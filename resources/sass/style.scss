@@ -104,6 +104,7 @@ aside {
 
 .sidebar {
     transition: all ease 0.3s;
+    border-right: 1px solid rgba($color: $dark, $alpha: .2);
     .sidebar-title {
         display: flex;
         flex-direction: column;

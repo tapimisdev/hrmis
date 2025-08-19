@@ -1,4 +1,4 @@
-<aside class="sidebar shadow-lg border-1">
+<aside class="sidebar border-1">
     <div class="sidebar-title">
         <img src="{{ asset('img/dost-tapi.png') }}" alt="logo">
         <div class="title">HR and Payroll System</div>
@@ -66,9 +66,8 @@
             <div class="collapse collapsable" id="settings">
                 <ul class="nested-list">
                     <li class="nested-item p-2">
-                        <a href="" class="d-flex gap-2 align-items-center">
-                            <i class="fa-solid fa-chart-simple"></i>
-                            Employee List
+                        <a href="{{ route('role-and-permission.index') }}" class="d-flex gap-2 align-items-center">
+                            Roles and Permissions
                         </a>
                     </li>
                 </ul>
