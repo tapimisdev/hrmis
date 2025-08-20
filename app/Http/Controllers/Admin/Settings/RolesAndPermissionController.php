@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Settings;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\Facades\DataTables;
@@ -29,6 +30,32 @@ class RolesAndPermissionController extends Controller
         return view('admin.pages.settings.role-permission.edit', compact('role', 'permissions'));
     }
 
+    public function editRole($id)
+    {
+        $role = Role::findOrFail($id);
+        return response(['data' => $role, 'message' => 'success'], 200);
+    }
+
+    public function updateRole(Request $request, $id)
+    {
+        $role = Role::findOrFail($id);
+        DB::beginTransaction();
+        try {
+    
+            $role->name = $request->name;
+            $role->save();
+            DB::commit();
+
+            return response(['data' => $role, 'message' => 'update success'], 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response(['data' => $e->getMessage(), 'message' => 'update role failed'], 500);
+        }
+
+        
+    }
+
     public function update(Request $request, $id)
     {
         $role = Role::findOrFail($id);
@@ -50,15 +77,10 @@ class RolesAndPermissionController extends Controller
             ->addIndexColumn()
             ->addColumn('actions', function ($row) {
                return '
-                <button data-id="' . $row->id . '" 
-                        class="btn btn-outline-primary btn-sm ms-1 delete-button" 
-                        title="Update Permissions">
-                    <i class="fa-solid fa-key"></i>
-                </button>
                 <a href="' . route('role-and-permission.edit', $row->id) . '" 
-                class="btn btn-outline-secondary btn-sm ms-1" 
+                class="btn btn-outline-primary btn-sm ms-1" 
                 title="Edit">
-                    <i class="fa-solid fa-pen-to-square"></i>
+                   <i class="fa-solid fa-key"></i>
                 </a>';
             })
             ->rawColumns(['actions'])

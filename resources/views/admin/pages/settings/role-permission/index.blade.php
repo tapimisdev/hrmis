@@ -7,9 +7,6 @@
 @section('content')
     <div class="container">
         <x-header title="Role and Permission" subtitle="Manage role and permission in this module" >
-            <a href="" class="btn btn-primary py-3 px-4">
-                + Add Roles
-            </a>
         </x-header>
 
         <div class="table-responsive card p-3">
