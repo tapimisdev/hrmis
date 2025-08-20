@@ -65,12 +65,12 @@
                 </div>
 
                 <div class="row g-3 mt-2">
-                    {{-- Attachment --}}
+                  {{-- Attachments --}}
                     <div class="col-12">
-                        <label for="attachment" class="form-label fw-semibold">Attachment (optional)</label>
-                        <input type="file" name="attachment" id="attachment" class="form-control">
-                        <span id="attachment_error" class="text-danger d-none"></span>
-                    </div>
+                        <label for="attachments" class="form-label fw-semibold">Attachments (optional)</label>
+                        <input type="file" name="attachments[]" id="attachments" class="form-control" multiple>
+                        <span id="attachments_error" class="text-danger d-none"></span>
+                    </div>x
                 </div>
 
             </div>
@@ -92,6 +92,10 @@
     $(document).ready(function() {
         $('#submit-button').click(e => {
             e.preventDefault();
+
+            $('.text-danger').addClass('d-none');
+            $('.form-control').removeClass('is-invalid');
+            $('.form-select').removeClass('is-invalid');
 
             let form = $('#myForm')[0];
             let formData = new FormData(form); // handles file uploads
@@ -116,9 +120,6 @@
             .catch(error => {
                 if (error.response && error.response.status === 422) {
                     // Validation errors
-                    $('.text-danger').addClass('d-none');
-                    $('.form-control').removeClass('is-invalid');
-
                     $.each(error.response.data.errors, function(field, errorMessage) {
                         var errorSpanId = '#' + field + '_error';
                         $(`#${field}`).addClass('is-invalid');

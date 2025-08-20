@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('leave_applications', function (Blueprint $table) {
            $table->id();
             $table->unsignedBigInteger('user_id'); // Employee who filed the leave
+            $table->string('employee_no')->nullable();
             $table->enum('leave_type', [
                 'sick',
                 'vacation',
@@ -25,6 +26,8 @@ return new class extends Migration
             $table->integer('days')->default(1);
             $table->text('reason');
             $table->enum('status', ['cancelled', 'pending', 'approved', 'rejected'])->default('pending');
+            $table->foreignId('approver_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });
 

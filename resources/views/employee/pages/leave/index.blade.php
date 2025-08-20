@@ -1,6 +1,7 @@
 @extends('employee.layout.app')
 
 @section('content')
+@include('employee.pages.leave.show')
     <div class="container">
         <x-header title="Leave Applications" subtitle="Manage Leave Applications in this module" >
             <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">
@@ -31,6 +32,8 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+
 <script>
     $(document).ready(function() {
         let = DataTable = $('#myTable').DataTable({
@@ -78,6 +81,67 @@
                 }
             }); // swal end
         });
+
+        const myModal = $('#myModal');
+        $(document).on('click', '.show-button', function() {
+            let id = $(this).attr('data-id');
+            $('.modal-title').html('Leave Application');
+
+            axios.get(`/employee/leaves/${id}`)
+                .then((response) => {
+                    const data = response.data.leave;
+                    console.log(data);
+                    // Fill in modal
+                    $('#doc-id').text(data.id);
+                    $('#employee-no').text(data.employee_no ?? 'N/A');
+                    $('#leave-type').text(data.leave_type);
+                    $('#start-date').text(moment(data.start_date).format('MMMM D, YYYY'));
+                    $('#end-date').text(moment(data.end_date).format('MMMM D, YYYY'));
+                    $('#days').text(data.days);
+                    $('#reason').text(data.reason);
+
+                    // Status badge
+                    let statusClass = 'bg-secondary';
+                    if (data.status === 'pending') statusClass = 'bg-warning';
+                    else if (data.status === 'approved') statusClass = 'bg-success';
+                    else if (data.status === 'rejected') statusClass = 'bg-danger';
+
+                    $('#status').attr('class', 'badge ' + statusClass).text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
+
+                    $('#created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
+
+                    $('#approver').text(data.approver_id ?? 'Not Yet Assigned');
+                    $('#approved-at').text(data.approved_at ? moment(data.approved_at).format('MMMM D, YYYY h:mm A') : '---');
+
+                    $('#attachments ul').empty();
+
+                    const attachments = response.data.attachments;
+
+                    if (attachments && attachments.length > 0) {
+                        attachments.forEach(file => {
+                            let fileUrl = `/storage/${file.file_path}`; // adjust if different
+                            let fileName = file.file_name;
+
+                            $('#attachments ul').append(
+                                `<li><a href="${fileUrl}" target="_blank">${fileName}</a></li>`
+                            );
+                        });
+                    } else {
+                        $('#attachments ul').append('<li><em>No attachments</em></li>');
+                    }
+
+                    // Show modal
+                    $('#myModal').modal('show');
+                })
+                .catch(error => {
+                    Swal.fire({
+                        title: "Oops!",
+                        text: error.message,
+                        icon: "error"
+                    });
+                });
+        });
+
     });
 </script>
 @endsection

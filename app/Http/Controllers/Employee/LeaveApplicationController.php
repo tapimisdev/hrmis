@@ -18,6 +18,7 @@ class LeaveApplicationController extends Controller
     {
         $query = DB::table('leave_applications')
                     ->where('user_id', Auth::user()->id)
+                    ->orderBy('created_at', 'desc') // latest first
                     ->get();
         
         if (request()->ajax()) {
@@ -26,7 +27,6 @@ class LeaveApplicationController extends Controller
 
         return view('employee.pages.leave.index');
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -64,8 +64,8 @@ class LeaveApplicationController extends Controller
                     DB::table('leave_attachments')->insert([
                         'leave_application_id' => $leaveId,
                         'file_path'            => $path,
-                        'original_name'        => $file->getClientOriginalName(),
-                        'mime_type'            => $file->getMimeType(),
+                        'file_name'            => $file->getClientOriginalName(),
+                        'file_type'            => $file->getMimeType(),
                         'created_at'           => now(),
                         'updated_at'           => now(),
                     ]);
@@ -97,7 +97,15 @@ class LeaveApplicationController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $leave = DB::table('leave_applications')
+                    ->where('id', $id)
+                    ->first();
+
+        $attachments = DB::table('leave_attachments')
+                    ->where('leave_application_id', $leave->id)
+                    ->get();
+                    
+        return response(['leave' => $leave, 'attachments' => $attachments, 'status' => 'success'], 200);
     }
 
     /**
@@ -175,18 +183,29 @@ class LeaveApplicationController extends Controller
                 return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
             })
             ->addColumn('actions', function ($row) {
+                $buttons = '
+                    <div class="d-flex">
+                        <button data-id="' . $row->id . '" 
+                            class="btn btn-primary btn-sm ms-1 show-button" 
+                            title="Show">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                ';
+
+                // Only show cancel if status is pending or approved
                 if (in_array($row->status, ['pending', 'approved'])) {
-                    return '
-                        <div class="d-flex">
-                            <button data-id="' . $row->id . '" 
-                                class="btn btn-danger btn-sm ms-1 cancel-button" 
-                                title="Cancel">
-                                <i class="fa-solid fa-ban"></i> Cancel
-                            </button>
-                        </div>
+                    $buttons .= '
+                        <button data-id="' . $row->id . '" 
+                            class="btn btn-danger btn-sm ms-1 cancel-button" 
+                            title="Cancel">
+                            <i class="fa-solid fa-ban"></i>
+                        </button>
                     ';
                 }
-                return ''; // no button for rejected/cancelled
+
+                $buttons .= '</div>';
+
+                return $buttons;
             })
             ->rawColumns(['actions', 'status', 'date'])
             ->make(true);

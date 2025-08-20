@@ -29,8 +29,8 @@ class StoreLeaveApplication extends FormRequest
             'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
 
-            // File attachment (optional but must be valid if uploaded)
-            'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
+            'attachments' => ['nullable', 'array'],
+            'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 
             // Prevent duplicate leave applications with same dates and type
             Rule::unique('leave_applications')->where(function ($query) {
@@ -40,6 +40,23 @@ class StoreLeaveApplication extends FormRequest
                     ->where('end_date', $this->end_date);
             }),
         ];
+    }
+
+    protected function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($this->start_date && $this->end_date && $this->days) {
+                $start = \Carbon\Carbon::parse($this->start_date);
+                $end = \Carbon\Carbon::parse($this->end_date);
+
+                // Inclusive difference (add +1 if counting start & end date)
+                $expectedDays = $start->diffInDays($end) + 1;
+
+                if ($this->days != $expectedDays) {
+                    $validator->errors()->add('days', "Days must match the difference between start and end date ($expectedDays).");
+                }
+            }
+        });
     }
 
     public function messages(): array

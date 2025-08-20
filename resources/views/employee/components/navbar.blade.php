@@ -2,7 +2,7 @@
     <div class="container d-flex justify-content-md-between">
         <div></div>
         <div class="dropdown d-none d-lg-block">
-            <a class="nav-link text-dark text-capitalize" href="" role="button">
+            <a class="nav-link text-dark text-capitalize" href="{{ route('dashboard.index') }}" role="button">
                 {{ config('app.client') }}
             </a>
         </div>
