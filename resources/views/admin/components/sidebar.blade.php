@@ -1,10 +1,10 @@
 <aside class="sidebar border-1">
     <div class="sidebar-title">
-        <img src="{{ asset('img/dost-tapi.png') }}" alt="logo">
+        <img src="{{ asset('img/DOST-TAPI.png') }}" alt="logo">
         <div class="title">HR and Payroll System</div>
     </div>
     <ul class="sidebar-list">
-        <!-- Dashboard -->
+
         <li class="sidebar-item mt-1 {{ request()->routeIs('home') ? 'active' : '' }}">
             <a href="{{ route('home') }}" class="sidebar-link pe-5">
                 <i class="fa-solid fa-house me-2"></i> Dashboard
@@ -18,7 +18,7 @@
             <div class="collapse collapsable" id="financials">
                 <ul class="nested-list">
                     <li class="nested-item p-2">
-                        <a href="" class="d-flex gap-2 align-items-center">
+                        <a href="{{route('hris.employee.index')}}" class="d-flex gap-2 align-items-center">
                             <i class="fa-solid fa-chart-simple"></i>
                             Employee List
                         </a>
@@ -68,6 +68,11 @@
                     <li class="nested-item p-2">
                         <a href="{{ route('role-and-permission.index') }}" class="d-flex gap-2 align-items-center">
                             Roles and Permissions
+                        </a>
+                    </li>
+                    <li class="nested-item p-2">
+                        <a href="{{ route('employment-types.index') }}" class="d-flex gap-2 align-items-center">
+                            Employment Types
                         </a>
                     </li>
                 </ul>

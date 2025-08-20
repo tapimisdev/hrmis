@@ -51,12 +51,12 @@ class RolesAndPermissionController extends Controller
             ->addColumn('actions', function ($row) {
                return '
                 <button data-id="' . $row->id . '" 
-                        class="btn btn-outline-primary btn-sm ms-1 delete-button" 
+                        class="btn btn-outline-primary btn ms-1 delete-button" 
                         title="Update Permissions">
                     <i class="fa-solid fa-key"></i>
                 </button>
                 <a href="' . route('role-and-permission.edit', $row->id) . '" 
-                class="btn btn-outline-secondary btn-sm ms-1" 
+                class="btn btn-outline-secondary btn ms-1" 
                 title="Edit">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </a>';
