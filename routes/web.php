@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\HrisController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
+use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
 use Illuminate\Support\Facades\Auth;
@@ -41,5 +42,6 @@ Route::prefix('admin')->group(function () {
 
 Route::prefix('employee')->group(function () {
     Route::resource('dashboard', EmployeeDashboardController::class);
-    Route::resource('leaves', LeaveApplicationController::class);
+    Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');
+    Route::resource('overtime', AtroController::class);
 });

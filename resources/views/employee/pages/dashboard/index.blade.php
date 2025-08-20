@@ -98,12 +98,12 @@
                     <img src="{{ asset('img/overtime.svg') }}" class="img-fluid" alt="Overtime" style="height: 120px">
                 </div>
                 <div class="card-footer border-top d-flex justify-content-end bg-white border-0 gap-2">
-                    <button class="btn btn-outline-primary px-4">
+                    <a href="{{ route('overtime.index') }}" class="btn btn-outline-primary px-4">
                         <i class="fa-solid fa-list me-2"></i> View All
-                    </button>
-                    <button class="btn btn-primary px-4">
+                    </a>
+                    <a href="{{ route('overtime.create') }}" class="btn btn-primary px-4">
                         <i class="fa-solid fa-plus me-2"></i> File Overtime
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
