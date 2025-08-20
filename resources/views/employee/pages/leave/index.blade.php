@@ -12,22 +12,20 @@
             </a>
         </x-header>
 
-        <div class="table-responsive card p-3">
-            <table class="table table-hover" id="myTable">
-                <thead>
-                    <tr>
-                        <th style="width: 10px">#</th>
-                        <th>Leave Type</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Number of Days</th>
-                        <th style="width: 120px">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
+        <x-table id="myTable">
+            <thead>
+                <tr>
+                    <th style="width: 10px">#</th>
+                    <th>Leave Type</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Number of Days</th>
+                    <th style="width: 120px">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </x-table>
     </div>
 @endsection
 
