@@ -1,11 +1,12 @@
-<header class="d-flex mb-3 justify-content-between align-items-center pb-2 pt-4 border-bottom">
+<div class="d-flex mb-3 justify-content-between align-items-center pb-2 pt-4 ">
     <div>
-        <h1 class="text-xl font-bold">{{ $title }}</h1>
+        <h1 class="text-xl fw-bold text-uppercase">{{ $title }}</h1>
         @if($subtitle)
-            <p class="text-gray-600">{{ $subtitle }}</p>
+            <p class="text-gray-600 text-uppercase fw-medium">{{ $subtitle }}</p>
         @endif
     </div>
     <div>
         {{ $slot }}
     </div>
-</header>
+</div>
+<hr class="mt-4 mb-5">
