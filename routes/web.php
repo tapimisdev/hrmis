@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
+use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
+use App\Http\Controllers\Employee\LeaveApplicationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,4 +26,9 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 
 Route::prefix('admin')->group(function () {
     Route::resource('role-and-permission', RolesAndPermissionController::class);
+});
+
+Route::prefix('employee')->group(function () {
+    Route::resource('dashboard', EmployeeDashboardController::class);
+    Route::resource('leaves', LeaveApplicationController::class);
 });
