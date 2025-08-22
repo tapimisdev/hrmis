@@ -4,7 +4,7 @@
 @include('employee.pages.obs.show') {{-- modal partial for viewing details --}}
 
 <div class="container">
-    <x-header title="Travel Order" subtitle="Manage Official Travel Order in this module">
+    <x-header title="Official Business Slip" subtitle="Manage Official Official Business Slip in this module">
         <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">
             <i class="fa-solid fa-arrow-left me-2"></i> Back
         </a>

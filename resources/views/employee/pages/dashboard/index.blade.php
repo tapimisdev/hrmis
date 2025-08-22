@@ -66,11 +66,11 @@
         <div class="col-md-6 col-lg-4 col-sm-6">
             <div class="card shadow dashboard-card h-100">
                 <div class="card-header bg-light fw-bold">
-                    Travel Order
+                    Official Business Slip
                 </div>
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <p class="mb-3 text-muted flex-grow-1">
-                        Manage and monitor your travel orders seamlessly, from creation to approval.
+                        Manage and monitor your OBS seamlessly, from creation to approval.
                     </p>
                     <img src="{{ asset('img/travel.svg') }}" class="img-fluid" alt="Travel Order" style="height: 120px">
                 </div>
