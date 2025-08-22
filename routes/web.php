@@ -21,14 +21,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
+    Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
     Route::prefix('hris')->group(function() {
         Route::resource('employee', HrisController::class)
             ->names('hris.employee');
@@ -40,8 +41,8 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-Route::prefix('employee')->group(function () {
+Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
     Route::resource('dashboard', EmployeeDashboardController::class);
     Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');
-    Route::resource('overtime', AtroController::class);
+    Route::resource('overtime', AtroController::class)->except('edit', 'update');
 });

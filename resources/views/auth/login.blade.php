@@ -54,7 +54,7 @@
                 </div>
 
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary rounded-4 py-3 d-flex align-items-center justify-content-center">
+                    <button type="submit" class="btn btn-secondary rounded-4 py-3 d-flex align-items-center justify-content-center">
                         Sign In
                     </button>
                 </div>

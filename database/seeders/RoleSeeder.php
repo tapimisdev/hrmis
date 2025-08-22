@@ -19,9 +19,17 @@ class RoleSeeder extends Seeder
         // Create roles
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $hrRole = Role::firstOrCreate(['name' => 'hr']);
+        $employeeRole = Role::firstOrCreate(['name' => 'employee']);
 
         // Admin = all
         $adminRole->syncPermissions(Permission::all());
+
+        // HR = HRIS + Timekeeping + Reports
+        $hrRole->syncPermissions([
+            'view hris', 'create hris', 'edit hris', 'delete hris',
+            'view timekeeping', 'approve timekeeping', 'reject timekeeping',
+            'view reports', 'export reports',
+        ]);
 
         // HR = HRIS + Timekeeping + Reports
         $hrRole->syncPermissions([
@@ -49,5 +57,16 @@ class RoleSeeder extends Seeder
             ]
         );
         $hr->assignRole($hrRole);
+
+
+        // HR User
+        $employee = User::firstOrCreate(
+            ['email' => 'emp@dost-tapi.com'],
+            [
+                'name' => 'Kim Mariano',
+                'password' => Hash::make('d0$t2025'),
+            ]
+        );
+        $employee->assignRole($employeeRole);
     }
 }
