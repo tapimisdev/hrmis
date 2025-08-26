@@ -66,21 +66,21 @@
         <div class="col-md-6 col-lg-4 col-sm-6">
             <div class="card shadow dashboard-card h-100">
                 <div class="card-header bg-light fw-bold">
-                    Travel Order
+                    Official Business Slip
                 </div>
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <p class="mb-3 text-muted flex-grow-1">
-                        Manage and monitor your travel orders seamlessly, from creation to approval.
+                        Manage and monitor your OBS seamlessly, from creation to approval.
                     </p>
                     <img src="{{ asset('img/travel.svg') }}" class="img-fluid" alt="Travel Order" style="height: 120px">
                 </div>
                 <div class="card-footer border-top d-flex justify-content-end bg-white border-0 gap-2">
-                    <button class="btn btn-outline-primary px-4">
+                    <a href="{{ route('obs.index') }}" class="btn btn-outline-primary px-4">
                         <i class="fa-solid fa-list me-2"></i> View All
-                    </button>
-                    <button class="btn btn-primary px-4">
+                    </a>
+                    <a href="{{ route('obs.create') }}" class="btn btn-primary px-4">
                         <i class="fa-solid fa-plus me-2"></i> New Order
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>

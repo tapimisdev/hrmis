@@ -1,4 +1,4 @@
-<div class="d-flex mb-3 justify-content-between align-items-center pb-2 pt-4 ">
+<div class="d-flex mb-3 justify-content-between align-items-center pb-2 mt-4 pt-4">
     <div>
         <h1 class="text-xl fw-bold text-uppercase">{{ $title }}</h1>
         @if($subtitle)

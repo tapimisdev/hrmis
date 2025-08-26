@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
+use App\Http\Controllers\Employee\ObsController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -67,4 +68,5 @@ Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
     Route::resource('dashboard', EmployeeDashboardController::class);
     Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');
     Route::resource('overtime', AtroController::class)->except('edit', 'update');
+    Route::resource('official-business-slip', ObsController::class)->except('edit', 'update')->names('obs');
 });
