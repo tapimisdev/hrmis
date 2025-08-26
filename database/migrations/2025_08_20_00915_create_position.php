@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('positions', function (Blueprint $table) {
             $table->id();
-            $table->string('code');
-            $table->string('name');
-            $table->longText('description')
-                ->nullable();
             $table->foreignId('employment_type_id')
                 ->nullable()
                 ->constrained('employment_types')
                 ->onDelete('set null');
+            $table->string('code');
+            $table->string('name');
+            $table->longText('description')
+                ->nullable();
             $table->timestamps();
         });
     }

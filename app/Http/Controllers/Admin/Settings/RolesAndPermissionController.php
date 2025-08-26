@@ -25,9 +25,19 @@ class RolesAndPermissionController extends Controller
     public function edit($id)
     {
         $role = Role::findOrFail($id);
+
         $permissions = Permission::all();
 
-        return view('admin.pages.settings.role-permission.edit', compact('role', 'permissions'));
+        $grouped = [];
+
+        foreach ($permissions as $perm) {
+            [$action, $module] = explode(' ', $perm['name'], 2);
+
+            $grouped[$module][$action] = $perm;
+        }
+
+
+        return view('admin.pages.settings.role-permission.edit', compact('role', 'grouped'));
     }
 
     public function editRole($id)
@@ -77,11 +87,14 @@ class RolesAndPermissionController extends Controller
             ->addIndexColumn()
             ->addColumn('actions', function ($row) {
                return '
-                <a href="' . route('role-and-permission.edit', $row->id) . '" 
-                class="btn btn-outline-primary btn ms-1" 
-                title="Edit">
-                   <i class="fa-solid fa-key"></i>
-                </a>';
+                <div class="d-block d-md-flex gap-2 justify-content-start">
+                    <a href="' . route('role-and-permission.edit', $row->id) . '" 
+                    class="btn btn-outline-primary btn ms-1 my-1" 
+                    title="Edit">
+                    <i class="fa-solid fa-key"></i>
+                    </a>
+                </div>    
+                ';
             })
             ->rawColumns(['actions'])
             ->make(true);
