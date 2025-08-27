@@ -430,6 +430,16 @@ label {
     font-weight: medium;
 }
 
+.check-in-out {
+    
+    .time {
+        font-size: 24px;
+        p {
+            margin: 0;
+            padding: 0;
+        }
+    }
+}
 .error-field {
     margin-top: 5px;
     text-transform: uppercase;

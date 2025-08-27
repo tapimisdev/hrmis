@@ -1,3 +1,6 @@
+import { createApp } from 'vue';
+import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
+
 import { post, put } from './action';
 import { 
     confirmAction, alert, pushQuery, redirectToTab
@@ -8,11 +11,18 @@ window.put = put;
 
 redirectToTab();
 
+const authApp = createApp({
+  components: {
+    CheckInOutVue,
+  },
+});
+
+authApp.mount('#app');
+
 $('#toggleSidebar').on('change', function() {
     var sidebar = $('.sidebar');
     sidebar.toggleClass('show', this.checked);
 });
-
 
 $(document).on('click', '#btn-delete', function() {
     const url = $(this).data('target');

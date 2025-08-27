@@ -5,7 +5,7 @@
             <p class="text-gray-600 text-uppercase fw-medium">{{ $subtitle }}</p>
         @endif
     </div>
-    <div>
+    <div class="d-flex gap-2">
         {{ $slot }}
     </div>
 </div>

@@ -21,6 +21,7 @@ use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardContro
 use App\Http\Controllers\Employee\LeaveApplicationController;
 use App\Http\Controllers\Employee\ObsController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Employee\timelogs\CheckInOutController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -143,4 +144,6 @@ Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
     Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');
     Route::resource('overtime', AtroController::class)->except('edit', 'update');
     Route::resource('official-business-slip', ObsController::class)->except('edit', 'update')->names('obs');
+    Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store', 'create')->names('checkinout');
+    Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 });
