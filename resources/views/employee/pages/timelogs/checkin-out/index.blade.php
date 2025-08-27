@@ -4,7 +4,7 @@
 <div class="container check-in-out pt-4">
     
     <x-header title="Timelogs" subtitle="View your timelogs in this module">
-        <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">
+        <a href="{{ route('dashboard.index') }}" class="btn btn-outline-danger py-3 px-4">
             <i class="fa-solid fa-arrow-left me-2"></i> Back
         </a>
         <a href="{{ route('checkinout.create') }}" class="btn btn-primary py-3 px-4">
@@ -39,10 +39,10 @@
             "columns": [
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "date", name: 'date' },
-                { data: "time_in", name: 'time_in', orderable: false, searchable: false  },
-                { data: "break_out", name: 'break_out', orderable: false, searchable: false  },
-                { data: "break_in", name: 'break_in', orderable: false, searchable: false  },
-                { data: "time_out", name: 'time_out', orderable: false, searchable: false },
+                { data: "time_in", name: 'time_in' },
+                { data: "break_out", name: 'break_out' },
+                { data: "break_in", name: 'break_in' },
+                { data: "time_out", name: 'time_out'},
             ],
         });
     });

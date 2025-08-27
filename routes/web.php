@@ -71,4 +71,5 @@ Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
     Route::resource('overtime', AtroController::class)->except('edit', 'update');
     Route::resource('official-business-slip', ObsController::class)->except('edit', 'update')->names('obs');
     Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store', 'create')->names('checkinout');
+    Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 });

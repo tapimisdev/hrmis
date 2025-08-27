@@ -2,8 +2,6 @@ import './bootstrap';
 import { createApp } from 'vue';
 import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
 
-authApp.mount('#app');
-
 import { post, put } from './action';
 import { 
     confirmAction, alert, pushQuery, redirectToTab
@@ -19,6 +17,8 @@ const authApp = createApp({
     CheckInOutVue,
   },
 });
+
+authApp.mount('#app');
 
 $('#toggleSidebar').on('change', function() {
     var sidebar = $('.sidebar');

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 class TimelogsServices {
 
-    public function getTimeLogs($userId)
+   public function getTimeLogs($userId)
     {
         $timelogs = DB::table('timelogs')
             ->where('user_id', $userId)
@@ -30,12 +30,13 @@ class TimelogsServices {
             ];
         }
 
-        return collect($result);
+        // sort dates descending (latest first)
+        return collect($result)->sortByDesc('date')->values();
     }
 
     public function getValidLogs($logs)
     {
-        $duplicateThreshold = 5; // minutes; adjust if you want stricter/looser duplicate detection
+        $duplicateThreshold = 1; // minutes; adjust if you want stricter/looser duplicate detection
 
         // Normalize & sort
         $logs = collect($logs)->sortBy('date_time')->values();
@@ -52,7 +53,7 @@ class TimelogsServices {
             $lastTime = \Carbon\Carbon::parse($last->date_time);
             $currTime = \Carbon\Carbon::parse($log->date_time);
 
-            if ($currTime->diffInMinutes($lastTime) <= $duplicateThreshold) {
+            if ($currTime->diffInMinutes($lastTime) < $duplicateThreshold) {
                 // Considered a duplicate (too close) — skip the later one
                 continue;
             }
@@ -81,7 +82,7 @@ class TimelogsServices {
         if ($n === 2) {
             // assume in + out
             $validLogs['in'] = $filtered->get(0);
-            $validLogs['out'] = $filtered->get(1);
+            $validLogs['break_out'] = $filtered->get(1);
             return $validLogs;
         }
 
@@ -102,6 +103,43 @@ class TimelogsServices {
         return $validLogs;
     }
 
+    public function getTodaysLogs()
+    {
+        $user_id = auth()->user()->id;
+        $today = \Carbon\Carbon::now()->toDateString();
 
+        $logs = DB::table('timelogs')
+            ->where('user_id', $user_id)
+            ->whereDate('date_time', $today)
+            ->orderBy('date_time', 'asc')
+            ->get();
 
+        $valid = $this->getValidLogs($logs);
+
+        return [
+            'date'       => $today,
+            'timeIn'     => isset($valid['in']->date_time) 
+                ? \Carbon\Carbon::parse($valid['in']->date_time)->format('h:i:s A') 
+                : null,
+            'breakOut'   => isset($valid['break_out']->date_time) 
+                ? \Carbon\Carbon::parse($valid['break_out']->date_time)->format('h:i:s A') 
+                : null,
+            'breakIn'    => isset($valid['break_in']->date_time) 
+                ? \Carbon\Carbon::parse($valid['break_in']->date_time)->format('h:i:s A') 
+                : null,
+            'timeOut'    => isset($valid['out']->date_time) 
+                ? \Carbon\Carbon::parse($valid['out']->date_time)->format('h:i:s A') 
+                : null,
+        ];
+    }
+
+    public function getLastLog()
+    {
+        $user_id = auth()->user()->id;
+
+        return DB::table('timelogs')
+            ->where('user_id', $user_id)
+            ->orderBy('date_time', 'desc')
+            ->first();
+    }
 }

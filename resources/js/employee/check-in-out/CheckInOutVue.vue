@@ -12,24 +12,40 @@
         <tbody>
             <tr>
                 <td class="fw-bold text-success">{{ log.timeIn || '--:--:--' }}</td>
-                <td class="fw-bold text-warning">{{ log.lunchOut || '--:--:--' }}</td>
-                <td class="fw-bold text-primary">{{ log.lunchIn || '--:--:--' }}</td>
+                <td class="fw-bold text-warning">{{ log.breakOut || '--:--:--' }}</td>
+                <td class="fw-bold text-primary">{{ log.breakIn || '--:--:--' }}</td>
                 <td class="fw-bold text-danger">{{ log.timeOut || '--:--:--' }}</td>
             </tr>
         </tbody>
         <tfoot>
             <tr>
-                <td>
-                    <button class="btn btn-primary btn-lg w-100 py-3" @click="setTime('timeIn')" :disabled="!!log.timeIn">Time In</button>
+                 <td>
+                    <button class="btn btn-primary btn-lg w-100 py-3" 
+                            @click="setTime('timeIn')" 
+                            :disabled="isTimeInDisabled"
+                            >
+                            Time In</button>
                 </td>
                 <td>
-                    <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="setTime('lunchOut')" :disabled="!log.timeIn || !!log.lunchOut">Break Out</button>
+                    <button class="btn btn-warning btn-lg w-100 py-3" 
+                            @click="setTime('breakOut')" 
+                            :disabled="isBreakOutDisabled"
+                            >
+                            Break Out</button>
                 </td>
                 <td>
-                    <button class="btn btn-outline-primary btn-lg w-100 py-3" @click="setTime('lunchIn')" :disabled="!log.lunchOut || !!log.lunchIn">Break In</button>
+                    <button class="btn btn-warning btn-lg w-100 py-3" 
+                            @click="setTime('breakIn')" 
+                            :disabled="isBreakInDisabled"
+                            >
+                            Break In</button>
                 </td>
                 <td>
-                    <button class="btn btn-primary btn-lg w-100 py-3" @click="setTime('timeOut')" :disabled="!log.lunchIn || !!log.timeOut">Time Out</button>
+                    <button class="btn btn-primary btn-lg w-100 py-3" 
+                            @click="setTime('timeOut')" 
+                            :disabled="isTimeOutDisabled"
+                            >
+                            Time Out</button>
                 </td>
             </tr>
         </tfoot>
@@ -37,83 +53,105 @@
 </template>
 
 <style scoped>
-button:disabled {
-    cursor: not-allowed !important;
-    opacity: 0.6 !important;
-    pointer-events: auto !important;
-}
 </style>
 
 <script setup>
 import axios from 'axios';
-import { reactive } from 'vue';
-
-function getCurrentTime() {
-  const now = new Date();
-  let hours = now.getHours();
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  const seconds = now.getSeconds().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-  return `${hours.toString().padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
-}
+import { reactive, onMounted, computed } from 'vue';
 
 const log = reactive({
   timeIn: '',
-  lunchOut: '',
-  lunchIn: '',
+  breakOut: '',
+  breakIn: '',
   timeOut: ''
 });
 
+const isTimeInDisabled = computed(() => !!log.timeIn);
+const isBreakOutDisabled = computed(() => !log.timeIn || !!log.breakOut);
+const isBreakInDisabled = computed(() => !log.breakOut || !!log.breakIn);
+const isTimeOutDisabled = computed(() => !log.breakIn || !!log.timeOut);
+
+function getCurrentTime() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0'); // months are 0-based
+  const day = now.getDate().toString().padStart(2, '0');
+
+  const hours = now.getHours().toString().padStart(2, '0'); // 24-hour format
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
 function setTime(type) {
-  axios.post('/employee/check-in-out', { type, time: getCurrentTime() })
-    .then(response => {
-        const Toast = Swal.mixin({
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.onmouseenter = Swal.stopTimer;
-                toast.onmouseleave = Swal.resumeTimer;
-            }
-        });
-        Toast.fire({
-            icon: "success",
-            title: "Signed in successfully"
-        });
-        if (!log[type]) {
-            log[type] = getCurrentTime();
+
+    Swal.fire({
+        title: "Are you sure?",
+        icon: "question",
+        text: `You are about to log your ${type.replace(/([A-Z])/g, ' $1').toLowerCase()}.`,
+        showCancelButton: true,
+        confirmButtonText: "Save",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            axios.post('/employee/check-in-out', { type, date_time: getCurrentTime() })
+            .then(response => {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: "bottom-end",
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+                Toast.fire({
+                    icon: "success",
+                    title: response.data.message || "Time logged successfully"
+                });
+                getTodayLogs();
+            })
+            .catch(error => {
+                console.error('Error setting time:', error);
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: "bottom-end",
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+                Toast.fire({
+                    icon: "error",
+                    title: error.response.data.message || "An error occurred"
+                });
+            });
+
         }
-    //   log[type] = response.data.time;
+    });
+  
+}
+function getTodayLogs() {
+  axios.get('/employee/check-in-out/today-logs')
+    .then(response => {
+      const todayLog = response.data.data;
+      if (todayLog) {
+        log.timeIn = todayLog.timeIn || '';
+        log.breakOut = todayLog.breakOut || '';
+        log.breakIn = todayLog.breakIn || '';
+        log.timeOut = todayLog.timeOut || '';
+      }
     })
     .catch(error => {
-      console.error('Error setting time:', error);
-      const Toast = Swal.mixin({
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.onmouseenter = Swal.stopTimer;
-                toast.onmouseleave = Swal.resumeTimer;
-            }
-        });
-        Toast.fire({
-            icon: "success",
-            title: error.response.data.message || "An error occurred"
-        });
+      console.error('Error fetching today logs:', error);
     });
-
 }
-
-function resetLog() {
-  log.timeIn = '';
-  log.lunchOut = '';
-  log.lunchIn = '';
-  log.timeOut = '';
-}
+onMounted(() => {
+    getTodayLogs();
+});
 </script>
