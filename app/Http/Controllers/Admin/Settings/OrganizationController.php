@@ -29,8 +29,9 @@ class OrganizationController extends Controller
                         ->leftJoin('divisions', 'units.division_id', '=', 'divisions.id')
                         ->orderByDesc('units.id');
 
-                if (request()->filled('division_id')) {
-                    $query->where('division_id', request()->division_id);
+                $division_id = request()->division_id;
+                if ($division_id) {
+                    $query->where('division_id', $division_id);
                 }
 
                 $query->get();

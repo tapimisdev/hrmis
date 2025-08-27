@@ -1,4 +1,3 @@
-import './bootstrap';
 import { post, put } from './action';
 import { 
     confirmAction, alert, pushQuery, redirectToTab

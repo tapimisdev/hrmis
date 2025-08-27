@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Hris;
 
 use App\Http\Controllers\Controller;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
-class HrisController extends Controller
+class IndexController extends Controller
 {
 
     protected $employeeService;
@@ -17,9 +17,7 @@ class HrisController extends Controller
         $this->employeeService = app(EmployeeService::class);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
 
@@ -27,55 +25,14 @@ class HrisController extends Controller
 
             $query = $this->employeeService->getEmployee();
 
+            dd($query);
+
             return $this->datatable($query);
         }
 
         return view('admin.pages.hris.index');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('admin.pages.hris.form');
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         //
@@ -96,7 +53,9 @@ class HrisController extends Controller
             })
             ->addColumn('actions', function ($row) {
                return '
-                <a href="' . route('hris.employee.edit', $row->id) . '" 
+                <a href="' . route('hris.employee.information', [
+                    'employee_no' => $row->employee_no
+                ]) . '" 
                 class="btn btn-outline-secondary btn ms-1" 
                 title="Edit">
                     <i class="fa-solid fa-pen-to-square"></i>
