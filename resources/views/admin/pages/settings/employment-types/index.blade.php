@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container p-4">
+    <div class="container p-4 pb-5">
         <x-header title="Employment Types" subtitle="Manage employment types in this module">
             <a href="{{route('employment-types.create')}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
                 Add New
@@ -35,7 +35,7 @@
 
 @section('scripts')
 <script>
-    $(document).ready(function() {
+    $(function() {
         let = DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
@@ -48,6 +48,7 @@
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
         });
+        
     });
 </script>
 @endsection

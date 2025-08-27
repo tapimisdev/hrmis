@@ -16,31 +16,61 @@
             <div class="card-body p-4">
                 @csrf
                 @method('PUT')
-
                 <table class="table table-striped p-3 pb-5">
                     <thead>
                         <tr>
                             <th width="50">#</th>
-                            <th>Permission Name</th>
-                            <th width="100">Assign</th>
+                            <th>Module</th>
+                            <th class="text-center">Create</th>
+                            <th class="text-center">Read</th>
+                            <th class="text-center">Edit</th>
+                            <th class="text-center">Delete</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($permissions as $index => $permission)
+                        @php $row = 1; @endphp
+                        @foreach($grouped as $module => $actions)
                             <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $permission->name }}</td>
+                                <td>{{ $row++ }}</td>
+                                <td>{{ ucfirst($module) }}</td>
                                 <td class="text-center">
-                                    <input type="checkbox" 
-                                        name="permissions[]" 
-                                        value="{{ $permission->id }}"
-                                        id="perm_{{ $permission->id }}"
-                                        {{ $role->permissions->contains($permission->id) ? 'checked' : '' }}>
+                                    @if(isset($actions['create']))
+                                        <input type="checkbox" 
+                                            name="permissions[]" 
+                                            value="{{ $actions['create']['name'] }}"
+                                            {{ $role->permissions->contains('name', $actions['create']['name']) ? 'checked' : '' }}>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if(isset($actions['view']) || isset($actions['read']))
+                                        @php $perm = $actions['view'] ?? $actions['read']; @endphp
+                                        <input type="checkbox" 
+                                            name="permissions[]" 
+                                            value="{{ $perm['name'] }}"
+                                            {{ $role->permissions->contains('name', $perm['name']) ? 'checked' : '' }}>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if(isset($actions['edit']))
+                                        <input type="checkbox" 
+                                            name="permissions[]" 
+                                            value="{{ $actions['edit']['name'] }}"
+                                            {{ $role->permissions->contains('name', $actions['edit']['name']) ? 'checked' : '' }}>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    @if(isset($actions['delete']))
+                                        <input type="checkbox" 
+                                            name="permissions[]" 
+                                            value="{{ $actions['delete']['name'] }}"
+                                            {{ $role->permissions->contains('name', $actions['delete']['name']) ? 'checked' : '' }}>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
+
             </div>
             <div class="card-footer d-flex justify-content-end bg-transparent border-0 pb-4">
                 <button type="submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">Update</button>

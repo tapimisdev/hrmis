@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\HrisController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
+use App\Http\Controllers\Admin\Settings\OrganizationController;
+use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
@@ -30,16 +32,36 @@ Auth::routes(['register' => false]);
 
 
 Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
+    
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
     Route::prefix('hris')->group(function() {
+        # HRIS
         Route::resource('employee', HrisController::class)
             ->names('hris.employee');
     });
 
     Route::prefix('settings')->group(function() {
+        # ROLES AND PERMISSIONS
         Route::resource('role-and-permission', RolesAndPermissionController::class);
-        Route::resource('employment-types', EmploymentTypesController::class);
+        
+        # EMPLOYMENT TYPES
+        Route::resource('employment-types', EmploymentTypesController::class)
+            ->except('show');
+
+        # ORGANIZATION 
+        Route::resource('organization', OrganizationController::class)
+            ->except('show');
+
+        # POSITIONS
+        Route::get('positions/{employment_type_id?}', [PositionController::class, 'index'])->name('positions.index');
+        Route::post('positions/{employment_type_id?}', [PositionController::class, 'store'])->name('positions.store');
+        Route::get('positions/{employment_type_id?}/create', [PositionController::class, 'create'])->name('positions.create');
+        Route::get('positions/{employment_type_id?}/{id}/edit', [PositionController::class, 'edit'])->name('positions.edit');
+        Route::put('positions/{employment_type_id?}/{id}', [PositionController::class, 'update'])->name('positions.update');
+        Route::delete('positions/{employment_type_id?}/{id}', [PositionController::class, 'destroy'])->name('positions.destroy');
+
+
     });
 });
 

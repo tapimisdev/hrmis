@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container p-4">
+    <div class="container p-4 pb-5">
         <x-header title="Employee Lists" subtitle="Manage employee's informations in this module" >
             <a href="{{route('hris.employee.create')}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
                 Add Employee

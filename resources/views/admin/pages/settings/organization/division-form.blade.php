@@ -3,25 +3,26 @@
 @section('content')
     <div class="container p-4 pb-5">
         @if(isset($isEdit) && $isEdit == true)
-            <x-header title="Update Employment Type" subtitle="update this employment type" >
-                <a href="{{route('employment-types.index')}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+            <x-header title="Update Division" subtitle="Update this division in your organization">
+                <a href="{{route('organization.index', ['tab' => 'division'])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
                     Go Back
                 </a>
             </x-header>
         @else
-            <x-header title="Add New Employment Type" subtitle="Create new employment type" >
-                <a href="{{route('employment-types.index')}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+            <x-header title="Add New Division" subtitle="Create new division in your organization">
+                <a href="{{route('organization.index', ['tab' => 'division'])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
                     Go Back
                 </a>
             </x-header>
         @endif
-        <form id="form" action="{{ $isEdit ? route('employment-types.update', ['employment_type' => $id]) : route('employment-types.store') }}" method="post">
+        <form id="form" action="{{ $isEdit ? route('organization.update', ['organization' => $id]) : route('organization.store') }}" method="post">
             @if($isEdit)
                 @method('PUT')
             @else
                 @method('POST')
             @endif
             @csrf
+            <input type="hidden" name="type" value="{{$type}}">
             <div class="card shadow p-3">
                 <div class="card-body">
                     <div class="row my-3">

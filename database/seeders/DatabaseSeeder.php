@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             EmploymentTypeSeeder::class,
             TimeLogsSeeder::class,
+            OrganizationSeeder::class,
         ]);
     }
 }
