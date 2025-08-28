@@ -1,4 +1,4 @@
-<aside class="sidebar border-1">
+<div class="sidebar border-1">
     <div class="sidebar-title">
         <img src="{{ asset('img/DOST-TAPI.png') }}" alt="logo">
         <div class="title">HR and Payroll System</div>
@@ -122,4 +122,4 @@
             </div>
         </li>
     </ul>
-</aside>
+</div>

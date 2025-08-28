@@ -33,9 +33,14 @@
                             <input type="text" id="code" name="code" class="form-control" value="{{$isEdit ? $data->code : ''}}">
                             <div class="error-field"></div>
                         </div>
-                         <div class="col-12 col-md-6 mb-3">
+                        <div class="col-12 col-md-6 mb-3">
                             <label class="mb-2" for="name">Name <span class="text-danger">*</span></label>
                             <input type="text" id="name" name="name" class="form-control" value="{{$isEdit ? $data->name : ''}}">
+                            <div class="error-field"></div>
+                        </div>
+                        <div class="col-12 col-md-12 mb-3">
+                            <label class="mb-2" for="name">Salary <span class="text-danger">*</span></label>
+                            <input type="text" id="salary" name="salary" class="form-control" value="{{$isEdit ? $data->salary : ''}}">
                             <div class="error-field"></div>
                         </div>
                     </div>

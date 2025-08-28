@@ -19,7 +19,8 @@ export function alert(type, message, redirect = '') {
     Swal.fire({
         title: config[type].title,
         text: message,
-        icon: config[type].icon
+        icon: config[type].icon,
+        confirmButtonText: 'Got It'
     }).then(() => {
         if (redirect && redirect !== '_self') {
             window.location.href = redirect;
@@ -34,11 +35,30 @@ export function fieldError(error) {
         $('.form-control').removeClass('is-invalid');
         $('.error-field').text('');
 
+        let firstErrorField = null; 
+
         $.each(error.response.data.errors, function(fieldName, errorMessage) {
             const $field = $(`[name="${fieldName}"]`);
             $field.addClass('is-invalid');
             $field.closest('.mb-3').find('.error-field').text(errorMessage[0]);
+
+            if (!firstErrorField) {
+                firstErrorField = $field;
+            }
         });
+
+        if (firstErrorField && firstErrorField.length) {
+            
+            setTimeout(() => {
+                $('html, body').animate({
+                    scrollTop: firstErrorField.offset().top - 500 
+                }, 600, 'swing');
+                console.log(123);
+            }, 100);
+            
+
+            firstErrorField.focus({ preventScroll: true });
+        }       
     } else {
         Swal.fire({
             title: "Oops!",
@@ -47,6 +67,8 @@ export function fieldError(error) {
         });
     }
 }
+
+
 
 export function confirmAction(title, text, confirmText = 'Yes, proceed!', callback) {
     Swal.fire({
@@ -92,3 +114,4 @@ export function redirectToTab() {
         }
     }
 }
+

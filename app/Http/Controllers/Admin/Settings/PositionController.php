@@ -95,6 +95,7 @@ class PositionController extends Controller
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'employment_type_id' => 'required|exists:employment_types,id',
+            'salary' => 'required|numeric',
             'description' => 'nullable|string',
         ]);
 
@@ -114,6 +115,7 @@ class PositionController extends Controller
                 'code' => $request->code,
                 'name' => $request->name,
                 'employment_type_id' => $request->employment_type_id,
+                'salary' => $request->salary,
                 'description' => $request->description,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -178,6 +180,7 @@ class PositionController extends Controller
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'employment_type_id' => 'required|exists:employment_types,id',
+            'salary' => 'required|numeric',
             'description' => 'nullable|string',
         ]);
 
@@ -198,6 +201,7 @@ class PositionController extends Controller
                     'code' => $request->code,
                     'name' => $request->name,
                     'employment_type_id' => $request->employment_type_id,
+                    'salary' => $request->salary,
                     'description' => $request->description,
                     'updated_at' => now(),
             ]);

@@ -14,16 +14,30 @@ return new class extends Migration
         Schema::create('employee_information', function (Blueprint $table) {
             $table->id();
             $table->string('employee_no');
-            $table->string('biometrics_id');
+            $table->string('biometrics_id')
+                ->nullable();
             $table->enum('account_status', [
                 'active',
                 'inactive',
             ]);
             $table->string('date_hired');
-            $table->string('date_resigned');
+            $table->string('date_resigned')
+                ->nullable();
+            $table->foreignId('division_id')
+                ->nullable()
+                ->constrained('divisions')
+                ->onDelete('set null');
+            $table->foreignId('unit_id')
+                ->nullable()
+                ->constrained('units')
+                ->onDelete('set null');
             $table->foreignId('employment_type_id')
                 ->nullable()
                 ->constrained('employment_types')
+                ->onDelete('set null');
+            $table->foreignId('position_id')
+                ->nullable()
+                ->constrained('positions')
                 ->onDelete('set null');
             $table->foreignId('shift_schedule_id')
                 ->nullable()
@@ -106,7 +120,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('employee_parents', function(Blueprint $table) {
+        Schema::create('employee_family', function(Blueprint $table) {
             $table->id();
             $table->string('employee_no');
             $table->string('spouse_surname')
@@ -184,7 +198,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('employee_employment_history', function(Blueprint $table) {
+        Schema::create('employee_work_experience', function(Blueprint $table) {
             $table->id();
             $table->string('employee_no');
             $table->string('from_year')
@@ -252,7 +266,7 @@ return new class extends Migration
 
         });
 
-        Schema::create('employee_other_works', function(Blueprint $table) {
+        Schema::create('employee_voluntary_works', function(Blueprint $table) {
             $table->id();
             $table->string('employee_no');
             $table->string('organization')
@@ -290,16 +304,15 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_information');
         Schema::dropIfExists('employee_skills_hobbies');
-        Schema::dropIfExists('employee_other_works');
+        Schema::dropIfExists('employee_voluntary_works');
         Schema::dropIfExists('employee_trainings');
         Schema::dropIfExists('employee_civil_service');
 
-        Schema::dropIfExists('employee_employment_history');
+        Schema::dropIfExists('employee_work_experience');
         Schema::dropIfExists('employee_education');
         Schema::dropIfExists('employee_children');
-        Schema::dropIfExists('employee_parents');
+        Schema::dropIfExists('employee_family');
         Schema::dropIfExists('employee_personal');
         Schema::dropIfExists('employee_information');
     }
