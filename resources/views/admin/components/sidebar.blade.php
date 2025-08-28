@@ -108,6 +108,16 @@
                             Roles & Permissions
                         </a>
                     </li>
+                    <li class="nested-item p-2">
+                        <a href="{{ route('shift.index') }}" class="d-flex gap-2 align-items-center">
+                            Shifts
+                        </a>
+                    </li>
+                    <li class="nested-item p-2">
+                        <a href="{{ route('role-and-permission.index') }}" class="d-flex gap-2 align-items-center">
+                            Weekly Schedules
+                        </a>
+                    </li>
                 </ul>
             </div>
         </li>
