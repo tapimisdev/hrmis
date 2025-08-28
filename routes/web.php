@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\Settings\OrganizationController;
 use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
 use App\Http\Controllers\Admin\Settings\ShiftController;
+use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
@@ -136,17 +137,27 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
         Route::put('positions/{employment_type_id?}/{id}', [PositionController::class, 'update'])->name('positions.update');
         Route::delete('positions/{employment_type_id?}/{id}', [PositionController::class, 'destroy'])->name('positions.destroy');
 
-        # Shift
+        # SHIFTS
         Route::resource('shift', ShiftController::class);
+        
+        # WEEKLY SCHEDULES
+        Route::resource('weekly-schedules', WeeklyScheduleController::class);
 
     });
 });
 
 Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
+
+    # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
+
+    # EMPLOYEE LEAVES, OVERTIME, AND OBS
     Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');
     Route::resource('overtime', AtroController::class)->except('edit', 'update');
     Route::resource('official-business-slip', ObsController::class)->except('edit', 'update')->names('obs');
+
+    #EMPLOYEE TIMELOGS
     Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store', 'create')->names('checkinout');
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
+
 });

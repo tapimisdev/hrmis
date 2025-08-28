@@ -3,25 +3,22 @@
 namespace App\Http\Controllers\Admin\Settings;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Settings\StoreShiftRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
-class ShiftController extends Controller
+class WeeklyScheduleController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $query = DB::table('shifts')->where('is_active', true)->get();
-        
+        $query = DB::table('weekly_schedules')->where('is_active', true)->get();
         if (request()->ajax()) {
             return $this->datatable($query);
         }
-
-        return view('admin.pages.settings.shifts.index');
+        return view('admin.pages.settings.weekly-schedules.index');
     }
 
     /**
@@ -29,50 +26,43 @@ class ShiftController extends Controller
      */
     public function create()
     {
-        return view('admin.pages.settings.shifts.create');
+        return view('admin.pages.settings.weekly-schedules.create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreShiftRequest $request)
+    public function store(\App\Http\Requests\Admin\Settings\StoreWeeklyScheduleRequest $request)
     {
         $validatedData = $request->validated();
 
         DB::beginTransaction();
         try {
-
-        $shift = DB::table('shifts')
-            ->insert([
+            $schedule = DB::table('weekly_schedules')->insert([
                 'name' => $validatedData['name'],
-                'earliest_time' => $validatedData['earliest_time'],
-                'start_time' => $validatedData['start_time'],
-                'break_out_time' => $validatedData['break_out_time'] ?? null,
-                'break_in_time' => $validatedData['break_in_time'] ?? null,
-                'end_time' => $validatedData['end_time'],
-                'minimum_overtime_hours' => $validatedData['minimum_overtime_hours'] ?? 0,
-                'is_break_required' => $request->input('is_break_required', 1),
-                'is_night_shift' => $request->input('is_night_shift', 0),
-                'is_flexible' => $request->input('is_flexible', 0),
+                'is_monday' => $request->input('is_monday', 1),
+                'is_tuesday' => $request->input('is_tuesday', 1),
+                'is_wednesday' => $request->input('is_wednesday', 1),
+                'is_thursday' => $request->input('is_thursday', 1),
+                'is_friday' => $request->input('is_friday', 1),
+                'is_saturday' => $request->input('is_saturday', 0),
+                'is_sunday' => $request->input('is_sunday', 0),
+                'is_active' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-
             DB::commit();
-
             return response()->json([
-                'message' => 'Shift saved successfully.',
-                'shift' => $shift
+                'message' => 'Weekly Schedule saved successfully.',
+                'schedule' => $schedule
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
-                'message' => 'An error occurred while saving the shift.',
+                'message' => 'An error occurred while saving the weekly schedule.',
                 'error' => $e->getMessage()
             ], 500);
         }
-
     }
 
     /**
@@ -80,14 +70,14 @@ class ShiftController extends Controller
      */
     public function show(string $id)
     {
-        $shift = DB::table('shifts')->where('id', $id)->first();
-
-        if (!$shift) {
-            abort(404, 'Shift not found.');
+        $schedule = DB::table('weekly_schedules')->where('id', $id)->first();
+        if (!$schedule) {
+            return response()->json([
+                'message' => 'Weekly Schedule not found.'
+            ], 404);
         }
-
         return response()->json([
-            'shift' => $shift
+            'schedule' => $schedule
         ], 200);
     }
 
@@ -96,54 +86,48 @@ class ShiftController extends Controller
      */
     public function edit(string $id)
     {
-        $shift = DB::table('shifts')->where('id', $id)->first();
-
-        if (!$shift) {
-            abort(404, 'Shift not found.');
+        $schedule = DB::table('weekly_schedules')->where('id', $id)->first();
+        if (!$schedule) {
+            return response()->json([
+                'message' => 'Weekly Schedule not found.'
+            ], 404);
         }
-
-        return view('admin.pages.settings.shifts.edit', compact('shift'));
+        return view('admin.pages.settings.weekly-schedules.edit', compact('schedule'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreShiftRequest $request, string $id)
+    public function update(\App\Http\Requests\Admin\Settings\StoreWeeklyScheduleRequest $request, string $id)
     {
         $validatedData = $request->validated();
-
         DB::beginTransaction();
         try {
-            $shift = DB::table('shifts')->where('id', $id)->first();
-
-            if (!$shift) {
-                abort(404, 'Shift not found.');
+            $schedule = DB::table('weekly_schedules')->where('id', $id)->first();
+            if (!$schedule) {
+                return response()->json([
+                    'message' => 'Weekly Schedule not found.'
+                ], 404);
             }
-
-            DB::table('shifts')->where('id', $id)->update([
+            DB::table('weekly_schedules')->where('id', $id)->update([
                 'name' => $validatedData['name'],
-                'earliest_time' => $validatedData['earliest_time'],
-                'start_time' => $validatedData['start_time'],
-                'break_out_time' => $validatedData['break_out_time'] ?? null,
-                'break_in_time' => $validatedData['break_in_time'] ?? null,
-                'end_time' => $validatedData['end_time'],
-                'minimum_overtime_hours' => $validatedData['minimum_overtime_hours'] ?? 0,
-                'is_break_required' => $request->input('is_break_required', 1),
-                'is_night_shift' => $request->input('is_night_shift', 0),
-                'is_flexible' => $request->input('is_flexible', 0),
+                'is_monday' => $request->input('is_monday', 1),
+                'is_tuesday' => $request->input('is_tuesday', 1),
+                'is_wednesday' => $request->input('is_wednesday', 1),
+                'is_thursday' => $request->input('is_thursday', 1),
+                'is_friday' => $request->input('is_friday', 1),
+                'is_saturday' => $request->input('is_saturday', 0),
+                'is_sunday' => $request->input('is_sunday', 0),
                 'updated_at' => now(),
             ]);
-
             DB::commit();
-
             return response()->json([
-                'message' => 'Shift updated successfully.'
+                'message' => 'Weekly Schedule updated successfully.'
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
-                'message' => 'An error occurred while updating the shift.',
+                'message' => 'An error occurred while updating the weekly schedule.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -158,13 +142,15 @@ class ShiftController extends Controller
 
         try {
 
-            $shift = DB::table('shifts')->where('id', $id)->first();
+            $weekly_schedule = DB::table('weekly_schedules')->where('id', $id)->first();
 
-            if (!$shift) {
-                abort(404, 'Shift not found.');
+            if (!$weekly_schedule) {
+                return response()->json([
+                    'message' => 'Weekly Schedule not found.'
+                ], 404);
             }
 
-            DB::table('shifts')->where('id', $id)->update([
+            DB::table('weekly_schedules')->where('id', $id)->update([
                 'is_active' => false,
                 'updated_at' => now(),
             ]);
@@ -172,7 +158,7 @@ class ShiftController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Shift deleted successfully.'
+                'message' => 'Weekly Schedule deleted successfully.'
             ], 200);
             
         } catch (\Exception $e) {
@@ -188,21 +174,13 @@ class ShiftController extends Controller
     {
         return DataTables::of($query)
         ->addIndexColumn()
-        ->addColumn('earliest_time', function ($row) {
-            return $row->earliest_time ? $row->earliest_time : $row->start_time;
-        })
-        ->addColumn('is_flexible', function ($row) {
-            return $row->is_flexible
-            ? '<span class="badge bg-success">Yes</span>'
-            : '<span class="badge bg-secondary">No</span>';
-        })
         ->addColumn('actions', function ($row) {
 
             return '<div class="d-flex">' .
                 '<button data-id="' . $row->id . '" class="btn btn-outline-primary btn ms-1 my-1 show-button" title="View">' .
                     '<i class="fas fa-eye"></i>' .
                 '</button>' .
-                '<a href="' . route('shift.edit', $row->id) . '" 
+                '<a href="' . route('weekly-schedules.edit', $row->id) . '" 
                     class="btn btn-outline-secondary btn ms-1 my-1" 
                     title="Edit">
                         <i class="fas fa-edit"></i>

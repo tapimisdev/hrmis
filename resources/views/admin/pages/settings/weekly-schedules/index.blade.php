@@ -5,11 +5,11 @@
 @endsection
 
 @section('content')
-@include('admin.pages.settings.shifts.show')
+@include('admin.pages.settings.weekly-schedules.show')
     <div class="container p-4 pb-5">
-        <x-header title="Shift Schedules" subtitle="Manage shift schedule in this module">
-            <a href="{{ route('shift.create') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-plus me-2"></i> Add Shift
+        <x-header title="Weekly Schedules" subtitle="Manage weekly schedule in this module">
+            <a href="{{ route('weekly-schedules.create') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+                <i class="fa-solid fa-plus me-2"></i> Add Weekly Schedule
             </a>
         </x-header>
 
@@ -18,8 +18,6 @@
                 <tr>
                     <th>#</th>
                     <th>Name</th>
-                    <th>Earliest In</th>
-                    <th>Flexible</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -37,54 +35,47 @@
         let = DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
-            "ajax": '{{ route('shift.index') }}',
+            "ajax": '{{ route('weekly-schedules.index') }}',
             "columns": [
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "name", name: 'name' },
-                { data: "earliest_time", name: 'earliest_time' },
-                { data: "is_flexible", name: 'is_flexible' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
 
             ],
         });
 
-        const shiftModal = $('#shiftModal');
+        const myModal = $('#myModal');
 
         $(document).on('click', '.show-button', function() {
             let id = $(this).attr('data-id');
-            $('.modal-title').html('Shift Details');
+            $('.modal-title').html('Weekly Schedule Details');
 
-            axios.get(`shift/${id}`)
+            axios.get(`weekly-schedules/${id}`)
                 .then((response) => {
-                    const data = response.data.shift; // adjust according to your API response
-                    console.log(data);
-
+                    const data = response.data.schedule;
                     // Fill modal fields
-                    $('#shift-id').text(data.id);
-                    $('#shift-name').text(data.name);
-
-                    $('#earliest-time').text(data.earliest_time ? moment(data.earliest_time, 'HH:mm:ss').format('h:mm A') : '---');
-                    $('#start-time').text(moment(data.start_time, 'HH:mm:ss').format('h:mm A'));
-                    $('#break-out-time').text(data.break_out_time ? moment(data.break_out_time, 'HH:mm:ss').format('h:mm A') : '---');
-                    $('#break-in-time').text(data.break_in_time ? moment(data.break_in_time, 'HH:mm:ss').format('h:mm A') : '---');
-                    $('#end-time').text(data.end_time ? moment(data.end_time, 'HH:mm:ss').format('h:mm A') : '---');
-
-                    $('#minimum-overtime-hours').text(data.minimum_overtime_hours);
-
-                    // Boolean badges
-                    $('#is-flexible').attr('class', 'badge ' + (data.is_flexible ? 'bg-success' : 'bg-secondary'))
-                                    .text(data.is_flexible ? 'Yes' : 'No');
-
-                    $('#is-night-shift').attr('class', 'badge ' + (data.is_night_shift ? 'bg-dark' : 'bg-secondary'))
-                                        .text(data.is_night_shift ? 'Yes' : 'No');
-
-                    $('#is-break-required').attr('class', 'badge ' + (data.is_break_required ? 'bg-warning text-dark' : 'bg-secondary'))
-                                        .text(data.is_break_required ? 'Yes' : 'No');
-
+                    $('#schedule-id').text(data.id);
+                    $('#schedule-name').text(data.name);
+                    // Boolean badges for days
+                    $('#is-monday').attr('class', 'badge ' + (data.is_monday ? 'bg-success' : 'bg-danger'))
+                        .text(data.is_monday ? 'Yes' : 'No');
+                    $('#is-tuesday').attr('class', 'badge ' + (data.is_tuesday ? 'bg-success' : 'bg-danger'))
+                        .text(data.is_tuesday ? 'Yes' : 'No');
+                    $('#is-wednesday').attr('class', 'badge ' + (data.is_wednesday ? 'bg-success' : 'bg-danger'))
+                        .text(data.is_wednesday ? 'Yes' : 'No');
+                    $('#is-thursday').attr('class', 'badge ' + (data.is_thursday ? 'bg-success' : 'bg-danger'))
+                        .text(data.is_thursday ? 'Yes' : 'No');
+                    $('#is-friday').attr('class', 'badge ' + (data.is_friday ? 'bg-success' : 'bg-danger'))
+                        .text(data.is_friday ? 'Yes' : 'No');
+                    $('#is-saturday').attr('class', 'badge ' + (data.is_saturday ? 'bg-success' : 'bg-danger'))
+                        .text(data.is_saturday ? 'Yes' : 'No');
+                    $('#is-sunday').attr('class', 'badge ' + (data.is_sunday ? 'bg-success' : 'bg-danger'))
+                        .text(data.is_sunday ? 'Yes' : 'No');
+                    $('#is-active').attr('class', 'badge ' + (data.is_active ? 'bg-success' : 'bg-danger'))
+                        .text(data.is_active ? 'Active' : 'Inactive');
                     $('#created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
-
                     // Show modal
-                    shiftModal.modal('show');
+                    myModal.modal('show');
                 })
                 .catch(error => {
                     Swal.fire({
@@ -107,7 +98,7 @@
                 confirmButtonText: "Yes, delete it!"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    axios.delete(`shift/${id}`)
+                    axios.delete(`weekly-schedules/${id}`)
                     .then(response => {
                         DataTable.ajax.reload();
                         Swal.fire({

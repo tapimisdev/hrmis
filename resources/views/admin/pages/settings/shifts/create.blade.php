@@ -169,6 +169,8 @@
                     title: "Success!",
                     text: "Shift has been saved.",
                     icon: "success"
+                }).then(() => {
+                    window.location.href = "{{ route('shift.index') }}";
                 });
             })
             .catch(error => {
