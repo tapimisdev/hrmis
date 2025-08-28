@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
+import './bootstrap';
 
 import { post, put } from './action';
 import { 
