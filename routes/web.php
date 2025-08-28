@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
+use App\Http\Controllers\Admin\Settings\HolidayController;
 use App\Http\Controllers\Admin\Settings\OrganizationController;
 use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
@@ -142,6 +143,9 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
         
         # WEEKLY SCHEDULES
         Route::resource('weekly-schedules', WeeklyScheduleController::class);
+
+        # HOLIDAYS
+        Route::resource('holiday', HolidayController::class);
 
     });
 });

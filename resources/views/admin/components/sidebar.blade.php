@@ -118,6 +118,11 @@
                             Weekly Schedules
                         </a>
                     </li>
+                    <li class="nested-item p-2">
+                        <a href="{{ route('holiday.index') }}" class="d-flex gap-2 align-items-center">
+                            Holidays
+                        </a>
+                    </li>
                 </ul>
             </div>
         </li>
