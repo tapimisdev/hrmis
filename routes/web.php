@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\Hris\SkillsController;
 use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
+use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
 use App\Http\Controllers\Admin\Settings\HolidayController;
 use App\Http\Controllers\Admin\Settings\OrganizationController;
@@ -147,6 +148,8 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
         # HOLIDAYS
         Route::resource('holiday', HolidayController::class);
 
+        # EARNINGS
+        Route::resource('earnings', EarningsController::class);
     });
 });
 

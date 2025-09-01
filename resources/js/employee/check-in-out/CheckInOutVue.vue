@@ -96,38 +96,14 @@ function setTime(type) {
         if (result.isConfirmed) {
             axios.post('/employee/check-in-out', { type, date_time: getCurrentTime() })
             .then(response => {
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: "bottom-end",
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                });
-                Toast.fire({
-                    icon: "success",
+                SuccesToast.fire({
                     title: response.data.message || "Time logged successfully"
                 });
                 getTodayLogs();
             })
             .catch(error => {
                 console.error('Error setting time:', error);
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: "bottom-end",
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    didOpen: (toast) => {
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                });
-                Toast.fire({
-                    icon: "error",
+                ErrorToast.fire({
                     title: error.response.data.message || "An error occurred"
                 });
             });
