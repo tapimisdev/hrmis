@@ -1,0 +1,36 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('weekly_schedules', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->boolean('is_monday')->default(true);
+            $table->boolean('is_tuesday')->default(true);
+            $table->boolean('is_wednesday')->default(true);
+            $table->boolean('is_thursday')->default(true);
+            $table->boolean('is_friday')->default(true);
+            $table->boolean('is_saturday')->default(false);
+            $table->boolean('is_sunday')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('weekly_schedules');
+    }
+};

@@ -3,8 +3,8 @@
 @section('content')
     <div class="container p-4 pb-5">
         <x-header title="{{$isExists ? 'Update Employee Records' : 'Add New Employee'}}" subtitle="Create new employee's personal data sheet and portal account" >
-            <a href="{{route('hris.employee.index')}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                Go Back
+            <a href="{{route('hris.employee.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
+                <i class="fa-solid fa-arrow-left me-2"></i> Back
             </a>
         </x-header>
         @if($isExists)
@@ -176,7 +176,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-footer bg-transparent border-0 d-flex justify-content-end">
+                <div class="card-footer bg-transparent border-0 d-flex justify-content-end mt-3">
                     <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
                         Save <i class="fa-solid fa-arrow-right ms-2"></i>
                     </button>

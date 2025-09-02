@@ -16,7 +16,7 @@
 
     <div class="fw-bold d-flex justify-content-between time text-uppercase">
         <p id="current-date">{{ \Carbon\Carbon::now()->format('l, F d, Y') }}</p>
-        <p id="current-time">{{ \Carbon\Carbon::now()->format('h:i A') }}</p>
+        <p id="current-time">{{ \Carbon\Carbon::now()->format('h:i:s A') }}</p>
     </div>
 
 </div>
@@ -29,10 +29,11 @@
         const now = new Date();
         let hours = now.getHours();
         const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
         const ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12;
         hours = hours ? hours : 12;
-        const timeString = hours.toString().padStart(2, '0') + ':' + minutes + ' ' + ampm;
+        const timeString = hours.toString().padStart(2, '0') + ':' + minutes + ':' + seconds + ' ' + ampm;
         $('#current-time').text(timeString);
     }
     setInterval(updateTime, 1000);

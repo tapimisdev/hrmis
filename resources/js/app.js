@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
+import './bootstrap';
 
 import { post, put } from './action';
 import { 
@@ -15,6 +16,35 @@ const authApp = createApp({
   components: {
     CheckInOutVue,
   },
+});
+
+window.SuccesToast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 3000,
+    background: "#00af00",
+    icon: "success",
+    color: "#F6F5F5",
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
+    }
+});
+window.ErrorToast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 3000,
+    background: "#e03b3b",
+    icon: "error",
+    color: "#F6F5F5", 
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
+    }
 });
 
 authApp.mount('#app');
