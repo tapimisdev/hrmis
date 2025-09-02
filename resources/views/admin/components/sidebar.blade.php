@@ -133,6 +133,11 @@
                             Deductions
                         </a>
                     </li>
+                    <li class="nested-item p-2">
+                        <a href="{{ route('settings.leaves.index') }}" class="d-flex gap-2 align-items-center">
+                            Leaves
+                        </a>
+                    </li>
                 </ul>
             </div>
         </li>

@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             EmploymentTypeSeeder::class,
             TimeLogsSeeder::class,
             OrganizationSeeder::class,
+            LeaveSeeder::class,
         ]);
     }
 }
