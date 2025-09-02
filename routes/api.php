@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Employee;
+use App\Http\Controllers\Api\Organization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +18,17 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::get('divisions', [Organization::class, 'division'])
+    ->name('api.divisions');
+Route::get('units/{division_id}', [Organization::class, 'unit'])
+    ->name('api.units');
+
+# EMPLOYEE
+Route::prefix('employee')->group(function() {
+
+    Route::get('children', [Employee::class, 'children'])
+        ->name('api.employee.children');
+
 });

@@ -377,7 +377,6 @@ class OrganizationController extends Controller
                 if ($type === 'unit') {
                     return $row->division_name ?? '';
                 }
-                return '123';
             })
             ->addColumn('actions', function ($row) use ($type) {
                 $editRoute = $type === 'unit'

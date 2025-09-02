@@ -25,6 +25,30 @@ class EmployeeService {
         return false;
     }
 
+    public function getEmployees(? string $status, ? string $division_id, ? string $unit_id) {
+        
+        return DB::table('employee_information')
+            ->select(
+                'employee_information.employee_no',
+                'employee_information.date_hired',
+                'employee_information.account_status',
+                'employee_information.isDeleted',
+                'employee_personal.firstname',
+                'employee_personal.lastname',
+            )
+            ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->when($status, function($query) use ($status) {
+                return $query->where('account_status', $status);
+            })
+            ->when($division_id, function($query) use ($division_id) {
+                return $query->where('division_id', $division_id);
+            })
+            ->when($unit_id, function($query) use ($unit_id) {
+                return $query->where('unit_id', $unit_id);
+            })
+            ->get();
+    }
+
     public function getEmployee(string $type, string $employee_no)
     {
         $tables = [
@@ -70,20 +94,26 @@ class EmployeeService {
         return $query->{$config['method']}();
     }
 
-
-
     public function getSalary(string $employee_no) {
         return DB::table('employee_information')
             ->where('employee_no', $employee_no)
             ->value('salary') ?? 0;
     }
 
-    public function create_employee(bool $isNew = true, array $payload) {
+    public function delete(string $employee_no) {
+        return DB::table('employee_information')
+            ->where('employee_no', $employee_no)
+            ->update([
+                'account_status' => 'archived',
+            ]);
+    }
 
-        Validator::make($payload, [
-            
-        ]);
-
+    public function restore(string $employee_no) {
+        return DB::table('employee_information')
+            ->where('employee_no', $employee_no)
+            ->update([
+                'account_status' => 'active',
+            ]);
     }
 
 }

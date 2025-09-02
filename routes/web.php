@@ -54,9 +54,13 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
 
     Route::prefix('hris')->group(function() {
 
-        # HRIS
+        # INDEX
         Route::get('employee', [IndexController::class, 'index'])
             ->name('hris.employee.index');
+        Route::any('employee/remove/{employee_no}', [IndexController::class, 'remove'])
+            ->name('hris.employee.remove');
+         Route::any('employee/restore/{employee_no}', [IndexController::class, 'restore'])
+            ->name('hris.employee.restore');
 
         # INFORMATION
         Route::get('employee/information/{employee_no?}', [InformationController::class, 'index'])
@@ -113,7 +117,7 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.trainings');
 
         # SKILLS
-        Route::get('employee/skills/{employee_no}', [SkillsController::class, 'index'])
+        Route::get('employee/skills/{employee_no}se', [SkillsController::class, 'index'])
             ->name('hris.employee.skills');
         Route::post('employee/skills/{employee_no}', [SkillsController::class, 'save'])
             ->name('hris.employee.skills');
