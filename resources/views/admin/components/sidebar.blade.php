@@ -7,8 +7,8 @@
     <ul class="sidebar-list">
 
         <!-- Dashboard -->
-        <li class="sidebar-item mt-1 {{ request()->routeIs('home') ? 'active' : '' }}">
-            <a href="{{ route('home') }}" class="sidebar-link pe-5">
+        <li class="sidebar-item mt-1 {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            <a href="{{ route('admin.dashboard') }}" class="sidebar-link pe-5">
                 <i class="fa-solid fa-house me-2"></i> Dashboard
             </a>
         </li>

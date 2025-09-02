@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Hris\ChildrenController;
 use App\Http\Controllers\Admin\Hris\CivilServiceController;
 use App\Http\Controllers\Admin\Hris\EducationController;
@@ -51,7 +52,7 @@ Auth::routes(['register' => false]);
 
 Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
     
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     Route::prefix('hris')->group(function() {
 
