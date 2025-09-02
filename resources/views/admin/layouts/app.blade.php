@@ -36,13 +36,6 @@
 </head>
 <body>
     <div id="app">
-        <div class="loading d-none" id="isLoading">
-            <div class="d-flex justify-content-center">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        </div>
         @include('admin.components.sidebar')
         <div class="wrapper">
             @include('admin.components.navbar')

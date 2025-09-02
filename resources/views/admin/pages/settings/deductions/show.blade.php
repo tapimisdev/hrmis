@@ -1,31 +1,27 @@
 <!-- Modal Component -->
-<x-modal id="myModal" title="Earning Details" size="modal-lg">
+<x-modal id="myModal" title="Deduction Details" size="modal-lg">
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
-            <h3 class="fw-bold">Earning Details</h3>
-            <small class="text-muted">Earning ID: <span id="earning-id"></span></small>
+            <h3 class="fw-bold">Deduction Details</h3>
+            <small class="text-muted">Deduction ID: <span id="deduction-id"></span></small>
         </div>
 
         <table class="table table-bordered">
             <tr>
                 <th>Name:</th>
-                <td id="earning-name"></td>
+                <td id="deduction-name"></td>
             </tr>
             <tr>
                 <th>First Term (Amount):</th>
-                <td id="earning-first-term"></td>
+                <td id="deduction-first-term"></td>
             </tr>
             <tr>
                 <th>Second Term (Amount):</th>
-                <td id="earning-second-term"></td>
-            </tr>
-            <tr>
-                <th>Is Taxable:</th>
-                <td><span id="earning-is-taxable" class="badge"></span></td>
+                <td id="deduction-second-term"></td>
             </tr>
             <tr>
                 <th>Created At:</th>
-                <td id="earning-created-at"></td>
+                <td id="deduction-created-at"></td>
             </tr>
         </table>
     </div>
