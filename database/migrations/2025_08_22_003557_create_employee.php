@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('account_status', [
                 'active',
                 'inactive',
+                'archived'
             ]);
             $table->string('date_hired');
             $table->string('date_resigned')
@@ -51,6 +52,8 @@ return new class extends Migration
             $table->string('salary_method');
             $table->string('payroll_account_no')
                 ->nullable();
+            $table->boolean('isDeleted')
+                ->default(false);
             $table->timestamps();
         });
 
