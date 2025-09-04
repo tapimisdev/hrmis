@@ -35,7 +35,7 @@ class LoginController extends Controller
         }
 
         // default redirect for other roles
-        return '/admin/home';
+        return '/admin/dashboard';
     }
 
 

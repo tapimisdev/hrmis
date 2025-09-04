@@ -91,7 +91,7 @@ table {
     text-transform: uppercase;
     font-size: 12px;
     font-weight: 500;
-    width: 300px;
+    width: 280px;
     background-color: #fff;
     position: fixed;
     top: 0;
@@ -198,14 +198,13 @@ table {
 
 .wrapper {
     position: relative;
-    left: 300px;
-    width: calc(100% - 300px);
+    left: 280px;
+    width: calc(100% - 280px);
 }
 
 @media (max-width: 992px) {
     .sidebar {
         position: absolute;
-        width: 280px;
         max-width: 80vw;
         display: block;
         background-color: $white;
@@ -214,6 +213,12 @@ table {
     }
     .sidebar.show {
         left: 0 !important;
+        width: 280px !important;
+    }
+
+    .wrapper {
+        left: 0 !important;
+        width: 100% !important;
     }
 }
 

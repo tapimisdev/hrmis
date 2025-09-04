@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Hris\ChildrenController;
 use App\Http\Controllers\Admin\Hris\CivilServiceController;
 use App\Http\Controllers\Admin\Hris\EducationController;
@@ -12,9 +13,11 @@ use App\Http\Controllers\Admin\Hris\SkillsController;
 use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
+use App\Http\Controllers\Admin\Settings\DeductionController;
 use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
 use App\Http\Controllers\Admin\Settings\HolidayController;
+use App\Http\Controllers\Admin\Settings\LeaveController;
 use App\Http\Controllers\Admin\Settings\OrganizationController;
 use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
@@ -49,7 +52,7 @@ Auth::routes(['register' => false]);
 
 Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
     
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     Route::prefix('hris')->group(function() {
 
@@ -156,6 +159,12 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
 
         # EARNINGS
         Route::resource('earnings', EarningsController::class);
+
+        # DEDUCTIONS
+        Route::resource('deductions', DeductionController::class);
+
+        # LEAVES
+        Route::resource('leaves', LeaveController::class)->names('settings.leaves');
     });
 });
 

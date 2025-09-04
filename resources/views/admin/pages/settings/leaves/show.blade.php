@@ -1,31 +1,27 @@
 <!-- Modal Component -->
-<x-modal id="myModal" title="Earning Details" size="modal-lg">
+<x-modal id="myModal" title="Leave Details" size="modal-lg">
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
-            <h3 class="fw-bold">Earning Details</h3>
-            <small class="text-muted">Earning ID: <span id="earning-id"></span></small>
+            <h3 class="fw-bold">Leave Details</h3>
+            <small class="text-muted">Leave ID: <span id="leave-id"></span></small>
         </div>
 
         <table class="table table-bordered">
             <tr>
                 <th>Name:</th>
-                <td id="earning-name"></td>
+                <td id="leave-name"></td>
             </tr>
             <tr>
-                <th>First Term (Amount):</th>
-                <td id="earning-first-term"></td>
+                <th>Is Cumulative</th>
+                <td id="leave-is-cumulative"></td>
             </tr>
             <tr>
-                <th>Second Term (Amount):</th>
-                <td id="earning-second-term"></td>
-            </tr>
-            <tr>
-                <th>Is Taxable:</th>
-                <td><span id="earning-is-taxable" class="badge"></span></td>
+                <th>No. of Days</th>
+                <td id="leave-no-of-days"></td>
             </tr>
             <tr>
                 <th>Created At:</th>
-                <td id="earning-created-at"></td>
+                <td id="leave-created-at"></td>
             </tr>
         </table>
     </div>
