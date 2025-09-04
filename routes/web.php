@@ -84,6 +84,8 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.children');
         Route::post('employee/children/{employee_no}', [ChildrenController::class, 'save'])
             ->name('hris.employee.children');
+        Route::delete('employee/children/{employee_no}', [ChildrenController::class, 'destroy'])
+            ->name('hris.employee.children');
 
         # EDUCATION
         Route::get('employee/education/{employee_no}', [EducationController::class, 'index'])

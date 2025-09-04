@@ -6,9 +6,15 @@ import { post, put } from './action';
 import { 
     confirmAction, alert, pushQuery, redirectToTab
 } from './helper';
+import lightGallery from 'lightgallery';
+import lgThumbnail from 'lightgallery/plugins/thumbnail'
+import lgZoom from 'lightgallery/plugins/zoom'
 
 window.post = post;
 window.put = put;
+window.lightGallery = lightGallery;
+window.lgThumbnail = lgThumbnail;
+window.lgZoom = lgZoom;
 
 redirectToTab();
 
