@@ -4,14 +4,14 @@
     <div class="container p-4 pb-5">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Position" subtitle="update this employee position">
-                <a href="{{route('positions.index', ['employment_type' => $employment_type->id])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                    Go Back
+                <a href="{{route('positions.index', ['employment_type' => $employment_type->id])}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
                 </a>
             </x-header>
         @else
             <x-header title="Add New Position" subtitle="create new position for employees" >
-                <a href="{{route('positions.index', ['employment_type' => $employment_type->id])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                    Go Back
+                <a href="{{route('positions.index', ['employment_type' => $employment_type->id])}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
                 </a>
             </x-header>
         @endif

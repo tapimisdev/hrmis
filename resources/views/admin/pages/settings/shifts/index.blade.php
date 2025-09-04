@@ -8,7 +8,7 @@
 @include('admin.pages.settings.shifts.show')
     <div class="container p-4 pb-5">
         <x-header title="Shift Schedules" subtitle="Manage shift schedule in this module">
-            <a href="{{ route('shift.create') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+            <a href="{{ route('shift.create') }}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-plus me-2"></i> Add Shift
             </a>
         </x-header>

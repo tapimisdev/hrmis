@@ -7,8 +7,8 @@
 @section('content')
     <div class="container p-4 pb-5">
         <x-header title="{{strtoupper($employment_type->code . ' - ' . $employment_type->name)}} Positions" subtitle="Manage positions for this employment type">
-            <a href="{{route('positions.create', ['employment_type_id' => $employment_type->id])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                Add Position
+            <a href="{{route('positions.create', ['employment_type_id' => $employment_type->id])}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
+                <i class="fa-solid fa-plus me-2"></i> Add Position
             </a>
         </x-header>
         <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">

@@ -8,9 +8,9 @@
     <div class="container p-4 pb-5">
         <x-header title="Organization" subtitle="Manage your organization settings here">
             <div class="btn-group">
-                <button type="button" class="btn btn-primary py-3 px-4 text-uppercase fw-medium dropdown-toggle" 
+                <button type="button" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium dropdown-toggle" 
                         data-bs-toggle="dropdown" aria-expanded="false">
-                    Add New
+                    <i class="fa-solid fa-plus me-2"></i> Add New
                 </button>
                 <ul class="dropdown-menu">
                     <li>

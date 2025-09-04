@@ -7,6 +7,8 @@ import {
     confirmAction, alert, pushQuery, redirectToTab
 } from './helper';
 
+import DashboardVue from "./admin/dashboard/DashboardVue.vue";
+
 window.post = post;
 window.put = put;
 
@@ -15,6 +17,7 @@ redirectToTab();
 const authApp = createApp({
   components: {
     CheckInOutVue,
+    DashboardVue
   },
 });
 

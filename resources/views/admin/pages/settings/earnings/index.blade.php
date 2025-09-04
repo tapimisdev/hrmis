@@ -8,7 +8,7 @@
 @include('admin.pages.settings.earnings.show')
     <div class="container p-4 pb-5">
         <x-header title="Earnings" subtitle="Manage earnings in this module">
-            <a href="{{ route('earnings.create') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+            <a href="{{ route('earnings.create') }}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-plus me-2"></i> Add Earning
             </a>
         </x-header>

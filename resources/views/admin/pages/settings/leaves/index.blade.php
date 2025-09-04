@@ -8,7 +8,7 @@
 @include('admin.pages.settings.leaves.show')
     <div class="container p-4 pb-5">
         <x-header title="Leaves" subtitle="Manage leave in this module">
-            <a href="{{ route('settings.leaves.create') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+            <a href="{{ route('settings.leaves.create') }}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-plus me-2"></i> Add Leave
             </a>
         </x-header>

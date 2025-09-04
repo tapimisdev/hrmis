@@ -174,7 +174,7 @@ table {
             }
 
             &.active {
-                a {
+                .sidebar-link {
                     background-color: $primary !important; 
                     color: $light !important;
                     i {

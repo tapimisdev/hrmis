@@ -8,7 +8,7 @@
 @include('admin.pages.settings.weekly-schedules.show')
     <div class="container p-4 pb-5">
         <x-header title="Weekly Schedules" subtitle="Manage weekly schedule in this module">
-            <a href="{{ route('weekly-schedules.create') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+            <a href="{{ route('weekly-schedules.create') }}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-plus me-2"></i> Add Weekly Schedule
             </a>
         </x-header>

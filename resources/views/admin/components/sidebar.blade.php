@@ -14,7 +14,7 @@
         </li>
 
         <!-- HRIS -->
-        <li class="sidebar-item {{ request()->is('hris*') ? 'active' : '' }}">
+        <li class="sidebar-item {{ Str::contains(request()->path(), 'hris') ? 'active' : '' }}">
             <a class="sidebar-link collapse-link dropdown-toggle" 
                data-bs-toggle="collapse" 
                data-bs-target="#hris" 
@@ -35,7 +35,7 @@
         </li>
 
         <!-- Services -->
-        <li class="sidebar-item {{ request()->is('services*') ? 'active' : '' }}">
+        <li class="sidebar-item {{ Str::contains(request()->path(), 'services') ? 'active' : '' }}">
             <a class="sidebar-link collapse-link dropdown-toggle" 
                data-bs-toggle="collapse" 
                data-bs-target="#services" 
@@ -56,7 +56,7 @@
         </li>
 
         <!-- Reports -->
-        <li class="sidebar-item {{ request()->is('reports*') ? 'active' : '' }}">
+        <li class="sidebar-item {{ Str::contains(request()->path(), 'reports') ? 'active' : '' }}">
             <a class="sidebar-link collapse-link dropdown-toggle" 
                data-bs-toggle="collapse" 
                data-bs-target="#reports" 
@@ -77,7 +77,7 @@
         </li>
 
         <!-- Settings -->
-        <li class="sidebar-item {{ request()->is('settings*') ? 'active' : '' }}">
+        <li class="sidebar-item {{ Str::contains(request()->path(), 'settings') ? 'active' : '' }}">
             <a class="sidebar-link collapse-link dropdown-toggle" 
                data-bs-toggle="collapse" 
                data-bs-target="#settings" 

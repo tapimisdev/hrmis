@@ -8,7 +8,7 @@
 @include('admin.pages.settings.holiday.show')
     <div class="container p-4 pb-5">
         <x-header title="Holidays" subtitle="Manage Holiday in this module">
-            <a href="{{ route('holiday.create') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+            <a href="{{ route('holiday.create') }}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-plus me-2"></i> Add Holiday
             </a>
         </x-header>
