@@ -25,7 +25,16 @@ class EducationController extends Controller
             return redirect()->route('hris.employee.information');
         }
 
-        return view('admin.pages.hris.education', compact('isExists', 'employee_no'));
+        $isEdit = false;
+        $id = null;
+
+        return view('admin.pages.hris.education', compact('isEdit', 'id', 'isExists', 'employee_no'));
+
+    }
+
+    public function save(string $employee_no, Request $request) {
+
+        
 
     }
 

@@ -21,7 +21,7 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Birthday</th>
-                                <th>Documents</th>
+                                <th>Document</th>
                                 <th style="width: 120px">Action</th>
                             </tr>
                         </thead>
@@ -34,7 +34,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+    <div class="modal fade" id="itemModal" tabindex="-1" data-bs-backdrop="static" aria-labelledby="itemModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -42,52 +42,60 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="form" action="{{route('hris.employee.children', ['employee_no' => $employee_no])}}" method="post">
-                        @method('POST')
-                            <div class="row">
-                                <div class="col-12 col-md-6 mb-3">
-                                    <label class="mb-2" for="firstname">First Name <span class="text-danger">*</span></label>
-                                    <input type="text" id="firstname" name="firstname" class="form-control text-uppercase"
-                                        value="">
-                                    <div class="error-field"></div>
-                                </div>
-                                <div class="col-12 col-md-6 mb-3">
-                                    <label class="mb-2" for="middlename">Middle Name</label>
-                                    <input type="text" id="middlename" name="middlename" class="form-control text-uppercase"
-                                        value="">
-                                    <div class="error-field"></div>
-                                </div>
-                                <div class="col-12 col-md-12 mb-3">
-                                    <label class="mb-2" for="lastname">Last Name <span class="text-danger">*</span></label>
-                                    <input type="text" id="lastname" name="lastname" class="form-control text-uppercase"
-                                        value="">
-                                    <div class="error-field"></div>
-                                </div>
-                                <div class="col-12 col-md-12 mb-3">
-                                    <label class="mb-2" for="birthdate">Birthday <span class="text-danger">*</span></label>
-                                    <input type="date" id="birthdate" name="birthdate" class="form-control text-uppercase"
-                                        value="">
-                                    <div class="error-field"></div>
-                                </div>
-                                 <div class="col-12 col-md-12 mb-3">
-                                    <label class="mb-2" for="document">Document <span class="text-danger">*</span></label>
-                                    <input type="file" id="document" name="document" class="form-control text-uppercase"
-                                        value="">
-                                    <div class="error-field"></div>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-end mt-5 mb-4">
-                                <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
-                                    Save <i class="fa-solid fa-arrow-right ms-2"></i>
-                                </button>
-                            </div>
+                    <form id="form" enctype="multipart/form-data" action="{{route('hris.employee.children', ['employee_no' => $employee_no])}}" method="post">
+                        @if($isEdit)
+                            @method('PUT')
+                        @else
+                            @method('POST')
+                        @endif
                         @csrf
+                        <div class="row">
+                            <input type="hidden" name="id" id="id" value="">
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="mb-2" for="firstname">First Name <span class="text-danger">*</span></label>
+                                <input type="text" id="firstname" name="firstname" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="mb-2" for="middlename">Middle Name</label>
+                                <input type="text" id="middlename" name="middlename" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="lastname">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" id="lastname" name="lastname" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="birthdate">Birthday <span class="text-danger">*</span></label>
+                                <input type="date" id="birthdate" name="birthdate" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                                <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="documents">Document</label>
+                                <input type="file" id="documents" name="documents" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                                <div class="mt-1">
+                                    <small class="text-muted text-uppercase">Note: Only accepts docs | docx | pdf | jpeg | jpg | png files only.</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end mt-5 mb-4">
+                            <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
+                                Save <i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-
+    <div id="galleryContainer"></div>
 
 
 @endsection
@@ -104,6 +112,7 @@
             "ajax": {
                 url: '{{ route('api.employee.children') }}',
                 data: function (d) {
+                    d.isDT = true;
                     d.employee_no = employee_no;
                 }
             },  
@@ -116,6 +125,7 @@
         });    
 
         $('#openItemModal').on('click', function() {
+
             const action = $(this).data('action');
 
             const config = {
@@ -136,8 +146,72 @@
             $('.modal-title').html(title);
 
             $('#itemForm').attr('data-method', method);
+
+            $('#form').trigger('reset');
+            
         });
 
+        const isEdit = @json($isEdit);
+        const url = $('#form').attr('action');
+
+        if(!isEdit) {
+            post(url);
+        } else {
+            put(url);
+        }
+
+
+        $(document).on('click', '#btn-edit', function() {
+            const id = $(this).data('id');
+            $.ajax({
+                type: "GET",
+                url: "{{ route('api.employee.children') }}",
+                data: {
+                    'isDT': false,
+                    'employee_no': employee_no,
+                    'id': id,
+                },
+                dataType: "json",
+                success: function (response) {
+                    console.log(response);
+                    Object.entries(response).forEach(([key, value]) => {
+                        if (key === 'documents') {
+                            return; 
+                        }
+                        $(`form [name="${key}"]`).val(value);
+                    });
+
+                    $('#itemModal').modal('show');
+                }
+            });
+        });
+
+    $(document).on('click', '.open-document', function() {
+
+        const src = $(this).data('src'); 
+
+        const galleryContainer = document.getElementById('galleryContainer');
+        if (galleryContainer.lightGalleryInstance) {
+            galleryContainer.lightGalleryInstance.destroy();
+        }
+
+        const gallery = lightGallery(galleryContainer, {
+            dynamic: true,
+            dynamicEl: [
+                {
+                    src: src,
+                    iframe: true
+                }
+            ],
+            plugins: [lgThumbnail, lgZoom],
+            licenseKey: '0000-0000-000-0000',
+            speed: 500
+        });
+
+        galleryContainer.lightGalleryInstance = gallery;
+
+        gallery.openGallery();
+    });
 
     });
 </script>

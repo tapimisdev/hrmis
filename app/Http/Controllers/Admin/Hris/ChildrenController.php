@@ -4,15 +4,23 @@ namespace App\Http\Controllers\Admin\Hris;
 
 use App\Http\Controllers\Controller;
 use App\Services\EmployeeService;
+use App\Services\GenerateService;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class ChildrenController extends Controller
 {
     public $employeeService;
+    public $generateService;
 
-    public function __construct(EmployeeService $employeeService)
+    public function __construct(EmployeeService $employeeService, GenerateService $generateService)
     {
-        $this->employeeService = $employeeService;    
+        $this->employeeService = $employeeService;
+        $this->generateService = $generateService;    
     }
 
     public function index(Request $request, ? string $employee_no = null)
@@ -24,7 +32,131 @@ class ChildrenController extends Controller
             return redirect()->route('hris.employee.information');
         }
 
-        return view('admin.pages.hris.children', compact('isExists', 'employee_no'));
+        $isEdit = false;
+        $id = null;
 
+        return view('admin.pages.hris.children', compact('isEdit', 'id', 'isExists', 'employee_no'));
+
+    }
+
+    public function handleFile(string $employee_no, object $file) {
+        
+        $filename = $this->generateService::filename('randomized');
+        $extension = $file->extension();
+
+        $filename = $filename . '.' . $extension;
+
+        $file->storeAs(
+            'uploads/employees/' . $employee_no , 
+            $filename, 
+            'public'
+        );   
+        
+        return $filename;
+
+    }
+
+    public function save(string $employee_no, Request $request) {
+
+        $payload = $request->all();
+
+        $validator = Validator::make($payload, [
+            'id' => [
+                'nullable',
+            ],
+            'firstname' => 'required|string|max:255',
+            'middlename' => 'nullable|string|max:255',
+            'lastname' => 'required|string|max:255',
+            'birthdate' => 'required|date',
+            'documents' => 'nullable|file|mimes:docs,docx,pdf,jpg,png,jpeg',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'field error', 
+                'errors'  => $validator->errors()           
+            ], 422);
+        }
+        
+        DB::beginTransaction();
+
+        try {
+
+            $exists = DB::table('employee_children')
+                ->where('id', $payload['id'])
+                ->where('employee_no', $employee_no)
+                ->exists();
+
+            $data = [
+                'firstname'  => $payload['firstname'],
+                'middlename' => $payload['middlename'],
+                'lastname'   => $payload['lastname'],
+                'birthdate'  => $payload['birthdate'],
+                'updated_at' => now(),
+                'created_at' => now(),
+            ];
+
+            if (!empty($payload['documents']) && $payload['documents'] instanceof UploadedFile) {
+                $data['documents'] = $this->handleFile($employee_no, $payload['documents']);
+            }
+                      
+            DB::table('employee_children')->updateOrInsert(
+                [
+                    'id'          => $payload['id'],
+                    'employee_no' => $employee_no
+                ],
+                $data
+            );
+
+            DB::commit();
+
+            $redirect = $exists ? '' : '_self';
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'changes has been saved',
+                'redirect' => $redirect
+            ]);
+
+        } catch(\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function destroy(string $employee_no, Request $request)
+    {
+
+        DB::beginTransaction();
+
+        try {
+
+            DB::table('employee_children')
+                ->where('employee_no', $employee_no)
+                ->where('id', $request->id)
+                ->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'children record has been deleted.',
+                'redirect' => ''
+            ]);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
+        }
     }
 }
