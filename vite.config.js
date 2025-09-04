@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/sass/style.scss',
                 'resources/sass/dashboard.scss',
                 'resources/js/app.js',
+                'resources/sass/auth.scss'
             ],
             refresh: true,
         }),
