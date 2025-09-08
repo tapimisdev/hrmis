@@ -11,10 +11,10 @@
         </thead>
         <tbody>
             <tr>
-                <td class="fw-bold text-success">{{ log.timeIn || '--:--:--' }}</td>
-                <td class="fw-bold text-warning">{{ log.breakOut || '--:--:--' }}</td>
-                <td class="fw-bold text-primary">{{ log.breakIn || '--:--:--' }}</td>
-                <td class="fw-bold text-danger">{{ log.timeOut || '--:--:--' }}</td>
+                <td class="fw-bold">{{ log.timeIn || '--:--:--' }}</td>
+                <td class="fw-bold">{{ log.breakOut || '--:--:--' }}</td>
+                <td class="fw-bold">{{ log.breakIn || '--:--:--' }}</td>
+                <td class="fw-bold">{{ log.timeOut || '--:--:--' }}</td>
             </tr>
         </tbody>
         <tfoot>
@@ -27,14 +27,14 @@
                             Time In</button>
                 </td>
                 <td>
-                    <button class="btn btn-warning btn-lg w-100 py-3" 
+                    <button class="btn btn-outline-primary btn-lg w-100 py-3" 
                             @click="setTime('breakOut')" 
                             :disabled="isBreakOutDisabled"
                             >
                             Break Out</button>
                 </td>
                 <td>
-                    <button class="btn btn-warning btn-lg w-100 py-3" 
+                    <button class="btn btn-outline-primary btn-lg w-100 py-3" 
                             @click="setTime('breakIn')" 
                             :disabled="isBreakInDisabled"
                             >

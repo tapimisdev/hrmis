@@ -44,8 +44,8 @@ class LeaveController extends Controller
         try {
             $leave = DB::table('leaves')->insert([
                 'name'              => $validated['name'],
-                'is_cumulative'    => $validated['is_cumulative'],
-                'no_of_days'        => $validated['no_of_days'],
+                'is_cumulative'     => $validated['is_cumulative'],
+                'credit_to_deduct'  => $validated['credit_to_deduct'],
                 'created_at'        => now(),
                 'updated_at'        => now(),
             ]);
@@ -105,7 +105,7 @@ class LeaveController extends Controller
             $leave = DB::table('leaves')->where('id', $id)->update([
                 'name'              => $validated['name'],
                 'is_cumulative'     => $validated['is_cumulative'],
-                'no_of_days'        => $validated['no_of_days'],
+                'credit_to_deduct'  => $validated['credit_to_deduct'],
                 'updated_at'        => now(),
             ]);
 

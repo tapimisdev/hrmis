@@ -19,7 +19,7 @@
                     <th>#</th>
                     <th>Name</th>
                     <th>Is Cumulative</th>
-                    <th>No. of Days</th>
+                    <th>Deduction</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -42,7 +42,7 @@
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "name", name: 'name' },
                 { data: "is_cumulative", name: 'is_cumulative' },
-                { data: "no_of_days", name: 'no_of_days' },
+                { data: "credit_to_deduct", name: 'credit_to_deduct' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
         });
@@ -62,7 +62,7 @@
                     $('#leave-id').text(data.id);
                     $('#leave-name').text(data.name);
                     $('#leave-is-cumulative').text(data.is_cumulative ? 'Yes' : 'No');
-                    $('#leave-no-of-days').text(data.no_of_days);
+                    $('#leave-deduction').text(data.credit_to_deduct);
                     $('#leave-created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
 
                     // Show modal

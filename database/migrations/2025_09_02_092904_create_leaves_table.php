@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->boolean('is_cumulative')->default(true);
-            $table->integer('no_of_days');
+            $table->decimal('credit_to_deduct', 10, 2)->default(1.25);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

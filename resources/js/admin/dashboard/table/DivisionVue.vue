@@ -61,6 +61,6 @@ export default {
 .nav-tabs .nav-link.active {
   font-weight: 600;
   background-color: $secondary;
-  color: white;
+  color: $primary;
 }
 </style>

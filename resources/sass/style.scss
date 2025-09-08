@@ -204,7 +204,7 @@ table {
 
 @media (max-width: 992px) {
     .sidebar {
-        position: absolute;
+        position: fixed;
         max-width: 80vw;
         display: block;
         background-color: $white;
