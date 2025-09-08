@@ -20,15 +20,14 @@
                 <div class="row g-3">
                     {{-- Leave Type --}}
                     <div class="col-md-6">
-                        <label for="leave_type" class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
-                        <select name="leave_type" id="leave_type" class="form-select" required>
+                        <label for="leave_id" class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
+                        <select name="leave_id" id="leave_id" class="form-select" required>
                             <option value="">-- Select Leave Type --</option>
-                            <option value="sick">Sick Leave</option>
-                            <option value="vacation">Vacation Leave</option>
-                            <option value="special">Special Leave</option>
-                            <option value="leave-privileges">Leave Privileges</option>
+                            @foreach ($leaves as $leave)
+                                <option value="{{ $leave->id }}">{{ $leave->name }}</option>
+                            @endforeach
                         </select>
-                        <span id="leave_type_error" class="text-danger d-none"></span>
+                        <span id="leave_id_error" class="text-danger d-none"></span>
                     </div>
 
                     {{-- Number of Days --}}

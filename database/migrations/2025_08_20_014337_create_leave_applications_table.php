@@ -15,12 +15,7 @@ return new class extends Migration
            $table->id();
             $table->unsignedBigInteger('user_id'); // Employee who filed the leave
             $table->string('employee_no')->nullable();
-            $table->enum('leave_type', [
-                'sick',
-                'vacation',
-                'special',
-                'leave-privileges',
-            ]);
+            $table->foreignId('leave_id')->constrained('leaves');
             $table->date('start_date');
             $table->date('end_date');
             $table->integer('days')->default(1);

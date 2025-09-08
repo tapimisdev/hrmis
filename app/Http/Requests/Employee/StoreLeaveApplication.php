@@ -23,7 +23,7 @@ class StoreLeaveApplication extends FormRequest
     public function rules(): array
     {
         return [
-            'leave_type' => ['required', 'string', 'max:100'],
+            'leave_id' => ['required', 'exists:leaves,id'],
             'reason' => ['required', 'string', 'max:500'],
             'days' => ['required', 'integer'],
             'start_date' => ['required', 'date', 'after_or_equal:today'],
@@ -35,7 +35,7 @@ class StoreLeaveApplication extends FormRequest
             // Prevent duplicate leave applications with same dates and type
             Rule::unique('leave_applications')->where(function ($query) {
                 return $query->where('employee_id', $this->employee_id)
-                    ->where('leave_type', $this->leave_type)
+                    ->where('leave_id', $this->leave_id)
                     ->where('start_date', $this->start_date)
                     ->where('end_date', $this->end_date);
             }),
@@ -62,7 +62,7 @@ class StoreLeaveApplication extends FormRequest
     public function messages(): array
     {
         return [
-            'leave_type.required' => 'Leave type is required.',
+            'leave_id.required' => 'leave type is required.',
             'reason.required' => 'Reason for leave is required.',
             'start_date.required' => 'Start date is required.',
             'start_date.after_or_equal' => 'Start date must be today or later.',

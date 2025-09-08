@@ -16,11 +16,13 @@ class LeaveApplicationController extends Controller
      */
     public function index()
     {
-        $query = DB::table('leave_applications')
-                    ->where('user_id', Auth::user()->id)
-                    ->orderBy('created_at', 'desc') // latest first
+        $query = DB::table('leave_applications as la')
+                    ->leftJoin('leaves as l', 'la.leave_id', 'l.id')
+                    ->select('la.*', 'l.name as leave_name')
+                    ->where('la.user_id', Auth::user()->id)
+                    ->orderBy('la.created_at', 'desc') // latest first
                     ->get();
-        
+
         if (request()->ajax()) {
             return $this->datatable($query);
         }
@@ -32,7 +34,9 @@ class LeaveApplicationController extends Controller
      */
     public function create()
     {
-        return view('employee.pages.leave.create');
+        $leaves = DB::table('leaves')->where('is_active', true)->get();
+
+        return view('employee.pages.leave.create', compact('leaves'));
     }
 
     /**
@@ -47,7 +51,7 @@ class LeaveApplicationController extends Controller
             // Insert leave application
             $leaveId = DB::table('leave_applications')->insertGetId([
                 'user_id'       => Auth::user()->id,
-                'leave_type' => $validatedData['leave_type'],
+                'leave_id'      => $validatedData['leave_id'],
                 'start_date'    => $validatedData['start_date'],
                 'end_date'      => $validatedData['end_date'],
                 'reason'        => $validatedData['reason'],
@@ -97,8 +101,10 @@ class LeaveApplicationController extends Controller
      */
     public function show(string $id)
     {
-        $leave = DB::table('leave_applications')
-                    ->where('id', $id)
+        $leave = DB::table('leave_applications as la')
+                    ->leftJoin('leaves as l', 'la.leave_id', '=', 'l.id')
+                    ->select('la.*', 'l.name as leave_name')
+                    ->where('la.id', $id)
                     ->first();
 
         $attachments = DB::table('leave_attachments')
