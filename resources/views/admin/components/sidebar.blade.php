@@ -34,6 +34,29 @@
             </div>
         </li>
 
+        <!-- Timekeeping -->
+        <li class="sidebar-item {{ Str::contains(request()->path(), 'timekeeping') ? 'active' : '' }}">
+            <a class="sidebar-link collapse-link dropdown-toggle" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#timekeeping" 
+            role="button" 
+            aria-expanded="false" 
+            aria-controls="timekeeping">
+                <!-- Changed to fa-clock -->
+                <i class="fa-solid fa-clock"></i> Timekeeping
+            </a>
+            <div class="collapse collapsable" id="timekeeping" data-bs-parent=".sidebar-list">
+                <ul class="nested-list">
+                    <li class="nested-item p-2">
+                        <a href="{{ route('timelogs.index') }}" class="d-flex gap-2 align-items-center">
+                            <!-- Changed to fa-stopwatch -->
+                            <i class="fa-solid fa-stopwatch"></i> Timelogs
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
         <!-- Services -->
         <li class="sidebar-item {{ Str::contains(request()->path(), 'services') ? 'active' : '' }}">
             <a class="sidebar-link collapse-link dropdown-toggle" 

@@ -24,6 +24,7 @@ class CheckInOutRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type'         => ['nullable', 'string'],
             'date_time'    => ['required', 'date'],
         ];
     }
@@ -31,7 +32,14 @@ class CheckInOutRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $duplicateThreshold = 1; // minutes
+
+            $duplicateThreshold = 10; // seconds
+
+
+            if($this->input('type') === 'timeOut') {
+                $duplicateThreshold = 30; // seconds
+            }
+
 
             // 1) Get all today's logs for this user
             $logs = DB::table('timelogs')
@@ -52,7 +60,7 @@ class CheckInOutRequest extends FormRequest
                 $lastTime = Carbon::parse($last->date_time);
                 $currTime = Carbon::parse($log->date_time);
 
-                if ($currTime->diffInMinutes($lastTime) < $duplicateThreshold) {
+                if ($currTime->diffInSeconds($lastTime) < $duplicateThreshold) {
                     // skip duplicate (too close)
                     continue;
                 }
@@ -66,10 +74,10 @@ class CheckInOutRequest extends FormRequest
                 $lastTime = Carbon::parse($lastLog->date_time);
                 $newTime  = Carbon::parse($this->date_time);
 
-                if ($newTime->diffInMinutes($lastTime) < $duplicateThreshold) {
+                if ($newTime->diffInSeconds($lastTime) < $duplicateThreshold) {
                     $validator->errors()->add(
                         'date_time',
-                        "Logs must be at least {$duplicateThreshold} minutes apart."
+                        "Logs must be at least {$duplicateThreshold} seconds apart."
                     );
                 }
             }

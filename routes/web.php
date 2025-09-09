@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
 use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
+use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
@@ -128,6 +129,11 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
 
     });
 
+    Route::prefix('timekeeping')->group(function() {
+        # TIMELOGS
+        Route::resource('timelogs', TimelogController::class);
+    });
+
     Route::prefix('settings')->group(function() {
         # ROLES AND PERMISSIONS
         Route::resource('role-and-permission', RolesAndPermissionController::class);
@@ -179,7 +185,7 @@ Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
     Route::resource('official-business-slip', ObsController::class)->except('edit', 'update')->names('obs');
 
     #EMPLOYEE TIMELOGS
-    Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store', 'create')->names('checkinout');
+    Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store')->names('checkinout');
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 
 });

@@ -46,16 +46,33 @@ class CheckInOutController extends Controller
     {
         $validatedData = $request->validated();
 
-        $user_id = auth()->user()->id;
-        $employee_no = auth()->user()->employee_no;
-
         DB::beginTransaction();
 
         try {
+     
+            $validatedData['user_id'] = auth()->user()->id;
+            $validatedData['employee_no'] = auth()->user()->employee_no;
+
+            $current_timelog = $this->timelogsServices->getTodaysLogs($validatedData['user_id']);
+            
+            if (    !empty($current_timelog['breakIn']) &&
+                    !empty($current_timelog['breakIn']) &&
+                    !empty($current_timelog['breakIn']) &&
+                    !empty($current_timelog['breakIn'])
+                ) {
+
+                throw new \Exception('You have already completed all your logs for today. No further action is needed.');
+            }
+        
+
+            // check if there is valid logs and create if no
+            if($validatedData['type'] === 'timeOut') {
+                $this->timelogsServices->straightToTimeOut($validatedData);
+            }
 
             $timelog = DB::table('timelogs')->insert([
-                'user_id'     => $user_id,
-                'employee_no' => $employee_no ?? null,
+                'user_id'     => $validatedData['user_id'],
+                'employee_no' => $validatedData['employee_no'] ?? null,
                 'date_time'   => $validatedData['date_time'],
                 'created_at'  => now(),
                 'updated_at'  => now(),

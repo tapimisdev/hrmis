@@ -1,6 +1,5 @@
-import { createApp } from 'vue';
-import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
 import './bootstrap';
+import './vue';
 
 import { post, put } from './action';
 import { 
@@ -10,8 +9,6 @@ import lightGallery from 'lightgallery';
 import lgThumbnail from 'lightgallery/plugins/thumbnail'
 import lgZoom from 'lightgallery/plugins/zoom'
 
-import DashboardVue from "./admin/dashboard/DashboardVue.vue";
-
 window.post = post;
 window.put = put;
 window.lightGallery = lightGallery;
@@ -19,13 +16,6 @@ window.lgThumbnail = lgThumbnail;
 window.lgZoom = lgZoom;
 
 redirectToTab();
-
-const authApp = createApp({
-  components: {
-    CheckInOutVue,
-    DashboardVue
-  },
-});
 
 window.SuccesToast = Swal.mixin({
     toast: true,
@@ -55,8 +45,6 @@ window.ErrorToast = Swal.mixin({
         toast.onmouseleave = Swal.resumeTimer;
     }
 });
-
-authApp.mount('#app');
 
 $('#toggleSidebar').on('change', function() {
     var sidebar = $('.sidebar');

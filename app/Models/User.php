@@ -51,4 +51,9 @@ class User extends Authenticatable
     {
         $this->employee_no = DB::table('employee_information')->where('user_id', $this->id)->value('employee_no');
     }
+
+    public function employeeInformation()
+    {
+        return $this->hasOne(EmployeeInformation::class, 'user_id', 'id');
+    }
 }

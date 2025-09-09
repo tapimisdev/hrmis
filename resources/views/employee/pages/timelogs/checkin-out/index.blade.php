@@ -7,10 +7,9 @@
         <a href="{{ route('dashboard.index') }}" class="btn btn-outline-danger py-3 px-4">
             <i class="fa-solid fa-arrow-left me-2"></i> Back
         </a>
-        <a href="{{ route('checkinout.create') }}" class="btn btn-primary py-3 px-4">
-            <i class="fa-solid fa-list me-2"></i> Check In/Out
-        </a>
     </x-header>
+
+    <check-in-out-vue></check-in-out-vue>
 
     <x-table id="myTable">
         <thead>
@@ -44,6 +43,10 @@
                 { data: "break_in", name: 'break_in' },
                 { data: "time_out", name: 'time_out'},
             ],
+        });
+
+        window.addEventListener('reload-datatable', function () {
+            DataTable.ajax.reload(null, false);
         });
     });
     function updateTime() {

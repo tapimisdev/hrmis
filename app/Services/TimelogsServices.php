@@ -2,11 +2,15 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+
+use function PHPUnit\Framework\isEmpty;
+use function PHPUnit\Framework\throwException;
 
 class TimelogsServices {
 
-   public function getTimeLogs($userId)
+    public function getTimeLogs($userId)
     {
         $timelogs = DB::table('timelogs')
             ->where('user_id', $userId)
@@ -36,7 +40,7 @@ class TimelogsServices {
 
     public function getValidLogs($logs)
     {
-        $duplicateThreshold = 1; // minutes; adjust if you want stricter/looser duplicate detection
+        $duplicateThreshold = 10; // minutes; adjust if you want stricter/looser duplicate detection
 
         // Normalize & sort
         $logs = collect($logs)->sortBy('date_time')->values();
@@ -53,7 +57,7 @@ class TimelogsServices {
             $lastTime = \Carbon\Carbon::parse($last->date_time);
             $currTime = \Carbon\Carbon::parse($log->date_time);
 
-            if ($currTime->diffInMinutes($lastTime) < $duplicateThreshold) {
+            if ($currTime->diffInSeconds($lastTime) < $duplicateThreshold) {
                 // Considered a duplicate (too close) — skip the later one
                 continue;
             }
@@ -103,9 +107,9 @@ class TimelogsServices {
         return $validLogs;
     }
 
-    public function getTodaysLogs()
+    public function getTodaysLogs($user_id = null)
     {
-        $user_id = auth()->user()->id;
+        $user_id = $user_id ?? auth()->user()->id;
         $today = \Carbon\Carbon::now()->toDateString();
 
         $logs = DB::table('timelogs')
@@ -142,4 +146,51 @@ class TimelogsServices {
             ->orderBy('date_time', 'desc')
             ->first();
     }
+
+    public function straightToTimeOut($payload)
+    {
+        $current_timelog = $this->getTodaysLogs($payload['user_id']);
+
+        if (empty($current_timelog['timeIn'])) {
+            throw new \Exception('No clock in yet.');
+        }
+
+        if (    !empty($current_timelog['breakIn']) &&
+                !empty($current_timelog['breakIn']) &&
+                !empty($current_timelog['breakIn']) &&
+                !empty($current_timelog['breakIn'])
+            ) {
+
+            throw new \Exception('Ano ba kumpleto na eh!!');
+        }
+
+        // duplicateThreshold = 10 seconds
+        $breakOut = $current_timelog['breakOut'];
+        $breakIn = $current_timelog['breakIn'];
+
+        if(empty($current_timelog['breakOut'])) {
+            $breakOut = Carbon::parse($payload['date_time'])->subSecond(20);
+            DB::table('timelogs')->insert([
+                'user_id'     => $payload['user_id'],
+                'employee_no' => $payload['employee_no'] ?? null,
+                'date_time'   => $breakOut,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        }
+
+        if(empty($current_timelog['breakIn'])) {
+            $breakIn = Carbon::parse($payload['date_time'])->subSecond(10);
+            DB::table('timelogs')->insert([
+                'user_id'     => $payload['user_id'],
+                'employee_no' => $payload['employee_no'] ?? null,
+                'date_time'   => $breakIn,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        }
+
+    }
+
+
 }
