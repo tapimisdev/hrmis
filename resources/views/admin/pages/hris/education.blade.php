@@ -10,116 +10,247 @@
         @if($isExists)
             <x-hris-menu active="education" empno="{{$employee_no}}" />
         @endif
-        <form id="form" action="{{route('hris.employee.family', ['employee_no' => $employee_no])}}" method="post">
-            @method('POST')
-            @csrf
-            <div class="card shadow p-3">
-                <div class="card-body">
-                   <div class="table-responsive">
-                        <table class="table table-bordered mt-3">
-                            <thead>
-                                <tr>
-                                    <th rowspan="2" class="text-center"></th>
-                                    <th rowspan="2" class="text-center">Level</th>
-                                    <th rowspan="2" class="text-center">Name of School</th>
-                                    <th rowspan="2" class="text-center">Basic Education / Degree / Course</th>
-                                    <th colspan="2" class="text-center">Period of Attendance</th>
-                                    <th rowspan="2" class="text-center">Highest Level / Units Earned <br> (if not graduated)</th>
-                                    <th rowspan="2" class="text-center">Year Graduated</th>
-                                    <th rowspan="2" class="text-center">Scholarship / Academic <br> Honors Received</th>
-                                    <th rowspan="2" class="text-center">Documents</th>
-                                </tr>
-                                <tr>
-                                    <th class="text-center">From</th>
-                                    <th class="text-center">To</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <button type="button" class="btn btn-danger">
-                                            <i class="fa-solid fa-circle-minus"></i>
-                                        </button>
-                                    </td>
-                                    <td>
-                                        <select style="width: 300px" class="form-select text-uppercase text-center">
-                                            <option value=""> - CHOOSE - </option>
-                                            <option value="elementary">Elementary</option>
-                                            <option value="secondary">Secondary</option>
-                                            <option value="vocational">Vocational</option>
-                                            <option value="highschool">High School</option>
-                                            <option value="senior_highschool">Senior High School</option>
-                                            <option value="college">College</option>
-                                            <option value="masters">Masters</option>
-                                            <option value="doctoral">Doctoral</option>
-                                        </select>
-                                        <div class="error-field"></div>
-                                    </td>
-                                    <td>
-                                        <input type="text" style="width: 600px" class="form-control text-uppercase text-center">
-                                        <div class="error-field"></div>
-                                    </td>
-                                    <td>
-                                        <input type="text" style="width: 800px" class="form-control text-uppercase text-center">
-                                        <div class="error-field"></div>
-                                    </td>
-                                    <td>
-                                        <input type="number" style="width: 300px" class="form-control text-uppercase text-center" placeholder="ex. 2020">
-                                        <div class="error-field"></div>
-                                    </td>
-                                    <td>
-                                        <input type="number" style="width: 300px" class="form-control text-uppercase text-center" placeholder="ex. 2024">
-                                        <div class="error-field"></div>
-                                    </td>
-                                    <td>
-                                        <input type="text" style="width: 300px" class="form-control text-uppercase text-center">
-                                        <div class="error-field"></div>
-                                    </td>
-                                    <td>
-                                        <input type="number" style="width: 300px" class="form-control text-uppercase text-center" placeholder="ex. 2024">
-                                        <div class="error-field"></div>
-                                    </td>
-                                    <td>
-                                        <input type="text" style="width: 800px" class="form-control text-uppercase text-center">
-                                        <div class="error-field"></div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div>
-                                                <input type="file" style="width: 300px;" class="form-control">
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <a href="javascript:void(0)" class="btn btn-primary">
-                                                    <i class="fa-solid fa-download"></i>
-                                                </a>
-                                                <a href="javascript:void(0)" class="btn btn-danger">
-                                                    <i class="fa-solid fa-trash"></i>
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <div class="error-field"></div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent border-0 d-flex justify-content-end">
-                    <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
-                        Save <i class="fa-solid fa-arrow-right ms-2"></i>
-                    </button>
+        <div class="d-flex justify-content-end align-items-center bg-transparent border-0 mt-4">
+            <button class="btn btn-outline-primary px-5 py-3 text-uppercase fw-bold" id="openItemModal" data-action="add">Add Data</button>
+        </div>
+        <div class="card shadow p-3 pb-5 mt-5">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover w-100 pb-3" id="myTable">
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>Name of School</th>
+                                <th>Year Graduated</th>
+                                <th>Documents</th>
+                                <th style="width: 120px">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </form>
+        </div>
     </div>
+
+    <div class="modal fade" id="itemModal" tabindex="-1" data-bs-backdrop="static" aria-labelledby="itemModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5 text-uppercase" id="itemModalLabel"></h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form" enctype="multipart/form-data" action="{{route('hris.employee.education', ['employee_no' => $employee_no])}}" method="post">
+                        @if($isEdit)
+                            @method('PUT')
+                        @else
+                            @method('POST')
+                        @endif
+                        @csrf
+                        <div class="row">
+                            <input type="hidden" name="id" id="id" value="">
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="level">Level <span class="text-danger">*</span></label>
+                                <select class="form-select text-uppercase" id="level" name="level">
+                                    <option value=""> - CHOOSE - </option>
+                                    <option value="elementary">Elementary</option>
+                                    <option value="secondary">Secondary</option>
+                                    <option value="vocational">Vocational</option>
+                                    <option value="highschool">High School</option>
+                                    <option value="senior_highschool">Senior High School</option>
+                                    <option value="college">College</option>
+                                    <option value="masters">Masters</option>
+                                    <option value="doctoral">Doctoral</option>
+                                </select>
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="school_name">Name of School</label>
+                                <input type="text" id="school_name" name="school_name" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="course">Basic Education / Degree / Course <span class="text-danger">*</span></label>
+                                <input type="text" id="course" name="course" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="mb-2" for="from_year">From Year <span class="text-danger">*</span></label>
+                                <input type="text" id="from_year" name="from_year" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-6 mb-3">
+                                <label class="mb-2" for="to_year">To Year <span class="text-danger">*</span></label>
+                                <input type="text" id="to_year" name="to_year" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="highest_level">Highest Level</label>
+                                <input type="text" id="highest_level" name="highest_level" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="year_graduated">Year  Graduated <span class="text-danger">*</span></label>
+                                <input type="date" id="year_graduated" name="year_graduated" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="scholarship_honors">Scholarship / Honors</label>
+                                <input type="text" id="scholarship_honors" name="scholarship_honors" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3">
+                                <label class="mb-2" for="documents">Document</label>
+                                <input type="file" id="documents" name="documents" class="form-control text-uppercase"
+                                    value="">
+                                <div class="error-field"></div>
+                                <div class="mt-1">
+                                    <small class="text-muted text-uppercase">Note: Only accepts docs | docx | pdf | jpeg | jpg | png files only.</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end mt-5 mb-4">
+                            <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
+                                Save <i class="fa-solid fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="galleryContainer"></div>
+
+
 @endsection
 
 @section('scripts')
 <script>
     $(function() {
 
+        const employee_no = '{{$employee_no}}';
+
+        let = DataTable = $('#myTable').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                url: '{{ route('api.employee.education') }}',
+                data: function (d) {
+                    d.isDT = true;
+                    d.employee_no = employee_no;
+                }
+            },  
+            "columns": [
+                { data: "level", name: 'level' },
+                { data: "school_name", name: 'school_name' },
+                { data: "year_graduated", name: 'from_year' },
+                { data: "documents", name: 'documents' },
+                { data: "actions", name: 'actions', orderable: false, searchable: false },
+            ],
+            "scrollX": true,
+            "columnDefs": [
+                { targets: '_all', className: 'dt-nowrap' } 
+            ]
+        });    
+
+        $('#openItemModal').on('click', function() {
+
+            const action = $(this).data('action');
+
+            const config = {
+                title: {
+                    add: 'Add Details',
+                    update: 'Update Details'
+                },
+                method: {
+                    add: 'post',
+                    update: 'update'
+                }
+            };
+
+            const title = config.title[action];
+            const method = config.method[action];
+
+            $('#itemModal').modal('show');
+            $('.modal-title').html(title);
+
+            $('#itemForm').attr('data-method', method);
+
+            $('#form').trigger('reset');
+            
+        });
+
+        const isEdit = @json($isEdit);
         const url = $('#form').attr('action');
-        post(url);
+
+        if(!isEdit) {
+            post(url);
+        } else {
+            put(url);
+        }
+
+
+        $(document).on('click', '#btn-edit', function() {
+            const id = $(this).data('id');
+            $.ajax({
+                type: "GET",
+                url: "{{ route('api.employee.education') }}",
+                data: {
+                    'isDT': false,
+                    'employee_no': employee_no,
+                    'id': id,
+                },
+                dataType: "json",
+                success: function (response) {
+                    console.log(response);
+                    Object.entries(response).forEach(([key, value]) => {
+                        if (key === 'documents') {
+                            return; 
+                        }
+                        $(`form [name="${key}"]`).val(value);
+                    });
+
+                    $('#itemModal').modal('show');
+                }
+            });
+        });
+
+    $(document).on('click', '.open-document', function() {
+
+        const src = $(this).data('src'); 
+
+        const galleryContainer = document.getElementById('galleryContainer');
+        if (galleryContainer.lightGalleryInstance) {
+            galleryContainer.lightGalleryInstance.destroy();
+        }
+
+        const gallery = lightGallery(galleryContainer, {
+            dynamic: true,
+            dynamicEl: [
+                {
+                    src: src,
+                    iframe: true
+                }
+            ],
+            plugins: [lgThumbnail, lgZoom],
+            licenseKey: '0000-0000-000-0000',
+            speed: 500
+        });
+
+        galleryContainer.lightGalleryInstance = gallery;
+
+        gallery.openGallery();
+    });
 
     });
 </script>

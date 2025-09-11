@@ -69,6 +69,8 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.information');
         Route::post('employee/information/{employee_no?}', [InformationController::class, 'save'])
             ->name('hris.employee.information');
+        Route::delete('employee/information/{employee_no?}', [InformationController::class, 'destroy'])
+            ->name('hris.employee.information');
 
         # PERSONAL
         Route::get('employee/personal/{employee_no?}', [PersonalController::class, 'index'])
@@ -95,11 +97,15 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.education');
         Route::post('employee/education/{employee_no}', [EducationController::class, 'save'])
             ->name('hris.employee.education');
+        Route::delete('employee/education/{employee_no}', [EducationController::class, 'destroy'])
+            ->name('hris.employee.education');
 
         # CIVIL SERVICE
         Route::get('employee/civil-service/{employee_no}', [CivilServiceController::class, 'index'])
             ->name('hris.employee.civil-service');
         Route::post('employee/civil-service/{employee_no}', [CivilServiceController::class, 'save'])
+            ->name('hris.employee.civil-service');
+        Route::delete('employee/civil-service/{employee_no}', [CivilServiceController::class, 'destroy'])
             ->name('hris.employee.civil-service');
 
         # WORK EXPERIENCE
@@ -107,11 +113,15 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.work-experience');
         Route::post('employee/work-experience/{employee_no}', [WorkExperienceController::class, 'save'])
             ->name('hris.employee.work-experience');
+        Route::delete('employee/work-experience/{employee_no}', [WorkExperienceController::class, 'destroy'])
+            ->name('hris.employee.work-experience');
 
         # VOLUNTARY WORKS
         Route::get('employee/voluntary-works/{employee_no}', [VoluntaryWorksController::class, 'index'])
             ->name('hris.employee.voluntary-works');
         Route::post('employee/voluntary-works/{employee_no}', [VoluntaryWorksController::class, 'save'])
+            ->name('hris.employee.voluntary-works');
+        Route::delete('employee/voluntary-works/{employee_no}', [VoluntaryWorksController::class, 'destroy'])
             ->name('hris.employee.voluntary-works');
 
         # TRAININGS
@@ -119,11 +129,15 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.trainings');
         Route::post('employee/trainings/{employee_no}', [TrainingsController::class, 'save'])
             ->name('hris.employee.trainings');
+        Route::delete('employee/trainings/{employee_no}', [TrainingsController::class, 'destroy'])
+            ->name('hris.employee.trainings');
 
         # SKILLS
-        Route::get('employee/skills/{employee_no}se', [SkillsController::class, 'index'])
+        Route::get('employee/skills/{employee_no}', [SkillsController::class, 'index'])
             ->name('hris.employee.skills');
         Route::post('employee/skills/{employee_no}', [SkillsController::class, 'save'])
+            ->name('hris.employee.skills');
+        Route::delete('employee/skills/{employee_no}', [SkillsController::class, 'destroy'])
             ->name('hris.employee.skills');
 
     });

@@ -194,4 +194,36 @@ class InformationController extends Controller
         ];
     } 
 
+    public function destroy(string $employee_no, Request $request)
+    {
+
+        DB::beginTransaction();
+
+        try {
+
+            DB::table('employee_information')
+                ->where('employee_no', $employee_no)
+                ->where('id', $request->id)
+                ->update([
+                    'account_status' => 'archived'
+                ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'skill or hobby record has been deleted.',
+                'redirect' => ''
+            ]);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
+        }
+    }
+
 }

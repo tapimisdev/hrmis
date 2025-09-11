@@ -122,6 +122,9 @@
                 { data: "documents", name: 'documents' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            "columnDefs": [
+                { targets: '_all', className: 'dt-nowrap' } 
+            ]
         });    
 
         $('#openItemModal').on('click', function() {
