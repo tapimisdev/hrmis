@@ -57,6 +57,29 @@
             </div>
         </li>
 
+        <!-- Payroll -->
+        <li class="sidebar-item {{ Str::contains(request()->path(), 'payroll') ? 'active' : '' }}">
+            <a class="sidebar-link collapse-link dropdown-toggle" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#payroll" 
+                role="button" 
+                aria-expanded="false" 
+                aria-controls="payroll">
+                <!-- Parent icon -->
+                <i class="fa-solid fa-money-check-dollar"></i> Payroll
+            </a>
+            <div class="collapse collapsable" id="payroll" data-bs-parent=".sidebar-list">
+                <ul class="nested-list">
+                    <li class="nested-item p-2">
+                        <a href="{{ route('timelogs.index') }}" class="d-flex gap-2 align-items-center">
+                            <!-- Child icon -->
+                            <i class="fa-solid fa-calculator"></i> Salary
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+
         <!-- Services -->
         <li class="sidebar-item {{ Str::contains(request()->path(), 'services') ? 'active' : '' }}">
             <a class="sidebar-link collapse-link dropdown-toggle" 

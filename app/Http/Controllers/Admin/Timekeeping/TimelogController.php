@@ -80,7 +80,7 @@ class TimelogController extends Controller
         ->addIndexColumn()
         ->addColumn('picture', function ($row) {
             // Assuming $row->picture contains the image filename or full URL
-            $url = 'https://images.pexels.com/photos/20804701/pexels-photo-20804701.jpeg?cs=srgb&dl=pexels-agrosales-20804701.jpg&fm=jpg';
+            $url = 'https://i.pinimg.com/originals/99/8f/41/998f41fc4c63e69c06b99a6e03629815.jpg';
 
             return '
                 <div class="d-flex justify-content-center align-items-center">
@@ -91,7 +91,7 @@ class TimelogController extends Controller
         ->addColumn('actions', function ($row) {
 
           return '<div class="d-flex">' .
-                '<a href="' . route('timelogs.show', $row->id) . '" class="btn btn-outline-primary btn ms-1 my-1" title="DTR">' .
+                '<a href="' . route('daily-time-record.index', $row->id) . '" class="btn btn-outline-primary btn ms-1 my-1" title="DTR">' .
                     '<i class="fas fa-clock"></i>' .
                 '</a>' .
             '</div>';

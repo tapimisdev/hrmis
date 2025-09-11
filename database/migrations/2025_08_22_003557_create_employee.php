@@ -40,9 +40,9 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('positions')
                 ->onDelete('set null');
-            $table->foreignId('shift_schedule_id')
+            $table->foreignId('shift_id')
                 ->nullable()
-                ->constrained('shift_schedule')
+                ->constrained('shifts')
                 ->onDelete('set null');
             $table->foreignId('work_schedule_id')
                 ->nullable()

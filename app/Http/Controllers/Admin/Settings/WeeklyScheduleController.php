@@ -14,7 +14,7 @@ class WeeklyScheduleController extends Controller
      */
     public function index()
     {
-        $query = DB::table('weekly_schedules')->where('is_active', true)->get();
+        $query = DB::table('work_schedule')->where('is_active', true)->get();
         if (request()->ajax()) {
             return $this->datatable($query);
         }
@@ -38,7 +38,7 @@ class WeeklyScheduleController extends Controller
 
         DB::beginTransaction();
         try {
-            $schedule = DB::table('weekly_schedules')->insert([
+            $schedule = DB::table('work_schedule')->insert([
                 'name' => $validatedData['name'],
                 'is_monday' => $request->input('is_monday', 1),
                 'is_tuesday' => $request->input('is_tuesday', 1),
@@ -70,7 +70,7 @@ class WeeklyScheduleController extends Controller
      */
     public function show(string $id)
     {
-        $schedule = DB::table('weekly_schedules')->where('id', $id)->first();
+        $schedule = DB::table('work_schedule')->where('id', $id)->first();
         if (!$schedule) {
             return response()->json([
                 'message' => 'Weekly Schedule not found.'
@@ -86,7 +86,7 @@ class WeeklyScheduleController extends Controller
      */
     public function edit(string $id)
     {
-        $schedule = DB::table('weekly_schedules')->where('id', $id)->first();
+        $schedule = DB::table('work_schedule')->where('id', $id)->first();
         if (!$schedule) {
             return response()->json([
                 'message' => 'Weekly Schedule not found.'
@@ -103,13 +103,13 @@ class WeeklyScheduleController extends Controller
         $validatedData = $request->validated();
         DB::beginTransaction();
         try {
-            $schedule = DB::table('weekly_schedules')->where('id', $id)->first();
+            $schedule = DB::table('work_schedule')->where('id', $id)->first();
             if (!$schedule) {
                 return response()->json([
                     'message' => 'Weekly Schedule not found.'
                 ], 404);
             }
-            DB::table('weekly_schedules')->where('id', $id)->update([
+            DB::table('work_schedule')->where('id', $id)->update([
                 'name' => $validatedData['name'],
                 'is_monday' => $request->input('is_monday', 1),
                 'is_tuesday' => $request->input('is_tuesday', 1),
@@ -142,15 +142,15 @@ class WeeklyScheduleController extends Controller
 
         try {
 
-            $weekly_schedule = DB::table('weekly_schedules')->where('id', $id)->first();
+            $works_schedule = DB::table('work_schedule')->where('id', $id)->first();
 
-            if (!$weekly_schedule) {
+            if (!$works_schedule) {
                 return response()->json([
                     'message' => 'Weekly Schedule not found.'
                 ], 404);
             }
 
-            DB::table('weekly_schedules')->where('id', $id)->update([
+            DB::table('work_schedule')->where('id', $id)->update([
                 'is_active' => false,
                 'updated_at' => now(),
             ]);

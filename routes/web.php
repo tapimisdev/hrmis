@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
 use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
+use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
@@ -131,7 +132,14 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
 
     Route::prefix('timekeeping')->group(function() {
         # TIMELOGS
-        Route::resource('timelogs', TimelogController::class);
+        Route::resource('timelogs', TimelogController::class)->only('index');
+        
+        # DTR
+        Route::get('daily-time-record/{id}', [DailyTimeRecordController::class, 'index'])
+            ->name('daily-time-record.index');
+        Route::get('daily-time-record/{id}/show', [DailyTimeRecordController::class, 'show'])
+            ->name('daily-time-record.show');
+
     });
 
     Route::prefix('settings')->group(function() {

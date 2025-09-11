@@ -74,6 +74,8 @@ class CheckInOutController extends Controller
                 'user_id'     => $validatedData['user_id'],
                 'employee_no' => $validatedData['employee_no'] ?? null,
                 'date_time'   => $validatedData['date_time'],
+                'shift_id'   => 1,
+                'work_schedule_id'   => 1,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ]);

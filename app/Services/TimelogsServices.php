@@ -12,29 +12,64 @@ class TimelogsServices {
 
     public function getTimeLogs($userId)
     {
-        $timelogs = DB::table('timelogs')
-            ->where('user_id', $userId)
-            ->orderBy('date_time', 'asc')
-            ->get()
-            ->groupBy(function ($item) {
-                return \Carbon\Carbon::parse($item->date_time)->toDateString();
-            });
+        // Get all logs for the user
+        $timelogs = $this->fetchLogs($userId);
+        return $this->formatLogs($timelogs);
+    }
 
+    public function getTimeLogsWithPeriod($userId, $startDate, $endDate)
+    {
+        // Get logs within a date range
+        $timelogs = $this->fetchLogs($userId, $startDate, $endDate);
+
+        return $this->formatLogs($timelogs);
+    }
+
+    /**
+     * Fetch timelogs from database
+     * @param int $userId
+     * @param string|null $startDate
+     * @param string|null $endDate
+     * @return \Illuminate\Support\Collection
+     */
+    private function fetchLogs($userId, $startDate = null, $endDate = null)
+    {
+        $query = DB::table('timelogs')
+            ->where('user_id', $userId)
+            ->orderBy('date_time', 'asc');
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('date_time', [$startDate, $endDate]);
+        }
+
+        return $query->get()->groupBy(function ($item) {
+            return \Carbon\Carbon::parse($item->date_time)->toDateString();
+        });
+    }
+
+    /**
+     * Format grouped timelogs into structured array
+     * @param \Illuminate\Support\Collection $timelogs
+     * @return \Illuminate\Support\Collection
+     */
+    private function formatLogs($timelogs)
+    {
         $result = [];
 
         foreach ($timelogs as $date => $logs) {
             $valid = $this->getValidLogs($logs);
 
             $result[] = [
-                'date'       => $date,
-                'time_in'    => $valid['in']->date_time ?? null,
-                'break_out'  => $valid['break_out']->date_time ?? null,
-                'break_in'   => $valid['break_in']->date_time ?? null,
-                'time_out'   => $valid['out']->date_time ?? null,
+                'date'      => $date,
+                'time_in'   => $valid['in']->date_time ?? null,
+                'break_out' => $valid['break_out']->date_time ?? null,
+                'break_in'  => $valid['break_in']->date_time ?? null,
+                'time_out'  => $valid['out']->date_time ?? null,
+                'shift_id'  => $valid['out']->shift_id ?? null,
+                'work_schedule_id'  => $valid['out']->work_schedule_id ?? null,
             ];
         }
 
-        // sort dates descending (latest first)
         return collect($result)->sortByDesc('date')->values();
     }
 
@@ -57,7 +92,7 @@ class TimelogsServices {
             $lastTime = \Carbon\Carbon::parse($last->date_time);
             $currTime = \Carbon\Carbon::parse($log->date_time);
 
-            if ($currTime->diffInSeconds($lastTime) < $duplicateThreshold) {
+            if ($currTime->diffInMinutes($lastTime) < $duplicateThreshold) {
                 // Considered a duplicate (too close) — skip the later one
                 continue;
             }
@@ -72,11 +107,18 @@ class TimelogsServices {
             'break_out' => null,
             'break_in' => null,
             'out' => null,
+            'shift_id' => null,
+            'work_schedule_id' => null,
         ];
 
         if ($n === 0) {
             return $validLogs;
         }
+
+        // Assign shift_id and work_schedule_id from the first log
+        $firstLog = $filtered->first();
+        $validLogs['shift_id'] = $firstLog->shift_id ?? null;
+        $validLogs['work_schedule_id'] = $firstLog->work_schedule_id ?? null;
 
         if ($n === 1) {
             $validLogs['in'] = $filtered->get(0);
@@ -106,6 +148,7 @@ class TimelogsServices {
 
         return $validLogs;
     }
+
 
     public function getTodaysLogs($user_id = null)
     {
@@ -174,6 +217,8 @@ class TimelogsServices {
                 'user_id'     => $payload['user_id'],
                 'employee_no' => $payload['employee_no'] ?? null,
                 'date_time'   => $breakOut,
+                'shift_id'   => 1,
+                'work_schedule_id'   => 1,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ]);
@@ -185,12 +230,12 @@ class TimelogsServices {
                 'user_id'     => $payload['user_id'],
                 'employee_no' => $payload['employee_no'] ?? null,
                 'date_time'   => $breakIn,
+                'shift_id'   => 1,
+                'work_schedule_id'   => 1,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ]);
         }
 
     }
-
-
 }
