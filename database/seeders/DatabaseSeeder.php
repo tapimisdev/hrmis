@@ -20,6 +20,10 @@ class DatabaseSeeder extends Seeder
             TimeLogsSeeder::class,
             OrganizationSeeder::class,
             LeaveSeeder::class,
+            DivisionSeeder::class,
+            UnitSeeder::class,
+            PositionSeeder::class,
+            TestUserSeeder::class
         ]);
     }
 }

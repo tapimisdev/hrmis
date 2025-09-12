@@ -22,6 +22,8 @@ class InformationController extends Controller
     {
         $divisions = DB::table('divisions')->get();
         $employment_types = DB::table('employment_types')->get();
+        $shifts = DB::table('shifts')->get();
+        $schedules = DB::table('work_schedule')->get();
 
         if ($request->ajax()) {
             return $this->ajax_request($request);
@@ -35,7 +37,7 @@ class InformationController extends Controller
 
         $data = $employee_no && $isExists ? $this->employeeService->getEmployee('information', $employee_no) : [];
 
-        return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'isExists', 'employee_no', 'data'));
+        return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'shifts', 'schedules',  'isExists', 'employee_no', 'data'));
     }
 
 
