@@ -46,11 +46,12 @@ class LeaveApplicationController extends Controller
     {
         $validatedData = $request->validated();
 
+        // dd($validatedData);
         DB::beginTransaction();
         try {
             // Insert leave application
             $leaveId = DB::table('leave_applications')->insertGetId([
-                'user_id'       => Auth::user()->id,
+                'user_id'       => Auth::user()->id ?? $validatedData['user_id'],
                 'leave_id'      => $validatedData['leave_id'],
                 'start_date'    => $validatedData['start_date'],
                 'end_date'      => $validatedData['end_date'],

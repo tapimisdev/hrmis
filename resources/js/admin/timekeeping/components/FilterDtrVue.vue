@@ -49,7 +49,7 @@
             >
                 <div class="card p-3">
                     <h5>{{ card.label }}</h5>
-                    <h2 class="text-success text-end">{{ card.value }}</h2>
+                    <h2 class="text-info text-end">{{ card.value }}</h2>
                 </div>
             </div>
         </div>
@@ -59,7 +59,6 @@
             <div class="d-flex gap-2">
                 <!-- Month Dropdown -->
                 <select class="form-select" @change="emitDate" v-model="localMonth">
-                    <option value="">Select Month</option>
                     <option v-for="(month, index) in months" :key="index" :value="index + 1">
                         {{ month }}
                     </option>
@@ -80,8 +79,14 @@
 <script>
 export default {
     props: {
-        month: Number,
-        year: Number
+        month: {
+            type: Number,
+            default: () => new Date().getMonth() + 1 // 1-12
+        },
+        year: {
+            type: Number,
+            default: () => new Date().getFullYear()
+        }
     },
     data() {
         return {

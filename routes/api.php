@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\Employee;
+use App\Http\Controllers\Api\LeavesApiController;
 use App\Http\Controllers\Api\Organization;
+use App\Http\Controllers\Employee\LeaveApplicationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -32,3 +34,8 @@ Route::prefix('employee')->group(function() {
         ->name('api.employee.children');
 
 });
+
+Route::get('leaves', [LeavesApiController::class, 'getLeaves'])
+            ->name('api.get-leaves');
+
+Route::resource('leaves', LeaveApplicationController::class)->only('store', 'update');

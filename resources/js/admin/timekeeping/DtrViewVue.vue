@@ -21,7 +21,7 @@ export default {
   components: { FilterDtrVue, TableDtrVue },
   props: {
     employee_id: {
-      type: Number,
+      type: String,
       required: true
     }
   },

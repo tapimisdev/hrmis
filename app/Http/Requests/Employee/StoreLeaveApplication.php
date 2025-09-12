@@ -23,11 +23,12 @@ class StoreLeaveApplication extends FormRequest
     public function rules(): array
     {
         return [
+            'user_id' => ['nullable', 'exists:users,id'],
             'leave_id' => ['required', 'exists:leaves,id'],
             'reason' => ['required', 'string', 'max:500'],
             'days' => ['required', 'integer'],
-            'start_date' => ['required', 'date', 'after_or_equal:today'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date'],
 
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
