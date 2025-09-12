@@ -20,6 +20,8 @@
                 <th>Break Out</th>
                 <th>Break In</th>
                 <th>Time Out</th>
+                <th>Overtime In</th>
+                <th>Overtime Out</th>
             </tr>
         </thead>
         <tbody>
@@ -42,6 +44,8 @@
                 { data: "break_out", name: 'break_out' },
                 { data: "break_in", name: 'break_in' },
                 { data: "time_out", name: 'time_out'},
+                { data: "overtime_in", name: 'overtime_in'},
+                { data: "overtime_out", name: 'overtime_out'},
             ],
         });
 

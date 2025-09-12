@@ -53,32 +53,65 @@
             <i v-else class="fas fa-sign-out-alt"></i>
             Clock Out
           </button>
+
+          <button 
+              class="btn btn-primary btn-thick-outline py-3 px-5" 
+              @click="setTime('overtimeIn')"
+              v-if="!isOvertimeInDisabled"
+              :disabled="isOvertimeInDisabled || buttonLoading === 'overtimeIn'">
+              <i v-if="buttonLoading === 'overtimeIn'" class="fas fa-spinner fa-spin"></i>
+              <i v-else class="fas fa-moon"></i>
+              Start OT
+          </button>
+
+          <button 
+              class="btn btn-warning text-light btn-thick-outline py-3 px-5" 
+              @click="setTime('overtimeOut')"
+              v-if="!isOvertimeOutDisabled"
+              :disabled="isOvertimeOutDisabled || buttonLoading === 'overtimeOut'">
+              <i v-if="buttonLoading === 'overtimeOut'" class="fas fa-spinner fa-spin"></i>
+              <i v-else class="fas fa-sun"></i>
+              Finish OT
+          </button>
+
         </div>
       </div>
 
-      <div class="row py-4 px-5 mb-0 pb-0">
-        <div class="col-md-3">
+      <div class="row py-4 px-5 mb-0 pb-0 p-5 g-5">
+        <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end">
             <h5>Clock In</h5>
             {{ log.timeIn || '--:--:--' }}
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end">
             <h5>Break</h5>
             {{ log.breakOut || '--:--:--' }}
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end">
             <h5>Back to Work</h5>
             {{ log.breakIn || '--:--:--' }}
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end">
             <h5>Clock Out</h5>
             {{ log.timeOut || '--:--:--' }}
+          </div>
+        </div>
+        <div class="col-md-2 col-sm-4 col-12">
+          <div class="border-end">
+            <h5>Overtime In</h5>
+            {{ log.overtimeIn || '--:--:--' }}
+          </div>
+        </div>
+        <div class="col-md-2 col-sm-4 col-12">
+          <div>
+            <h5>Overtime Out</h5>
+            {{ log.overtimeOut || '--:--:--' }}
           </div>
         </div>
       </div>
@@ -94,16 +127,20 @@ const log = reactive({
   timeIn: '',
   breakOut: '',
   breakIn: '',
-  timeOut: ''
+  timeOut: '',
+  overtimeIn: '',
+  overtimeOut: '',
 });
 
 const loading = ref(true);
-const buttonLoading = ref(null); // ✅ Track which button is currently loading
+const buttonLoading = ref(null); // Track which button is currently loading
 
 const isTimeInDisabled = computed(() => !!log.timeIn);
 const isBreakOutDisabled = computed(() => !log.timeIn || !!log.breakOut);
 const isBreakInDisabled = computed(() => !log.breakOut || !!log.breakIn);
 const isTimeOutDisabled = computed(() => !log.timeIn || !!log.timeOut);
+const isOvertimeInDisabled = computed(() => !log.timeOut || !!log.overtimeIn);
+const isOvertimeOutDisabled = computed(() => !log.overtimeIn || !!log.overtimeOut);
 
 function getMonthShort() {
   return new Date().toLocaleString('default', { month: 'short' });
@@ -159,6 +196,8 @@ function getTodayLogs(isLoading = true) {
         log.breakOut = todayLog.breakOut || '';
         log.breakIn = todayLog.breakIn || '';
         log.timeOut = todayLog.timeOut || '';
+        log.overtimeIn = todayLog.overtimeIn || '';
+        log.overtimeOut = todayLog.overtimeOut || '';
       }
     })
     .catch(error => {

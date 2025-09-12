@@ -75,6 +75,7 @@ class DailyTimeRecordService {
                 $is_future = true;
             }
 
+            // LEAVE AND ABSENT BLOCK
             $leave = $this->checkIfLeave($date, $userId);
             $is_leave = $leave['is_leave'];
             $leave_status = $leave['status'];
@@ -90,16 +91,24 @@ class DailyTimeRecordService {
             }
 
             if ($empty_time_in_and_out && !$is_future) {
-                $computedData[] = $this->insertNoData('Absent', $userId);
-                continue;
+                if(!$is_leave) {
+                    $computedData[] = $this->insertNoData('Absent', $userId);
+                    continue;
+                } else {
+
+                    if($leave_status === 'pending leave') {
+                        $computedData[] = $this->insertNoData($leave_status, $userId);
+                        continue;
+                    }
+                }
             }
 
             if ($empty_time_in_and_out && $is_future) {
                 $computedData[] = $this->insertNoData('', $userId);
                 continue;
             }
-
-            // if()
+            // End of LEAVE AND ABSENT
+            
 
             // Safe parsing to avoid Carbon error if null
             $timeInCarbon   = Carbon::parse($date['time_in'])->format('h:i A');

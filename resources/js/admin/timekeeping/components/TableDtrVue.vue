@@ -227,7 +227,7 @@ export default {
                         console.warn(`Unknown modal type: ${this.modalType}`);
                 }
 
-                // this.$refs.modal.close();
+                this.$refs.modal.close();
             }
         }
     },

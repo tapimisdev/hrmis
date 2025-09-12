@@ -65,6 +65,8 @@ class TimelogsServices {
                 'break_out' => $valid['break_out']->date_time ?? null,
                 'break_in'  => $valid['break_in']->date_time ?? null,
                 'time_out'  => $valid['out']->date_time ?? null,
+                'overtime_in'  => $valid['overtime_in']->date_time ?? null,
+                'overtime_out'  => $valid['overtime_out']->date_time ?? null,
                 'shift_id'  => $valid['out']->shift_id ?? null,
                 'work_schedule_id'  => $valid['out']->work_schedule_id ?? null,
             ];
@@ -75,12 +77,12 @@ class TimelogsServices {
 
     public function getValidLogs($logs)
     {
-        $duplicateThreshold = 10; // minutes; adjust if you want stricter/looser duplicate detection
+        $duplicateThreshold = 10; // seconds for collapsing near-duplicates
 
         // Normalize & sort
         $logs = collect($logs)->sortBy('date_time')->values();
 
-        // 1) Collapse near-duplicates (keep earliest of duplicates)
+        // Collapse near-duplicates
         $filtered = collect();
         foreach ($logs as $log) {
             if ($filtered->isEmpty()) {
@@ -88,12 +90,10 @@ class TimelogsServices {
                 continue;
             }
 
-            $last = $filtered->last();
-            $lastTime = \Carbon\Carbon::parse($last->date_time);
+            $lastTime = \Carbon\Carbon::parse($filtered->last()->date_time);
             $currTime = \Carbon\Carbon::parse($log->date_time);
 
-            if ($currTime->diffInMinutes($lastTime) < $duplicateThreshold) {
-                // Considered a duplicate (too close) — skip the later one
+            if ($currTime->diffInSeconds($lastTime) < $duplicateThreshold) {
                 continue;
             }
 
@@ -107,48 +107,34 @@ class TimelogsServices {
             'break_out' => null,
             'break_in' => null,
             'out' => null,
-            'shift_id' => null,
-            'work_schedule_id' => null,
+            'overtime_in' => null,
+            'overtime_out' => null,
+            'shift_id' => $filtered->first()->shift_id ?? null,
+            'work_schedule_id' => $filtered->first()->work_schedule_id ?? null,
         ];
 
-        if ($n === 0) {
-            return $validLogs;
+        if ($n === 0) return $validLogs;
+
+        // Separate overtime logs
+        $normalLogs = $filtered->take(4); // first 4 are normal logs
+        $overtimeLogs = $filtered->slice(4)->values(); // everything after 4th is overtime
+
+        // Assign normal in/out/breaks
+        $validLogs['in'] = $normalLogs->get(0) ?? null;
+        $validLogs['break_out'] = $normalLogs->get(1) ?? null;
+        $validLogs['break_in'] = $normalLogs->get(2) ?? null;
+        $validLogs['out'] = $normalLogs->get(3) ?? null;
+
+        // Assign overtime
+        if ($overtimeLogs->count() === 1) {
+            $validLogs['overtime_in'] = $overtimeLogs->first();
+        } elseif ($overtimeLogs->count() >= 2) {
+            $validLogs['overtime_in'] = $overtimeLogs->first();
+            $validLogs['overtime_out'] = $overtimeLogs->last();
         }
-
-        // Assign shift_id and work_schedule_id from the first log
-        $firstLog = $filtered->first();
-        $validLogs['shift_id'] = $firstLog->shift_id ?? null;
-        $validLogs['work_schedule_id'] = $firstLog->work_schedule_id ?? null;
-
-        if ($n === 1) {
-            $validLogs['in'] = $filtered->get(0);
-            return $validLogs;
-        }
-
-        if ($n === 2) {
-            // assume in + out
-            $validLogs['in'] = $filtered->get(0);
-            $validLogs['break_out'] = $filtered->get(1);
-            return $validLogs;
-        }
-
-        if ($n === 3) {
-            // assume in, break_out, break_in
-            $validLogs['in'] = $filtered->get(0);
-            $validLogs['break_out'] = $filtered->get(1);
-            $validLogs['break_in'] = $filtered->get(2);
-            return $validLogs;
-        }
-
-        // n >= 4: use first, second, second-last, last
-        $validLogs['in'] = $filtered->get(0);
-        $validLogs['break_out'] = $filtered->get(1);
-        $validLogs['break_in'] = $filtered->get($n - 2);
-        $validLogs['out'] = $filtered->get($n - 1);
 
         return $validLogs;
     }
-
 
     public function getTodaysLogs($user_id = null)
     {
@@ -177,6 +163,12 @@ class TimelogsServices {
             'timeOut'    => isset($valid['out']->date_time) 
                 ? \Carbon\Carbon::parse($valid['out']->date_time)->format('h:i:s A') 
                 : null,
+            'overtimeIn' => isset($valid['overtime_in']->date_time) 
+                ? \Carbon\Carbon::parse($valid['overtime_in']->date_time)->format('h:i:s A') 
+                : null,
+            'overtimeOut'=> isset($valid['overtime_out']->date_time) 
+                ? \Carbon\Carbon::parse($valid['overtime_out']->date_time)->format('h:i:s A') 
+                : null,
         ];
     }
 
@@ -198,13 +190,14 @@ class TimelogsServices {
             throw new \Exception('No clock in yet.');
         }
 
-        if (    !empty($current_timelog['breakIn']) &&
+
+        if (    !empty($current_timelog['timeIn']) &&
+                !empty($current_timelog['breakOut']) &&
                 !empty($current_timelog['breakIn']) &&
-                !empty($current_timelog['breakIn']) &&
-                !empty($current_timelog['breakIn'])
+                !empty($current_timelog['timeOut'])
             ) {
 
-            throw new \Exception('Ano ba kumpleto na eh!!');
+            throw new \Exception('You are already time out');
         }
 
         // duplicateThreshold = 10 seconds
