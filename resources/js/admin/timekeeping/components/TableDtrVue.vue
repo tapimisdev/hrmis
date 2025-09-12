@@ -37,9 +37,6 @@
             <div v-else-if="modalType === 'ob'">
                 <p>Record official business details here...</p>
             </div>
-            <div v-else-if="modalType === 'obs'">
-                <p>Recorasdadasd.</p>
-            </div>
         </ModalVue>
 
         <div class="table-wrapper">
@@ -118,7 +115,7 @@
                         <td>
                             <div class="dropdown w-100 d-flex justify-content-center">
                                 <button
-                                    class="btn btn-sm p-0 bg-transparent border-0"
+                                    class="btn btn-sm p-0 bg-transparent w-100 border-0"
                                     type="button"
                                     id="correctionsDropdown"
                                     data-bs-toggle="dropdown"
@@ -138,7 +135,6 @@
                                     </li>
                                     <li><button class="dropdown-item" @click="openModal('restday', index)">Set as Restday</button></li>
                                     <li><button class="dropdown-item" @click="openModal('ob', index)">Record OB</button></li>
-                                    <li><button class="dropdown-item" @click="openModal('obs', index)">Record OB</button></li>
                                 </ul>
                             </div>
                         </td>

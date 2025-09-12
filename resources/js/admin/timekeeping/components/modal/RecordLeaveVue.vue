@@ -118,7 +118,7 @@ export default {
             }
             this.loading = false;
         },
-       async submitLeave() {
+        async submitLeave() {
             this.loading = true;
             this.errors = {}; // reset previous errors
 
@@ -188,12 +188,31 @@ export default {
 
             this.form.start_date = formatted;
             this.form.end_date = formatted;
-        }
+        },
+        computeDays() {
+            const { start_date, end_date } = this.form;
+
+            if (!start_date || !end_date) {
+                this.form.days = 1;
+                return;
+            }
+
+            const start = new Date(start_date);
+            const end = new Date(end_date);
+
+            // Compute difference in days, inclusive
+            const diffTime = end - start;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+            this.form.days = diffDays > 0 ? diffDays : 1; // minimum 1 day
+        },
     },
     watch: {
         index: 'getDefaultDate',
         month: 'getDefaultDate',
-        year: 'getDefaultDate'
+        year: 'getDefaultDate',
+        'form.start_date': 'computeDays',
+        'form.end_date': 'computeDays',
     }
 };
 </script>

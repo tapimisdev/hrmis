@@ -90,6 +90,7 @@ export default {
     },
     data() {
         return {
+            loading: false,
             localMonth: this.month,
             localYear: this.year,
             profile: {
@@ -132,6 +133,20 @@ export default {
     methods: {
         emitDate() {
             this.$emit('update-date', { month: this.localMonth, year: this.localYear });
+        },
+        async getEmployeeInformation() {
+            this.loading = true;
+            try {
+                const response = await axios.get(
+                    `/admin/timekeeping/daily-time-record/${this.employee_id}/show`,
+                    { params: { month: this.month, year: this.year } }
+                );
+                this.logs = response.data;
+                console.log(response.data);
+            } catch (error) {
+                console.error("Error fetching logs:", error);
+            }
+            this.loading = false;
         }
     },
     watch: {
