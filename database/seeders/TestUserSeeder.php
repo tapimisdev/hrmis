@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -18,7 +19,7 @@ class TestUserSeeder extends Seeder
 
         $data = [
             'account' => [
-                'name' => 'Angela Machicaz',
+                'name' => 'Test Employee',
                 'email' => 'test01@email.com',
                 'password' => Hash::make('password')
             ],
@@ -43,19 +44,17 @@ class TestUserSeeder extends Seeder
             ]
         ];
 
-        $user = DB::table('users')->where('email', $data['account']['email'])->first();
+        $user = User::where('email', $data['account']['email'])->first();
 
         if (!$user) {
-            $user_id = DB::table('users')->insertGetId([
+            $user = User::create([
                 'name' => $data['account']['name'],
                 'email' => $data['account']['email'],
                 'password' => $data['account']['password'],
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             DB::table('employee_information')->insert([
-                'user_id' => $user_id,
+                'user_id' => $user->id,
                 'employee_no' => $data['information']['employee_no'],
                 'biometrics_id' => $data['information']['biometrics_id'],
                 'account_status' => $data['information']['account_status'],
@@ -72,6 +71,7 @@ class TestUserSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
+            // Insert personal information
             DB::table('employee_personal')->insert([
                 'employee_no' => $data['information']['employee_no'],
                 'firstname' => $data['personal']['firstname'],
@@ -81,6 +81,8 @@ class TestUserSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
+            // Assign role
+            $user->assignRole('employee'); 
         }
 
     }
