@@ -81,6 +81,20 @@ class TimeLogsSeeder extends Seeder
         ];
 
 
-        DB::table('timelogs')->insert($logs);
+        foreach ($logs as $log) {
+            DB::table('timelogs')->updateOrInsert(
+                [
+                    'user_id' => $log['user_id'],
+                    'date_time' => $log['date_time'],
+                    'shift_id' => $log['shift_id'],
+                    'work_schedule_id' => $log['work_schedule_id'],
+                ], 
+                [
+                    'created_at' => $log['created_at'],
+                    'updated_at' => $log['updated_at'],
+                ]
+            );
+        }
+
     }
 }

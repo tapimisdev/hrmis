@@ -30,11 +30,12 @@ class EmploymentTypeSeeder extends Seeder
             ]
         ];
 
-        DB::table('employment_types')->upsert(
-            $data,
-            ['code'], 
-            ['name']  
-        );
+        foreach ($data as $row) {
+            DB::table('employment_types')->updateOrInsert(
+                ['code' => $row['code']], 
+                ['name' => $row['name']]   
+            );
+        }
 
     }
 }

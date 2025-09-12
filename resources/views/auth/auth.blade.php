@@ -24,7 +24,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
 
     <!-- Scripts -->
-    @vite(['resources/sass/app.scss', 'resources/js/app.js', 'resources/sass/auth.scss'])
+    @vite(['resources/sass/app.scss', 'resources/js/auth.js', 'resources/sass/auth.scss'])
 </head>
 <body>
     <div id="auth">

@@ -19,7 +19,7 @@
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingInfo">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInfo" aria-expanded="true">
-                            Employee Information
+                                Employee Information
                             </button>
                         </h2>
                         <div id="collapseInfo" class="accordion-collapse collapse show">
@@ -118,24 +118,23 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-12 col-md-6 mb-3">
-                                    <label class="mb-2" for="shift_schedule">Shift Schedule</label>
-                                    <select id="shift_schedule" name="shift_schedule" class="form-select">
-                                        @if(optional($data)->shift_schedule_id)
-                                        <option value="{{ optional($data)->shift_schedule_id }}" selected>{{ optional($data)->shift_schedule_id }}</option>
-                                        @else
-                                        <option value=""> - CHOOSE - </option>
-                                        @endif
-                                    </select>
+                                    <label class="mb-2" for="shift_id">Shift Schedule</label>
+                                    <select id="shift_id" name="shift_id" class="form-select">
+                                         <option value=""> - CHOOSE - </option>
+                                            @foreach($shifts as $shift)
+                                            <option value="{{ $shift->id }}" {{ (optional($data)->shift_id ?? '') == $shift->id ? 'selected' : '' }}>{{ strtoupper($shift->name) }}</option>
+                                            @endforeach
+                                        </select>
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-12 col-md-6 mb-3">
-                                    <label class="mb-2" for="employee_schedule">Days Schedule</label>
-                                    <select id="employee_schedule" name="employee_schedule" class="form-select">
-                                        @if(optional($data)->work_schedule_id)
-                                        <option value="{{ optional($data)->work_schedule_id }}" selected>{{ optional($data)->work_schedule_id }}</option>
-                                        @else
+                                    <label class="mb-2" for="schedule_id">Days Schedule</label>
+                                    <select id="schedule_id" name="schedule_id" class="form-select">
                                         <option value=""> - CHOOSE - </option>
-                                        @endif
+                                        @foreach($schedules as $schedule)
+                                        <option value="{{ $schedule->id }}" {{ (optional($data)->work_schedule_id ?? '') == $schedule->id ? 'selected' : '' }}>{{ strtoupper($schedule->name) }}</option>
+                                        @endforeach
+                                    </select>
                                     </select>
                                     <div class="error-field"></div>
                                 </div>
