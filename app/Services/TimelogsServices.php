@@ -268,7 +268,7 @@ class TimelogsServices {
         return $data;
     }
 
-    public function insertNoData($remark, $userId)
+    public function insertNoData($remarks, $userId)
     {
         return [
             'user_id'           => $userId,
@@ -282,7 +282,40 @@ class TimelogsServices {
             'total_paid_hrs'    => 0,
             'doble'             => 0,
             'late_undertime'    => 0,
-            'remarks'           => [$remark],
+            'remarks'           => $remarks,
         ];
     }
+
+    /**
+     * Get rest days from a work schedule
+     *
+     * @param object|array $schedule
+     * @return array
+     */
+    public function getRestDays($scheduleId)
+    {
+        $schedule = DB::table('work_schedule')->find($scheduleId);
+
+        if (!$schedule) return [];
+
+        $days = [
+            'Monday'    => $schedule->is_monday,
+            'Tuesday'   => $schedule->is_tuesday,
+            'Wednesday' => $schedule->is_wednesday,
+            'Thursday'  => $schedule->is_thursday,
+            'Friday'    => $schedule->is_friday,
+            'Saturday'  => $schedule->is_saturday,
+            'Sunday'    => $schedule->is_sunday,
+        ];
+
+        $restDays = [];
+        foreach ($days as $dayName => $value) {
+            if ($value == 0) { // 0 = rest day
+                $restDays[] = $dayName;
+            }
+        }
+
+        return $restDays;
+    }
+
 }

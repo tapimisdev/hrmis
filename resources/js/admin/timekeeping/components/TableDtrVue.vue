@@ -73,19 +73,25 @@
                         <td>{{ index + 1 }}</td>
 
                         <!-- If Absent -->
-                        <td v-if="hasRemark(log.remarks, 'absent')" colspan="9" class="text-center bg-danger bg-opacity-10 fw-bold">
-                            Absent
+                        <td v-if="hasRemark(log.remarks, 'restday')" colspan="9" class="text-center bg-dark bg-opacity-10 fw-bold">
+                            Restday 
                         </td>
 
                         <!-- If Leave -->
                         <td v-else-if="hasRemark(log.remarks, 'leave')" colspan="9" class="text-center bg-info bg-opacity-10 fw-bold">
-                            Leave
+                            Leave 
                         </td>
 
                         <!-- If OB -->
                         <td v-else-if="hasRemark(log.remarks, 'ob')" colspan="9" class="text-center bg-warning bg-opacity-10 fw-bold">
-                            OB
+                            OB 
                         </td>
+
+                        <!-- If Absent -->
+                        <td v-else-if="hasRemark(log.remarks, 'absent')" colspan="9" class="text-center bg-danger bg-opacity-10 fw-bold">
+                            Absent 
+                        </td>
+
 
                         <!-- Otherwise show log details -->
                         <template v-else>

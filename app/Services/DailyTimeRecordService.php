@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DailyTimeRecordService {
 
@@ -54,25 +55,55 @@ class DailyTimeRecordService {
 
     protected function compute($dates, $userId)
     {
+        // Array to hold the final computed attendance data
         $computedData = [];
 
+        // Today's date for comparison with log dates
         $today = Carbon::today();
 
-        $weeklySchedule = DB::table('work_schedule')->first();
-        $shift = DB::table('shifts')->first();
+        // Fetch default user info like shift and work schedule
+        $defaultInformation = $this->getUserDefault($userId);
 
+        $shift_id = $defaultInformation->shift_id;             // Default shift ID of the user
+        $weeklySchedule_id = $defaultInformation->work_schedule_id; // Default weekly schedule ID
+
+        // Counters for leaves and official business
         $TOTAL_LEAVES = 0;
         $TOTAL_OBS = 0;
 
+        // Loop through each date to compute attendance
         foreach ($dates as $date) {
-            $remarks = [];
-            $is_future = false;
+            $remarks = [];                 // Initialize remarks array for this date
+            $is_future = false;            // Flag to check if date is today/future
             $empty_time_in_and_out = (empty($date['time_in']) && empty($date['time_out']));
 
+            // Parse date string into Carbon object
             $logDate = Carbon::parse($date['date']);
+            $dayName = $logDate->format('l');  // Get day name (e.g., Monday)
 
+            // Check if the log date is today
             $is_same_day = $today->isSameDay($logDate);
 
+            // If the date doesn't have a work schedule, assign default
+            if(is_null($date['work_schedule_id'])) {
+                $date['work_schedule_id'] = $weeklySchedule_id;
+            }
+
+            // Get rest days for this work schedule
+            $date_work_schedule = $this->timelogs_services->getRestDays($date['work_schedule_id']); 
+
+            // Mark as 'restday' if the log date is a rest day
+            if (in_array($dayName, $date_work_schedule) && $empty_time_in_and_out) {
+                $remarks[] = 'restday';
+            }
+
+            // Mark as 'restday' if the log date is a rest day
+            if (in_array($dayName, $date_work_schedule) && !$empty_time_in_and_out) {
+                $remarks[] = 'restday ot';
+            }
+
+            
+            // Flag future dates and mark 'today'
             if($logDate->greaterThan($today) || $is_same_day) {
                 $is_future = true;
                 if($is_same_day) {
@@ -80,42 +111,49 @@ class DailyTimeRecordService {
                 }
             }
 
-            // LEAVE AND ABSENT BLOCK
+            // ================== LEAVE AND ABSENT BLOCK ==================
+            // Check if user has leave on this date
             $leave = $this->timelogs_services->checkIfLeave($date, $userId);
             $is_leave = $leave['is_leave'];
             $leave_status = $leave['status'];
 
             if($is_leave) {
-                $TOTAL_LEAVES += 1;
-                $remarks[] = $leave_status;
+                $TOTAL_LEAVES += 1;        // Increment total leaves
+                $remarks[] = $leave_status; // Add leave status to remarks
             }
             
+            // Case: No time-in/out, future date, and has leave
             if ($empty_time_in_and_out && $is_future && $is_leave) {
                 $computedData[] = $this->timelogs_services->insertNoData($leave_status, $userId);
                 continue;
             }
 
+            // Case: No time-in/out, past date
             if ($empty_time_in_and_out && !$is_future) {
                 if(!$is_leave) {
-                    $computedData[] = $this->timelogs_services->insertNoData('Absent', $userId);
+                    // Mark as absent if no leave
+                    $remarks[] = 'absent';
+                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId);
                     continue;
                 } else {
-
+                    // If leave is pending, still mark it
                     if($leave_status === 'pending leave') {
-                        $computedData[] = $this->timelogs_services->insertNoData($leave_status, $userId);
+                        $remarks[] = $leave_status;
+                        $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId);
                         continue;
                     }
                 }
             }
 
+            // Case: No time-in/out and future date without leave
             if ($empty_time_in_and_out && $is_future) {
-                $computedData[] = $this->timelogs_services->insertNoData('', $userId);
+                $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId);
                 continue;
             }
-            // End of LEAVE AND ABSENT
-            
+            // ================== END LEAVE AND ABSENT ==================
 
-            // Safe parsing to avoid Carbon error if null
+            // ================== TIME PARSING BLOCK ==================
+            // Safely parse times to avoid errors if null
             $timeInCarbon   = !empty($date['time_in']) 
                                 ? Carbon::parse($date['time_in'])->format('h:i A') 
                                 : null;
@@ -132,11 +170,13 @@ class DailyTimeRecordService {
                                 ? Carbon::parse($date['break_in'])->format('h:i A') 
                                 : null;
 
-
+            // Combine break times if both are present
             $break = ($breakOutCarbon && $breakInCarbon)
                 ? $breakOutCarbon . ' to ' . $breakInCarbon
                 : null;
+            // ================== END TIME PARSING ==================
 
+            // Append computed data for this date
             $computedData[] = [
                 'user_id'           => $userId,
                 'time_in'           => $timeInCarbon,
@@ -147,13 +187,23 @@ class DailyTimeRecordService {
                 'apply_overtime'    => $date['apply_overtime'] ?? false,
                 'overtime'          => $date['overtime'] ?? 0,
                 'total_paid_hrs'    => $date['total_paid_hrs'] ?? 0,
-                'doble'             => $date['doble'] ?? 0,
-                'late_undertime'    => $date['late_undertime'] ?? 0,
+                'doble'             => $date['doble'] ?? 0,           // Possibly double pay
+                'late_undertime'    => $date['late_undertime'] ?? 0,   // Late/Undertime minutes
                 'remarks'           => $remarks
             ];
         }
 
+        // Return all computed attendance data
         return $computedData;
+    }
+
+
+    protected function getUserDefault($user_id)
+    {
+        return  DB::table('employee_information')
+                ->where('user_id', $user_id)
+                ->select('employee_no', 'shift_id', 'work_schedule_id')
+                ->first();                
     }
 
 }
