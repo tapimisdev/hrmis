@@ -1,7 +1,9 @@
 <template>
     <div>
+        <SkeletonProfile v-if="loading" :lines="4"/>
+
         <!-- Profile Card -->
-        <div class="card p-4 mb-4">
+        <div v-else class="card p-4 mb-4">
             <div class="d-flex flex-column flex-md-row align-items-center gap-4">
                 <!-- Profile Picture -->
                 <div class="flex-shrink-0">
@@ -14,8 +16,8 @@
 
                 <!-- Content Section -->
                 <div class="content w-100">
-                    <h3 class="fw-bold text-dark mb-4 border-bottom pb-3">
-                        <span class="text-primary text-uppercase">Name:</span>
+                    <h3 class="fw-bold text-dark text-uppercase mb-4 border-bottom pb-3">
+                        <span class="text-info">Name:</span>
                         {{ profile.name }}
                     </h3>
 
@@ -26,7 +28,7 @@
                             :key="index"
                         >
                             <div class="info-card p-3 rounded-3 border h-100">
-                                <h6 class="fw-bold text-muted mb-1">
+                                <h6 class="fw-bold mb-1 text-info">
                                     {{ info.label }}
                                 </h6>
                                 <p class="mb-0 text-dark fw-semibold">
@@ -53,7 +55,8 @@
                 </div>
             </div>
         </div>
-                <!-- Timelogs Filter -->
+
+        <!-- Timelogs Filter -->
         <p class="fw-bold">Filter Options</p>
         <div class="card p-4 mb-3">
             <div class="d-flex gap-2">
@@ -77,7 +80,9 @@
 </template>
 
 <script>
+import SkeletonProfile from './SkeletonProfile.vue';
 export default {
+    components: { SkeletonProfile },
     props: {
         month: {
             type: Number,
@@ -86,24 +91,19 @@ export default {
         year: {
             type: Number,
             default: () => new Date().getFullYear()
-        }
+        },
+        employee_id: { 
+            type: String, 
+            required: true
+        },
     },
     data() {
         return {
             loading: false,
             localMonth: this.month,
             localYear: this.year,
-            profile: {
-                picture:
-                    "https://i.pinimg.com/originals/99/8f/41/998f41fc4c63e69c06b99a6e03629815.jpg",
-                name: "Kim Mariano"
-            },
-            infoCards: [
-                { label: "Position", value: "Police Officer" },
-                { label: "Unit", value: "Special Operations" },
-                { label: "Official Time", value: "8:00 AM - 5:00 PM" },
-                { label: "Schedule", value: "Monday - Friday" }
-            ],
+            profile: {},
+            infoCards: [],
             tallyCards: [
                 { label: "Total HRS", value: "235 HRS" },
                 { label: "Overtime", value: "120 MINS" },
@@ -130,6 +130,9 @@ export default {
             years: Array.from({ length: 2 }, (_, i) => new Date().getFullYear() - i)
         };
     },
+    mounted() {
+        this.getEmployeeInformation();
+    },
     methods: {
         emitDate() {
             this.$emit('update-date', { month: this.localMonth, year: this.localYear });
@@ -137,11 +140,9 @@ export default {
         async getEmployeeInformation() {
             this.loading = true;
             try {
-                const response = await axios.get(
-                    `/admin/timekeeping/daily-time-record/${this.employee_id}/show`,
-                    { params: { month: this.month, year: this.year } }
-                );
-                this.logs = response.data;
+                const response = await axios.get(`/admin/timekeeping/daily-time-record/${this.employee_id}/employee_information`);
+                this.profile = response.data.profile;
+                this.infoCards = response.data.infoCards;
                 console.log(response.data);
             } catch (error) {
                 console.error("Error fetching logs:", error);

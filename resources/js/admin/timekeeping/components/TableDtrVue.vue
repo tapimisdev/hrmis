@@ -26,6 +26,7 @@
                     :year="year"
                     :index="dateIndex"
                     @leave-added="loadTimelogs"
+                    @success="closeModal"
                 />
             </div>
             <div v-else-if="modalType === 'absent'">
@@ -62,7 +63,12 @@
 
                 <!-- Actual Data -->
                 <tbody v-else>
-                    <tr v-for="(log, index) in logs" :key="log.id || index">
+                    <tr 
+                        v-for="(log, index) in logs" 
+                        :key="log.id || index" 
+                        :class="{ 'highlight-today': hasRemark(log.remarks, 'today') }"
+                        >
+
                         <td>{{ index + 1 }}</td>
 
                         <!-- If Absent -->
@@ -202,7 +208,7 @@ export default {
             this.$refs.modal.open();
         },
         handleAction(actionType) {
-            if (actionType === "close") this.$refs.modal.close();
+            if (actionType === "close") this.closeModal();
             if (actionType === "save") {
                 console.log("Saving data for", this.modalType);
 
@@ -222,9 +228,10 @@ export default {
                     default:
                         console.warn(`Unknown modal type: ${this.modalType}`);
                 }
-
-                this.$refs.modal.close();
             }
+        },
+        closeModal() {
+            this.$refs.modal.close();
         }
     },
     watch: {
@@ -281,5 +288,9 @@ export default {
 
 .table-wrapper::-webkit-scrollbar-thumb:hover {
   background: $primary;
+}
+
+.highlight-today td:not(:first-child):not(:last-child) {
+  background-color: rgba($color: $success, $alpha: 0.1);
 }
 </style>

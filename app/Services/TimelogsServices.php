@@ -21,7 +21,6 @@ class TimelogsServices {
     {
         // Get logs within a date range
         $timelogs = $this->fetchLogs($userId, $startDate, $endDate);
-
         return $this->formatLogs($timelogs);
     }
 
@@ -230,5 +229,57 @@ class TimelogsServices {
             ]);
         }
 
+    }
+
+    // Functions for DTR
+    
+    public function checkIfLeave($date, $userId)
+    {
+        $isLeave = false;
+        $status = 'pending leave';
+
+        $leave = DB::table('leave_applications')
+            ->where('user_id', $userId)
+            ->where(function($query) use ($date) {
+                $query->whereDate('start_date', '<=', $date)
+                    ->whereDate('end_date', '>=', $date);
+            })
+            ->where(function($query) {
+                $query->where('status', 'approved')
+                    ->orWhere('status', 'pending');
+            })
+            ->first();
+
+        if ($leave) {
+            $isLeave = true;
+            if($leave->status === 'approved') {
+                $status = 'leave';
+            }
+        }
+
+        $data = [
+            'is_leave' => $isLeave,
+            'status'   => $status
+        ];
+
+        return $data;
+    }
+
+    public function insertNoData($remark, $userId)
+    {
+        return [
+            'user_id'           => $userId,
+            'time_in'           => null,
+            'time_out'          => null,
+            'break'             => null,
+            'shift_id'          => null,
+            'work_schedule_id'  => null,
+            'apply_overtime'    => false,
+            'overtime'          => 0,
+            'total_paid_hrs'    => 0,
+            'doble'             => 0,
+            'late_undertime'    => 0,
+            'remarks'           => [$remark],
+        ];
     }
 }

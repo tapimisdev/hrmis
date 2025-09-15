@@ -71,12 +71,17 @@ class DailyTimeRecordService {
 
             $logDate = Carbon::parse($date['date']);
 
-            if($logDate->greaterThan($today)) {
+            $is_same_day = $today->isSameDay($logDate);
+
+            if($logDate->greaterThan($today) || $is_same_day) {
                 $is_future = true;
+                if($is_same_day) {
+                    $remarks[] = 'today';
+                }
             }
 
             // LEAVE AND ABSENT BLOCK
-            $leave = $this->checkIfLeave($date, $userId);
+            $leave = $this->timelogs_services->checkIfLeave($date, $userId);
             $is_leave = $leave['is_leave'];
             $leave_status = $leave['status'];
 
@@ -86,35 +91,47 @@ class DailyTimeRecordService {
             }
             
             if ($empty_time_in_and_out && $is_future && $is_leave) {
-                $computedData[] = $this->insertNoData($leave_status, $userId);
+                $computedData[] = $this->timelogs_services->insertNoData($leave_status, $userId);
                 continue;
             }
 
             if ($empty_time_in_and_out && !$is_future) {
                 if(!$is_leave) {
-                    $computedData[] = $this->insertNoData('Absent', $userId);
+                    $computedData[] = $this->timelogs_services->insertNoData('Absent', $userId);
                     continue;
                 } else {
 
                     if($leave_status === 'pending leave') {
-                        $computedData[] = $this->insertNoData($leave_status, $userId);
+                        $computedData[] = $this->timelogs_services->insertNoData($leave_status, $userId);
                         continue;
                     }
                 }
             }
 
             if ($empty_time_in_and_out && $is_future) {
-                $computedData[] = $this->insertNoData('', $userId);
+                $computedData[] = $this->timelogs_services->insertNoData('', $userId);
                 continue;
             }
             // End of LEAVE AND ABSENT
             
 
             // Safe parsing to avoid Carbon error if null
-            $timeInCarbon   = Carbon::parse($date['time_in'])->format('h:i A');
-            $timeOutCarbon  = Carbon::parse($date['time_out'])->format('h:i A');
-            $breakOutCarbon = !empty($date['break_out']) ? Carbon::parse($date['break_out'])->format('h:i A') : null;
-            $breakInCarbon  = !empty($date['break_in']) ? Carbon::parse($date['break_in'])->format('h:i A') : null;
+            $timeInCarbon   = !empty($date['time_in']) 
+                                ? Carbon::parse($date['time_in'])->format('h:i A') 
+                                : null;
+
+            $timeOutCarbon  = !empty($date['time_out']) 
+                                ? Carbon::parse($date['time_out'])->format('h:i A') 
+                                : null;
+
+            $breakOutCarbon = !empty($date['break_out']) 
+                                ? Carbon::parse($date['break_out'])->format('h:i A') 
+                                : null;
+
+            $breakInCarbon  = !empty($date['break_in']) 
+                                ? Carbon::parse($date['break_in'])->format('h:i A') 
+                                : null;
+
 
             $break = ($breakOutCarbon && $breakInCarbon)
                 ? $breakOutCarbon . ' to ' . $breakInCarbon
@@ -138,59 +155,5 @@ class DailyTimeRecordService {
 
         return $computedData;
     }
-
-    private function checkIfLeave($date, $userId)
-    {
-        $isLeave = false;
-        $status = 'pending leave';
-
-        $leave = DB::table('leave_applications')
-            ->where('user_id', $userId)
-            ->where(function($query) use ($date) {
-                $query->whereDate('start_date', '<=', $date)
-                    ->whereDate('end_date', '>=', $date);
-            })
-            ->where(function($query) {
-                $query->where('status', 'approved')
-                    ->orWhere('status', 'pending');
-            })
-            ->first();
-
-        if ($leave) {
-            $isLeave = true;
-            if($leave->status === 'approved') {
-                $status = 'leave';
-            }
-        }
-
-        $data = [
-            'is_leave' => $isLeave,
-            'status'   => $status
-        ];
-
-        return $data;
-    }
-
-
-    public function insertNoData($remark, $userId)
-    {
-        return [
-            'user_id'           => $userId,
-            'time_in'           => null,
-            'time_out'          => null,
-            'break'             => null,
-            'shift_id'          => null,
-            'work_schedule_id'  => null,
-            'apply_overtime'    => false,
-            'overtime'          => 0,
-            'total_paid_hrs'    => 0,
-            'doble'             => 0,
-            'late_undertime'    => 0,
-            'remarks'           => [$remark],
-        ];
-    }
-
-
-   
 
 }

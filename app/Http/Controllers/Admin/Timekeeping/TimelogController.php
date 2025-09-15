@@ -15,31 +15,26 @@ class TimelogController extends Controller
      */
     public function index()
     {
-        $employees = User::role('employee')
-            ->with('employeeInformation')
-            ->get();
+        $employees = DB::table('users')
+        ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id') // spatie roles table
+        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+        ->leftJoin('employee_information', 'users.id', '=', 'employee_information.user_id')
+        ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+        ->where('roles.name', 'employee')
+        ->select(
+            'users.id',
+            'users.email',
+            'employee_information.employee_no',
+            'employee_personal.firstname',
+            'employee_personal.lastname'
+        )
+        ->get();
 
         if (request()->ajax()) {
             return $this->datatable($employees);
         }
 
         return view('admin.pages.timekeeping.timelogs.index');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
     }
 
     /**
@@ -50,34 +45,16 @@ class TimelogController extends Controller
         return view('admin.pages.timekeeping.timelogs.show');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
-
     public function datatable($query)
     {
         return DataTables::of($query)
         ->addIndexColumn()
+        ->addColumn('employee_no', function ($row) {
+            return $row->employee_no ?? '-';
+        })
+        ->addColumn('fullname', function ($row) {
+            return ($row->lastname . ', ' . $row->firstname) ?? '-';
+        })
         ->addColumn('picture', function ($row) {
             // Assuming $row->picture contains the image filename or full URL
             $url = 'https://i.pinimg.com/originals/99/8f/41/998f41fc4c63e69c06b99a6e03629815.jpg';
@@ -98,7 +75,7 @@ class TimelogController extends Controller
 
             
         })
-        ->rawColumns(['actions', 'picture'])
+        ->rawColumns(['actions', 'picture', 'fullname', 'employee_no'])
         ->make(true);
     }
 }

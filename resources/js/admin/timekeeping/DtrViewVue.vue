@@ -1,6 +1,7 @@
 <template>
   <div>
     <filter-dtr-vue
+      :employee_id="employee_id"
       :month="month"
       :year="year"
       @update-date="updateDate"

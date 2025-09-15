@@ -143,6 +143,7 @@ export default {
                     icon: "success"
                 }).then(() => {
                     this.$emit("leave-added", response.data);
+                    this.$emit("success");
                     this.resetForm();
                 });
 

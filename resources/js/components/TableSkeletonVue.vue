@@ -27,7 +27,7 @@ export default {
 
 <style scoped>
 .skeleton {
-    height: 32px;
+    height: 48px;
     width: 100%;
     border-radius: 4px;
     background: linear-gradient(

@@ -134,11 +134,13 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
         # TIMELOGS
         Route::resource('timelogs', TimelogController::class)->only('index');
         
-        # DTR
+        # API DTR
         Route::get('daily-time-record/{id}', [DailyTimeRecordController::class, 'index'])
             ->name('daily-time-record.index');
         Route::get('daily-time-record/{id}/show', [DailyTimeRecordController::class, 'show'])
             ->name('daily-time-record.show');
+        Route::get('daily-time-record/{id}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
+        
 
     });
 
