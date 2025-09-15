@@ -4,16 +4,24 @@ namespace App\Http\Controllers\Admin\Hris;
 
 use App\Http\Controllers\Controller;
 use App\Services\EmployeeService;
+use App\Services\GenerateService;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class EducationController extends Controller
 {
     
     public $employeeService;
+    public $generateService;
 
-    public function __construct(EmployeeService $employeeService)
+    public function __construct(EmployeeService $employeeService, GenerateService $generateService)
     {
-        $this->employeeService = $employeeService;    
+        $this->employeeService = $employeeService;
+        $this->generateService = $generateService;    
     }
 
     public function index(Request $request, ? string $employee_no = null)
@@ -32,10 +40,133 @@ class EducationController extends Controller
 
     }
 
+    public function handleFile(string $employee_no, object $file) {
+        
+        $filename = $this->generateService::filename('randomized');
+        $extension = $file->extension();
+
+        $filename = $filename . '.' . $extension;
+
+        $file->storeAs(
+            'uploads/employees/' . $employee_no , 
+            $filename, 
+            'public'
+        );   
+        
+        return $filename;
+
+    }
+
     public function save(string $employee_no, Request $request) {
 
-        
+        $payload = $request->all();
 
+        $validator = Validator::make($payload, [
+            'id' => [
+                'nullable',
+            ],
+            'level' => 'required|string|max:255',
+            'school_name' => 'required|string|max:255',
+            'course' => 'required|string|max:255',
+            'from_year' => 'required|digits:4|integer|min:1900|max:' . date('Y'),
+            'to_year' => 'required|digits:4|integer|min:1900|max:' . date('Y'),
+            'highest_level' => 'nullable',
+            'year_graduated' => 'required|date',
+            'scholarship_honors' => 'nullable',
+            'documents' => 'nullable|file|mimes:docs,docx,pdf,jpg,png,jpeg',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'field error', 
+                'errors'  => $validator->errors()           
+            ], 422);
+        }
+        
+        DB::beginTransaction();
+
+        try {
+
+            $exists = DB::table('employee_education')
+                ->where('id', $payload['id'])
+                ->where('employee_no', $employee_no)
+                ->exists();
+
+            $data = [
+                'level'  => $payload['level'],
+                'school_name' => $payload['school_name'],
+                'course'   => $payload['course'],
+                'from_year'  => $payload['from_year'],
+                'to_year'  => $payload['to_year'],
+                'highest_level'  => $payload['highest_level'],
+                'year_graduated'  => $payload['year_graduated'],
+                'scholarship_honors'  => $payload['scholarship_honors'],
+                'updated_at' => now(),
+                'created_at' => now(),
+            ];
+
+            if (!empty($payload['documents']) && $payload['documents'] instanceof UploadedFile) {
+                $data['documents'] = $this->handleFile($employee_no, $payload['documents']);
+            }
+                      
+            DB::table('employee_education')->updateOrInsert(
+                [
+                    'id'          => $payload['id'],
+                    'employee_no' => $employee_no
+                ],
+                $data
+            );
+
+            DB::commit();
+
+            $redirect = $exists ? '' : '_self';
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'changes has been saved',
+                'redirect' => $redirect
+            ]);
+
+        } catch(\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function destroy(string $employee_no, Request $request)
+    {
+
+        DB::beginTransaction();
+
+        try {
+
+            DB::table('employee_education')
+                ->where('employee_no', $employee_no)
+                ->where('id', $request->id)
+                ->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'education record has been deleted.',
+                'redirect' => ''
+            ]);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
+        }
     }
 
 }
