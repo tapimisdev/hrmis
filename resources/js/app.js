@@ -96,3 +96,11 @@ $(document).on('click', '.push-state-query', function() {
     let tabName = $(this).data('id');
     pushQuery('tab', tabName);
 });
+
+$('.select2').select2({
+    placeholder: " - CHOOSE - ",
+    allowClear: true,
+    width: '100%',
+    dropdownParent: $('body'),
+    closeOnSelect: false 
+});

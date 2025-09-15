@@ -15,21 +15,34 @@
         </div>
         <div class="card shadow p-3 pb-5 mt-5">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover w-100 pb-3" id="myTable">
-                        <thead>
-                            <tr>
-                                <th>Position / Title</th>
-                                <th>Company / Agency</th>
-                                <th>Status of Appointment</th>
-                                <th>Document</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            
-                        </tbody>
-                    </table>
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-work-experience" aria-expanded="false" aria-controls="flush-work-experience">
+                                Work Experiences
+                            </button>
+                        </h2>
+                        <div id="flush-work-experience" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover w-100 pb-3" id="myTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Position / Title</th>
+                                                <th>Company / Agency</th>
+                                                <th>Status of Appointment</th>
+                                                <th>Document</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

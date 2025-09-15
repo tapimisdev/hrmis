@@ -19,7 +19,7 @@
                     <div class="accordion-item">
                         <h2 class="accordion-header">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-children" aria-expanded="false" aria-controls="flush-children">
-                                Children
+                                Children Background
                             </button>
                         </h2>
                         <div id="flush-children" class="accordion-collapse collapse show">

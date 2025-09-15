@@ -36,7 +36,7 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-12 col-md-3 mb-3">
-                                    <label class="mb-2" for="date_hired">Date Hired</label>
+                                    <label class="mb-2" for="date_hired">Date Hired <span class="text-danger">*</span></label>
                                     <input type="date" id="date_hired" name="date_hired" class="form-control" value="{{ optional($data)->date_hired ?? '' }}">
                                     <div class="error-field"></div>
                                 </div>
@@ -63,7 +63,7 @@
                             <div class="accordion-body">
                                 <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="mb-2" for="division_id">Division</label>
+                                    <label class="mb-2" for="division_id">Division <span class="text-danger">*</span></label>
                                     <select id="division_id" name="division_id" class="form-select">
                                         <option value=""> - CHOOSE - </option>
                                         @foreach($divisions as $division)
@@ -73,7 +73,7 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="mb-2" for="unit_id">Unit</label>
+                                    <label class="mb-2" for="unit_id">Unit <span class="text-danger">*</span></label>
                                     <select id="unit_id" name="unit_id" class="form-select">
                                         @if(optional($data)->unit_id)
                                         <option value="{{ optional($data)->unit_id }}" selected>{{ strtoupper(optional($data)->unit_name) }}</option>
@@ -118,7 +118,7 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-12 col-md-6 mb-3">
-                                    <label class="mb-2" for="shift_id">Shift Schedule</label>
+                                    <label class="mb-2" for="shift_id">Shift Schedule <span class="text-danger">*</span></label>
                                     <select id="shift_id" name="shift_id" class="form-select">
                                          <option value=""> - CHOOSE - </option>
                                             @foreach($shifts as $shift)
@@ -128,7 +128,7 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-12 col-md-6 mb-3">
-                                    <label class="mb-2" for="schedule_id">Days Schedule</label>
+                                    <label class="mb-2" for="schedule_id">Days Schedule <span class="text-danger">*</span></label>
                                     <select id="schedule_id" name="schedule_id" class="form-select">
                                         <option value=""> - CHOOSE - </option>
                                         @foreach($schedules as $schedule)
@@ -162,7 +162,7 @@
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label class="mb-2" for="salary">Monthly Rate <span class="text-danger">*</span></label>
-                                    <input type="number" id="salary" name="salary" class="form-control" value="{{ optional($data)->salary ?? '' }}">
+                                    <input type="text" id="salary" name="salary" class="form-control restricted" value="{{ optional($data)->salary ?? '' }}" readonly>
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">

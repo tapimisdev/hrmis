@@ -11,20 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_organization', function (Blueprint $table) {
+        Schema::create('employee_shift_work_schedule', function (Blueprint $table) {
             $table->id();
             $table->string('employee_no');
-            $table->foreignId('division_id')
-                ->constrained('divisions')
+            $table->foreignId('shift_id')
+                ->constrained('shifts')
                 ->onDelete('restrict');
-            $table->foreignId('unit_id')
-                ->constrained('units')
-                ->onDelete('restrict');
-            $table->foreignId('employment_type_id')
-                ->constrained('employment_types')
-                ->onDelete('restrict');
-            $table->foreignId('position_id')
-                ->constrained('positions')
+            $table->foreignId('work_schedule_id')
+                ->constrained('work_schedule')
                 ->onDelete('restrict');
             $table->date('effectivity_date');
             $table->timestamps();
@@ -36,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_organization');
+        Schema::dropIfExists('employee_shift_work_schedule');
     }
 };

@@ -1,5 +1,8 @@
 @import 'variables';
 
+.restricted {
+    cursor: no-drop;   
+}
 
 .image-container {
     display: flex;
@@ -62,6 +65,7 @@
 table {
     th {
         text-transform: uppercase;
+        white-space: nowrap;
     }
     td {
         vertical-align: middle;
@@ -468,4 +472,14 @@ label {
     object-fit: cover; 
     border-radius: 50%; 
     border: 2px solid $primary
+}
+
+.select2-container--default .select2-selection--multiple {
+    height: 100px;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice,
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    background-color: var(--bs-primary);
+    color: $white;
 }

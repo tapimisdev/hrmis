@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\Hris\EmployeeController;
 use App\Http\Controllers\Admin\Hris\ChildrenController;
 use App\Http\Controllers\Admin\Hris\CivilServiceController;
 use App\Http\Controllers\Admin\Hris\EducationController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
 use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
+use App\Http\Controllers\Admin\Settings\TrancheController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Employee\AtroController;
@@ -63,8 +65,22 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.index');
         Route::any('employee/remove/{employee_no}', [IndexController::class, 'remove'])
             ->name('hris.employee.remove');
-         Route::any('employee/restore/{employee_no}', [IndexController::class, 'restore'])
+        Route::any('employee/restore/{employee_no}', [IndexController::class, 'restore'])
             ->name('hris.employee.restore');
+        
+        # TRANSFER EMPLOYEE
+        Route::get('employee/transfer', [EmployeeController::class, 'transfer'])
+            ->name('hris.employee.transfer');
+        Route::post('employee/transfer', [EmployeeController::class, 'updateTransfer'])
+            ->name('hris.employee.transfer');
+
+        # UPDATE SALARY
+        Route::get('employee/update-salary', [EmployeeController::class, 'update_salary'])
+            ->name('hris.employee.salary');
+        Route::post('employee/update-salary', [EmployeeController::class, 'updateSalary'])
+            ->name('hris.employee.salary');
+
+
 
         # INFORMATION
         Route::get('employee/information/{employee_no?}', [InformationController::class, 'index'])
@@ -193,6 +209,15 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
 
         # LEAVES
         Route::resource('leaves', LeaveController::class)->names('settings.leaves');
+
+        # TRANCHES
+        Route::get('tranche', [TrancheController::class, 'index'])->name('settings.tranche.index');
+        Route::get('tranche/{id}/show', [TrancheController::class, 'show'])->name('settings.tranche.show');
+        Route::get('tranche/create', [TrancheController::class, 'create'])->name('settings.tranche.create');
+        Route::post('tranche/create', [TrancheController::class, 'store'])->name('settings.tranche.store');
+        Route::get('tranche/{id}/edit', [TrancheController::class, 'edit'])->name('settings.tranche.edit');
+        Route::put('tranche/{id}/edit', [TrancheController::class, 'update'])->name('settings.tranche.update');
+        Route::any('tranche/{id}/destroy', [TrancheController::class, 'destroy'])->name('settings.tranche.destroy');
     });
 });
 

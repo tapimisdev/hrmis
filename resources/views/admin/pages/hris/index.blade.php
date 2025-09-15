@@ -6,14 +6,20 @@
 
 @section('content')
     <div class="container p-4 pb-5">
-        <x-header title="Employee Lists" subtitle="Manage employee's informations in this module" >
-            <a href="{{route('hris.employee.information')}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-plus me-2"></i> Add Employee
-            </a>
-        </x-header>
+        <div class="pb-5">
+             <x-header title="Employee Lists" subtitle="Manage employee's informations in this module" >
+            </x-header>
+            <div class="d-flex gap-3 justify-content-end">
+                <a href="{{ route('hris.employee.salary') }}" class="btn btn-primary text-uppercase fw-bold px-5 py-3">Update Salary</a>
+                <a href="{{ route('hris.employee.transfer') }}" class="btn btn-primary text-uppercase fw-bold px-5 py-3">Transfer Unit</a>
+                <a href="{{route('hris.employee.information')}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
+                    <i class="fa-solid fa-plus me-2"></i> Add Employee
+                </a>
+            </div>
+        </div>
         <div class="row mb-3">
             <div class="col-12 col-md-4 mb-3">
-                <label for="division" class="mb-3">Filter By Visions</label>
+                <label for="division" class="mb-3">Filter By Divisions</label>
                 <select id="division" class="form-select text-uppercase">
                     <option value=""> - CHOOSE -</option>
                 </select>

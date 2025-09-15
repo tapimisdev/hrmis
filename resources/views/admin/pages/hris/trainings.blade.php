@@ -16,20 +16,33 @@
         <div class="card shadow p-3 pb-5 mt-5">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover w-100 pb-3" id="myTable">
-                        <thead>
-                            <tr>
-                                <th>Training Programs</th>
-                                <th>Number of Hours</th>
-                                <th>Conducted / Sponsored By</th>
-                                <th>Documents</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            
-                        </tbody>
-                    </table>
+                    <div class="accordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-trainings" aria-expanded="false" aria-controls="flush-trainings">
+                                    Trainings and Programs Attended
+                                </button>
+                            </h2>
+                            <div id="flush-trainings" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    <table class="table table-hover w-100 pb-3" id="myTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Training Programs</th>
+                                                <th>Number of Hours</th>
+                                                <th>Conducted / Sponsored By</th>
+                                                <th>Documents</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

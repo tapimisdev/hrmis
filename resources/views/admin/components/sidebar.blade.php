@@ -184,6 +184,11 @@
                             Leaves
                         </a>
                     </li>
+                    <li class="nested-item p-2">
+                        <a href="{{ route('settings.tranche.index') }}" class="d-flex gap-2 align-items-center">
+                            Tranches
+                        </a>
+                    </li>
                 </ul>
             </div>
         </li>

@@ -21,6 +21,9 @@ return new class extends Migration
 
         Schema::create('tranche_items', function(Blueprint $table) {
             $table->id();
+            $table->foreignId('tranche_id')
+                ->constrained('tranche')
+                ->onDelete('restrict');
             $table->integer('salary_grade');
             $table->string('step_1');
             $table->string('step_2');

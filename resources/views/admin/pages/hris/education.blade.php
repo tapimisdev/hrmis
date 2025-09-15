@@ -15,21 +15,34 @@
         </div>
         <div class="card shadow p-3 pb-5 mt-5">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover w-100 pb-3" id="myTable">
-                        <thead>
-                            <tr>
-                                <th>Level</th>
-                                <th>Name of School</th>
-                                <th>Year Graduated</th>
-                                <th>Documents</th>
-                                <th style="width: 120px">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            
-                        </tbody>
-                    </table>
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-education" aria-expanded="false" aria-controls="flush-education">
+                                Educational Background
+                            </button>
+                        </h2>
+                        <div id="flush-education" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover w-100 pb-3" id="myTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Level</th>
+                                                <th>Name of School</th>
+                                                <th>Year Graduated</th>
+                                                <th>Documents</th>
+                                                <th style="width: 120px">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -130,6 +130,20 @@ class IndexController extends Controller
 
                 if ($row->account_status != 'archived') {
                     $div .= '
+                        <a href="' . route('hris.employee.transfer', [
+                            'employee_no' => $row->employee_no
+                        ]) . '" 
+                            class="btn btn-outline-primary btn ms-1 my-1" 
+                            title="Transfer Unit">
+                               <i class="fa-solid fa-retweet"></i>
+                        </a>
+                        <a href="' . route('hris.employee.salary', [
+                            'employee_no' => $row->employee_no
+                        ]) . '" 
+                            class="btn btn-outline-primary btn ms-1 my-1" 
+                            title="Update Salary">
+                               <i class="fa-solid fa-money-bills"></i>
+                        </a>
                         <a href="' . route('hris.employee.information', [
                             'employee_no' => $row->employee_no
                         ]) . '" 

@@ -15,21 +15,34 @@
         </div>
         <div class="card shadow p-3 pb-5 mt-5">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover w-100 pb-3" id="myTable">
-                        <thead>
-                            <tr>
-                                <th>Career Service</th>
-                                <th>Rating</th>
-                                <th>License</th>
-                                <th>Documents</th>
-                                <th row></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            
-                        </tbody>
-                    </table>
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-civil-service" aria-expanded="false" aria-controls="flush-civil-service">
+                                Civil Service Eligibility
+                            </button>
+                        </h2>
+                        <div id="flush-civil-service" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover w-100 pb-3" id="myTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Career Service</th>
+                                                <th>Rating</th>
+                                                <th>License</th>
+                                                <th>Documents</th>
+                                                <th row></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
