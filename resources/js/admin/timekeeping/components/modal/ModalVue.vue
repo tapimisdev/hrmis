@@ -21,23 +21,8 @@
           ></button>
         </div>
 
-        <!-- Content -->
-        <div class="modal-body">
-          <slot />
-        </div>
-
-        <!-- Actions -->
-        <div class="modal-footer">
-          <button 
-            v-for="(action, i) in actions" 
-            :key="i" 
-            :class="action.class" 
-            @click="emitAction(action.type)"
-          >
-            <i v-if="action.icon" :class="action.icon" class="me-2"></i>
-            {{ action.label }}
-          </button>
-        </div>
+        <!-- Body and Footer -->
+        <slot />
 
       </div>
     </div>
@@ -75,9 +60,6 @@ export default {
     open() {
       $('#myModal').modal('show');
     },
-    close() {
-      $('#myModal').modal('hide');
-    }
   }
 };
 </script>

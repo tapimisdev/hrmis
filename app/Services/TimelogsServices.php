@@ -34,6 +34,7 @@ class TimelogsServices {
     private function fetchLogs($userId, $startDate = null, $endDate = null)
     {
         $query = DB::table('timelogs')
+            ->where('is_active', true)
             ->where('user_id', $userId)
             ->orderBy('date_time', 'asc');
 
@@ -141,6 +142,7 @@ class TimelogsServices {
         $today = \Carbon\Carbon::now()->toDateString();
 
         $logs = DB::table('timelogs')
+            ->where('is_active', true)
             ->where('user_id', $user_id)
             ->whereDate('date_time', $today)
             ->orderBy('date_time', 'asc')
@@ -176,6 +178,7 @@ class TimelogsServices {
         $user_id = auth()->user()->id;
 
         return DB::table('timelogs')
+            ->where('is_active', true)
             ->where('user_id', $user_id)
             ->orderBy('date_time', 'desc')
             ->first();

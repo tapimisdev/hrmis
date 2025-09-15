@@ -9,14 +9,16 @@
         <ModalVue
             ref="modal"
             :type="modalType"
-            :actions="[
-                { label: 'Close', class: 'btn py-3 px-4 btn-outline-danger', icon: 'fas fa-times', type: 'close' },
-                { label: 'Save', class: 'btn py-3 px-4 btn-primary', icon: 'fas fa-save', type: 'save' }
-            ]"
-            @action="handleAction"
             >
             <div v-if="modalType === 'adjustment'">
-                <p>Fill out adjustment form here...</p>
+                <AddTimeVue
+                    ref="recordAdjustment"
+                    :employee_id="employee_id"
+                    :month="month"
+                    :year="year"
+                    :index="dateIndex"
+                    @success="loadTimelogs"
+                />
             </div>
             <div v-else-if="modalType === 'leave'">
                 <RecordLeaveVue
@@ -25,8 +27,7 @@
                     :month="month"
                     :year="year"
                     :index="dateIndex"
-                    @leave-added="loadTimelogs"
-                    @success="closeModal"
+                    @success="loadTimelogs"
                 />
             </div>
             <div v-else-if="modalType === 'absent'">
@@ -159,9 +160,10 @@ import ModalVue from './modal/ModalVue.vue';
 
 // Modals
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
+import AddTimeVue from './modal/AddTimeVue.vue';
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue },
+    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue },
     props: {
         employee_id: { type: String, required: true },
         month: Number,
@@ -207,32 +209,6 @@ export default {
             this.dateIndex = index + 1;
             this.$refs.modal.open();
         },
-        handleAction(actionType) {
-            if (actionType === "close") this.closeModal();
-            if (actionType === "save") {
-                console.log("Saving data for", this.modalType);
-
-                switch (this.modalType) {
-                    case 'leave':
-                        this.$refs.recordLeave.submitLeave();
-                        break;
-
-                    case 'overtime':
-                        this.$refs.recordOvertime.submitOvertime();
-                        break;
-
-                    case 'adjustment':
-                        this.$refs.recordAdjustment.submitAdjustment();
-                        break;
-
-                    default:
-                        console.warn(`Unknown modal type: ${this.modalType}`);
-                }
-            }
-        },
-        closeModal() {
-            this.$refs.modal.close();
-        }
     },
     watch: {
         month: 'loadTimelogs',
