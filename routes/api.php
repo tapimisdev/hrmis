@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\Settings\ShiftController;
+use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
+use App\Http\Controllers\Api\AddTimeApiController;
 use App\Http\Controllers\Api\Employee;
 use App\Http\Controllers\Api\LeavesApiController;
 use App\Http\Controllers\Api\Organization;
@@ -60,3 +63,8 @@ Route::get('trainings', [Employee::class, 'trainings'])
 Route::get('skikls', [Employee::class, 'skills'])
     ->name('api.employee.skills');
 
+Route::get('shifts', [ShiftController::class, 'index']);
+Route::get('work-schedules', [WeeklyScheduleController::class, 'index']);
+
+Route::get('fetch-timelogs', [AddTimeApiController::class, 'edit']);
+Route::post('add-time', [AddTimeApiController::class, 'store']);

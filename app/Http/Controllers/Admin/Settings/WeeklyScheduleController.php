@@ -14,12 +14,25 @@ class WeeklyScheduleController extends Controller
      */
     public function index()
     {
-        $query = DB::table('work_schedule')->where('is_active', true)->get();
+        $query = DB::table('work_schedule')->where('is_active', true);
+
+        // Handle AJAX requests (e.g., DataTables)
         if (request()->ajax()) {
-            return $this->datatable($query);
+            return $this->datatable($query->get());
         }
+
+        // Handle API requests
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'weekly_schedules' => $query->get()
+            ]);
+        }
+
+        // Default: return Blade view
         return view('admin.pages.settings.weekly-schedules.index');
     }
+
 
     /**
      * Show the form for creating a new resource.

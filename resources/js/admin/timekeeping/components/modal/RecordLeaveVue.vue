@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="modal-body">
         <form @submit.prevent="submitLeave">
             <div class="row">
                 <div class="col-md-12">
@@ -75,6 +75,24 @@
             </div>
         </form>
     </div>
+        <!-- Actions -->
+    <div class="modal-footer">
+        <button @click="close" class="btn py-3 px-4 btn-outline-danger">
+            <i class="me-2 fas fa-times"></i>
+            Close
+        </button>
+
+        <button
+            :disabled="loading"
+            @click="submitLeave"
+            class="btn py-3 px-4 btn-primary">
+            
+            <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
+            <i v-else class="me-2 fas fa-save"></i>
+
+            {{ loading ? 'Saving...' : 'Save' }}
+        </button>
+    </div>
 </template>
 
 <script>
@@ -142,7 +160,8 @@ export default {
                     text: "Your leave application has been submitted.",
                     icon: "success"
                 }).then(() => {
-                    this.$emit("leave-added", response.data);
+                    this.$emit("success", response.data);
+                    this.close();
                     this.resetForm();
                 });
 
@@ -206,6 +225,9 @@ export default {
 
             this.form.days = diffDays > 0 ? diffDays : 1; // minimum 1 day
         },
+        close() {
+            $('#myModal').modal('hide');
+        }
     },
     watch: {
         index: 'getDefaultDate',

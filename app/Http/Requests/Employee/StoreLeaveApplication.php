@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Employee;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class StoreLeaveApplication extends FormRequest
@@ -46,19 +47,62 @@ class StoreLeaveApplication extends FormRequest
     protected function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            // Validate Days vs Date Range
             if ($this->start_date && $this->end_date && $this->days) {
                 $start = \Carbon\Carbon::parse($this->start_date);
                 $end = \Carbon\Carbon::parse($this->end_date);
 
-                // Inclusive difference (add +1 if counting start & end date)
+                // Inclusive difference (count start & end date)
                 $expectedDays = $start->diffInDays($end) + 1;
 
                 if ($this->days != $expectedDays) {
                     $validator->errors()->add('days', "Days must match the difference between start and end date ($expectedDays).");
                 }
             }
+
+            // Check for existing leave OR OB slip within range
+            if ($this->start_date && $this->end_date && $this->user_id) {
+                $start = $this->start_date;
+                $end   = $this->end_date;
+
+                // Check LEAVES
+                $leaveExists = DB::table('leave_applications')
+                    ->where('user_id', $this->user_id)
+                    ->whereIn('status', ['pending', 'approved'])
+                    ->where(function ($query) use ($start, $end) {
+                        $query->whereBetween('start_date', [$start, $end])
+                            ->orWhereBetween('end_date', [$start, $end])
+                            ->orWhere(function ($q) use ($start, $end) {
+                                $q->where('start_date', '<=', $start)
+                                ->where('end_date', '>=', $end);
+                            });
+                    })
+                    ->exists();
+
+                // Check OB SLIPS
+                $obExists = DB::table('obs')
+                    ->where('user_id', $this->user_id)
+                    ->whereIn('status', ['pending', 'approved'])
+                    ->where(function ($query) use ($start, $end) {
+                        $query->whereBetween('date_from', [$start, $end])
+                            ->orWhereBetween('date_to', [$start, $end])
+                            ->orWhere(function ($q) use ($start, $end) {
+                                $q->where('date_from', '<=', $start)
+                                ->where('date_to', '>=', $end);
+                            });
+                    })
+                    ->exists();
+
+                if ($leaveExists || $obExists) {
+                    $validator->errors()->add(
+                        'start_date',
+                        'These dates overlap with an existing leave or OB slip.'
+                    );
+                }
+            }
         });
     }
+
 
     public function messages(): array
     {

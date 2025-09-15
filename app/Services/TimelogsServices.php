@@ -21,7 +21,6 @@ class TimelogsServices {
     {
         // Get logs within a date range
         $timelogs = $this->fetchLogs($userId, $startDate, $endDate);
-
         return $this->formatLogs($timelogs);
     }
 
@@ -35,6 +34,7 @@ class TimelogsServices {
     private function fetchLogs($userId, $startDate = null, $endDate = null)
     {
         $query = DB::table('timelogs')
+            ->where('is_active', true)
             ->where('user_id', $userId)
             ->orderBy('date_time', 'asc');
 
@@ -142,6 +142,7 @@ class TimelogsServices {
         $today = \Carbon\Carbon::now()->toDateString();
 
         $logs = DB::table('timelogs')
+            ->where('is_active', true)
             ->where('user_id', $user_id)
             ->whereDate('date_time', $today)
             ->orderBy('date_time', 'asc')
@@ -177,6 +178,7 @@ class TimelogsServices {
         $user_id = auth()->user()->id;
 
         return DB::table('timelogs')
+            ->where('is_active', true)
             ->where('user_id', $user_id)
             ->orderBy('date_time', 'desc')
             ->first();
@@ -231,4 +233,89 @@ class TimelogsServices {
         }
 
     }
+
+    // Functions for DTR
+    
+    public function checkIfLeave($date, $userId)
+    {
+        $isLeave = false;
+        $status = 'pending leave';
+
+        $leave = DB::table('leave_applications')
+            ->where('user_id', $userId)
+            ->where(function($query) use ($date) {
+                $query->whereDate('start_date', '<=', $date)
+                    ->whereDate('end_date', '>=', $date);
+            })
+            ->where(function($query) {
+                $query->where('status', 'approved')
+                    ->orWhere('status', 'pending');
+            })
+            ->first();
+
+        if ($leave) {
+            $isLeave = true;
+            if($leave->status === 'approved') {
+                $status = 'leave';
+            }
+        }
+
+        $data = [
+            'is_leave' => $isLeave,
+            'status'   => $status
+        ];
+
+        return $data;
+    }
+
+    public function insertNoData($remarks, $userId)
+    {
+        return [
+            'user_id'           => $userId,
+            'time_in'           => null,
+            'time_out'          => null,
+            'break'             => null,
+            'shift_id'          => null,
+            'work_schedule_id'  => null,
+            'apply_overtime'    => false,
+            'overtime'          => 0,
+            'total_paid_hrs'    => 0,
+            'doble'             => 0,
+            'late_undertime'    => 0,
+            'remarks'           => $remarks,
+        ];
+    }
+
+    /**
+     * Get rest days from a work schedule
+     *
+     * @param object|array $schedule
+     * @return array
+     */
+    public function getRestDays($scheduleId)
+    {
+        $schedule = DB::table('work_schedule')->find($scheduleId);
+
+        if (!$schedule) return [];
+
+        $days = [
+            'Monday'    => $schedule->is_monday,
+            'Tuesday'   => $schedule->is_tuesday,
+            'Wednesday' => $schedule->is_wednesday,
+            'Thursday'  => $schedule->is_thursday,
+            'Friday'    => $schedule->is_friday,
+            'Saturday'  => $schedule->is_saturday,
+            'Sunday'    => $schedule->is_sunday,
+        ];
+
+        $restDays = [];
+        foreach ($days as $dayName => $value) {
+            if ($value == 0) { // 0 = rest day
+                $restDays[] = $dayName;
+            }
+        }
+
+        return $restDays;
+    }
+
 }

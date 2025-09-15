@@ -39,8 +39,8 @@
             "columns": [
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "picture", name: 'picture' },
-                { data: "name", name: 'name' },
-                { data: "email", name: 'email' },
+                { data: "employee_no", name: 'employee_no' },
+                { data: "fullname", name: 'fullname' },
                 { data: "email", name: 'email' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],

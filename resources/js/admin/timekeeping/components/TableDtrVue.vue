@@ -9,14 +9,16 @@
         <ModalVue
             ref="modal"
             :type="modalType"
-            :actions="[
-                { label: 'Close', class: 'btn py-3 px-4 btn-outline-danger', icon: 'fas fa-times', type: 'close' },
-                { label: 'Save', class: 'btn py-3 px-4 btn-primary', icon: 'fas fa-save', type: 'save' }
-            ]"
-            @action="handleAction"
             >
             <div v-if="modalType === 'adjustment'">
-                <p>Fill out adjustment form here...</p>
+                <AddTimeVue
+                    ref="recordAdjustment"
+                    :employee_id="employee_id"
+                    :month="month"
+                    :year="year"
+                    :index="dateIndex"
+                    @success="loadTimelogs"
+                />
             </div>
             <div v-else-if="modalType === 'leave'">
                 <RecordLeaveVue
@@ -25,7 +27,7 @@
                     :month="month"
                     :year="year"
                     :index="dateIndex"
-                    @leave-added="loadTimelogs"
+                    @success="loadTimelogs"
                 />
             </div>
             <div v-else-if="modalType === 'absent'">
@@ -62,23 +64,34 @@
 
                 <!-- Actual Data -->
                 <tbody v-else>
-                    <tr v-for="(log, index) in logs" :key="log.id || index">
+                    <tr 
+                        v-for="(log, index) in logs" 
+                        :key="log.id || index" 
+                        :class="{ 'highlight-today': hasRemark(log.remarks, 'today') }"
+                        >
+
                         <td>{{ index + 1 }}</td>
 
                         <!-- If Absent -->
-                        <td v-if="hasRemark(log.remarks, 'absent')" colspan="9" class="text-center bg-danger bg-opacity-10 fw-bold">
-                            Absent
+                        <td v-if="hasRemark(log.remarks, 'restday')" colspan="9" class="text-center bg-dark bg-opacity-10 fw-bold">
+                            Restday 
                         </td>
 
                         <!-- If Leave -->
                         <td v-else-if="hasRemark(log.remarks, 'leave')" colspan="9" class="text-center bg-info bg-opacity-10 fw-bold">
-                            Leave
+                            Leave 
                         </td>
 
                         <!-- If OB -->
                         <td v-else-if="hasRemark(log.remarks, 'ob')" colspan="9" class="text-center bg-warning bg-opacity-10 fw-bold">
-                            OB
+                            OB 
                         </td>
+
+                        <!-- If Absent -->
+                        <td v-else-if="hasRemark(log.remarks, 'absent')" colspan="9" class="text-center bg-danger bg-opacity-10 fw-bold">
+                            Absent 
+                        </td>
+
 
                         <!-- Otherwise show log details -->
                         <template v-else>
@@ -153,9 +166,10 @@ import ModalVue from './modal/ModalVue.vue';
 
 // Modals
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
+import AddTimeVue from './modal/AddTimeVue.vue';
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue },
+    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue },
     props: {
         employee_id: { type: String, required: true },
         month: Number,
@@ -201,31 +215,6 @@ export default {
             this.dateIndex = index + 1;
             this.$refs.modal.open();
         },
-        handleAction(actionType) {
-            if (actionType === "close") this.$refs.modal.close();
-            if (actionType === "save") {
-                console.log("Saving data for", this.modalType);
-
-                switch (this.modalType) {
-                    case 'leave':
-                        this.$refs.recordLeave.submitLeave();
-                        break;
-
-                    case 'overtime':
-                        this.$refs.recordOvertime.submitOvertime();
-                        break;
-
-                    case 'adjustment':
-                        this.$refs.recordAdjustment.submitAdjustment();
-                        break;
-
-                    default:
-                        console.warn(`Unknown modal type: ${this.modalType}`);
-                }
-
-                this.$refs.modal.close();
-            }
-        }
     },
     watch: {
         month: 'loadTimelogs',
@@ -281,5 +270,9 @@ export default {
 
 .table-wrapper::-webkit-scrollbar-thumb:hover {
   background: $primary;
+}
+
+.highlight-today td:not(:first-child):not(:last-child) {
+  background-color: rgba($color: $success, $alpha: 0.1);
 }
 </style>
