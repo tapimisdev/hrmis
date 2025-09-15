@@ -111,7 +111,7 @@ class InformationController extends Controller
                     'unit_id' => $request->unit_id ?? null,
                     'employment_type_id' => $request->employment_type_id ?? null,
                     'position_id' => $request->position_id ?? null,
-                    'shift_schedule_id' => $request->shift_schedule ?? null,
+                    'work_schedule_id' => $request->shift_schedule ?? null,
                     'work_schedule_id' => $request->employee_schedule ?? null,
                     'salary_method' => $request->salary_method ?? null,
                     'salary' => $request->salary ?? null,

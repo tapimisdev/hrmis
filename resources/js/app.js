@@ -3,7 +3,7 @@ import './vue';
 
 import { post, put } from './action';
 import { 
-    confirmAction, alert, pushQuery, redirectToTab
+    confirmAction, alert, pushQuery, redirectToTab, loadCountries
 } from './helper';
 import lightGallery from 'lightgallery';
 import lgThumbnail from 'lightgallery/plugins/thumbnail'
@@ -14,6 +14,7 @@ window.put = put;
 window.lightGallery = lightGallery;
 window.lgThumbnail = lgThumbnail;
 window.lgZoom = lgZoom;
+window.loadCountries = loadCountries;
 
 redirectToTab();
 

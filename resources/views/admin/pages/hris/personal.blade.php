@@ -97,7 +97,7 @@
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
-                                        <div class="col-12 col-md-4 mb-3">    
+                                        <div class="col-12 col-md-4 mb-3 citizen_content d-none">    
                                             <label class="mb-2" for="country">Country (Dual Citizenship)</label>
                                             <select name="country" id="country" class="form-select text-uppercase">
                                                 <option value=""> - CHOOSE - </option>
@@ -258,6 +258,34 @@
 @section('scripts')
 <script>
     $(function() {
+
+        $('#citizenship').on('change', function() {
+            const val = $(this).val();
+            if(val == 'dual_citizenship') {
+                $('.citizen_content').removeClass('d-none');
+                loadCountries()
+                    .done(function(data) {
+                        let $country = $('#country');
+                        $country.html('<option value=""> - CHOOSE - </option>');
+
+                        $.each(data, function(index, country) {
+                            $country.append(
+                                $('<option>', {
+                                    value: country.name,
+                                    text: country.name
+                                })
+                            );
+                        });
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.log(error);
+                        console.error("Error loading countries:", error);
+                    });
+
+            } else {
+                $('.citizen_content').addClass('d-none');
+            }
+        });
 
         const url = $('#form').attr('action');
         post(url);

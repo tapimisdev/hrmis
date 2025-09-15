@@ -115,3 +115,10 @@ export function redirectToTab() {
     }
 }
 
+export function loadCountries() {
+    return $.ajax({
+        url: '/api/countries',
+        method: 'GET',
+        dataType: 'json'
+    });
+}

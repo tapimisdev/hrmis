@@ -23,7 +23,8 @@ class DatabaseSeeder extends Seeder
             DivisionSeeder::class,
             UnitSeeder::class,
             PositionSeeder::class,
-            TestUserSeeder::class
+            TestUserSeeder::class,
+            CountriesSeeder::class,
         ]);
     }
 }

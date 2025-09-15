@@ -15,20 +15,33 @@
         </div>
         <div class="card shadow p-3 pb-5 mt-5">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover w-100 pb-3" id="myTable">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Birthday</th>
-                                <th>Document</th>
-                                <th style="width: 120px">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            
-                        </tbody>
-                    </table>
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-children" aria-expanded="false" aria-controls="flush-children">
+                                Children
+                            </button>
+                        </h2>
+                        <div id="flush-children" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover w-100 pb-3" id="myTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Birthday</th>
+                                                <th>Document</th>
+                                                <th style="width: 120px">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
