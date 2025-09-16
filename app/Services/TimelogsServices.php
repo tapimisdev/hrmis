@@ -302,7 +302,7 @@ class TimelogsServices {
             'status'   => $status
         ];
 
-        dd($computedTimeLogOvertime['hours']);
+        // dd($computedTimeLogOvertime['hours']);
 
         return $data;
     }
