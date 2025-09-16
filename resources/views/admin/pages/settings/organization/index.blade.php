@@ -72,22 +72,20 @@
                         </div>
                     </div>
                     <div class="tab-pane fade" id="division" role="tabpanel">
-                        <div class="table-responsive mt-5">
-                            <table class="table table-hover w-100 pb-3" id="divisionTable">
-                                <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th>Code</th>
-                                        <th>Name</th>
-                                        <th>Date Added</th>
-                                        <th style="width: 120px">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    
-                                </tbody>
-                            </table>
-                        </div>
+                        <x-table id="divisionTable">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Date Added</th>
+                                    <th style="width: 120px">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                            </tbody>
+                        </x-table>
                     </div>
                     <div class="tab-pane fade" id="unit" role="tabpanel">
                         <div class="row">
@@ -102,8 +100,8 @@
                             </div>
                         </div>
                         <div class="table-responsive mt-5 mt-5">
-                            <table class="table table-hover w-100 pb-3" id="unitTable">
-                                <thead>
+                            <x-table id="unitTable">
+                               <thead>
                                     <tr>
                                         <th></th>
                                         <th>Division</th>
@@ -115,7 +113,7 @@
                                 </thead>
                                 <tbody>
                                 </tbody>
-                            </table>
+                            </x-table>
                         </div>
                     </div>
                 </div>

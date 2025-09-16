@@ -19,7 +19,7 @@ class ShiftAndWeeklyScheduleSeeder extends Seeder
         // Shifts
         $shifts = [
             [
-                'name'                   => 'Regular Shift Flexi',
+                'name'                   => '7AM-9AM Regular Flexible',
                 'earliest_time'          => '07:00:00',
                 'start_time'             => '09:00:00',
                 'break_out_time'         => '12:00:00',
@@ -32,7 +32,7 @@ class ShiftAndWeeklyScheduleSeeder extends Seeder
                 'is_active'              => true,
             ],
             [
-                'name'                   => 'COS Flexi',
+                'name'                   => '7AM-8PM COS Flexible',
                 'earliest_time'          => '07:00:00',
                 'start_time'             => '08:00:00',
                 'break_out_time'         => '12:00:00',

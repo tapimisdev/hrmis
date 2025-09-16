@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreTimeLogsRequest;
+use App\Http\Requests\Employee\StoreAtroRequest;
 use App\Services\TimelogsServices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class AddTimeApiController extends Controller
         $this->timelog_service = $timelog_service;
     }
 
-    public function store(StoreTimeLogsRequest $request)
+    public function add_time(StoreTimeLogsRequest $request)
     {
         $validatedData = $request->validated();
 
@@ -47,11 +48,13 @@ class AddTimeApiController extends Controller
                 'break_out'=> $validatedData['break_out'] ?? null,
                 'break_in' => $validatedData['break_in'] ?? null,
                 'time_out' => $validatedData['time_out'] ?? null,
+                'overtime_in' => $validatedData['overtime_in'] ?? null,
+                'overtime_out' => $validatedData['overtime_out'] ?? null,
             ];
 
             foreach ($timeEntries as $time) {
                 DB::table('timelogs')->insert([
-                    'user_id'          => $validatedData['user_id'],
+                    'user_id'          => $validatedData['user_id'],    
                     'employee_no'      => $validatedData['employee_no'] ?? null,
                     'date_time'        => Carbon::parse($date . ' ' . $time)->format('Y-m-d H:i:s'),
                     'shift_id'         => $validatedData['shift'],
@@ -75,6 +78,37 @@ class AddTimeApiController extends Controller
                 'status' => 'error',
                 'message' => 'Error Occurred: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    public function add_overtime(StoreAtroRequest $request)
+    {
+        $validatedData = $request->validated();
+
+        $userId = $validatedData['user_id'];
+
+        DB::beginTransaction();
+        try {
+
+            $employee_no = DB::table('employee_information')->where('user_id', $userId)->value('employee_no');
+
+            $atro = DB::table('overtimes')
+                    ->insert([
+                        'user_id'       => $userId,
+                        'employee_no'   => $employee_no,
+                        'date'          => $validatedData['date'],
+                        'start_time'    => $validatedData['start_time'],
+                        'end_time'      => $validatedData['end_time'],
+                        'total_hours'   => $validatedData['total_hours'],
+                        'reason'        => $validatedData['reason'],
+                        'status'        => $validatedData['status'] ?? 'pending',
+                    ]);
+
+            DB::commit();
+            return response(['data' => $atro, 'status' => 'store success'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response(['message' => $e->getMessage(), 'status' => 'store failed'], 500);
         }
     }
 

@@ -1,7 +1,6 @@
 <template>
     <div>
         <SkeletonProfile v-if="loading" :lines="4"/>
-
         <!-- Profile Card -->
         <div v-else class="card p-4 mb-4">
             <div class="d-flex flex-column flex-md-row align-items-center gap-4">
@@ -16,10 +15,17 @@
 
                 <!-- Content Section -->
                 <div class="content w-100">
-                    <h3 class="fw-bold text-dark text-uppercase mb-4 border-bottom pb-3">
-                        <span class="text-info">Name:</span>
-                        {{ profile.name }}
-                    </h3>
+                    <div class="d-flex justify-content-between border-bottom align-items-center mb-4 pb-3">
+                        <h3 class="fw-bold text-dark text-uppercase">
+                            <span class="text-info">Name:</span>
+                            {{ profile.name }}
+                        </h3>
+
+                        <div class="d-flex gap-3">
+                            <button class="btn px-4 py-3 btn-primary" ><i class="fa-solid fa-print"></i> Print DTR</button>
+                            <button class="btn px-4 py-3 btn-secondary" ><i class="fa-solid fa-file-export"></i> Download</button>
+                        </div>
+                    </div>
 
                     <div class="row g-3">
                         <div
@@ -168,5 +174,19 @@ export default {
     width: 160px;
     height: 160px;
     border: 4px solid $primary !important;
+}
+
+.no-image {
+    width: 160px;
+    height: 160px;
+    background-color: $info;
+    color: $light;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 4px solid $primary !important;
+    border-radius: 50%;
+    font-size: 54px;
+    font-weight: 700;
 }
 </style>

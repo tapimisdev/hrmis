@@ -31,6 +31,14 @@ class StoreTimeLogsRequest extends FormRequest
             'break_in' => ['required', 'date_format:H:i:s', 'after:break_out'],
             'time_out' => ['required', 'date_format:H:i:s', 'after:time_in'],
 
+            'overtime_in' => ['nullable', 'date_format:H:i:s', 'after:break_out'],
+            'overtime_out' => [
+                'required_with:overtime_in',   // only required if overtime_in is present
+                'nullable',
+                'date_format:H:i:s',
+                'after:overtime_in'
+            ],
+
             // Foreign key checks
             'shift' => ['required', 'exists:shifts,id'],
             'weeklyschedule' => ['required', 'exists:work_schedule,id'],
@@ -45,6 +53,8 @@ class StoreTimeLogsRequest extends FormRequest
                 'break_out' => $this->input('break_out'),
                 'break_in' => $this->input('break_in'),
                 'time_out' => $this->input('time_out'),
+                'overtime_in' => $this->input('overtime_in'),
+                'overtime_out' => $this->input('overtime_out'),
             ];
 
             // Filter out nulls so we only check provided fields

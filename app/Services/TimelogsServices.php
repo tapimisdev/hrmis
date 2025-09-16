@@ -268,6 +268,45 @@ class TimelogsServices {
         return $data;
     }
 
+    public function checkOvertime($date, $userId, $computedTimeLogOvertime)
+    {
+        $is_overtime = false;
+        $status = 'pending overtime';
+        $overtime_total_hours = 0;
+
+        // $computedHourFrom
+        
+        $overtime = DB::table('overtimes')
+            ->where('user_id', $userId)
+            ->whereDate('date', $date)
+            ->where(function($query) {
+                $query->where('status', 'approved')
+                    ->orWhere('status', 'pending');
+            })
+            ->first();
+
+        if ($overtime) {
+
+            $is_overtime = true;
+
+            if($overtime->status === 'approved') {
+                $status = 'overtime';
+            }
+
+            $overtime_total_hours = $overtime->total_hours;
+        }
+
+        $data = [
+            'is_overtime' => $is_overtime,
+            'overtime_hrs' => $overtime_total_hours,
+            'status'   => $status
+        ];
+
+        dd($computedTimeLogOvertime['hours']);
+
+        return $data;
+    }
+
     public function insertNoData($remarks, $userId)
     {
         return [
@@ -275,14 +314,34 @@ class TimelogsServices {
             'time_in'           => null,
             'time_out'          => null,
             'break'             => null,
+            'overtime'          => null,
             'shift_id'          => null,
             'work_schedule_id'  => null,
-            'apply_overtime'    => false,
-            'overtime'          => 0,
+            'ot_hrs'            => 0,
             'total_paid_hrs'    => 0,
             'doble'             => 0,
             'late_undertime'    => 0,
             'remarks'           => $remarks,
+        ];
+    }
+
+    public function overtimeDifference($overtimeIn, $overtimeOut)
+    {
+        $overtimeIn = Carbon::createFromFormat('h:i A', $overtimeIn);
+        $overtimeOut = Carbon::createFromFormat('h:i A', $overtimeOut);
+
+        // Get difference in minutes
+        $minutes = $overtimeIn->diffInMinutes($overtimeOut);
+
+        // Separate into hours and minutes
+        $hours = intdiv($minutes, 60); // whole hours
+        $remainderMinutes = $minutes % 60; // remaining minutes
+
+        return [
+            'overtime_in' => $overtimeIn,
+            'overtime_out' => $overtimeOut,
+            'hours'   => $hours,
+            'minutes' => $remainderMinutes,
         ];
     }
 

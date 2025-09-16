@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Employee;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAtroRequest extends FormRequest
 {
@@ -22,11 +23,13 @@ class StoreAtroRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'date' => ['required', 'date', 'after_or_equal:today'],
+            'user_id' => ['nullable', 'exists:users,id'], // only for timekeeping adjustment only
+            'date' => ['required', 'date'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'total_hours' => ['required', 'numeric', 'min:0'],
-            'reason' => ['nullable', 'string', 'max:500']
+            'reason' => ['nullable', 'string', 'max:500'],
+            'status' => ['nullable', Rule::in(['pending', 'approved'])], // only for timekeeping adjustment only
         ];
     }
 

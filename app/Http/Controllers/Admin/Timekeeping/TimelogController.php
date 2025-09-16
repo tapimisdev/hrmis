@@ -13,28 +13,64 @@ class TimelogController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $employees = DB::table('users')
-        ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id') // spatie roles table
-        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-        ->leftJoin('employee_information', 'users.id', '=', 'employee_information.user_id')
-        ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
-        ->where('roles.name', 'employee')
-        ->select(
-            'users.id',
-            'users.email',
-            'employee_information.employee_no',
-            'employee_personal.firstname',
-            'employee_personal.lastname'
-        )
-        ->get();
+            ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id') // spatie roles table
+            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->leftJoin('employee_information', 'users.id', '=', 'employee_information.user_id')
+            ->leftJoin('employee_shift_work_schedule', 'employee_information.employee_no', '=', 'employee_shift_work_schedule.employee_no')
+            ->leftJoin('employee_organization', 'employee_information.employee_no', '=', 'employee_organization.employee_no')
+            ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
+            ->leftJoin('work_schedule', 'employee_shift_work_schedule.work_schedule_id', '=', 'work_schedule.id')
+            ->leftJoin('units', 'employee_organization.unit_id', '=', 'units.id')
+            ->leftJoin('divisions', 'employee_organization.division_id', '=', 'divisions.id')
+            ->leftJoin('shifts', 'employee_shift_work_schedule.shift_id', '=', 'shifts.id')
+            ->leftJoin('employment_types', 'employee_organization.employment_type_id', '=', 'employment_types.id')
+            ->where('roles.name', 'employee')
+            ->select(
+                'users.id',
+                'users.email',
+                'employee_information.employee_no',
+                'employee_personal.firstname',
+                'employee_personal.lastname',
 
+                'positions.name as position_name',
+                'work_schedule.name as work_schedule_name',
+                'divisions.name as division_name',
+                'units.name as units_name',
+                'shifts.name as shift_name',
+                'employment_types.name as employment_type'
+            );
+        
         if (request()->ajax()) {
-            return $this->datatable($employees);
+
+            if ($request->filled('type')) {
+                $employees->where('employment_types.name', $request->type);
+            }
+
+            if ($request->filled('position')) {
+                $employees->where('positions.name', $request->position);
+            }
+
+            if ($request->filled('division')) {
+                $employees->where('divisions.name', $request->division);
+            }
+
+            if ($request->filled('unit')) {
+                $employees->where('units.name', $request->unit);
+            }
+
+            return $this->datatable($employees->get());
         }
 
-        return view('admin.pages.timekeeping.timelogs.index');
+        $positions = DB::table('positions')->get();
+        $types = DB::table('employment_types')->get();
+        $divisions = DB::table('divisions')->get();
+        $units = DB::table('units')->get();
+
+        return view('admin.pages.timekeeping.timelogs.index', compact('positions', 'types', 'units', 'divisions'));
     }
 
     /**
@@ -53,26 +89,25 @@ class TimelogController extends Controller
             return $row->employee_no ?? '-';
         })
         ->addColumn('fullname', function ($row) {
-            return ($row->lastname . ', ' . $row->firstname) ?? '-';
+            return ($row->firstname . ' ' . $row->lastname) ?? '-';
         })
         ->addColumn('picture', function ($row) {
-            // Assuming $row->picture contains the image filename or full URL
-            $url = 'https://i.pinimg.com/originals/99/8f/41/998f41fc4c63e69c06b99a6e03629815.jpg';
+             $profile = "https://ui-avatars.com/api/?name=" . urlencode($row->firstname . ' ' . $row->lastname) . "&background=random&color=fff&font-size=0.5";
 
-            return '
-                <div class="d-flex justify-content-center align-items-center">
-                    <img src="' . $url . '" alt="Picture" class="profile-picture">
-                </div>
-            ';
+            return '<div style="width: 50px; height: 50px; border:1px solid #ccc; border-radius:8px; 
+                                    display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f9f9f9;">
+                            <img src="' . $profile . '" 
+                                alt="Avatar of ' . e(($row->firstname ?? '') . ' ' . ($row->lastname ?? '')) . '" 
+                                style="width:100%; height:100%; object-fit:cover;">
+                        </div>';
         })
         ->addColumn('actions', function ($row) {
 
           return '<div class="d-flex">' .
-                '<a href="' . route('daily-time-record.index', $row->id) . '" class="btn btn-outline-primary btn ms-1 my-1" title="DTR">' .
-                    '<i class="fas fa-clock"></i>' .
+                '<a href="' . route('daily-time-record.index', $row->id) . '" class="btn btn-info btn-sm ms-1 my-1" title="DTR">' .
+                    '<i class="fas fa-clock"></i> View DTR'  .
                 '</a>' .
             '</div>';
-
             
         })
         ->rawColumns(['actions', 'picture', 'fullname', 'employee_no'])

@@ -79,11 +79,13 @@ class DailyTimeRecordController extends Controller
             ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id') // spatie roles table
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->leftJoin('employee_information', 'users.id', '=', 'employee_information.user_id')
+            ->leftJoin('employee_shift_work_schedule', 'employee_information.employee_no', '=', 'employee_shift_work_schedule.employee_no')
+            ->leftJoin('employee_organization', 'employee_information.employee_no', '=', 'employee_organization.employee_no')
             ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
-            ->leftJoin('positions', 'employee_information.position_id', '=', 'positions.id')
-            ->leftJoin('work_schedule', 'employee_information.work_schedule_id', '=', 'work_schedule.id')
-            ->leftJoin('units', 'employee_information.unit_id', '=', 'units.id')
-            ->leftJoin('shifts', 'employee_information.shift_id', '=', 'shifts.id')
+            ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
+            ->leftJoin('work_schedule', 'employee_shift_work_schedule.work_schedule_id', '=', 'work_schedule.id')
+            ->leftJoin('units', 'employee_organization.unit_id', '=', 'units.id')
+            ->leftJoin('shifts', 'employee_shift_work_schedule.shift_id', '=', 'shifts.id')
             ->where('roles.name', 'employee')
             ->where('users.id', $user_id)
             ->select(
@@ -103,8 +105,9 @@ class DailyTimeRecordController extends Controller
         }
 
         $profile = [
-            'picture' => $employee->picture ?? asset('img/DOST-TAPI.png'),
-            'name'    => $employee->full_name
+            'picture' => $employee->picture 
+                ?? "https://ui-avatars.com/api/?name=" . urlencode($employee->full_name) . "&background=random&color=fff&font-size=0.5",
+            'name'    => $employee->full_name,
         ];
 
         $infoCards = [

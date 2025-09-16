@@ -30,11 +30,18 @@
                     @success="loadTimelogs"
                 />
             </div>
+            <div v-else-if="modalType === 'overtime'">
+                <AddOvertimeVue
+                    ref="addOvertime"
+                    :employee_id="employee_id"
+                    :month="month"
+                    :year="year"
+                    :index="dateIndex"
+                    @success="loadTimelogs"
+                />
+            </div>
             <div v-else-if="modalType === 'absent'">
                 <p>Are you sure you want to mark this employee absent?</p>
-            </div>
-            <div v-else-if="modalType === 'restday'">
-                <p>Set this day as rest day?</p>
             </div>
             <div v-else-if="modalType === 'ob'">
                 <p>Record official business details here...</p>
@@ -42,15 +49,15 @@
         </ModalVue>
 
         <div class="table-wrapper">
-            <table class="table table-sm table-border">
+            <table class="table table-sm table-striped">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>In</th>
-                        <th>Out</th>
                         <th>Break</th>
-                        <th>OT</th>
-                        <th>ATRO</th>
+                        <th>Out</th>
+                        <th>Overtime</th>
+                        <th>OT (HRS)</th>
                         <th>Hrs</th>
                         <th>2x</th>
                         <th>Tar/UT</th>
@@ -73,22 +80,22 @@
                         <td>{{ index + 1 }}</td>
 
                         <!-- If Absent -->
-                        <td v-if="hasRemark(log.remarks, 'restday')" colspan="9" class="text-center bg-dark bg-opacity-10 fw-bold">
+                        <td v-if="hasRemark(log.remarks, 'restday')" colspan="9" class="text-center text-success fw-bold">
                             Restday 
                         </td>
 
                         <!-- If Leave -->
-                        <td v-else-if="hasRemark(log.remarks, 'leave')" colspan="9" class="text-center bg-info bg-opacity-10 fw-bold">
+                        <td v-else-if="hasRemark(log.remarks, 'leave')" colspan="9" class="text-center text-info fw-bold">
                             Leave 
                         </td>
 
                         <!-- If OB -->
-                        <td v-else-if="hasRemark(log.remarks, 'ob')" colspan="9" class="text-center bg-warning bg-opacity-10 fw-bold">
+                        <td v-else-if="hasRemark(log.remarks, 'ob')" colspan="9" class="text-center text-warning fw-bold">
                             OB 
                         </td>
 
                         <!-- If Absent -->
-                        <td v-else-if="hasRemark(log.remarks, 'absent')" colspan="9" class="text-center bg-danger bg-opacity-10 fw-bold">
+                        <td v-else-if="hasRemark(log.remarks, 'absent')" colspan="9" class="text-center text-danger fw-bold">
                             Absent 
                         </td>
 
@@ -96,16 +103,10 @@
                         <!-- Otherwise show log details -->
                         <template v-else>
                             <td>{{ log.time_in ?? '-- : --' }}</td>
-                            <td>{{ log.time_out ?? '-- : --' }}</td>
                             <td>{{ log.break ?? '-- : -- to -- : --' }}</td>
-                            <td>{{ log.overtime }}</td>
-                            <td>
-                                <input 
-                                    type="checkbox" 
-                                    :checked="Boolean(log.apply_overtime)" 
-                                    @change="toggleOvertime(log)"
-                                >
-                            </td>
+                            <td>{{ log.time_out ?? '-- : --' }}</td>
+                            <td>{{ log.overtime ?? '-- : -- to -- : --' }}</td>
+                            <td>{{ log.ot_hrs }}</td>
                             <td>{{ log.total_paid_hrs }}</td>
                             <td>{{ log.doble }}</td>
                             <td>{{ log.late_undertime }}</td>
@@ -138,6 +139,7 @@
                                 </button>
                                 <ul class="dropdown-menu w-100" aria-labelledby="correctionsDropdown">
                                     <li><button class="dropdown-item" @click="openModal('adjustment', index)">Add or Adjustment</button></li>
+                                    <li><button class="dropdown-item" @click="openModal('overtime', index)">Add Overtime</button></li>
                                     <li><button class="dropdown-item" @click="openModal('leave', index)">Record Leave</button></li>
                                     <li>
                                         <button class="dropdown-item" 
@@ -146,7 +148,6 @@
                                             Mark Absent
                                         </button>
                                     </li>
-                                    <li><button class="dropdown-item" @click="openModal('restday', index)">Set as Restday</button></li>
                                     <li><button class="dropdown-item" @click="openModal('ob', index)">Record OB</button></li>
                                 </ul>
                             </div>
@@ -167,9 +168,10 @@ import ModalVue from './modal/ModalVue.vue';
 // Modals
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
 import AddTimeVue from './modal/AddTimeVue.vue';
+import AddOvertimeVue from './modal/AddOvertimeVue.vue';
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue },
+    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue },
     props: {
         employee_id: { type: String, required: true },
         month: Number,
@@ -273,6 +275,6 @@ export default {
 }
 
 .highlight-today td:not(:first-child):not(:last-child) {
-  background-color: rgba($color: $success, $alpha: 0.1);
+    
 }
 </style>

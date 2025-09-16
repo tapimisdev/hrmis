@@ -138,7 +138,6 @@ class DailyTimeRecordService {
                 } else {
                     // If leave is pending, still mark it
                     if($leave_status === 'pending leave') {
-                        $remarks[] = $leave_status;
                         $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId);
                         continue;
                     }
@@ -170,11 +169,41 @@ class DailyTimeRecordService {
                                 ? Carbon::parse($date['break_in'])->format('h:i A') 
                                 : null;
 
+            $overtimeOutCarbon = !empty($date['overtime_out']) 
+                                ? Carbon::parse($date['overtime_out'])->format('h:i A') 
+                                : null;
+
+            $overtimeInCarbon  = !empty($date['overtime_in']) 
+                                ? Carbon::parse($date['overtime_in'])->format('h:i A') 
+                                : null;
+
             // Combine break times if both are present
             $break = ($breakOutCarbon && $breakInCarbon)
                 ? $breakOutCarbon . ' to ' . $breakInCarbon
                 : null;
+            
+            // Combine break times if both are present
+            $overtime = ($overtimeOutCarbon && $overtimeInCarbon)
+                ? $overtimeInCarbon . ' to ' . $overtimeOutCarbon
+                : null;
             // ================== END TIME PARSING ==================
+
+            // ================== CHECK OVERTIME ==================
+
+            $overtime_var = [
+                'overtime_in' => $overtimeInCarbon,
+                'overtime_out' => $overtimeOutCarbon
+            ];
+
+            $timelog_overtime_computed = $this->timelogs_services->overtimeDifference($overtimeInCarbon, $overtimeOutCarbon);
+
+
+            $overtime_data = $this->timelogs_services->checkOvertime($date, $userId, $timelog_overtime_computed);
+
+
+            // dd($overtime_data);
+
+            // ================== CHECK OVERTIME ==================
 
             // Append computed data for this date
             $computedData[] = [
@@ -182,10 +211,10 @@ class DailyTimeRecordService {
                 'time_in'           => $timeInCarbon,
                 'time_out'          => $timeOutCarbon,
                 'break'             => $break,
+                'overtime'          => $overtime,
                 'shift_id'          => $date['shift_id'],
                 'work_schedule_id'  => $date['work_schedule_id'],
-                'apply_overtime'    => $date['apply_overtime'] ?? false,
-                'overtime'          => $date['overtime'] ?? 0,
+                'ot_hrs'            => $date['ot_hrs'] ?? 0,
                 'total_paid_hrs'    => $date['total_paid_hrs'] ?? 0,
                 'doble'             => $date['doble'] ?? 0,           // Possibly double pay
                 'late_undertime'    => $date['late_undertime'] ?? 0,   // Late/Undertime minutes
@@ -200,9 +229,10 @@ class DailyTimeRecordService {
 
     protected function getUserDefault($user_id)
     {
-        return  DB::table('employee_information')
-                ->where('user_id', $user_id)
-                ->select('employee_no', 'shift_id', 'work_schedule_id')
+        return  DB::table('employee_information as ei')
+                ->leftJoin('employee_shift_work_schedule as sws', 'ei.employee_no', '=', 'sws.employee_no')
+                ->where('ei.user_id', $user_id)
+                ->select('ei.employee_no', 'sws.shift_id', 'sws.work_schedule_id')
                 ->first();                
     }
 

@@ -111,6 +111,36 @@
                         <span class="text-danger" v-if="errors.time_out">{{ errors.time_out[0] }}</span>
                     </div>
                 </div>
+
+                <!-- Overtime In -->
+                <div class="col-md-6">
+                    <FormSkeletonVue v-if="initial_loading" :rows="1" :columns="1"/>
+                    <div v-else class="mb-3">
+                        <label class="form-label">Overtime In</label>
+                        <input type="time"
+                            step="1"
+                            v-model="form.overtime_in"
+                            class="form-control"
+                            :class="{ 'is-invalid': errors.overtime_in }"
+                            required />
+                        <span class="text-danger" v-if="errors.overtime_in">{{ errors.overtime_in[0] }}</span>
+                    </div>
+                </div>
+
+                <!-- Overtime Out -->
+                <div class="col-md-6">
+                    <FormSkeletonVue v-if="initial_loading" :rows="1" :columns="1"/>
+                    <div v-else class="mb-3">
+                        <label class="form-label">Overtime Out</label>
+                        <input type="time"
+                            step="1"
+                            v-model="form.overtime_out"
+                            class="form-control"
+                            :class="{ 'is-invalid': errors.overtime_out }"
+                            required />
+                        <span class="text-danger" v-if="errors.overtime_out">{{ errors.overtime_out[0] }}</span>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
@@ -162,6 +192,8 @@ export default {
                 break_out: "",
                 break_in: "",
                 time_out: "",
+                overtime_in: "",
+                overtime_out: "",
                 shift: "",
                 weeklyschedule: ""
             }
@@ -212,6 +244,8 @@ export default {
                         break_out: log.break_out ? log.break_out.split(' ')[1] : "",
                         break_in: log.break_in ? log.break_in.split(' ')[1] : "",
                         time_out: log.time_out ? log.time_out.split(' ')[1] : "",
+                        overtime_in: log.overtime_in ? log.overtime_in.split(' ')[1] : "",
+                        overtime_out: log.overtime_out ? log.overtime_out.split(' ')[1] : "",
                         shift: log.shift_id || "",
                         weeklyschedule: log.work_schedule_id || ""
                     };
@@ -224,6 +258,8 @@ export default {
                         break_out: "",
                         break_in: "",
                         time_out: "",
+                        overtime_in: "",
+                        overtime_out: "",
                         shift: "",
                         weeklyschedule: ""
                     };
@@ -264,7 +300,6 @@ export default {
                     icon: "success"
                 }).then(() => {
                     this.$emit("success", response.data);
-                    this.close();
                     this.resetForm();
                 });
 
@@ -286,6 +321,8 @@ export default {
                 break_out: "",
                 break_in: "",
                 time_out: "",
+                overtime_in: "",
+                overtime_out: "",
                 shift: "",
                 weeklyschedule: ""
             };

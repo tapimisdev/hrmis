@@ -46,6 +46,7 @@ export default {
         case "adjustment": return "Add or Adjust Time";
         case "leave": return "Record Leave";
         case "absent": return "Mark as Absent";
+        case "overtime": return "Add Overtime";
         case "restday": return "Set as Rest Day";
         case "ob": return "Record Official Business";
         default: return "Modal";

@@ -20,23 +20,19 @@
                 </li>
             @endforeach
         </ul>
-        <div class="card shadow p-3">
-            <div class="card-body">
-                <table class="table table-hover w-100 pb-3" id="myTable">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Code</th>
-                            <th>Name</th>
-                            <th>Date Added</th>
-                            <th style="width: 120px">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <x-table id="myTable">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Date Added</th>
+                    <th style="width: 120px">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </x-table>
 
     </div>
 @endsection
