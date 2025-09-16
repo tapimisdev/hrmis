@@ -8,6 +8,7 @@ use App\Http\Requests\Employee\StoreAtroRequest;
 use App\Services\TimelogsServices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AddTimeApiController extends Controller
@@ -53,6 +54,10 @@ class AddTimeApiController extends Controller
             ];
 
             foreach ($timeEntries as $time) {
+                if ($time === null) {
+                    // Skip null entries (like no overtime)
+                    continue;
+                }
                 DB::table('timelogs')->insert([
                     'user_id'          => $validatedData['user_id'],    
                     'employee_no'      => $validatedData['employee_no'] ?? null,
@@ -92,6 +97,11 @@ class AddTimeApiController extends Controller
 
             $employee_no = DB::table('employee_information')->where('user_id', $userId)->value('employee_no');
 
+            if($validatedData['status'] === 'approved') {
+                $approver_id = auth()->id();
+                $approved_at = now();
+            }
+
             $atro = DB::table('overtimes')
                     ->insert([
                         'user_id'       => $userId,
@@ -102,6 +112,10 @@ class AddTimeApiController extends Controller
                         'total_hours'   => $validatedData['total_hours'],
                         'reason'        => $validatedData['reason'],
                         'status'        => $validatedData['status'] ?? 'pending',
+                        'approver_id'   => $approver_id ?? null,
+                        'approved_at'   => $approved_at ?? null,
+                        'created_at'    => now(),
+                        'updated_at'    => now()
                     ]);
 
             DB::commit();
@@ -110,6 +124,16 @@ class AddTimeApiController extends Controller
             DB::rollBack();
             return response(['message' => $e->getMessage(), 'status' => 'store failed'], 500);
         }
+    }
+
+    public function getOvertime(Request $request)
+    {
+        $data = DB::table('overtimes')
+                ->where('date', $request->input('date'))
+                ->where('user_id', $request->input('user_id'))
+                ->first();
+
+        return response(['overtime' => $data, 'message' => 'show success'], 200);
     }
 
     public function edit(Request $request)

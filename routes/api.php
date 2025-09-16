@@ -69,3 +69,4 @@ Route::get('work-schedules', [WeeklyScheduleController::class, 'index']);
 Route::get('fetch-timelogs', [AddTimeApiController::class, 'edit']);
 Route::post('add-time', [AddTimeApiController::class, 'add_time']);
 Route::post('add-overtime', [AddTimeApiController::class, 'add_overtime']);
+Route::get('get-overtime', [AddTimeApiController::class, 'getOvertime']);

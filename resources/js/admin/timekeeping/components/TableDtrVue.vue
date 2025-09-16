@@ -40,6 +40,14 @@
                     @success="loadTimelogs"
                 />
             </div>
+            <div v-else-if="modalType === 'view_overtime'">
+                <ViewOvertimeVue
+                    :employee_id="employee_id"
+                    :month="month"
+                    :year="year"
+                    :index="dateIndex"
+                />
+            </div>
             <div v-else-if="modalType === 'absent'">
                 <p>Are you sure you want to mark this employee absent?</p>
             </div>
@@ -106,7 +114,15 @@
                             <td>{{ log.break ?? '-- : -- to -- : --' }}</td>
                             <td>{{ log.time_out ?? '-- : --' }}</td>
                             <td>{{ log.overtime ?? '-- : -- to -- : --' }}</td>
-                            <td>{{ log.ot_hrs }}</td>
+                           <td>
+                                <button
+                                    class="btn btn-sm btn-transparent border-0"
+                                    :disabled="!hasRemark(log.remarks, 'overtime') && !hasRemark(log.remarks, 'pending overtime')"
+                                    @click="openModal('view_overtime', index)"
+                                >
+                                    {{ log.ot_hrs }}
+                                </button>
+                            </td>
                             <td>{{ log.total_paid_hrs }}</td>
                             <td>{{ log.doble }}</td>
                             <td>{{ log.late_undertime }}</td>
@@ -169,9 +185,10 @@ import ModalVue from './modal/ModalVue.vue';
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
 import AddTimeVue from './modal/AddTimeVue.vue';
 import AddOvertimeVue from './modal/AddOvertimeVue.vue';
+import ViewOvertimeVue from './modal/ViewOvertimeVue.vue';
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue },
+    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue },
     props: {
         employee_id: { type: String, required: true },
         month: Number,

@@ -76,6 +76,7 @@ class DailyTimeRecordService {
             $remarks = [];                 // Initialize remarks array for this date
             $is_future = false;            // Flag to check if date is today/future
             $empty_time_in_and_out = (empty($date['time_in']) && empty($date['time_out']));
+            $ot_hrs = 0;
 
             // Parse date string into Carbon object
             $logDate = Carbon::parse($date['date']);
@@ -188,22 +189,20 @@ class DailyTimeRecordService {
                 : null;
             // ================== END TIME PARSING ==================
 
-            // ================== CHECK OVERTIME ==================
+            // ================== START CHECK OVERTIME ==================
 
-            $overtime_var = [
-                'overtime_in' => $overtimeInCarbon,
-                'overtime_out' => $overtimeOutCarbon
-            ];
+            if(!is_null($overtime)) {
+                $timelog_overtime_computed = $this->timelogs_services->overtimeDifference($overtimeInCarbon, $overtimeOutCarbon);
 
-            $timelog_overtime_computed = $this->timelogs_services->overtimeDifference($overtimeInCarbon, $overtimeOutCarbon);
+                $overtime_data = $this->timelogs_services->checkOvertime($logDate, $userId, $timelog_overtime_computed);
 
+                if($overtime_data['is_overtime']) {
+                    $ot_hrs = $overtime_data['overtime_hrs'];
+                    $remarks[] = $overtime_data['status'];
+                }
+            }
 
-            $overtime_data = $this->timelogs_services->checkOvertime($date, $userId, $timelog_overtime_computed);
-
-
-            // dd($overtime_data);
-
-            // ================== CHECK OVERTIME ==================
+            // ================== END CHECK OVERTIME ==================
 
             // Append computed data for this date
             $computedData[] = [
@@ -214,7 +213,7 @@ class DailyTimeRecordService {
                 'overtime'          => $overtime,
                 'shift_id'          => $date['shift_id'],
                 'work_schedule_id'  => $date['work_schedule_id'],
-                'ot_hrs'            => $date['ot_hrs'] ?? 0,
+                'ot_hrs'            => $ot_hrs ?? 0,
                 'total_paid_hrs'    => $date['total_paid_hrs'] ?? 0,
                 'doble'             => $date['doble'] ?? 0,           // Possibly double pay
                 'late_undertime'    => $date['late_undertime'] ?? 0,   // Late/Undertime minutes

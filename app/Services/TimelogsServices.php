@@ -268,44 +268,60 @@ class TimelogsServices {
         return $data;
     }
 
+    /**
+     * Check and compute overtime for a given user and date.
+     *
+     * @param  string  $date   The target date (Y-m-d).
+     * @param  int     $userId The user's ID.
+     * @param  array   $computedTimeLogOvertime Precomputed timelog data (expects 'combined_hours').
+     * 
+     * @return array{
+     *     is_overtime: bool,
+     *     overtime_hrs: float,
+     *     status: string
+     * }
+     * 
+     * Logic:
+     * - Finds an overtime request (approved or pending) for the user on the given date.
+     * - If approved → actual overtime = min(timelog hours, approved hours).
+     * - If pending → status remains "pending overtime", overtime_hrs = 0.
+     * - If no request → returns default (false, 0, "pending overtime").
+     */
     public function checkOvertime($date, $userId, $computedTimeLogOvertime)
     {
-        $is_overtime = false;
-        $status = 'pending overtime';
-        $overtime_total_hours = 0;
+        // Hours logged from timelog computation
+        $timelogHours = (double) $computedTimeLogOvertime['combined_hours'];
 
-        // $computedHourFrom
-        
+        // Find overtime record (only approved or pending)
         $overtime = DB::table('overtimes')
             ->where('user_id', $userId)
             ->whereDate('date', $date)
-            ->where(function($query) {
-                $query->where('status', 'approved')
-                    ->orWhere('status', 'pending');
-            })
+            ->whereIn('status', ['approved', 'pending'])
             ->first();
 
-        if ($overtime) {
+        // Defaults
+        $is_overtime = false;
+        $status = 'pending overtime';
+        $TOTAL_OVERTIME = 0;
 
+        if ($overtime) {
             $is_overtime = true;
 
-            if($overtime->status === 'approved') {
+            // Only compute hours if approved
+            if ($overtime->status === 'approved') {
                 $status = 'overtime';
+                $approvedHours = (double) $overtime->total_hours;
+                $TOTAL_OVERTIME = min($timelogHours, $approvedHours);
             }
-
-            $overtime_total_hours = $overtime->total_hours;
         }
 
-        $data = [
-            'is_overtime' => $is_overtime,
-            'overtime_hrs' => $overtime_total_hours,
-            'status'   => $status
+        return [
+            'is_overtime'   => $is_overtime,
+            'overtime_hrs'  => $TOTAL_OVERTIME,
+            'status'        => $status,
         ];
-
-        // dd($computedTimeLogOvertime['hours']);
-
-        return $data;
     }
+
 
     public function insertNoData($remarks, $userId)
     {
@@ -337,11 +353,14 @@ class TimelogsServices {
         $hours = intdiv($minutes, 60); // whole hours
         $remainderMinutes = $minutes % 60; // remaining minutes
 
+        $combined_hours = round($minutes / 60, 2);
+        
         return [
             'overtime_in' => $overtimeIn,
             'overtime_out' => $overtimeOut,
             'hours'   => $hours,
             'minutes' => $remainderMinutes,
+            'combined_hours' => $combined_hours
         ];
     }
 
