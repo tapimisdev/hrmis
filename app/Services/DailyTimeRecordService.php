@@ -70,13 +70,20 @@ class DailyTimeRecordService {
         // Counters for leaves and official business
         $TOTAL_LEAVES = 0;
         $TOTAL_OBS = 0;
+        $TOTAL_UT = 0;
+        $TOTAL_HOURS = 0;
+        $TOTAL_OVERTIME = 0;
+        $TOTAL_ABSENT = 0;
+        $TOTAL_HOLIDAY = 0;
+        $TOTAL_SUSPENSION = 0;
 
         // Loop through each date to compute attendance
         foreach ($dates as $date) {
             $remarks = [];                 // Initialize remarks array for this date
             $is_future = false;            // Flag to check if date is today/future
             $empty_time_in_and_out = (empty($date['time_in']) && empty($date['time_out']));
-
+            $ot_mins = 0;
+            $total_time_work = 0;
             // Parse date string into Carbon object
             $logDate = Carbon::parse($date['date']);
             $dayName = $logDate->format('l');  // Get day name (e.g., Monday)
@@ -87,6 +94,11 @@ class DailyTimeRecordService {
             // If the date doesn't have a work schedule, assign default
             if(is_null($date['work_schedule_id'])) {
                 $date['work_schedule_id'] = $weeklySchedule_id;
+            }
+
+            // If the date doesn't have a shift schedule, assign default
+            if(is_null($date['shift_id'])) {
+                $date['shift_id'] = $shift_id;
             }
 
             // Get rest days for this work schedule
@@ -133,6 +145,7 @@ class DailyTimeRecordService {
                 if(!$is_leave) {
                     // Mark as absent if no leave
                     $remarks[] = 'absent';
+                    $TOTAL_ABSENT += 1;
                     $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId);
                     continue;
                 } else {
@@ -153,77 +166,108 @@ class DailyTimeRecordService {
 
             // ================== TIME PARSING BLOCK ==================
             // Safely parse times to avoid errors if null
-            $timeInCarbon   = !empty($date['time_in']) 
-                                ? Carbon::parse($date['time_in'])->format('h:i A') 
-                                : null;
-
-            $timeOutCarbon  = !empty($date['time_out']) 
-                                ? Carbon::parse($date['time_out'])->format('h:i A') 
-                                : null;
-
-            $breakOutCarbon = !empty($date['break_out']) 
-                                ? Carbon::parse($date['break_out'])->format('h:i A') 
-                                : null;
-
-            $breakInCarbon  = !empty($date['break_in']) 
-                                ? Carbon::parse($date['break_in'])->format('h:i A') 
-                                : null;
-
-            $overtimeOutCarbon = !empty($date['overtime_out']) 
-                                ? Carbon::parse($date['overtime_out'])->format('h:i A') 
-                                : null;
-
-            $overtimeInCarbon  = !empty($date['overtime_in']) 
-                                ? Carbon::parse($date['overtime_in'])->format('h:i A') 
-                                : null;
-
-            // Combine break times if both are present
-            $break = ($breakOutCarbon && $breakInCarbon)
-                ? $breakOutCarbon . ' to ' . $breakInCarbon
-                : null;
+            // Safely parse times to avoid errors if null
+            $timeInCarbon       = $this->timelogs_services->parseTime($date['time_in']);
+            $timeOutCarbon      = $this->timelogs_services->parseTime($date['time_out']);
+            $breakOutCarbon     = $this->timelogs_services->parseTime($date['break_out']);
+            $breakInCarbon      = $this->timelogs_services->parseTime($date['break_in']);
+            $overtimeOutCarbon  = $this->timelogs_services->parseTime($date['overtime_out']);
+            $overtimeInCarbon   = $this->timelogs_services->parseTime($date['overtime_in']);
             
-            // Combine break times if both are present
-            $overtime = ($overtimeOutCarbon && $overtimeInCarbon)
-                ? $overtimeInCarbon . ' to ' . $overtimeOutCarbon
-                : null;
+            if (!$timeInCarbon || !$timeOutCarbon || !$breakOutCarbon || !$breakInCarbon) {
+                $remarks[] = 'discrepancy';
+            } 
+
+            if ($breakOutCarbon && $breakInCarbon) {
+                $break = $breakOutCarbon . ' to ' . $breakInCarbon;
+            } elseif ($breakOutCarbon) {
+                $break = $breakOutCarbon . ' to -- : --';
+            } elseif ($breakInCarbon) {
+                $break = '-- : -- to ' . $breakInCarbon;
+            } else {
+                $break = null;
+            }
+            
+            // Combine overtime times if any is present
+            if ($overtimeInCarbon && $overtimeOutCarbon) {
+                $overtime = $overtimeInCarbon . ' to ' . $overtimeOutCarbon;
+            } elseif ($overtimeInCarbon) {
+                $overtime = $overtimeInCarbon . ' to  -- : --';
+            } elseif ($overtimeOutCarbon) {
+                $overtime = ' -- : -- to ' . $overtimeOutCarbon;
+            } else {
+                $overtime = null;
+            }
+
             // ================== END TIME PARSING ==================
 
-            // ================== CHECK OVERTIME ==================
+            // ================== START CHECK OVERTIME ==================
+            if ($overtimeInCarbon && $overtimeOutCarbon) {
+                // Only compute if both overtime in/out exist
+                $timelog_overtime_computed = $this->timelogs_services->overtimeDifference($overtimeInCarbon, $overtimeOutCarbon);
 
-            $overtime_var = [
-                'overtime_in' => $overtimeInCarbon,
-                'overtime_out' => $overtimeOutCarbon
-            ];
+                $overtime_data = $this->timelogs_services->checkOvertime($logDate, $userId, $timelog_overtime_computed);
 
-            $timelog_overtime_computed = $this->timelogs_services->overtimeDifference($overtimeInCarbon, $overtimeOutCarbon);
+                if ($overtime_data['is_overtime']) {
+                    $TOTAL_OVERTIME += $overtime_data['overtime_mins'];
+                    $ot_mins = $overtime_data['overtime_mins'];
+                    $remarks[] = $overtime_data['status'];
+                }
+            } else {
+                // If either is missing, you can still store remarks or leave OT as null
+                $ot_mins = 0;
+            }
 
+            // ================== END CHECK OVERTIME ==================
 
-            $overtime_data = $this->timelogs_services->checkOvertime($date, $userId, $timelog_overtime_computed);
+            // ================== START CHECK TARDINESS AND UNDERTIME ==================
 
+            $computed_tar_underime = $this->timelogs_services->computeTardinessAndUndertime($date);
+            $TOTAL_UT += $computed_tar_underime['total_ut_mins'];
 
-            // dd($overtime_data);
+            // dd($computed_tar_underime);
+            // ================== END CHECK TARDINESS AND UNDERTIME ==================
 
-            // ================== CHECK OVERTIME ==================
+            $total_time_work = $computed_tar_underime['actual_work_mins'];
+            $TOTAL_HOURS += $total_time_work;
+
+            $paid_hours = $total_time_work + $ot_mins;
 
             // Append computed data for this date
             $computedData[] = [
                 'user_id'           => $userId,
                 'time_in'           => $timeInCarbon,
                 'time_out'          => $timeOutCarbon,
-                'break'             => $break,
+                'break'             => $break   ,
                 'overtime'          => $overtime,
                 'shift_id'          => $date['shift_id'],
                 'work_schedule_id'  => $date['work_schedule_id'],
-                'ot_hrs'            => $date['ot_hrs'] ?? 0,
-                'total_paid_hrs'    => $date['total_paid_hrs'] ?? 0,
-                'doble'             => $date['doble'] ?? 0,           // Possibly double pay
-                'late_undertime'    => $date['late_undertime'] ?? 0,   // Late/Undertime minutes
+                'ot_mins'           => $ot_mins ?? 0,
+                'total_time_work'   => $total_time_work ?? 0,
+                'doble'             => $date['doble'] ?? 0,          
+                'late_undertime'    => $computed_tar_underime['total_ut_mins'] ?? 0,
+                'paid_hours'        => $paid_hours ?? 0,
                 'remarks'           => $remarks
             ];
         }
 
+        $summary = [
+            ['label' => 'Total HRS',         'value' => intval($TOTAL_HOURS / 60) . ' HRS'],
+            ['label' => 'Overtime',          'value' => $TOTAL_OVERTIME . ' MINS'],
+            ['label' => 'Late / Undertime',  'value' => $TOTAL_UT . ' MINS'],
+            ['label' => 'Absent',            'value' => $TOTAL_ABSENT . ' Days'],
+            ['label' => 'Leaves',            'value' => $TOTAL_LEAVES . ' Day' . ($TOTAL_LEAVES != 1 ? 's' : '')],
+            ['label' => 'Holiday',           'value' => ($TOTAL_HOLIDAY ?? 0) . ' Day' . (($TOTAL_HOLIDAY ?? 0) != 1 ? 's' : '')],
+            ['label' => 'Suspensions',       'value' => ($TOTAL_SUSPENSION ?? 0)],
+        ];
+
+        $data = [
+            'computedData' => $computedData,
+            'summary'      => $summary
+        ];
+
         // Return all computed attendance data
-        return $computedData;
+        return $data;
     }
 
 

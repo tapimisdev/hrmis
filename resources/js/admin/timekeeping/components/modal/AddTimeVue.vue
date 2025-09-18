@@ -300,6 +300,7 @@ export default {
                     icon: "success"
                 }).then(() => {
                     this.$emit("success", response.data);
+                    this.close();
                     this.resetForm();
                 });
 

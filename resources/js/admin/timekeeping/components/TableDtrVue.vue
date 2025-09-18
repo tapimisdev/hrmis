@@ -1,6 +1,5 @@
 <template>
     <p class="fw-bold">Employee Attendance Table</p>
-
     <div class="card p-4">
         <p class="fs-5 text-uppercase fw-bolder">
             <span class="text-danger">{{ formattedMonth }} {{ year }}</span>
@@ -40,6 +39,14 @@
                     @success="loadTimelogs"
                 />
             </div>
+            <div v-else-if="modalType === 'view_overtime'">
+                <ViewOvertimeVue
+                    :employee_id="employee_id"
+                    :month="month"
+                    :year="year"
+                    :index="dateIndex"
+                />
+            </div>
             <div v-else-if="modalType === 'absent'">
                 <p>Are you sure you want to mark this employee absent?</p>
             </div>
@@ -49,18 +56,18 @@
         </ModalVue>
 
         <div class="table-wrapper">
-            <table class="table table-sm table-striped">
+            <table class="table table-sm table-hover">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>In</th>
+                     <th>Day</th>
+                        <th>Time In</th>
                         <th>Break</th>
-                        <th>Out</th>
+                        <th>Time Out</th>
                         <th>Overtime</th>
-                        <th>OT (HRS)</th>
-                        <th>Hrs</th>
-                        <th>2x</th>
-                        <th>Tar/UT</th>
+                        <th>Worked HRS</th>
+                        <th>Double</th>
+                        <th>Tardiness/Undertime</th>
+                        <th>Paid HRS</th>
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
@@ -99,24 +106,52 @@
                             Absent 
                         </td>
 
-
                         <!-- Otherwise show log details -->
                         <template v-else>
                             <td>{{ log.time_in ?? '-- : --' }}</td>
                             <td>{{ log.break ?? '-- : -- to -- : --' }}</td>
                             <td>{{ log.time_out ?? '-- : --' }}</td>
-                            <td>{{ log.overtime ?? '-- : -- to -- : --' }}</td>
-                            <td>{{ log.ot_hrs }}</td>
-                            <td>{{ log.total_paid_hrs }}</td>
+                            <td class="d-flex p-0 m-0 justify-content-center align-items-center flex-column">
+                                <div class="mt-2">
+                                    {{ log.overtime ?? '-- : -- to -- : --' }}
+                                </div>
+
+                                <button
+                                    class="btn btn-sm btn-transparent p-0 m-0 px-3 border-0"
+                                    :disabled="!hasRemark(log.remarks, 'overtime') && !hasRemark(log.remarks, 'pending overtime')"
+                                    @click="openModal('view_overtime', index)"
+                                >
+                                    <span :class="{ 
+                                        'text-decoration-underline': hasRemark(log.remarks, 'overtime') || hasRemark(log.remarks, 'pending overtime') 
+                                    }">
+                                        {{ convertToReadableTime(log.ot_mins) }}
+                                    </span>
+                                </button>
+                            </td>
+                            <td>
+                                 <span class="text-lowercase">
+                                    {{ convertToReadableTime(log.total_time_work) }}
+                                </span>
+                            </td>
                             <td>{{ log.doble }}</td>
-                            <td>{{ log.late_undertime }}</td>
+                            <td>
+                                <span class="text-lowercase">
+                                    {{ convertToReadableTime(log.late_undertime) }}
+                                </span>
+                            </td>
+                            <td>
+                                 <span class="text-lowercase">
+                                    {{ convertToReadableTime(log.paid_hours) }}
+                                </span>
+                            </td>
                             <!-- Remarks Column -->
                             <td>
                                 <div class="mb-0 ps-3 d-flex flex-wrap">
                                     <span
                                         v-for="(remark, rIndex) in log.remarks || []"
                                         :key="rIndex"
-                                        class="me-2 mb-1"
+                                        class="me-2 mb-1 py-2 px-3 badge text-bg-info"
+                                        :class=" remark === 'discrepancy' ? 'bg-danger text-light' : ''"
                                     >
                                         {{ remark }}
                                         <span v-if="rIndex < (log.remarks || []).length - 1">|</span>
@@ -169,9 +204,10 @@ import ModalVue from './modal/ModalVue.vue';
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
 import AddTimeVue from './modal/AddTimeVue.vue';
 import AddOvertimeVue from './modal/AddOvertimeVue.vue';
+import ViewOvertimeVue from './modal/ViewOvertimeVue.vue';
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue },
+    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue },
     props: {
         employee_id: { type: String, required: true },
         month: Number,
@@ -183,6 +219,7 @@ export default {
             loading: false,
             modalType: null,
             dateIndex: null,
+            summary: []
         };
     },
     computed: {
@@ -192,6 +229,8 @@ export default {
             });
         }
     },
+    emits: ['sendSummary'],
+    emits: ['send-summary'],
     methods: {
         async loadTimelogs() {
             this.loading = true;
@@ -200,7 +239,9 @@ export default {
                     `/admin/timekeeping/daily-time-record/${this.employee_id}/show`,
                     { params: { month: this.month, year: this.year } }
                 );
-                this.logs = response.data;
+                this.logs = response.data.computedData;
+                this.summary = response.data.summary;
+                this.$emit('send-summary', response.data.summary);
                 console.log(response.data);
             } catch (error) {
                 console.error("Error fetching logs:", error);
@@ -217,6 +258,11 @@ export default {
             this.dateIndex = index + 1;
             this.$refs.modal.open();
         },
+        convertToReadableTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}h ${mins}m`;
+        }
     },
     watch: {
         month: 'loadTimelogs',
@@ -241,17 +287,30 @@ export default {
         
         thead th {
             font-weight: 600;
-            font-size: 14px !important;
+            font-size: 12px !important;
             position: sticky;
             top: 0;
             background-color: $primary;
             color: $light;
             z-index: 1000;
+            text-align: center;
+        }
+
+        thead th:nth-child(odd) {
+            background-color: $primary; // Light color for odd rows
+        }
+
+        thead th:nth-child(even) {
+            background-color: rgba($primary, .8); // Slightly lighter shade for even rows
         }
 
         tbody td {
             height: 60px !important;
             font-size: 12px;
+            text-align: center;
+            span {
+                font-size: 10px;
+            }
         }
     }
 }

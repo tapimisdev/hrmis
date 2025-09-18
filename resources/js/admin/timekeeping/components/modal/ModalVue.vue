@@ -44,6 +44,7 @@ export default {
 
       switch (this.type) {
         case "adjustment": return "Add or Adjust Time";
+        case "view_overtime": return "Overtime";
         case "leave": return "Record Leave";
         case "absent": return "Mark as Absent";
         case "overtime": return "Add Overtime";
