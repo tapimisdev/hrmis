@@ -151,25 +151,45 @@
                         <div id="collapseSalary" class="accordion-collapse collapse show">
                             <div class="accordion-body">
                                 <div class="row">
-                                <div class="col-md-3 mb-3">
-                                    <label class="mb-2" for="salary_method">Salary Method <span class="text-danger">*</span></label>
-                                    <select id="salary_method" name="salary_method" class="form-select">
-                                    @foreach(['' => '- CHOOSE -', 'cash' => 'Cash', 'bank transfer' => 'Bank Transfer', 'paycheck' => 'Paycheck', 'e-wallet' => 'E-Wallet'] as $value => $label)
-                                    <option value="{{ $value }}" {{ (optional($data)->salary_method ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                    </select>
-                                    <div class="error-field"></div>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="mb-2" for="salary">Monthly Rate <span class="text-danger">*</span></label>
-                                    <input type="text" id="salary" name="salary" class="form-control restricted" value="{{ optional($data)->salary ?? '' }}" readonly>
-                                    <div class="error-field"></div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="mb-2" for="payroll_account_number">Payroll Account No.</label>
-                                    <input type="text" id="payroll_account_number" name="payroll_account_number" class="form-control" value="{{ optional($data)->payroll_account_no ?? '' }}">
-                                    <div class="error-field"></div>
-                                </div>
+                                    <div class="col-12 col-md-6 mb-3">
+                                        <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
+                                        <select id="tranche_id" name="tranche_id" class="form-select">
+                                            <option value=""> - CHOOSE - </option>
+                                            @foreach($tranches as $tranche)
+                                                <option value="{{ $tranche->id }}" {{ (optional($data)->tranche_id ?? '') == $tranche->id ? 'selected' : '' }}>{{ strtoupper($tranche->name) }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="error-field"></div>
+                                    </div>
+                                    <div class="col-12 col-md-6 mb-3">
+                                        <label class="mb-2" for="step_id">Steps <span class="text-danger">*</span></label>
+                                        <select id="step_id" name="step_id" class="form-select">
+                                            <option value=""> - CHOOSE - </option>
+                                            @foreach(range(1, 8) as $step)
+                                                <option value="{{ $step }}" {{ (optional($data)->step ?? '') == $step ? 'selected' : '' }}>Step {{ $step }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="error-field"></div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="mb-2" for="salary_method">Salary Method <span class="text-danger">*</span></label>
+                                        <select id="salary_method" name="salary_method" class="form-select">
+                                        @foreach(['' => '- CHOOSE -', 'cash' => 'Cash', 'bank transfer' => 'Bank Transfer', 'paycheck' => 'Paycheck', 'e-wallet' => 'E-Wallet'] as $value => $label)
+                                        <option value="{{ $value }}" {{ (optional($data)->salary_method ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                        </select>
+                                        <div class="error-field"></div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="mb-2" for="salary">Monthly Rate <span class="text-danger">*</span></label>
+                                        <input type="text" id="salary" name="salary" class="form-control restricted" value="{{ optional($data)->salary ?? '' }}" readonly>
+                                        <div class="error-field"></div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="mb-2" for="payroll_account_number">Payroll Account No.</label>
+                                        <input type="text" id="payroll_account_number" name="payroll_account_number" class="form-control" value="{{ optional($data)->payroll_account_no ?? '' }}">
+                                        <div class="error-field"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -274,6 +294,32 @@
             });
 
         });
+
+        $('#tranche_id, #step_id').on('change', function () {
+            const tranche_id = $('#tranche_id').val();
+            const step_id = $('#step_id').val();
+            const url = @json(route('hris.employee.information'));
+
+            $.ajax({
+                type: "GET",
+                url: url,
+                data: {
+                    tranche_id: tranche_id,
+                    step_id: step_id,
+                },
+                dataType: "json",
+                success: function (response) {
+                    if (response.data) {
+                        console.log(response.data);
+                        $('#salary').val(response.data.salary);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
+                }
+            });
+        });
+
 
     });
 </script>

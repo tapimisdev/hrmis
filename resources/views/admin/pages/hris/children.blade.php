@@ -202,32 +202,32 @@
             });
         });
 
-    $(document).on('click', '.open-document', function() {
+        $(document).on('click', '.open-document', function() {
 
-        const src = $(this).data('src'); 
+            const src = $(this).data('src'); 
 
-        const galleryContainer = document.getElementById('galleryContainer');
-        if (galleryContainer.lightGalleryInstance) {
-            galleryContainer.lightGalleryInstance.destroy();
-        }
+            const galleryContainer = document.getElementById('galleryContainer');
+            if (galleryContainer.lightGalleryInstance) {
+                galleryContainer.lightGalleryInstance.destroy();
+            }
 
-        const gallery = lightGallery(galleryContainer, {
-            dynamic: true,
-            dynamicEl: [
-                {
-                    src: src,
-                    iframe: true
-                }
-            ],
-            plugins: [lgThumbnail, lgZoom],
-            licenseKey: '0000-0000-000-0000',
-            speed: 500
+            const gallery = lightGallery(galleryContainer, {
+                dynamic: true,
+                dynamicEl: [
+                    {
+                        src: src,
+                        iframe: true
+                    }
+                ],
+                plugins: [lgThumbnail, lgZoom],
+                licenseKey: '0000-0000-000-0000',
+                speed: 500
+            });
+
+            galleryContainer.lightGalleryInstance = gallery;
+
+            gallery.openGallery();
         });
-
-        galleryContainer.lightGalleryInstance = gallery;
-
-        gallery.openGallery();
-    });
 
     });
 </script>

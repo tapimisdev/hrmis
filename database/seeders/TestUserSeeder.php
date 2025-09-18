@@ -13,7 +13,7 @@ class TestUserSeeder extends Seeder
     public function run(): void
     {
         TestUserFactory::new()
-            ->count(100)
+            ->count(50)
             ->withEmployeeData()
             ->create()
             ->each(fn ($user) => $user->assignRole('employee'));

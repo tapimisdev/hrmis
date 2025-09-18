@@ -8,7 +8,7 @@
             </a>
         </x-header>
 
-        <form id="form" action="{{ route('hris.employee.information') }}" method="post">
+        <form id="form" action="{{ route('hris.employee.salary') }}" method="post">
             @method('POST')
             @csrf
             <div class="card shadow p-3">
@@ -16,7 +16,7 @@
                     <div class="row">
                         <div class="col-12 col-md-12 mb-3">
                             <label class="mb-2" for="employee_no">Choose Employees</label>
-                            <select id="employeeSelect" class="form-select select2" multiple="multiple" style="width: 75%">
+                            <select id="employees" name="employees[]" class="form-select select2" multiple="multiple" style="width: 75%">
                                 <option value=""> - CHOOSE - </option>
                                 @foreach ($employees as $divisionName => $units)
                                     <optgroup label="{{ $divisionName }}">
@@ -34,23 +34,31 @@
                             </select>
                             <div class="error-field"></div>
                         </div>  
-                        <div class="col-12 col-md-12 mb-3">
-                            <label for="division" class="mb-3">Choose Tranche</label>
-                            <select id="division_id" class="form-select text-uppercase">
-                                <option value=""> - CHOOSE -</option>
-                                @foreach ($divisions as $division)
-                                    <option value="{{$division->id}}">
-                                        {{ strtoupper($division->name) }}
-                                    </option>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
+                            <select id="tranche_id" name="tranche_id" class="form-select">
+                                <option value=""> - CHOOSE - </option>
+                                @foreach($tranches as $tranche)
+                                    <option value="{{ $tranche->id }}">{{ strtoupper($tranche->name) }}</option>
                                 @endforeach
                             </select>
+                            <div class="error-field"></div>
                         </div>
-                        <div class="col-12 col-md-12 mb-3">
-                            <label for="units" class="mb-3">Choose Step</label>
-                            <select id="unit_id" class="form-select text-uppercase">
-                                <option value=""> - CHOOSE -</option>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="mb-2" for="step_id">Steps <span class="text-danger">*</span></label>
+                            <select id="step_id" name="step_id" class="form-select">
+                                <option value=""> - CHOOSE - </option>
+                                @foreach(range(1, 8) as $step)
+                                    <option value="{{ $step }}">Step {{ $step }}</option>
+                                @endforeach
                             </select>
+                            <div class="error-field"></div>
                         </div>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="mb-2" for="salary">Monthly Rate <span class="text-danger">*</span></label>
+                        <input type="text" id="salary" name="salary" class="form-control restricted" value="0" readonly>
+                        <div class="error-field"></div>
                     </div>
                 </div>
             </div>
@@ -69,31 +77,32 @@
 
         let selectedEmployees = @json($selectedEmployee ?? []);
 
-        $('#employeeSelect').val(selectedEmployees).trigger('change');
+        $('#employees').val(selectedEmployees).trigger('change');
 
         const url = $('#form').attr('action');
         post(url);
 
-        // DIVISIONS ON CHANGE, SHOW UNITS
-        $('#division_id').on('change', function() {
-            const id = $(this).val();
+        $('#tranche_id, #step_id').on('change', function () {
+            const tranche_id = $('#tranche_id').val();
+            const step_id = $('#step_id').val();
             const url = @json(route('hris.employee.information'));
+
             $.ajax({
                 type: "GET",
                 url: url,
-                data: { 'division_id': id },
-                dataType: "JSON",
-                success: function (response) {
-                    const res = response.data;
-                    $('#unit_id').html('<option value=""> - CHOOSE UNIT - </option>'); 
-                    res.forEach(item => {
-                        $('#unit_id').append(`
-                            <option value="${item.id}">${item.name.toUpperCase()}</option>
-                        `);
-                    });
+                data: {
+                    tranche_id: tranche_id,
+                    step_id: step_id,
                 },
-                error: function(xhr, status, error) {
-                    console.error(status, error);
+                dataType: "json",
+                success: function (response) {
+                    if (response.data) {
+                        console.log(response.data);
+                        $('#salary').val(response.data.salary);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
                 }
             });
         });

@@ -46,7 +46,7 @@ class CivilServiceController extends Controller
         $filename = $filename . '.' . $extension;
 
         $file->storeAs(
-            'uploads/employees/' . $employee_no , 
+            'uploads/employees/' . $employee_no . '/civil-service' , 
             $filename, 
             'public'
         );   

@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\Hris\SkillsController;
 use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
+use App\Http\Controllers\Admin\Hris\AccountController;
 use App\Http\Controllers\Admin\Settings\DeductionController;
 use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
@@ -157,6 +158,12 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.skills');
         Route::delete('employee/skills/{employee_no}', [SkillsController::class, 'destroy'])
             ->name('hris.employee.skills');
+
+        # ACCOUNT
+        Route::get('employee/account/{employee_no}', [AccountController::class, 'index'])
+            ->name('hris.employee.account');
+        Route::put('employee/account/{employee_no}', [AccountController::class, 'save'])
+            ->name('hris.employee.account');
 
     });
 

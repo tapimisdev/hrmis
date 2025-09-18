@@ -48,7 +48,7 @@ class WorkExperienceController extends Controller
         $filename = $filename . '.' . $extension;
 
         $file->storeAs(
-            'uploads/employees/' . $employee_no , 
+            'uploads/employees/' . $employee_no . '/work-experience' , 
             $filename, 
             'public'
         );   

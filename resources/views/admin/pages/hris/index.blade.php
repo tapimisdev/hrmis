@@ -47,9 +47,9 @@
                     <table class="table table-hover w-100 pb-3" id="myTable">
                         <thead>
                             <tr>
+                                <th></th>
                                 <th>Employee No</th>
                                 <th>Name</th>
-                                <th>Status</th>
                                 <th>Date Hired</th>
                                 <th style="width: 120px">Action</th>
                             </tr>
@@ -78,9 +78,9 @@
                 }
             },
             "columns": [
+                { data: "profile", name: 'profile' },
                 { data: "employee_no", name: 'employee_no' },
                 { data: "name", name: 'name' },
-                { data: "account_status", name: 'account_status' },
                 { data: "date_hired", name: 'date_hired' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],

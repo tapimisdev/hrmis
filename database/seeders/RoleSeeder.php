@@ -42,7 +42,6 @@ class RoleSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'dev05@dost-tapi.com'],
             [
-                'name' => 'System Admin',
                 'password' => Hash::make('d0$t2025'),
             ]
         );
@@ -52,7 +51,6 @@ class RoleSeeder extends Seeder
         $hr = User::firstOrCreate(
             ['email' => 'hr@dost-tapi.com'],
             [
-                'name' => 'HR Manager',
                 'password' => Hash::make('d0$t2025'),
             ]
         );
@@ -63,7 +61,6 @@ class RoleSeeder extends Seeder
         $employee = User::firstOrCreate(
             ['email' => 'emp@dost-tapi.com'],
             [
-                'name' => 'Kim Mariano',
                 'password' => Hash::make('d0$t2025'),
             ]
         );

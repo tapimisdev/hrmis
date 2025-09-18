@@ -7,6 +7,7 @@ use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class PersonalController extends Controller
 {
@@ -29,80 +30,109 @@ class PersonalController extends Controller
 
         $data = $employee_no && $isExists ? $this->employeeService->getEmployee('personal', $employee_no) : [];
 
+        $profile = $data->profile ?? null;
+
+        if ($profile) {
+            $data->profile = Storage::url('uploads/employees/' . $employee_no . '/profile/' . $data->profile);
+        } else {
+            $data->profile = 'https://ui-avatars.com/api/?name=' 
+                . urlencode(($data->firstname ?? '') . ' ' . ($data->lastname ?? '')) 
+                . '&background=random&color=fff&font-size=0.5';
+        }
+
         return view('admin.pages.hris.personal', compact('isExists', 'employee_no', 'data'));
 
     }
 
     public function save(Request $request, string $employee_no)
     {
-
-        $birth_certificate = '';
-        $marriage_certificate = '';
-
-        $request->validate($this->rules(), $this->messages());          
+        $request->validate($this->rules());          
 
         DB::beginTransaction();
 
         try {
+            $data = [
+                'firstname' => $request->firstname ?? null,
+                'middlename' => $request->middlename ?? null,
+                'lastname' => $request->lastname ?? null,
+                'suffix' => $request->suffix ?? null,
+                'birthday' => $request->birthday ?? null,
+                'civil_status' => $request->civil_status ?? null,
+                'sex' => $request->sex ?? null,
+                'citizenship' => $request->citizenship ?? null,
+                'citizenship_type' => $request->citizenship_type ?? null,
+                'country' => $request->country ?? null,
+                'present_address' => $request->present_address ?? null,
+                'present_province' => $request->present_province ?? null,
+                'present_city' => $request->present_city ?? null,
+                'permanent_address' => $request->permanent_address ?? null,
+                'permanent_province' => $request->permanent_province ?? null,
+                'permanent_city' => $request->permanent_city ?? null,
+                'mobile_number' => $request->mobile_number ?? null,
+                'tel_no' => $request->tel_no ?? null,
+                'height' => $request->height ?? null,
+                'weight' => $request->weight ?? null,
+                'blood_type' => $request->blood_type ?? null,
+                'gsis_no' => $request->gsis_no ?? null,
+                'pagibig_no' => $request->pagibig_no ?? null,
+                'philhealth_no' => $request->philhealth_no ?? null,
+                'sss_no' => $request->sss_no ?? null,
+                'tin_no' => $request->tin_no ?? null,
+                'updated_at' => now()
+            ];
 
+            // Handle profile upload
+            if ($request->hasFile('profile') && $request->file('profile')->isValid()) {
+                $file = $request->file('profile');
+                $profile = 'profile_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('public/uploads/employees/' . $employee_no . '/profile', $profile);
+                $data['profile'] = $profile;
+            }
+
+            // Handle birth certificate upload
+            if ($request->hasFile('birth_certificate') && $request->file('birth_certificate')->isValid()) {
+                $file = $request->file('birth_certificate');
+                $birth_certificate = 'birth_certificate_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('public/uploads/employees/' . $employee_no . '/birth_certificate', $birth_certificate);
+                $data['birth_certificate'] = $birth_certificate;
+            }
+
+            // Handle marriage certificate upload
+            if ($request->hasFile('marriage_certificate') && $request->file('marriage_certificate')->isValid()) {
+                $file = $request->file('marriage_certificate');
+                $marriage_certificate = 'marriage_certificate_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('public/uploads/employees/' . $employee_no . '/marriage_certificate', $marriage_certificate);
+                $data['marriage_certificate'] = $marriage_certificate;
+            }
+
+            // Insert/Update only with the fields that should change
             DB::table('employee_personal')->updateOrInsert(
                 ['employee_no' => $employee_no],
-                [
-                    'profile' => $request->profile ?? null,
-                    'firstname' => $request->firstname ?? null,
-                    'middlename' => $request->middlename ?? null,
-                    'lastname' => $request->lastname ?? null,
-                    'suffix' => $request->suffix ?? null,
-                    'birthday' => $request->birthday ?? null,
-                    'civil_status' => $request->civil_status ?? null,
-                    'sex' => $request->sex ?? null,
-                    'citizenship' => $request->citizenship ?? null,
-                    'citizenship_type' => $request->citizenship_type ?? null,
-                    'country' => $request->country ?? null,
-                    'birth_certificate' => $birth_certificate ?? null,
-                    'marriage_certificate' => $marriage_certificate ?? null,
-                    'present_address' => $request->present_address ?? null,
-                    'present_province' => $request->present_province ?? null,
-                    'present_city' => $request->present_city ?? null,
-                    'permanent_address' => $request->permanent_address ?? null,
-                    'permanent_province' => $request->permanent_province ?? null,
-                    'permanent_city' => $request->permanent_city ?? null,
-                    'mobile_number' => $request->mobile_number ?? null,
-                    'tel_no' => $request->tel_no ?? null,
-                    'height' => $request->height ?? null,
-                    'weight' => $request->weight ?? null,
-                    'blood_type' => $request->blood_type ?? null,
-                    'gsis_no' => $request->gsis_no ?? null,
-                    'pagibig_no' => $request->pagibig_no ?? null,
-                    'philhealth_no' => $request->philhealth_no ?? null,
-                    'sss_no' => $request->sss_no ?? null,
-                    'tin_no' => $request->tin_no ?? null,
-                    'updated_at' => now()
-                ]
+                $data
             );
-
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Personal information of  #' . $employee_no . ' was savedsuccessfully.',
+                'message' => 'Personal information of #' . $employee_no . ' was saved successfully.',
                 'redirect' => ''
             ]);
-            
-        } catch(\Exception $e) {
-             DB::rollBack();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error Occured: ' . $e->getMessage()
+                'message' => 'Error Occurred: ' . $e->getMessage()
             ]);
         }
-        
-
     }
+
+
 
     protected function rules(?string $employee_no = null) {
         return [
+            'profile' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'firstname' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
             'suffix' => 'nullable|in:jr,sr,I,II,III,IV,V',
@@ -118,20 +148,4 @@ class PersonalController extends Controller
         ];
     }
 
-    protected function messages() {
-        return [
-           
-            'firstname.required' => 'The first name is required.',
-            'lastname.required' => 'The last name is required.',
-            'suffix.in' => 'The suffix must be one of the following: jr, sr, I, II, III, IV, or V.',
-            'civil_status.in' => 'The civil status must be one of the following: single, married, divorced, separated, widowed, or annulled.',
-            'sex.in' => 'The sex must be either male or female.',
-            'citizenship_type.required_with' => 'The citizenship type is required when citizenship is provided.',
-            'country.required_if' => 'The country is required when citizenship is dual citizenship.',
-            'mobile_number.regex' => 'The mobile number format is invalid. It should start with 09 and be followed by 9 digits.',
-            'email.email' => 'The email must be a valid email address.',
-            'email.required' => 'The email is required.',
-            'email.unique' => 'The email is already taken.',
-        ];
-    }
 }

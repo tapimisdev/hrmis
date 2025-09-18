@@ -46,8 +46,10 @@ class EmployeeService {
                 'employee_information.date_hired',
                 'employee_information.account_status',
                 'employee_information.isDeleted',
+                'employee_personal.profile',
                 'employee_personal.firstname',
                 'employee_personal.lastname',
+                
 
                 // Organization details
                 'org.id as organization_id',
@@ -115,6 +117,7 @@ class EmployeeService {
             'trainings' => ['table' => 'employee_trainings', 'method' => 'get'],
             'voluntary-works' => ['table' => 'employee_voluntary_works', 'method' => 'get'],
             'skills' => ['table' => 'employee_skills_hobbies', 'method' => 'get'],
+            'account' => ['table' => 'users', 'method' => 'first'], 
         ];
 
         if (!isset($tables[$type])) {
@@ -122,10 +125,18 @@ class EmployeeService {
         }
 
         $config = $tables[$type];
+
+        if ($type === 'account') {
+            return DB::table('users')
+                ->select('users.*')
+                ->join('employee_information', 'employee_information.user_id', '=', 'users.id')
+                ->where('employee_information.employee_no', $employee_no)
+                ->first();
+        }
+
         $query = DB::table($config['table']);
 
         if (!empty($config['joins']) && $type === 'information') {
-            // Subqueries for latest rows
             $latestOrg = DB::table('employee_organization as eo1')
                 ->select('eo1.*')
                 ->whereRaw('eo1.id = (select max(eo2.id) from employee_organization eo2 where eo2.employee_no = eo1.employee_no)');
@@ -140,6 +151,8 @@ class EmployeeService {
 
             $query->select(
                     'employee_information.*',
+                    'users.id as account_id',
+                    'users.email as account_email',
                     'org.id as organization_id',
                     'org.effectivity_date',
                     'divisions.id as division_id',
@@ -154,10 +167,13 @@ class EmployeeService {
                     'employment_types.id as employment_type_id',
                     'employment_types.code as employment_type_code',
                     'employment_types.name as employment_type_name',
+                    'salary.tranche_id',
+                    'salary.step',
                     'salary.amount as salary',
                     'shift.shift_id',
                     'shift.work_schedule_id'
                 )
+                ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
                 ->leftJoinSub($latestOrg, 'org', 'employee_information.employee_no', '=', 'org.employee_no')
                 ->leftJoin('divisions', 'org.division_id', '=', 'divisions.id')
                 ->leftJoin('units', 'org.unit_id', '=', 'units.id')

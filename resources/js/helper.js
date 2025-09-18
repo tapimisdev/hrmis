@@ -38,7 +38,7 @@ export function fieldError(error) {
         let firstErrorField = null; 
 
         $.each(error.response.data.errors, function(fieldName, errorMessage) {
-            const $field = $(`[name="${fieldName}"]`);
+            const $field = $(`[id="${fieldName}"]`);
             $field.addClass('is-invalid');
             $field.closest('.mb-3').find('.error-field').text(errorMessage[0]);
 

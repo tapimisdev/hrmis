@@ -14,6 +14,12 @@ return new class extends Migration
         Schema::create('employee_salary', function (Blueprint $table) {
             $table->id();
             $table->string('employee_no');
+            $table->foreignId('tranche_id')
+                ->nullable()
+                ->constrained('tranche')
+                ->onDelete('restrict');
+            $table->integer('step')
+                ->nullable();
             $table->string('amount');
             $table->date('effectivity_date');
             $table->timestamps();

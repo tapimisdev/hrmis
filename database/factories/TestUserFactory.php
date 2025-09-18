@@ -15,7 +15,6 @@ class TestUserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'           => $this->faker->name(),
             'email'          => $this->faker->unique()->safeEmail(),
             'password'       => Hash::make('password'),
             'remember_token' => Str::random(10),
@@ -65,7 +64,7 @@ class TestUserFactory extends Factory
 
             DB::table('employee_salary')->insert([
                 'employee_no'      => $employeeNo,
-                'amount'           => $this->faker->numberBetween(15000, 80000),
+                'amount'           => 0,
                 'effectivity_date' => now(),
             ]);
         });

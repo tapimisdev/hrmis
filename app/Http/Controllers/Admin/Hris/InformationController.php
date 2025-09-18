@@ -25,6 +25,7 @@ class InformationController extends Controller
         $employment_types = DB::table('employment_types')->get();
         $shifts = DB::table('shifts')->get();
         $schedules = DB::table('work_schedule')->get();
+        $tranches = DB::table('tranche')->get();
 
         if ($request->ajax()) {
             return $this->ajax_request($request);
@@ -37,8 +38,8 @@ class InformationController extends Controller
         }
 
         $data = $employee_no && $isExists ? $this->employeeService->getEmployee('information', $employee_no) : [];
-
-        return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'shifts', 'schedules',  'isExists', 'employee_no', 'data'));
+        
+        return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'shifts', 'schedules', 'tranches', 'isExists', 'employee_no', 'data'));
     }
 
     private function ajax_request($request) {
@@ -46,6 +47,8 @@ class InformationController extends Controller
         $division_id = $request->division_id;
         $employment_type_id = $request->employment_type_id;
         $position_id = $request->position_id;
+        $tranche_id = $request->tranche_id;
+        $step_id = $request->step_id;
 
         if ($division_id) {
             $data = DB::table('units')
@@ -79,12 +82,25 @@ class InformationController extends Controller
             ]);
         }
 
+        if ($tranche_id && $step_id) {
+            $stepColumn = 'step_' . $step_id;
+
+            $data = DB::table('tranche_items')
+                ->where('tranche_id', $tranche_id)
+                ->select($stepColumn . ' as salary') 
+                ->first();
+
+            return response()->json([
+                'status' => $data ? 'success' : 'error',
+                'data'   => $data ?? ['salary' => null],
+            ]);
+        }
+
         return response()->json([
             'status' => 'error',
             'message' => 'no data found'
         ]);
     }
-
 
     public function save(Request $request, ? string $employee_no = null)
     {
@@ -146,6 +162,8 @@ class InformationController extends Controller
             if (!$latestSalary || $latestSalary->amount != $request->salary) {
                 DB::table('employee_salary')->insert([
                     'employee_no'      => $request->employee_no,
+                    'tranche_id'       => $request->tranche_id,
+                    'step'             => $request->step_id,
                     'amount'           => $request->salary,
                     'effectivity_date' => $now,
                     'created_at'       => now(),
