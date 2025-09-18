@@ -52,7 +52,7 @@
         <div class="row g-3 mb-3">
             <div
                 class="col-md-3"
-                v-for="(card, index) in tallyCards"
+                v-for="(card, index) in summary"
                 :key="index"
             >
                 <div class="card p-3">
@@ -82,6 +82,7 @@
                 </select>
             </div>
         </div>
+
     </div>
 </template>
 
@@ -102,6 +103,10 @@ export default {
             type: String, 
             required: true
         },
+        summary: {
+            type: Array,
+            required: true
+        }
     },
     data() {
         return {

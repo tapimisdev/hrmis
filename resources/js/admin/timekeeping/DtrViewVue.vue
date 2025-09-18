@@ -4,12 +4,14 @@
       :employee_id="employee_id"
       :month="month"
       :year="year"
+      :summary="summary"
       @update-date="updateDate"
     />
     <table-dtr-vue
       :employee_id="employee_id"
       :month="month"
       :year="year"
+      @send-summary="handleSummary"
     />
   </div>
 </template>
@@ -29,13 +31,17 @@ export default {
   data() {
     return {
       month: new Date().getMonth() + 1,
-      year: new Date().getFullYear()
+      year: new Date().getFullYear(),
+      summary: []
     }
   },
   methods: {
     updateDate({ month, year }) {
       this.month = month;
       this.year = year;
+    },
+    handleSummary(payload) {
+      this.summary = payload;
     }
   }
 }
