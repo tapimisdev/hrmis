@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreTimeLogsRequest;
 use App\Http\Requests\Employee\StoreAtroRequest;
@@ -13,7 +14,6 @@ use Illuminate\Support\Facades\DB;
 
 class AddTimeApiController extends Controller
 {
-
     protected $timelog_service;
 
     public function __construct(TimelogsServices $timelog_service)
@@ -33,7 +33,7 @@ class AddTimeApiController extends Controller
             // Mark existing logs as inactive
             $oldLogs = DB::table('timelogs')
                 ->whereDate('date_time', $date)
-                ->where('user_id', $validatedData['user_id'])
+                ->where('user_id', $validatedData['user_id'])   
                 ->get();
 
             if ($oldLogs->isNotEmpty()) {
@@ -43,29 +43,29 @@ class AddTimeApiController extends Controller
                     ->update(['is_active' => false]);
             }
 
-            // Prepare each time entry as a separate record
-            $timeEntries = [
-                'time_in'  => $validatedData['time_in'] ?? null,
-                'break_out'=> $validatedData['break_out'] ?? null,
-                'break_in' => $validatedData['break_in'] ?? null,
-                'time_out' => $validatedData['time_out'] ?? null,
-                'overtime_in' => $validatedData['overtime_in'] ?? null,
-                'overtime_out' => $validatedData['overtime_out'] ?? null,
+           $timeEntries = [
+                ['fn' => FnEnum::TimeIn,      'time' => $validatedData['time_in'] ?? null],
+                ['fn' => FnEnum::TimeOut,     'time' => $validatedData['time_out'] ?? null],
+                ['fn' => FnEnum::BreakOut,    'time' => $validatedData['break_out'] ?? null],
+                ['fn' => FnEnum::BreakIn,     'time' => $validatedData['break_in'] ?? null],
+                ['fn' => FnEnum::OvertimeIn,  'time' => $validatedData['overtime_in'] ?? null],
+                ['fn' => FnEnum::OvertimeOut, 'time' => $validatedData['overtime_out'] ?? null],
             ];
 
-            foreach ($timeEntries as $time) {
-                if ($time === null) {
-                    // Skip null entries (like no overtime)
+            foreach ($timeEntries as $entry) {
+                if ($entry['time'] === null) {
                     continue;
                 }
+
                 DB::table('timelogs')->insert([
-                    'user_id'          => $validatedData['user_id'],    
+                    'user_id'          => $validatedData['user_id'],
                     'employee_no'      => $validatedData['employee_no'] ?? null,
-                    'date_time'        => Carbon::parse($date . ' ' . $time)->format('Y-m-d H:i:s'),
+                    'date_time'        => Carbon::parse($date . ' ' . $entry['time'])->format('Y-m-d H:i:s'),
                     'shift_id'         => $validatedData['shift'],
                     'work_schedule_id' => $validatedData['weeklyschedule'],
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
+                    'fn'               => $entry['fn']->value,
+                    'created_at'       => now(),
+                    'updated_at'       => now(),
                 ]);
             }
 

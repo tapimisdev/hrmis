@@ -7,6 +7,8 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+use function PHPUnit\Framework\isEmpty;
+
 class DailyTimeRecordService {
 
     protected $timelogs_services;
@@ -90,6 +92,7 @@ class DailyTimeRecordService {
 
             // Check if the log date is today
             $is_same_day = $today->isSameDay($logDate);
+            $is_restday = false;
 
             // If the date doesn't have a work schedule, assign default
             if(is_null($date['work_schedule_id'])) {
@@ -107,6 +110,7 @@ class DailyTimeRecordService {
             // Mark as 'restday' if the log date is a rest day
             if (in_array($dayName, $date_work_schedule) && $empty_time_in_and_out) {
                 $remarks[] = 'restday';
+                $is_restday = true;
             }
 
             // Mark as 'restday' if the log date is a rest day
@@ -142,7 +146,7 @@ class DailyTimeRecordService {
 
             // Case: No time-in/out, past date
             if ($empty_time_in_and_out && !$is_future) {
-                if(!$is_leave) {
+                if(!$is_leave && !$is_restday) {
                     // Mark as absent if no leave
                     $remarks[] = 'absent';
                     $TOTAL_ABSENT += 1;
@@ -166,37 +170,43 @@ class DailyTimeRecordService {
 
             // ================== TIME PARSING BLOCK ==================
             // Safely parse times to avoid errors if null
-            // Safely parse times to avoid errors if null
             $timeInCarbon       = $this->timelogs_services->parseTime($date['time_in']);
             $timeOutCarbon      = $this->timelogs_services->parseTime($date['time_out']);
             $breakOutCarbon     = $this->timelogs_services->parseTime($date['break_out']);
             $breakInCarbon      = $this->timelogs_services->parseTime($date['break_in']);
             $overtimeOutCarbon  = $this->timelogs_services->parseTime($date['overtime_out']);
             $overtimeInCarbon   = $this->timelogs_services->parseTime($date['overtime_in']);
-            
-            if (!$timeInCarbon || !$timeOutCarbon || !$breakOutCarbon || !$breakInCarbon) {
-                $remarks[] = 'discrepancy';
-            } 
 
-            if ($breakOutCarbon && $breakInCarbon) {
-                $break = $breakOutCarbon . ' to ' . $breakInCarbon;
-            } elseif ($breakOutCarbon) {
-                $break = $breakOutCarbon . ' to -- : --';
-            } elseif ($breakInCarbon) {
-                $break = '-- : -- to ' . $breakInCarbon;
-            } else {
-                $break = null;
+            // Break time formatting using switch-case
+            switch (true) {
+                case ($breakOutCarbon && $breakInCarbon):
+                    $break = $breakOutCarbon . ' to ' . $breakInCarbon;
+                    break;
+                case ($breakOutCarbon):
+                    $break = $breakOutCarbon . ' to -- : --';
+                    break;
+                case ($breakInCarbon):
+                    $break = '-- : -- to ' . $breakInCarbon;
+                    break;
+                default:
+                    $break = null;
+                    break;
             }
-            
-            // Combine overtime times if any is present
-            if ($overtimeInCarbon && $overtimeOutCarbon) {
-                $overtime = $overtimeInCarbon . ' to ' . $overtimeOutCarbon;
-            } elseif ($overtimeInCarbon) {
-                $overtime = $overtimeInCarbon . ' to  -- : --';
-            } elseif ($overtimeOutCarbon) {
-                $overtime = ' -- : -- to ' . $overtimeOutCarbon;
-            } else {
-                $overtime = null;
+
+            // Overtime time formatting using switch-case
+            switch (true) {
+                case ($overtimeInCarbon && $overtimeOutCarbon):
+                    $overtime = $overtimeInCarbon . ' to ' . $overtimeOutCarbon;
+                    break;
+                case ($overtimeInCarbon):
+                    $overtime = $overtimeInCarbon . ' to  -- : --';
+                    break;
+                case ($overtimeOutCarbon):
+                    $overtime = ' -- : -- to ' . $overtimeOutCarbon;
+                    break;
+                default:
+                    $overtime = null;
+                    break;
             }
 
             // ================== END TIME PARSING ==================
@@ -223,9 +233,12 @@ class DailyTimeRecordService {
             // ================== START CHECK TARDINESS AND UNDERTIME ==================
 
             $computed_tar_underime = $this->timelogs_services->computeTardinessAndUndertime($date);
-            $TOTAL_UT += $computed_tar_underime['total_ut_mins'];
+            $TOTAL_UT += $computed_tar_underime['lost_minutes'];
 
-            // dd($computed_tar_underime);
+            if(!is_null($computed_tar_underime['remark'])) {
+                $remarks[] = $computed_tar_underime['remark'];
+            }
+
             // ================== END CHECK TARDINESS AND UNDERTIME ==================
 
             $total_time_work = $computed_tar_underime['actual_work_mins'];
@@ -239,13 +252,13 @@ class DailyTimeRecordService {
                 'time_in'           => $timeInCarbon,
                 'time_out'          => $timeOutCarbon,
                 'break'             => $break   ,
-                'overtime'          => $overtime,
+                'overtime'          => $overtime,   
                 'shift_id'          => $date['shift_id'],
                 'work_schedule_id'  => $date['work_schedule_id'],
                 'ot_mins'           => $ot_mins ?? 0,
                 'total_time_work'   => $total_time_work ?? 0,
                 'doble'             => $date['doble'] ?? 0,          
-                'late_undertime'    => $computed_tar_underime['total_ut_mins'] ?? 0,
+                'late_undertime'    => $computed_tar_underime['lost_minutes'] ?? 0,
                 'paid_hours'        => $paid_hours ?? 0,
                 'remarks'           => $remarks
             ];

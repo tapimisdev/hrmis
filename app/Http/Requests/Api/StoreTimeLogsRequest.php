@@ -27,8 +27,8 @@ class StoreTimeLogsRequest extends FormRequest
 
             // Times must be in proper format
             'time_in' => ['required', 'date_format:H:i:s'],
-            'break_out' => ['required', 'date_format:H:i:s', 'after:time_in'],
-            'break_in' => ['required', 'date_format:H:i:s', 'after:break_out'],
+            'break_out' => ['nullable', 'date_format:H:i:s', 'after:time_in'],
+            'break_in' => ['nullable', 'date_format:H:i:s', 'after:break_out'],
             'time_out' => ['required', 'date_format:H:i:s', 'after:time_in'],
 
             'overtime_in' => ['nullable', 'date_format:H:i:s', 'after:break_out'],
@@ -47,35 +47,35 @@ class StoreTimeLogsRequest extends FormRequest
 
     public function withValidator($validator)
     {
-        $validator->after(function ($validator) {
-            $times = [
-                'time_in' => $this->input('time_in'),
-                'break_out' => $this->input('break_out'),
-                'break_in' => $this->input('break_in'),
-                'time_out' => $this->input('time_out'),
-                'overtime_in' => $this->input('overtime_in'),
-                'overtime_out' => $this->input('overtime_out'),
-            ];
+        // $validator->after(function ($validator) {
+        //     $times = [
+        //         'time_in' => $this->input('time_in'),
+        //         'break_out' => $this->input('break_out'),
+        //         'break_in' => $this->input('break_in'),
+        //         'time_out' => $this->input('time_out'),
+        //         'overtime_in' => $this->input('overtime_in'),
+        //         'overtime_out' => $this->input('overtime_out'),
+        //     ];
 
-            // Filter out nulls so we only check provided fields
-            $times = array_filter($times);
+        //     // Filter out nulls so we only check provided fields
+        //     $times = array_filter($times);
 
-            // Sort times in chronological order
-            $ordered = collect($times)->sort()->values();
+        //     // Sort times in chronological order
+        //     $ordered = collect($times)->sort()->values();
 
-            // Check if each pair has at least 10 seconds gap
-            for ($i = 0; $i < count($ordered) - 1; $i++) {
-                $first = \Carbon\Carbon::createFromFormat('H:i:s', $ordered[$i]);
-                $second = \Carbon\Carbon::createFromFormat('H:i:s', $ordered[$i + 1]);
+        //     // Check if each pair has at least 10 seconds gap
+        //     for ($i = 0; $i < count($ordered) - 1; $i++) {
+        //         $first = \Carbon\Carbon::createFromFormat('H:i:s', $ordered[$i]);
+        //         $second = \Carbon\Carbon::createFromFormat('H:i:s', $ordered[$i + 1]);
 
-                if ($second->diffInSeconds($first) < 10) {
-                    $validator->errors()->add(
-                        'time_in',
-                        'Each log must be at least 10 seconds apart.'
-                    );
-                    break;
-                }
-            }
-        });
+        //         if ($second->diffInSeconds($first) < 10) {
+        //             $validator->errors()->add(
+        //                 'time_in',
+        //                 'Each log must be at least 10 seconds apart.'
+        //             );
+        //             break;
+        //         }
+        //     }
+        // });
     }
 }
