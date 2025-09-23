@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
 use App\Http\Controllers\Admin\Hris\AccountController;
+use App\Http\Controllers\Admin\Services\EventsController;
 use App\Http\Controllers\Admin\Settings\DeductionController;
 use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
 use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
 use App\Http\Controllers\Admin\Settings\TrancheController;
+use App\Http\Controllers\Admin\Settings\ApproverController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Employee\AtroController;
@@ -167,6 +169,15 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
 
     });
 
+
+    # SERVICES
+    Route::prefix('service')->group(function() {
+
+        # EVENTS AND ANNOUNCEMENTS
+        route::resource('events', EventsController::class)->names('services.events');
+
+    });
+
     Route::prefix('timekeeping')->group(function() {
         # TIMELOGS
         Route::resource('timelogs', TimelogController::class)->only('index');
@@ -227,6 +238,10 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
         Route::get('tranche/{id}/edit', [TrancheController::class, 'edit'])->name('settings.tranche.edit');
         Route::put('tranche/{id}/edit', [TrancheController::class, 'update'])->name('settings.tranche.update');
         Route::any('tranche/{id}/destroy', [TrancheController::class, 'destroy'])->name('settings.tranche.destroy');
+
+        # APPROVERS
+        Route::resource('approvers', ApproverController::class)->names('settings.approvers');
+
     });
 });
 

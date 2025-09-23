@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             ShiftAndWeeklyScheduleSeeder::class,
             EmploymentTypeSeeder::class,
-            TimeLogsSeeder::class,
             OrganizationSeeder::class,
             LeaveSeeder::class,
             DivisionSeeder::class,
@@ -25,6 +24,7 @@ class DatabaseSeeder extends Seeder
             PositionSeeder::class,
             TestUserSeeder::class,
             CountriesSeeder::class,
+            TimeLogsSeeder::class,
         ]);
     }
 }

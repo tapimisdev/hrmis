@@ -93,8 +93,23 @@
             <div class="collapse collapsable" id="services" data-bs-parent=".sidebar-list">
                 <ul class="nested-list">
                     <li class="nested-item p-2">
+                        <a href="{{ route('services.events.index') }}" class="d-flex gap-2 align-items-center">
+                            <i class="fa-solid fa-chart-simple"></i> Events & Announcements
+                        </a>
+                    </li>
+                    <li class="nested-item p-2">
                         <a href="#" class="d-flex gap-2 align-items-center">
-                            <i class="fa-solid fa-chart-simple"></i> Service Item
+                            <i class="fa-solid fa-chart-simple"></i> Leave Application
+                        </a>
+                    </li>
+                    <li class="nested-item p-2">
+                        <a href="#" class="d-flex gap-2 align-items-center">
+                            <i class="fa-solid fa-chart-simple"></i> Passlip Application
+                        </a>
+                    </li>
+                    <li class="nested-item p-2">
+                        <a href="#" class="d-flex gap-2 align-items-center">
+                            <i class="fa-solid fa-chart-simple"></i> Overtime Application
                         </a>
                     </li>
                 </ul>
@@ -189,6 +204,11 @@
                             Tranches
                         </a>
                     </li>
+                    <li class="nested-item p-2">
+                        <a href="{{ route('settings.approvers.index') }}" class="d-flex gap-2 align-items-center">
+                            Approvers
+                        </a>
+                    </li>
                 </ul>
             </div>
         </li>
@@ -200,7 +220,6 @@
                                 document.getElementById('logout-form').submit();">
                 <i class="fa-solid fa-right-from-bracket"></i> {{ __('Logout') }}
             </a>
-
             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                 @csrf
             </form>

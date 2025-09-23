@@ -15,6 +15,7 @@ window.lightGallery = lightGallery;
 window.lgThumbnail = lgThumbnail;
 window.lgZoom = lgZoom;
 window.loadCountries = loadCountries;
+window.alert = alert;
 
 redirectToTab();
 
@@ -104,6 +105,34 @@ $('.select2').select2({
     dropdownParent: $('body'),
     closeOnSelect: false 
 });
+
+ClassicEditor
+    .create(document.querySelector('.ckeditor'), {
+        toolbar: [
+            'heading', '|',
+            'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',
+            'blockQuote', 'undo', 'redo'
+        ],
+        removePlugins: [
+            'CKFinder',
+            'CKFinderUploadAdapter',
+            'EasyImage',
+            'Image',
+            'ImageCaption',
+            'ImageStyle',
+            'ImageToolbar',
+            'ImageUpload',
+            'MediaEmbed',
+            'MediaEmbedToolbar'
+        ]
+    })
+    .then(editor => {
+        editor.ui.view.editable.element.style.height = '300px';
+    })
+    .catch(error => {
+        console.error(error);
+    });
+
 
  $(document).on('click', '.open-document', function() {
 

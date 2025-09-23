@@ -37,4 +37,7 @@ return [
     'image'    => '*must be an image',
     'dimensions' => '*invalid image dimensions',
     'size'     => '*file size must be exactly :size kilobytes',
+
+    'after_or_equal' => '*must be a date after or now :date',
+    'after'          => '*must be a date after :date',
 ];
