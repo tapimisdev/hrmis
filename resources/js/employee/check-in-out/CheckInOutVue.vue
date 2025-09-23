@@ -17,7 +17,7 @@
         <div class="w-100 d-flex gap-4 px-4">
           <button 
             class="btn btn-outline-primary btn-thick-outline py-3 px-5"
-            @click="setTime('timeIn')" 
+            @click="setTime(0)" 
             v-if="!isTimeInDisabled"
             :disabled="isTimeInDisabled || buttonLoading === 'timeIn'">
             <i v-if="buttonLoading === 'timeIn'" class="fas fa-spinner fa-spin"></i>
@@ -27,7 +27,7 @@
 
           <button 
             class="btn btn-outline-primary btn-thick-outline py-3 px-5" 
-            @click="setTime('breakOut')" 
+            @click="setTime(2)" 
             v-if="!isBreakOutDisabled"
             :disabled="isBreakOutDisabled || buttonLoading === 'breakOut'">
             <i v-if="buttonLoading === 'breakOut'" class="fas fa-spinner fa-spin"></i>
@@ -37,7 +37,7 @@
 
           <button 
             class="btn btn-outline-primary btn-thick-outline py-3 px-5" 
-            @click="setTime('breakIn')" 
+            @click="setTime(3)" 
             v-if="!isBreakInDisabled"
             :disabled="isBreakInDisabled || buttonLoading === 'breakIn'">
             <i v-if="buttonLoading === 'breakIn'" class="fas fa-spinner fa-spin"></i>
@@ -47,7 +47,7 @@
 
           <button 
             class="btn btn-danger py-3 px-5" 
-            @click="setTime('timeOut')"
+            @click="setTime(1)"
             :disabled="isTimeOutDisabled || buttonLoading === 'timeOut'">
             <i v-if="buttonLoading === 'timeOut'" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-sign-out-alt"></i>
@@ -56,7 +56,7 @@
 
           <button 
               class="btn btn-primary btn-thick-outline py-3 px-5" 
-              @click="setTime('overtimeIn')"
+              @click="setTime(4)"
               v-if="!isOvertimeInDisabled"
               :disabled="isOvertimeInDisabled || buttonLoading === 'overtimeIn'">
               <i v-if="buttonLoading === 'overtimeIn'" class="fas fa-spinner fa-spin"></i>
@@ -66,7 +66,7 @@
 
           <button 
               class="btn btn-warning text-light btn-thick-outline py-3 px-5" 
-              @click="setTime('overtimeOut')"
+              @click="setTime(5)"
               v-if="!isOvertimeOutDisabled"
               :disabled="isOvertimeOutDisabled || buttonLoading === 'overtimeOut'">
               <i v-if="buttonLoading === 'overtimeOut'" class="fas fa-spinner fa-spin"></i>
@@ -159,12 +159,13 @@ function setTime(type) {
   Swal.fire({
     title: "Are you sure?",
     icon: "question",
-    text: `You are about to log your ${type.replace(/([A-Z])/g, ' $1').toLowerCase()}.`,
+    text: `You are about to log this time.`,
     showCancelButton: true,
     confirmButtonText: "Save",
   }).then((result) => {
     if (result.isConfirmed) {
       buttonLoading.value = type; // Set loading for this button
+
       axios.post('/employee/check-in-out', { type, date_time: getCurrentTime() })
         .then(response => {
           SuccesToast.fire({

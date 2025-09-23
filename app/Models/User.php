@@ -72,4 +72,23 @@ class User extends Authenticatable
 
         return 'No Name';
     }
+
+    public function getShiftAndWorkSchedule()
+    {
+        $employee_no = DB::table('employee_information')->where('user_id', $this->id)->value('employee_no');
+
+        $schedule = DB::table('employee_shift_work_schedule')
+            ->where('employee_no', $employee_no)
+            ->where('effectivity_date', '<=', now())
+            ->first();
+
+        if (!$schedule) {
+            throw new \Exception('Please ask your HR to set your Shift and Work Schedule.');
+        }
+
+        return [
+            'shift_id'         => $schedule->shift_id,
+            'work_schedule_id' => $schedule->work_schedule_id,
+        ];
+    }
 }

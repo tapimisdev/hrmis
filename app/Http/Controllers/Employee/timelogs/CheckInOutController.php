@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee\timelogs;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\Timelogs\CheckInOutRequest;
+use App\Models\User;
 use App\Services\TimelogsServices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -47,6 +48,8 @@ class CheckInOutController extends Controller
     {
         $validatedData = $request->validated();
 
+        $fn = $validatedData['type'] ?? null;
+
         DB::beginTransaction();
 
         try {
@@ -54,8 +57,10 @@ class CheckInOutController extends Controller
             $validatedData['user_id'] = auth()->user()->id;
             $validatedData['employee_no'] = auth()->user()->employee_no;
 
+            $user = User::find($validatedData['user_id']);
+            $user_schedule = $user->getShiftAndWorkSchedule();
+            // get current timelogs
             $current_timelog = $this->timelogsServices->getTodaysLogs($validatedData['user_id']);
-
             
             if (    !empty($current_timelog['timeIn']) &&
                     !empty($current_timelog['breakOut']) &&
@@ -74,11 +79,12 @@ class CheckInOutController extends Controller
             }
 
             $timelog = DB::table('timelogs')->insert([
-                'user_id'     => $validatedData['user_id'],
-                'employee_no' => $validatedData['employee_no'] ?? null,
-                'date_time'   => $validatedData['date_time'],
-                'shift_id'   => 1,
-                'work_schedule_id'   => 1,
+                'user_id'           => $validatedData['user_id'],
+                'employee_no'       => $validatedData['employee_no'] ?? null,
+                'date_time'         => $validatedData['date_time'],
+                'fn'                => $fn,
+                'shift_id'           => $user_schedule['shift_id'],
+                'work_schedule_id'   => $user_schedule['work_schedule_id'],
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ]);
