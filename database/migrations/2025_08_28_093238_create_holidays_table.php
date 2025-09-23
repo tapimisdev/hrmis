@@ -21,6 +21,12 @@ return new class extends Migration
                 'special_non_working',// Special Non-working Day
                 'company'             // Company-declared Holiday
             ])->default('regular');
+            
+            // Pay rules as decimal multipliers
+            $table->decimal('no_work_rate', 4, 2)->default(0.00);   // e.g., 1.00 = 100%, 0.00 = no pay
+            $table->decimal('work_rate', 4, 2)->default(1.00);      // e.g., 2.00 = 200%, 1.30 = 130%
+            $table->decimal('overtime_rate', 4, 2)->default(1.00);  // e.g., 2.60 = 260%, 1.69 = 169%
+
             $table->boolean('is_repeating')->default(false); // repeats yearly?
             $table->boolean('is_active')->default(true);
             $table->timestamps();

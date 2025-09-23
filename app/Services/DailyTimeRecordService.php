@@ -86,13 +86,50 @@ class DailyTimeRecordService {
             $empty_time_in_and_out = (empty($date['time_in']) && empty($date['time_out']));
             $ot_mins = 0;
             $total_time_work = 0;
+            $double = 1;
             // Parse date string into Carbon object
             $logDate = Carbon::parse($date['date']);
             $dayName = $logDate->format('l');  // Get day name (e.g., Monday)
-
+            
             // Check if the log date is today
             $is_same_day = $today->isSameDay($logDate);
             $is_restday = false;
+
+            $holiday = $this->timelogs_services->getHolidays($date['date']);
+
+            if($holiday) {
+                $remarks[] = 'holiday';
+                $holiday_no_work_rate = $holiday->no_work_rate;
+                $holiday_work_rate = $holiday->work_rate;
+                $holiday_overtime = $holiday->overtime_rate;
+
+                // If no time in/out on holiday, mark as holiday
+                $TOTAL_HOLIDAY += 1;
+
+                if(!$empty_time_in_and_out) {
+                    $double = $holiday_work_rate;
+                } else {
+                    $double = $holiday_no_work_rate;
+                    $shift = DB::table('shifts')->where('id', $shift_id )->first();
+
+                    $computedData[] = [
+                        'user_id'           => $userId,
+                        'time_in'           => null,
+                        'time_out'          => null,
+                        'break'             => null,
+                        'overtime'          => null,
+                        'shift_id'          => $date['shift_id'],
+                        'work_schedule_id'  => $date['work_schedule_id'],
+                        'ot_mins'           => 0,
+                        'total_time_work'   => $shift->working_hours * 60,
+                        'doble'             => $double,
+                        'late_undertime'    => 0,
+                        'paid_hours'        => $shift->working_hours * 60,
+                        'remarks'           => $remarks,
+                    ];
+                    continue;
+                }
+            }
 
             // If the date doesn't have a work schedule, assign default
             if(is_null($date['work_schedule_id'])) {
@@ -159,6 +196,7 @@ class DailyTimeRecordService {
                         continue;
                     }
                 }
+                
             }
 
             // Case: No time-in/out and future date without leave
@@ -257,7 +295,7 @@ class DailyTimeRecordService {
                 'work_schedule_id'  => $date['work_schedule_id'],
                 'ot_mins'           => $ot_mins ?? 0,
                 'total_time_work'   => $total_time_work ?? 0,
-                'doble'             => $date['doble'] ?? 0,          
+                'doble'             => $double,          
                 'late_undertime'    => $computed_tar_underime['lost_minutes'] ?? 0,
                 'paid_hours'        => $paid_hours ?? 0,
                 'remarks'           => $remarks

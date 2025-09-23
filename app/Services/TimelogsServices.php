@@ -409,7 +409,7 @@ class TimelogsServices {
      *     @type string      $remarks          Remarks/reason (e.g., "absent", "holiday")
     * }
     */
-    public function insertNoData($remarks, $userId)
+    public function insertNoData($remarks, $userId, $double = 0)
     {
         return [
             'user_id'           => $userId,
@@ -420,9 +420,10 @@ class TimelogsServices {
             'shift_id'          => null,
             'work_schedule_id'  => null,
             'ot_mins'           => 0,
-            'total_paid_hrs'    => 0,
-            'doble'             => 0,   // possibly double pay (e.g., holiday)
+            'total_time_work'    => 0,
+            'doble'             => $double,
             'late_undertime'    => 0,
+            'paid_hours'        => 0,
             'remarks'           => $remarks,
         ];
     }
@@ -801,6 +802,14 @@ class TimelogsServices {
         }
 
         return $restDays;
+    }
+
+    public function getHolidays($date_today)
+    {
+        return DB::table('holidays')
+            ->whereDate('date', $date_today)
+            ->where('is_active', true)
+            ->first();
     }
 
 }

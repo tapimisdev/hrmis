@@ -24,15 +24,18 @@
                 <div class="row my-3">
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="name">Holiday Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" name="name" class="form-control" value="{{ $holiday->name ?? '' }}">
+                        <input type="text" id="name" name="name" class="form-control" 
+                               value="{{ $holiday->name ?? '' }}">
                         <div class="text-danger name_error error-field"></div>
                     </div>
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="date">Date <span class="text-danger">*</span></label>
-                        <input type="date" id="date" name="date" class="form-control" value="{{ isset($holiday->date) ? \Carbon\Carbon::parse($holiday->date)->format('Y-m-d') : '' }}">
+                        <input type="date" id="date" name="date" class="form-control" 
+                               value="{{ isset($holiday->date) ? \Carbon\Carbon::parse($holiday->date)->format('Y-m-d') : '' }}">
                         <div class="text-danger date_error error-field"></div>
                     </div>
                 </div>
+
                 <div class="row my-3">
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="type">Type <span class="text-danger">*</span></label>
@@ -53,6 +56,28 @@
                         <div class="text-danger is_repeating_error error-field"></div>
                     </div>
                 </div>
+
+                {{-- New Rate Fields --}}
+                <div class="row my-3">
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="mb-2" for="no_work_rate">No Work Rate (%) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" id="no_work_rate" name="no_work_rate" class="form-control" 
+                               value="{{ $holiday->no_work_rate ?? '' }}" placeholder="e.g., 1.00">
+                        <div class="text-danger no_work_rate_error error-field"></div>
+                    </div>
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="mb-2" for="work_rate">Work Rate (%) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" id="work_rate" name="work_rate" class="form-control" 
+                               value="{{ $holiday->work_rate ?? '' }}" placeholder="e.g., 1.30">
+                        <div class="text-danger work_rate_error error-field"></div>
+                    </div>
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="mb-2" for="overtime_rate">Overtime Rate (%) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" id="overtime_rate" name="overtime_rate" class="form-control" 
+                               value="{{ $holiday->overtime_rate ?? '' }}" placeholder="e.g., 1.50">
+                        <div class="text-danger overtime_rate_error error-field"></div>
+                    </div>
+                </div>
             </div>
             <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
                 <button type="button" id="update-button"
@@ -62,7 +87,6 @@
             </div>
         </div>
     </form>
-
 
  </div>
 @endsection
@@ -82,6 +106,9 @@ $(function() {
             date: $("#date").val(),
             type: $("#type").val(),
             is_repeating: $("#is_repeating").val(),
+            no_work_rate: $("#no_work_rate").val(),
+            work_rate: $("#work_rate").val(),
+            overtime_rate: $("#overtime_rate").val(),
         };
 
         // Get holiday id from a hidden input or JS variable
@@ -117,5 +144,4 @@ $(function() {
     });
 });
 </script>
-
 @endsection
