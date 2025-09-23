@@ -20,6 +20,7 @@ return new class extends Migration
             $table->dateTime('date_time');
             $table->foreignId('shift_id')->constrained('shifts')->nullable();
             $table->foreignId('work_schedule_id')->constrained('work_schedule')->nullable();
+            $table->integer('fn');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

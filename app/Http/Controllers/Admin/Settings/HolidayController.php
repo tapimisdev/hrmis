@@ -40,13 +40,16 @@ class HolidayController extends Controller
         DB::beginTransaction();
         try {
             $holiday = DB::table('holidays')->insert([
-                'name' => $validated['name'],
-                'date' => $validated['date'],
-                'type' => $validated['type'],
-                'is_repeating' => $request->input('is_repeating', 0),
-                'is_active' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'name'          => $validated['name'],
+                'date'          => $validated['date'],
+                'type'          => $validated['type'],
+                'is_repeating'  => $request->input('is_repeating', 0),
+                'no_work_rate'  => $validated['no_work_rate'],
+                'work_rate'     => $validated['work_rate'],
+                'overtime_rate' => $validated['overtime_rate'],
+                'is_active'     => true,
+                'created_at'    => now(),
+                'updated_at'    => now(),
             ]);
             DB::commit();
             return response()->json([
@@ -106,6 +109,9 @@ class HolidayController extends Controller
                 'date' => $validated['date'],
                 'type' => $validated['type'],
                 'is_repeating' => $request->input('is_repeating', 0),
+                'no_work_rate'  => $validated['no_work_rate'],
+                'work_rate'     => $validated['work_rate'],
+                'overtime_rate' => $validated['overtime_rate'],
                 'updated_at' => now(),
             ]);
             DB::commit();

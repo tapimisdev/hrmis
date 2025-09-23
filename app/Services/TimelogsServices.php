@@ -58,6 +58,7 @@ class TimelogsServices {
      * @param  string|null $endDate   Optional end date for filtering (YYYY-MM-DD or full datetime).
      * @return \Illuminate\Support\Collection A collection of logs grouped by date.
      */
+
     private function fetchLogs($userId, $startDate = null, $endDate = null)
     {
         $query = DB::table('timelogs')
@@ -71,8 +72,27 @@ class TimelogsServices {
         }
 
         // Group logs by date (e.g., "2025-09-18")
-        return $query->get()->groupBy(function ($item) {
+        $grouped = $query->get()->groupBy(function ($item) {
             return \Carbon\Carbon::parse($item->date_time)->toDateString();
+        });
+
+        // Ensure only the first "time in" per day is kept
+        return $grouped->map(function ($logs) {
+            $seen = [];
+            return $logs->filter(function ($log) use (&$seen) {
+                // Cast type to int for comparison
+                $type = (int) $log->fn;
+
+                // If it's a time in and we already saw one, skip it
+                if ($type === \App\Enums\FnEnum::TimeIn->value) {
+                    if (in_array($type, $seen, true)) {
+                        return false;
+                    }
+                }
+
+                $seen[] = $type;
+                return true;
+            });
         });
     }
 
@@ -129,31 +149,8 @@ class TimelogsServices {
      */
     public function getValidLogs($logs)
     {
-        $duplicateThreshold = 10; // Seconds for collapsing near-duplicates
-
         // Normalize input into a collection & sort chronologically
         $logs = collect($logs)->sortBy('date_time')->values();
-
-        // Collapse near-duplicate logs (within threshold)
-        $filtered = collect();
-        foreach ($logs as $log) {
-            if ($filtered->isEmpty()) {
-                $filtered->push($log);
-                continue;
-            }
-
-            $lastTime = \Carbon\Carbon::parse($filtered->last()->date_time);
-            $currTime = \Carbon\Carbon::parse($log->date_time);
-
-            // Skip if log is too close to the previous one
-            if ($currTime->diffInSeconds($lastTime) < $duplicateThreshold) {
-                continue;
-            }
-
-            $filtered->push($log);
-        }
-
-        $n = $filtered->count();
 
         // Default structured result
         $validLogs = [
@@ -163,32 +160,60 @@ class TimelogsServices {
             'out'             => null,
             'overtime_in'     => null,
             'overtime_out'    => null,
-            'shift_id'        => $filtered->first()->shift_id ?? null,
-            'work_schedule_id'=> $filtered->first()->work_schedule_id ?? null,
+            'shift_id'        => $logs->first()->shift_id ?? null,
+            'work_schedule_id'=> $logs->first()->work_schedule_id ?? null,
         ];
 
-        if ($n === 0) return $validLogs;
+        if ($logs->isEmpty()) {
+            return $validLogs;
+        }
 
-        // Separate normal logs (first 4) from overtime logs (remaining)
-        $normalLogs   = $filtered->take(4);
-        $overtimeLogs = $filtered->slice(4)->values();
+        // Assign logs by type (only first per type)
+        foreach ($logs as $log) {
+            $type = (int) $log->fn;
 
-        // Assign normal logs
-        $validLogs['in']        = $normalLogs->get(0) ?? null;
-        $validLogs['break_out'] = $normalLogs->get(1) ?? null;
-        $validLogs['break_in']  = $normalLogs->get(2) ?? null;
-        $validLogs['out']       = $normalLogs->get(3) ?? null;
+            switch ($type) {
+                case \App\Enums\FnEnum::TimeIn->value:
+                    if (!$validLogs['in']) {
+                        $validLogs['in'] = $log;
+                    }
+                    break;
 
-        // Assign overtime logs (if any)
-        if ($overtimeLogs->count() === 1) {
-            $validLogs['overtime_in'] = $overtimeLogs->first();
-        } elseif ($overtimeLogs->count() >= 2) {
-            $validLogs['overtime_in']  = $overtimeLogs->first();
-            $validLogs['overtime_out'] = $overtimeLogs->last();
+                case \App\Enums\FnEnum::TimeOut->value:
+                    if (!$validLogs['out']) {
+                        $validLogs['out'] = $log;
+                    }
+                    break;
+
+                case \App\Enums\FnEnum::BreakOut->value:
+                    if (!$validLogs['break_out']) {
+                        $validLogs['break_out'] = $log;
+                    }
+                    break;
+
+                case \App\Enums\FnEnum::BreakIn->value:
+                    if (!$validLogs['break_in']) {
+                        $validLogs['break_in'] = $log;
+                    }
+                    break;
+
+                case \App\Enums\FnEnum::OvertimeIn->value:
+                    if (!$validLogs['overtime_in']) {
+                        $validLogs['overtime_in'] = $log;
+                    }
+                    break;
+
+                case \App\Enums\FnEnum::OvertimeOut->value:
+                    if (!$validLogs['overtime_out']) {
+                        $validLogs['overtime_out'] = $log;
+                    }
+                    break;
+            }
         }
 
         return $validLogs;
     }
+
 
     public function parseTime($time) {
         return !empty($time) ? Carbon::parse($time)->format('h:i A') : null;
@@ -384,7 +409,7 @@ class TimelogsServices {
      *     @type string      $remarks          Remarks/reason (e.g., "absent", "holiday")
     * }
     */
-    public function insertNoData($remarks, $userId)
+    public function insertNoData($remarks, $userId, $double = 0)
     {
         return [
             'user_id'           => $userId,
@@ -395,9 +420,10 @@ class TimelogsServices {
             'shift_id'          => null,
             'work_schedule_id'  => null,
             'ot_mins'           => 0,
-            'total_paid_hrs'    => 0,
-            'doble'             => 0,   // possibly double pay (e.g., holiday)
+            'total_time_work'    => 0,
+            'doble'             => $double,
             'late_undertime'    => 0,
+            'paid_hours'        => 0,
             'remarks'           => $remarks,
         ];
     }
@@ -553,69 +579,98 @@ class TimelogsServices {
         $shift = DB::table('shifts')->where('id', $date['shift_id'])->first();
         if (!$shift) return null;
 
-        $referenceDate = Carbon::parse($date['date']);
-        $total_hours   = $shift->working_hours + $shift->breaktime_hours;
+        $workDate = Carbon::parse($date['date']);
+
+        $breakDurationMins = $shift->breaktime_hours * 60;
+        $shiftDurationHours = $shift->working_hours + $shift->breaktime_hours; // correctly include break hours
 
         // Helper to combine reference date with time
-        $combine = fn($time) => $time ? Carbon::parse($time)->setDate($referenceDate->year, $referenceDate->month, $referenceDate->day) : null;
+        $combineWithDate = fn($time) => $time
+            ? Carbon::parse($time)->setDate($workDate->year, $workDate->month, $workDate->day)
+            : null;
 
-        // Shift times
-        $earliest_time_in = $combine($shift->earliest_time);
-        $latest_time_in   = $combine($shift->start_time);
-        $breakout_time    = $combine($shift->break_out_time);
-        $breakin_time     = $combine($shift->break_in_time);
-        $end_time         = $combine($shift->end_time);
-        $base_time        = null;
+        // Shift schedule
+        $shiftEarliestIn  = $combineWithDate($shift->earliest_time);
+        $shiftStart       = $combineWithDate($shift->start_time);
+        $shiftBreakOut    = $combineWithDate($shift->break_out_time);
+        $shiftBreakIn     = $combineWithDate($shift->break_in_time);
+        $shiftEnd         = $combineWithDate($shift->end_time);
+        $baseStart        = $shiftStart;
 
         // Employee logs
-        $time_in   = $combine($date['time_in']);
-        $time_out  = $combine($date['time_out']);
-        $break_out = $combine($date['break_out']);
-        $break_in  = $combine($date['break_in']);
+        $logIn       = $combineWithDate($date['time_in']);
+        $logOut      = $combineWithDate($date['time_out']);
+        $logBreakOut = $combineWithDate($date['break_out']);
+        $logBreakIn  = $combineWithDate($date['break_in']);
 
-        // Flexible shift end time
-        if ($shift->is_flexible && $time_in) {
-            $base_time = $time_in;
-
-            if ($earliest_time_in && $time_in->lt($earliest_time_in)) {
-                $base_time = $earliest_time_in;
-            } elseif ($latest_time_in && $time_in->gt($latest_time_in)) {
-                $base_time = $latest_time_in;
+        // Flexible shift adjustment
+        if ($shift->is_flexible && $logIn) {
+            $baseStart = $logIn->copy();
+            if ($shiftEarliestIn && $logIn->lt($shiftEarliestIn)) {
+                $baseStart = $shiftEarliestIn;
+            } elseif ($shiftStart && $logIn->gt($shiftStart)) {
+                $baseStart = $shiftStart;
             }
 
-            $end_time = $base_time->copy()->addHour($total_hours);
+            $shiftEnd = $baseStart->copy()->addHours($shiftDurationHours);
         }
 
-        // Compute tardiness and undertime
-        $morning_tardiness   = $this->computeTardiness($time_in, $latest_time_in);
-        $morning_undertime   = $this->computeUndertime($break_out, $breakout_time, $time_in);
-        $afternoon_tardiness = $this->computeTardiness($break_in, $breakin_time);
-        $afternoon_undertime = $this->computeUndertime($time_out, $end_time, $breakin_time);
+        // Compute tardiness & undertime
+        $amTardiness   = $this->computeTardiness($logIn, $shiftStart);
 
-        $total_tardiness = $morning_tardiness + $afternoon_tardiness;
-        $total_undertime = $morning_undertime + $afternoon_undertime;
+        $amUndertime = ($logOut && $logOut->gte($shiftBreakOut))
+            ? $this->computeUndertime($logOut, $shiftBreakOut, $baseStart)
+            : $this->computeUndertime($logBreakOut, $shiftBreakOut, $baseStart);
 
-        $total_minutes = $total_tardiness + $total_undertime;
-        $total_hours   = floor($total_minutes / 60);
-        $remaining_mins = $total_minutes % 60;
+        $pmTardiness = $this->computeTardiness($logBreakIn, $shiftBreakIn);
+        $pmUndertime = $this->computeUndertime($logOut, $shiftEnd, $shiftBreakIn);
 
-        $breaktime_in_mins = $shift->breaktime_hours * 60;
-        $actual_work_mins = ($base_time->diffInMinutes($end_time) - $breaktime_in_mins) - $total_minutes;
+        $totalTardiness = $amTardiness + $pmTardiness;
+        $totalUndertime = $amUndertime + $pmUndertime;
+        $totalLostMinutes = $totalTardiness + $totalUndertime;
 
-        return [
-            'morning_tardiness'   => $morning_tardiness,
-            'morning_undertime'   => $morning_undertime,
-            'afternoon_tardiness' => $afternoon_tardiness,
-            'afternoon_undertime' => $afternoon_undertime,
-            'tardiness'           => $total_tardiness,
-            'undertime'           => $total_undertime,
-            'actual_work_mins'    => $actual_work_mins,
-            'total_ut_mins'       => $total_minutes,
-            'total_ut_hrs'        => sprintf('%02d:%02d', $total_hours, $remaining_mins),
+        $actualWorkMinutes = 0;
+        $remark = null;
+
+        // Special halfday cases
+        if ($logIn && $shiftBreakIn && $logIn->gte($shiftBreakIn)) {
+            // Late in → halfday
+            $actualWorkMinutes = max(0, $logIn->diffInMinutes($logOut));
+            $remark = 'halfday';
+            $totalTardiness = max(0, $totalTardiness - $breakDurationMins);
+
+        } elseif ($logOut && $shiftBreakOut && $logOut->lte($shiftBreakOut)) {
+            // Early out → halfday
+            $actualWorkMinutes = max(0, $logIn->diffInMinutes($logOut));
+            $remark = 'halfday';
+            $totalTardiness = max(0, $totalTardiness - $breakDurationMins);
+        } else {
+            // Normal full day
+            $actualWorkMinutes = max(0, ($baseStart->diffInMinutes($shiftEnd) - $breakDurationMins - $totalLostMinutes));
+        }
+
+        $totalLostHours   = floor($totalLostMinutes / 60);
+        $remainingMinutes = $totalLostMinutes % 60;
+
+        $data = [
+            'am_tardiness'     => $amTardiness,
+            'am_undertime'     => $amUndertime,
+            'pm_tardiness'     => $pmTardiness,
+            'pm_undertime'     => $pmUndertime,
+            'total_tardiness'  => $totalTardiness,
+            'total_undertime'  => $totalUndertime,
+            'actual_work_mins' => $actualWorkMinutes,
+            'lost_minutes'     => $totalLostMinutes,
+            'lost_hours'       => sprintf('%02d:%02d', $totalLostHours, $remainingMinutes),
+            'remark'           => $remark,
         ];
+
+        // dd($data);
+
+        return $data;
     }
 
-
+    
     /**
      * Compute tardiness in minutes.
      *
@@ -747,6 +802,14 @@ class TimelogsServices {
         }
 
         return $restDays;
+    }
+
+    public function getHolidays($date_today)
+    {
+        return DB::table('holidays')
+            ->whereDate('date', $date_today)
+            ->where('is_active', true)
+            ->first();
     }
 
 }

@@ -92,6 +92,11 @@
                         </td>
 
                         <!-- If Leave -->
+                        <td v-else-if="hasRemark(log.remarks, 'holiday') && !log.time_in" colspan="9" class="text-center text-dark fw-bold">
+                            Holiday <span class="text-info"> (Double = {{ log.doble }})</span>
+                        </td>
+
+                        <!-- If Leave -->
                         <td v-else-if="hasRemark(log.remarks, 'leave')" colspan="9" class="text-center text-info fw-bold">
                             Leave 
                         </td>

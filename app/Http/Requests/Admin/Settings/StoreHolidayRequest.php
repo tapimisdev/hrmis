@@ -32,6 +32,10 @@ class StoreHolidayRequest extends FormRequest
             'date' => 'required|date',
             'type' => 'required|in:regular,special_working,special_non_working,company',
             'is_repeating' => 'required|boolean',
+
+            'no_work_rate' => 'required|numeric|min:0|max:9.99',
+            'work_rate' => 'required|numeric|min:0|max:9.99',
+            'overtime_rate' => 'required|numeric|min:0|max:9.99',
         ];
     }
 }

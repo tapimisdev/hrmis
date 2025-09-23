@@ -24,6 +24,18 @@
                 <td><span id="holiday-is-repeating" class="badge"></span></td>
             </tr>
             <tr>
+                <th>No Work %:</th>
+                <td id="holiday-no-work-percent"></td>
+            </tr>
+            <tr>
+                <th>Work %:</th>
+                <td id="holiday-work-percent"></td>
+            </tr>
+            <tr>
+                <th>Overtime %:</th>
+                <td id="holiday-overtime-percent"></td>
+            </tr>
+            <tr>
                 <th>Created At:</th>
                 <td id="holiday-created-at"></td>
             </tr>
