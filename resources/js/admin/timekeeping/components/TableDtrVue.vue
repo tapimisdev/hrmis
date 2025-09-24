@@ -156,7 +156,7 @@
                                         v-for="(remark, rIndex) in log.remarks || []"
                                         :key="rIndex"
                                         class="me-2 mb-1 py-2 px-3 badge text-bg-info"
-                                        :class=" remark === 'discrepancy' ? 'bg-danger text-light' : ''"
+                                        :class=" remark === 'incomplete log' ? 'bg-danger text-light' : ''"
                                     >
                                         {{ remark }}
                                         <span v-if="rIndex < (log.remarks || []).length - 1">|</span>

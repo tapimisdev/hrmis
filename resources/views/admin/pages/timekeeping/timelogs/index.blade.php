@@ -5,7 +5,6 @@
 @endsection
 
 @section('content')
-{{-- @include('admin.pages.settings.leaves.show') --}}
     <div class="container p-4 pb-5">
         <x-header title="Timelogs" subtitle="View timelogs in this module">
            
