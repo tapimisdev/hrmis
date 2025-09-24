@@ -49,6 +49,7 @@ class InformationController extends Controller
         $position_id = $request->position_id;
         $tranche_id = $request->tranche_id;
         $step_id = $request->step_id;
+        $role_id = $request->role_id;
 
         if ($division_id) {
             $data = DB::table('units')
@@ -92,9 +93,35 @@ class InformationController extends Controller
 
             return response()->json([
                 'status' => $data ? 'success' : 'error',
-                'data'   => $data ?? ['salary' => null],
+                'data'   => $data ?? null,
             ]);
         }
+
+        if ($role_id) {
+            $role = DB::table('roles')
+                ->where('name', $role_id)
+                ->first();
+
+            if ($role) {
+                $users = DB::table('model_has_roles as mhr')
+                    ->join('users as u', 'mhr.model_id', '=', 'u.id')
+                    ->where('mhr.role_id', $role->id)
+                    ->where('mhr.model_type', 'App\Models\User')
+                    ->select('u.id', 'u.name', 'u.email')
+                    ->get();
+
+                $data = (array) $role;
+                $data['users'] = $users;
+            } else {
+                $data = ['salary' => null, 'users' => []];
+            }
+
+            return response()->json([
+                'status' => $role ? 'success' : 'error',
+                'data'   => $data,
+            ]);
+        }
+
 
         return response()->json([
             'status' => 'error',

@@ -215,7 +215,6 @@
         // DIVISIONS ON CHANGE, SHOW UNITS
 
         $('#division_id').on('change', function() {
-            console.log(123);
             const id = $(this).val();
             const url = @json(route('hris.employee.information'));
             $.ajax({

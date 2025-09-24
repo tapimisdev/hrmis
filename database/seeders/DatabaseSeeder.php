@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             PositionSeeder::class,
             TestUserSeeder::class,
             CountriesSeeder::class,
+            TimeLogsSeeder::class,
         ]);
     }
 }

@@ -10,6 +10,11 @@
     cursor: no-drop;   
 }
 
+.ck-editor__editable {
+    min-height: 300px;
+    max-height: 600px;
+}
+
 .image-container {
     display: flex;
     border: 1px dotted $primary;
@@ -508,7 +513,7 @@ label {
 }
 
 .select2-container--default .select2-selection--multiple {
-    height: 100px;
+    min-height: 100px;
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice,
