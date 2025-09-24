@@ -82,22 +82,22 @@
             </a>
             <div class="collapse collapsable" id="services" data-bs-parent=".sidebar-list">
                 <ul class="nested-list">
-                    <li class="nested-item p-2">
+                    <li class="nested-item px-3 py-2">
                         <a href="{{ route('services.events.index') }}" class="d-flex gap-2 align-items-center">
                             <i class="fa-solid fa-chart-simple"></i> Events & Announcements
                         </a>
                     </li>
-                    <li class="nested-item p-2">
+                    <li class="nested-item px-3 py-2">
                         <a href="#" class="d-flex gap-2 align-items-center">
                             <i class="fa-solid fa-chart-simple"></i> Leave Application
                         </a>
                     </li>
-                    <li class="nested-item p-2">
+                    <li class="nested-item px-3 py-2">
                         <a href="#" class="d-flex gap-2 align-items-center">
                             <i class="fa-solid fa-chart-simple"></i> Passlip Application
                         </a>
                     </li>
-                    <li class="nested-item p-2">
+                    <li class="nested-item px-3 py-2">
                         <a href="#" class="d-flex gap-2 align-items-center">
                             <i class="fa-solid fa-chart-simple"></i> Overtime Application
                         </a>

@@ -247,6 +247,26 @@ class DailyTimeRecordService {
                     break;
             }
 
+            if(!$timeInCarbon || !$timeOutCarbon) {
+                $remarks[] = 'incomplete log';
+
+                    $computedData[] = [
+                        'user_id'           => $userId,
+                        'time_in'           => $timeInCarbon,
+                        'time_out'          => $timeOutCarbon,
+                        'break'             => $break   ,
+                        'overtime'          => $overtime,   
+                        'shift_id'          => $date['shift_id'],
+                        'work_schedule_id'  => $date['work_schedule_id'],
+                        'ot_mins'           => 0,
+                        'total_time_work'   => 0,
+                        'doble'             => 0,
+                        'late_undertime'    => 0,
+                        'paid_hours'        => 0,
+                        'remarks'           => $remarks,
+                    ];
+                    continue;
+            }
             // ================== END TIME PARSING ==================
 
             // ================== START CHECK OVERTIME ==================
