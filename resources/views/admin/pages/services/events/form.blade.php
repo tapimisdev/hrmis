@@ -31,6 +31,78 @@
                             <div class="error-field"></div>
                         </div>
                         <div class="col-12 col-md-12 mb-3">
+                            <label class="mb-2" for="banner">Banner <span class="text-danger">*</span></label>
+                            <input type="file" id="banner" name="banner" class="form-control" value="{{$isEdit ? $data->banner : ''}}">
+                            <div class="error-field"></div>
+                        </div>
+                        <div class="col-12 col-md-12 mb-3">
+                            <label class="mb-2" for="tags">Tags <span class="text-danger">*</span></label>
+                            <select name="tags[]" id="tags" class="form-select select2" multiple required>
+
+                                <optgroup label="General Government">
+                                <option value="announcement">Announcement</option>
+                                <option value="advisory">Advisory</option>
+                                <option value="memo">Memo</option>
+                                <option value="circular">Circular</option>
+                                <option value="guidelines">Guidelines</option>
+                                <option value="policy">Policy</option>
+                                <option value="regulation">Regulation</option>
+                                <option value="public-service">Public Service</option>
+                                <option value="press-release">Press Release</option>
+                                <option value="update">Update</option>
+                                </optgroup>
+
+                                <optgroup label="Meetings & Engagements">
+                                <option value="meeting">Meeting</option>
+                                <option value="consultation">Consultation</option>
+                                <option value="public-hearing">Public Hearing</option>
+                                <option value="orientation">Orientation</option>
+                                <option value="training">Training</option>
+                                <option value="seminar">Seminar</option>
+                                <option value="workshop">Workshop</option>
+                                </optgroup>
+
+                                <optgroup label="Community & Civic Programs">
+                                <option value="health-camp">Health Camp</option>
+                                <option value="vaccination">Vaccination</option>
+                                <option value="cleanup-drive">Clean-up Drive</option>
+                                <option value="tree-planting">Tree Planting</option>
+                                <option value="blood-donation">Blood Donation</option>
+                                <option value="charity">Charity</option>
+                                <option value="fundraiser">Fundraiser</option>
+                                <option value="donation-drive">Donation Drive</option>
+                                <option value="volunteering">Volunteering</option>
+                                <option value="community-meeting">Community Meeting</option>
+                                </optgroup>
+
+                                <optgroup label="Emergency & Safety">
+                                <option value="emergency">Emergency</option>
+                                <option value="alert">Alert</option>
+                                <option value="disaster-preparedness">Disaster Preparedness</option>
+                                <option value="evacuation">Evacuation</option>
+                                <option value="rescue-operation">Rescue Operation</option>
+                                <option value="fire-drill">Fire Drill</option>
+                                <option value="safety-advisory">Safety Advisory</option>
+                                </optgroup>
+
+                                <optgroup label="Holidays & Observances">
+                                <option value="independence-day">Independence Day</option>
+                                <option value="national-heroes-day">National Heroes Day</option>
+                                <option value="labor-day">Labor Day</option>
+                                <option value="election-day">Election Day</option>
+                                <option value="new-year">New Year</option>
+                                <option value="christmas">Christmas</option>
+                                <option value="all-saints">All Saints Day</option>
+                                <option value="all-souls">All Souls Day</option>
+                                <option value="ramadan">Ramadan</option>
+                                <option value="thanksgiving">Thanksgiving</option>
+                                </optgroup>
+
+                            </select>
+                            <div class="error-field"></div>
+                            </div>
+
+                        <div class="col-12 col-md-12 mb-3">
                             <label class="mb-2" for="content">Content <span class="text-danger">*</span></label>
                             <textarea name="content" id="content" cols="30" rows="10" class="form-control ckeditor">{{$isEdit ? $data->description : ''}}</textarea>
                             <div class="error-field"></div>
@@ -43,7 +115,7 @@
                         </div>
                         <div class="col-12 col-md-12 mb-3">
                             <label class="mb-2" for="name">Posted / Authored By <span class="text-danger">*</span></label>
-                            <select name="posted_by" id="posted_by" class="form-select select2" multiple>
+                            <select name="posted_by[]" id="posted_by" class="form-select select2" multiple>
                                 <option value=""> - CHOOSE - </option>
                                 @foreach ($users as $user)
                                     <option value="{{ $user->id }}" {{ !$isEdit && $posted_by == $user->id ? 'selected' : '' }}>
@@ -56,7 +128,7 @@
                         <div class="col-12 col-md-12 mb-3">
                             <label class="form-label">Notifications & Options</label>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="1" name="push_notification" id="push_notification" {{ old('push_notification', $data->push_notification ?? 0) ? 'checked' : '' }}>
+                                <input class="form-check-input" type="checkbox" value="1" name="push_notification" id="push_notification" {{ old('push_notification', $data->push_notification ?? 0) ? 'checked' : '' }} checked>
                                 <label class="form-check-label" for="push_notification">
                                     Push Notification
                                 </label>
@@ -68,12 +140,27 @@
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="1" name="show_viewers" id="show_viewers" {{ old('show_viewers', $data->show_viewers ?? 0) ? 'checked' : '' }}>
+                                <input class="form-check-input" type="checkbox" value="1" name="show_viewers" id="show_viewers" {{ old('show_viewers', $data->show_viewers ?? 0) ? 'checked' : '' }} checked>
                                 <label class="form-check-label" for="show_viewers">
                                     Show Viewers
                                 </label>
                             </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="1" name="is_suspension" id="is_suspension" {{ old('is_suspension', $data->is_suspension ?? 0) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="is_suspension">
+                                    Mark as Suspension
+                                </label>
+                            </div>
                             <div class="error-field"></div>
+                        </div>
+                        <div id="suspension_date_range" style="display: none;">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label for="suspension" class="form-label">Suspension Start</label>
+                                    <input type="text" class="form-control datepicker" name="suspension" id="suspension" 
+                                        value="{{ old('suspension', $data->suspension ?? '') }}">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -129,6 +216,14 @@
                 $(this).closest('.attachment-item').remove();
             } else {
                 alert('At least one attachment is required.');
+            }
+        });
+
+        $("#is_suspension").on("change", function() {
+            if ($("#is_suspension").is(":checked")) {
+                $("#suspension_date_range").show();
+            } else {
+                $("#suspension_date_range").hide();
             }
         });
 
