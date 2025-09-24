@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
 use App\Http\Controllers\Admin\Settings\TrancheController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
+use App\Http\Controllers\Admin\Timekeeping\SalaryPayrollController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
@@ -178,7 +179,11 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('daily-time-record.show');
         Route::get('daily-time-record/{id}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
         
+    });
 
+    Route::prefix('payroll')->group(function() {
+        # SALARY PAYROLL
+        Route::resource('salary', SalaryPayrollController::class);
     });
 
     Route::prefix('settings')->group(function() {
