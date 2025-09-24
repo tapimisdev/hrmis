@@ -106,6 +106,8 @@ $('.select2').select2({
     closeOnSelect: false 
 });
 
+$('.datepicker').daterangepicker();
+
 ClassicEditor
     .create(document.querySelector('.ckeditor'), {
         toolbar: [

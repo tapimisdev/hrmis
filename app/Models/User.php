@@ -57,6 +57,18 @@ class User extends Authenticatable
         return $this->hasOne(EmployeeInformation::class, 'user_id', 'id');
     }
 
+    public function postedAnnouncements()
+    {
+        return $this->belongsToMany(EventAnnouncement::class, 'events_announcements_posted_by')
+            ->withTimestamps();
+    }
+
+    public function viewedAnnouncements()
+    {
+        return $this->hasMany(EventAnnouncementViewer::class);
+    }
+
+
     // public function getNameAttribute()
     // {
     //     $employee = DB::table('users as u')
