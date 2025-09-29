@@ -184,17 +184,17 @@
                     </li>
                     <li class="nested-item px-3 py-2">
                         <a href="{{ route('settings.leaves.index') }}" class="d-flex gap-2 align-items-center">
-                            Leaves
+                            <i class="fa-solid fa-leaf"></i> Leaves
                         </a>
                     </li>
-                    <li class="nested-item p-2">
+                    <li class="nested-item px-3 py-2">
                         <a href="{{ route('settings.tranche.index') }}" class="d-flex gap-2 align-items-center">
-                            Tranches
+                            <i class="fa-solid fa-layer-group"></i> Tranches
                         </a>
                     </li>
-                    <li class="nested-item p-2">
+                    <li class="nested-item px-3 py-2">
                         <a href="{{ route('settings.approvers.index') }}" class="d-flex gap-2 align-items-center">
-                            Approvers
+                            <i class="fa-solid fa-user-check"></i> Approvers
                         </a>
                     </li>
                 </ul>

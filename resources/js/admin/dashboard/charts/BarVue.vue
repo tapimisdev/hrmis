@@ -23,25 +23,17 @@ export default {
   data() {
     return {
       chartData: {
-        labels: [
-          'January',
-          'February',
-          'March',
-          'April',
-          'May',
-          'June',
-          'July',
-          'August',
-          'September',
-          'October',
-          'November',
-          'December'
-        ],
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
         datasets: [
           {
-            label: 'Data One',
-            backgroundColor: '#1F2231',
-            data: [40, 20, 12, 39, 10, 40, 39, 80, 40, 20, 12, 11]
+            label: 'On-Time',
+            backgroundColor: '#0c8384',
+            data: [95, 92, 98, 94, 96] 
+          },
+          {
+            label: 'Late',
+            backgroundColor: '#323535',
+            data: [25, 32, 12, 11, 24]
           }
         ]
       },
@@ -50,14 +42,14 @@ export default {
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'top' as const // ✅ Fix: use `as const` so TS knows it's a valid literal
+            position: 'top' as const
           },
           title: {
             display: true,
-            text: 'Monthly Data'
+            text: 'Daily Late vs On-Time Attendance'
           }
         }
-      } as ChartOptions<'bar'> // ✅ Explicitly type the object
+      } as ChartOptions<'bar'>
     }
   }
 }

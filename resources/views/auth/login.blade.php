@@ -1,24 +1,21 @@
 @extends('auth.auth')
 
 @section('content')
-<div class="min-vh-100 d-flex align-items-center justify-content-center bg-primary px-3">
-    <div class="card shadow-lg border-0 rounded-4" style="max-width: 420px; width: 100%;">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between mb-4">
-                <div>
-                    <h4 class="mt-3 mb-1 fw-semibold">Welcome back!</h4>
-                    <p class="text-muted mb-0">Please sign in...</p>
-                </div>
-                <img src="{{ asset('img/DOST-TAPI.png') }}" alt="logo" class="img-fluid" style="max-height: 40px;">
+<div class="wrapper">
+    <div class="card-container">
+        <div class="form-container">
+            <div class="logo">
+                <img src="{{ asset('img/HR_NROLL.png') }}" alt="">
             </div>
 
+            <h5>Sign In</h5>
             <form method="POST" action="{{ route('login') }}" novalidate>
                 @csrf
 
                 <div class="form-floating mb-3">
                     <input 
                         type="email" 
-                        class="form-control rounded-4 @error('email') is-invalid @enderror" 
+                        class="form-input @error('email') is-invalid @enderror" 
                         id="email" 
                         name="email" 
                         placeholder="Username" 
@@ -27,7 +24,6 @@
                         autocomplete="email" 
                         autofocus
                     >
-                    <label for="email">Username</label>
                     @error('email')
                         <div class="invalid-feedback d-block">
                             <strong>{{ $message }}</strong>
@@ -35,17 +31,16 @@
                     @enderror
                 </div>
 
-                <div class="form-floating mb-4">
+                <div class="form-floating mb-2">
                     <input 
                         type="password" 
-                        class="form-control rounded-4 @error('password') is-invalid @enderror" 
+                        class="form-input @error('password') is-invalid @enderror" 
                         id="password" 
                         name="password" 
                         placeholder="Password" 
                         required 
                         autocomplete="current-password"
                     >
-                    <label for="password">Password</label>
                     @error('password')
                         <div class="invalid-feedback d-block">
                             <strong>{{ $message }}</strong>
@@ -53,8 +48,26 @@
                     @enderror
                 </div>
 
+                <div class="d-flex flex-wrap mx-2 justify-content-between align-items-center mb-3">
+                    {{-- Remember Me --}}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="remember" style="font-size: 14px; color: #2c3e50;">
+                            Remember Me
+                        </label>
+                    </div>
+
+                    {{-- Forgot Password --}}
+                    @if (Route::has('password.request'))
+                        <a href="{{ route('password.request') }}" class="text-decoration-none" style="font-size: 14px; color: #0c8384;">
+                            Forgot Password?
+                        </a>
+                    @endif
+                </div>
+
+
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-secondary rounded-4 py-3 d-flex align-items-center justify-content-center">
+                    <button type="submit" class="btn btn-primary rounded-5 py-3 d-flex align-items-center justify-content-center">
                         Sign In
                     </button>
                 </div>
@@ -62,5 +75,4 @@
         </div>
     </div>
 </div>
-
 @endsection

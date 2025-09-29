@@ -55,8 +55,12 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Auth::routes(['register' => false]);
-
+Auth::routes([
+    'register' => false,      // disable registration
+    'reset' => true,          // allow forgot password (reset link request)
+    'verify' => false,        // disable email verification
+    'confirm' => false        // disable password confirmation
+]);
 
 Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
     

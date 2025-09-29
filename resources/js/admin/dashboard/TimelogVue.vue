@@ -1,20 +1,27 @@
 <template>
-  <div class="row g-3 p-3 pt-1">
-    <div class="col-md-6">
-        <DivisionVue/>
+  <div class="dashboard">
+
+    <!-- Row: Divisions -->
+    <div class="row g-3 p-3 pt-1">
+      <div class="col-md-6">
+          <DivisionVue/>
+      </div>
+      <div class="col-md-6">
+          <DivisionVue/>
+      </div>
+      <div class="col-md-6">
+          <DivisionVue/>
+      </div>
+      <div class="col-md-6">
+          <DivisionVue/>
+      </div>
     </div>
-    <div class="col-md-6">
-        <DivisionVue/>
+
+    <!-- Row: Timelogs Table -->
+    <div class="g-3 p-3 pt-1">
+      <TimelogsTableVue/>
     </div>
-    <div class="col-md-6">
-        <DivisionVue/>
-    </div>
-    <div class="col-md-6">
-        <DivisionVue/>
-    </div>
-  </div>
-  <div class="g-3 p-3 pt-1">
-    <TimelogsTableVue/>
+
   </div>
 </template>
 
@@ -34,9 +41,22 @@ export default {
 
 <style lang="scss" scoped>
 @import './../../../sass/variables';
-.cardiness {
-    border: 2px solid rgba($color: $primary, $alpha: 1.0);
-    border-radius: 12px;
-    padding: 24px;
+
+.dashboard {
+  background: rgba($color: $primary, $alpha: 0.1);
+  min-height: 100vh;
+}
+.chart-card {
+    background: $white;
+    height: 100%;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
 }
 </style>

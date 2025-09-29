@@ -1,5 +1,5 @@
 <template>
-  <div class="card cardiness">
+  <div class="card chart-card">
     <div class="card-body">
       <h2 class="h4 mb-4 fw-bold text-uppercase">Timelog Table</h2>
 
@@ -61,7 +61,7 @@ export default {
   name: "TimelogTable",
   data() {
     return {
-      logs: [], // Will be populated by API
+      logs: [],
       page: 1,
       perPage: 5,
     };

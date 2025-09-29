@@ -1,5 +1,5 @@
 <template>
-  <div class="cardiness">
+  <div class="chart-card">
     <h5 class="text-uppercase fw-bold pb-2 mb-3 border-bottom">Division One</h5>
 
     <!-- Tabs Navigation -->
@@ -53,14 +53,9 @@ export default {
 
 <style lang="scss" scoped>
 @import './../../../../sass/variables';
-.cardiness {
-    border: 2px solid rgba($color: $primary, $alpha: 1.0);
-    border-radius: 12px;
-    padding: 24px;
-}
 .nav-tabs .nav-link.active {
   font-weight: 600;
   background-color: $secondary;
-  color: $primary;
+  color: $light;
 }
 </style>
