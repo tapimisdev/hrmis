@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
+use App\Http\Controllers\Admin\Services\LeaveApplicationController as AdminLeaveApplicationController;
 use App\Http\Controllers\Employee\ObsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Employee\timelogs\CheckInOutController;
@@ -87,8 +88,6 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.salary');
         Route::post('employee/update-salary', [EmployeeController::class, 'updateSalary'])
             ->name('hris.employee.salary');
-
-
 
         # INFORMATION
         Route::get('employee/information/{employee_no?}', [InformationController::class, 'index'])
@@ -180,6 +179,9 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
 
         # EVENTS AND ANNOUNCEMENTS
         route::resource('events', EventsController::class)->names('services.events');
+
+        # LEAVE APPLICATIONS
+        route::resource('leave/application', AdminLeaveApplicationController::class)->names('services.leaves');
 
     });
 

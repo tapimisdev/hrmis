@@ -25,30 +25,30 @@
                         <div id="collapseInfo" class="accordion-collapse collapse show">
                             <div class="accordion-body">
                                 <div class="row">
-                                <div class="col-12 col-md-3 mb-3">
-                                    <label class="mb-2" for="employee_no">Employee No. <span class="text-danger">*</span></label>
-                                    <input type="text" id="employee_no" name="employee_no" class="form-control" value="{{ optional($data)->employee_no ?? '' }}">
-                                    <div class="error-field"></div>
-                                </div>
-                                <div class="col-12 col-md-3 mb-3">
-                                    <label class="mb-2" for="biometrics_id">Biometrics ID</label>
-                                    <input type="number" id="biometrics_id" name="biometrics_id" class="form-control" value="{{ optional($data)->biometrics_id ?? '' }}">
-                                    <div class="error-field"></div>
-                                </div>
-                                <div class="col-12 col-md-3 mb-3">
-                                    <label class="mb-2" for="date_hired">Date Hired <span class="text-danger">*</span></label>
-                                    <input type="date" id="date_hired" name="date_hired" class="form-control" value="{{ optional($data)->date_hired ?? '' }}">
-                                    <div class="error-field"></div>
-                                </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="mb-2" for="status">Account Status <span class="text-danger">*</span></label>
-                                    <select id="status" name="status" class="form-select">
-                                    @foreach(['' => '- CHOOSE -', 'active' => 'Active', 'inactive' => 'Inactive'] as $value => $label)
-                                    <option value="{{ $value }}" {{ (optional($data)->account_status ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                    </select>
-                                    <div class="error-field"></div>
-                                </div>
+                                    <div class="col-12 col-md-3 mb-3">
+                                        <label class="mb-2" for="employee_no">Employee No. <span class="text-danger">*</span></label>
+                                        <input type="text" id="employee_no" name="employee_no" class="form-control" value="{{ optional($data)->employee_no ?? '' }}">
+                                        <div class="error-field"></div>
+                                    </div>
+                                    <div class="col-12 col-md-3 mb-3">
+                                        <label class="mb-2" for="biometrics_id">Biometrics ID</label>
+                                        <input type="number" id="biometrics_id" name="biometrics_id" class="form-control" value="{{ optional($data)->biometrics_id ?? '' }}">
+                                        <div class="error-field"></div>
+                                    </div>
+                                    <div class="col-12 col-md-3 mb-3">
+                                        <label class="mb-2" for="date_hired">Date Hired <span class="text-danger">*</span></label>
+                                        <input type="date" id="date_hired" name="date_hired" class="form-control" value="{{ optional($data)->date_hired ?? '' }}">
+                                        <div class="error-field"></div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="mb-2" for="status">Account Status <span class="text-danger">*</span></label>
+                                        <select id="status" name="status" class="form-select">
+                                        @foreach(['' => '- CHOOSE -', 'active' => 'Active', 'inactive' => 'Inactive'] as $value => $label)
+                                        <option value="{{ $value }}" {{ (optional($data)->account_status ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                        </select>
+                                        <div class="error-field"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -151,17 +151,20 @@
                         <div id="collapseSalary" class="accordion-collapse collapse show">
                             <div class="accordion-body">
                                 <div class="row">
-                                    <div class="col-12 col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
                                         <select id="tranche_id" name="tranche_id" class="form-select">
                                             <option value=""> - CHOOSE - </option>
                                             @foreach($tranches as $tranche)
-                                                <option value="{{ $tranche->id }}" {{ (optional($data)->tranche_id ?? '') == $tranche->id ? 'selected' : '' }}>{{ strtoupper($tranche->name) }}</option>
+                                                <option value="{{ $tranche->id }}" {{ (optional($data)->tranche_id ?? '') == $tranche->id ? 'selected' : '' }}>
+                                                    {{ strtoupper($tranche->name) }}
+                                                </option>
                                             @endforeach
                                         </select>
                                         <div class="error-field"></div>
                                     </div>
-                                    <div class="col-12 col-md-6 mb-3">
+
+                                    <div class="col-md-4 mb-3">
                                         <label class="mb-2" for="step_id">Steps <span class="text-danger">*</span></label>
                                         <select id="step_id" name="step_id" class="form-select">
                                             <option value=""> - CHOOSE - </option>
@@ -171,27 +174,78 @@
                                         </select>
                                         <div class="error-field"></div>
                                     </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label class="mb-2" for="salary_method">Salary Method <span class="text-danger">*</span></label>
-                                        <select id="salary_method" name="salary_method" class="form-select">
-                                        @foreach(['' => '- CHOOSE -', 'cash' => 'Cash', 'bank transfer' => 'Bank Transfer', 'paycheck' => 'Paycheck', 'e-wallet' => 'E-Wallet'] as $value => $label)
-                                        <option value="{{ $value }}" {{ (optional($data)->salary_method ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
-                                        @endforeach
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="mb-2" for="salary_frequency">Salary Frequency <span class="text-danger">*</span></label>
+                                        <select id="salary_frequency" name="salary_frequency" class="form-select">
+                                            @foreach(['' => '- CHOOSE -', 'once' => 'Once A Month', 'twice' => 'Twice A Month'] as $value => $label)
+                                                <option value="{{ $value }}" {{ (optional($data)->salary_frequency ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endforeach
                                         </select>
                                         <div class="error-field"></div>
                                     </div>
+
                                     <div class="col-md-3 mb-3">
-                                        <label class="mb-2" for="salary">Monthly Rate <span class="text-danger">*</span></label>
-                                        <input type="text" id="salary" name="salary" class="form-control restricted" value="{{ optional($data)->salary ?? '' }}" readonly>
+                                        <label class="mb-2" for="salary">Total Salary <span class="text-danger">*</span></label>
+                                        <input type="text" id="salary" name="salary" class="form-control restricted"
+                                            value="{{ optional($data)->salary ?? '' }}" readonly>
                                         <div class="error-field"></div>
                                     </div>
+
+                                    <div class="col-md-3 mb-3">
+                                        <label class="mb-2" for="daily_rate">Daily Rate</label>
+                                        <input type="text" id="daily_rate" name="daily_rate" class="form-control restricted"
+                                            value="{{ optional($data)->daily_rate ?? '' }}" readonly>
+                                    </div>
+
+
+                                    <div class="col-md-3 mb-3 cutoff once-cutoff" style="display:none;">
+                                        <label class="mb-2" for="cutoff_amount_once">1st Cutoff Amount <span class="text-danger">*</span></label>
+                                        <input type="text" id="cutoff_amount_once" name="cutoff_amount_once" class="form-control restricted"
+                                            value="{{ optional($data)->cutoff_amount_once ?? '' }}">
+                                    </div>
+
+                                    <div class="col-md-3 mb-3 cutoff twice-cutoff" style="display:none;">
+                                        <label class="mb-2" for="first_cutoff_amount">1st Cutoff Amount <span class="text-danger">*</span></label>
+                                        <input type="text" id="first_cutoff_amount" name="first_cutoff_amount" class="form-control"
+                                            value="{{ optional($data)->first_cutoff_amount ?? '' }}">
+                                    </div>
+
+                                    <div class="col-md-3 mb-3 cutoff twice-cutoff" style="display:none;">
+                                        <label class="mb-2" for="second_cutoff_amount">2nd Cutoff Amount <span class="text-danger">*</span></label>
+                                        <input type="text" id="second_cutoff_amount" name="second_cutoff_amount" class="form-control"
+                                            value="{{ optional($data)->second_cutoff_amount ?? '' }}">
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="mb-2" for="deduction_applied">Deduction Applied <span class="text-danger">*</span></label>
+                                        <select id="deduction_applied" name="deduction_applied" class="form-select">
+                                            <option value=""> - CHOOSE - </option>
+                                            <option value="first_cutoff" {{ optional($data)->deduction_applied == 'first_cutoff' ? 'selected' : '' }}>First Cut Off</option>
+                                            <option value="second_cutoff" {{ optional($data)->deduction_applied == 'second_cutoff' ? 'selected' : '' }}>Second Cut Off</option>
+                                            <option value="both" {{ optional($data)->deduction_applied == 'both' ? 'selected' : '' }}>Both Cut Off</option>
+                                        </select>
+                                        <div class="error-field"></div>
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label class="mb-2" for="salary_method">Salary Method <span class="text-danger">*</span></label>
+                                        <select id="salary_method" name="salary_method" class="form-select">
+                                            @foreach(['' => '- CHOOSE -', 'cash' => 'Cash', 'bank transfer' => 'Bank Transfer', 'paycheck' => 'Paycheck', 'e-wallet' => 'E-Wallet'] as $value => $label)
+                                                <option value="{{ $value }}" {{ (optional($data)->salary_method ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="error-field"></div>
+                                    </div>
+
                                     <div class="col-md-6 mb-3">
                                         <label class="mb-2" for="payroll_account_number">Payroll Account No.</label>
-                                        <input type="text" id="payroll_account_number" name="payroll_account_number" class="form-control" value="{{ optional($data)->payroll_account_no ?? '' }}">
-                                        <div class="error-field"></div>
+                                        <input type="text" id="payroll_account_number" name="payroll_account_number" class="form-control"
+                                            value="{{ optional($data)->payroll_account_no ?? '' }}">
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -294,6 +348,7 @@
 
         });
 
+        
         $('#tranche_id, #step_id').on('change', function () {
             const tranche_id = $('#tranche_id').val();
             const step_id = $('#step_id').val();
@@ -302,15 +357,17 @@
             $.ajax({
                 type: "GET",
                 url: url,
-                data: {
-                    tranche_id: tranche_id,
-                    step_id: step_id,
-                },
+                data: { tranche_id, step_id },
                 dataType: "json",
                 success: function (response) {
                     if (response.data) {
-                        console.log(response.data);
-                        $('#salary').val(response.data.salary);
+                        let salary = parseFloat(response.data.salary) || 0;
+                        $('#salary').val(salary);
+
+                        let dailyRate = (salary / 22).toFixed(2);
+                        $('#daily_rate').val(dailyRate);
+
+                        updateCutoffAmounts();
                     }
                 },
                 error: function (xhr, status, error) {
@@ -318,6 +375,34 @@
                 }
             });
         });
+
+
+        $('#salary_frequency').on('change', function () {
+            $('.cutoff').hide();
+
+            if ($(this).val() === 'once') {
+                $('.once-cutoff').show();
+                updateCutoffAmounts(false);
+            } else if ($(this).val() === 'twice') {
+                $('.twice-cutoff').show();
+                updateCutoffAmounts(true);
+            }
+        });
+
+        function updateCutoffAmounts(split = false) {
+            let salary = parseFloat($('#salary').val()) || 0;
+
+            if (!split) {
+                $('#cutoff_amount_once').val(salary.toFixed(2));
+            } else {
+                let half = (salary / 2).toFixed(2);
+                $('#first_cutoff_amount').val(half);
+                $('#second_cutoff_amount').val(half);
+            }
+        }
+
+        // Run on page load in case of edit
+        $('#salary_frequency').trigger('change');
 
 
     });

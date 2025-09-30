@@ -44,14 +44,17 @@ class LeaveApplicationController extends Controller
      */
     public function store(StoreLeaveApplication $request) 
     {
+        $user = Auth::user()->load('employeeInformation');
         $validatedData = $request->validated();
+        $employee_no = $user->toArray()['employee_information']['employee_no'];
 
-        // dd($validatedData);
         DB::beginTransaction();
+
         try {
             // Insert leave application
             $leaveId = DB::table('leave_applications')->insertGetId([
                 'user_id'       => Auth::user()->id ?? $validatedData['user_id'],
+                'employee_no'  => $employee_no,
                 'leave_id'      => $validatedData['leave_id'],
                 'start_date'    => $validatedData['start_date'],
                 'end_date'      => $validatedData['end_date'],

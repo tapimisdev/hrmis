@@ -38,14 +38,14 @@
                                         <div class="col-12 col-md-12 mb-3">
                                             <label class="mb-2" for="password">Password</label>
                                             <input type="password" id="password" name="password" 
-                                                class="form-control" placeholder="Leave blank to keep current">
+                                                class="form-control" placeholder="New Password">
                                             <div class="error-field"></div>
                                         </div>
 
                                         <div class="col-12 col-md-12 mb-3">
                                             <label class="mb-2" for="confirm_password">Confirm Password</label>
                                             <input type="password" id="confirm_password" name="confirm_password" 
-                                                class="form-control" placeholder="Re-enter password">
+                                                class="form-control" placeholder="Confirm password">
                                             <div class="error-field"></div>
                                         </div>
                                         

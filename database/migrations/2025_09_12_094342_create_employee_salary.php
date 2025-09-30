@@ -20,7 +20,20 @@ return new class extends Migration
                 ->onDelete('restrict');
             $table->integer('step')
                 ->nullable();
+            $table->enum('salary_frequency', [
+                'once',
+                'twice'
+            ])->nullable();
+            $table->string('first_cutoff')
+                ->nullable();
+            $table->string('second_cutoff')
+                ->nullable();
+            $table->enum('salary_basis', [
+                'monthly',
+                'daily'
+            ])->nullable();
             $table->string('amount');
+            $table->string('daily_rate');
             $table->date('effectivity_date');
             $table->timestamps();
         });

@@ -13,9 +13,9 @@ class RolesAndPermissionController extends Controller
 {
     public function index()
     {
-        $query = Role::all();
         
         if (request()->ajax()) {
+            $query = Role::all();
             return $this->datatable($query);
         }
 

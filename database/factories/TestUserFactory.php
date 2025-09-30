@@ -75,6 +75,7 @@ class TestUserFactory extends Factory
             DB::table('employee_salary')->insert([
                 'employee_no'      => $employeeNo,
                 'amount'           => 0,
+                'daily_rate'       => 0,
                 'effectivity_date' => now(),
             ]);
         });

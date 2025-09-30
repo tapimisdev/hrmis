@@ -9,7 +9,7 @@
         </a>
     </x-header>
 
-    <div class="card rounded-3">
+    <div class="card rounded-3 mb-5">
         <div class="card-header fw-bold d-flex align-items-center">
             <i class="fa-solid fa-file-pen me-2"></i> Application Form
         </div>
@@ -69,7 +69,7 @@
                         <label for="attachments" class="form-label fw-semibold">Attachments (optional)</label>
                         <input type="file" name="attachments[]" id="attachments" class="form-control" multiple>
                         <span id="attachments_error" class="text-danger d-none"></span>
-                    </div>x
+                    </div>
                 </div>
 
             </div>

@@ -77,22 +77,27 @@ class ApproverController extends Controller
     public function create() {
 
         $divisions = DB::table('divisions')->get();
-        $users = User::whereDoesntHave('roles', function ($q) {
+        $users = User::with('roles')
+            ->whereDoesntHave('roles', function ($q) {
                 $q->where('name', 'employee');
-            })->get();
+            })
+            ->get();
+
+        $usersGrouped = $users->groupBy(function ($user) {
+            return $user->roles->pluck('name')->implode(', ') ?: 'No Role';
+        });
 
 
         $isEdit = false;
         $id = null;
         $units = [];
 
-        return view('admin.pages.settings.approvers.form', compact('divisions', 'units', 'users', 'isEdit', 'id'));
+        return view('admin.pages.settings.approvers.form', compact('divisions', 'units', 'usersGrouped', 'isEdit', 'id'));
     }
 
     public function store(Request $request)
     {
         $this->validate($request, $this->rules('store'));
-
 
         DB::beginTransaction();
 
@@ -133,7 +138,7 @@ class ApproverController extends Controller
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Approver ' . strtoupper($request->name) . ' Added',
-                'redirect'=> '_reload'
+                'redirect'=> route('settings.approvers.create')
             ]);
 
         } catch (\Exception $e) {
@@ -209,26 +214,32 @@ class ApproverController extends Controller
         $divisions = DB::table('divisions')->get();
         $units = DB::table('units')->where('division_id', $data['division_id'])->get();
         
-        $users     = User::whereDoesntHave('roles', function ($q) {
-            $q->where('name', 'employee');
-        })->get();
+        $users = User::with('roles')
+            ->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'employee');
+            })
+            ->get();
+
+        $usersGrouped = $users->groupBy(function ($user) {
+            return $user->roles->pluck('name')->implode(', ') ?: 'No Role';
+        });
 
         $isEdit = true;
 
-        return view('admin.pages.settings.approvers.form', compact('id', 'divisions', 'units', 'users', 'isEdit', 'data'));
+        return view('admin.pages.settings.approvers.form', compact('id', 'divisions', 'units', 'usersGrouped', 'isEdit', 'data'));
     }
 
     public function rules(string $type, ?int $id = null)
     {
         $rules = [
-            'name'        => $type === 'store' ? 'required|string|max:255' : 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'type'        => 'required|in:overtime,leave,pass_slip',
-            'approvers'   => 'required|array|min:1',
-            'approvers.*' => 'required|array|min:1',
+            'name'          => $type === 'store' ? 'required|string|max:255' : 'sometimes|string|max:255',
+            'description'   => 'nullable|string',
+            'type'          => 'required|in:overtime,leave,pass_slip',
+            'approvers'     => 'required|array|min:1',
+            'approvers.*'   => 'required|array|min:1',
             'approvers.*.*' => 'required|exists:users,id',
-            'division_id' => 'required|exists:divisions,id',
-            'unit_id'     => 'required|array|min:1',
+            'division_id'   => 'required|exists:divisions,id',
+            'unit_id'       => 'required|array|min:1',
         ];
 
         $rules['unit_id.*'] = [
@@ -238,13 +249,14 @@ class ApproverController extends Controller
                 $division_id = request('division_id');
                 $typeValue   = request('type');
 
-                $query = DB::table('application_approver_org')
-                    ->where('unit_id', $value)
-                    ->where('division_id', $division_id)
-                    ->where('type', $typeValue);
+                $query = DB::table('application_approver_org as org')
+                    ->join('application_approver as app', 'app.id', '=', 'org.application_approver_id')
+                    ->where('org.unit_id', $value)
+                    ->where('org.division_id', $division_id)
+                    ->where('app.type', $typeValue);
 
                 if ($type === 'update' && $id) {
-                    $query->where('application_approver_id', '!=', $id);
+                    $query->where('org.application_approver_id', '!=', $id);
                 }
 
                 if ($query->exists()) {

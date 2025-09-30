@@ -38,7 +38,7 @@ class InformationController extends Controller
         }
 
         $data = $employee_no && $isExists ? $this->employeeService->getEmployee('information', $employee_no) : [];
-        
+
         return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'shifts', 'schedules', 'tranches', 'isExists', 'employee_no', 'data'));
     }
 
@@ -144,6 +144,7 @@ class InformationController extends Controller
             
             $now = Carbon::now()->toDateString();
 
+
             DB::table('employee_information')->updateOrInsert(
                 ['employee_no' => $request->employee_no],
                 [
@@ -153,6 +154,7 @@ class InformationController extends Controller
                     'account_status'  => $request->status ?? null,
                     'salary_method'   => $request->salary_method ?? null,
                     'payroll_account_no' => $request->payroll_account_number ?? null,
+                    'deduction_applied'  => $request->deduction_applied,
                     'updated_at'      => now(),
                 ]
             );
@@ -187,10 +189,19 @@ class InformationController extends Controller
                 ->first();
 
             if (!$latestSalary || $latestSalary->amount != $request->salary) {
+
+                $half = $request->salary / 2;
+                $daily_rate = number_format($request->salary / 22, 2);
+
                 DB::table('employee_salary')->insert([
                     'employee_no'      => $request->employee_no,
                     'tranche_id'       => $request->tranche_id,
                     'step'             => $request->step_id,
+                    'salary_frequency' => $request->salary_frequency,
+                    'first_cutoff'     => $half,
+                    'second_cutoff'    => $half,
+                    'daily_rate'       => $daily_rate,
+                    'salary_basis'     => $request->salary_basis,
                     'amount'           => $request->salary,
                     'effectivity_date' => $now,
                     'created_at'       => now(),
@@ -261,6 +272,7 @@ class InformationController extends Controller
             'employment_type_id' => 'required|exists:employment_types,id',
             'position_id' => 'required_if:type,,2|nullable|exists:positions,id|required_without:type',
             'salary_method' => 'required|in:cash,bank transfer,paycheck,e-wallet',
+            'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both'
         ];
     }
 

@@ -40,14 +40,13 @@
 
                             <div class="card-body">
                                 <h5 class="card-title mb-2 text-uppercase fw-medium">{{ $item->title }}</h5>
-
                                 @php
                                     $maxTags = 5;
                                     $tagCount = $item->tags->count();
                                 @endphp
 
                                 @foreach ($item->tags->take($maxTags) as $tag)
-                                    <span class="badge bg-primary text-uppercase m-1 px-3 py-2">{{ $tag->name ?? $tag }}</span>
+                                    <span class="badge bg-primary text-uppercase m-1 px-3 py-2" style="font-size: 10px">{{ $tag->name ?? $tag }}</span>
                                 @endforeach
 
                                 @if ($tagCount > $maxTags)
@@ -56,9 +55,9 @@
                                     </span>
                                 @endif
 
-                                <p class="card-text text-muted mt-3">
+                                <h6 class="card-text text-muted mt-3">
                                     {{ \Illuminate\Support\Str::limit(strip_tags($item->description), 300, '...') }}
-                                </p>
+                                </h6>
 
                                 <div class="text-muted text-end small">
                                     (click to view)

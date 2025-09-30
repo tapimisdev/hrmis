@@ -77,6 +77,12 @@ class EmployeeService {
 
                 // Salary
                 'salary.amount as salary',
+                'salary.salary_frequency',
+                'salary.first_cutoff',
+                'salary.second_cutoff',
+                'salary.salary_basis',
+                'salary.tranche_id',
+                'salary.step',
 
                 // Shift
                 'shift.shift_id',
@@ -167,9 +173,14 @@ class EmployeeService {
                     'employment_types.id as employment_type_id',
                     'employment_types.code as employment_type_code',
                     'employment_types.name as employment_type_name',
+                    'salary.amount as salary',
+                    'salary.salary_frequency',
+                    'salary.first_cutoff',
+                    'salary.second_cutoff',
+                    'salary.salary_basis',
                     'salary.tranche_id',
                     'salary.step',
-                    'salary.amount as salary',
+                    'salary.daily_rate',
                     'shift.shift_id',
                     'shift.work_schedule_id'
                 )

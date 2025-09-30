@@ -29,6 +29,15 @@
             position: relative;
             top: -5px;
         }
+
+        .attachment-item {
+            height: 100%;
+        }
+
+        .file-bubble {
+            text-align: left;
+            overflow: hidden;
+        }
     </style>
 @endsection
 
@@ -38,7 +47,7 @@
             <a href="{{route('services.events.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-arrow-left me-2"></i>Go Back
             </a>
-            <a href="{{route('services.events.index')}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
+            <a href="{{route('services.events.edit', ['event' => $data['slug']])}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-pen-to-square"></i> Update
             </a>
         </div>
@@ -66,6 +75,76 @@
                 <div class="description">
                     {!! $data['description'] !!}
                 </div>
+                @if($data['attachments'])
+                    <hr>
+                    <label class="mb-4">Attachments</label>
+                @endif
+                <div class="d-flex flex-wrap gap-3 mb-4">
+                    @foreach($data['attachments'] as $attachment)
+                        @php
+                            $ext = pathinfo($attachment['filename'], PATHINFO_EXTENSION);
+                            $isImage = in_array(strtolower($ext), ['jpg','jpeg','png','gif','webp']);
+                        @endphp
+
+                        @if($isImage)
+                            <div class="attachment-item" style="flex: 1 1 150px; max-width: 250px;">
+                                <a href="{{ Storage::url('events/attachments/' . $attachment['filename']) }}" 
+                                download 
+                                class="text-decoration-none">
+                                    <div class="card shadow-sm border-0 rounded-3 w-100 h-100" style="cursor: pointer">
+                                        <div class="ratio ratio-1x1" style="height: 150px;">
+                                            <img src="{{ Storage::url('events/attachments/' . $attachment['filename']) }}" 
+                                                alt="{{ $attachment['title'] }}"
+                                                class="img-fluid object-fit-cover rounded-3">
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach($data['attachments'] as $attachment)
+                        @php
+                            $ext = pathinfo($attachment['filename'], PATHINFO_EXTENSION);
+                            $isImage = in_array(strtolower($ext), ['jpg','jpeg','png','gif','webp']);
+                        @endphp
+
+                        @if(!$isImage)
+                            <div class="attachment-item" style="width: fit-content; min-width: 100px;">
+                                <a href="{{ Storage::url('events/attachments/' . $attachment['filename']) }}" 
+                                download 
+                                class="text-decoration-none">
+                                    <div class="file-bubble bg-light text-dark rounded-3 shadow-sm py-2 px-3 d-flex flex-column justify-content-center h-100" style="cursor: pointer; width: fit-content;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fa-regular fa-file-lines fs-4"></i>
+                                            <div>
+                                                <span class="fw-semibold d-block text-truncate" style="max-width: 200px;" 
+                                                    title="{{ $attachment['title'] . '.' . $ext }}">
+                                                    {{ $attachment['title'] . '.' . $ext }}
+                                                </span>
+                                                <small class="text-dark fw-bold">
+                                                    @php
+                                                        try {
+                                                            echo number_format(Storage::disk('public')->size('events/attachments/' . $attachment['filename']) / 1024, 2) . ' KB';
+                                                        } catch (\Exception $e) {
+                                                            echo 'Unknown size';
+                                                        }
+                                                    @endphp
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+
+
+
+
             </div>
             <div class="col-12 col-md-4">
                 <h5 class="fw-bold text-uppercase mb-3">Other Events</h5>

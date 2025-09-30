@@ -113,7 +113,7 @@
                 </div>
 
                <div class="col-12 col-md-7 mb-3">
-                    <div class="row px-2" id="input-container">
+                   <div class="row px-2" id="input-container">
                         @if($isEdit)
                             @foreach($data['users'] as $index => $selectedUsers)
                                 @php
@@ -126,15 +126,18 @@
                                             <label class="form-label">
                                                 {{ $loop->iteration }}{{ $loop->iteration == 1 ? 'st' : ($loop->iteration == 2 ? 'nd' : ($loop->iteration == 3 ? 'rd' : 'th')) }} Approval
                                             </label>
-                                            <select name="approvers[{{ $index }}][]" class="form-select select2" multiple>
-                                                @foreach($users as $u)
-                                                    @php
-                                                        $displayName = trim(($u->firstname ?? '') . ' ' . ($u->lastname ?? '')) ?: $u->name;
-                                                    @endphp
-                                                    <option value="{{ $u->id }}" 
-                                                        {{ in_array($u->id, $selectedIds) ? 'selected' : '' }}>
-                                                        {{ $displayName }}
-                                                    </option>
+                                            <select name="approvers[{{ $index }}][]" class="form-select select2" multiple autocomplete="disable">
+                                                @foreach($usersGrouped as $role => $users)
+                                                    <optgroup label="{{ ucfirst($role) }}">
+                                                        @foreach($users as $u)
+                                                            @php
+                                                                $displayName = trim(($u->firstname ?? '') . ' ' . ($u->lastname ?? '')) ?: $u->name;
+                                                            @endphp
+                                                            <option value="{{ $u->id }}" {{ in_array($u->id, $selectedIds) ? 'selected' : '' }}>
+                                                                {{ $displayName }}
+                                                            </option>
+                                                        @endforeach
+                                                    </optgroup>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -152,17 +155,19 @@
                             <div class="col-12 mb-2 approver-item" id="approver_item_0">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="flex-grow-1">
-                                        <label class="form-label">
-                                            1st Approval
-                                        </label>
-                                        <select name="approvers[1][]" class="form-select select2" multiple>
-                                            @foreach($users as $u)
-                                                @php
-                                                    $displayName = trim(($u->firstname ?? '') . ' ' . ($u->lastname ?? '')) ?: $u->name;
-                                                @endphp
-                                                <option value="{{ $u->id }}">
-                                                    {{ $displayName }}
-                                                </option>
+                                        <label class="form-label">1st Approval</label>
+                                        <select name="approvers[1][]" class="form-select select2" multiple autocomplete="disable">
+                                            @foreach($usersGrouped as $role => $users)
+                                                <optgroup label="{{ ucfirst($role) }}">
+                                                    @foreach($users as $u)
+                                                        @php
+                                                            $displayName = trim(($u->firstname ?? '') . ' ' . ($u->lastname ?? '')) ?: $u->name;
+                                                        @endphp
+                                                        <option value="{{ $u->id }}">
+                                                            {{ $displayName }}
+                                                        </option>
+                                                    @endforeach
+                                                </optgroup>
                                             @endforeach
                                         </select>
                                     </div>
@@ -170,7 +175,6 @@
                             </div>
                         @endif
                     </div>
-
                     <div class="d-flex justify-content-end">
                         <button type="button" id="add-input" class="btn btn-outline-primary px-4 py-2 mt-2 text-uppercase">
                             Add Approver

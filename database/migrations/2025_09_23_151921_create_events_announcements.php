@@ -80,8 +80,9 @@
         public function down(): void
         {
             Schema::dropIfExists('events_announcements_viewers');
-            Schema::dropIfExists('events_announcements_posted_by');
             Schema::dropIfExists('events_announcements_attachments');
+            Schema::dropIfExists('events_announcements_posted_by');
+            Schema::dropIfExists('events_announcements_tags');
             Schema::dropIfExists('events_announcements');
         }
     };
