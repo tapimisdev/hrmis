@@ -63,7 +63,7 @@ Auth::routes([
     'confirm' => false        // disable password confirmation
 ]);
 
-Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
+Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
@@ -256,7 +256,7 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
     });
 });
 
-Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
+Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(function () {
 
     # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
