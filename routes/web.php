@@ -181,7 +181,14 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         route::resource('events', EventsController::class)->names('services.events');
 
         # LEAVE APPLICATIONS
-        route::resource('leave/application', AdminLeaveApplicationController::class)->names('services.leaves');
+        route::get('leave/application', [AdminLeaveApplicationController::class, 'index'])->name('services.leaves.index');
+        route::get('leave/application/{application}', [AdminLeaveApplicationController::class, 'show'])->name('services.leaves.show');
+        route::get('leave/application/{application}/save', [AdminLeaveApplicationController::class, 'save'])->name('services.leaves.save');
+
+        # PASS SLIP APPLICATIONS
+
+        # OVERTIME APPLICATION
+        
 
     });
 

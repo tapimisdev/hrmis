@@ -230,6 +230,7 @@ main {
         & a {
             text-decoration: none;
             color: $dark;
+            white-space: nowrap;
         }
     }
 

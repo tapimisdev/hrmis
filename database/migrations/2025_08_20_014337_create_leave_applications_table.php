@@ -21,6 +21,8 @@ return new class extends Migration
             $table->integer('days')->default(1);
             $table->text('reason');
             $table->enum('status', ['cancelled', 'pending', 'approved', 'rejected'])->default('pending');
+            $table->tinyText('remarks')
+                ->nullable();
             $table->foreignId('approver_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
