@@ -28,7 +28,7 @@
                             <div class="accordion-body">
                                 <div class="row">
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="mb-2" for="employee_no">Employee No. <span class="text-danger">*</span></label>
+                                        <label class="mb-2" for="employee_no">Employee No. <span class="text-danger"></span></label>
                                         <input type="text" id="employee_no" name="employee_no" class="form-control" value="{{ optional($data)->employee_no ?? '' }}">
                                         <div class="error-field"></div>
                                     </div>
@@ -38,7 +38,7 @@
                                         <div class="error-field"></div>
                                     </div>
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="mb-2" for="date_hired">Date Hired <span class="text-danger">*</span></label>
+                                        <label class="mb-2" for="date_hired">Date Hired <span class="text-danger"></span></label>
                                         <input type="date" id="date_hired" name="date_hired" class="form-control" value="{{ optional($data)->date_hired ?? '' }}">
                                         <div class="error-field"></div>
                                     </div>
@@ -67,7 +67,7 @@
                             <div class="accordion-body">
                                 <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="mb-2" for="division_id">Division <span class="text-danger">*</span></label>
+                                    <label class="mb-2" for="division_id">Division <span class="text-danger"></span></label>
                                     <select id="division_id" name="division_id" class="form-select">
                                         <option value=""> - CHOOSE - </option>
                                         @foreach($divisions as $division)
@@ -77,7 +77,7 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="mb-2" for="unit_id">Unit <span class="text-danger">*</span></label>
+                                    <label class="mb-2" for="unit_id">Unit <span class="text-danger"></span></label>
                                     <select id="unit_id" name="unit_id" class="form-select">
                                         @if(optional($data)->unit_id)
                                         <option value="{{ optional($data)->unit_id }}" selected>{{ strtoupper(optional($data)->unit_name) }}</option>
@@ -99,11 +99,11 @@
                             Employment Details
                             </button>
                         </h2>
-                        <div id="collapseEmp" class="accordion-collapse collapse show">
+                        <div id="collapseEmp" class="accordion-collapsecollapse show">
                             <div class="accordion-body">
                                 <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="mb-2" for="employment_type_id">Employment Type <span class="text-danger">*</span></label>
+                                    <label class="mb-2" for="employment_type_id">Employment Type <span class="text-danger"></span></label>
                                     <select id="employment_type_id" name="employment_type_id" class="form-select">
                                         <option value=""> - CHOOSE - </option>
                                         @foreach($employment_types as $type)
@@ -113,7 +113,7 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label class="mb-2" for="position_id">Position <span class="text-danger">*</span></label>
+                                    <label class="mb-2" for="position_id">Position <span class="text-danger"></span></label>
                                     <select id="position_id" name="position_id" class="form-select">
                                         @if(optional($data)->position_id)
                                         <option value="{{ optional($data)->position_id }}" selected>{{ strtoupper(optional($data)->position_name) }}</option>
@@ -124,7 +124,7 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-12 col-md-6 mb-3">
-                                    <label class="mb-2" for="shift_id">Shift Schedule <span class="text-danger">*</span></label>
+                                    <label class="mb-2" for="shift_id">Shift Schedule <span class="text-danger"></span></label>
                                     <select id="shift_id" name="shift_id" class="form-select">
                                          <option value=""> - CHOOSE - </option>
                                             @foreach($shifts as $shift)
@@ -134,7 +134,7 @@
                                     <div class="error-field"></div>
                                 </div>
                                 <div class="col-12 col-md-6 mb-3">
-                                    <label class="mb-2" for="schedule_id">Days Schedule <span class="text-danger">*</span></label>
+                                    <label class="mb-2" for="schedule_id">Days Schedule <span class="text-danger"></span></label>
                                     <select id="schedule_id" name="schedule_id" class="form-select">
                                         <option value=""> - CHOOSE - </option>
                                         @foreach($schedules as $schedule)
@@ -158,11 +158,11 @@
                         </h2>
                         <div id="collapseSalary" class="accordion-collapse collapse show">
                             <div class="accordion-body">
-                                <div class="row">   
 
-                                    @if(optional($data)->employment_type_id && optional($data)->employment_type_id == 1)
+                                <div class="row tranche-step">
+                                     @if(optional($data)->employment_type_id)
                                         {{-- Tranche & Step (Only PL) --}}
-                                        <div class="col-md-4 mb-3 tranche-step">
+                                        <div class="col-md-4 mb-3">
                                             <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
                                             <select id="tranche_id" name="tranche_id" class="form-select">
                                                 <option value=""> - CHOOSE - </option>
@@ -175,7 +175,7 @@
                                             <div class="error-field"></div>
                                         </div>
 
-                                        <div class="col-md-4 mb-3 tranche-step">
+                                        <div class="col-md-4 mb-3">
                                             <label class="mb-2" for="step_id">Steps <span class="text-danger">*</span></label>
                                             <select id="step_id" name="step_id" class="form-select">
                                                 <option value=""> - CHOOSE - </option>
@@ -186,12 +186,13 @@
                                             <div class="error-field"></div>
                                         </div>
                                     @endif
-
+                                </div>
+                                <div class="row">   
                                     {{-- Salary Frequency --}}
                                     <div class="col-md-4 mb-3">
                                         <label class="mb-2" for="salary_frequency">Salary Frequency <span class="text-danger">*</span></label>
                                         <select id="salary_frequency" name="salary_frequency" class="form-select">
-                                            @foreach(['' => '- CHOOSE -', 'once' => 'Once A Month', 'twice' => 'Twice A Month'] as $value => $label)
+                                            @foreach([''=> '- CHOOSE -', 'once' => 'Once A Month', 'twice' => 'Twice A Month'] as $value => $label)
                                                 <option value="{{ $value }}" {{ (optional($data)->salary_frequency ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
                                             @endforeach
                                         </select>
