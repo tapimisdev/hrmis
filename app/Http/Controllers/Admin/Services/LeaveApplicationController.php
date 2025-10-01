@@ -23,7 +23,7 @@ class LeaveApplicationController extends Controller {
     }
     
     public function show(int $id) {
-        
+
         $data = DB::table('leave_applications')
             ->leftJoin('leaves', 'leaves.id', '=', 'leave_applications.leave_id')
             ->where('leave_applications.id', $id)
@@ -36,6 +36,87 @@ class LeaveApplicationController extends Controller {
 
         return view('admin.pages.services.leave.show', compact('data'));
       
+    }
+
+    public function rules() {
+        return [
+            'id' => 'required|exists:leave_applications,id',
+            'action' => 'required|in:approve,decline'
+        ];
+    }
+
+    public function save(Request $request) {
+        
+        $this->validate();
+
+        $payload = $request->all();
+
+        switch($payload['action']) {
+            case 'approve':
+                $this->approve($payload);
+                return;
+            case 'decline':
+                $this->decline($payload);
+                return;
+            default:
+
+                break;
+        }
+
+
+    }
+
+    public function approve(array $payload) {
+
+        try {
+
+            DB::table('leave_applications')
+                ->where('id', $payload['id'])
+                ->update([
+                    'status' => 'approved'
+                ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Leave application has been approved!'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error occured: ' . $e->getMessage()
+            ]);
+        }
+
+
+
+
+    }
+
+    public function decline(array $payload) {
+        
+        try {
+            
+            DB::table('leave_applications')
+                ->where('id', $payload['id'])
+                ->update([
+                    'remarks' => $payload['remarks'] ?? null,
+                    'status' => 'rejected',
+                ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Leave application was declined successfully'
+            ]);
+
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error occured: ' . $e->getMessage()
+            ]);
+        }
+
     }
 
     public function datatable($query)

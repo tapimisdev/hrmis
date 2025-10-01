@@ -16,6 +16,8 @@
             <div class="card shadow p-3">
                 <div class="card-body">
                   <div class="accordion" id="employeeAccordion">
+                    
+                    {{-- EMPLOYEE INFORMATION --}}
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingInfo">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInfo" aria-expanded="true">
@@ -32,7 +34,7 @@
                                     </div>
                                     <div class="col-12 col-md-3 mb-3">
                                         <label class="mb-2" for="biometrics_id">Biometrics ID</label>
-                                        <input type="number" id="biometrics_id" name="biometrics_id" class="form-control" value="{{ optional($data)->biometrics_id ?? '' }}">
+                                        <input type="text" id="biometrics_id" name="biometrics_id" class="form-control" value="{{ optional($data)->biometrics_id ?? '' }}">
                                         <div class="error-field"></div>
                                     </div>
                                     <div class="col-12 col-md-3 mb-3">
@@ -53,6 +55,8 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- ORGANIZATION DETAILS --}}
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingOrg">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrg" aria-expanded="true">
@@ -87,6 +91,8 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- EMPLOYMENT DETAILS --}}
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingEmp">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEmp" aria-expanded="true">
@@ -142,6 +148,8 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- SALARY & PAYROLL DETAILS --}}
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingSalary">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSalary" aria-expanded="true">
@@ -150,31 +158,36 @@
                         </h2>
                         <div id="collapseSalary" class="accordion-collapse collapse show">
                             <div class="accordion-body">
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
-                                        <select id="tranche_id" name="tranche_id" class="form-select">
-                                            <option value=""> - CHOOSE - </option>
-                                            @foreach($tranches as $tranche)
-                                                <option value="{{ $tranche->id }}" {{ (optional($data)->tranche_id ?? '') == $tranche->id ? 'selected' : '' }}>
-                                                    {{ strtoupper($tranche->name) }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <div class="error-field"></div>
-                                    </div>
+                                <div class="row">   
 
-                                    <div class="col-md-4 mb-3">
-                                        <label class="mb-2" for="step_id">Steps <span class="text-danger">*</span></label>
-                                        <select id="step_id" name="step_id" class="form-select">
-                                            <option value=""> - CHOOSE - </option>
-                                            @foreach(range(1, 8) as $step)
-                                                <option value="{{ $step }}" {{ (optional($data)->step ?? '') == $step ? 'selected' : '' }}>Step {{ $step }}</option>
-                                            @endforeach
-                                        </select>
-                                        <div class="error-field"></div>
-                                    </div>
+                                    @if(optional($data)->employment_type_id && optional($data)->employment_type_id == 1)
+                                        {{-- Tranche & Step (Only PL) --}}
+                                        <div class="col-md-4 mb-3 tranche-step">
+                                            <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
+                                            <select id="tranche_id" name="tranche_id" class="form-select">
+                                                <option value=""> - CHOOSE - </option>
+                                                @foreach($tranches as $tranche)
+                                                    <option value="{{ $tranche->id }}" {{ (optional($data)->tranche_id ?? '') == $tranche->id ? 'selected' : '' }}>
+                                                        {{ strtoupper($tranche->name) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <div class="error-field"></div>
+                                        </div>
 
+                                        <div class="col-md-4 mb-3 tranche-step">
+                                            <label class="mb-2" for="step_id">Steps <span class="text-danger">*</span></label>
+                                            <select id="step_id" name="step_id" class="form-select">
+                                                <option value=""> - CHOOSE - </option>
+                                                @foreach(range(1, 8) as $step)
+                                                    <option value="{{ $step }}" {{ (optional($data)->step ?? '') == $step ? 'selected' : '' }}>Step {{ $step }}</option>
+                                                @endforeach
+                                            </select>
+                                            <div class="error-field"></div>
+                                        </div>
+                                    @endif
+
+                                    {{-- Salary Frequency --}}
                                     <div class="col-md-4 mb-3">
                                         <label class="mb-2" for="salary_frequency">Salary Frequency <span class="text-danger">*</span></label>
                                         <select id="salary_frequency" name="salary_frequency" class="form-select">
@@ -185,23 +198,24 @@
                                         <div class="error-field"></div>
                                     </div>
 
+                                    {{-- Salary / Daily Rate --}}
                                     <div class="col-md-3 mb-3">
-                                        <label class="mb-2" for="salary">Total Salary <span class="text-danger">*</span></label>
-                                        <input type="text" id="salary" name="salary" class="form-control restricted"
-                                            value="{{ optional($data)->salary ?? '' }}" readonly>
+                                        <label class="mb-2" for="salary">Salary <span class="text-danger">*</span></label>
+                                        <input type="text" id="salary" name="salary" class="form-control"
+                                            value="{{ optional($data)->salary ?? '' }}">
                                         <div class="error-field"></div>
                                     </div>
 
                                     <div class="col-md-3 mb-3">
                                         <label class="mb-2" for="daily_rate">Daily Rate</label>
-                                        <input type="text" id="daily_rate" name="daily_rate" class="form-control restricted"
-                                            value="{{ optional($data)->daily_rate ?? '' }}" readonly>
+                                        <input type="text" id="daily_rate" name="daily_rate" class="form-control"
+                                            value="{{ optional($data)->daily_rate ?? '' }}">
                                     </div>
 
-
+                                    {{-- Cutoffs --}}
                                     <div class="col-md-3 mb-3 cutoff once-cutoff" style="display:none;">
                                         <label class="mb-2" for="cutoff_amount_once">1st Cutoff Amount <span class="text-danger">*</span></label>
-                                        <input type="text" id="cutoff_amount_once" name="cutoff_amount_once" class="form-control restricted"
+                                        <input type="text" id="cutoff_amount_once" name="cutoff_amount_once" class="form-control"
                                             value="{{ optional($data)->cutoff_amount_once ?? '' }}">
                                     </div>
 
@@ -217,6 +231,7 @@
                                             value="{{ optional($data)->second_cutoff_amount ?? '' }}">
                                     </div>
 
+                                    {{-- Deduction --}}
                                     <div class="col-md-4 mb-3">
                                         <label class="mb-2" for="deduction_applied">Deduction Applied <span class="text-danger">*</span></label>
                                         <select id="deduction_applied" name="deduction_applied" class="form-select">
@@ -228,6 +243,7 @@
                                         <div class="error-field"></div>
                                     </div>
 
+                                    {{-- Salary Method --}}
                                     <div class="col-md-4 mb-3">
                                         <label class="mb-2" for="salary_method">Salary Method <span class="text-danger">*</span></label>
                                         <select id="salary_method" name="salary_method" class="form-select">
@@ -238,6 +254,7 @@
                                         <div class="error-field"></div>
                                     </div>
 
+                                    {{-- Payroll No --}}
                                     <div class="col-md-6 mb-3">
                                         <label class="mb-2" for="payroll_account_number">Payroll Account No.</label>
                                         <input type="text" id="payroll_account_number" name="payroll_account_number" class="form-control"
@@ -245,10 +262,12 @@
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
+
+                  </div>
                 </div>
+
                 <div class="card-footer bg-transparent border-0 d-flex justify-content-end mt-3">
                     <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
                         Save <i class="fa-solid fa-arrow-right ms-2"></i>
@@ -262,94 +281,75 @@
 @section('scripts')
 <script>
     $(function() {
-
+        
         const url = $('#form').attr('action');
         post(url);
 
-        // DIVISIONS ON CHANGE, SHOW UNITS
-
+        // DIVISION CHANGE
         $('#division_id').on('change', function() {
             const id = $(this).val();
             const url = @json(route('hris.employee.information'));
-            $.ajax({
-                type: "GET",
-                url: url,
-                data: {
-                    'division_id': id
-                },
-                dataType: "JSON",
-                success: function (response) {
-                    console.log(response);
-                    const res = response.data;
-                    console.log(res)
-                    $('#unit_id').html('<option value=""> - CHOOSE UNIT - </option>'); 
-                    res.forEach(item => {
-                        $('#unit_id').append(`
-                            <option value="${item.id}">${item.name.toUpperCase()}</option>
-                        `);
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error(status, error);
-                    console.error("Response Text:", xhr.responseText);
-                }
-            });
+            $.get(url, { division_id: id }, function(response) {
+                const res = response.data;
+                $('#unit_id').html('<option value=""> - CHOOSE UNIT - </option>');
+                res.forEach(item => {
+                    $('#unit_id').append(`<option value="${item.id}">${item.name.toUpperCase()}</option>`);
+                });
+            }, 'json');
         });
 
-        // EMPLOYMENT TYPE ON CHANGE, SHOW POSITIONS
-
+        // EMPLOYMENT TYPE CHANGE
         $('#employment_type_id').on('change', function() {
             const id = $(this).val();
             const url = @json(route('hris.employee.information'));
-            $('#salary').val(0)
-            $.ajax({
-                type: "GET",
-                url: url,
-                data: {
-                    'employment_type_id': id
-                },
-                dataType: "json",
-                success: function (response) {
-                    const res = response.data;
-                    console.log(res);
-                    $('#position_id').html('<option value=""> - CHOOSE POSITION - </option>'); 
-                    res.forEach(item => {
-                        $('#position_id').append(`
-                            <option value="${item.id}">${item.name.toUpperCase()}</option>
-                        `);
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error(status, error);
+            const selectedPositionId = @json(optional($data)->position_id); 
+
+            $.get(url, { employment_type_id: id }, function(response) {
+                const res = response.data;
+                $('#position_id').html('<option value=""> - CHOOSE POSITION - </option>');
+                
+                res.forEach(item => {
+                    let selected = (item.id == selectedPositionId) ? 'selected' : '';
+                    $('#position_id').append(`<option value="${item.id}" ${selected}>${item.name.toUpperCase()}</option>`);
+                });
+
+                if (id == 1) {
+                    $('.tranche-step').show();
+                    $('#salary, #daily_rate, #first_cutoff_amount, #second_cutoff_amount')
+                        .prop('readonly', true)
+                        .addClass('restricted');
+                } else {
+                    $('.tranche-step').hide();
+                    $('#salary, #daily_rate, #first_cutoff_amount, #second_cutoff_amount')
+                        .prop('readonly', false)
+                        .removeClass('restricted');
                 }
-            });
+            }, 'json');
         });
 
-        // POSITION ID ON CHANGE, SHOW POSITIONS
 
+        // POSITION CHANGE (only PL)
         $('#position_id').on('change', function() {
             const id = $(this).val();
             const url = @json(route('hris.employee.information'));
-            $.ajax({
-                type: "GET",
-                url: url,
-                data: {
-                    'position_id': id
-                },
-                dataType: "json",
-                success: function (response) {
-                    const res = response.data;
-                    $('#salary').val(res.salary)
-                },
-                error: function(xhr, status, error) {
-                    console.error(status, error);
+            $.get(url, { position_id: id }, function(response) {
+                let selectedType = $("#employment_type_id option:selected").val();
+                if (selectedType === 2) {
+                    let salary = response.data.salary;
+                    $('#salary').val(salary);
+                    $('#daily_rate').val((salary / 22).toFixed(2));
+                    updateCutoffAmounts();
                 }
-            });
-
+            }, 'json');
         });
 
-        
+        // TRANCHE & STEP CHANGE (only PL)
         $('#tranche_id, #step_id').on('change', function () {
+
+            const employment_type_id = $('#employment_type_id').val();
+
+            if(employment_type_id == 2) return;
+
             const tranche_id = $('#tranche_id').val();
             const step_id = $('#step_id').val();
             const url = @json(route('hris.employee.information'));
@@ -374,12 +374,12 @@
                     console.error("AJAX Error:", status, error);
                 }
             });
+
         });
 
-
-        $('#salary_frequency').on('change', function () {
+        // SALARY FREQUENCY CHANGE
+        $('#salary_frequency').on('change', function() {
             $('.cutoff').hide();
-
             if ($(this).val() === 'once') {
                 $('.once-cutoff').show();
                 updateCutoffAmounts(false);
@@ -391,7 +391,6 @@
 
         function updateCutoffAmounts(split = false) {
             let salary = parseFloat($('#salary').val()) || 0;
-
             if (!split) {
                 $('#cutoff_amount_once').val(salary.toFixed(2));
             } else {
@@ -401,12 +400,9 @@
             }
         }
 
-        // Run on page load in case of edit
+        // Run on load
         $('#salary_frequency').trigger('change');
-
-
+        $('#employment_type_id').trigger('change');
     });
 </script>
 @endsection
-
-

@@ -190,16 +190,27 @@ class InformationController extends Controller
 
             if (!$latestSalary || $latestSalary->amount != $request->salary) {
 
-                $half = $request->salary / 2;
+                
+                $frequency = $request->salary_frequency;
                 $daily_rate = number_format($request->salary / 22, 2);
+
+                if($frequency == 'once') {
+                    $first_cutoff = $request->salary;
+                    $second_cutoff = 0;
+                } else {
+                    $half = $request->salary / 2;
+                    $first_cutoff = $half;
+                    $second_cutoff = $half;
+                }
+
 
                 DB::table('employee_salary')->insert([
                     'employee_no'      => $request->employee_no,
                     'tranche_id'       => $request->tranche_id,
                     'step'             => $request->step_id,
                     'salary_frequency' => $request->salary_frequency,
-                    'first_cutoff'     => $half,
-                    'second_cutoff'    => $half,
+                    'first_cutoff'     => $first_cutoff,
+                    'second_cutoff'    => $second_cutoff,
                     'daily_rate'       => $daily_rate,
                     'salary_basis'     => $request->salary_basis,
                     'amount'           => $request->salary,
