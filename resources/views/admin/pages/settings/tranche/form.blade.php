@@ -25,9 +25,22 @@
             <div class="card shadow p-3">
                 <div class="card-body">
                     <div class="row my-3">
-                        <div class="col-12 col-md-12 mb-3">
-                            <label class="mb-2" for="name">Name <span class="text-danger">*</span></label>
-                            <input type="text" id="name" name="name" class="form-control" value="{{$isEdit ? $data->name : ''}}">
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="mb-2" for="employment_type">Employment Type <span class="text-danger">*</span></label>
+                            <select id="employment_type" name="employment_type_id" class="form-control">
+                                <option value="">-- Select Employment Type --</option>
+                                @foreach($employment_types as $type)
+                                    <option value="{{ $type->id }}" 
+                                        {{ $isEdit && $data->employment_type_id == $type->id ? 'selected' : '' }}>
+                                        {{ $type->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="error-field"></div>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="mb-2" for="date">Date <span class="text-danger">*</span></label>
+                            <input type="date" id="date" name="date" class="form-control" value="{{$isEdit ? $data->name : ''}}">
                             <div class="error-field"></div>
                         </div>
                         <div class="col-12 col-md-12 mb-3">

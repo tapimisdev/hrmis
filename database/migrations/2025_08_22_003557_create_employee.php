@@ -27,11 +27,6 @@ return new class extends Migration
             $table->string('salary_method');
             $table->string('payroll_account_no')
                 ->nullable();
-            $table->enum('deduction_applied', [
-                'first_cutoff',
-                'second_cutoff',
-                'both'
-            ])->default('both');
             $table->boolean('isDeleted')
                 ->default(false);
             $table->timestamps();

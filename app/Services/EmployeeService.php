@@ -78,8 +78,6 @@ class EmployeeService {
                 // Salary
                 'salary.amount as salary',
                 'salary.salary_frequency',
-                'salary.first_cutoff',
-                'salary.second_cutoff',
                 'salary.salary_basis',
                 'salary.tranche_id',
                 'salary.step',

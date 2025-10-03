@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
 use App\Http\Controllers\Admin\Hris\AccountController;
+use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
 use App\Http\Controllers\Admin\Services\EventsController;
 use App\Http\Controllers\Admin\Settings\DeductionController;
 use App\Http\Controllers\Admin\Settings\EarningsController;
@@ -63,11 +64,13 @@ Auth::routes([
     'confirm' => false        // disable password confirmation
 ]);
 
-Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
+Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     Route::prefix('hris')->group(function() {
+
+        Route::resource('employee/import', ImportEmployeeController::class)->names('hris.import');
 
         # INDEX
         Route::get('employee', [IndexController::class, 'index'])
@@ -263,7 +266,7 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
     });
 });
 
-Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
+Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(function () {
 
     # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
