@@ -48,10 +48,37 @@ class LeaveApplicationController extends Controller
         $validatedData = $request->validated();
         $employee_no = $user->toArray()['employee_information']['employee_no'];
 
+        $organization = DB::table('employee_organization')
+            ->where('employee_no', $employee_no)
+            ->first();
+
         DB::beginTransaction();
 
         try {
-            // Insert leave application
+
+            $approvers = DB::table('application_approver')
+                ->leftJoin('application_approver_org', 'application_approver.id', '=', 'application_approver_org.application_approver_id')
+                ->leftJoin('application_approver_user', 'application_approver.id', '=', 'application_approver_user.application_approver_id')
+                ->leftJoin('users', 'application_approver_user.user_id', '=', 'users.id')
+                ->where('application_approver.type', 'leave')
+                ->where('application_approver_org.division_id', $organization->division_id)
+                ->where('application_approver_org.unit_id', $organization->unit_id)
+                ->select(
+                    'application_approver.*',
+                    'application_approver_org.*',
+                    'application_approver_user.*',
+                    'users.id as user_id',
+                    'users.name as user_name',
+                )
+                ->get();
+
+            if($approvers->isEmpty()) {
+                return response([
+                    'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
+                    'status'  => 'error'
+                ], 500); 
+            }
+
             $leaveId = DB::table('leave_applications')->insertGetId([
                 'user_id'       => Auth::user()->id ?? $validatedData['user_id'],
                 'employee_no'  => $employee_no,
@@ -63,6 +90,18 @@ class LeaveApplicationController extends Controller
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
+        
+            foreach($approvers as $approver) {
+
+                DB::table('application_approvers')->insertGetId([
+                    'leave_application_id' => $leaveId,
+                    'user_id' => $approver->user_id,
+                    'status' => 'pending',
+                    'level' => $approver->level,
+                ]);
+
+            }
+
 
             // Handle multiple attachments (if any)
             if ($request->hasFile('attachments')) {

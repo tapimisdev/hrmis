@@ -56,6 +56,7 @@ class RoleSeeder extends Seeder
                 'password' => Hash::make('d0$t2025'),
             ]
         );
+        
         $hr->assignRole($hrRole);
 
     }

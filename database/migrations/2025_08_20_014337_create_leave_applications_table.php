@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('leave_applications', function (Blueprint $table) {
            $table->id();
-            $table->unsignedBigInteger('user_id'); // Employee who filed the leave
+            $table->unsignedBigInteger('user_id'); 
             $table->string('employee_no')->nullable();
             $table->foreignId('leave_id')->constrained('leaves');
             $table->date('start_date');
@@ -21,8 +21,6 @@ return new class extends Migration
             $table->integer('days')->default(1);
             $table->text('reason');
             $table->enum('status', ['cancelled', 'pending', 'approved', 'rejected'])->default('pending');
-            $table->tinyText('remarks')
-                ->nullable();
             $table->foreignId('approver_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();

@@ -75,6 +75,7 @@
             <form action="{{ route('services.leaves.index', $data->id) }}" method="POST">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="action" id="action" value="rejected">
                 <button type="submit" class="px-5 py-3 text-uppercase btn btn-danger px-4">
                     <i class="fa-solid fa-xmark me-2"></i> Decline
                 </button>
@@ -82,6 +83,7 @@
             <form action="{{ route('services.leaves.index', $data->id) }}" method="POST">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="action" id="action" value="approved">
                 <button type="submit" class="px-5 py-3 text-uppercase btn btn-primary px-4">
                     <i class="fa-solid fa-check me-2"></i> Approve
                 </button>
@@ -89,4 +91,15 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    $(function () {
+     
+        const url = $('#form').attr('action');
+        put(url);
+        
+    });
+</script>
 @endsection

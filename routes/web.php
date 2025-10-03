@@ -183,7 +183,7 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
         # LEAVE APPLICATIONS
         route::get('leave/application', [AdminLeaveApplicationController::class, 'index'])->name('services.leaves.index');
         route::get('leave/application/{application}', [AdminLeaveApplicationController::class, 'show'])->name('services.leaves.show');
-        route::get('leave/application/{application}/save', [AdminLeaveApplicationController::class, 'save'])->name('services.leaves.save');
+        route::put('leave/application/{application}/save', [AdminLeaveApplicationController::class, 'save'])->name('services.leaves.save');
 
         # PASS SLIP APPLICATIONS
 
