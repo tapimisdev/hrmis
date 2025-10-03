@@ -13,7 +13,10 @@ return new class extends Migration
     {
         Schema::create('tranche', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->foreignId('employment_type_id')
+                ->constrained('employment_types')
+                ->onDelete('restrict');
+            $table->date('date');
             $table->longText('description')
                 ->nullable();
             $table->timestamps();

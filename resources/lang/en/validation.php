@@ -1,43 +1,46 @@
 <?php
 
 return [
-    'required' => '*required',
-    'exists'   => '*already exists',
-    'date'     => '*invalid date',
-    'email'    => '*invalid email',
-    'unique'   => '*already taken',
-    'numeric'  => '*must be a number',
-    'string'   => '*must be text',
-    'boolean'  => '*must be true or false',
-    'integer'  => '*must be an integer',
-    'digits'   => '*must be :digits digits',
-    'digits_between' => '*must be between :min and :max digits',
-    'regex'    => '*invalid format',
-    'confirmed'=> '*confirmation does not match',
-    'in'       => '*must be one of: :values',
-    'not_in'   => '*invalid selection',
-    'same'     => '*must match :other',
+
+    // Basic Rules
+    'required' => 'This field is required.',
+    'exists'   => 'The selected value already exists.',
+    'date'     => 'Please provide a valid date.',
+    'email'    => 'Please enter a valid email address.',
+    'unique'   => 'This value has already been taken.',
+    'numeric'  => 'Please enter a valid number.',
+    'string'   => 'Please enter text.',
+    'boolean'  => 'This field must be true or false.',
+    'integer'  => 'Please enter a valid integer.',
+    'digits'   => 'This must be exactly :digits digits.',
+    'digits_between' => 'This must be between :min and :max digits.',
+    'regex'    => 'The format is invalid.',
+    'confirmed'=> 'The confirmation does not match.',
+    'in'       => 'Please select a valid option.',
+    'not_in'   => 'The selected option is invalid.',
+    'same'     => 'This must match :other.',
 
     // Min rules
-    'min.string'  => '*too short (minimum :min characters)',
-    'min.numeric' => '*must be at least :min',
-    'min.array'   => '*must have at least :min items',
-    'min.file'    => '*file must be at least :min kilobytes',
+    'min.string'  => 'Must be at least :min characters.',
+    'min.numeric' => 'Must be at least :min.',
+    'min.array'   => 'Must have at least :min items.',
+    'min.file'    => 'File must be at least :min kilobytes.',
 
     // Max rules
-    'max.string'  => '*too long (maximum :max characters)',
-    'max.numeric' => '*must not be greater than :max',
-    'max.array'   => '*must not have more than :max items',
-    'max.file'    => '*file must not be larger than :max kilobytes',
+    'max.string'  => 'Must not exceed :max characters.',
+    'max.numeric' => 'Must not be greater than :max.',
+    'max.array'   => 'Must not have more than :max items.',
+    'max.file'    => 'File must not be larger than :max kilobytes.',
 
     // File & MIME rules
-    'file'     => '*invalid file',
-    'mimes'    => '*only accepts :values',
-    'mimetypes'=> '*invalid file type (must be :values)',
-    'image'    => '*must be an image',
-    'dimensions' => '*invalid image dimensions',
-    'size'     => '*file size must be exactly :size kilobytes',
+    'file'        => 'Please upload a valid file.',
+    'mimes'       => 'Allowed file types: :values.',
+    'mimetypes'   => 'Invalid file type. Must be: :values.',
+    'image'       => 'Please upload a valid image.',
+    'dimensions'  => 'Invalid image dimensions.',
+    'size'        => 'File size must be exactly :size kilobytes.',
 
-    'after_or_equal' => '*must be a date after or now :date',
-    'after'          => '*must be a date after :date',
+    // Date rules
+    'after_or_equal' => 'Date must be today or after :date.',
+    'after'          => 'Date must be after :date.',
 ];

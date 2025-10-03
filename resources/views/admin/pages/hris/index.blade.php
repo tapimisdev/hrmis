@@ -6,17 +6,43 @@
 
 @section('content')
     <div class="container p-4 pb-5">
-        <div class="pb-5">
-             <x-header title="Employee Lists" subtitle="Manage employee's informations in this module" >
-            </x-header>
-            <div class="d-flex gap-3 justify-content-end">
-                <a href="{{ route('hris.employee.salary') }}" class="btn btn-primary text-uppercase fw-bold px-5 py-3">Update Salary</a>
-                <a href="{{ route('hris.employee.transfer') }}" class="btn btn-primary text-uppercase fw-bold px-5 py-3">Transfer Unit</a>
-                <a href="{{route('hris.employee.information')}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
+        <x-header title="Employee List" subtitle="Manage employee's informations in this module" >
+            <div class="d-flex flex-wrap gap-3 justify-content-end">
+                <!-- Dropdown Button -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary text-uppercase fw-bold px-5 py-3 dropdown-toggle" 
+                            type="button" 
+                            id="employeeActionsDropdown" 
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false">
+                        Actions
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end w-100" aria-labelledby="employeeActionsDropdown">
+                        <li>
+                            <a class="dropdown-item fw-bold text-uppercase" href="{{ route('hris.import.index') }}">
+                                Import
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item fw-bold text-uppercase" href="{{ route('hris.employee.salary') }}">
+                                Update Salary
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item fw-bold text-uppercase" href="{{ route('hris.employee.transfer') }}">
+                                Transfer Unit
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Add Employee Button -->
+                <a href="{{route('hris.employee.information')}}" 
+                class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
                     <i class="fa-solid fa-plus me-2"></i> Add Employee
                 </a>
             </div>
-        </div>
+        </x-header>
         <div class="row mb-3">
             <div class="col-12 col-md-4 mb-3">
                 <label for="division" class="mb-3">Filter By Divisions</label>
@@ -41,7 +67,7 @@
                 </select>
             </div>
         </div>
-        <div class="card shadow p-3">
+        <div class="card p-3">
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover w-100 pb-3" id="myTable">
@@ -89,9 +115,15 @@
         const selectedDivision = "{{ $division_id ?? '' }}";
         const selectedUnit = "{{ $unit_id ?? '' }}";
 
+        const token = localStorage.getItem('auth_token'); // token from local storage
+
         $.ajax({
             url: '/api/divisions',
             type: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,  // <-- add this
+                'Accept': 'application/json'
+            },
             success: function (data) {
                 $('#division').append(
                     data.map(d =>
@@ -130,6 +162,10 @@
             $.ajax({
                 url: '/api/units/' + divisionId,
                 type: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,  // <-- add this
+                    'Accept': 'application/json'
+                },
                 success: function (data) {
                     $('#units').empty().append('<option value=""> - CHOOSE UNIT - </option>');
                     $('#units').append(

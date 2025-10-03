@@ -1,12 +1,12 @@
-<div class="d-flex mb-3 justify-content-between align-items-center pb-2 mt-4 pt-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 mt-3">
     <div>
-        <h1 class="text-xl fw-bold text-uppercase">{{ $title }}</h1>
+        <h3 class="fw-bold text-uppercase mb-1">{{ $title }}</h3>
         @if($subtitle)
-            <p class="text-gray-600 text-uppercase fw-medium">{{ $subtitle }}</p>
+            <p class="text-muted text-uppercase fw-medium mb-0">{{ $subtitle }}</p>
         @endif
     </div>
     <div class="d-flex gap-3">
         {{ $slot }}
     </div>
 </div>
-<hr class="mt-4 mb-5">
+<hr class="mt-3 mb-4">

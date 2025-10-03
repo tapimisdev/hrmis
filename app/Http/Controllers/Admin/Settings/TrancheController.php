@@ -40,8 +40,10 @@ class TrancheController extends Controller
 
         $isEdit = false;
         $id = null;
+
+        $employment_types = DB::table('employment_types')->get();
     
-        return view('admin.pages.settings.tranche.form', compact('isEdit', 'id'));
+        return view('admin.pages.settings.tranche.form', compact('isEdit', 'id', 'employment_types'));
     }
 
     public function store(Request $request) 
@@ -49,8 +51,9 @@ class TrancheController extends Controller
         $payload = $request->all();
 
         $validator = Validator::make($payload, [
-            'name' => 'required|string|max:255',
-            'file' => 'required|mimes:csv,txt',
+            'employment_type_id'   => 'required|exists:employment_types,id',
+            'date'              => 'required|date',
+            'file'              => 'required|mimes:csv,txt',
         ]);
 
         if ($validator->fails()) {
@@ -83,7 +86,8 @@ class TrancheController extends Controller
             }
 
             $tranche_id = DB::table('tranche')->insertGetId([
-                'name'        => $request->name,
+                'employment_type_id' => $request->employment_type_id,
+                'date'        => $request->date,
                 'description' => $request->description,
                 'created_at'  => now(),
                 'updated_at'  => now(),
@@ -94,13 +98,13 @@ class TrancheController extends Controller
                     'tranche_id'    => $tranche_id,
                     'salary_grade'  => $items['salary_grade'],
                     'step_1'        => $items['step_1'] ?? null,
-                    'step_2'        => $items['step_2'] ?? null,
-                    'step_3'        => $items['step_3'] ?? null,
-                    'step_4'        => $items['step_4'] ?? null,
-                    'step_5'        => $items['step_5'] ?? null,
-                    'step_6'        => $items['step_6'] ?? null,
-                    'step_7'        => $items['step_7'] ?? null,
-                    'step_8'        => $items['step_8'] ?? null,
+                    'step_2'        => $items['step_2'] ?? 0,
+                    'step_3'        => $items['step_3'] ?? 0,
+                    'step_4'        => $items['step_4'] ?? 0,
+                    'step_5'        => $items['step_5'] ?? 0,
+                    'step_6'        => $items['step_6'] ?? 0,
+                    'step_7'        => $items['step_7'] ?? 0,
+                    'step_8'        => $items['step_8'] ?? 0,
                 ]);
             }
 
@@ -136,10 +140,11 @@ class TrancheController extends Controller
 
         $data->items = $items;
 
+        $employment_types = DB::table('employment_types')->get();
 
         $isEdit = true;
 
-        return view('admin.pages.settings.tranche.form', compact('isEdit', 'id', 'data'));
+        return view('admin.pages.settings.tranche.form', compact('isEdit', 'id', 'data', 'employment_types'));
     }
 
     public function update(Request $request, $id) 
@@ -147,7 +152,8 @@ class TrancheController extends Controller
         $payload = $request->all();
 
         $validator = Validator::make($payload, [
-            'name' => 'required|string|max:255',
+            'employment_type_id'   => 'required|exists:employment_types,id',
+            'date' => 'required|date',
             'file' => 'nullable|mimes:csv'
         ]);
 
@@ -165,7 +171,8 @@ class TrancheController extends Controller
             DB::table('tranche')
                 ->where('id', $id)
                 ->update([
-                    'name'        => $request->name,
+                    'employment_type_id' => $request->employment_type_id,
+                    'date'        => $request->date,
                     'description' => $request->description,
                     'updated_at'  => now(),
                 ]);
@@ -195,13 +202,13 @@ class TrancheController extends Controller
                         'tranche_id'    => $id,
                         'salary_grade'  => $items['salary_grade'],
                         'step_1'        => $items['step_1'] ?? null,
-                        'step_2'        => $items['step_2'] ?? null,
-                        'step_3'        => $items['step_3'] ?? null,
-                        'step_4'        => $items['step_4'] ?? null,
-                        'step_5'        => $items['step_5'] ?? null,
-                        'step_6'        => $items['step_6'] ?? null,
-                        'step_7'        => $items['step_7'] ?? null,
-                        'step_8'        => $items['step_8'] ?? null,
+                        'step_2'        => $items['step_2'] ?? 0,
+                        'step_3'        => $items['step_3'] ?? 0,
+                        'step_4'        => $items['step_4'] ?? 0,
+                        'step_5'        => $items['step_5'] ?? 0,
+                        'step_6'        => $items['step_6'] ?? 0,
+                        'step_7'        => $items['step_7'] ?? 0,
+                        'step_8'        => $items['step_8'] ?? 0,
                     ]);
                 }
             }
@@ -254,8 +261,8 @@ class TrancheController extends Controller
     {
         return DataTables::of($query)
             ->addIndexColumn()
-            ->editColumn('name', function ($row) {
-                return $row->name;
+            ->editColumn('date', function ($row) {
+                return $row->date;
             })
             ->addColumn('actions', function ($row) {
                 $showRoute = route('settings.tranche.show', [
@@ -291,5 +298,14 @@ class TrancheController extends Controller
             })
             ->rawColumns(['actions'])
             ->make(true);
+    }
+
+    #API
+    public function tranches()
+    {
+        $query = DB::table('tranche')
+                ->get();
+
+        return response(['data' => $query, 'status' => 'success'], 200);
     }
 }
