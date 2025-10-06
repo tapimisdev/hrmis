@@ -15,10 +15,15 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionSeeder::class,
             RoleSeeder::class,
+            ShiftAndWeeklyScheduleSeeder::class,
             EmploymentTypeSeeder::class,
-            TimeLogsSeeder::class,
             OrganizationSeeder::class,
             LeaveSeeder::class,
+            DivisionSeeder::class,
+            UnitSeeder::class,
+            PositionSeeder::class,
+            TestUserSeeder::class,
+            CountriesSeeder::class,
         ]);
     }
 }

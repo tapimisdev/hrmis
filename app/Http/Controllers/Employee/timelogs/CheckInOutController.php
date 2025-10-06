@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee\timelogs;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\Timelogs\CheckInOutRequest;
+use App\Models\User;
 use App\Services\TimelogsServices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ class CheckInOutController extends Controller
     public function todayLogs()
     {
         $logs = $this->timelogsServices->getTodaysLogs();
+
         return response()->json(['data' => $logs]);
     }
 
@@ -46,17 +48,43 @@ class CheckInOutController extends Controller
     {
         $validatedData = $request->validated();
 
-        $user_id = auth()->user()->id;
-        $employee_no = auth()->user()->employee_no;
+        $fn = $validatedData['type'] ?? null;
 
         DB::beginTransaction();
 
         try {
+     
+            $validatedData['user_id'] = auth()->user()->id;
+            $validatedData['employee_no'] = auth()->user()->employee_no;
+
+            $user = User::find($validatedData['user_id']);
+            $user_schedule = $user->getShiftAndWorkSchedule();
+            // get current timelogs
+            $current_timelog = $this->timelogsServices->getTodaysLogs($validatedData['user_id']);
+            
+            if (    !empty($current_timelog['timeIn']) &&
+                    !empty($current_timelog['breakOut']) &&
+                    !empty($current_timelog['breakIn']) &&
+                    !empty($current_timelog['timeOut']) &&
+                    !empty($current_timelog['overtimeIn']) &&
+                    !empty($current_timelog['overtimeOut']) 
+                ) {
+
+                throw new \Exception('You have already completed all your logs for today. No further action is needed.');
+            }
+        
+            // check if there is valid logs and create if no
+            if($validatedData['type'] === 'timeOut') {
+                $this->timelogsServices->straightToTimeOut($validatedData);
+            }
 
             $timelog = DB::table('timelogs')->insert([
-                'user_id'     => $user_id,
-                'employee_no' => $employee_no ?? null,
-                'date_time'   => $validatedData['date_time'],
+                'user_id'           => $validatedData['user_id'],
+                'employee_no'       => $validatedData['employee_no'] ?? null,
+                'date_time'         => $validatedData['date_time'],
+                'fn'                => $fn,
+                'shift_id'           => $user_schedule['shift_id'],
+                'work_schedule_id'   => $user_schedule['work_schedule_id'],
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ]);
@@ -120,7 +148,23 @@ class CheckInOutController extends Controller
 
                 return \Carbon\Carbon::parse($row['time_out'])->format('h:i:s A') ?? '-- : -----';
             })
-            ->rawColumns(['date', 'time_in', 'break_out', 'break_in', 'time_out'])
+            ->addColumn('overtime_in', function ($row) {
+                
+                if($row['overtime_in'] == null) {
+                    return '-- : -----';
+                }
+
+                return \Carbon\Carbon::parse($row['overtime_in'])->format('h:i:s A') ?? '-- : -----';
+            })
+            ->addColumn('overtime_out', function ($row) {
+                
+                if($row['overtime_out'] == null) {
+                    return '-- : -----';
+                }
+
+                return \Carbon\Carbon::parse($row['overtime_out'])->format('h:i:s A') ?? '-- : -----';
+            })
+            ->rawColumns(['date', 'time_in', 'break_out', 'break_in', 'time_out', 'overtime_in', 'overtime_out'])
             ->make(true);
     }
 }

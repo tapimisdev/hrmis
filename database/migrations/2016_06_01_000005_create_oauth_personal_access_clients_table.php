@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_salary', function (Blueprint $table) {
-            $table->id();
-            $table->string('employee_no');
-            $table->string('amount');
-            $table->date('effectivity_date');
+        Schema::create('oauth_personal_access_clients', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('client_id');
             $table->timestamps();
         });
     }
@@ -25,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_salary');
+        Schema::dropIfExists('oauth_personal_access_clients');
     }
 };

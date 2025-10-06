@@ -24,31 +24,6 @@ return new class extends Migration
             $table->string('date_hired');
             $table->string('date_resigned')
                 ->nullable();
-            $table->foreignId('division_id')
-                ->nullable()
-                ->constrained('divisions')
-                ->onDelete('set null');
-            $table->foreignId('unit_id')
-                ->nullable()
-                ->constrained('units')
-                ->onDelete('set null');
-            $table->foreignId('employment_type_id')
-                ->nullable()
-                ->constrained('employment_types')
-                ->onDelete('set null');
-            $table->foreignId('position_id')
-                ->nullable()
-                ->constrained('positions')
-                ->onDelete('set null');
-            $table->foreignId('shift_schedule_id')
-                ->nullable()
-                ->constrained('shift_schedule')
-                ->onDelete('set null');
-            $table->foreignId('work_schedule_id')
-                ->nullable()
-                ->constrained('work_schedule')
-                ->onDelete('set null');
-            $table->string('salary');
             $table->string('salary_method');
             $table->string('payroll_account_no')
                 ->nullable();

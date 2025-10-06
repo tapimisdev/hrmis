@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
@@ -38,6 +39,15 @@ class LoginController extends Controller
         return '/admin/dashboard';
     }
 
+    protected function authenticated(Request $request, $user)
+    {
+        // Create a Sanctum token
+        $token = $user->createToken('app-token')->plainTextToken;
+
+        // Pass it to the session temporarily
+        session(['auth_token' => $token]);
+    }
+
 
     /**
      * Create a new controller instance.
@@ -48,5 +58,20 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
         $this->middleware('auth')->only('logout');
+    }
+
+    public function logout(Request $request)
+    {
+        // Delete all tokens for this user
+        $request->user()->tokens()->delete();
+
+        // Forget the session variable
+        $request->session()->forget('auth_token');
+
+        // Optionally flush the whole session
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/login');
     }
 }

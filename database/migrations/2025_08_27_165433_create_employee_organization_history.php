@@ -11,12 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_organization_history', function (Blueprint $table) {
+        Schema::create('employee_organization', function (Blueprint $table) {
             $table->id();
             $table->string('employee_no');
-            $table->longText('division');
-            $table->longText('unit');
-            $table->longText('position');
+            $table->foreignId('division_id')
+                ->constrained('divisions')
+                ->onDelete('restrict');
+            $table->foreignId('unit_id')
+                ->constrained('units')
+                ->onDelete('restrict');
+            $table->foreignId('employment_type_id')
+                ->constrained('employment_types')
+                ->onDelete('restrict');
+            $table->foreignId('position_id')
+                ->constrained('positions')
+                ->onDelete('restrict');
             $table->date('effectivity_date');
             $table->timestamps();
         });
@@ -27,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_organization_history');
+        Schema::dropIfExists('employee_organization');
     }
 };

@@ -29,11 +29,8 @@
                     <img src="{{ asset('img/logs.svg') }}" class="img-fluid" alt="Timelogs" style="height: 120px">
                 </div>
                 <div class="card-footer border-top d-flex justify-content-end bg-white border-0 gap-2">
-                    <a href="{{ route('checkinout.index') }}" class="btn btn-outline-primary px-4">
-                        <i class="fa-solid fa-list me-2"></i> My Logs
-                    </a>
-                    <a href="{{ route('checkinout.create') }}" class="btn btn-primary px-4">
-                        <i class="fa-solid fa-clock me-2"></i> Check In/Out
+                    <a href="{{ route('checkinout.index') }}" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-clock me-2"></i>  Check In/Out
                     </a>
                 </div>
             </div>

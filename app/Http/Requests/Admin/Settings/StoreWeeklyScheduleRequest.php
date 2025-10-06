@@ -27,7 +27,9 @@ class StoreWeeklyScheduleRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('weekly_schedules', 'name')->ignore($this->route('weekly_schedule')),
+                Rule::unique('shifts', 'name')
+                    ->where(fn ($query) => $query->where('is_active', true))
+                    ->ignore($this->works_schedule), // for update
             ],
             'is_monday' => 'required|boolean',
             'is_tuesday' => 'required|boolean',

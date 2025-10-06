@@ -19,7 +19,6 @@ return new class extends Migration
                 ->onDelete('set null');
             $table->string('code');
             $table->string('name');
-            $table->string('salary');
             $table->longText('description')
                 ->nullable();
             $table->timestamps();

@@ -38,9 +38,9 @@
                         <div class="is_cumulative_error"></div>
                     </div>
                     <div class="col-12 col-md-4 mb-3">
-                        <label class="mb-2" for="no_of_days">No. of Days <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" id="no_of_days" placeholder="0" name="no_of_days" class="form-control">
-                        <div class="no_of_days_error error-field"></div>
+                        <label class="mb-2" for="credit_to_deduct">Deduction <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" id="credit_to_deduct" placeholder="0" name="credit_to_deduct" class="form-control">
+                        <div class="credit_to_deduct_error error-field"></div>
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
             const formData = {
                 name: $('#name').val(),
                 is_cumulative: $('#is_cumulative').val(),
-                no_of_days: $('#no_of_days').val(),
+                credit_to_deduct: $('#credit_to_deduct').val(),
                 _token: $('input[name="_token"]').val()
             };
 

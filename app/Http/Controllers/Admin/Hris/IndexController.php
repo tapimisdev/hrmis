@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Storage;
 
 class IndexController extends Controller
 {
@@ -110,11 +111,26 @@ class IndexController extends Controller
     public function datatable($query)
     {
         return DataTables::of($query)
+            ->editColumn('profile', function ($row) {
+                $profile = $row->profile ?? null;
+
+                if ($profile) {
+                    $profile = Storage::url('uploads/employees/' . $row->employee_no . '/profile/' . $row->profile);
+                } else {
+                    $profile = 'https://ui-avatars.com/api/?name='
+                        . urlencode(($row->firstname ?? '') . ' ' . ($row->lastname ?? ''))
+                        . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
+                }
+
+                return '<div style="width: 50px; height: 50px; border:1px solid #ccc; border-radius:8px; 
+                                    display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f9f9f9;">
+                            <img src="' . $profile . '" 
+                                alt="Avatar of ' . e(($row->firstname ?? '') . ' ' . ($row->lastname ?? '')) . '" 
+                                style="width:100%; height:100%; object-fit:cover;">
+                        </div>';
+            })
             ->editColumn('employee_no', function ($row) {
                 return $row->employee_no;
-            })
-             ->editColumn('account_status', function ($row) {
-                return $this->setStatus($row->account_status);
             })
             ->editColumn('name', function ($row) {
                 return empty($row->firstname) && empty($row->lastname)
@@ -130,6 +146,20 @@ class IndexController extends Controller
 
                 if ($row->account_status != 'archived') {
                     $div .= '
+                        <a href="' . route('hris.employee.transfer', [
+                            'employee_no' => $row->employee_no
+                        ]) . '" 
+                            class="btn btn-outline-primary btn ms-1 my-1" 
+                            title="Transfer Unit">
+                               <i class="fa-solid fa-retweet"></i>
+                        </a>
+                        <a href="' . route('hris.employee.salary', [
+                            'employee_no' => $row->employee_no
+                        ]) . '" 
+                            class="btn btn-outline-primary btn ms-1 my-1" 
+                            title="Update Salary">
+                               <i class="fa-solid fa-money-bills"></i>
+                        </a>
                         <a href="' . route('hris.employee.information', [
                             'employee_no' => $row->employee_no
                         ]) . '" 
@@ -167,7 +197,7 @@ class IndexController extends Controller
             })
 
 
-            ->rawColumns(['name', 'account_status', 'actions'])
+            ->rawColumns(['profile','name', 'account_status', 'actions'])
             ->make(true);
     }
 }

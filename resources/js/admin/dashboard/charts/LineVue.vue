@@ -28,11 +28,11 @@ export default {
     },
     hires: {
       type: Array,
-      default: () => [5, 10, 7, 12, 8, 15, 10] // new hires per month
+      default: () => [5, 10, 7, 12, 8, 15, 10] 
     },
     resignations: {
       type: Array,
-      default: () => [2, 3, 1, 4, 3, 5, 2] // resignations per month
+      default: () => [2, 3, 1, 4, 3, 5, 2]
     }
   },
   computed: {
@@ -43,8 +43,8 @@ export default {
           {
             label: 'New Hires',
             data: this.hires,
-            borderColor: '#FFE433',
-            backgroundColor: 'rgba(76, 175, 239, 0.2)',
+            borderColor: '#0c8384',
+            backgroundColor: '#0c8384',
             tension: 0.3,
             fill: true,
             pointRadius: 5
@@ -52,8 +52,8 @@ export default {
           {
             label: 'Resignations',
             data: this.resignations,
-            borderColor: '#1F2231',
-            backgroundColor: 'rgba(239, 83, 80, 0.2)',
+            borderColor: '#323535',
+            backgroundColor: '#323535',
             tension: 0.3,
             fill: true,
             pointRadius: 5

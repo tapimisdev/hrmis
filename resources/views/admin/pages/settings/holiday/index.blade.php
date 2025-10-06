@@ -66,6 +66,9 @@
                     $('#holiday-name').text(data.name);
                     $('#holiday-date').text(data.date ? moment(data.date).format('MMMM D, YYYY') : '---');
                     $('#holiday-type').text(data.type ? formatHolidayType(data.type) : '---');
+                    $('#holiday-no-work-percent').text(data.no_work_rate ? (data.no_work_rate * 100) + '%' : '---');
+                    $('#holiday-work-percent').text(data.work_rate ? (data.work_rate * 100) + '%' : '---');
+                    $('#holiday-overtime-percent').text(data.overtime_rate ? (data.overtime_rate * 100) + '%' : '---');
                     $('#holiday-is-repeating').attr('class', 'badge ' + (data.is_repeating ? 'bg-success' : 'bg-secondary'))
                         .text(data.is_repeating ? 'Yes' : 'No');
                     $('#holiday-created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));

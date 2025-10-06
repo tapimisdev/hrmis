@@ -47,14 +47,12 @@ export default {
 
 <style lang="scss" scoped>
 @import './../../../sass/variables';
+.nav-tabs .nav-link {
+  border: 2px solid rgba($color: $primary, $alpha: 0.2);
+}
 .nav-tabs .nav-link.active {
   font-weight: 600;
   background-color: $primary;
   color: white;
-}
-.cardiness {
-    border: 2px solid rgba($color: $primary, $alpha: 1.0);
-    border-radius: 12px;
-    padding: 24px;
 }
 </style>

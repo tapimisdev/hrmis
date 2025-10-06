@@ -16,8 +16,8 @@
                 <td id="leave-is-cumulative"></td>
             </tr>
             <tr>
-                <th>No. of Days</th>
-                <td id="leave-no-of-days"></td>
+                <th>Deduction</th>
+                <td id="leave-deduction"></td>
             </tr>
             <tr>
                 <th>Created At:</th>

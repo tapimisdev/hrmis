@@ -53,6 +53,25 @@
                         <div class="is_repeating_error error-field"></div>
                     </div>
                 </div>
+
+                {{-- New Rate Fields --}}
+                <div class="row my-3">
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="mb-2" for="no_work_rate">No Work Rate (%) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" id="no_work_rate" name="no_work_rate" class="form-control" placeholder="e.g., 1.00">
+                        <div class="no_work_rate_error error-field"></div>
+                    </div>
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="mb-2" for="work_rate">Work Rate (%) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" id="work_rate" name="work_rate" class="form-control" placeholder="e.g., 1.30">
+                        <div class="work_rate_error error-field"></div>
+                    </div>
+                    <div class="col-12 col-md-4 mb-3">
+                        <label class="mb-2" for="overtime_rate">Overtime Rate (%) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" id="overtime_rate" name="overtime_rate" class="form-control" placeholder="e.g., 1.50">
+                        <div class="overtime_rate_error error-field"></div>
+                    </div>
+                </div>
             </div>
             <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
                 <button type="button" id="submit-button"
@@ -83,6 +102,9 @@
                 date: $('#date').val(),
                 type: $('#type').val(),
                 is_repeating: $('#is_repeating').val(),
+                no_work_rate: $('#no_work_rate').val(),
+                work_rate: $('#work_rate').val(),
+                overtime_rate: $('#overtime_rate').val(),
                 _token: $('input[name="_token"]').val()
             };
 

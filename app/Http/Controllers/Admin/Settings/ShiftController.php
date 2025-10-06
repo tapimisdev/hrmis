@@ -15,10 +15,19 @@ class ShiftController extends Controller
      */
     public function index()
     {
-        $query = DB::table('shifts')->where('is_active', true)->get();
-        
+        $query = DB::table('shifts')->where('is_active', true);
+
+        // If it's an AJAX request (usually from DataTables or JS fetch)
         if (request()->ajax()) {
-            return $this->datatable($query);
+            return $this->datatable($query->get());
+        }
+
+        // If it's an API request (e.g., /api/shifts)
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'shifts' => $query->get()
+            ]);
         }
 
         return view('admin.pages.settings.shifts.index');

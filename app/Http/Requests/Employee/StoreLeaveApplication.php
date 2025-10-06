@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Employee;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class StoreLeaveApplication extends FormRequest
@@ -23,11 +24,12 @@ class StoreLeaveApplication extends FormRequest
     public function rules(): array
     {
         return [
-            'leave_type' => ['required', 'string', 'max:100'],
+            'user_id' => ['nullable', 'exists:users,id'],
+            'leave_id' => ['required', 'exists:leaves,id'],
             'reason' => ['required', 'string', 'max:500'],
             'days' => ['required', 'integer'],
-            'start_date' => ['required', 'date', 'after_or_equal:today'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date'],
 
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
@@ -35,7 +37,7 @@ class StoreLeaveApplication extends FormRequest
             // Prevent duplicate leave applications with same dates and type
             Rule::unique('leave_applications')->where(function ($query) {
                 return $query->where('employee_id', $this->employee_id)
-                    ->where('leave_type', $this->leave_type)
+                    ->where('leave_id', $this->leave_id)
                     ->where('start_date', $this->start_date)
                     ->where('end_date', $this->end_date);
             }),
@@ -45,24 +47,67 @@ class StoreLeaveApplication extends FormRequest
     protected function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            // Validate Days vs Date Range
             if ($this->start_date && $this->end_date && $this->days) {
                 $start = \Carbon\Carbon::parse($this->start_date);
                 $end = \Carbon\Carbon::parse($this->end_date);
 
-                // Inclusive difference (add +1 if counting start & end date)
+                // Inclusive difference (count start & end date)
                 $expectedDays = $start->diffInDays($end) + 1;
 
                 if ($this->days != $expectedDays) {
                     $validator->errors()->add('days', "Days must match the difference between start and end date ($expectedDays).");
                 }
             }
+
+            // Check for existing leave OR OB slip within range
+            if ($this->start_date && $this->end_date && $this->user_id) {
+                $start = $this->start_date;
+                $end   = $this->end_date;
+
+                // Check LEAVES
+                $leaveExists = DB::table('leave_applications')
+                    ->where('user_id', $this->user_id)
+                    ->whereIn('status', ['pending', 'approved'])
+                    ->where(function ($query) use ($start, $end) {
+                        $query->whereBetween('start_date', [$start, $end])
+                            ->orWhereBetween('end_date', [$start, $end])
+                            ->orWhere(function ($q) use ($start, $end) {
+                                $q->where('start_date', '<=', $start)
+                                ->where('end_date', '>=', $end);
+                            });
+                    })
+                    ->exists();
+
+                // Check OB SLIPS
+                $obExists = DB::table('obs')
+                    ->where('user_id', $this->user_id)
+                    ->whereIn('status', ['pending', 'approved'])
+                    ->where(function ($query) use ($start, $end) {
+                        $query->whereBetween('date_from', [$start, $end])
+                            ->orWhereBetween('date_to', [$start, $end])
+                            ->orWhere(function ($q) use ($start, $end) {
+                                $q->where('date_from', '<=', $start)
+                                ->where('date_to', '>=', $end);
+                            });
+                    })
+                    ->exists();
+
+                if ($leaveExists || $obExists) {
+                    $validator->errors()->add(
+                        'start_date',
+                        'These dates overlap with an existing leave or OB slip.'
+                    );
+                }
+            }
         });
     }
+
 
     public function messages(): array
     {
         return [
-            'leave_type.required' => 'Leave type is required.',
+            'leave_id.required' => 'leave type is required.',
             'reason.required' => 'Reason for leave is required.',
             'start_date.required' => 'Start date is required.',
             'start_date.after_or_equal' => 'Start date must be today or later.',

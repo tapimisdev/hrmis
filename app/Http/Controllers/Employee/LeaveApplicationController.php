@@ -16,11 +16,13 @@ class LeaveApplicationController extends Controller
      */
     public function index()
     {
-        $query = DB::table('leave_applications')
-                    ->where('user_id', Auth::user()->id)
-                    ->orderBy('created_at', 'desc') // latest first
+        $query = DB::table('leave_applications as la')
+                    ->leftJoin('leaves as l', 'la.leave_id', 'l.id')
+                    ->select('la.*', 'l.name as leave_name')
+                    ->where('la.user_id', Auth::user()->id)
+                    ->orderBy('la.created_at', 'desc') // latest first
                     ->get();
-        
+
         if (request()->ajax()) {
             return $this->datatable($query);
         }
@@ -32,7 +34,9 @@ class LeaveApplicationController extends Controller
      */
     public function create()
     {
-        return view('employee.pages.leave.create');
+        $leaves = DB::table('leaves')->where('is_active', true)->get();
+
+        return view('employee.pages.leave.create', compact('leaves'));
     }
 
     /**
@@ -40,14 +44,45 @@ class LeaveApplicationController extends Controller
      */
     public function store(StoreLeaveApplication $request) 
     {
+        $user = Auth::user()->load('employeeInformation');
         $validatedData = $request->validated();
+        $employee_no = $user->toArray()['employee_information']['employee_no'];
+
+        $organization = DB::table('employee_organization')
+            ->where('employee_no', $employee_no)
+            ->first();
 
         DB::beginTransaction();
+
         try {
-            // Insert leave application
+
+            $approvers = DB::table('application_approver')
+                ->leftJoin('application_approver_org', 'application_approver.id', '=', 'application_approver_org.application_approver_id')
+                ->leftJoin('application_approver_user', 'application_approver.id', '=', 'application_approver_user.application_approver_id')
+                ->leftJoin('users', 'application_approver_user.user_id', '=', 'users.id')
+                ->where('application_approver.type', 'leave')
+                ->where('application_approver_org.division_id', $organization->division_id)
+                ->where('application_approver_org.unit_id', $organization->unit_id)
+                ->select(
+                    'application_approver.*',
+                    'application_approver_org.*',
+                    'application_approver_user.*',
+                    'users.id as user_id',
+                    'users.name as user_name',
+                )
+                ->get();
+
+            if($approvers->isEmpty()) {
+                return response([
+                    'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
+                    'status'  => 'error'
+                ], 500); 
+            }
+
             $leaveId = DB::table('leave_applications')->insertGetId([
-                'user_id'       => Auth::user()->id,
-                'leave_type' => $validatedData['leave_type'],
+                'user_id'       => Auth::user()->id ?? $validatedData['user_id'],
+                'employee_no'  => $employee_no,
+                'leave_id'      => $validatedData['leave_id'],
                 'start_date'    => $validatedData['start_date'],
                 'end_date'      => $validatedData['end_date'],
                 'reason'        => $validatedData['reason'],
@@ -55,6 +90,18 @@ class LeaveApplicationController extends Controller
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
+        
+            foreach($approvers as $approver) {
+
+                DB::table('application_approvers')->insertGetId([
+                    'leave_application_id' => $leaveId,
+                    'user_id' => $approver->user_id,
+                    'status' => 'pending',
+                    'level' => $approver->level,
+                ]);
+
+            }
+
 
             // Handle multiple attachments (if any)
             if ($request->hasFile('attachments')) {
@@ -97,8 +144,10 @@ class LeaveApplicationController extends Controller
      */
     public function show(string $id)
     {
-        $leave = DB::table('leave_applications')
-                    ->where('id', $id)
+        $leave = DB::table('leave_applications as la')
+                    ->leftJoin('leaves as l', 'la.leave_id', '=', 'l.id')
+                    ->select('la.*', 'l.name as leave_name')
+                    ->where('la.id', $id)
                     ->first();
 
         $attachments = DB::table('leave_attachments')

@@ -40,7 +40,7 @@
             "ajax": '{{ route('leaves.index') }}',
             "columns": [
                 { data: "DT_RowIndex", name: 'index' },
-                { data: "leave_type", name: 'leave_type' },
+                { data: "leave_name", name: 'leave_name' },
                 { data: "date", name: 'date' },
                 { data: "status", name: 'status' },
                 { data: "days", name: 'days' },
@@ -92,7 +92,7 @@
                     // Fill in modal
                     $('#doc-id').text(data.id);
                     $('#employee-no').text(data.employee_no ?? 'N/A');
-                    $('#leave-type').text(data.leave_type);
+                    $('#leave-type').text(data.leave_name);
                     $('#start-date').text(moment(data.start_date).format('MMMM D, YYYY'));
                     $('#end-date').text(moment(data.end_date).format('MMMM D, YYYY'));
                     $('#days').text(data.days);

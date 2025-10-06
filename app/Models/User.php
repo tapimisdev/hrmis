@@ -51,4 +51,57 @@ class User extends Authenticatable
     {
         $this->employee_no = DB::table('employee_information')->where('user_id', $this->id)->value('employee_no');
     }
+
+    public function employeeInformation()
+    {
+        return $this->hasOne(EmployeeInformation::class, 'user_id', 'id');
+    }
+
+    public function postedAnnouncements()
+    {
+        return $this->belongsToMany(EventAnnouncement::class, 'events_announcements_posted_by')
+            ->withTimestamps();
+    }
+
+    public function viewedAnnouncements()
+    {
+        return $this->hasMany(EventAnnouncementViewer::class);
+    }
+
+
+    // public function getNameAttribute()
+    // {
+    //     $employee = DB::table('users as u')
+    //         ->leftJoin('employee_information as ei', 'ei.user_id', '=', 'u.id')
+    //         ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+    //         ->where('u.id', $this->id)
+    //         ->select('ep.firstname', 'ep.lastname')
+    //         ->first();
+
+    //     if ($employee) {
+    //         return $employee->firstname . ' ' . $employee->lastname;
+    //     }
+
+    //     return 'No Name';
+    // }
+
+
+    public function getShiftAndWorkSchedule()
+    {
+        $employee_no = DB::table('employee_information')->where('user_id', $this->id)->value('employee_no');
+
+        $schedule = DB::table('employee_shift_work_schedule')
+            ->where('employee_no', $employee_no)
+            ->where('effectivity_date', '<=', now())
+            ->first();
+
+        if (!$schedule) {
+            throw new \Exception('Please ask your HR to set your Shift and Work Schedule.');
+        }
+
+        return [
+            'shift_id'         => $schedule->shift_id,
+            'work_schedule_id' => $schedule->work_schedule_id,
+        ];
+    }
 }

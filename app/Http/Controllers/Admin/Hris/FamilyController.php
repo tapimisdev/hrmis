@@ -35,7 +35,7 @@ class FamilyController extends Controller
     public function save(Request $request, string $employee_no)
     {
 
-        $request->validate($this->rules(), $this->messages());          
+        $request->validate($this->rules());          
 
         DB::beginTransaction();
 
@@ -104,30 +104,6 @@ class FamilyController extends Controller
             'mother_surname' => 'nullable|string|max:255',
             'mother_firstname' => 'nullable|string|max:255',
             'mother_middlename' => 'nullable|string|max:255',
-        ];
-    }
-
-    protected function messages() {
-        return [
-            'spouse_surname.string' => 'Spouse surname must be a valid string.',
-            'spouse_firstname.string' => 'Spouse first name must be a valid string.',
-            'spouse_middlename.string' => 'Spouse middle name must be a valid string.',
-            'spouse_suffix.string' => 'Spouse suffix must be a valid string.',
-            'spouse_suffix.max' => 'Spouse suffix must not exceed 10 characters.',
-            'spouse_occupation.string' => 'Spouse occupation must be a valid string.',
-            'spouse_business_name_employer.string' => 'Spouse employer/business name must be a valid string.',
-            'spouse_business_address.string' => 'Spouse business address must be a valid string.',
-            'spouse_contact_no.string' => 'Spouse contact number must be a valid string.',
-
-            'father_surname.string' => 'Father\'s surname must be a valid string.',
-            'father_firstname.string' => 'Father\'s first name must be a valid string.',
-            'father_middlename.string' => 'Father\'s middle name must be a valid string.',
-            'father_suffix.string' => 'Father\'s suffix must be a valid string.',
-            'father_suffix.max' => 'Father\'s suffix must not exceed 10 characters.',
-
-            'mother_surname.string' => 'Mother\'s surname must be a valid string.',
-            'mother_firstname.string' => 'Mother\'s first name must be a valid string.',
-            'mother_middlename.string' => 'Mother\'s middle name must be a valid string.',
         ];
     }
 

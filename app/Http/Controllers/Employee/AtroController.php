@@ -42,12 +42,17 @@ class AtroController extends Controller
     {
         $validatedData = $request->validated();
 
+        $userId = Auth::user()->id;
+
         DB::beginTransaction();
         try {
 
+            $employee_no = DB::table('employee_information')->where('user_id', $userId)->value('employee_no');
+
             $atro = DB::table('overtimes')
                     ->insert([
-                        'user_id'       => Auth::user()->id,
+                        'user_id'       => $userId,
+                        'employee_no'   => $employee_no,
                         'date'          => $validatedData['date'],
                         'start_time'    => $validatedData['start_time'],
                         'end_time'      => $validatedData['end_time'],

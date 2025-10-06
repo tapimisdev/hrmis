@@ -25,6 +25,24 @@
                             <div id="flush-personal" class="accordion-collapse collapse show">
                                 <div class="accordion-body">
                                     <div class="row">
+                                        @if(!empty($data))
+                                            <div class="col-12 col-md-12 mb-3">
+                                                <div class="row">
+                                                    <div class="col-12 mb-3">
+                                                        <img class="open-document" data-src="{{ $data->profile }}" id="profile-preview"
+                                                            src="{{ $data->profile }}"
+                                                            alt="Avatar of {{ $data->firstname . ' ' . $data->lastname }}"
+                                                            style="width: 150px; padding: 2px; border: 1px solid #c3c3c3; object-fit: cover; cursor: pointer;">
+                                                    </div> 
+
+                                                    <div class="col-12 col-md-5 mb-3">
+                                                        <label class="mb-2" for="profile">Profile Image</label>
+                                                        <input type="file" name="profile" id="profile" class="form-control text-uppercase" accept="image/*">
+                                                        <div class="error-field"></div>
+                                                    </div>  
+                                                </div>
+                                            </div>  
+                                        @endif
                                         <div class="col-12 col-md-3 mb-3">
                                             <label class="mb-2" for="lastname">Surname</label>
                                             <input type="text" name="lastname" id="lastname" class="form-control text-uppercase"
@@ -97,7 +115,7 @@
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
-                                        <div class="col-12 col-md-4 mb-3">    
+                                        <div class="col-12 col-md-4 mb-3 citizen_content d-none">    
                                             <label class="mb-2" for="country">Country (Dual Citizenship)</label>
                                             <select name="country" id="country" class="form-select text-uppercase">
                                                 <option value=""> - CHOOSE - </option>
@@ -114,15 +132,36 @@
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
-                                        <div class="col-12 col-md-4 mb-3">
+                                       <div class="col-12 col-md-4 mb-3">
                                             <label class="mb-2" for="birth_certificate">Birth Certificate - (img/pdf)</label>
                                             <input type="file" name="birth_certificate" id="birth_certificate" class="form-control">
                                             <div class="error-field"></div>
+
+                                            @if(!empty($data->birth_certificate))
+                                                <div class="mt-2 d-flex justify-content-center text-uppercase">
+                                                    <a href="{{ Storage::url('uploads/employees/' . $data->employee_no . '/birth_certificate/' . $data->birth_certificate) }}"
+                                                        download="{{ $data->birth_certificate }}"
+                                                        class="btn btn-sm btn-outline-primary fw-bold px-5">
+                                                            Download Birth Certificate
+                                                        </a>
+                                                </div>
+                                            @endif
                                         </div>
+
                                         <div class="col-12 col-md-4 mb-3">
                                             <label class="mb-2" for="marriage_certificate">Marriage Certificate - (img/pdf)</label>
                                             <input type="file" name="marriage_certificate" id="marriage_certificate" class="form-control">
                                             <div class="error-field"></div>
+
+                                            @if(!empty($data->marriage_certificate))
+                                                <div class="mt-2 d-flex justify-content-center text-uppercase">
+                                                    <a href="{{ Storage::url('uploads/employees/' . $data->employee_no . '/marriage_certificate/' . $data->marriage_certificate) }}" 
+                                                    download="{{ $data->marriage_certificate }}"
+                                                    class="btn btn-sm btn-outline-primary fw-bold px-5">
+                                                        Download Marriage Certificate
+                                                    </a>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -253,11 +292,53 @@
             </div>
         </form>
     </div>
+    <div id="galleryContainer"></div>
 @endsection
 
 @section('scripts')
 <script>
+    
     $(function() {
+
+
+        $('#profile').on('change', function(e) {
+            let file = e.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#profile-preview').attr('src', e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        $('#citizenship').on('change', function() {
+            const val = $(this).val();
+            if(val == 'dual_citizenship') {
+                $('.citizen_content').removeClass('d-none');
+                loadCountries()
+                    .done(function(data) {
+                        let $country = $('#country');
+                        $country.html('<option value=""> - CHOOSE - </option>');
+
+                        $.each(data, function(index, country) {
+                            $country.append(
+                                $('<option>', {
+                                    value: country.name,
+                                    text: country.name
+                                })
+                            );
+                        });
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.log(error);
+                        console.error("Error loading countries:", error);
+                    });
+
+            } else {
+                $('.citizen_content').addClass('d-none');
+            }
+        });
 
         const url = $('#form').attr('action');
         post(url);

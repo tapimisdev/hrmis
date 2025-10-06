@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-md navbar-dark bg-primary sticky-top shadow" style="height: 50px">
+<nav class="navbar navbar-expand-md navbar-light bg-primary sticky-top" style="height: 50px">
     <div class="container d-flex justify-content-md-between">
         <div></div>
         <div class="dropdown d-none d-lg-block">
@@ -16,7 +16,7 @@
                 @endif
             @else
                 <li class="nav-item d-none d-lg-block dropdown">
-                    <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                    <a id="navbarDropdown" class="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                         {{ Auth::user()->name }}
                     </a>
 

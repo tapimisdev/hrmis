@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\Hris\EmployeeController;
 use App\Http\Controllers\Admin\Hris\ChildrenController;
 use App\Http\Controllers\Admin\Hris\CivilServiceController;
 use App\Http\Controllers\Admin\Hris\EducationController;
@@ -13,6 +14,9 @@ use App\Http\Controllers\Admin\Hris\SkillsController;
 use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
+use App\Http\Controllers\Admin\Hris\AccountController;
+use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
+use App\Http\Controllers\Admin\Services\EventsController;
 use App\Http\Controllers\Admin\Settings\DeductionController;
 use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
@@ -23,9 +27,15 @@ use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
 use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
+use App\Http\Controllers\Admin\Settings\TrancheController;
+use App\Http\Controllers\Admin\Settings\ApproverController;
+use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
+use App\Http\Controllers\Admin\Timekeeping\SalaryPayrollController;
+use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
+use App\Http\Controllers\Admin\Services\LeaveApplicationController as AdminLeaveApplicationController;
 use App\Http\Controllers\Employee\ObsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Employee\timelogs\CheckInOutController;
@@ -47,27 +57,47 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Auth::routes(['register' => false]);
+Auth::routes([
+    'register' => false,      // disable registration
+    'reset' => true,          // allow forgot password (reset link request)
+    'verify' => false,        // disable email verification
+    'confirm' => false        // disable password confirmation
+]);
 
-
-Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
+Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     Route::prefix('hris')->group(function() {
+
+        Route::resource('employee/import', ImportEmployeeController::class)->names('hris.import');
 
         # INDEX
         Route::get('employee', [IndexController::class, 'index'])
             ->name('hris.employee.index');
         Route::any('employee/remove/{employee_no}', [IndexController::class, 'remove'])
             ->name('hris.employee.remove');
-         Route::any('employee/restore/{employee_no}', [IndexController::class, 'restore'])
+        Route::any('employee/restore/{employee_no}', [IndexController::class, 'restore'])
             ->name('hris.employee.restore');
+        
+        # TRANSFER EMPLOYEE
+        Route::get('employee/transfer', [EmployeeController::class, 'transfer'])
+            ->name('hris.employee.transfer');
+        Route::post('employee/transfer', [EmployeeController::class, 'updateTransfer'])
+            ->name('hris.employee.transfer');
+
+        # UPDATE SALARY
+        Route::get('employee/update-salary', [EmployeeController::class, 'update_salary'])
+            ->name('hris.employee.salary');
+        Route::post('employee/update-salary', [EmployeeController::class, 'updateSalary'])
+            ->name('hris.employee.salary');
 
         # INFORMATION
         Route::get('employee/information/{employee_no?}', [InformationController::class, 'index'])
             ->name('hris.employee.information');
         Route::post('employee/information/{employee_no?}', [InformationController::class, 'save'])
+            ->name('hris.employee.information');
+        Route::delete('employee/information/{employee_no?}', [InformationController::class, 'destroy'])
             ->name('hris.employee.information');
 
         # PERSONAL
@@ -95,11 +125,15 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.education');
         Route::post('employee/education/{employee_no}', [EducationController::class, 'save'])
             ->name('hris.employee.education');
+        Route::delete('employee/education/{employee_no}', [EducationController::class, 'destroy'])
+            ->name('hris.employee.education');
 
         # CIVIL SERVICE
         Route::get('employee/civil-service/{employee_no}', [CivilServiceController::class, 'index'])
             ->name('hris.employee.civil-service');
         Route::post('employee/civil-service/{employee_no}', [CivilServiceController::class, 'save'])
+            ->name('hris.employee.civil-service');
+        Route::delete('employee/civil-service/{employee_no}', [CivilServiceController::class, 'destroy'])
             ->name('hris.employee.civil-service');
 
         # WORK EXPERIENCE
@@ -107,11 +141,15 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.work-experience');
         Route::post('employee/work-experience/{employee_no}', [WorkExperienceController::class, 'save'])
             ->name('hris.employee.work-experience');
+        Route::delete('employee/work-experience/{employee_no}', [WorkExperienceController::class, 'destroy'])
+            ->name('hris.employee.work-experience');
 
         # VOLUNTARY WORKS
         Route::get('employee/voluntary-works/{employee_no}', [VoluntaryWorksController::class, 'index'])
             ->name('hris.employee.voluntary-works');
         Route::post('employee/voluntary-works/{employee_no}', [VoluntaryWorksController::class, 'save'])
+            ->name('hris.employee.voluntary-works');
+        Route::delete('employee/voluntary-works/{employee_no}', [VoluntaryWorksController::class, 'destroy'])
             ->name('hris.employee.voluntary-works');
 
         # TRAININGS
@@ -119,13 +157,60 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
             ->name('hris.employee.trainings');
         Route::post('employee/trainings/{employee_no}', [TrainingsController::class, 'save'])
             ->name('hris.employee.trainings');
+        Route::delete('employee/trainings/{employee_no}', [TrainingsController::class, 'destroy'])
+            ->name('hris.employee.trainings');
 
         # SKILLS
-        Route::get('employee/skills/{employee_no}se', [SkillsController::class, 'index'])
+        Route::get('employee/skills/{employee_no}', [SkillsController::class, 'index'])
             ->name('hris.employee.skills');
         Route::post('employee/skills/{employee_no}', [SkillsController::class, 'save'])
             ->name('hris.employee.skills');
+        Route::delete('employee/skills/{employee_no}', [SkillsController::class, 'destroy'])
+            ->name('hris.employee.skills');
 
+        # ACCOUNT
+        Route::get('employee/account/{employee_no}', [AccountController::class, 'index'])
+            ->name('hris.employee.account');
+        Route::put('employee/account/{employee_no}', [AccountController::class, 'save'])
+            ->name('hris.employee.account');
+
+    });
+
+
+    # SERVICES
+    Route::prefix('service')->group(function() {
+
+        # EVENTS AND ANNOUNCEMENTS
+        route::resource('events', EventsController::class)->names('services.events');
+
+        # LEAVE APPLICATIONS
+        route::get('leave/application', [AdminLeaveApplicationController::class, 'index'])->name('services.leaves.index');
+        route::get('leave/application/{application}', [AdminLeaveApplicationController::class, 'show'])->name('services.leaves.show');
+        route::put('leave/application/{application}/save', [AdminLeaveApplicationController::class, 'save'])->name('services.leaves.save');
+
+        # PASS SLIP APPLICATIONS
+
+        # OVERTIME APPLICATION
+        
+
+    });
+
+    Route::prefix('timekeeping')->group(function() {
+        # TIMELOGS
+        Route::resource('timelogs', TimelogController::class)->only('index');
+        
+        # API TIMEKEEPING
+        Route::get('daily-time-record/{id}', [DailyTimeRecordController::class, 'index'])
+            ->name('daily-time-record.index');
+        Route::get('daily-time-record/{id}/show', [DailyTimeRecordController::class, 'show'])
+            ->name('daily-time-record.show');
+        Route::get('daily-time-record/{id}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
+        
+    });
+
+    Route::prefix('payroll')->group(function() {
+        # SALARY PAYROLL
+        Route::resource('salary', SalaryPayrollController::class);
     });
 
     Route::prefix('settings')->group(function() {
@@ -165,10 +250,23 @@ Route::prefix('admin')->middleware(['checkrole:admin'])->group(function () {
 
         # LEAVES
         Route::resource('leaves', LeaveController::class)->names('settings.leaves');
+
+        # TRANCHES
+        Route::get('tranche', [TrancheController::class, 'index'])->name('settings.tranche.index');
+        Route::get('tranche/{id}/show', [TrancheController::class, 'show'])->name('settings.tranche.show');
+        Route::get('tranche/create', [TrancheController::class, 'create'])->name('settings.tranche.create');
+        Route::post('tranche/create', [TrancheController::class, 'store'])->name('settings.tranche.store');
+        Route::get('tranche/{id}/edit', [TrancheController::class, 'edit'])->name('settings.tranche.edit');
+        Route::put('tranche/{id}/edit', [TrancheController::class, 'update'])->name('settings.tranche.update');
+        Route::any('tranche/{id}/destroy', [TrancheController::class, 'destroy'])->name('settings.tranche.destroy');
+
+        # APPROVERS
+        Route::resource('approvers', ApproverController::class)->names('settings.approvers');
+
     });
 });
 
-Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
+Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(function () {
 
     # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
@@ -179,7 +277,7 @@ Route::prefix('employee')->middleware('checkrole:employee')->group(function () {
     Route::resource('official-business-slip', ObsController::class)->except('edit', 'update')->names('obs');
 
     #EMPLOYEE TIMELOGS
-    Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store', 'create')->names('checkinout');
+    Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store')->names('checkinout');
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 
 });
