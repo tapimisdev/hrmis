@@ -154,7 +154,6 @@ class InformationController extends Controller
                     'account_status'  => $request->status ?? null,
                     'salary_method'   => $request->salary_method ?? null,
                     'payroll_account_no' => $request->payroll_account_number ?? null,
-                    'deduction_applied'  => $request->deduction_applied,
                     'updated_at'      => now(),
                 ]
             );
@@ -190,30 +189,20 @@ class InformationController extends Controller
 
             if (!$latestSalary || $latestSalary->amount != $request->salary) {
 
-                
                 $frequency = $request->salary_frequency;
                 $daily_rate = number_format($request->salary / 22, 2);
-
-                if($frequency == 'once') {
-                    $first_cutoff = $request->salary;
-                    $second_cutoff = 0;
-                } else {
-                    $half = $request->salary / 2;
-                    $first_cutoff = $half;
-                    $second_cutoff = $half;
-                }
-
+                $salary_cutoff = $frequency == 'twice' ? 'both' : $request->salary_cutoff;
 
                 DB::table('employee_salary')->insert([
                     'employee_no'      => $request->employee_no,
                     'tranche_id'       => $request->tranche_id,
                     'step'             => $request->step_id,
                     'salary_frequency' => $request->salary_frequency,
-                    'first_cutoff'     => $first_cutoff,
-                    'second_cutoff'    => $second_cutoff,
-                    'daily_rate'       => $daily_rate,
+                    'salary_cutoff'   => $salary_cutoff,
+                    'deduction_applied'     => $request->deduction_applied,
                     'salary_basis'     => $request->salary_basis,
                     'amount'           => $request->salary,
+                    'daily_rate'       => $daily_rate,
                     'effectivity_date' => $now,
                     'created_at'       => now(),
                     'updated_at'       => now(),
@@ -271,19 +260,30 @@ class InformationController extends Controller
                 Rule::unique('employee_information', 'employee_no')
                     ->ignore($employee_no, 'employee_no')
             ],
+
             'biometrics_id' => [
                 'nullable',
                 Rule::unique('employee_information', 'biometrics_id')
                     ->ignore($employee_no, 'employee_no')
             ],
+
             'status' => 'required|in:active,inactive',
             'date_hired' => 'required|date',
+
             'division_id' => 'required|exists:divisions,id',
             'unit_id' => 'required|exists:units,id',
             'employment_type_id' => 'required|exists:employment_types,id',
+
             'position_id' => 'required_if:type,,2|nullable|exists:positions,id|required_without:type',
+
             'salary_method' => 'required|in:cash,bank transfer,paycheck,e-wallet',
-            'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both'
+            'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both',
+
+            'salary_frequency' => 'required|in:once,twice',
+            'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
+            'salary' => 'required|numeric|min:100',
+            'daily_rate' => 'required',
+            'payroll_account_number' => 'nullable|string|max:100',
         ];
     }
 

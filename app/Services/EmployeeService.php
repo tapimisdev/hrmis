@@ -121,7 +121,7 @@ class EmployeeService {
             'trainings' => ['table' => 'employee_trainings', 'method' => 'get'],
             'voluntary-works' => ['table' => 'employee_voluntary_works', 'method' => 'get'],
             'skills' => ['table' => 'employee_skills_hobbies', 'method' => 'get'],
-            'account' => ['table' => 'users', 'method' => 'first'], 
+            'account' => ['table' => 'users', 'method' => 'first'],
         ];
 
         if (!isset($tables[$type])) {
@@ -141,6 +141,7 @@ class EmployeeService {
         $query = DB::table($config['table']);
 
         if (!empty($config['joins']) && $type === 'information') {
+            // Latest subqueries
             $latestOrg = DB::table('employee_organization as eo1')
                 ->select('eo1.*')
                 ->whereRaw('eo1.id = (select max(eo2.id) from employee_organization eo2 where eo2.employee_no = eo1.employee_no)');
@@ -153,36 +154,59 @@ class EmployeeService {
                 ->select('sw1.*')
                 ->whereRaw('sw1.id = (select max(sw2.id) from employee_shift_work_schedule sw2 where sw2.employee_no = sw1.employee_no)');
 
-            $query->select(
-                    'employee_information.*',
-                    'users.id as account_id',
-                    'users.email as account_email',
+            $query ->select(
+                    'employee_information.employee_no',
+                    'employee_information.date_hired',
+                    'employee_information.salary_method',
+                    'employee_information.account_status',
+                    'employee_information.isDeleted',
+                    'employee_personal.profile',
+                    'employee_personal.firstname',
+                    'employee_personal.lastname',
+                    
+
+                    // Organization details
                     'org.id as organization_id',
                     'org.effectivity_date',
+
+                    // Division
                     'divisions.id as division_id',
                     'divisions.code as division_code',
                     'divisions.name as division_name',
+
+                    // Unit
                     'units.id as unit_id',
                     'units.code as unit_code',
                     'units.name as unit_name',
+
+                    // Position
                     'positions.id as position_id',
                     'positions.code as position_code',
                     'positions.name as position_name',
+
+                    // Employment type
                     'employment_types.id as employment_type_id',
                     'employment_types.code as employment_type_code',
                     'employment_types.name as employment_type_name',
-                    'salary.amount as salary',
-                    'salary.salary_frequency',
-                    'salary.first_cutoff',
-                    'salary.second_cutoff',
-                    'salary.salary_basis',
+
+                    // Salary
                     'salary.tranche_id',
+                    'salary.salary_grade',
                     'salary.step',
+                    'salary.salary_frequency',
+                    'salary.salary_cutoff',
+                    'salary.deduction_applied',
+                    'salary.salary_basis',
+                    'salary.amount as salary',
                     'salary.daily_rate',
+                    'salary.effectivity_date',
+
+                    // Shift
                     'shift.shift_id',
                     'shift.work_schedule_id'
                 )
                 ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
+                ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
                 ->leftJoinSub($latestOrg, 'org', 'employee_information.employee_no', '=', 'org.employee_no')
                 ->leftJoin('divisions', 'org.division_id', '=', 'divisions.id')
                 ->leftJoin('units', 'org.unit_id', '=', 'units.id')
@@ -196,6 +220,7 @@ class EmployeeService {
 
         return $query->{$config['method']}();
     }
+
 
 
     public function getSalary(string $employee_no) {

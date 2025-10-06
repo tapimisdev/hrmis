@@ -30,11 +30,11 @@ return new class extends Migration
                 'twice'
             ])->nullable();
 
-            $table->enum('salary_cuttoff', [
+            $table->enum('salary_cutoff', [
                 'first_cutoff',
                 'second_cutoff',
-                'both',
-            ])->default('both');
+                'both'
+            ]);
 
             $table->enum('deduction_applied', [
                 'first_cutoff',

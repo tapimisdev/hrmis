@@ -7,9 +7,11 @@
                 <i class="fa-solid fa-arrow-left me-2"></i> Back
             </a>
         </x-header>
+        
         @if($isExists)
             <x-hris-menu active="information" empno="{{$employee_no}}" />
         @endif
+
         <form id="form" action="{{!$isExists ? route('hris.employee.information') : route('hris.employee.information', ['employee_no' => $employee_no])}}" method="post">
             @method('POST')
             @csrf
@@ -153,15 +155,15 @@
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingSalary">
                             <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSalary" aria-expanded="true">
-                            Salary & Payroll Details
+                                Salary & Payroll Details
                             </button>
                         </h2>
                         <div id="collapseSalary" class="accordion-collapse collapse show">
                             <div class="accordion-body">
 
+                                {{-- Tranche & Step (Only PL) --}}
                                 <div class="row tranche-step">
-                                     @if(optional($data)->employment_type_id)
-                                        {{-- Tranche & Step (Only PL) --}}
+                                    @if(optional($data)->employment_type_id)
                                         <div class="col-md-4 mb-3">
                                             <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
                                             <select id="tranche_id" name="tranche_id" class="form-select">
@@ -187,19 +189,36 @@
                                         </div>
                                     @endif
                                 </div>
-                                <div class="row">   
+
+                                <div class="row">
                                     {{-- Salary Frequency --}}
                                     <div class="col-md-4 mb-3">
                                         <label class="mb-2" for="salary_frequency">Salary Frequency <span class="text-danger">*</span></label>
                                         <select id="salary_frequency" name="salary_frequency" class="form-select">
                                             @foreach([''=> '- CHOOSE -', 'once' => 'Once A Month', 'twice' => 'Twice A Month'] as $value => $label)
-                                                <option value="{{ $value }}" {{ (optional($data)->salary_frequency ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                                <option value="{{ $value }}" {{ (optional($data)->salary_frequency ?? '') == $value ? 'selected' : '' }}>
+                                                    {{ $label }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <div class="error-field"></div>
+                                    </div>
+
+                                    {{-- Show only if frequency is "once" --}}
+                                    <div id="salary_cutoff_container" class="col-md-4 mb-3" style="display: none;">
+                                        <label class="mb-2" for="salary_cutoff">Salary Every <span class="text-danger">*</span></label>
+                                        <select id="salary_cutoff" name="salary_cutoff" class="form-select">
+                                            @foreach([''=> '- CHOOSE -', 'first_cutoff' => 'First Cut-Off', 'second_cutoff' => 'Second Cut-Off'] as $value => $label)
+                                                <option value="{{ $value }}" {{ (optional($data)->salary_cutoff ?? '') == $value ? 'selected' : '' }}>
+                                                    {{ $label }}
+                                                </option>
                                             @endforeach
                                         </select>
                                         <div class="error-field"></div>
                                     </div>
 
                                     {{-- Salary / Daily Rate --}}
+
                                     <div class="col-md-3 mb-3">
                                         <label class="mb-2" for="salary">Salary <span class="text-danger">*</span></label>
                                         <input type="text" id="salary" name="salary" class="form-control"
@@ -211,25 +230,22 @@
                                         <label class="mb-2" for="daily_rate">Daily Rate</label>
                                         <input type="text" id="daily_rate" name="daily_rate" class="form-control"
                                             value="{{ optional($data)->daily_rate ?? '' }}">
+                                        <div class="error-field"></div>
                                     </div>
 
-                                    {{-- Cutoffs --}}
-                                    <div class="col-md-3 mb-3 cutoff once-cutoff" style="display:none;">
-                                        <label class="mb-2" for="cutoff_amount_once">1st Cutoff Amount <span class="text-danger">*</span></label>
-                                        <input type="text" id="cutoff_amount_once" name="cutoff_amount_once" class="form-control"
-                                            value="{{ optional($data)->cutoff_amount_once ?? '' }}">
-                                    </div>
-
-                                    <div class="col-md-3 mb-3 cutoff twice-cutoff" style="display:none;">
+                                    {{-- Cutoff Amounts (conditionally shown by JS) --}}
+                                    <div class="col-md-3 mb-3 cutoff first-cutoff" style="display: none;">
                                         <label class="mb-2" for="first_cutoff_amount">1st Cutoff Amount <span class="text-danger">*</span></label>
                                         <input type="text" id="first_cutoff_amount" name="first_cutoff_amount" class="form-control"
                                             value="{{ optional($data)->first_cutoff_amount ?? '' }}">
+                                        <div class="error-field"></div>
                                     </div>
 
-                                    <div class="col-md-3 mb-3 cutoff twice-cutoff" style="display:none;">
+                                    <div class="col-md-3 mb-3 cutoff second-cutoff" style="display: none;">
                                         <label class="mb-2" for="second_cutoff_amount">2nd Cutoff Amount <span class="text-danger">*</span></label>
                                         <input type="text" id="second_cutoff_amount" name="second_cutoff_amount" class="form-control"
                                             value="{{ optional($data)->second_cutoff_amount ?? '' }}">
+                                        <div class="error-field"></div> 
                                     </div>
 
                                     {{-- Deduction --}}
@@ -265,7 +281,6 @@
                             </div>
                         </div>
                     </div>
-
                   </div>
                 </div>
 
@@ -281,16 +296,17 @@
 
 @section('scripts')
 <script>
-    $(function() {
-        
+    $(function () {
         const url = $('#form').attr('action');
+        const salary = @json(optional($data)->salary ?? 0);
+        const daily_rate = @json(optional($data)->daily_rate ?? 0);
+
         post(url);
 
-        // DIVISION CHANGE
-        $('#division_id').on('change', function() {
+        $('#division_id').on('change', function () {
             const id = $(this).val();
             const url = @json(route('hris.employee.information'));
-            $.get(url, { division_id: id }, function(response) {
+            $.get(url, { division_id: id }, function (response) {
                 const res = response.data;
                 $('#unit_id').html('<option value=""> - CHOOSE UNIT - </option>');
                 res.forEach(item => {
@@ -299,16 +315,14 @@
             }, 'json');
         });
 
-        // EMPLOYMENT TYPE CHANGE
-        $('#employment_type_id').on('change', function() {
+        $('#employment_type_id').on('change', function () {
             const id = $(this).val();
             const url = @json(route('hris.employee.information'));
-            const selectedPositionId = @json(optional($data)->position_id); 
+            const selectedPositionId = @json(optional($data)->position_id);
 
-            $.get(url, { employment_type_id: id }, function(response) {
+            $.get(url, { employment_type_id: id }, function (response) {
                 const res = response.data;
                 $('#position_id').html('<option value=""> - CHOOSE POSITION - </option>');
-                
                 res.forEach(item => {
                     let selected = (item.id == selectedPositionId) ? 'selected' : '';
                     $('#position_id').append(`<option value="${item.id}" ${selected}>${item.name.toUpperCase()}</option>`);
@@ -328,28 +342,25 @@
             }, 'json');
         });
 
-
-        // POSITION CHANGE (only PL)
-        $('#position_id').on('change', function() {
+        $('#position_id').on('change', function () {
             const id = $(this).val();
             const url = @json(route('hris.employee.information'));
-            $.get(url, { position_id: id }, function(response) {
-                let selectedType = $("#employment_type_id option:selected").val();
-                if (selectedType === 2) {
-                    let salary = response.data.salary;
-                    $('#salary').val(salary);
-                    $('#daily_rate').val((salary / 22).toFixed(2));
-                    updateCutoffAmounts();
+            $.get(url, { position_id: id }, function (response) {
+                let selectedType = $("#employment_type_id").val();
+                if (selectedType === "2" && response.data) {
+                    let salary = parseFloat(response.data.salary || 0);
+                    if (salary > 0) {
+                        $('#salary').val(salary.toFixed(2));
+                        $('#daily_rate').val((salary / 22).toFixed(2));
+                        updateCutoffAmounts();
+                    }
                 }
             }, 'json');
         });
 
-        // TRANCHE & STEP CHANGE (only PL)
         $('#tranche_id, #step_id').on('change', function () {
-
             const employment_type_id = $('#employment_type_id').val();
-
-            if(employment_type_id == 2) return;
+            if (employment_type_id == 2) return;
 
             const tranche_id = $('#tranche_id').val();
             const step_id = $('#step_id').val();
@@ -362,48 +373,98 @@
                 dataType: "json",
                 success: function (response) {
                     if (response.data) {
-                        let salary = parseFloat(response.data.salary) || 0;
-                        $('#salary').val(salary);
-
-                        let dailyRate = (salary / 22).toFixed(2);
-                        $('#daily_rate').val(dailyRate);
-
-                        updateCutoffAmounts();
+                        let salary = parseFloat(response.data.salary || 0);
+                        if (salary > 0) {
+                            $('#salary').val(salary.toFixed(2));
+                            $('#daily_rate').val((salary / 22).toFixed(2));
+                            updateCutoffAmounts();
+                        }
                     }
-                },
-                error: function (xhr, status, error) {
-                    console.error("AJAX Error:", status, error);
                 }
             });
-
         });
 
-        // SALARY FREQUENCY CHANGE
-        $('#salary_frequency').on('change', function() {
+        $('#salary_frequency').on('change', function () {
+            const frequency = $(this).val();
             $('.cutoff').hide();
-            if ($(this).val() === 'once') {
-                $('.once-cutoff').show();
-                updateCutoffAmounts(false);
-            } else if ($(this).val() === 'twice') {
-                $('.twice-cutoff').show();
-                updateCutoffAmounts(true);
+
+            if (frequency === 'once') {
+                $('#salary_cutoff_container').show();
+                handleSalaryCutoff();
+                updateCutoffAmounts();
+            } else if (frequency === 'twice') {
+                $('#salary_cutoff_container').hide();
+                $('#salary_cutoff').val('');
+                $('.first-cutoff, .second-cutoff').show();
+                updateCutoffAmounts();
+            } else {
+                $('#salary_cutoff_container').hide();
+                $('#salary_cutoff').val('');
             }
         });
 
-        function updateCutoffAmounts(split = false) {
-            let salary = parseFloat($('#salary').val()) || 0;
-            if (!split) {
-                $('#cutoff_amount_once').val(salary.toFixed(2));
+        $('#salary_cutoff').on('change', function () {
+            const frequency = $('#salary_frequency').val();
+            const cutoff = $(this).val();
+
+            handleSalaryCutoff();
+
+            if (frequency === 'once' && cutoff) {
+                $('.first-cutoff input, .second-cutoff input').val('0.00');
+                $('#salary').val(salary ?? 0.00);
+                $('#daily_rate').val(daily_rate ?? 0.00);
+                updateCutoffAmounts();
             } else {
-                let half = (salary / 2).toFixed(2);
-                $('#first_cutoff_amount').val(half);
-                $('#second_cutoff_amount').val(half);
+                $('#salary_frequency').trigger('change');
+                updateCutoffAmounts();
+            }
+        });
+
+        $('#salary').on('keyup', function () {
+            const salary = parseFloat($(this).val()) || 0.00;
+            const frequency = $('#salary_frequency').val();
+
+            $('#daily_rate').val((salary / 22).toFixed(2));
+            updateCutoffAmounts();
+        });
+
+        $('#salary_frequency').trigger('change');
+        $('#salary_cutoff').trigger('change');
+        $('#employment_type_id').trigger('change');
+
+        function handleSalaryCutoff() {
+            const selected = $('#salary_cutoff').val();
+            $('.cutoff').hide();
+
+            if (selected === 'first_cutoff') {
+                $('.first-cutoff').show();
+            } else if (selected === 'second_cutoff') {
+                $('.second-cutoff').show();
             }
         }
 
-        // Run on load
-        $('#salary_frequency').trigger('change');
-        $('#employment_type_id').trigger('change');
+        function updateCutoffAmounts() {
+            let salary = parseFloat($('#salary').val()) || 0.00;
+            const frequency = $('#salary_frequency').val();
+            const cutoff = $('#salary_cutoff').val();
+
+            if (frequency === 'twice') {
+                const half = (salary / 2).toFixed(2);
+                $('#first_cutoff_amount').val(half);
+                $('#second_cutoff_amount').val(half);
+            } else if (frequency === 'once') {
+                if (cutoff === 'first_cutoff') {
+                    $('#first_cutoff_amount').val(salary.toFixed(2));
+                    $('#second_cutoff_amount').val('');
+                } else if (cutoff === 'second_cutoff') {
+                    $('#second_cutoff_amount').val(salary.toFixed(2));
+                    $('#first_cutoff_amount').val('');
+                }
+            } else {
+                $('#first_cutoff_amount').val('');
+                $('#second_cutoff_amount').val('');
+            }
+        }
     });
 </script>
 @endsection
