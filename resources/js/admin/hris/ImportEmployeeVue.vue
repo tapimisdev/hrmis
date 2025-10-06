@@ -9,14 +9,17 @@
             :units="units"
             :shifts="shifts"
             :schedules="schedules"
+            :tranches="tranches"
             />
         <ViewEmployeeVue 
             v-show="!upload" 
             @back-to-form="backtoFormFromView"
+            @remove-employee="removeEmployee"
+
             :employees="employees_data.employees"
-            :details="employees_data.details"
-            
+            :details="employees_data.details"            
             :employmentTypes="employmentTypes"
+
             :divisions="divisions"
             :units="units"
             :shifts="shifts"
@@ -43,6 +46,7 @@ export default {
             units: [],
             shifts: [],
             schedules: [],
+            tranches: [],
         };
     },
     mounted() {
@@ -50,6 +54,7 @@ export default {
         this.fetchData('employmentTypes', '/api/employment-types', true);
         this.fetchData('shifts', '/api/shifts', true);
         this.fetchData('schedules', '/api/work-schedules', true);
+        this.fetchData('tranches', '/api/tranches', true);
     },
     methods: {
         fetchData(stateKey, url, useDataWrapper = false) {
@@ -75,6 +80,9 @@ export default {
         },
         backtoFormFromView() {
             this.upload = true;
+        },
+        removeEmployee(index) {
+          this.employees_data.employees.splice(index, 1)
         }
     },
 };

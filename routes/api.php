@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('employment-types', [EmploymentTypesController::class, 'index']);
     Route::get('tranches', [TrancheController::class, 'tranches']);
+    Route::get('compute-salary/{trach_id}/{salary_grade}/{step}', [TrancheController::class, 'compute_salary']);
     
     Route::get('divisions', [Organization::class, 'division'])
         ->name('api.divisions');

@@ -14,13 +14,12 @@
             <div class="card-body">
                 <!-- Employee Accordion -->
                 <div class="accordion" id="employeeAccordion">
-                    <div class="accordion-item border-0 shadow-sm rounded-3 mb-3"
+                    <div class="accordion-item border-0 mb-3"
                         v-for="(employee, index) in employees"
                         :key="index">
-    
                         <!-- Accordion Header (Balanced Layout) -->
-                        <h2 class="accordion-header" :id="'heading' + index">
-                            <button class="accordion-button collapsed rounded px-3 py-2 d-flex align-items-center"
+                        <h2 class="accordion-header " :id="'heading' + index">
+                            <button class="accordion-button collapsed rounded px-3 py-2 d-flex align-items-center bg-primary bg-opacity-10"
                                     type="button"
                                     data-bs-toggle="collapse"
                                     :data-bs-target="'#collapse' + index"
@@ -46,6 +45,9 @@
                                     </div>
                                 </div>
                             </button>
+                            <button class="delete-button" @click="removeFromList(index)">
+                              <i class="fa-solid fa-xmark"></i>
+                            </button>  
                         </h2>
 
                         <!-- Accordion Body -->
@@ -58,7 +60,7 @@
                                 <!-- Section: Basic Info -->
                                 <div class="section-title">Basic Information</div>
                                 <div class="row mb-3">
-                                <div class="col-12 col-md-3 mb-3">
+                                    <div class="col-12 col-md-3 mb-3">
                                         <label class="form-label">Employee No</label>
                                         <input type="text"
                                             class="form-control form-control-sm"
@@ -171,12 +173,18 @@
                                         <label class="form-label">Tranche</label>
                                         <select class="form-control form-control-sm"
                                                 v-model="employee.tranche"
+                                                @change="computeSalary(employee.tranche , employee.salary_grade, employee.step, index)"
                                                 :class="{ 'is-invalid': errors[`employees.${index}.tranche`] }">
                                             <option value="">-- CHOOSE --</option>
-                                            <option v-for="tranche in tranches"
+                                            <option v-for="tranche in filteredTranches"
                                                     :key="tranche.id"
                                                     :value="tranche.id">
-                                                {{ tranche.date }}
+                                               <span>{{ new Date(tranche.date).toLocaleDateString('en-PH', { 
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                }) }}</span>
+                                                  &mdash; {{ tranche.description }}
                                             </option>
                                         </select>
                                         <span class="text-danger" v-if="errors[`employees.${index}.tranche`]">
@@ -189,6 +197,7 @@
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             v-model="employee.salary_grade"
+                                            @change="computeSalary(employee.tranche , employee.salary_grade, employee.step, index)"
                                             :class="{ 'is-invalid': errors[`employees.${index}.salary_grade`] }">
                                         <span class="text-danger" v-if="errors[`employees.${index}.salary_grade`]">
                                             <span v-for="(err, i) in errors[`employees.${index}.salary_grade`]" :key="i">{{ err }}</span>
@@ -200,6 +209,7 @@
                                         <select class="form-control form-control-sm"
                                                 v-model="employee.step"
                                                 :disabled="details.employment_type_id == 2"
+                                                @change="computeSalary(employee.tranche , employee.salary_grade, employee.step, index)"
                                                 :class="{ 'is-invalid': errors[`employees.${index}.step`] }">
                                             <option v-for="n in 8"
                                                     :key="n"
@@ -387,6 +397,8 @@ export default {
             },
             errors: {},
             tranches: [],
+            filteredTranches: [],
+            salary_grade: [],
             loading: false
         }
     },
@@ -419,7 +431,25 @@ export default {
             };
         }
     },
+     watch: {
+      'details.employment_type_id': {
+        immediate: true, // runs once on component mount
+        handler(newVal) {
+          this.filterTranches(newVal);
+        }
+      }
+    },
     methods: {
+        filterTranches(employmentTypeId) {
+            if (!employmentTypeId) {
+                this.filteredTranches = this.tranches;
+                return;
+            }
+
+            this.filteredTranches = this.tranches.filter(
+                tranche => Number(tranche.employment_type_id) === Number(employmentTypeId)
+            );
+        },
         hasError(index) {
             return Object.keys(this.errors).some(key => key.startsWith(`employees.${index}`));
         },
@@ -428,6 +458,18 @@ export default {
                 headers: { Authorization: `Bearer ${token}` }
             }).then(response => {
                 this[stateKey] = useDataWrapper ? response.data.data : response.data;
+            });
+        },
+        computeSalary(tranche_id, salary_grade, step, index) {
+            axios.get(`/api/compute-salary/${tranche_id}/${salary_grade}/${step}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            .then(response => {
+                this.employees[index].total_salary = response.data.data.total_salary;
+                this.employees[index].daily_rate = response.data.data.daily_rate;
+            })
+            .catch(error => {
+                console.error('Error computing salary:', error);
             });
         },
         handleSalaryCutoffChange(salary_frequency, index) {
@@ -505,9 +547,23 @@ export default {
                     block: 'center' // center it on screen
                 });
             }
-        }
+        },
+        removeFromList(index) {
+          Swal.fire({
+            title: "Are you sure?",
+            text: "This employee will be removed from the list.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, remove it!"
+          }).then((result) => {
+            if (result.isConfirmed) {
+              this.$emit('remove-employee', index);
 
-    
+            }
+          });
+        }
     }
 }
 </script>
@@ -561,5 +617,29 @@ export default {
 }
 .text-camelcase {
   @include text-camelcase;
+}
+
+.accordion-item {
+  .accordion-header {
+    display: flex;
+    border: none;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    .delete-button {
+      background-color: transparent;
+      border: none;
+      font-weight: 200 !important;
+      font-size: 8px;
+      height: 20px;
+      width: 20px;
+      border-radius: 8px;
+      transition: all ease-in-out 0.2s;
+      &:hover {
+        background-color: rgba($danger, 0.8);
+        color: $light;
+      }
+    }
+  }
 }
 </style>

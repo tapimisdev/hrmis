@@ -12,7 +12,6 @@ class TrancheController extends Controller
 {
     public function index(Request $request)
     {
-
         if($request->ajax()) {
             $query = DB::table('tranche')
                 ->get();
@@ -307,5 +306,47 @@ class TrancheController extends Controller
                 ->get();
 
         return response(['data' => $query, 'status' => 'success'], 200);
+    }
+
+    public function compute_salary($tranch_id, $salary_grade, $step = null) 
+    {
+        $daily_rate = null;
+        $total_salary = null;
+        try {
+            $db_tranche_item = DB::table('tranche_items')
+                        ->where('tranche_id', $tranch_id)
+                        ->where('salary_grade', $salary_grade)
+                        ->first();
+
+            if ($db_tranche_item) {
+                // Determine the step column
+               if ($step === null || $step === '' || $step === 'null') {
+                    $stepColumn = 'step_1';
+                } else {
+                    $stepColumn = 'step_' . $step;
+                }
+
+                // Get the total salary from the selected step
+                $total_salary = $db_tranche_item->{$stepColumn} ?? null;
+
+                // Convert to float if exists
+                $total_salary = $total_salary ? (float) str_replace(',', '', $total_salary) : null;
+
+                // Calculate daily rate
+                $daily_rate = $total_salary !== null ? round($total_salary / 22, 2) : null;
+
+            }
+
+            $data = [
+                'daily_rate' => $daily_rate,
+                'total_salary' => $total_salary
+            ];
+
+            return response(['data' => $data, 'status' => 'success'], 200);
+
+        } catch (\Exception $e) {
+            return response(['message' => $e->getMessage(), 'status' => 'compute fail'], 500);
+        }
+
     }
 }

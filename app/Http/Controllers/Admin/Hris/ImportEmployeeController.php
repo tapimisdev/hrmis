@@ -50,6 +50,7 @@ class ImportEmployeeController extends Controller
             if ($tranche) {
                 $tranche = DB::table('tranche')
                     ->where('date', $tranche)
+                    ->where('employment_type_id', $validatedData['employment_type'])
                     ->value('id');
 
                 if ($tranche) {
