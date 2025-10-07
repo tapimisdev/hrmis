@@ -201,29 +201,40 @@
 
                         {{-- Suspension Date Range --}}
                         <div id="suspension_date_range" style="display: {{ old('is_suspension', $data['is_suspension'] ?? 0) ? 'block' : 'none' }};">
-                            <div class="row g-2">
-                                <!-- From Date -->
-                                <div class="col-md-3">
-                                    <label for="suspension_from_date" class="form-label">From Date</label>
-                                    <input type="date" class="form-control" name="suspension_from_date" id="suspension_from_date"
-                                        value="{{ old('suspension_from_date', $data['from_date'] ?? '') }}">
+                            <div id="suspension_rows">
+                                @php
+                                    $suspensions = old('suspensions', $data['suspensions'] ?? [ [] ]);
+                                @endphp
+                                @foreach ($suspensions as $index => $suspension)
+                                <div class="suspension-row row g-2 mb-2">
+                                    <div class="col-md-3">
+                                        <label for="suspensions_{{ $index }}_date" class="form-label">Date</label>
+                                        <input type="date" class="form-control" name="suspensions[{{ $index }}][date]" value="{{ $suspension['date'] ?? '' }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Type</label>
+                                        <select class="form-select" name="suspensions[{{ $index }}][type]">
+                                            <option value="whole_day" {{ ($suspension['type'] ?? '') === 'whole_day' ? 'selected' : '' }}>Whole Day</option>
+                                            <option value="half_day" {{ ($suspension['type'] ?? '') === 'half_day' ? 'selected' : '' }}>Half Day</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">From Time</label>
+                                        <input type="time" class="form-control" name="suspensions[{{ $index }}][from_time]" value="{{ $suspension['from_time'] ?? '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">To Time</label>
+                                        <input type="time" class="form-control" name="suspensions[{{ $index }}][to_time]" value="{{ $suspension['to_time'] ?? '' }}">
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-danger btn-remove-row">Delete</button>
+                                    </div>
                                 </div>
-
-                                <!-- From Time -->
-                                <div class="col-md-3">
-                                    <label for="suspension_from_time" class="form-label">From Time</label>
-                                    <input type="time" class="form-control" name="suspension_from_time" id="suspension_from_time"
-                                        value="{{ old('suspension_from_time', $data['from_time'] ?? '') }}">
-                                </div>
-
-                                <!-- To Date -->
-                                <div class="col-md-6">
-                                    <label for="suspension_to_date" class="form-label">To Date</label>
-                                    <input type="date" class="form-control" name="suspension_to_date" id="suspension_to_date"
-                                        value="{{ old('suspension_to_date', $data['to_date'] ?? '') }}">
-                                </div>
+                                @endforeach
                             </div>
+                            <button type="button" class="btn btn-primary mt-2 text-uppercase px-4" id="add_suspension_row">Add Suspension</button>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -301,25 +312,20 @@
 
         // Remove attachment
         $(document).on('click', '.remove-attachment', function () {
-            // Count how many attachment items exist
             let totalAttachments = $('.attachment-item').length;
-
             if (totalAttachments <= 1) {
-                // Stop removal if only one left
                 alert("At least one attachment is required.");
                 return;
             }
 
             let id = $(this).data('id');
 
-            // If it's an existing attachment (numeric ID from DB), mark for deletion
             if (id && !id.toString().startsWith('new-')) {
                 $('#attachments-container').append(
                     `<input type="hidden" name="remove_attachments[]" value="${id}">`
                 );
             }
 
-            // Remove the DOM item
             $(this).closest('.attachment-item').remove();
         });
 
@@ -343,9 +349,52 @@
         } else {
             put(url);
         }
+
+        // ==========================================
+        // Suspension Row Logic (Add/Delete Rows)
+        // ==========================================
+
+        let suspensionIndex = {{ count(old('suspensions', $data['suspensions'] ?? [[]])) }};
+
+        // Add Suspension Row
+        $('#add_suspension_row').click(function () {
+            let row = `
+            <div class="suspension-row row g-2 mb-2">
+                <div class="col-md-3">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" name="suspensions[${suspensionIndex}][date]">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" name="suspensions[${suspensionIndex}][type]">
+                        <option value="whole_day">Whole Day</option>
+                        <option value="half_day">Half Day</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">From Time</label>
+                    <input type="time" class="form-control" name="suspensions[${suspensionIndex}][from_time]">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">To Time</label>
+                    <input type="time" class="form-control" name="suspensions[${suspensionIndex}][to_time]">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-remove-row">Delete</button>
+                </div>
+            </div>`;
+            $('#suspension_rows').append(row);
+            suspensionIndex++;
+        });
+
+        // Remove Suspension Row
+        $(document).on('click', '.btn-remove-row', function () {
+            $(this).closest('.suspension-row').remove();
+        });
     });
 </script>
 @endsection
+
 
 
 
