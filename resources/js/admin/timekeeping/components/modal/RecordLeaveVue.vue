@@ -96,6 +96,7 @@
 </template>
 
 <script>
+const token = localStorage.getItem('auth_token');
 import axios from "axios";
 
 export default {
@@ -129,7 +130,12 @@ export default {
         async loadLeaves() {
             this.loading = true;
             try {
-                const response = await axios.get(`/api/leaves`);
+                const response = await axios.get('/api/leaves', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 this.leaveTypes = response.data.leaves;
             } catch (error) {
                 console.error("Error fetching leaves:", error);
@@ -150,7 +156,8 @@ export default {
                 const response = await axios.post('/api/leaves', formData, {
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'multipart/form-data'
+                        'Content-Type': 'multipart/form-data',
+                        'Authorization': `Bearer ${token}`
                     }
                 });
 

@@ -5,12 +5,21 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreLeaveApplication;
 use Illuminate\Http\Request;
+use App\Services\EmployeeService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\User;
 
 class LeaveApplicationController extends Controller
 {
+    protected $employee_service;
+
+    public function __construct(EmployeeService $employee_service)
+    {
+        $this->employee_service = $employee_service;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -44,9 +53,17 @@ class LeaveApplicationController extends Controller
      */
     public function store(StoreLeaveApplication $request) 
     {
-        $user = Auth::user()->load('employeeInformation');
         $validatedData = $request->validated();
-        $employee_no = $user->toArray()['employee_information']['employee_no'];
+
+        if(!empty($validatedData['user_id'])) { // api
+            $user = User::with('employeeInformation')->findOrFail($validatedData['user_id']);
+            $employee_no = $user->employeeInformation->employee_no;
+            $user_id = $user->id;
+        } else { // employee side
+            $user = Auth::user()->load('employeeInformation');
+            $employee_no = $user->toArray()['employee_information']['employee_no'];
+            $user_id = Auth::user()->id;
+        }
 
         $organization = DB::table('employee_organization')
             ->where('employee_no', $employee_no)
@@ -80,7 +97,7 @@ class LeaveApplicationController extends Controller
             }
 
             $leaveId = DB::table('leave_applications')->insertGetId([
-                'user_id'       => Auth::user()->id ?? $validatedData['user_id'],
+                'user_id'       => $user_id,
                 'employee_no'  => $employee_no,
                 'leave_id'      => $validatedData['leave_id'],
                 'start_date'    => $validatedData['start_date'],

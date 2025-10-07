@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreTimeLogsRequest;
 use App\Http\Requests\Employee\StoreAtroRequest;
 use App\Services\TimelogsServices;
+use App\Services\EmployeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,15 +16,19 @@ use Illuminate\Support\Facades\DB;
 class AddTimeApiController extends Controller
 {
     protected $timelog_service;
+    protected $employee_service;
 
-    public function __construct(TimelogsServices $timelog_service)
+    public function __construct(TimelogsServices $timelog_service, EmployeeService $employee_service)
     {
         $this->timelog_service = $timelog_service;
+        $this->employee_service = $employee_service;
     }
 
     public function add_time(StoreTimeLogsRequest $request)
     {
         $validatedData = $request->validated();
+
+        $employee_no = $this->employee_service->getEmployeeNo($validatedData['user_id']);
 
         DB::beginTransaction();
 
@@ -59,7 +64,7 @@ class AddTimeApiController extends Controller
 
                 DB::table('timelogs')->insert([
                     'user_id'          => $validatedData['user_id'],
-                    'employee_no'      => $validatedData['employee_no'] ?? null,
+                    'employee_no'      => $employee_no,
                     'date_time'        => Carbon::parse($date . ' ' . $entry['time'])->format('Y-m-d H:i:s'),
                     'shift_id'         => $validatedData['shift'],
                     'work_schedule_id' => $validatedData['weeklyschedule'],

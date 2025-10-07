@@ -188,7 +188,7 @@
                                             Mark Absent
                                         </button>
                                     </li>
-                                    <li><button class="dropdown-item" @click="openModal('ob', index)">Record OB</button></li>
+                                    <!-- <li><button class="dropdown-item" @click="openModal('ob', index)">Record OB</button></li> -->
                                 </ul>
                             </div>
                         </td>

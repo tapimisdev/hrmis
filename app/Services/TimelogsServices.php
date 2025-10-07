@@ -469,7 +469,7 @@ class TimelogsServices {
                 $query->where('status', 'approved')
                     ->orWhere('status', 'pending');
             })
-            ->first();
+            ->first();  
 
         if ($leave) {
             $isLeave = true;
