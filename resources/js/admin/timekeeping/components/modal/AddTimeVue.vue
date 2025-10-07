@@ -167,6 +167,7 @@
 </template>
 
 <script>
+const token = localStorage.getItem('auth_token');
 import axios from "axios";
 import FormSkeletonVue from "../../../../components/FormSkeletonVue.vue";
 
@@ -207,7 +208,9 @@ export default {
     methods: {
         async loadShifts() {
             try {
-                const res = await axios.get("/api/shifts");
+                const res = await axios.get("/api/shifts", {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
                 this.shifts = res.data.data;
             } catch (error) {
                 console.error("Failed to load shifts:", error);
@@ -215,7 +218,9 @@ export default {
         },
         async loadSchedules() {
             try {
-                const res = await axios.get("/api/work-schedules");
+                const res = await axios.get("/api/work-schedules", {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
                 this.weeklySchedules = res.data.data;
             } catch (error) {
                 console.error("Failed to load schedules:", error);
@@ -224,11 +229,15 @@ export default {
         async loadTimelog() {
             this.initial_loading = true;
             this.errors = {};
+            console.log(this.employee_id);
             try {
                 const res = await axios.get("/api/fetch-timelogs", {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
                     params: {
                         user_id: this.employee_id,
-                        date: this.form.date, // or start_date / end_date
+                        date: this.form.date // or start_date / end_date
                     }
                 });
 
@@ -291,7 +300,7 @@ export default {
 
             try {
                 const response = await axios.post('/api/add-time', this.form, {
-                    headers: { 'Accept': 'application/json' }
+                    headers: { 'Accept': 'application/json', Authorization: `Bearer ${token}` }
                 });
 
                 Swal.fire({

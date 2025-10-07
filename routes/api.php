@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Employee;
 use App\Http\Controllers\Api\LeavesApiController;
 use App\Http\Controllers\Api\Organization;
 use App\Http\Controllers\Employee\LeaveApplicationController;
+use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
 use App\Http\Controllers\Api\CountriesApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('children', [Employee::class, 'children'])
             ->name('api.employee.children');
 
+    });
+
+    Route::prefix('timekeeping')->group(function() {
+        Route::post('import-timelogs', [UploadTimeLogController::class, 'store']);
     });
 
     Route::get('leaves', [LeavesApiController::class, 'getLeaves'])

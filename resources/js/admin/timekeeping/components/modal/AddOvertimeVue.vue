@@ -103,6 +103,7 @@
 </template>
 
 <script>
+const token = localStorage.getItem('auth_token');
 import axios from "axios";
 
 export default {
@@ -137,8 +138,11 @@ export default {
 
             try {
                 const res = await axios.post('/api/add-overtime', this.form, {
-                    headers: { 'Accept': 'application/json' }
-                });
+                      headers: {
+                          'Accept': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                      }
+                  });
 
                 Swal.fire({
                     title: "Success!",

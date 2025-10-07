@@ -96,9 +96,15 @@
         const selectedDivision = "{{ $division_id ?? '' }}";
         const selectedUnit = "{{ $unit_id ?? '' }}";
 
+        const token = localStorage.getItem('auth_token');
+
         $.ajax({
             url: '/api/divisions',
             type: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Accept': 'application/json'
+            },
             success: function (data) {
                 $('#division').append(
                     data.map(d =>
@@ -111,8 +117,12 @@
                 if (selectedDivision) {
                     loadUnits(selectedDivision, selectedUnit);
                 }
+            },
+            error: function () {
+                console.error('Failed to load divisions');
             }
         });
+
 
         $('#division').on('change', function () {
             const divisionId = $(this).val();
@@ -134,10 +144,14 @@
             $.ajax({
                 url: '/api/units/' + divisionId,
                 type: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept': 'application/json'
+                },
                 success: function (data) {
                     $('#units').empty().append('<option value=""> - CHOOSE UNIT - </option>');
 
-                    data.forEach(function(u) {
+                    data.forEach(function (u) {
                         const isSelected = u.id == selectedUnit ? 'selected' : '';
                         $('#units').append(
                             `<option value="${u.id}" ${isSelected}>${u.name.toUpperCase()}</option>`

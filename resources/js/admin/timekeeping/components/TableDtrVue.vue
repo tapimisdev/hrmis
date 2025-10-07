@@ -66,8 +66,8 @@
                         <th>Overtime</th>
                         <th>Worked HRS</th>
                         <th>Double</th>
-                        <th>Tardiness/Undertime</th>
-                        <th>Paid HRS</th>
+                        <th>UT</th>
+                        <!-- <th>Paid HRS</th> -->
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
@@ -87,27 +87,27 @@
                         <td>{{ index + 1 }}</td>
 
                         <!-- If Absent -->
-                        <td v-if="hasRemark(log.remarks, 'restday')" colspan="9" class="text-center text-success fw-bold">
+                        <td v-if="hasRemark(log.remarks, 'restday')" colspan="8" class="text-center text-success fw-bold">
                             Restday 
                         </td>
 
                         <!-- If Leave -->
-                        <td v-else-if="hasRemark(log.remarks, 'holiday') && !log.time_in" colspan="9" class="text-center text-dark fw-bold">
+                        <td v-else-if="hasRemark(log.remarks, 'holiday') && !log.time_in" colspan="8" class="text-center text-dark fw-bold">
                             Holiday <span class="text-info"> (Double = {{ log.doble }})</span>
                         </td>
 
                         <!-- If Leave -->
-                        <td v-else-if="hasRemark(log.remarks, 'leave')" colspan="9" class="text-center text-info fw-bold">
+                        <td v-else-if="hasRemark(log.remarks, 'leave')" colspan="8" class="text-center text-info fw-bold">
                             Leave 
                         </td>
 
                         <!-- If OB -->
-                        <td v-else-if="hasRemark(log.remarks, 'ob')" colspan="9" class="text-center text-warning fw-bold">
+                        <td v-else-if="hasRemark(log.remarks, 'ob')" colspan="8" class="text-center text-warning fw-bold">
                             OB 
                         </td>
 
                         <!-- If Absent -->
-                        <td v-else-if="hasRemark(log.remarks, 'absent')" colspan="9" class="text-center text-danger fw-bold">
+                        <td v-else-if="hasRemark(log.remarks, 'absent')" colspan="8" class="text-center text-danger fw-bold">
                             Absent 
                         </td>
 
@@ -144,11 +144,11 @@
                                     {{ convertToReadableTime(log.late_undertime) }}
                                 </span>
                             </td>
-                            <td>
+                            <!-- <td>
                                  <span class="text-lowercase">
                                     {{ convertToReadableTime(log.paid_hours) }}
                                 </span>
-                            </td>
+                            </td> -->
                             <!-- Remarks Column -->
                             <td>
                                 <div class="mb-0 ps-3 d-flex flex-wrap">
@@ -188,7 +188,7 @@
                                             Mark Absent
                                         </button>
                                     </li>
-                                    <li><button class="dropdown-item" @click="openModal('ob', index)">Record OB</button></li>
+                                    <!-- <li><button class="dropdown-item" @click="openModal('ob', index)">Record OB</button></li> -->
                                 </ul>
                             </div>
                         </td>

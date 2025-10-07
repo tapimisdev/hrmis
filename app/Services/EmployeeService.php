@@ -14,6 +14,16 @@ class EmployeeService {
 
     }
 
+    public function getEmployeeNo($user_id)
+    {
+        $employee = DB::table('employee_information')
+                ->where('user_id', $user_id)
+                ->select('id', 'employee_no')
+                ->first();
+
+        return $employee->employee_no;
+    }
+
     public function checkIfEmployeeExists(? string $employee_no = null)
     {
         if(!is_null($employee_no)) {
@@ -220,8 +230,6 @@ class EmployeeService {
 
         return $query->{$config['method']}();
     }
-
-
 
     public function getSalary(string $employee_no) {
         return DB::table('employee_information')
