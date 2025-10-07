@@ -618,7 +618,7 @@ class TimelogsServices {
         // Compute tardiness & undertime
         $amTardiness   = $this->computeTardiness($logIn, $shiftStart);
 
-        $amUndertime = ($logOut && $logOut->gte($shiftBreakOut))
+        $amUndertime = ($logOut && $logOut->lte($shiftBreakOut))
             ? $this->computeUndertime($logOut, $shiftBreakOut, $baseStart)
             : $this->computeUndertime($logBreakOut, $shiftBreakOut, $baseStart);
 
@@ -713,13 +713,24 @@ class TimelogsServices {
     {
         if (!$actual || !$expected) return 0;
 
-        // Ensure actual is not before shift start
-        $actual = $in && $actual->lt($in) ? $in : $actual;
+        // Normalize times (remove seconds)
+        $actual   = $actual->copy()->seconds(0);
+        $expected = $expected->copy()->seconds(0);
+        if ($in) {
+            $in = $in->copy()->seconds(0);
+        }
 
-        return $actual->lt($expected) 
-            ? $expected->diffInMinutes($actual) 
+        // Ensure actual is not before shift start
+        if ($in && $actual->lt($in)) {
+            $actual = $in;
+        }
+
+        // Compute undertime in minutes (ignoring seconds)
+        return $actual->lt($expected)
+            ? $expected->diffInMinutes($actual)
             : 0;
     }
+
 
     /**
      * Calculate the difference between two overtime timestamps.
