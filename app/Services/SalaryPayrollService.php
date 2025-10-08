@@ -14,6 +14,8 @@ class SalaryPayrollService {
     {
         $query = DB::table('payroll_salary');
 
+        // dd($payload);
+
         if (!empty($payload['year'])) {
             $query->whereYear('payroll_date', $payload['year']);
         }
@@ -29,6 +31,8 @@ class SalaryPayrollService {
         if (!empty($payload['status'])) {
             $query->where('status', $payload['status']);
         }
+
+        // dd($query->get());
 
         return $query->get();
     }

@@ -170,7 +170,7 @@
                                                 <option value=""> - CHOOSE - </option>
                                                 @foreach($tranches as $tranche)
                                                     <option value="{{ $tranche->id }}" {{ (optional($data)->tranche_id ?? '') == $tranche->id ? 'selected' : '' }}>
-                                                        {{ strtoupper($tranche->name) }}
+                                                        {{ strtoupper($tranche->date) }}
                                                     </option>
                                                 @endforeach
                                             </select>

@@ -92,7 +92,7 @@ export default {
           placeholder: "-- CHOOSE STATUS --",
           options: [
             { text: "Draft", value: "draft" },
-            { text: "Pending Approval", value: "pending_approval" },
+            { text: "Pending Approval", value: "pending" },
             { text: "Approved", value: "approved" },
             { text: "For Releasing", value: "for_releasing" },
             { text: "Completed", value: "completed" },
