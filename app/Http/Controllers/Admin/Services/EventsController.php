@@ -128,7 +128,6 @@ class EventsController extends Controller
 
     public function store(Request $request)
     {
-
         $request->validate([
             'title'               => 'required|string|max:255',
             'tags'                => 'required|array|max:5|min:1',
@@ -137,19 +136,20 @@ class EventsController extends Controller
             'posted_on'           => 'nullable|date|after_or_equal:today',
             'posted_by'           => 'required',
             'posted_by.*'         => 'exists:users,id',
-            'attachment_titles.*'=> 'nullable|string|max:255',
-            'attachment_files.*' => 'nullable|file|max:10240',
+            'attachment_titles.*' => 'nullable|string|max:255',
+            'attachment_files.*'  => 'nullable|file|max:10240',
             'email_notif'         => 'nullable|boolean',
             'push_notification'   => 'nullable|boolean',
             'show_viewers'        => 'nullable|boolean',
             'is_suspension'       => 'nullable|boolean',
 
-            // suspension fields
-            'suspension_from_date' => 'required_if:is_suspension,1|date_format:Y-m-d|after_or_equal:today',
-            'suspension_from_time'           => 'required_if:is_suspension,1|date_format:H:i',
-            'suspension_to_date'   => 'required_if:is_suspension,1|date_format:Y-m-d|after_or_equal:from_date',
+            // Multiple suspension validations
+            'suspensions'                      => 'nullable|array',
+            'suspensions.*.date'              => 'required_if:is_suspension,1|date|after_or_equal:today',
+            'suspensions.*.type'              => 'required_if:is_suspension,1|in:whole_day,half_day',
+            'suspensions.*.from_time'         => 'nullable|date_format:H:i',
+            'suspensions.*.to_time'           => 'nullable|date_format:H:i',
         ]);
-
 
         try {
             DB::beginTransaction();
@@ -163,10 +163,8 @@ class EventsController extends Controller
             }
 
             $banner = null;
-
             if ($request->hasFile('banner')) {
                 $file = $request->file('banner');
-                // Store file in storage but save only filename
                 $path = $file->store('events/attachments', 'public');
                 $banner = basename($path);
             }
@@ -186,7 +184,7 @@ class EventsController extends Controller
                 'updated_at'    => now(),
             ]);
 
-            // Save tags (pivot, multiple)
+            // Save tags
             foreach ($request->tags as $tags) {
                 DB::table('events_announcements_tags')->insert([
                     'event_announcement_id' => $eventId,
@@ -196,7 +194,7 @@ class EventsController extends Controller
                 ]);
             }
 
-            // Save posted_by (pivot, multiple)
+            // Save posted_by
             foreach ($request->posted_by as $userId) {
                 DB::table('events_announcements_posted_by')->insert([
                     'user_id'               => $userId,
@@ -211,7 +209,7 @@ class EventsController extends Controller
                 foreach ($request->file('attachment_files') as $index => $file) {
                     if ($file) {
                         $path = $file->store('events/attachments', 'public');
-                        $filename = basename($path); // only filename
+                        $filename = basename($path);
                         $title = $request->attachment_titles[$index] ?? null;
 
                         DB::table('events_announcements_attachments')->insert([
@@ -225,18 +223,20 @@ class EventsController extends Controller
                 }
             }
 
-            // Save suspension if marked
-            if ($request->boolean('is_suspension')) {
-                DB::table('suspensions')->insert([
-                    'events_announcements_id' => $eventId,
-                    'from_date'               => Carbon::parse($request->suspension_from_date)->format('Y-m-d'),
-                    'from_time'               => Carbon::parse($request->suspension_from_time)->format('H:i:s'),
-                    'to_date'                 => Carbon::parse($request->suspension_to_date)->format('Y-m-d'),
-                    'created_at'              => now(),
-                    'updated_at'              => now(),
-                ]);
+            // Save suspensions (if any)
+            if ($request->boolean('is_suspension') && is_array($request->suspensions)) {
+                foreach ($request->suspensions as $suspension) {
+                    DB::table('suspensions')->insert([
+                        'events_announcements_id' => $eventId,
+                        'date'                    => Carbon::parse($suspension['date'])->format('Y-m-d'),
+                        'type'                    => $suspension['type'],
+                        'from_time'               => $suspension['from_time'] ?? null,
+                        'to_time'                 => $suspension['to_time'] ?? null,
+                        'created_at'              => now(),
+                        'updated_at'              => now(),
+                    ]);
+                }
             }
-
 
             DB::commit();
 
@@ -255,7 +255,7 @@ class EventsController extends Controller
         }
     }
 
-    
+
     public function edit(string $slug)
     {
         $isEdit = true;
@@ -314,10 +314,11 @@ class EventsController extends Controller
             ->toArray();
 
         // suspension → single record (if exists)
-        $suspension = DB::table('suspensions')
-            ->where('events_announcements_id', $event->id)
-            ->select('from_date', 'from_time', 'to_date')
-            ->first();
+        $suspension = json_decode(json_encode(
+            DB::table('suspensions')
+                ->where('events_announcements_id', $event->id)
+                ->get()
+        ), true);
 
         // Build final array
         $data = [
@@ -334,9 +335,7 @@ class EventsController extends Controller
             'posted_by'     => $postedBy,
             'tags'          => $tags,
             'attachments'   => $attachments,
-            'from_date'     => $suspension->from_date ?? null,
-            'from_time'     => $suspension->from_time ?? null,
-            'to_date'       => $suspension->to_date ?? null,
+            'suspensions'   => $suspension
         ];
 
         $id = $data['id'];
@@ -363,10 +362,11 @@ class EventsController extends Controller
             'show_viewers'       => 'nullable|boolean',
             'is_suspension'      => 'nullable|boolean',
 
-            // suspension fields
-            'suspension_from_date'           => 'required_if:is_suspension,1|date|after_or_equal:today',
-            'suspension_from_time'           => 'required_if:is_suspension,1|date_format:H:i',
-            'suspension_to_date'             => 'required_if:is_suspension,1|date|after_or_equal:from_date',
+            'suspensions' => 'nullable|array|required_if:is_suspension,1',
+            'suspensions.*.date'      => 'required_with:suspensions.*.type|date|after_or_equal:today',
+            'suspensions.*.type'      => 'required_with:suspensions.*.date|in:whole_day,half_day',
+            'suspensions.*.from_time' => 'nullable|date_format:H:i|required_if:suspensions.*.type,half_day',
+            'suspensions.*.to_time'   => 'nullable|date_format:H:i|required_if:suspensions.*.type,half_day|after:suspensions.*.from_time',
         ]);
 
         try {

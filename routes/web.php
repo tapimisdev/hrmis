@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
 use App\Http\Controllers\Admin\Hris\AccountController;
+use App\Http\Controllers\Admin\Hris\EarningsController as HrisEarningsController;
+use App\Http\Controllers\Admin\Hris\DeductionsController as HrisDeductionsController;
 use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
 use App\Http\Controllers\Admin\Services\EventsController;
 use App\Http\Controllers\Admin\Settings\DeductionController;
@@ -174,6 +176,18 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
             ->name('hris.employee.account');
         Route::put('employee/account/{employee_no}', [AccountController::class, 'save'])
             ->name('hris.employee.account');
+
+        # EARNINGS
+        Route::get('employee/earnings/{employee_no}', [HrisEarningsController::class, 'index'])
+            ->name('hris.employee.earnings');
+        Route::post('employee/earnings/{employee_no}', [HrisEarningsController::class, 'save'])
+            ->name('hris.employee.earnings');
+
+        # DEDUCTIONS
+        Route::get('employee/deductions/{employee_no}', [HrisDeductionsController::class, 'index'])
+            ->name('hris.employee.deductions');
+        Route::post('employee/deductions/{employee_no}', [HrisDeductionsController::class, 'save'])
+            ->name('hris.employee.deductions');
 
     });
 

@@ -17,9 +17,15 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('events_announcements')
                 ->onDelete('set null');
-            $table->date('from_date');
-            $table->time('from_time');
-            $table->date('to_date');
+            $table->date('date');
+            $table->enum('type', [
+                'whole_day',
+                'half_day',
+            ]);
+            $table->time('from_time')
+                ->nullable();
+            $table->time('to_time')
+                ->nullable();
             $table->timestamps();
         });
     }

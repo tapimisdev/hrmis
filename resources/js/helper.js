@@ -41,7 +41,7 @@ export function fieldError(error) {
             const $field = $(`[id="${fieldName}"]`);
             $field.addClass('is-invalid');
             $field.closest('.mb-3').find('.error-field').text(errorMessage[0]);
-
+            console.log(fieldName)
             if (!firstErrorField) {
                 firstErrorField = $field;
             }
@@ -53,7 +53,6 @@ export function fieldError(error) {
                 $('html, body').animate({
                     scrollTop: firstErrorField.offset().top - 500 
                 }, 600, 'swing');
-                console.log(123);
             }, 100);
             
 
