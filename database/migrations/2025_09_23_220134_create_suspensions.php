@@ -11,12 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('suspensions', function (Blueprint $table) {
+        Schema::create('suspension', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('events_announcements_id')
-                ->nullable()
-                ->constrained('events_announcements')
-                ->onDelete('set null');
+            $table->unsignedBigInteger('events_announcements_id');
+            $table->string('name');
+            $table->longText('description')
+                ->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('suspension_dates', function(Blueprint $table) {
+            $table->id();
+            $table->foreignId('suspension_id')
+                ->constrained('suspension')
+                ->onDelete('cascade');
             $table->date('date');
             $table->enum('type', [
                 'whole_day',
@@ -26,7 +34,6 @@ return new class extends Migration
                 ->nullable();
             $table->time('to_time')
                 ->nullable();
-            $table->timestamps();
         });
     }
 
@@ -35,6 +42,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('suspensions');
+        Schema::dropIfExists('suspension_dates');
+        Schema::dropIfExists('suspension');
     }
 };

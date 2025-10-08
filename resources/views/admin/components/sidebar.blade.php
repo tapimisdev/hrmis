@@ -88,6 +88,11 @@
                         </a>
                     </li>
                     <li class="nested-item px-3 py-2">
+                        <a href="{{ route('services.suspensions.index') }}" class="d-flex gap-2 align-items-center">
+                            <i class="fa-solid fa-chart-simple"></i> Suspensions
+                        </a>
+                    </li>
+                    <li class="nested-item px-3 py-2">
                         <a href="{{ route('services.leaves.index') }}" class="d-flex gap-2 align-items-center">
                             <i class="fa-solid fa-chart-simple"></i> Leave Application
                         </a>

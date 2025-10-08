@@ -43,4 +43,6 @@ return [
     // Date rules
     'after_or_equal' => 'Date must be today or after :date.',
     'after'          => 'Date must be after :date.',
+  
+    'required_if'    => 'Required'
 ];

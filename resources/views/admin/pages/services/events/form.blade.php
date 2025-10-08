@@ -61,7 +61,7 @@
                         </div>
                         <div class="col-12 col-md-12 mb-3">
                             <label class="mb-2" for="tags">Tags <span class="text-danger">*</span></label>
-                            <select name="tags[]" id="tags" class="form-select select2" multiple required>
+                            <select name="tags[]" id="tags" class="form-select select2" multiple>
                                 <optgroup label="General Government">
                                     <option value="announcement" {{ in_array('announcement', $data['tags'] ?? []) ? 'selected' : '' }}>Announcement</option>
                                     <option value="advisory" {{ in_array('advisory', $data['tags'] ?? []) ? 'selected' : '' }}>Advisory</option>
@@ -142,7 +142,7 @@
                         </div>
                         <div class="col-12 col-md-12 mb-3">
                             <label class="mb-2" for="posted_by">Posted / Authored By <span class="text-danger">*</span></label>
-                            <select name="posted_by[]" id="posted_by" class="form-select select2" multiple required>
+                            <select name="posted_by[]" id="posted_by" class="form-select select2" multiple>
                                 <option value=""> - CHOOSE - </option>
                                 @php
                                     $postedByIds = !empty($data['posted_by']) ? array_column($data['posted_by'], 'id') : [];
@@ -205,34 +205,125 @@
                                 @php
                                     $suspensions = old('suspensions', $data['suspensions'] ?? [ [] ]);
                                 @endphp
-                                @foreach ($suspensions as $index => $suspension)
-                                <div class="suspension-row row g-2 mb-2">
-                                    <div class="col-md-3">
-                                        <label for="suspensions_{{ $index }}_date" class="form-label">Date</label>
-                                        <input type="date" class="form-control" name="suspensions[{{ $index }}][date]" value="{{ $suspension['date'] ?? '' }}">
+                                @if ($isEdit && !empty($data['suspensions']))
+                                    @foreach ($suspensions as $index => $suspension)
+                                        <div class="suspension-row row g-2 mb-2">
+                                            <div class="col-md-3 mb-3">
+                                                <label for="suspensions.{{ $index }}.date" class="form-label">Date</label>
+                                                <input type="date"
+                                                    class="form-control"
+                                                    name="suspensions[{{ $index }}][date]"
+                                                    id="suspensions.{{ $index }}.date"
+                                                    value="{{ $suspension['date'] ?? '' }}">
+                                                <div class="error-field"></div>
+                                            </div>
+
+                                            <div class="col-md-3 mb-3">
+                                                <label for="suspensions.{{ $index }}.type" class="form-label">Type</label>
+                                                <select class="form-select suspend-select"
+                                                        name="suspensions[{{ $index }}][type]"
+                                                        id="suspensions.{{ $index }}.type">
+                                                    <option value="whole_day"
+                                                        {{ ($suspension['type'] ?? '') === 'whole_day' ? 'selected' : '' }}>
+                                                        Whole Day
+                                                    </option>
+                                                    <option value="half_day"
+                                                        {{ ($suspension['type'] ?? '') === 'half_day' ? 'selected' : '' }}>
+                                                        Half Day
+                                                    </option>
+                                                </select>
+                                                <div class="error-field"></div>
+                                            </div>
+
+                                            <div class="col-md-2 mb-3">
+                                                <label for="suspensions.{{ $index }}.from_time" class="form-label">From Time</label>
+                                                <input type="time"
+                                                    class="form-control"
+                                                    name="suspensions[{{ $index }}][from_time]"
+                                                    id="suspensions.{{ $index }}.from_time"
+                                                    value="{{ \Carbon\Carbon::parse($suspension['from_time'])->format('H:i') }}"
+                                                    {{ ( ($suspension['type'] ?? '') !== 'half_day' ) ? 'disabled' : '' }}>
+                                                <div class="error-field"></div>
+                                            </div>
+
+                                            <div class="col-md-2 mb-3">
+                                                <label for="suspensions.{{ $index }}.to_time" class="form-label">To Time</label>
+                                                <input type="time"
+                                                    class="form-control"
+                                                    name="suspensions[{{ $index }}][to_time]"
+                                                    id="suspensions.{{ $index }}.to_time"
+                                                    value="{{ \Carbon\Carbon::parse($suspension['to_time'])->format('H:i') }}"
+                                                    {{ ( ($suspension['type'] ?? '') !== 'half_day' ) ? 'disabled' : '' }}>
+                                                <div class="error-field"></div>
+                                            </div>
+
+                                            <div class="col-md-2 d-flex align-items-center">
+                                                <button type="button" class="btn btn-danger btn-remove-row">Delete</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <div class="suspension-row row g-2 mb-2">
+                                        <div class="col-md-3 mb-3">
+                                            <label for="suspensions.0.date" class="form-label">Date</label>
+                                            <input type="date"
+                                                class="form-control"
+                                                name="suspensions[0][date]"
+                                                id="suspensions.0.date"
+                                                value="{{ $suspension['date'] ?? '' }}">
+                                            <div class="error-field"></div>
+                                        </div>
+
+                                        <div class="col-md-3 mb-3">
+                                            <label for="suspensions.0.type" class="form-label">Type</label>
+                                            <select class="form-select suspend-select"
+                                                    name="suspensions[0][type]"
+                                                    id="suspensions.0.type">
+                                                <option value="whole_day"
+                                                    {{ ($suspension['type'] ?? '') === 'whole_day' ? 'selected' : '' }}>
+                                                    Whole Day
+                                                </option>
+                                                <option value="half_day"
+                                                    {{ ($suspension['type'] ?? '') === 'half_day' ? 'selected' : '' }}>
+                                                    Half Day
+                                                </option>
+                                            </select>
+                                            <div class="error-field"></div>
+                                        </div>
+
+                                        <div class="col-md-2 mb-3">
+                                            <label for="suspensions.0.from_time" class="form-label">From Time</label>
+                                            <input type="time"
+                                                class="form-control"
+                                                name="suspensions[0][from_time]"
+                                                id="suspensions.0.from_time"
+                                                value="{{ isset($suspension['from_time']) ? \Carbon\Carbon::parse($suspension['from_time'])->format('H:i') : '' }}"
+                                                {{ (($suspension['type'] ?? '') !== 'half_day') ? 'disabled' : '' }}>
+                                            <div class="error-field"></div>
+                                        </div>
+
+                                        <div class="col-md-2 mb-3">
+                                            <label for="suspensions.0.to_time" class="form-label">To Time</label>
+                                            <input type="time"
+                                                class="form-control"
+                                                name="suspensions[0][to_time]"
+                                                id="suspensions.0.to_time"
+                                                value="{{ isset($suspension['to_time']) ? \Carbon\Carbon::parse($suspension['to_time'])->format('H:i') : '' }}"
+                                                {{ (($suspension['type'] ?? '') !== 'half_day') ? 'disabled' : '' }}>
+                                            <div class="error-field"></div>
+                                        </div>
+
+                                        <div class="col-md-2 d-flex align-items-center">
+                                            <button type="button" class="btn btn-danger btn-remove-row">Delete</button>
+                                        </div>
                                     </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Type</label>
-                                        <select class="form-select" name="suspensions[{{ $index }}][type]">
-                                            <option value="whole_day" {{ ($suspension['type'] ?? '') === 'whole_day' ? 'selected' : '' }}>Whole Day</option>
-                                            <option value="half_day" {{ ($suspension['type'] ?? '') === 'half_day' ? 'selected' : '' }}>Half Day</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">From Time</label>
-                                        <input type="time" class="form-control" name="suspensions[{{ $index }}][from_time]" value="{{ $suspension['from_time'] ?? '' }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">To Time</label>
-                                        <input type="time" class="form-control" name="suspensions[{{ $index }}][to_time]" value="{{ $suspension['to_time'] ?? '' }}">
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end">
-                                        <button type="button" class="btn btn-danger btn-remove-row">Delete</button>
-                                    </div>
-                                </div>
-                                @endforeach
+
+                                @endif
                             </div>
-                            <button type="button" class="btn btn-primary mt-2 text-uppercase px-4" id="add_suspension_row">Add Suspension</button>
+
+                            <button type="button" class="btn btn-primary mt-2 text-uppercase px-4" id="add_suspension_row">
+                                Add Suspension
+                            </button>
                         </div>
 
                     </div>
@@ -291,12 +382,10 @@
 @section('scripts')
 <script>
     $(function () {
-        let attachmentIndex = 0; 
+        let attachmentIndex = 0;
 
-        // Add attachment
         $('#add-attachment').click(function () {
-            attachmentIndex++; // increment each time
-
+            attachmentIndex++;
             let html = `
             <div class="col-12 mb-3 attachment-item" id="attachment_${attachmentIndex}">
                 <div class="d-flex gap-3 align-items-center">
@@ -310,26 +399,21 @@
             $('#attachments-container').append(html);
         });
 
-        // Remove attachment
         $(document).on('click', '.remove-attachment', function () {
             let totalAttachments = $('.attachment-item').length;
             if (totalAttachments <= 1) {
                 alert("At least one attachment is required.");
                 return;
             }
-
             let id = $(this).data('id');
-
             if (id && !id.toString().startsWith('new-')) {
                 $('#attachments-container').append(
                     `<input type="hidden" name="remove_attachments[]" value="${id}">`
                 );
             }
-
             $(this).closest('.attachment-item').remove();
         });
 
-        // Toggle suspension date range
         function toggleSuspensionRange() {
             if ($("#is_suspension").is(":checked")) {
                 $("#suspension_date_range").slideDown();
@@ -337,11 +421,9 @@
                 $("#suspension_date_range").slideUp();
             }
         }
-
         $("#is_suspension").on("change", toggleSuspensionRange);
-        toggleSuspensionRange(); // run once on load
+        toggleSuspensionRange();
 
-        // Handle create/edit form submission
         const isEdit = @json($isEdit);
         const url = $('#form').attr('action');
         if (!isEdit) {
@@ -350,50 +432,83 @@
             put(url);
         }
 
-        // ==========================================
-        // Suspension Row Logic (Add/Delete Rows)
-        // ==========================================
-
         let suspensionIndex = {{ count(old('suspensions', $data['suspensions'] ?? [[]])) }};
 
-        // Add Suspension Row
         $('#add_suspension_row').click(function () {
             let row = `
             <div class="suspension-row row g-2 mb-2">
-                <div class="col-md-3">
-                    <label class="form-label">Date</label>
-                    <input type="date" class="form-control" name="suspensions[${suspensionIndex}][date]">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label" for="suspensions.${suspensionIndex}.date">Date</label>
+                    <input type="date" class="form-control"
+                        name="suspensions[${suspensionIndex}][date]"
+                        id="suspensions.${suspensionIndex}.date">
+                    <div class="error-field"></div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Type</label>
-                    <select class="form-select" name="suspensions[${suspensionIndex}][type]">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label" for="suspensions.${suspensionIndex}.type">Type</label>
+                    <select class="form-select suspend-select"
+                            name="suspensions[${suspensionIndex}][type]"
+                            id="suspensions.${suspensionIndex}.type">
                         <option value="whole_day">Whole Day</option>
                         <option value="half_day">Half Day</option>
                     </select>
+                    <div class="error-field"></div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">From Time</label>
-                    <input type="time" class="form-control" name="suspensions[${suspensionIndex}][from_time]">
+                <div class="col-md-2 mb-3">
+                    <label class="form-label" for="suspensions.${suspensionIndex}.from_time">From Time</label>
+                    <input type="time" class="form-control"
+                        name="suspensions[${suspensionIndex}][from_time]"
+                        id="suspensions.${suspensionIndex}.from_time" disabled>
+                    <div class="error-field"></div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">To Time</label>
-                    <input type="time" class="form-control" name="suspensions[${suspensionIndex}][to_time]">
+                <div class="col-md-2 mb-3">
+                    <label class="form-label" for="suspensions.${suspensionIndex}.to_time">To Time</label>
+                    <input type="time" class="form-control"
+                        name="suspensions[${suspensionIndex}][to_time]"
+                        id="suspensions.${suspensionIndex}.to_time" disabled>
+                    <div class="error-field"></div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-md-2 d-flex align-items-center">
                     <button type="button" class="btn btn-danger btn-remove-row">Delete</button>
                 </div>
             </div>`;
             $('#suspension_rows').append(row);
+            bindSuspendSelectChange(suspensionIndex);
             suspensionIndex++;
         });
 
-        // Remove Suspension Row
         $(document).on('click', '.btn-remove-row', function () {
             $(this).closest('.suspension-row').remove();
         });
+
+        $('.suspend-select').each(function () {
+            let id = $(this).attr('id');
+            let parts = id.split('.');
+            if (parts.length >= 3) {
+                let index = parts[1];
+                bindSuspendSelectChange(index);
+            }
+        });
+
+        function bindSuspendSelectChange(index) {
+            $(`#suspensions\\.${index}\\.type`).on('change', function () {
+                const val = $(this).val();
+                const fromInput = $(`#suspensions\\.${index}\\.from_time`);
+                const toInput   = $(`#suspensions\\.${index}\\.to_time`);
+                if (val === 'whole_day') {
+                    fromInput.val('').prop('disabled', true);
+                    toInput.val('').prop('disabled', true);
+                } else if (val === 'half_day') {
+                    fromInput.prop('disabled', false);
+                    toInput.prop('disabled', false);
+                }
+            });
+        }
     });
 </script>
 @endsection
+
+
 
 
 

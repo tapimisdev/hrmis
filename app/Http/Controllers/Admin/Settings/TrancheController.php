@@ -50,7 +50,7 @@ class TrancheController extends Controller
         $payload = $request->all();
 
         $validator = Validator::make($payload, [
-            'employment_type_id'   => 'required|exists:employment_types,id',
+            'employment_type_id'   => 'required|exists:employment_types,id|unique:tranche,id',
             'date'              => 'required|date',
             'file'              => 'required|mimes:csv,txt',
         ]);
@@ -151,7 +151,7 @@ class TrancheController extends Controller
         $payload = $request->all();
 
         $validator = Validator::make($payload, [
-            'employment_type_id'   => 'required|exists:employment_types,id',
+            'employment_type_id'   => 'required|exists:employment_types,id|unique:tranche,id',
             'date' => 'required|date',
             'file' => 'nullable|mimes:csv'
         ]);
@@ -260,6 +260,14 @@ class TrancheController extends Controller
     {
         return DataTables::of($query)
             ->addIndexColumn()
+            ->editColumn('name', function($row) {
+                $employment_type = $row->id;
+                $name = DB::table('employment_types')
+                    ->where('id', $row->employment_type_id)
+                    ->value('name');
+
+                return $name;
+            })
             ->editColumn('date', function ($row) {
                 return $row->date;
             })
@@ -319,20 +327,17 @@ class TrancheController extends Controller
                         ->first();
 
             if ($db_tranche_item) {
-                // Determine the step column
-               if ($step === null || $step === '' || $step === 'null') {
+
+                if ($step === null || $step === '' || $step === 'null') {
                     $stepColumn = 'step_1';
                 } else {
                     $stepColumn = 'step_' . $step;
                 }
 
-                // Get the total salary from the selected step
                 $total_salary = $db_tranche_item->{$stepColumn} ?? null;
 
-                // Convert to float if exists
                 $total_salary = $total_salary ? (float) str_replace(',', '', $total_salary) : null;
 
-                // Calculate daily rate
                 $daily_rate = $total_salary !== null ? round($total_salary / 22, 2) : null;
 
             }

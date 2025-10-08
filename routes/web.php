@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\Hris\EarningsController as HrisEarningsController
 use App\Http\Controllers\Admin\Hris\DeductionsController as HrisDeductionsController;
 use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
 use App\Http\Controllers\Admin\Services\EventsController;
+use App\Http\Controllers\Admin\Services\SuspensionController;
 use App\Http\Controllers\Admin\Settings\DeductionController;
 use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
@@ -197,6 +198,9 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
 
         # EVENTS AND ANNOUNCEMENTS
         route::resource('events', EventsController::class)->names('services.events');
+
+        # SUSPENSIONS
+        Route::resource('suspensions', SuspensionController::class)->names('services.suspensions');
 
         # LEAVE APPLICATIONS
         route::get('leave/application', [AdminLeaveApplicationController::class, 'index'])->name('services.leaves.index');
