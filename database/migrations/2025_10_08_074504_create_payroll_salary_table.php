@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('deduction_amount', 12, 2);
             $table->decimal('netpay_amount', 12, 2);
             $table->date('payroll_date');
+            $table->foreignId('processed_by_id')->constrained('users');
             $table->enum('status', [
                 'draft',
                 'pending',

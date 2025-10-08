@@ -7,11 +7,19 @@
 @section('content')
     <div class="container p-4 pb-5">
         <x-header title="Salary Payroll" subtitle="View salary payroll in this module">
-            <button class="btn btn-secondary text-uppercase">
+            <a href="{{ route('salary.create') }}" class="btn btn-secondary text-uppercase create-payroll">
                 <i class="fa fa-plus py-3 px-2"></i> Create Payroll
-            </button>
+            </a>
         </x-header>
 
         <payroll-index/>
     </div>
+@endsection
+
+@section('scripts')
+<script>
+    $(function() {
+
+    })
+</script>
 @endsection
