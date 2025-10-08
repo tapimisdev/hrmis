@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
 use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\TrancheController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
+use App\Http\Controllers\Admin\Payroll\Api\SalaryApiController;
 use App\Http\Controllers\Api\AddTimeApiController;
 use App\Http\Controllers\Api\Employee;
 use App\Http\Controllers\Api\LeavesApiController;
@@ -32,11 +33,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 // Protected routes (require Bearer token from Passport)
 Route::middleware('auth:sanctum')->group(function () {
-    
+    # ORGANIZATION
     Route::get('employment-types', [EmploymentTypesController::class, 'index']);
     Route::get('tranches', [TrancheController::class, 'tranches']);
     Route::get('compute-salary/{trach_id}/{salary_grade}/{step}', [TrancheController::class, 'compute_salary']);
-    
     Route::get('divisions', [Organization::class, 'division'])
         ->name('api.divisions');
     Route::get('units/{division_id}', [Organization::class, 'unit'])
@@ -44,20 +44,25 @@ Route::middleware('auth:sanctum')->group(function () {
 
     # EMPLOYEE
     Route::prefix('employee')->group(function() {
-
         # Upload employee file with some details  ##First step in importing employees
         Route::post('upload', [ImportEmployeeController::class, 'upload']);
         Route::post('import', [ImportEmployeeController::class, 'store']);
 
         Route::get('children', [Employee::class, 'children'])
             ->name('api.employee.children');
-
     });
 
+    # PAYROLL
+    Route::prefix('payroll')->group(function() {
+        Route::post('salary', [SalaryApiController::class, 'getList']);
+    });
+
+    # TIMEKEEPING
     Route::prefix('timekeeping')->group(function() {
         Route::post('import-timelogs', [UploadTimeLogController::class, 'store']);
     });
 
+    # LEAVES
     Route::get('leaves', [LeavesApiController::class, 'getLeaves'])
             ->name('api.get-leaves');
 
