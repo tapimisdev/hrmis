@@ -33,9 +33,9 @@ use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
 use App\Http\Controllers\Admin\Settings\TrancheController;
 use App\Http\Controllers\Admin\Settings\ApproverController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
-use App\Http\Controllers\Admin\Timekeeping\SalaryPayrollController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
+use App\Http\Controllers\Admin\Payroll\SalaryController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
@@ -217,7 +217,7 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
     Route::prefix('timekeeping')->group(function() {
         # TIMELOGS
         Route::resource('timelogs', TimelogController::class)->only('index');
-        Route::resource('upload-timelogs', UploadTimeLogController::class)->only('index');
+        Route::resource('upload-timelogs', UploadTimeLogController::class)->only('index')->names(['index' => 'import.timelogs.index']);
         
         # API TIMEKEEPING
         Route::get('daily-time-record/{id}', [DailyTimeRecordController::class, 'index'])
@@ -230,7 +230,7 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
 
     Route::prefix('payroll')->group(function() {
         # SALARY PAYROLL
-        Route::resource('salary', SalaryPayrollController::class);
+        Route::resource('salary', SalaryController::class)->only('index', 'create', 'store', 'destroy');
     });
 
     Route::prefix('settings')->group(function() {

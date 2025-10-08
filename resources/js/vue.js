@@ -6,6 +6,10 @@ import DashboardVue from "./admin/dashboard/DashboardVue.vue";
 import DtrViewVue from './admin/timekeeping/DtrViewVue.vue';
 import ImportEmployeeVue from './admin/hris/ImportEmployeeVue.vue';
 import UploadTimelogVue from './admin/timekeeping/UploadTimelogVue.vue';
+import PayrollStepper from './admin/payroll/create/PayrollStepper.vue';
+
+// payroll
+import PayrollIndex from './admin/payroll/IndexVue.vue';
 
 const authApp = createApp({
   components: {
@@ -13,7 +17,9 @@ const authApp = createApp({
     DashboardVue,
     DtrViewVue,
     ImportEmployeeVue,
-    UploadTimelogVue
+    UploadTimelogVue,
+    PayrollIndex,
+    PayrollStepper
   },
 });
 
