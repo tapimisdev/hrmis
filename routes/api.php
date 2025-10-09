@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\TrancheController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
 use App\Http\Controllers\Admin\Payroll\Api\SalaryApiController;
+use App\Http\Controllers\Admin\Payroll\SalaryController;
 use App\Http\Controllers\Api\AddTimeApiController;
 use App\Http\Controllers\Api\Employee;
 use App\Http\Controllers\Api\LeavesApiController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\Organization;
 use App\Http\Controllers\Employee\LeaveApplicationController;
 use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
 use App\Http\Controllers\Api\CountriesApiController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +37,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
     # ORGANIZATION
     Route::get('employment-types', [EmploymentTypesController::class, 'index']);
+    Route::get('get-employment-types', [EmploymentTypesController::class, 'getEmploymentTypes']);
     Route::get('tranches', [TrancheController::class, 'tranches']);
     Route::get('compute-salary/{trach_id}/{salary_grade}/{step}', [TrancheController::class, 'compute_salary']);
     Route::get('divisions', [Organization::class, 'division'])
@@ -50,6 +53,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('children', [Employee::class, 'children'])
             ->name('api.employee.children');
+    });
+
+    # payroll
+    Route::prefix('payroll')->group(function () {
+        Route::post('validate-and-fetch-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
+    });
+
+    Route::get('/users', function () {
+        $users = User::role('hr')->get(); 
+        return response()->json($users);
     });
 
     # PAYROLL

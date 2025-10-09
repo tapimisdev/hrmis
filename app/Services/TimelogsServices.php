@@ -409,9 +409,10 @@ class TimelogsServices {
      *     @type string      $remarks          Remarks/reason (e.g., "absent", "holiday")
     * }
     */
-    public function insertNoData($remarks, $userId, $double = 0)
+    public function insertNoData($remarks, $userId, $today, $double = 0)
     {
         return [
+            'date'              => $today,
             'user_id'           => $userId,
             'time_in'           => null,
             'time_out'          => null,

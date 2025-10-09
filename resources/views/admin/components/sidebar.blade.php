@@ -137,15 +137,15 @@
         </li>
 
         {{-- Settings --}}
-        <li class="sidebar-item {{ Str::contains(request()->path(), 'settings') ? 'active' : '' }}">
+        <li class="sidebar-item {{ Str::contains(request()->path(), 'maintenance') ? 'active' : '' }}">
             <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between"
-               data-bs-toggle="collapse" data-bs-target="#settings"
+               data-bs-toggle="collapse" data-bs-target="#maintenance"
                role="button" aria-expanded="false" aria-controls="settings">
                 <div>
-                    <i class="fa-solid fa-gear px-2"></i> Settings
+                    <i class="fa-solid fa-gear px-2"></i> Maintenance
                 </div>
             </a>
-            <div class="collapse collapsable" id="settings" data-bs-parent=".sidebar-list">
+            <div class="collapse collapsable" id="maintenance" data-bs-parent=".sidebar-list">
                 <ul class="nested-list">
                     <li class="nested-item px-3 py-2">
                         <a href="{{ route('organization.index', ['tab' => 'agency']) }}" class="d-flex gap-2 align-items-center">

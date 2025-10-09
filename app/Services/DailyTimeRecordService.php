@@ -71,6 +71,8 @@ class DailyTimeRecordService {
         $restDaysCache = [];
 
         // Totals
+        $TOTAL_INCOMPLETE_LOGS = 0;
+        $TOTAL_PENDING_LEAVES = 0;
         $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
         $TOTAL_OVERTIME = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
 
@@ -109,6 +111,7 @@ class DailyTimeRecordService {
                     $shift = $shiftsCache[$shift_id];
 
                     $computedData[] = [
+                        'date'              => $logDate,
                         'user_id'           => $userId,
                         'time_in'           => null,
                         'time_out'          => null,
@@ -160,19 +163,20 @@ class DailyTimeRecordService {
 
             if ($empty_log) {
                 if ($is_future) {
-                    $computedData[] = $this->timelogs_services->insertNoData($is_leave ? $leave_status : $remarks, $userId);
+                    $computedData[] = $this->timelogs_services->insertNoData($is_leave ? $leave_status : $remarks, $userId, $date['date']);
                     continue;
                 }
 
                 if (!$is_future && !$is_leave && !$is_restday) {
                     $remarks[] = 'absent';
                     $TOTAL_ABSENT++;
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId);
+                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
                     continue;
                 }
 
                 if ($leave_status === 'pending leave') {
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId);
+                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $TOTAL_PENDING_LEAVES++;
                     continue;
                 }
             }
@@ -201,7 +205,9 @@ class DailyTimeRecordService {
 
             if (!$timeInCarbon || !$timeOutCarbon) {
                 $remarks[] = 'incomplete log';
+                $TOTAL_INCOMPLETE_LOGS++;
                 $computedData[] = [
+                    'date'              => $logDate,
                     'user_id'          => $userId,
                     'time_in'          => $timeInCarbon,
                     'time_out'         => $timeOutCarbon,
@@ -243,6 +249,7 @@ class DailyTimeRecordService {
 
             /** ---------------- FINAL DATA ROW ---------------- **/
             $computedData[] = [
+                'date'              => $logDate,
                 'user_id'           => $userId,
                 'time_in'           => $timeInCarbon,
                 'time_out'          => $timeOutCarbon,
@@ -262,6 +269,8 @@ class DailyTimeRecordService {
         /** ---------------- SUMMARY ---------------- **/
         $summary = [
             ['label' => 'Total HRS',        'value' => intval($TOTAL_HOURS / 60) . ' HRS'],
+            ['label' => 'Incomplete Logs',  'value' => $TOTAL_INCOMPLETE_LOGS],
+            ['label' => 'Pending Leaves',   'value' => $TOTAL_PENDING_LEAVES],
             ['label' => 'Overtime',         'value' => $TOTAL_OVERTIME . ' MINS'],
             ['label' => 'Late / Undertime', 'value' => $TOTAL_UT . ' MINS'],
             ['label' => 'Absent',           'value' => $TOTAL_ABSENT . ' Days'],
@@ -275,7 +284,6 @@ class DailyTimeRecordService {
             'summary'      => $summary,
         ];
     }
-
 
     protected function getUserDefault($user_id)
     {

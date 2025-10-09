@@ -233,7 +233,7 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         Route::resource('salary', SalaryController::class)->only('index', 'create', 'store', 'destroy');
     });
 
-    Route::prefix('settings')->group(function() {
+    Route::prefix('maintenance')->group(function() {
         # ROLES AND PERMISSIONS
         Route::resource('role-and-permission', RolesAndPermissionController::class);
         

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Admin\Payroll;
+namespace App\Http\Requests\Admin\Payroll\Steps;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreSalaryRequest extends FormRequest
+class ValidateCreatePayrollRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,19 +23,14 @@ class StoreSalaryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'label'              => 'required|string|max:50',
+            'label' => 'required|string|max:50',
             'employment_type_id' => 'required|integer|exists:employment_types,id',
-            'cutoff'             => [
+            'cutoff' => [
                 'required',
                 'string',
-                Rule::in(['first_cutoff', 'second_cutoff'])
+                Rule::in(['first_cutoff', 'second_cutoff']),
             ],
             'date' => 'required|date|before_or_equal:today',
-            'aprrovers.*'        => 'required|array',
-            'approvers.*.id'     => [
-                'required',
-                Rule::exists('users', 'id')->where('role', 'HR'),
-            ],
         ];
     }
 }

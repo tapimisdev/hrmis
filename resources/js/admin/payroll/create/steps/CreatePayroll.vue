@@ -1,69 +1,65 @@
 <template>
-  <div>
-    <h5>Step 1: Create Payroll</h5>
-    <p class="text-muted">Fill in all payroll details and review before sending it for approval.</p>
-    <div class="row mb-3">
-      <!-- Date Field -->
-      <div class="col-12 col-md-6 mb-3">
-        <div class="d-flex gap-2">
-          <label class="form-label fw-bold">Label</label>
-          <span v-if="errors.label" class="text-danger small">
-            ({{ errors.label[0] }})
-          </span>
-        </div>
-
+  <div class="">
+    <h5 class="mb-3 text-primary text-uppercase">Step 1: Create Payroll</h5>
+    <p class="text-muted mb-4">Fill in all payroll details and review before sending it for approval.</p>
+    <div class="row g-3">
+      <!-- Label Field -->
+      <div class="col-12 col-md-5">
+        <label class="form-label fw-bold">Label</label>
         <input
           type="text"
           class="form-control"
-          v-model="form.label"
+          v-model="localForm.label"
           :class="{ 'is-invalid': errors.label }"
         />
+        <small v-if="errors.label" class="text-danger">{{ errors.label[0] }}</small>
       </div>
 
       <!-- Date Field -->
-      <div class="col-12 col-md-6 mb-3">
-        <div class="d-flex gap-2">
-          <label class="form-label fw-bold">Date</label>
-          <span v-if="errors.date" class="text-danger small">
-            ({{ errors.date[0] }})
-          </span>
-        </div>
-
+      <div class="col-12 col-md-6">
+        <label class="form-label fw-bold">Date</label>
         <input
           type="date"
           class="form-control"
-          v-model="form.date"
+          v-model="localForm.date"
           :class="{ 'is-invalid': errors.date }"
         />
+        <small v-if="errors.date" class="text-danger">{{ errors.date[0] }}</small>
       </div>
 
-      <!-- Dynamic Select Fields -->
-      <div
-        v-for="(field, index) in selects"
-        :key="index"
-        class="col-12 col-md-6 mb-3"
-      >
-        <div class="d-flex gap-2">
-          <label class="form-label fw-bold">{{ field.label }}</label>
-          <span v-if="errors[field.model]" class="text-danger small">
-            ({{ errors[field.model][0] }})
-          </span>
-        </div>
-
+      <!-- Cutoff Select -->
+      <div class="col-12 col-md-7">
+        <label class="form-label fw-bold">Cutoff</label>
         <select
           class="form-select"
-          v-model="form[field.model]"
-          :class="{ 'is-invalid': errors[field.model] }"
+          v-model="localForm.cutoff"
+          :class="{ 'is-invalid': errors.cutoff }"
         >
-          <option value="">{{ field.placeholder }}</option>
+          <option value="">-- CHOOSE CUTOFF --</option>
+          <option value="first_cutoff">1st Cutoff</option>
+          <option value="second_cutoff">2nd Cutoff</option>
+        </select>
+        <small v-if="errors.cutoff" class="text-danger">{{ errors.cutoff[0] }}</small>
+      </div>
+
+      <!-- Employment Type Select (Static) -->
+      <div class="col-12 col-md-5">
+        <label class="form-label fw-bold">Employment Type</label>
+        <select
+          class="form-select"
+          v-model="localForm.employment_type_id"
+          :class="{ 'is-invalid': errors.employment_type_id }"
+        >
+          <option value="">-- CHOOSE EMPLOYMENT TYPE --</option>
           <option
-            v-for="(option, i) in field.options"
-            :key="i"
-            :value="option.value ?? option"
+            v-for="(type, index) in employment_types"
+            :key="index"
+            :value="type.id ?? type"
           >
-            {{ option.text ?? option }}
+            {{ type.name }}
           </option>
         </select>
+        <small v-if="errors.employment_type_id" class="text-danger">{{ errors.employment_type_id[0] }}</small>
       </div>
     </div>
   </div>
@@ -71,70 +67,43 @@
 
 <script>
 export default {
+  props: {
+    modelValue: Object,
+    errors: Object
+  },
+  emits: ["update:modelValue"],
   data() {
     const token = localStorage.getItem("auth_token");
     return {
       token,
       loading: false,
-      errors: {},
-      form: {
-        year: new Date().getFullYear(),
-        month: new Date().getMonth() + 1,
-        cutoff: "",
-        status: "",
-        date: new Date().toISOString().split("T")[0], // default today's date
+      localForm: {
+        label: '',
+        cutoff: '',
+        employment_type_id: '',
+        date: new Date().toISOString().split("T")[0],
       },
-      selects: [
-        {
-          label: "Cutoff",
-          model: "cutoff",
-          placeholder: "-- CHOOSE CUTOFF --",
-          options: [
-            { text: "1st Cutoff", value: "first_cutoff" },
-            { text: "2nd Cutoff", value: "second_cutoff" }
-          ]
-        },
-        {
-          label: "Status",
-          model: "status",
-          placeholder: "-- CHOOSE STATUS --",
-          options: [
-            { text: "Draft", value: "draft" },
-            { text: "Pending Approval", value: "pending" },
-            { text: "Approved", value: "approved" },
-            { text: "For Releasing", value: "for_releasing" },
-            { text: "Completed", value: "completed" },
-            { text: "Cancelled", value: "cancelled" }
-          ]
-        }
-      ]
+      employment_types: [],
     };
   },
-
+  watch: {
+    localForm: {
+      deep: true,
+      handler(newVal) {
+        this.$emit("update:modelValue", newVal);
+      },
+    },
+  },
+  created() {
+    this.fetchData('employment_types', '/api/get-employment-types', true);
+  },
   methods: {
-    submitPayroll() {
-      this.errors = {};
-      this.loading = true;
-
-      axios.post("/api/payroll/salary", this.form, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${this.token}`
-        }
-      })
-      .then((response) => {
-        
-      })
-      .catch((error) => {
-        if (error.response?.status === 422) {
-          this.errors = error.response.data.errors;
-        } else {
-          Swal.fire("Error", error.response?.data?.message || "Something went wrong.", "error");
-        }
-      }).finally(() => {
-        this.loading = false;
-      });
-    }
+    fetchData(stateKey, url, useDataWrapper = false) {
+      axios.get(url, { headers: { Authorization: `Bearer ${this.token}` } })
+        .then(response => {
+          this[stateKey] = useDataWrapper ? response.data.data : response.data;
+        });
+    },
   }
 };
 </script>

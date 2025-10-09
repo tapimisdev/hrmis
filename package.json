@@ -13,6 +13,9 @@
         "vite": "^5.0.0"
     },
     "dependencies": {
+        "@fullcalendar/daygrid": "^6.1.19",
+        "@fullcalendar/interaction": "^6.1.19",
+        "@fullcalendar/vue3": "^6.1.19",
         "@vitejs/plugin-vue": "^5.0.4",
         "bootstrap": "^5.3.8",
         "chart.js": "^4.5.0",

@@ -15,12 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('employee_no');
             $table->foreignId('tranche_id')
-                ->nullable()
                 ->constrained('tranche')
                 ->onDelete('restrict');
             
-            $table->integer('salary_grade')
-                ->nullable();
+            $table->integer('salary_grade');
 
             $table->integer('step')
                 ->nullable();
@@ -28,7 +26,7 @@ return new class extends Migration
             $table->enum('salary_frequency', [
                 'once',
                 'twice'
-            ])->nullable();
+            ]);
 
             $table->enum('salary_cutoff', [
                 'first_cutoff',
@@ -45,7 +43,7 @@ return new class extends Migration
             $table->enum('salary_basis', [
                 'monthly',
                 'daily'
-            ])->nullable();
+            ]);
 
             $table->string('amount');
             $table->string('daily_rate');

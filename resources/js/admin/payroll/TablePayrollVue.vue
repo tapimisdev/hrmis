@@ -5,6 +5,7 @@
       <thead>
         <tr>
           <th>Payroll #</th>
+          <th>Label</th>
           <th>Cutoff</th>
           <th>Period Covered</th>
           <th>Emp</th>
@@ -19,6 +20,7 @@
       </thead>
       <tbody>
         <tr v-for="payroll in payrolls" :key="payroll.id">
+          <td>{{ payroll.label }}</td>
           <td>{{ payroll.payroll_no }}</td>
           <td>{{ payroll.cutoff }}</td>
           <td>{{ payroll.period_covered }}</td>
@@ -63,12 +65,12 @@
             </td>
         </tr>
         <tr v-if="!loading && payrolls.length === 0">
-          <td colspan="11" class="text-center text-muted py-3">
+          <td colspan="12" class="text-center text-muted py-3">
             No payroll records found.
           </td>
         </tr>
         <tr v-if="loading">
-          <td colspan="11" class="text-center text-muted py-3">
+          <td colspan="12" class="text-center text-muted py-3">
             Loading...
           </td>
         </tr>

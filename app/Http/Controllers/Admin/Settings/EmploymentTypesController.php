@@ -11,6 +11,14 @@ use Yajra\DataTables\Facades\DataTables;
 
 class EmploymentTypesController extends Controller
 {
+    public function getEmploymentTypes()
+    {
+        $query = DB::table('employment_types')
+                ->orderByDesc('id')
+                ->get();
+                
+        return response(['data' => $query, 'status' => 'success'], 200);
+    }
 
     /**
      * Display a listing of the resource.
