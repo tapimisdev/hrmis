@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\Hris\AccountController;
 use App\Http\Controllers\Admin\Hris\EarningsController as HrisEarningsController;
 use App\Http\Controllers\Admin\Hris\DeductionsController as HrisDeductionsController;
 use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
+use App\Http\Controllers\Admin\Payroll\SalaryController;
 use App\Http\Controllers\Admin\Services\EventsController;
 use App\Http\Controllers\Admin\Services\SuspensionController;
 use App\Http\Controllers\Admin\Settings\DeductionController;
