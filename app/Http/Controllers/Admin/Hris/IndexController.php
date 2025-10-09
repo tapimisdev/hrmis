@@ -118,7 +118,7 @@ class IndexController extends Controller
                     $profile = Storage::url('uploads/employees/' . $row->employee_no . '/profile/' . $row->profile);
                 } else {
                     $profile = 'https://ui-avatars.com/api/?name='
-                        . urlencode(($row->firstname ?? '') . ' ' . ($row->lastname ?? ''))
+                        . urlencode(($row->firstname ?? '?') . ' ' . ($row->lastname ?? '?'))
                         . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
                 }
 

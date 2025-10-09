@@ -203,7 +203,7 @@
                 },
                 dataType: "json",
                 success: function (response) {
-                    console.log(response);
+                    
                     Object.entries(response).forEach(([key, value]) => {
                         if (key === 'documents') {
                             return; 

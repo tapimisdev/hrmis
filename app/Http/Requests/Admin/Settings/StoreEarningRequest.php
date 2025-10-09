@@ -29,8 +29,8 @@ class StoreEarningRequest extends FormRequest
                 'max:100',
                 Rule::unique('earnings', 'name')->ignore($this->route('earning')),
             ],
-            'first_term' => 'nullable|numeric|min:0',
-            'second_term' => 'nullable|numeric|min:0',
+            'first_term' => 'required|numeric|min:0',
+            'second_term' => 'required|numeric|min:0',
             'is_taxable' => 'required|boolean',
         ];
     }

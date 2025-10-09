@@ -32,15 +32,15 @@ class PersonalController extends Controller
 
         $profile = $data->profile ?? null;
 
-        if ($profile) {
-            $data->profile = Storage::url('uploads/employees/' . $employee_no . '/profile/' . $data->profile);
+        if (!is_null($profile)) {
+            $profile = Storage::url('uploads/employees/' . $employee_no . '/profile/' . $profile);
         } else {
-            $data->profile = 'https://ui-avatars.com/api/?name=' 
-                . urlencode(($data->firstname ?? '') . ' ' . ($data->lastname ?? '')) 
+            $profile = 'https://ui-avatars.com/api/?name=' 
+                . urlencode(($data->firstname ?? '?') . ' ' . ($data->lastname ?? '?')) 
                 . '&background=random&color=fff&font-size=0.5';
         }
 
-        return view('admin.pages.hris.personal', compact('isExists', 'employee_no', 'data'));
+        return view('admin.pages.hris.personal', compact('isExists', 'employee_no', 'data', 'profile'));
 
     }
 

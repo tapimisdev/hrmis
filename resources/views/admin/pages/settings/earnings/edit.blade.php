@@ -32,13 +32,13 @@
                 <div class="row my-3">
                     <div class="col-12 col-md-4 mb-3">
                         <label class="mb-2" for="first_term">First Term Amount <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" id="first_term" name="first_term" class="form-control"
+                        <input type="number" step="0.01" id="first_term" name="first_term" class="form-control" value="0"
                             value="{{ $earnings->first_term ?? '' }}">
                         <div class="text-danger first_term_error error-field"></div>
                     </div>
                     <div class="col-12 col-md-4 mb-3">
                         <label class="mb-2" for="second_term">Second Term Amount <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" id="second_term" name="second_term" class="form-control"
+                        <input type="number" step="0.01" id="second_term" name="second_term" class="form-control" value="0"
                             value="{{ $earnings->second_term ?? '' }}">
                         <div class="text-danger second_term_error error-field"></div>
                     </div>

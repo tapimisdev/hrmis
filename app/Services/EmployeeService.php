@@ -167,6 +167,7 @@ class EmployeeService {
             $query ->select(
                     'employee_information.employee_no',
                     'employee_information.date_hired',
+                    'employee_information.biometrics_id',
                     'employee_information.salary_method',
                     'employee_information.account_status',
                     'employee_information.isDeleted',

@@ -213,7 +213,6 @@
                             'Authorization': `Bearer ${token}`
                         }
                     });
-                    console.log(res.data.data);
                     this.$emit("handle-employee", res.data.data);
                     $('container').animate({ scrollTop: 0 }, 'slow');
                 } catch (error) {

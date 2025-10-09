@@ -32,39 +32,15 @@
 
             <div class="row">
                 <input type="hidden" name="text" id="text" class="level_approver" value="1">
-
-                {{-- Basic Info --}}
-                <div class="col-12 mb-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row">
-                                {{-- Name --}}
-                                <div class="col-12 mb-3">
-                                    <label class="mb-2" for="name">Name <span class="text-danger">*</span></label>
-                                    <input type="text"
-                                           name="name"
-                                           id="name"
-                                           class="form-control"
-                                           value="{{ old('name', $data['name'] ?? '') }}"
-                                           placeholder="Enter Name">
-                                    <div class="error-field"></div>
-                                </div>
-
-                                {{-- Description --}}
-                                <div class="col-12 mb-3">
-                                    <label class="mb-2" for="description">Description</label>
-                                    <textarea name="description" id="description" cols="30" rows="5"
-                                              class="form-control"
-                                              placeholder="Write Something...">{{ old('description', $data['description'] ?? '') }}</textarea>
-                                    <div class="error-field"></div>
-                                </div>
-
-                                {{-- Type --}}
+                <div class="col-12 col-md-5 mb-3">
+                    <div class="card shadow">
+                        <div class="card-body p-4">
+                            <div class="row my-3">
                                 <div class="col-12 mb-3">
                                     <label class="mb-2" for="type">Application Type <span class="text-danger">*</span></label>
                                     <select name="type" id="type" class="form-select">
                                         <option value=""> - CHOOSE TYPE - </option>
-                                        @foreach (['leave', 'pass_slip', 'overtime'] as $type)
+                                        @foreach (['leave', 'pass_slip', 'overtime', 'payroll'] as $type)
                                             <option value="{{ $type }}"
                                                 {{ old('type', $data['type'] ?? '') == $type ? 'selected' : '' }}>
                                                 {{ ucfirst(str_replace('_', ' ', $type)) }}
@@ -73,15 +49,6 @@
                                     </select>
                                     <div class="error-field"></div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-md-5 mb-3">
-                    <div class="card shadow">
-                        <div class="card-body p-4">
-                            <div class="row my-3">
                                 <div class="col-12 mb-3">
                                     <label class="mb-2" for="division">Division <span class="text-danger">*</span></label>
                                     <select name="division_id" id="division_id" class="form-select">
@@ -97,7 +64,8 @@
                                 </div>
                                 <div class="col-12 mb-3">
                                     <label class="mb-2" for="unit">Unit <span class="text-danger">*</span></label>
-                                    <select name="unit_id[]" id="unit_id" class="form-select select2" multiple>
+                                    <select name="unit_id" id="unit_id" class="form-select">
+                                        <option value=""> - CHOOSE UNIT - </option>
                                         @foreach($units as $unit)
                                             <option value="{{ $unit->id }}"
                                                 @if(($isEdit ?? false) && in_array($unit->id, (array) ($data['unit_id'] ?? []))) selected @endif>
@@ -196,16 +164,15 @@
 <script>
 $(function() {
 
-    let users = @json($users ?? []); // preload users from controller
+    let users = @json($users ?? []); 
     let approverCount = 1;
     const urlEmployees = @json(route('hris.employee.information'));
 
-    // Fetch units when division changes
     $('#division_id').on('change', function() {
         const divisionId = $(this).val();
         $.getJSON(urlEmployees, { division_id: divisionId }, function(response) {
             const units = response?.data || [];
-            $('#unit_id').html('');
+            $('#unit_id').html('<option value=""> - CHOOSE UNIT - </option>');
             units.forEach(unit => {
                 $('#unit_id').append(
                     `<option value="${unit.id}">${unit.name.toUpperCase()}</option>`
@@ -246,10 +213,8 @@ $(function() {
         return "th";
     }
 
-    // Add approver button
     $('#add-input').on('click', addApprover);
 
-    // Remove approver
     $(document).on('click', '.remove-approver', function() {
         const id = $(this).data('id');
         $(`#approver_item_${id}`).remove();
@@ -257,7 +222,6 @@ $(function() {
         $('.level_approver').val(approverCount);
     });
 
-    // Auto-init edit mode approvers with Select2
     if(@json($isEdit)) {
         approverCount = $('.approver-item').length;
         $('.select2').select2({ width: '100%' });

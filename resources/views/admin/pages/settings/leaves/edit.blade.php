@@ -39,7 +39,7 @@
                         <div class="is_cumulative_error"></div>
                     </div>
                     <div class="col-12 col-md-4 mb-3">
-                        <label class="mb-2" for="credit_to_deduct">No. of Days <span class="text-danger">*</span></label>
+                        <label class="mb-2" for="credit_to_deduct">To Be Deducted <span class="text-danger">*</span></label>
                         <input value="{{ $leave->credit_to_deduct ?? '' }}" type="number" step="0.01" id="credit_to_deduct" placeholder="0" name="no_of_days" class="form-control">
                         <div class="credit_to_deduct_error error-field"></div>
                     </div>

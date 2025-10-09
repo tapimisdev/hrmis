@@ -95,7 +95,6 @@ class PositionController extends Controller
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'employment_type_id' => 'required|exists:employment_types,id',
-            'salary' => 'required|numeric',
             'description' => 'nullable|string',
         ]);
 
@@ -115,7 +114,6 @@ class PositionController extends Controller
                 'code' => $request->code,
                 'name' => $request->name,
                 'employment_type_id' => $request->employment_type_id,
-                'salary' => $request->salary,
                 'description' => $request->description,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -180,7 +178,6 @@ class PositionController extends Controller
             'code' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'employment_type_id' => 'required|exists:employment_types,id',
-            'salary' => 'required|numeric',
             'description' => 'nullable|string',
         ]);
 
@@ -201,7 +198,6 @@ class PositionController extends Controller
                     'code' => $request->code,
                     'name' => $request->name,
                     'employment_type_id' => $request->employment_type_id,
-                    'salary' => $request->salary,
                     'description' => $request->description,
                     'updated_at' => now(),
             ]);
@@ -211,7 +207,7 @@ class PositionController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Position ' . strtoupper($request->name) . ' Updated',
-                'redirect' => '_self'
+                'redirect' => ''
             ]);
 
         } catch(\Exception $e) {
@@ -228,12 +224,12 @@ class PositionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+    
     public function destroy(int $employment_type_id, string $id)
     {
         DB::beginTransaction();
 
         try {
-
             DB::table('positions')
                 ->where('id', $id)
                 ->delete();
@@ -246,15 +242,24 @@ class PositionController extends Controller
                 'redirect' => ''
             ]);
 
-        } catch(\Exception $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
+
+            // Check for foreign key constraint violation (SQLSTATE[23000])
+            if ($e->getCode() === '23000') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unable to delete position because it is assigned to one or more users.'
+                ], 200);
+            }
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error Occured: ' . $e->getMessage()
-            ]);
+                'message' => 'Error occurred: ' . $e->getMessage()
+            ], 500);
         }
     }
+
 
     public function datatable($query)
     {
