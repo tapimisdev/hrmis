@@ -106,34 +106,38 @@ $('.select2').select2({
     closeOnSelect: false 
 });
 
-$('.datepicker').daterangepicker();
+if ($('.datepicker').length) {
+    $('.datepicker').daterangepicker();
+}
 
-ClassicEditor
-    .create(document.querySelector('.ckeditor'), {
-        toolbar: [
-            'heading', '|',
-            'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',
-            'blockQuote', 'undo', 'redo'
-        ],
-        removePlugins: [
-            'CKFinder',
-            'CKFinderUploadAdapter',
-            'EasyImage',
-            'Image',
-            'ImageCaption',
-            'ImageStyle',
-            'ImageToolbar',
-            'ImageUpload',
-            'MediaEmbed',
-            'MediaEmbedToolbar'
-        ]
-    })
-    .then(editor => {
-        editor.ui.view.editable.element.style.height = '300px';
-    })
-    .catch(error => {
-        console.error(error);
-    });
+if ($('.ckeditor').length) {
+    ClassicEditor
+        .create(document.querySelector('.ckeditor'), {
+            toolbar: [
+                'heading', '|',
+                'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',
+                'blockQuote', 'undo', 'redo'
+            ],
+            removePlugins: [
+                'CKFinder',
+                'CKFinderUploadAdapter',
+                'EasyImage',
+                'Image',
+                'ImageCaption',
+                'ImageStyle',
+                'ImageToolbar',
+                'ImageUpload',
+                'MediaEmbed',
+                'MediaEmbedToolbar'
+            ]
+        })
+        .then(editor => {
+            editor.ui.view.editable.element.style.height = '300px';
+        })
+        .catch(error => {
+            console.error(error);
+        });
+}
 
 
  $(document).on('click', '.open-document', function() {

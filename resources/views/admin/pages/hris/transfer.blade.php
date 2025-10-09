@@ -63,7 +63,6 @@
                             </select>
                             <div class="error-field"></div>
                         </div>
-
                         <div class="col-md-6 mb-3">
                             <label class="mb-2" for="position_id">Position <span class="text-danger">*</span></label>
                             <select id="position_id" name="position_id" class="form-select">
@@ -136,13 +135,11 @@
                 },
                 dataType: "json",
                 success: function (response) {
-                    const res = response.data;
-                    console.log(res);
+                    const res = response;
+                    const $position = $('#position_id')
                     $('#position_id').html('<option value=""> - CHOOSE POSITION - </option>'); 
-                    res.forEach(item => {
-                        $('#position_id').append(`
-                            <option value="${item.id}">${item.name.toUpperCase()}</option>
-                        `);
+                     res.positions.forEach(item => {
+                        $position.append(`<option value="${item.id}">${item.name.toUpperCase()}</option>`);
                     });
                 },
                 error: function(xhr, status, error) {
@@ -155,7 +152,7 @@
 
         $('#position_id').on('change', function() {
             const id = $(this).val();
-            const url = @json(route('hris.employee.information'));
+               const url = @json(route('hris.employee.information'));
             $.ajax({
                 type: "GET",
                 url: url,

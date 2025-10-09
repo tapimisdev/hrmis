@@ -273,7 +273,7 @@ $(function() {
             method: 'GET',
             data: { deduction_id: deductionId },
             success: function(response) {
-                console.log(response);
+                
                 // Assuming response has first_term and second_term fields
                 groupDiv.find(`input[name="first_term[${index}]"]`).val(response.data.first_term || '0');
                 groupDiv.find(`input[name="second_term[${index}]"]`).val(response.data.second_term || '0');

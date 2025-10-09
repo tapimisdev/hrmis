@@ -15,44 +15,45 @@ class ApproverController extends Controller
     
     public function index(Request $request)
     {   
+        
         if ($request->ajax()) {
-
             $division_id = $request->get('division');
             $unit_id     = $request->get('unit');
 
             $query = DB::table('application_approver as aa')
                 ->leftJoin('application_approver_user as aau', 'aa.id', '=', 'aau.application_approver_id')
-                ->leftJoin('application_approver_org as aao', 'aa.id', '=', 'aao.application_approver_id')
-                ->leftJoin('divisions as d', 'aao.division_id', '=', 'd.id')
-                ->leftJoin('units as u', 'aao.unit_id', '=', 'u.id')
+                ->leftJoin('divisions as d', 'aa.division_id', '=', 'd.id')
+                ->leftJoin('units as u', 'aa.unit_id', '=', 'u.id')
                 ->select(
                     'aa.id as approver_id',
-                    'aa.name',
-                    'aa.description',
                     'aa.type',
-                    'aao.division_id',
-                    'aao.unit_id',
+                    'aa.division_id',
+                    'aa.unit_id',
                     'd.code as division_code',
                     'd.name as division_name',
                     'u.code as unit_code',
                     'u.name as unit_name',
                     'aau.user_id',
+                    'aau.level',
                     'aa.created_at',
                     'aa.updated_at'
                 )
                 ->when($division_id, function ($q) use ($division_id) {
-                    $q->where('aao.division_id', $division_id);
+                    $q->where('aa.division_id', $division_id);
                 })
                 ->when($unit_id, function ($q) use ($unit_id) {
-                    $q->where('aao.unit_id', $unit_id);
+                    $q->where('aa.unit_id', $unit_id);
                 })
                 ->get()
                 ->groupBy('approver_id')
                 ->map(function ($group) {
+                    $levelCounts = $group
+                        ->filter(fn($item) => !is_null($item->user_id))
+                        ->groupBy('level')
+                        ->map(fn($items) => $items->count());
+
                     return [
                         'approver_id'   => $group->first()->approver_id,
-                        'name'          => $group->first()->name,
-                        'description'   => $group->first()->description,
                         'type'          => $group->first()->type,
                         'division_id'   => $group->pluck('division_id')->unique()->values()->all(),
                         'division_code' => $group->pluck('division_code')->unique()->values()->all(),
@@ -60,13 +61,14 @@ class ApproverController extends Controller
                         'unit_id'       => $group->pluck('unit_id')->unique()->values()->all(),
                         'unit_code'     => $group->pluck('unit_code')->unique()->values()->all(),
                         'unit_name'     => $group->pluck('unit_name')->unique()->values()->all(),
-                        'users'         => $group->pluck('user_id')->filter()->unique()->values()->all(), 
+                        'users'         => $group->pluck('user_id')->filter()->unique()->values()->all(),
+                        'level_counts'  => $levelCounts->toArray(),
                         'created_at'    => $group->first()->created_at,
                         'updated_at'    => $group->first()->updated_at,
                     ];
                 })
                 ->values();
-            
+
             return $this->datatable($query);
         }
 
@@ -79,14 +81,13 @@ class ApproverController extends Controller
         $divisions = DB::table('divisions')->get();
         $users = User::with('roles')
             ->whereDoesntHave('roles', function ($q) {
-                $q->where('name', 'employee');
+                $q->whereNot('name', 'employee');
             })
             ->get();
 
         $usersGrouped = $users->groupBy(function ($user) {
             return $user->roles->pluck('name')->implode(', ') ?: 'No Role';
         });
-
 
         $isEdit = false;
         $id = null;
@@ -105,21 +106,11 @@ class ApproverController extends Controller
 
             $approver_id = DB::table('application_approver')->insertGetId([
                 'type'        => $request->type,
-                'name'        => $request->name,
-                'description' => $request->description,
+                'division_id' => $request->division_id,
+                'unit_id'     => $request->unit_id,
                 'created_at'  => now(),
                 'updated_at'  => now(),
             ]);
-
-            foreach ($request->unit_id as $unit_id) {
-                DB::table('application_approver_org')->insert([
-                    'application_approver_id' => $approver_id,
-                    'division_id'             => $request->division_id,
-                    'unit_id'                 => $unit_id,
-                    'created_at'              => now(),
-                    'updated_at'              => now(),
-                ]);
-            }
 
             foreach ($request->approvers as $level => $userIds) {
                 foreach ((array) $userIds as $userId) {
@@ -157,19 +148,16 @@ class ApproverController extends Controller
 
         $data = DB::table('application_approver as aa')
             ->leftJoin('application_approver_user as aau', 'aa.id', '=', 'aau.application_approver_id')
-            ->leftJoin('application_approver_org as aao', 'aa.id', '=', 'aao.application_approver_id')
-            ->leftJoin('divisions as d', 'aao.division_id', '=', 'd.id')
-            ->leftJoin('units as u', 'aao.unit_id', '=', 'u.id')
+            ->leftJoin('divisions as d', 'aa.division_id', '=', 'd.id')
+            ->leftJoin('units as u', 'aa.unit_id', '=', 'u.id')
             ->leftJoin('users as usr', 'aau.user_id', '=', 'usr.id')
             ->select(
                 'aa.id as approver_id',
                 'aa.type',
-                'aa.name',
-                'aa.description',
-                'aao.division_id',
+                'aa.division_id',
                 'd.code as division_code',
                 'd.name as division_name',
-                'aao.unit_id',
+                'aa.unit_id',
                 'u.code as unit_code',
                 'u.name as unit_name',
                 'aau.user_id',
@@ -184,8 +172,6 @@ class ApproverController extends Controller
                 return [
                     'approver_id'   => $group->first()->approver_id,
                     'type'          => $group->first()->type,
-                    'name'          => $group->first()->name,
-                    'description'   => $group->first()->description,
                     'division_id'   => $group->pluck('division_id')->unique()->values()->all(),
                     'division_code' => $group->pluck('division_code')->unique()->values()->all(),
                     'division_name' => $group->pluck('division_name')->unique()->values()->all(),
@@ -205,6 +191,7 @@ class ApproverController extends Controller
                 ];
             })
             ->first();
+
         
         if(is_null($data)) {
             return redirect()->route('settings.approvers.index')
@@ -216,7 +203,7 @@ class ApproverController extends Controller
         
         $users = User::with('roles')
             ->whereDoesntHave('roles', function ($q) {
-                $q->where('name', 'employee');
+                $q->whereNot('name', 'employee');
             })
             ->get();
 
@@ -232,37 +219,12 @@ class ApproverController extends Controller
     public function rules(string $type, ?int $id = null)
     {
         $rules = [
-            'name'          => $type === 'store' ? 'required|string|max:255' : 'sometimes|string|max:255',
-            'description'   => 'nullable|string',
-            'type'          => 'required|in:overtime,leave,pass_slip',
+            'type'          => 'required|in:overtime,leave,pass_slip,payroll',
             'approvers'     => 'required|array|min:1',
             'approvers.*'   => 'required|array|min:1',
             'approvers.*.*' => 'required|exists:users,id',
             'division_id'   => 'required|exists:divisions,id',
-            'unit_id'       => 'required|array|min:1',
-        ];
-
-        $rules['unit_id.*'] = [
-            'required',
-            'exists:units,id',
-            function ($attribute, $value, $fail) use ($type, $id) {
-                $division_id = request('division_id');
-                $typeValue   = request('type');
-
-                $query = DB::table('application_approver_org as org')
-                    ->join('application_approver as app', 'app.id', '=', 'org.application_approver_id')
-                    ->where('org.unit_id', $value)
-                    ->where('org.division_id', $division_id)
-                    ->where('app.type', $typeValue);
-
-                if ($type === 'update' && $id) {
-                    $query->where('org.application_approver_id', '!=', $id);
-                }
-
-                if ($query->exists()) {
-                    $fail("The selected unit {$value} already exists for this division and type.");
-                }
-            },
+            'unit_id'       => 'required|exists:units,id',
         ];
 
         return $rules;
@@ -282,24 +244,10 @@ class ApproverController extends Controller
                 ->where('id', $id)
                 ->update([
                     'type'        => $request->type,
-                    'name'        => $request->name,
-                    'description' => $request->description,
+                    'division_id' => $request->division_id,
+                    'unit_id'     => $request->unit_id,
                     'updated_at'  => now(),
                 ]);
-
-            DB::table('application_approver_org')
-                ->where('application_approver_id', $id)
-                ->delete();
-
-            foreach ($request->unit_id as $unit_id) {
-                DB::table('application_approver_org')->insert([
-                    'application_approver_id' => $id,
-                    'division_id'             => $request->division_id,
-                    'unit_id'                 => $unit_id,
-                    'created_at'              => now(),
-                    'updated_at'              => now(),
-                ]);
-            }
 
             DB::table('application_approver_user')
                 ->where('application_approver_id', $id)
@@ -344,10 +292,13 @@ class ApproverController extends Controller
             ->editColumn('type', function ($row) {
                 return $row['type'];
             })
+            ->editColumn('level_approvers', function ($row) {
+                return max(array_keys($row['level_counts'])) . ' levels';
+            })
             ->editColumn('no_approvers', function ($row) {
                 return DB::table('application_approver_user')
                     ->where('application_approver_id', $row['approver_id'])
-                    ->count('user_id');
+                    ->count('user_id') . ' approver(s)';
             })
             ->editColumn('date_created', function ($row) {
                 return Carbon::parse($row['created_at'])->format('M d, Y');
@@ -371,7 +322,7 @@ class ApproverController extends Controller
                 '</div>';
                 
             })
-            ->rawColumns(['actions', 'is_taxable'])
+            ->rawColumns(['actions'])
             ->make(true);
     }
 

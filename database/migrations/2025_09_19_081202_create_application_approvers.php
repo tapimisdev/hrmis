@@ -18,17 +18,6 @@ return new class extends Migration
                 'leave',
                 'pass_slip'
             ]);
-            $table->string('name');
-            $table->longText('description')
-                ->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('application_approver_org', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('application_approver_id')
-                ->constrained('application_approver')
-                ->onDelete('cascade');
             $table->foreignId('division_id')
                 ->nullable()
                 ->constrained('divisions')

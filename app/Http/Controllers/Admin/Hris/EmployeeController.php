@@ -54,6 +54,7 @@ class EmployeeController extends Controller
         $tranches = DB::table('tranche')->get();
 
         $employees = $this->employeeService->getEmployees(null, null, null);
+        $employment_types = DB::table('employment_types')->get();
 
         $employees = collect($employees)
             ->groupBy('division_name')
@@ -62,7 +63,7 @@ class EmployeeController extends Controller
             });
 
         return view('admin.pages.hris.salary', compact(
-            'divisions', 'division_id', 'unit_id', 'employees', 'tranches', 'selectedEmployee'
+            'divisions', 'division_id', 'unit_id', 'employees', 'employment_types', 'tranches', 'selectedEmployee'
         ));
     }
 
@@ -161,11 +162,14 @@ class EmployeeController extends Controller
             $now = now();
 
             $stepColumn = 'step_' . $request->step_id;
-
-            $salary = DB::table('tranche_items')
-                ->where('tranche_id', $request->tranche_id)
+            $data = DB::table('tranche_items')
+                ->where('tranche_id', $request->tranch_id)
+                ->where('salary_grade', $request->salary_grade)
                 ->select($stepColumn . ' as salary') 
-                ->value('salary') ?? 0;
+                ->first();
+
+            $salary = $data ? str_replace(',', '', $data->salary) : 0;
+            $daily_rate = $salary / 22;
 
             foreach ($request->employees as $employee_no) {
                 DB::table('employee_salary')->insert([
@@ -173,6 +177,7 @@ class EmployeeController extends Controller
                     'tranche_id'         => $request->tranche_id,
                     'step'               => $request->step_id,
                     'amount'             => $salary,
+                    'daily_rate'         => $daily_rate,
                     'effectivity_date'   => $now,
                     'created_at'         => $now,
                     'updated_at'         => $now,
@@ -184,7 +189,7 @@ class EmployeeController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Employees ' . implode(', ', $request->employees) . ' salary was updated successfully.',
-                'redirect' => '_self'
+                'redirect' => route('hris.employee.salary')
             ]);
 
         } catch (\Exception $e) {

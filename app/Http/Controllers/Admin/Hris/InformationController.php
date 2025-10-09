@@ -25,7 +25,6 @@ class InformationController extends Controller
         $employment_types = DB::table('employment_types')->get();
         $shifts = DB::table('shifts')->get();
         $schedules = DB::table('work_schedule')->get();
-        $tranches = DB::table('tranche')->get();
 
         if ($request->ajax()) {
             return $this->ajax_request($request);
@@ -39,7 +38,7 @@ class InformationController extends Controller
 
         $data = $employee_no && $isExists ? $this->employeeService->getEmployee('information', $employee_no) : [];
 
-        return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'shifts', 'schedules', 'tranches', 'isExists', 'employee_no', 'data'));
+        return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'shifts', 'schedules', 'isExists', 'employee_no', 'data'));
     }
 
     private function ajax_request($request) {
@@ -50,8 +49,10 @@ class InformationController extends Controller
         $tranche_id = $request->tranche_id;
         $step_id = $request->step_id;
         $role_id = $request->role_id;
+        $forSalaryGrade = $request->forSalaryGrade;
+        $salary_grade = $request->salary_grade;
 
-        if ($division_id) {
+        if ($division_id) { 
             $data = DB::table('units')
                 ->where('division_id', $division_id)
                 ->get();
@@ -62,13 +63,25 @@ class InformationController extends Controller
         }
 
         if ($employment_type_id) {
-            $data = DB::table('positions')
+            $positions = DB::table('positions')
                 ->where('employment_type_id', $employment_type_id)
+                ->get();
+
+            $tranches = DB::table('tranche')
+                ->where('employment_type_id', $employment_type_id)
+                ->get();
+
+            $employees = DB::table('employee_personal as ep')
+                ->leftJoin('employee_organization as eo', 'ep.employee_no', '=', 'eo.employee_no')
+                ->where('eo.employment_type_id', $employment_type_id)
+                ->select('ep.employee_no', 'ep.firstname', 'ep.lastname')
                 ->get();
 
             return response()->json([
                 'status' => 'success',
-                'data' => $data
+                'positions' => $positions,
+                'tranches'  => $tranches,
+                'employees' => $employees
             ]);
         }
 
@@ -80,20 +93,6 @@ class InformationController extends Controller
             return response()->json([
                 'status' => 'success',
                 'data' => $data
-            ]);
-        }
-
-        if ($tranche_id && $step_id) {
-            $stepColumn = 'step_' . $step_id;
-
-            $data = DB::table('tranche_items')
-                ->where('tranche_id', $tranche_id)
-                ->select($stepColumn . ' as salary') 
-                ->first();
-
-            return response()->json([
-                'status' => $data ? 'success' : 'error',
-                'data'   => $data ?? null,
             ]);
         }
 
@@ -122,11 +121,58 @@ class InformationController extends Controller
             ]);
         }
 
+        if($forSalaryGrade) {
+
+           $data = DB::table('tranche_items')
+                ->where('tranche_id', $tranche_id)
+                ->pluck('salary_grade');
+
+            return response()->json([
+                'status' => $data ? 'success' : 'error',
+                'data'   => $data,
+            ]);
+        }
+
+        if ($tranche_id && $step_id && $salary_grade) {
+            $stepColumn = 'step_' . $step_id;
+
+            $data = DB::table('tranche_items')
+                ->where('tranche_id', $tranche_id)
+                ->where('salary_grade', $salary_grade)
+                ->select($stepColumn . ' as salary') 
+                ->first();
+
+            $salary = $data ? str_replace(',', '', $data->salary) : 0;
+
+            $data->salary = $salary;
+
+            return response()->json([
+                'status' => $data ? 'success' : 'error',
+                'data'   => $data ?? null,
+            ]);
+        }
 
         return response()->json([
             'status' => 'error',
             'message' => 'no data found'
         ]);
+    }
+
+    public function getSalary($tranch_id, $step_id, $salary_grade) {
+        $stepColumn = 'step_' . $step_id;
+        $data = DB::table('tranche_items')
+            ->where('tranche_id', $tranch_id)
+            ->where('salary_grade', $salary_grade)
+            ->select($stepColumn . ' as salary') 
+            ->first();
+
+        $salary = $data ? str_replace(',', '', $data->salary) : 0;
+        $daily_rate = $salary / 22;
+
+        return (object) [
+            'amount' => number_format($salary, 2),
+            'daily_rate' => number_format($daily_rate, 2)
+        ];
     }
 
     public function save(Request $request, ? string $employee_no = null)
@@ -187,6 +233,8 @@ class InformationController extends Controller
                 ->latest('effectivity_date')
                 ->first();
 
+            $salary = $this->getSalary($request->tranche_id, $request->step_id, $request->salary_grade);
+
             if (!$latestSalary || $latestSalary->amount != $request->salary) {
 
                 $frequency = $request->salary_frequency;
@@ -196,13 +244,14 @@ class InformationController extends Controller
                 DB::table('employee_salary')->insert([
                     'employee_no'      => $request->employee_no,
                     'tranche_id'       => $request->tranche_id,
+                    'salary_grade'     => $request->salary_grade,
                     'step'             => $request->step_id,
                     'salary_frequency' => $request->salary_frequency,
                     'salary_cutoff'   => $salary_cutoff,
                     'deduction_applied'     => $request->deduction_applied,
                     'salary_basis'     => $request->salary_basis,
-                    'amount'           => $request->salary,
-                    'daily_rate'       => $daily_rate,
+                    'amount'           => $salary->amount,
+                    'daily_rate'       => $salary->daily_rate,
                     'effectivity_date' => $now,
                     'created_at'       => now(),
                     'updated_at'       => now(),
@@ -281,8 +330,6 @@ class InformationController extends Controller
 
             'salary_frequency' => 'required|in:once,twice',
             'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
-            'salary' => 'required|numeric|min:100',
-            'daily_rate' => 'required',
             'payroll_account_number' => 'nullable|string|max:100',
         ];
     }

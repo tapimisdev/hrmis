@@ -29,8 +29,8 @@
                                             <div class="col-12 col-md-12 mb-3">
                                                 <div class="row">
                                                     <div class="col-12 mb-3">
-                                                        <img class="open-document" data-src="{{ $data->profile }}" id="profile-preview"
-                                                            src="{{ $data->profile }}"
+                                                        <img class="open-document" data-src="{{ $profile }}" id="profile-preview"
+                                                            src="{{ $profile }}"
                                                             alt="Avatar of {{ $data->firstname . ' ' . $data->lastname }}"
                                                             style="width: 150px; padding: 2px; border: 1px solid #c3c3c3; object-fit: cover; cursor: pointer;">
                                                     </div> 
@@ -331,7 +331,6 @@
                         });
                     })
                     .fail(function(xhr, status, error) {
-                        console.log(error);
                         console.error("Error loading countries:", error);
                     });
 

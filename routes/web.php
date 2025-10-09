@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
 use App\Http\Controllers\Admin\Settings\HolidayController;
 use App\Http\Controllers\Admin\Settings\LeaveController;
+use App\Http\Controllers\Admin\Settings\ProjectsController;
 use App\Http\Controllers\Admin\Settings\OrganizationController;
 use App\Http\Controllers\Admin\Settings\PositionController;
 use App\Http\Controllers\Admin\Settings\RolesAndPermissionController;
@@ -35,7 +36,6 @@ use App\Http\Controllers\Admin\Settings\ApproverController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
-use App\Http\Controllers\Admin\Payroll\SalaryController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
@@ -237,6 +237,10 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         # ROLES AND PERMISSIONS
         Route::resource('role-and-permission', RolesAndPermissionController::class);
         
+        # PROJECTS 
+        Route::resource('projects', ProjectsController::class)
+            ->except('show');
+
         # EMPLOYMENT TYPES
         Route::resource('employment-types', EmploymentTypesController::class)
             ->except('show');

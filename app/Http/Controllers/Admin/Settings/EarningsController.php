@@ -38,6 +38,7 @@ class EarningsController extends Controller
     public function store(StoreEarningRequest $request)
     {
         $validated = $request->validated();
+        
         DB::beginTransaction();
         try {
             $earnings = DB::table('earnings')->insert([

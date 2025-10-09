@@ -26,6 +26,7 @@
                 <tr>
                     <th></th>
                     <th>Type</th>
+                    <th>Approver Levels</th>
                     <th>No. Of Approvers</th>
                     <th>Date Added</th>
                     <th style="width: 120px">Action</th>
@@ -60,6 +61,7 @@
                     defaultContent: ''
                 },
                 { data: "type", name: 'type' },
+                { data: "level_approvers", name: 'level_approvers' },
                 { data: "no_approvers", name: 'no_approvers' },
                 { data: "date_created", name: 'date_created' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
@@ -84,7 +86,9 @@
             var html = '<ul class="list-group">';
             if(d.unit_name && d.unit_name.length) {
                 d.unit_name.forEach(function(user, key) {
-                    html += `<li style="font-size: 12px;" class="list-group-item">(${d.unit_code[key]}) | ${d.unit_name[key]}</li>`;
+                    html += `
+                        <li style="font-size: 12px;" class="list-group-item">(${d.unit_code[key]}) | ${d.unit_name[key]}</li>
+                    `;
                 });
             } else {
                 html += '<li style="font-size: 12px;" class="list-group-item">No approvers</li>';

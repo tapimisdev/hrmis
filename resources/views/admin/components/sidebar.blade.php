@@ -13,7 +13,7 @@
 
         {{-- HRIS --}}
         <li class="sidebar-item {{ Str::contains(request()->path(), 'hris') ? 'active' : '' }}">
-            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between"
+            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between pe-3"
                data-bs-toggle="collapse" data-bs-target="#hris"
                role="button" aria-expanded="false" aria-controls="hris">
                 <div>
@@ -33,7 +33,7 @@
 
         {{-- Timekeeping --}}
         <li class="sidebar-item {{ Str::contains(request()->path(), 'timekeeping') ? 'active' : '' }}">
-            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between"
+            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between pe-3"
                data-bs-toggle="collapse" data-bs-target="#timekeeping"
                role="button" aria-expanded="false" aria-controls="timekeeping">
                 <div>
@@ -58,7 +58,7 @@
 
         {{-- Payroll --}}
         <li class="sidebar-item {{ Str::contains(request()->path(), 'payroll') ? 'active' : '' }}">
-            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between"
+            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between pe-3"
                data-bs-toggle="collapse" data-bs-target="#payroll"
                role="button" aria-expanded="false" aria-controls="payroll">
                 <div>
@@ -78,7 +78,7 @@
 
         {{-- Services --}}
         <li class="sidebar-item {{ Str::contains(request()->path(), 'services') ? 'active' : '' }}">
-            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between"
+            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between pe-3"
                data-bs-toggle="collapse" data-bs-target="#services"
                role="button" aria-expanded="false" aria-controls="services">
                 <div>
@@ -118,7 +118,7 @@
 
         {{-- Reports --}}
         <li class="sidebar-item {{ Str::contains(request()->path(), 'reports') ? 'active' : '' }}">
-            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between"
+            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between pe-3"
                data-bs-toggle="collapse" data-bs-target="#reports"
                role="button" aria-expanded="false" aria-controls="reports">
                 <div>
@@ -138,7 +138,7 @@
 
         {{-- Settings --}}
         <li class="sidebar-item {{ Str::contains(request()->path(), 'settings') ? 'active' : '' }}">
-            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between"
+            <a class="sidebar-link collapse-link dropdown-toggle d-flex justify-content-between pe-3"
                data-bs-toggle="collapse" data-bs-target="#settings"
                role="button" aria-expanded="false" aria-controls="settings">
                 <div>
@@ -150,6 +150,11 @@
                     <li class="nested-item px-3 py-2">
                         <a href="{{ route('organization.index', ['tab' => 'agency']) }}" class="d-flex gap-2 align-items-center">
                            <i class="fa-solid fa-building"></i> Organization
+                        </a>
+                    </li>
+                    <li class="nested-item px-3 py-2">
+                        <a href="{{ route('projects.index') }}" class="d-flex gap-2 align-items-center">
+                           <i class="fa-solid fa-suitcase"></i> Projects
                         </a>
                     </li>
                     <li class="nested-item px-3 py-2">

@@ -1,3 +1,5 @@
+import * as bootstrap from 'bootstrap';
+
 export function alert(type, message, redirect = '') {
     const config = {
         success: { title: "Yey!", icon: "success" },
@@ -98,19 +100,17 @@ export function pushQuery(param, value) {
 }
 
 export function redirectToTab() {
-    const url = new URL(window.location);
-    const tab = url.searchParams.get('tab');
+    const tabParam = new URLSearchParams(window.location.search).get('tab');
 
-    if (tab) {
-        const triggerEl = document.querySelector(
-            `[data-bs-toggle="tab"][data-bs-target="#${tab}"], 
-             [data-bs-toggle="tab"][href="#${tab}"]`
-        );
+    if (!tabParam) return;
 
-        if (triggerEl) {
-            const tabObj = new bootstrap.Tab(triggerEl);
-            tabObj.show();
-        }
+    const selector = `[data-bs-toggle="tab"][data-bs-target="#${tabParam}"], 
+                      [data-bs-toggle="tab"][href="#${tabParam}"]`;
+
+    const tabTrigger = document.querySelector(selector.trim());
+
+    if (tabTrigger) {
+        new bootstrap.Tab(tabTrigger).show();
     }
 }
 

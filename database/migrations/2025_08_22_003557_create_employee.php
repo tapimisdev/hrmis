@@ -32,6 +32,14 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('employee_projects', function(Blueprint $table) {
+            $table->id();
+            $table->foreignId('project_id')
+                ->constrained('projects')
+                ->onDelete('cascade');
+            $table->string('employee_no');
+        });
+
         Schema::create('employee_personal', function(Blueprint $table) {
             $table->id();
             $table->string('employee_no');
@@ -292,6 +300,7 @@ return new class extends Migration
         Schema::dropIfExists('employee_children');
         Schema::dropIfExists('employee_family');
         Schema::dropIfExists('employee_personal');
+        Schema::dropIfExists('employee_projects');
         Schema::dropIfExists('employee_information');
     }
 };

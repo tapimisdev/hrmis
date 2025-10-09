@@ -214,14 +214,16 @@ class EmploymentTypesController extends Controller
                         title="Edit">
                             <i class="fa-solid fa-pen-to-square"></i>
                     </a>
-                    <button id="btn-delete"
-                        class="btn btn-outline-danger btn ms-1 my-1" 
-                        data-target="'.route('employment-types.destroy', ['employment_type' => $row->id]).'"
-                        title="Delete">
-                            <i class="fa-solid fa-trash-can"></i>
-                    </button>
+                   
                 </div>
                 ';
+
+                // <button id="btn-delete"
+                //     class="btn btn-outline-danger btn ms-1 my-1" 
+                //     data-target="'.route('employment-types.destroy', ['employment_type' => $row->id]).'"
+                //     title="Delete">
+                //         <i class="fa-solid fa-trash-can"></i>
+                // </button>
             })
             ->rawColumns(['actions'])
             ->make(true);
