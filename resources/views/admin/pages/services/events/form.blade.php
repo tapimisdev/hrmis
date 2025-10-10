@@ -18,7 +18,7 @@
     </style>
 @endsection
 @section('content')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Events" subtitle="update this event or announcement">
                 <x-button-link 

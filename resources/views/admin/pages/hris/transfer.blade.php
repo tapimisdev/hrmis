@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Transfer Employees" subtitle="Transfer employees to other units" >
             <x-button-link 
                 :href="route('hris.employee.index')" 

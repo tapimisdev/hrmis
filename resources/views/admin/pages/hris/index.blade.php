@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Employee List" subtitle="Manage employee's informations in this module" >
             <div class="d-flex flex-wrap gap-3 justify-content-end">
                 <!-- Dropdown Button -->

@@ -114,6 +114,12 @@ main {
     font-size: 12px;
     width: 100%;
     overflow: auto;
+    position: relative;
+    footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 1000;
+    }
     // Scrollbar styling (Webkit browsers)
     &::-webkit-scrollbar {
         width: 6px;
@@ -140,6 +146,7 @@ main {
     scrollbar-gutter: stable;
     position: relative;
     z-index: 2;
+    border-right: 1px solid rgba($color: $dark, $alpha: .1);
     font-size: 13px;
     transition: all ease 0.3s;
     background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
@@ -299,9 +306,9 @@ main {
         
         .nested-list {
             margin: 8px 0px 12px 12px;
-            padding: 8px 0px 0px 0px;
+            padding: 8px 0px 0px 8px;
             list-style-type: none;
-            border-left: 2px solid rgba($color: $primary, $alpha: 0.15);
+            border-left: 2px solid rgba($color: $primary, $alpha: 0.12);
             
             .nested-item {
                 transition: all ease 0.25s;
@@ -721,4 +728,9 @@ label {
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
     background-color: var(--bs-primary);
     color: $white;
+}
+
+.mini-logo {
+    height: 32px;
+    width: 32px;
 }

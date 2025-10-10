@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Organization" subtitle="Manage your organization settings here">
             <div class="btn-group">
                 <button type="button" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium dropdown-toggle" 

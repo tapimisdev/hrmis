@@ -70,6 +70,7 @@
 
             <!-- Main content area (unique per page) -->
             @yield('content')
+            @include('admin.components.footer')
         </main>
     </div>
 

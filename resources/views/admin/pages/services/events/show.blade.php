@@ -42,7 +42,7 @@
 @endsection
 
 @section('content')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <div class="d-flex justify-content-start gap-2 mt-3 pb-4">
             <a href="{{route('services.events.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-arrow-left me-2"></i>Go Back

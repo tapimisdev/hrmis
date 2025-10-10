@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Timelogs" subtitle="View timelogs in this module">
            
         </x-header>

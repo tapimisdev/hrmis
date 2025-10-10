@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Create Salary Payroll" subtitle="Create and manage salary payroll details in this module">
             <x-button-link 
                 :href="route('salary.index')" 

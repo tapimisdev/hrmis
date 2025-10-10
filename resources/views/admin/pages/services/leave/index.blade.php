@@ -6,7 +6,7 @@
 
 @section('content')
 @include('admin.pages.settings.deductions.show')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Leave Applications" subtitle="Manage leave applications in this module">
             
         </x-header>

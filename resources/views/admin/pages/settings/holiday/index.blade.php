@@ -6,7 +6,7 @@
 
 @section('content')
 @include('admin.pages.settings.holiday.show')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Holidays" subtitle="Manage Holiday in this module">
             <x-button-link 
                 :href="route('holiday.create')" 

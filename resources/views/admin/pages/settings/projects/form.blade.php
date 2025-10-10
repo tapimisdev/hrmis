@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Project" subtitle="update this employee project">
                 <x-button-link 

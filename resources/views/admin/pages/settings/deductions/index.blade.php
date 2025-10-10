@@ -6,7 +6,7 @@
 
 @section('content')
 @include('admin.pages.settings.deductions.show')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Deductions" subtitle="Manage deductions in this module">
             <x-button-link 
                 :href="route('deductions.create')" 

@@ -6,7 +6,7 @@
 
 @section('content')
 @include('admin.pages.settings.shifts.show')
-    <div class="container p-4 pb-5">
+    <div class="container pt-4 px-3">
         <x-header title="Tranches" subtitle="Manage tranches in this module">
             <x-button-link 
                 :href="route('settings.tranche.create')" 
