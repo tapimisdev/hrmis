@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container p-4 pb-5">
-        <x-header title="Update Salary" subtitle="Change or update employee salary" >
+        <x-header title="{{$isExists ? 'Update Employee Records' : 'Add New Employee'}}" subtitle="employee personal data sheet and portal account" >
             <x-button-link 
                 :href="route('hris.employee.index')" 
                 icon="fa-solid fa-arrow-left me-2" 

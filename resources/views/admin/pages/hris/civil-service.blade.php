@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container p-4 pb-5">
-        <x-header title="{{$isExists ? 'Update Employee Records' : 'Add New Employee'}}" subtitle="Create new employee's personal data sheet and portal account" >
+        <x-header title="{{$isExists ? 'Update Employee Records' : 'Add New Employee'}}" subtitle="employee personal data sheet" >
             <x-button-link 
                 :href="route('hris.employee.index')" 
                 icon="fa-solid fa-arrow-left me-2" 

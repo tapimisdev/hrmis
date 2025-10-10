@@ -69,7 +69,7 @@ export function initCalendar(selector = '.full-calendar', options = {}) {
             const events = calendar.getEvents().filter(event => event.startStr === info.dateStr);
 
             if (events.length === 0) {
-                alert('error', 'No event found on this date to toggle.');
+                alert('err  or', 'No event found on this date to toggle.');
                 return;
             }
 
