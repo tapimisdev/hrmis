@@ -4,13 +4,13 @@
     <div class="container p-4 pb-5">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Employment Type" subtitle="update this employment type" >
-                <a href="{{route('employment-types.index')}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+                <a href="{{route('employment-types.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
                     Go Back
                 </a>
             </x-header>
         @else
             <x-header title="Add New Employment Type" subtitle="Create new employment type" >
-                <a href="{{route('employment-types.index')}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+                <a href="{{route('employment-types.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
                     Go Back
                 </a>
             </x-header>

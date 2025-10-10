@@ -51,7 +51,7 @@ class DeductionsController extends Controller
 
         $deductions = DB::table('deductions')->get();
 
-        return view('admin.pages.hris.deductions', compact('id', 'deductions', 'data', 'employee_no'));
+        return view('admin.pages.hris.deductions', compact('id', 'deductions', 'data', 'employee_no', 'isExists'));
     }
 
     public function rules()

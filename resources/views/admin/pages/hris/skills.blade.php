@@ -2,19 +2,21 @@
 
 @section('content')
     <div class="container p-4 pb-5">
-        <x-header title="{{$isExists ? 'Update Employee Records' : 'Add New Employee'}}" subtitle="Create new employee's personal data sheet and portal account" >
-            <a href="{{route('hris.employee.index')}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                Go Back
+        <x-header title="{{$isExists ? 'Manage Employee Records' : 'Add New Employee'}}" subtitle="Update employee's personal data sheet and portal account" >
+            <a href="{{route('hris.employee.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
+                <i class="fa-solid fa-arrow-left me-2"></i> Go Back
             </a>
         </x-header>
-        @if($isExists)
-            <x-hris-menu active="skills" empno="{{$employee_no}}" />
-        @endif
-        <div class="d-flex justify-content-end align-items-center bg-transparent border-0 mt-4">
-            <button class="btn btn-outline-primary px-5 py-3 text-uppercase fw-bold" id="openItemModal" data-action="add">Add Data</button>
-        </div>
-        <div class="card shadow p-3 pb-5 mt-5">
-            <div class="card-body">
+        <div class="row">
+            <div class="col-12 col-md-3">
+                @if($isExists)
+                    <x-hris-menu active="skills" empno="{{$employee_no}}" />
+                @endif
+            </div>
+            <div class="col-12 {{ $isExists ? 'col-md-9' : '' }}">
+                <div class="d-flex justify-content-end align-items-center bg-transparent border-0 mt-2 mb-4">
+                    <button class="btn btn-primary px-5 py-3 text-uppercase fw-bold" id="openItemModal" data-action="add">Add Data</button>
+                </div>
                 <div class="accordion">
                     <div class="accordion-item">
                         <h2 class="accordion-header">

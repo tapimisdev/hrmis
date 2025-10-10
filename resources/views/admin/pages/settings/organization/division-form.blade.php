@@ -4,13 +4,13 @@
     <div class="container p-4 pb-5">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Division" subtitle="Update this division in your organization">
-                <a href="{{route('organization.index', ['tab' => 'division'])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+                <a href="{{route('organization.index', ['tab' => 'division'])}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
                     Go Back
                 </a>
             </x-header>
         @else
             <x-header title="Add New Division" subtitle="Create new division in your organization">
-                <a href="{{route('organization.index', ['tab' => 'division'])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+                <a href="{{route('organization.index', ['tab' => 'division'])}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
                     Go Back
                 </a>
             </x-header>

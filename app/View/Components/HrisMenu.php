@@ -26,7 +26,7 @@ class HrisMenu extends Component
     private function menuInfo() {
         return [
             [
-                'name' => 'Employee Information',
+                'name' => 'I. Employee Information',
                 'route' => route('hris.employee.information', ['employee_no' => $this->employee_no]),
                 'active' => $this->active == 'information' ? 'active' : '',
             ],
@@ -76,17 +76,17 @@ class HrisMenu extends Component
                 'active' => $this->active == 'skills' ? 'active' : '',
             ],
             [
-                'name' => 'Account Setup',
+                'name' => 'IX. Account Setup',
                 'route' => route('hris.employee.account', ['employee_no' => $this->employee_no]),
                 'active' => $this->active == 'account' ? 'active' : '',
             ],
             [
-                'name' => 'Earnings',
+                'name' => 'X. Earnings',
                 'route' => route('hris.employee.earnings', ['employee_no' => $this->employee_no]),
                 'active' => $this->active == 'earnings' ? 'active' : '',
             ],
             [
-                'name' => 'Deductions',
+                'name' => 'XI. Deductions',
                 'route' => route('hris.employee.deductions', ['employee_no' => $this->employee_no]),
                 'active' => $this->active == 'deductions' ? 'active' : '',
             ],

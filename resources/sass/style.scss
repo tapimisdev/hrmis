@@ -6,8 +6,19 @@
     overflow: hidden;
     position: relative;
 }
+
 .restricted {
     cursor: no-drop;   
+}
+
+.fc-event-main {
+    text-align: center;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.fc .fc-daygrid-day-frame {
+    cursor: pointer;
 }
 
 .ck-editor__editable {

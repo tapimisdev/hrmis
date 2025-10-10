@@ -51,7 +51,7 @@ class EarningsController extends Controller
 
         $earnings = DB::table('earnings')->get();
 
-        return view('admin.pages.hris.earnings', compact('id', 'earnings', 'data', 'employee_no'));
+        return view('admin.pages.hris.earnings', compact('id', 'earnings', 'data', 'employee_no', 'isExists'));
     }
 
     public function rules()
