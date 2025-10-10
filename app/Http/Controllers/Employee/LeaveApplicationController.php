@@ -44,8 +44,43 @@ class LeaveApplicationController extends Controller
     public function create()
     {
         $leaves = DB::table('leaves')->where('is_active', true)->get();
+        
+        $user = Auth::user()->load('employeeInformation');
+        $employee_no = $user->toArray()['employee_information']['employee_no'];
 
-        return view('employee.pages.leave.create', compact('leaves'));
+        $organization = DB::table('employee_organization')
+            ->where('employee_no', $employee_no)
+            ->latest()
+            ->first();
+
+        $approvers = DB::table('application_approver')
+            ->leftJoin('application_approver_user', 'application_approver.id', '=', 'application_approver_user.application_approver_id')
+            ->leftJoin('users', 'application_approver_user.user_id', '=', 'users.id')
+            ->where('application_approver.type', 'leave')
+            ->where('application_approver.division_id', $organization->division_id)
+            ->where('application_approver.unit_id', $organization->unit_id)
+            ->select(
+                'application_approver.*',
+                'application_approver_user.*',
+                'users.id as user_id',
+                'users.name as user_name',
+            )
+            ->get();
+
+        $approvers = $approvers
+            ->groupBy('level')
+            ->mapWithKeys(function ($items, $level) {
+                return [
+                    $level => $items->map(function ($item) {
+                        return [
+                            'id'   => $item->user_id,
+                            'name' => $item->user_name,
+                        ];
+                    })->unique('user_id')->values()
+                ];
+            })->sortKeys();
+        
+        return view('employee.pages.leave.create', compact('leaves', 'approvers'));
     }
 
     /**
@@ -55,11 +90,11 @@ class LeaveApplicationController extends Controller
     {
         $validatedData = $request->validated();
 
-        if(!empty($validatedData['user_id'])) { // api
+        if(!empty($validatedData['user_id'])) {
             $user = User::with('employeeInformation')->findOrFail($validatedData['user_id']);
             $employee_no = $user->employeeInformation->employee_no;
             $user_id = $user->id;
-        } else { // employee side
+        } else { 
             $user = Auth::user()->load('employeeInformation');
             $employee_no = $user->toArray()['employee_information']['employee_no'];
             $user_id = Auth::user()->id;
@@ -73,21 +108,7 @@ class LeaveApplicationController extends Controller
 
         try {
 
-            $approvers = DB::table('application_approver')
-                ->leftJoin('application_approver_org', 'application_approver.id', '=', 'application_approver_org.application_approver_id')
-                ->leftJoin('application_approver_user', 'application_approver.id', '=', 'application_approver_user.application_approver_id')
-                ->leftJoin('users', 'application_approver_user.user_id', '=', 'users.id')
-                ->where('application_approver.type', 'leave')
-                ->where('application_approver_org.division_id', $organization->division_id)
-                ->where('application_approver_org.unit_id', $organization->unit_id)
-                ->select(
-                    'application_approver.*',
-                    'application_approver_org.*',
-                    'application_approver_user.*',
-                    'users.id as user_id',
-                    'users.name as user_name',
-                )
-                ->get();
+            dd($request->all());
 
             if($approvers->isEmpty()) {
                 return response([

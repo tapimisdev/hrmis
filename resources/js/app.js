@@ -8,6 +8,7 @@ import {
 import lightGallery from 'lightgallery';
 import lgThumbnail from 'lightgallery/plugins/thumbnail'
 import lgZoom from 'lightgallery/plugins/zoom'
+import { initCalendar, setEvents, generateEventsWithAvailability } from './calendar';
 
 window.post = post;
 window.put = put;
@@ -16,6 +17,9 @@ window.lgThumbnail = lgThumbnail;
 window.lgZoom = lgZoom;
 window.loadCountries = loadCountries;
 window.alert = alert;
+window.initCalendar = initCalendar;
+window.setEvents = setEvents;
+window.generateEventsWithAvailability = generateEventsWithAvailability;
 
 redirectToTab();
 
@@ -33,6 +37,7 @@ window.SuccesToast = Swal.mixin({
         toast.onmouseleave = Swal.resumeTimer;
     }
 });
+
 window.ErrorToast = Swal.mixin({
     toast: true,
     position: "top-end",
@@ -103,7 +108,7 @@ $('.select2').select2({
     allowClear: true,
     width: '100%',
     dropdownParent: $('body'),
-    closeOnSelect: false 
+    closeOnSelect: false
 });
 
 if ($('.datepicker').length) {
@@ -138,7 +143,6 @@ if ($('.ckeditor').length) {
             console.error(error);
         });
 }
-
 
  $(document).on('click', '.open-document', function() {
 

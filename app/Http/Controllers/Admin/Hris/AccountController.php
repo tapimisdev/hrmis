@@ -38,7 +38,7 @@ class AccountController extends Controller
         $id = null;
         $data = $this->employeeService->getEmployee('account', $employee_no) ?? [];
 
-        return view('admin.pages.hris.account', compact('isEdit', 'id', 'data', 'employee_no'));
+        return view('admin.pages.hris.account', compact('isEdit', 'id', 'data', 'employee_no', 'isExists'));
     }
 
     public function rules() {

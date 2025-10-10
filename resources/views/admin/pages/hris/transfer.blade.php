@@ -4,7 +4,7 @@
     <div class="container p-4 pb-5">
         <x-header title="Transfer Employees" subtitle="Transfer employees to other units" >
             <a href="{{ route('hris.employee.index') }}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-arrow-left me-2"></i> Back
+                <i class="fa-solid fa-arrow-left me-2"></i> Go Back
             </a>
         </x-header>
 

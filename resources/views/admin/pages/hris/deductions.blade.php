@@ -10,15 +10,17 @@
                 variant="danger"
             />
         </x-header>
-
-        <x-hris-menu active="deductions" empno="{{ $employee_no }}" />
-
-        <form id="form" action="{{ route('hris.employee.deductions', ['employee_no' => $employee_no]) }}" method="post">
-            @method('PUT') 
-            @csrf
-            <div class="card shadow p-3">
-                <div class="card-body">
-                    <div class="accordion">
+        <div class="row">
+            <div class="col-12 col-md-3">
+                @if($isExists)
+                    <x-hris-menu active="deductions" empno="{{ $employee_no }}" />
+                @endif
+            </div>
+            <div class="col-12 {{ $isExists ? 'col-md-9' : '' }}">
+                 <form id="form" action="{{ route('hris.employee.deductions', ['employee_no' => $employee_no]) }}" method="post">
+                    @method('PUT') 
+                    @csrf
+                     <div class="accordion">
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse"
@@ -40,7 +42,6 @@
                                                             </button>
                                                         </div>
                                                         <div class="row">
-
                                                             <div class="col-12 col-md-4 mb-3">
                                                                 <label for="deduction.{{ $index }}" class="form-label">deduction</label>
                                                                 <select name="deduction[{{ $index }}]" id="deduction.{{ $index }}" class="form-select">
@@ -165,14 +166,14 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="card-footer bg-transparent border-0 d-flex justify-content-end">
-                    <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
-                        Update <i class="fa-solid fa-arrow-right ms-2"></i>
-                    </button>
-                </div>
+                    <div class="bg-transparent border-0 d-flex justify-content-end mt-5">
+                        <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
+                            Save <i class="fa-solid fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
 @endsection
 

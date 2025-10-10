@@ -10,14 +10,16 @@
                 variant="danger"
             />
         </x-header>
-        @if($isExists)
-            <x-hris-menu active="personal" empno="{{$employee_no}}" />
-        @endif
-        <form id="form" action="{{route('hris.employee.personal', ['employee_no' => $employee_no])}}" method="post">
-            @method('POST')
-            @csrf
-            <div class="card shadow p-3">
-                <div class="card-body">
+        <div class="row">
+            <div class="col-12 col-md-3">
+                @if($isExists)
+                    <x-hris-menu active="personal" empno="{{$employee_no}}" />
+                @endif
+            </div>
+            <div class="col-12 {{ $isExists ? 'col-md-9' : '' }}">
+                <form id="form" action="{{route('hris.employee.personal', ['employee_no' => $employee_no])}}" method="post">
+                    @method('POST')
+                    @csrf
                     <div class="accordion" id="accordionTabPersonal">
                         <div class="accordion-item">
                             <h2 class="accordion-header">
@@ -29,7 +31,7 @@
                                 <div class="accordion-body">
                                     <div class="row">
                                         @if(!empty($data))
-                                            <div class="col-12 col-md-12 mb-3">
+                                            <div class="col-12 col-md-12 mb-3 ">
                                                 <div class="row">
                                                     <div class="col-12 mb-3">
                                                         <img class="open-document" data-src="{{ $profile }}" id="profile-preview"
@@ -135,7 +137,7 @@
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
-                                       <div class="col-12 col-md-4 mb-3">
+                                    <div class="col-12 col-md-4 mb-3">
                                             <label class="mb-2" for="birth_certificate">Birth Certificate - (img/pdf)</label>
                                             <input type="file" name="birth_certificate" id="birth_certificate" class="form-control">
                                             <div class="error-field"></div>
@@ -285,15 +287,15 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="card-footer bg-transparent border-0 d-flex justify-content-end">
-                    <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
-                        Save <i class="fa-solid fa-arrow-right ms-2"></i>
-                    </button>
-                </div>
+                    <div class="card-footer bg-transparent border-0 d-flex justify-content-end mt-4">
+                        <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
+                            Save <i class="fa-solid fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
     <div id="galleryContainer"></div>
 @endsection

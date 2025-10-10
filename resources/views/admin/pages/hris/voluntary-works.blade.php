@@ -10,14 +10,16 @@
                 variant="danger"
             />
         </x-header>
-        @if($isExists)
-            <x-hris-menu active="voluntary-works" empno="{{$employee_no}}" />
-        @endif
-        <div class="d-flex justify-content-end align-items-center bg-transparent border-0 mt-4">
-            <button class="btn btn-outline-primary px-5 py-3 text-uppercase fw-bold" id="openItemModal" data-action="add">Add Data</button>
-        </div>
-        <div class="card shadow p-3 pb-5 mt-5">
-            <div class="card-body">
+        <div class="row">
+            <div class="col-12 col-md-3">
+                @if($isExists)
+                    <x-hris-menu active="voluntary-works" empno="{{$employee_no}}" />
+                @endif
+            </div>
+            <div class="col-12 {{ $isExists ? 'col-md-9' : '' }}">
+                <div class="d-flex justify-content-end align-items-center bg-transparent border-0 mt-2 mb-4">
+                    <button class="btn btn-primary px-5 py-3 text-uppercase fw-bold" id="openItemModal" data-action="add">Add Data</button>
+                </div>
                 <div class="accordion">
                     <div class="accordion-item">
                         <h2 class="accordion-header">
@@ -52,7 +54,7 @@
     </div>
 
     <div class="modal fade" id="itemModal" tabindex="-1" data-bs-backdrop="static" aria-labelledby="itemModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5 text-uppercase" id="itemModalLabel"></h1>

@@ -10,73 +10,69 @@
     </x-header>
 
     <div class="card rounded-3 mb-5">
-        <div class="card-header fw-bold d-flex align-items-center">
+        <div class="card-header fw-bold d-flex align-items-center text-uppercase py-3">
             <i class="fa-solid fa-file-pen me-2"></i> Application Form
         </div>
-        <form method="POST" id="myForm" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('leaves.store') }}" id="form" enctype="multipart/form-data">
             @csrf
             <div class="card-body">
-
                 <div class="row g-3">
-                    {{-- Leave Type --}}
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-12 mb-3">
                         <label for="leave_id" class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
-                        <select name="leave_id" id="leave_id" class="form-select" required>
-                            <option value="">-- Select Leave Type --</option>
+                        <select name="leave_id" id="leave_id" class="form-select">
+                            <option value=""> - CHOOSE TYPE - </option>
                             @foreach ($leaves as $leave)
                                 <option value="{{ $leave->id }}">{{ $leave->name }}</option>
                             @endforeach
                         </select>
-                        <span id="leave_id_error" class="text-danger d-none"></span>
+                        <div class="error-field"></div>
                     </div>
-
-                    {{-- Number of Days --}}
-                    <div class="col-md-6">
-                        <label for="days" class="form-label fw-semibold">Number of Days</label>
-                        <input type="number" name="days" id="days" class="form-control" min="1" value="1" required>
-                        <span id="days_error" class="text-danger d-none"></span>
+                    <div class="col-12 col-md-12 mb-3">
+                        <label for="calendar" class="form-label fw-semibold">Choose Dates <span class="text-danger">*</span></label>
+                        <div id="calendar" class="full-calendar"></div>
+                        <div class="error-field"></div>
                     </div>
                 </div>
-
-                <div class="row g-3 mt-2">
-                    {{-- Start Date --}}
-                    <div class="col-md-6">
-                        <label for="start_date" class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
-                        <input type="date" name="start_date" id="start_date" class="form-control" required>
-                        <span id="start_date_error" class="text-danger d-none"></span>
-                    </div>
-
-                    {{-- End Date --}}
-                    <div class="col-md-6">
-                        <label for="end_date" class="form-label fw-semibold">End Date <span class="text-danger">*</span></label>
-                        <input type="date" name="end_date" id="end_date" class="form-control" required>
-                        <span id="end_date_error" class="text-danger d-none"></span>
-                    </div>
-                </div>
-
-                <div class="row g-3 mt-2">
-                    {{-- Reason --}}
+                <div class="row g-3 mt-2 mb-3">
                     <div class="col-12">
                         <label for="reason" class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
-                        <textarea name="reason" id="reason" class="form-control" rows="4" placeholder="State your reason..." required></textarea>
-                        <span id="reason_error" class="text-danger d-none"></span>
+                        <textarea name="reason" id="reason" class="form-control" rows="4" placeholder="State your reason..."></textarea>
+                        <div class="error-field"></div>
                     </div>
                 </div>
-
-                <div class="row g-3 mt-2">
-                  {{-- Attachments --}}
+                <div class="row g-3 mt-2 mb-3">
                     <div class="col-12">
                         <label for="attachments" class="form-label fw-semibold">Attachments (optional)</label>
                         <input type="file" name="attachments[]" id="attachments" class="form-control" multiple>
-                        <span id="attachments_error" class="text-danger d-none"></span>
+                        <div class="error-field"></div>
                     </div>
                 </div>
-
+                <hr class="mt-5 mb-4">
+                <div class="row g-3 mt-2">
+                    <div class="col-12 col-md-12">
+                        <div for="approvers" class="form-label fw-semibold text-uppercase mb-3">Choose Your Approvers</div>
+                        @foreach($approvers as $level => $users)
+                            <div class="mb-3">
+                                <label for="approvers.{{ $level }}" class="mb-2">{{ ordinal($level) . ' Approver' }}</label>
+                                <select name="approvers[{{$level}}][]" id="approvers.{{ $level }}" class="form-select select2 mb-3" multiple>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user['id'] }}">{{ $user['name'] }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="error-field"></div>
+                            </div>
+                        @endforeach
+                        <div class="mb-3">
+                            <div id="approvers">
+                                <div class="error-field"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div class="card-footer bg-light">
-                <div class="d-flex justify-content-end">
-                    <button id="submit-button" type="button" class="btn btn-primary px-4 py-2">
+            <div class="card-footer bg-transparent border-0 mt-4 mb-4">
+                <div class="d-flex align-items-center justify-content-end">
+                    <button type="submit" class="btn btn-primary px-4 py-2">
                         <i class="fa-solid fa-paper-plane me-2"></i> Submit
                     </button>
                 </div>
@@ -88,56 +84,20 @@
 
 @section('scripts')
 <script>
-    $(document).ready(function() {
-        $('#submit-button').click(e => {
-            e.preventDefault();
+    $(function() {
+        const url = $('#form').attr('action');
+        post(url);
 
-            $('.text-danger').addClass('d-none');
-            $('.form-control').removeClass('is-invalid');
-            $('.form-select').removeClass('is-invalid');
+        initCalendar();
 
-            let form = $('#myForm')[0];
-            let formData = new FormData(form); // handles file uploads
+        const unavailable = [
+            { title: 'Meeting', date: '2025-10-15', description: 'Team meeting in the conference room.' },
+            { title: 'Busy', date: '2025-11-03', description: 'Out of office for a personal day.' }
+        ];
 
-            $('#submit-button').prop('disabled', true);
+        const events = generateEventsWithAvailability(unavailable);
+        setEvents(events);
 
-            axios.post(`{{ route('leaves.store') }}`, formData, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'multipart/form-data'
-                }
-            })
-            .then((response) => {
-                Swal.fire({
-                    title: "Success!",
-                    text: "Your leave application has been submitted.",
-                    icon: "success"
-                }).then(() => {
-                    window.location.href = "{{ route('leaves.index') }}";
-                });
-            })
-            .catch(error => {
-                if (error.response && error.response.status === 422) {
-                    // Validation errors
-                    $.each(error.response.data.errors, function(field, errorMessage) {
-                        var errorSpanId = '#' + field + '_error';
-                        $(`#${field}`).addClass('is-invalid');
-
-                        // Show the error message in the respective error span
-                        $(errorSpanId).removeClass('d-none').text(errorMessage[0]);
-                    });
-                } else {
-                    Swal.fire({
-                        title: "Oops!",
-                        text: error.response?.data?.message || "Something went wrong.",
-                        icon: "error"
-                    });
-                }
-            })
-            .finally(() => {
-                $('#submit-button').prop('disabled', false);
-            });
-        })
     });
 </script>
 @endsection

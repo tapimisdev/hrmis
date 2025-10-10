@@ -15,7 +15,7 @@
         </div>
     </header>
 
-    <div class="row g-3">
+    <div class="row g-3 mb-5">
         <!-- Timelogs -->
         <div class="col-md-6 col-lg-4 col-sm-6">
             <div class="card shadow dashboard-card h-100">
