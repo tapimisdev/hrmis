@@ -7,9 +7,12 @@
 @section('content')
     <div class="container p-4 pb-5">
         <x-header title="Projects" subtitle="Manage projects for this employment type">
-            <a href="{{route('projects.create')}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-plus me-2"></i> Add Projects
-            </a>
+            <x-button-link 
+                :href="route('projects.create')" 
+                icon="fa-solid fa-plus" 
+                text="Add Projects" 
+                variant="primary"
+            />
         </x-header>
         <x-table id="myTable">
             <thead>

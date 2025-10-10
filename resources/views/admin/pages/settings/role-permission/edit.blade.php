@@ -7,9 +7,12 @@
 @section('content')
 <div class="container p-4">
     <x-header title="Edit Role: {{ $role->name }}" subtitle="Manage {{ $role->name }} in this module">
-        <a href="{{ route('role-and-permission.index') }}" class="btn btn-danger py-3 px-4">
-            <i class="fa-solid fa-arrow-left me-2"></i> Back
-        </a>
+        <x-button-link 
+            :href="route('role-and-permission.index')" 
+            icon="fa-solid fa-arrow-left me-2" 
+            text="Back" 
+            variant="danger"
+        />
     </x-header>
     <form action="{{ route('role-and-permission.update', $role->id) }}" method="POST">
         <div class="card">

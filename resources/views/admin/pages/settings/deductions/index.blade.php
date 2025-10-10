@@ -8,9 +8,12 @@
 @include('admin.pages.settings.deductions.show')
     <div class="container p-4 pb-5">
         <x-header title="Deductions" subtitle="Manage deductions in this module">
-            <a href="{{ route('deductions.create') }}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-plus me-2"></i> Add Deductions
-            </a>
+            <x-button-link 
+                :href="route('deductions.create')" 
+                icon="fa-solid fa-plus" 
+                text="Add Deductions" 
+                variant="primary"
+            />
         </x-header>
 
         <x-table id="myTable">

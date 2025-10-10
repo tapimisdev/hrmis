@@ -8,9 +8,12 @@
  <div class="container p-4 pb-5">
 
     <x-header title="Leave" subtitle="Add Leave in this module">
-        <a href="{{ route('settings.leaves.index') }}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-            <i class="fa-solid fa-arrow-left me-2"></i> Back
-        </a>
+        <x-button-link 
+            :href="route('settings.leaves.index')" 
+            icon="fa-solid fa-arrow-left me-2" 
+            text="Back" 
+            variant="danger"
+        />
     </x-header>
     <form id="form" method="post">
         @csrf

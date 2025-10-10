@@ -5,7 +5,7 @@
     <div class="card-container">
         <div class="form-container">
             <div class="logo">
-                <img src="{{ asset('img/HR_NROLL.png') }}" alt="">
+                <img src="{{ asset('img/HR EN ROLL.png') }}" alt="">
             </div>
 
             <h5>Sign In</h5>

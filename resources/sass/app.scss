@@ -6,3 +6,9 @@
 
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
+
+@import 'buttons.scss';
+
+.btn {
+    border-radius: 8px;
+}

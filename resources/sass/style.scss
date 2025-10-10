@@ -129,144 +129,333 @@ main {
     scrollbar-gutter: stable;
     position: relative;
     z-index: 2;
-    text-transform: uppercase;
-    font-size: 12px;
+    font-size: 13px;
     transition: all ease 0.3s;
-    border-right: 1px solid rgba($color: $dark, $alpha: .2);
+    background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.04);
+
+    // Logo Section
     .sidebar-title {
         display: flex;
         align-items: center;
         justify-content: center;
-        border-bottom: 1px solid rgba($color: $dark, $alpha: .2);
+        border-bottom: 1px solid rgba($color: $dark, $alpha: .08);
         position: sticky;
         top: 0;
         background-color: $white;
         z-index: 10;
         gap: 12px;
-        padding: 32px 0px 16px 0px;
+        padding: 28px 20px 20px 20px;
+        backdrop-filter: blur(10px);
+        
         img { 
             width: auto;
-            height: 58px;
+            height: 56px;
             object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            transition: transform 0.3s ease;
+            
+            &:hover {
+                transform: scale(1.05);
+            }
         }
+        
         .title {
             margin-top: 0px;
-            font-weight: 600;
-            font-size: 12px;
+            font-weight: 700;
+            font-size: 14px;
             padding-top: 4px;
+            letter-spacing: 0.5px;
+            color: $dark;
         }
+        
         .text {
-            font-size: 12px;
+            font-size: 11px;
+            color: rgba($color: $dark, $alpha: 0.6);
         }
     }
 
+    // Navigation List
     .sidebar-list {
         width: 100%;
-        padding: 8px;
+        padding: 16px 12px;
         margin: 0;
         list-style: none;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px;
+
         .sidebar-item {
-            transition: background-color ease 0.3s;
-            margin: 0px 8px 0px 8px;
-            position: relative;
             transition: all ease 0.3s;
-            color: rgba($color: $dark, $alpha: 0.7);
+            position: relative;
+            color: rgba($color: $dark, $alpha: 0.75);
             cursor: pointer;
-            border-radius: 24px;
-            font-weight: 700;
+            border-radius: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
 
             a {
-                color: rgba($color: $dark, $alpha: 0.8) !important;
+                color: rgba($color: $dark, $alpha: 0.75) !important;
+                transition: all ease 0.25s;
             }
 
-            &:hover {
-                a {
-                    color: rgba($color: $dark, $alpha: .6) !important;
+            // Hover Effect
+            &:hover:not(.active) {
+                .sidebar-link {
+                    background-color: rgba($color: $primary, $alpha: 0.08);
+                    transform: translateX(2px);
+                    
+                    a {
+                        color: $primary !important;
+                    }
+                    
+                    i {
+                        transform: scale(1.1);
+                    }
                 }
             }
 
+            // Main Link Styling
             .sidebar-link {
                 display: flex;
                 justify-content: start;
-                gap: 10px;
+                gap: 12px;
                 align-items: center;
                 position: relative;
-                top: 0;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                padding: 10px 10px 10px 24px;
+                padding: 12px 16px;
                 text-decoration: none;
                 color: $dark;
-                border-radius: 12px;
-                &:hover {
-                    background-color: rgba($color: $primary, $alpha: 0.2) !important; 
-                     color: $dark !important;
-                    a {
-                        color: rgba($color: $dark, $alpha: .6) !important;
-                    }
+                border-radius: 10px;
+                transition: all ease 0.3s;
+                font-size: 13px;
+                text-transform: uppercase;
+                
+                i {
+                    font-size: 16px;
+                    transition: all ease 0.3s;
+                    width: 20px;
+                    text-align: center;
+                }
+
+                // Dropdown Toggle Arrow
+                &.dropdown-toggle::after {
+                    transition: transform 0.3s ease;
+                    font-size: 12px;
+                }
+
+                &:not(.collapsed)::after {
+                    transform: rotate(180deg);
                 }
             }
 
+            // Active State
             &.active {
                 .sidebar-link {
-                    background-color: $primary !important; 
-                    color: $light !important;
+                    background: linear-gradient(135deg, $primary 0%, darken($primary, 8%) 100%);
+                    color: $white !important;
+                    box-shadow: 0 4px 12px rgba($primary, 0.3);
+                    transform: translateX(2px);
+                    
+                    a {
+                        color: $white !important;
+                    }
+                    
                     i {
-                        margin-left: -5px;
+                        color: $white;
+                        transform: scale(1.1);
+                    }
+
+                    &::before {
+                        content: '';
+                        position: absolute;
+                        left: 0;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        width: 4px;
+                        height: 60%;
+                        background-color: $white;
+                        border-radius: 0 4px 4px 0;
+                        opacity: 0.8;
                     }
                 }
             }
         }
     }
 
-    .collapsable .nested-list {
-        margin: 0px 0px 12px 30px;
-        padding: 0px 0px 0px 0px;
-        list-style-type: none;
-        & a {
-            text-decoration: none;
-            color: $dark;
-            white-space: nowrap;
+    // Nested/Collapsed Menu Items
+    .collapsable {
+        transition: all ease 0.3s;
+        
+        .nested-list {
+            margin: 8px 0px 12px 12px;
+            padding: 8px 0px 0px 0px;
+            list-style-type: none;
+            border-left: 2px solid rgba($color: $primary, $alpha: 0.15);
+            
+            .nested-item {
+                transition: all ease 0.25s;
+                border-radius: 8px;
+                margin-bottom: 2px;
+                
+                a {
+                    text-decoration: none;
+                    color: rgba($color: $dark, $alpha: 0.7);
+                    white-space: nowrap;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 10px 12px;
+                    border-radius: 8px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    transition: all ease 0.25s;
+                    
+                    i {
+                        font-size: 14px;
+                        width: 18px;
+                        text-align: center;
+                        transition: all ease 0.25s;
+                    }
+
+                    &:hover {
+                        background-color: rgba($color: $primary, $alpha: 0.1);
+                        color: $primary;
+                        transform: translateX(4px);
+                        padding-left: 16px;
+                        
+                        i {
+                            transform: scale(1.15);
+                        }
+                    }
+
+                    // Active nested item
+                    &.active {
+                        background-color: rgba($color: $primary, $alpha: 0.15);
+                        color: $primary;
+                        font-weight: 700;
+                    }
+                }
+            }
         }
     }
 
-     // Scrollbar styling (Webkit browsers)
+    // Custom Scrollbar
     &::-webkit-scrollbar {
-        width: 2px;
+        width: 6px;
     }
 
     &::-webkit-scrollbar-track {
-        background: #f1f1f1;
+        background: transparent;
+        margin: 10px 0;
     }
 
     &::-webkit-scrollbar-thumb {
-        background: rgba($color: $primary, $alpha: .1);
-        border-radius: 4px;
+        background: rgba($color: $primary, $alpha: 0.2);
+        border-radius: 10px;
+        transition: background 0.3s ease;
 
         &:hover {
-            background: #555;
+            background: rgba($color: $primary, $alpha: 0.4);
         }
     }
+
+    // Firefox scrollbar
+    scrollbar-width: thin;
+    scrollbar-color: rgba($color: $primary, $alpha: 0.2) transparent;
 }
 
+// Mobile Responsive
 @media (max-width: 992px) {
     .sidebar {
-        position: absolute;
+        position: fixed;
         width: 280px;
-        max-width: 80vw;
+        max-width: 85vw;
         display: block;
         background-color: $white;
         z-index: 9999;
         left: -280px;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        
+        &.show {
+            left: 0 !important;
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
+        }
     }
-    .sidebar.show {
-        left: 0 !important;
+
+    // Overlay for mobile sidebar
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+
+        &.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
     }
-}   
+}
+
+// Tablet adjustments
+@media (max-width: 1200px) and (min-width: 993px) {
+    .sidebar {
+        max-width: 260px;
+        
+        .sidebar-list .sidebar-item .sidebar-link {
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+    }
+}
+
+// Utility class for badge indicators
+.sidebar-badge {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(255, 107, 107, 0.4);
+}
+
+// Loading state for async items
+.sidebar-item.loading {
+    .sidebar-link {
+        opacity: 0.6;
+        pointer-events: none;
+        
+        &::after {
+            content: '';
+            position: absolute;
+            right: 16px;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba($primary, 0.3);
+            border-top-color: $primary;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 // Navbar Hamburger
 .hamburger {
   position: absolute;

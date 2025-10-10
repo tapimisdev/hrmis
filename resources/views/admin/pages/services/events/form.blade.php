@@ -21,15 +21,21 @@
     <div class="container p-4 pb-5">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Events" subtitle="update this event or announcement">
-                <a href="{{route('services.events.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-                </a>
+                <x-button-link 
+                    :href="route('hris.employee.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @else
             <x-header title="Add New Events" subtitle="create new event or positions" >
-                <a href="{{route('services.events.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-                </a>
+                <x-button-link 
+                    :href="route('hris.employee.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @endif
         <form id="form" action="{{ $isEdit ? route('services.events.update', ['event' => $id]) : route('services.events.store') }}" method="post">

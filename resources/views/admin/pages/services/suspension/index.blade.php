@@ -8,9 +8,12 @@
 @include('admin.pages.settings.shifts.show')
     <div class="container p-4 pb-5">
         <x-header title="Suspensions" subtitle="Manage suspensions in this module">
-            <a href="{{ route('services.suspensions.create') }}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-plus me-2"></i> Add Suspension
-            </a>
+            <x-button-link 
+                :href="route('services.suspensions.create')" 
+                icon="fa-solid fa-plus" 
+                text="Add Suspension" 
+                variant="primary"
+            />
         </x-header>
 
         <x-table id="myTable">

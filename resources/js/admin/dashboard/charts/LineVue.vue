@@ -43,8 +43,8 @@ export default {
           {
             label: 'New Hires',
             data: this.hires,
-            borderColor: '#0c8384',
-            backgroundColor: '#0c8384',
+            borderColor: '#032985',
+            backgroundColor: '#032985',
             tension: 0.3,
             fill: true,
             pointRadius: 5
@@ -52,8 +52,8 @@ export default {
           {
             label: 'Resignations',
             data: this.resignations,
-            borderColor: '#323535',
-            backgroundColor: '#323535',
+            borderColor: '#000000',
+            backgroundColor: '#000000',
             tension: 0.3,
             fill: true,
             pointRadius: 5

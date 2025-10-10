@@ -1,0 +1,322 @@
+
+// Modern Button Redesign (Glass + Ripple)
+.btn-modern {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 2rem;
+  font-family: $font-family-sans-serif;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: $white;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  overflow: hidden;
+  user-select: none;
+  text-decoration: none;
+  transition: all 0.25s ease-in-out;
+  background-size: 200% auto;
+  background-position: left center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(6px);
+
+  // Ripple Ink Effect
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: width 0.6s ease, height 0.6s ease, opacity 0.8s ease;
+  }
+
+  &:active::after {
+    width: 180px;
+    height: 180px;
+    opacity: 1;
+    transition: 0s;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    background-position: right center;
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($primary, 0.3);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  i,
+  svg {
+    font-size: 1.1em;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover i,
+  &:hover svg {
+    transform: translateX(3px);
+  }
+}
+
+/* Primary */
+.btn-modern.primary {
+  background-image: linear-gradient(135deg, $primary 0%, $secondary 100%);
+  box-shadow: 0 4px 14px rgba($primary, 0.3);
+
+  &:hover {
+    background-image: linear-gradient(135deg, darken($primary, 6%) 0%, darken($secondary, 6%) 100%);
+    box-shadow: 0 6px 18px rgba($primary, 0.4);
+  }
+}
+
+/* Secondary */
+.btn-modern.secondary {
+  background-image: linear-gradient(135deg, lighten($secondary, 10%) 0%, $secondary 100%);
+  box-shadow: 0 4px 14px rgba($secondary, 0.3);
+
+  &:hover {
+    background-image: linear-gradient(135deg, $secondary 0%, darken($secondary, 5%) 100%);
+    box-shadow: 0 6px 18px rgba($secondary, 0.4);
+  }
+}
+
+/* Success */
+.btn-modern.success {
+  background-image: linear-gradient(135deg, $success 0%, lighten($success, 20%) 100%);
+  box-shadow: 0 4px 14px rgba($success, 0.3);
+
+  &:hover {
+    background-image: linear-gradient(135deg, darken($success, 5%) 0%, $success 100%);
+  }
+}
+
+/* Danger */
+.btn-modern.danger {
+  background-image: linear-gradient(135deg, $danger 0%, lighten($danger, 10%) 100%);
+  box-shadow: 0 4px 14px rgba($danger, 0.3);
+
+  &:hover {
+    background-image: linear-gradient(135deg, darken($danger, 5%) 0%, $danger 100%);
+  }
+}
+
+/* Warning */
+.btn-modern.warning {
+  background-image: linear-gradient(135deg, $warning 0%, lighten($warning, 15%) 100%);
+  color: $dark;
+  box-shadow: 0 4px 14px rgba($warning, 0.4);
+
+  &:hover {
+    background-image: linear-gradient(135deg, darken($warning, 5%) 0%, $warning 100%);
+  }
+}
+
+/* Info */
+.btn-modern.info {
+  background-image: linear-gradient(135deg, $info 0%, lighten($info, 20%) 100%);
+  box-shadow: 0 4px 14px rgba($info, 0.3);
+
+  &:hover {
+    background-image: linear-gradient(135deg, darken($info, 5%) 0%, $info 100%);
+  }
+}
+
+/* Dark */
+.btn-modern.dark {
+  background-image: linear-gradient(135deg, lighten($dark, 5%) 0%, $dark 100%);
+  box-shadow: 0 4px 14px rgba($dark, 0.3);
+
+  &:hover {
+    background-image: linear-gradient(135deg, $dark 0%, darken($dark, 10%) 100%);
+  }
+}
+
+/* Ghost */
+.btn-modern.ghost {
+  background: transparent;
+  color: $primary;
+  border: 2px solid $primary;
+  box-shadow: none;
+  backdrop-filter: blur(8px);
+
+  &:hover {
+    background: rgba($primary, 0.1);
+    color: $primary;
+    box-shadow: 0 8px 25px rgba($primary, 0.25);
+  }
+}
+
+/* Sizes */
+.btn-modern.sm {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.82rem;
+  border-radius: 8px;
+}
+
+.btn-modern.lg {
+  padding: 1.1rem 2.5rem;
+  font-size: 1.05rem;
+  border-radius: 16px;
+}
+
+.btn-modern.xl {
+  padding: 1.3rem 3rem;
+  font-size: 1.15rem;
+  border-radius: 20px;
+}
+
+/* Pill & Block */
+.btn-modern.pill {
+  border-radius: 9999px;
+}
+
+.btn-modern.block {
+  display: flex;
+  width: 100%;
+}
+
+/* Icon-only */
+.btn-modern.icon-only {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  justify-content: center;
+  padding: 0;
+
+  &.sm {
+    width: 36px;
+    height: 36px;
+  }
+
+  &.lg {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* Loading */
+.btn-modern.loading {
+  color: transparent;
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Button group */
+.btn-group {
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+  .btn-modern {
+    border-radius: 0;
+    box-shadow: none;
+
+    &:first-child { border-radius: 12px 0 0 12px; }
+    &:last-child { border-radius: 0 12px 12px 0; }
+    &:not(:last-child) { border-right: 1px solid rgba(255, 255, 255, 0.2); }
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .btn-modern {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .btn-modern.lg {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+}
+
+/* === Bootstrap 5.3 Dropdown Compatibility Fix for .btn-modern === */
+
+.btn-group {
+  position: relative;
+}
+
+/* Restore dropdown functionality */
+.btn-modern.dropdown-toggle {
+  position: relative;
+  overflow: visible; /* allow dropdown to show outside button */
+}
+
+/* Remove Bootstrap’s default caret and use Font Awesome instead */
+.btn-modern.dropdown-toggle::after {
+  display: inline-block;
+  margin-left: 0.45rem;
+  vertical-align: middle;
+  content: "\f078"; /* fa-chevron-down */
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  border: none !important;
+}
+
+/* Dropdown menu styling */
+.btn-group .dropdown-menu {
+  margin-top: 0.4rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: dropdownFade 0.18s ease-out;
+  z-index: 1050; /* ensure it's above other content */
+}
+
+/* Dropdown item hover */
+.dropdown-item {
+  padding: 0.65rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.dropdown-item:hover {
+  background-color: #0077ff;
+  color: #fff;
+}
+
+/* Fade animation */
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

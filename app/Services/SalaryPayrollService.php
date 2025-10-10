@@ -68,6 +68,7 @@ class SalaryPayrollService {
                 'divisions.name as division',
 
                 'ei.user_id', 
+                'ei.employee_no', 
                 'ei.account_status')
             ->get();
         
@@ -91,39 +92,63 @@ class SalaryPayrollService {
     private function checkEligibility($employee)
     {
         // Prepare payload
-        $payload = $this->getCutoff();
-        $payload['user_id'] = $employee->user_id;
-
+        $payload = array_merge($this->getCutoff(), ['user_id' => $employee->user_id]);
         $dtr = $this->daily_time_record_service->getDTR($payload);
 
-        // Get Incomplete Logs safely
-        $summary = collect($dtr['summary'])->firstWhere('label', 'Incomplete Logs');
-        $incompleteLogs = isset($summary['value']) ? (int) $summary['value'] : 0;
+        // Extract summary counts in a clean, reusable way
+        $summary = collect($dtr['summary'])->keyBy('label')->map(fn($item) => (int) ($item['value'] ?? 0));
 
-        $remark = [];
+        $incompleteLogs = $summary->get('Incomplete Logs', 0);
+        $absentCount    = $summary->get('Absent', 0);
+        $pendingLeave   = $summary->get('Pending Leave', 0);
+
+        // Initialize remarks
+        $remarks = [];
+        $eligibleRemarks = [[
+            'value' => $absentCount,
+            'text' => "Absent: {$absentCount}",
+            'url'  => null
+        ]];
+
+        if ($pendingLeave > 0) {
+            $eligibleRemarks = [[
+                'value' => $pendingLeave,
+                'text' => "Leave/s: {$pendingLeave}",
+                'url'  => null
+            ]];
+        }
 
         // Check account status
         if ($employee->account_status !== 'active') {
-            $remark[] = [
+            $remarks[] = [
                 'text' => 'This Employee is Inactive',
-                'url'  => route('hris.employee.information', ['id' => $employee->user_id])
+                'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
             ];
         }
 
         // Check incomplete logs
         if ($incompleteLogs > 0) {
-            $verb = ($incompleteLogs === 1) ? 'has' : 'have';
-            $remark[] = [
-                'text' => "This Employee {$verb} {$incompleteLogs} missing log" . ($incompleteLogs !== 1 ? 's' : ''),
-                'url'  => route('daily-time-record.index', ['id' => $employee->user_id])
+            $remarks[] = [
+                'text' => sprintf(
+                    "This Employee %s %d missing log%s",
+                    $incompleteLogs === 1 ? 'has' : 'have',
+                    $incompleteLogs,
+                    $incompleteLogs === 1 ? '' : 's'
+                ),
+                'url' => route('daily-time-record.index', [
+                    'employee_no' => $employee->employee_no,
+                    'month' => \Carbon\Carbon::parse($this->date)->format('m'),
+                    'year' => \Carbon\Carbon::parse($this->date)->format('Y'),
+                ]),
             ];
         }
 
         // Determine eligibility
-        if (empty($remark)) {
+        $employee->remarks = $remarks ?: $eligibleRemarks;
+
+        if (empty($remarks)) {
             $this->eligibile[] = $employee;
         } else {
-            $employee->remarks = $remark;
             $this->not_eligibile[] = $employee;
         }
     }

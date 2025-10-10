@@ -68,7 +68,10 @@ class TimelogsServices {
 
         // Apply date range filter if both dates are provided
         if ($startDate && $endDate) {
-            $query->whereBetween('date_time', [$startDate, $endDate]);
+            $query->whereBetween('date_time', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay(),
+            ]);
         }
 
         // Group logs by date (e.g., "2025-09-18")
@@ -77,7 +80,7 @@ class TimelogsServices {
         });
 
         // Ensure only the first "time in" per day is kept
-        return $grouped->map(function ($logs) {
+        $grouped->map(function ($logs) {
             $seen = [];
             return $logs->filter(function ($log) use (&$seen) {
                 // Cast type to int for comparison
@@ -94,6 +97,8 @@ class TimelogsServices {
                 return true;
             });
         });
+
+        return $grouped;
     }
 
     /**

@@ -29,20 +29,29 @@
         >
           <div class="accordion-body">
             <div
-              v-if="employees.eligible.length"
-              class="list-group list-group-flush"
-            >
-              <div
-                v-for="employee in employees.eligible"
-                :key="employee.id"
-                class="list-group-item d-flex justify-content-between align-items-center"
+                v-if="employees.eligible.length"
+                class="list-group list-group-flush"
               >
+              <div
+                  v-for="employee in employees.eligible"
+                  :key="employee.id"
+                  class="list-group-item d-flex justify-content-between align-items-center"
+                >
                 <div>
                   <strong>{{ employee.suffix }} {{ employee.firstname }} {{ employee.middlename }} {{ employee.lastname }}</strong>
                   <div class="text-muted small">
                     {{ employee.position }} — {{ employee.division }}
                   </div>
+                  <div v-for="remark in employee.remarks">
+                    <a v-if="remark.value != 0"
+                       class="text-underline"
+                       href="#"
+                       @click.prevent="openRemark(remark.url)">
+                      <span class="text-warning small" >{{ remark.text }}</span>
+                    </a>
+                  </div>  
                 </div>
+                
                 <span class="badge bg-success">Eligible</span>
               </div>
             </div>
@@ -120,7 +129,8 @@ export default {
     };
   },
   methods: {
-    openRemark(url) {
+   openRemark(url) {
+      if (!url) return;
       window.open(
         url,
         '_blank',

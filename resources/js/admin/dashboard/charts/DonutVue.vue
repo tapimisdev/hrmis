@@ -34,17 +34,17 @@ export default {
     colors: {
       type: Array as () => string[],
       default: () => [
-        '#269899', // lighter 10%
-        '#40ADAE', // lighter 20%
-        '#5AC2C3', // lighter 30%
-        '#74D7D8', // lighter 40%
-        '#8EECEC', // lighter 50%
-        '#0C8384', // base
-        '#0A6E6F', // darker 10%
-        '#085A5B', // darker 20%
-        '#064647', // darker 30%
-        '#043233', // darker 40%
-        '#021E1F'  // darker 50%
+        '#AFC4FF', // lighter 50%
+        '#8DAAFF', // lighter 40%
+        '#6B8FFF', // lighter 30%
+        '#4975FF', // lighter 20%
+        '#275AFF', // lighter 10%
+        '#032985', // base
+        '#021F69', // darker 10%
+        '#02164D', // darker 20%
+        '#010C31', // darker 30%
+        '#000416', // darker 40%
+        '#000109'  // darker 50%
       ]
     },
     cutout: {

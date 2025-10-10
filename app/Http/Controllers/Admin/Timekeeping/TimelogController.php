@@ -104,7 +104,7 @@ class TimelogController extends Controller
         ->addColumn('actions', function ($row) {
 
           return '<div class="d-flex">' .
-                '<a href="' . route('daily-time-record.index', $row->id) . '" class="btn btn-primary btn-sm ms-1 my-1" title="DTR">' .
+                '<a href="' . route('daily-time-record.index', $row->employee_no) . '" class="btn btn-primary btn-sm ms-1 my-1" title="DTR">' .
                     '<i class="fas fa-clock"></i> View DTR'  .
                 '</a>' .
             '</div>';

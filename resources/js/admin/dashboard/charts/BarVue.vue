@@ -27,12 +27,12 @@ export default {
         datasets: [
           {
             label: 'On-Time',
-            backgroundColor: '#0c8384',
+            backgroundColor: '#032985',
             data: [95, 92, 98, 94, 96] 
           },
           {
             label: 'Late',
-            backgroundColor: '#323535',
+            backgroundColor: '#000000',
             data: [25, 32, 12, 11, 24]
           }
         ]

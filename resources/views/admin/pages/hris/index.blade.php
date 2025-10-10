@@ -10,13 +10,14 @@
             <div class="d-flex flex-wrap gap-3 justify-content-end">
                 <!-- Dropdown Button -->
                 <div class="dropdown">
-                    <button class="btn btn-outline-primary text-uppercase fw-bold px-5 py-3 dropdown-toggle" 
+                    <button class="btn-modern ghost text-uppercase fw-bold px-5 py-3" 
                             type="button" 
                             id="employeeActionsDropdown" 
                             data-bs-toggle="dropdown" 
                             aria-expanded="false">
-                        Actions
+                        <i class="fa-solid fa-gear me-2"></i> Actions 
                     </button>
+
                     <ul class="dropdown-menu dropdown-menu-end w-100" aria-labelledby="employeeActionsDropdown">
                         <li>
                             <a class="dropdown-item fw-bold text-uppercase" href="{{ route('hris.import.index') }}">
@@ -36,11 +37,12 @@
                     </ul>
                 </div>
                 
-                <!-- Add Employee Button -->
-                <a href="{{route('hris.employee.information')}}" 
-                class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-plus me-2"></i> Add Employee
-                </a>
+                <x-button-link 
+                    :href="route('hris.employee.information')" 
+                    icon="fa-solid fa-plus" 
+                    text="Add Employee" 
+                    variant="primary"
+                />
             </div>
         </x-header>
         <div class="row mb-3">

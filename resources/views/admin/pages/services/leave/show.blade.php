@@ -4,9 +4,12 @@
 <div class="container pt-4">
 
     <x-header title="Leave Application" subtitle="View leave application details">
-        <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">
-            <i class="fa-solid fa-arrow-left me-2"></i> Back
-        </a>
+        <x-button-link 
+            :href="javascript:history.back()" 
+            icon="fa-solid fa-arrow-left me-2" 
+            text="Back" 
+            variant="danger"
+        />
     </x-header>
 
     <div class="card rounded-3 mb-5">

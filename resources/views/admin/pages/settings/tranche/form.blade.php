@@ -4,15 +4,21 @@
     <div class="container p-4 pb-5">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Tranche" subtitle="update this tranche">
-                <a href="{{route('settings.tranche.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-                </a>
+                <x-button-link 
+                    :href="route('settings.tranche.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @else
             <x-header title="Add New Tranche" subtitle="create new tranche" >
-                <a href="{{route('settings.tranche.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-                </a>
+                <x-button-link 
+                    :href="route('settings.tranche.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @endif
         <form id="form" action="{{ $isEdit ? route('settings.tranche.update', ['id' => $id]) : route('settings.tranche.store') }}" method="post">

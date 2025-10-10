@@ -7,9 +7,12 @@
 @section('content')
  <div class="container p-4 pb-5">
     <x-header title="Shift Schedule" subtitle="Manage shift schedule in this module">
-        <a href="{{ route('shift.index') }}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-            <i class="fa-solid fa-arrow-left me-2"></i> Back
-        </a>
+        <x-button-link 
+            :href="route('shift.index')" 
+            icon="fa-solid fa-arrow-left me-2" 
+            text="Back" 
+            variant="danger"
+        />
     </x-header>
     <form id="form" method="post">
         @csrf

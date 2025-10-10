@@ -221,11 +221,11 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         Route::resource('upload-timelogs', UploadTimeLogController::class)->only('index')->names(['index' => 'import.timelogs.index']);
         
         # API TIMEKEEPING
-        Route::get('daily-time-record/{id}', [DailyTimeRecordController::class, 'index'])
+        Route::get('daily-time-record/{employee_no}', [DailyTimeRecordController::class, 'index'])
             ->name('daily-time-record.index');
-        Route::get('daily-time-record/{id}/show', [DailyTimeRecordController::class, 'show'])
+        Route::get('daily-time-record/{employee_no}/show', [DailyTimeRecordController::class, 'show'])
             ->name('daily-time-record.show');
-        Route::get('daily-time-record/{id}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
+        Route::get('daily-time-record/{employee_no}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
         
     });
 

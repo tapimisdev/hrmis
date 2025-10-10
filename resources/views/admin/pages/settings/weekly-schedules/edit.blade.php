@@ -8,9 +8,12 @@
  <div class="container p-4 pb-5">
 
     <x-header title="Weekly Schedule" subtitle="Edit weekly schedule in this module">
-        <a href="{{ route('weekly-schedules.index') }}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-            <i class="fa-solid fa-arrow-left me-2"></i> Back
-        </a>
+        <x-button-link 
+            :href="route('weekly-schedules.index')" 
+            icon="fa-solid fa-arrow-left me-2" 
+            text="Back" 
+            variant="danger"
+        />
     </x-header>
     <form id="form" method="post">
         @csrf

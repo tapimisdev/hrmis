@@ -1,5 +1,6 @@
+@import './variables';
 #auth {
-    background-image: url('/public/img/hr_n_roll_background.jpg');
+    background-image: url('/public/img/hr_n_roll_background.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -71,8 +72,8 @@
                         transition: all 0.2s ease-in-out;
 
                         &:focus {
-                            border-color: #0c8384;
-                            box-shadow: 0 0 0 3px rgba(12, 131, 132, 0.15);
+                            border-color: $primary;
+                            box-shadow: 0 0 0 3px rgba($primary, 0.15);
                             background-color: #fff;
                         }
 
@@ -106,15 +107,15 @@
                             padding: 12px 0;
                             font-size: 16px;
                             font-weight: 500;
-                            background-color: #0c8384;
+                            background-color: $primary;
                             color: #fff;
                             border: none;
                             cursor: pointer;
                             transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 
                             &:hover {
-                                background-color: #0a6a6a;
-                                box-shadow: 0 4px 12px rgba(12, 131, 132, 0.3);
+                                background-color: $primary;
+                                box-shadow: 0 4px 12px rgba($primary, 0.3);
                             }
 
                             &:disabled {

@@ -4,15 +4,21 @@
     <div class="container p-4 pb-5">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Tranche" subtitle="update this tranche">
-                <a href="{{route('services.suspensions.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-                </a>
+                <x-button-link 
+                    :href="route('services.suspensions.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @else
             <x-header title="Add New Suspension" subtitle="Create or add new suspensions" >
-                <a href="{{route('services.suspensions.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-                </a>
+                <x-button-link 
+                    :href="route('services.suspensions.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @endif
         <form id="form" action="{{ $isEdit ? route('services.suspensions.update', ['suspension' => $id]) : route('services.suspensions.store') }}" method="post">

@@ -49,6 +49,7 @@
 
     <!-- Extra styles pushed from child views -->
     @yield('styles')
+    @stack('styles')
 
     <!-- Vite (compiles and loads local SCSS/JS assets) -->
     @vite([

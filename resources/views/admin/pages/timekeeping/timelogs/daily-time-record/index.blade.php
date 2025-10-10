@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="container p-4 pb-5">
-        <dtr-view-vue :employee_id="{{ json_encode($id) }}" ></dtr-view-vue>
+        <dtr-view-vue :employee_id="{{ json_encode($employee_no) }}" ></dtr-view-vue>
     </div>
 @endsection
 

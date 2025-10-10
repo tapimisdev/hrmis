@@ -3,9 +3,12 @@
 @section('content')
     <div class="container p-4 pb-5">
         <x-header title="Update Employee Account" subtitle="Update employee's portal account">
-            <a href="{{ route('hris.employee.index') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                Go Back
-            </a>
+            <x-button-link 
+                :href="route('hris.employee.index')" 
+                icon="fa-solid fa-arrow-left me-2" 
+                text="Back" 
+                variant="danger"
+            />
         </x-header>
 
         <x-hris-menu active="earnings" empno="{{ $employee_no }}" />
@@ -177,7 +180,7 @@
                                             </div>
                                         @endif
                                     </div>
-                                    <button type="button" id="add-group-btn" class="btn btn-secondary text-uppercase fw-bold px-4 py-2">Add Items</button>
+                                    <button type="button" id="add-group-btn" class="btn btn-outline-primary text-uppercase fw-bold px-4 py-2">Add Items</button>
                                 </div>
                             </div>
                         </div>

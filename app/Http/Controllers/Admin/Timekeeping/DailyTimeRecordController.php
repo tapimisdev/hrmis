@@ -33,9 +33,9 @@ class DailyTimeRecordController extends Controller
      * @param  int  $id  The user ID for which to view DTRs.
      * @return \Illuminate\View\View
      */
-    public function index($id)
+    public function index($employee_no)
     {
-        return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('id'));
+        return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no'));
     }
 
     /**
@@ -48,9 +48,11 @@ class DailyTimeRecordController extends Controller
      * @param  int  $id  The user ID whose DTR will be fetched.
      * @return \Illuminate\Http\JsonResponse
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, $employee_no)
     {
-        $user_id = $id;
+        $user_id = DB::table('employee_information')
+            ->where('employee_no', $employee_no)
+            ->value('user_id');
 
         // Get month and year from query params, default to current month/year
         $month = $request->query('month', Carbon::now()->month);
@@ -63,7 +65,7 @@ class DailyTimeRecordController extends Controller
         // Fetch daily time records from the service
         $daily_time_record = $this->daily_time_record_service->getDTR([
             'user_id'     => $user_id,
-            'employee_no' => $employee_no ?? null, // optional, ensure this variable is defined if used
+            'employee_no' => $employee_no ?? null,
             'startDate'   => $startDate->toDateTimeString(),
             'endDate'     => $endDate->toDateTimeString(),
         ]);
@@ -71,10 +73,8 @@ class DailyTimeRecordController extends Controller
         return response()->json($daily_time_record, 200);
     }
 
-    public function employee_information_with_summary(Request $request, $id)
+    public function employee_information_with_summary(Request $request, $employee_no)
     {
-        $user_id = $id;
-
         $employee = DB::table('users')
             ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id') // spatie roles table
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
@@ -87,7 +87,7 @@ class DailyTimeRecordController extends Controller
             ->leftJoin('units', 'employee_organization.unit_id', '=', 'units.id')
             ->leftJoin('shifts', 'employee_shift_work_schedule.shift_id', '=', 'shifts.id')
             ->where('roles.name', 'employee')
-            ->where('users.id', $user_id)
+            ->where('employee_information.employee_no', $employee_no)
             ->select(
                 'users.id',
                 'users.email',

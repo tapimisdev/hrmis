@@ -5,15 +5,21 @@
         {{-- Header --}}
         @if($isEdit ?? false)
             <x-header title="Update Approver" subtitle="Update approver/s">
-                <a href="{{ route('settings.approvers.index') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                    Go Back
-                </a>
+                <x-button-link 
+                    :href="route('settings.approvers.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @else
             <x-header title="Add New Approver" subtitle="Create new approver/s">
-                <a href="{{ route('settings.approvers.index') }}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                    Go Back
-                </a>
+                <x-button-link 
+                    :href="route('settings.approvers.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @endif
 

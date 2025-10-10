@@ -3,9 +3,12 @@
 @section('content')
     <div class="container p-4 pb-5">
         <x-header title="All Approvers" subtitle="Manage approvers in this module">
-            <a href="{{ route('settings.approvers.create') }}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-plus me-2"></i> Add Approvers
-            </a>
+            <x-button-link 
+                :href="route('settings.approvers.create')" 
+                icon="fa-solid fa-plus" 
+                text="Add Approvers" 
+                variant="secondary"
+            />
         </x-header>
         <div class="row mb-3">
             <div class="col-12 col-md-6 mb-3">

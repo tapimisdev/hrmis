@@ -204,10 +204,6 @@ $bg-hover: #f8f9fa;
     transition: all 0.3s ease;
     cursor: pointer;
 
-    .circle {
-      background-color: #efeff0 !important;
-    }
-
     &:hover {
       transform: translateX(3px);
     }
@@ -234,6 +230,10 @@ $bg-hover: #f8f9fa;
       h6, p {
         color: $success;
       }
+      
+      .connector {
+        background-color: $success;
+      }
     }
 
     .circle {
@@ -241,7 +241,7 @@ $bg-hover: #f8f9fa;
       height: 36px;
       border-radius: 50%;
       background-color: lighten($border-color, 10%);
-      color: $text-muted;
+      background-color: #efeff0;
       display: flex;
       justify-content: center;
       align-items: center;

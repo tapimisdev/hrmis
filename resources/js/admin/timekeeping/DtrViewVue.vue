@@ -17,32 +17,51 @@
 </template>
 
 <script>
-import FilterDtrVue from './components/FilterDtrVue.vue';
-import TableDtrVue from './components/TableDtrVue.vue';
+import FilterDtrVue from './components/FilterDtrVue.vue'
+import TableDtrVue from './components/TableDtrVue.vue'
 
 export default {
   components: { FilterDtrVue, TableDtrVue },
+
   props: {
     employee_id: {
       type: String,
-      required: true
-    }
+      required: true,
+    },
   },
+
   data() {
     return {
       month: new Date().getMonth() + 1,
       year: new Date().getFullYear(),
-      summary: []
+      summary: [],
     }
   },
+
+  mounted() {
+    this.initializeFromQuery()
+  },
+
   methods: {
-    updateDate({ month, year }) {
-      this.month = month;
-      this.year = year;
+    initializeFromQuery() {
+      // ✅ Works with or without Vue Router
+      const params = this.$route?.query || Object.fromEntries(new URLSearchParams(window.location.search))
+
+      const month = params.month ? parseInt(params.month) : null
+      const year = params.year ? parseInt(params.year) : null
+
+      if (month) this.month = month
+      if (year) this.year = year
     },
+
+    updateDate({ month, year }) {
+      this.month = month
+      this.year = year
+    },
+
     handleSummary(payload) {
-      this.summary = payload;
-    }
-  }
+      this.summary = payload
+    },
+  },
 }
 </script>

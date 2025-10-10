@@ -7,9 +7,7 @@
 @section('content')
     <div class="container p-4 pb-5">
         <x-header title="Employment Types" subtitle="Manage employment types in this module">
-            <!-- <a href="{{route('employment-types.create')}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-plus me-2"></i> Add New
-            </a> -->
+
         </x-header>
 
         <x-table id="myTable">

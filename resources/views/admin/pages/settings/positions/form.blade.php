@@ -4,15 +4,21 @@
     <div class="container p-4 pb-5">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Position" subtitle="update this employee position">
-                <a href="{{route('positions.index', ['employment_type' => $employment_type->id])}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-                </a>
+                <x-button-link 
+                    :href="route('positions.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @else
             <x-header title="Add New Position" subtitle="create new position for employees" >
-                <a href="{{route('positions.index', ['employment_type' => $employment_type->id])}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
-                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-                </a>
+                <x-button-link 
+                    :href="route('positions.index')" 
+                    icon="fa-solid fa-arrow-left me-2" 
+                    text="Back" 
+                    variant="danger"
+                />
             </x-header>
         @endif
         <form id="form" action="{{ $isEdit ? route('positions.update', ['id' => $id, 'employment_type_id' => $employment_type->id]) : route('positions.store', ['employment_type_id' => $employment_type->id]) }}" method="post">

@@ -47,7 +47,7 @@
             <a href="{{route('services.events.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-arrow-left me-2"></i>Go Back
             </a>
-            <a href="{{route('services.events.edit', ['event' => $data['slug']])}}" class="btn btn-secondary py-3 px-4 text-uppercase fw-medium">
+            <a href="{{route('services.events.edit', ['event' => $data['slug']])}}" class="btn btn-outline-primary py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-pen-to-square"></i> Update
             </a>
         </div>
