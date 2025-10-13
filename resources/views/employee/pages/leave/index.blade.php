@@ -16,10 +16,10 @@
             <thead>
                 <tr>
                     <th style="width: 10px">#</th>
+                    <th>Status</th>
                     <th>Leave Type</th>
                     <th>Date</th>
-                    <th>Status</th>
-                    <th>Number of Days</th>
+                    <th>No. of Days</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -40,9 +40,9 @@
             "ajax": '{{ route('leaves.index') }}',
             "columns": [
                 { data: "DT_RowIndex", name: 'index' },
-                { data: "leave_name", name: 'leave_name' },
-                { data: "date", name: 'date' },
+                { data: "name", name: 'name' },
                 { data: "status", name: 'status' },
+                { data: "date", name: 'date' },
                 { data: "days", name: 'days' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
@@ -81,56 +81,74 @@
         });
 
         const myModal = $('#myModal');
+
         $(document).on('click', '.show-button', function() {
             let id = $(this).attr('data-id');
             $('.modal-title').html('Leave Application');
 
             axios.get(`/employee/leaves/${id}`)
                 .then((response) => {
-                    const data = response.data.leave;
-                    console.log(data);
-                    // Fill in modal
+                    const data = response.data.data;
+
+                    // Fill in modal fields
                     $('#doc-id').text(data.id);
                     $('#employee-no').text(data.employee_no ?? 'N/A');
                     $('#leave-type').text(data.leave_name);
-                    $('#start-date').text(moment(data.start_date).format('MMMM D, YYYY'));
-                    $('#end-date').text(moment(data.end_date).format('MMMM D, YYYY'));
+
+                    // Format and display dates array nicely (e.g. "Oct 14, 16 2025")
+                    if (Array.isArray(data.dates) && data.dates.length > 0) {
+                        const formattedDates = data.dates
+                            .map(date => moment(date).format('MMM D'))
+                            .join(', ');
+                        // Assuming all dates in same year; append year from first date
+                        const year = moment(data.dates[0]).format('YYYY');
+                        $('#selectedDates').text(`${formattedDates} ${year}`);
+                    } else {
+                        $('#selectedDates').text('N/A');
+                    }
+
                     $('#days').text(data.days);
                     $('#reason').text(data.reason);
 
-                    // Status badge
+                    // Status badge styling
                     let statusClass = 'bg-secondary';
                     if (data.status === 'pending') statusClass = 'bg-warning';
                     else if (data.status === 'approved') statusClass = 'bg-success';
                     else if (data.status === 'rejected') statusClass = 'bg-danger';
 
-                    $('#status').attr('class', 'badge ' + statusClass).text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
+                    $('#status').attr('class', 'badge ' + statusClass)
+                                .text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
 
                     $('#created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
 
+                    // Approver and approval date
                     $('#approver').text(data.approver_id ?? 'Not Yet Assigned');
-                    $('#approved-at').text(data.approved_at ? moment(data.approved_at).format('MMMM D, YYYY h:mm A') : '---');
+                    $('#approved-at').text(data.approved_at 
+                        ? moment(data.approved_at).format('MMMM D, YYYY h:mm A') 
+                        : '---');
 
+                    // Attachments list
                     $('#attachments ul').empty();
 
                     const attachments = response.data.attachments;
 
                     if (attachments && attachments.length > 0) {
                         attachments.forEach(file => {
-                            let fileUrl = `/storage/${file.file_path}`; // adjust if different
+                            let fileUrl = `/storage/${file.file_path}`; // adjust path if necessary
                             let fileName = file.file_name;
 
                             $('#attachments ul').append(
-                                `<li><a href="${fileUrl}" target="_blank">${fileName}</a></li>`
+                                `<li><a href="${fileUrl}" target="_blank" rel="noopener noreferrer">${fileName}</a></li>`
                             );
                         });
                     } else {
                         $('#attachments ul').append('<li><em>No attachments</em></li>');
                     }
 
-                    // Show modal
+                    // Show the modal
                     $('#myModal').modal('show');
                 })
+
                 .catch(error => {
                     Swal.fire({
                         title: "Oops!",

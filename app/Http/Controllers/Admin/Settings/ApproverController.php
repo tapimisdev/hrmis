@@ -21,7 +21,7 @@ class ApproverController extends Controller
             $unit_id     = $request->get('unit');
 
             $query = DB::table('application_approver as aa')
-                ->leftJoin('application_approver_user as aau', 'aa.id', '=', 'aau.application_approver_id')
+                ->leftJoin('application_approver_users as aau', 'aa.id', '=', 'aau.application_approver_id')
                 ->leftJoin('divisions as d', 'aa.division_id', '=', 'd.id')
                 ->leftJoin('units as u', 'aa.unit_id', '=', 'u.id')
                 ->select(
@@ -114,7 +114,7 @@ class ApproverController extends Controller
 
             foreach ($request->approvers as $level => $userIds) {
                 foreach ((array) $userIds as $userId) {
-                    DB::table('application_approver_user')->insert([
+                    DB::table('application_approver_users')->insert([
                         'application_approver_id' => $approver_id,
                         'user_id'                 => $userId,
                         'level'                   => $level,
@@ -147,7 +147,7 @@ class ApproverController extends Controller
     {
 
         $data = DB::table('application_approver as aa')
-            ->leftJoin('application_approver_user as aau', 'aa.id', '=', 'aau.application_approver_id')
+            ->leftJoin('application_approver_users as aau', 'aa.id', '=', 'aau.application_approver_id')
             ->leftJoin('divisions as d', 'aa.division_id', '=', 'd.id')
             ->leftJoin('units as u', 'aa.unit_id', '=', 'u.id')
             ->leftJoin('users as usr', 'aau.user_id', '=', 'usr.id')
@@ -249,13 +249,13 @@ class ApproverController extends Controller
                     'updated_at'  => now(),
                 ]);
 
-            DB::table('application_approver_user')
+            DB::table('application_approver_users')
                 ->where('application_approver_id', $id)
                 ->delete();
 
             foreach ($request->approvers as $level => $userIds) {
                 foreach ((array) $userIds as $userId) {
-                    DB::table('application_approver_user')->insert([
+                    DB::table('application_approver_users')->insert([
                         'application_approver_id' => $id,
                         'user_id'                 => $userId,
                         'level'                   => $level,
@@ -296,7 +296,7 @@ class ApproverController extends Controller
                 return max(array_keys($row['level_counts'])) . ' levels';
             })
             ->editColumn('no_approvers', function ($row) {
-                return DB::table('application_approver_user')
+                return DB::table('application_approver_users')
                     ->where('application_approver_id', $row['approver_id'])
                     ->count('user_id') . ' approver(s)';
             })

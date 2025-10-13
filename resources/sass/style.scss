@@ -11,14 +11,28 @@
     cursor: no-drop;   
 }
 
+#calendar {
+    td {
+        cursor: pointer;
+    }
+}
+
 .fc-event-main {
     text-align: center;
     font-weight: 600;
     text-transform: uppercase;
+    cursor: pointer;
 }
 
 .fc .fc-daygrid-day-frame {
     cursor: pointer;
+    min-height: 100px;
+}
+
+.fc-daygrid-event {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    white-space: inherit;
 }
 
 .ck-editor__editable {
