@@ -14,6 +14,7 @@ class EmployeeService {
 
     }
 
+    // user id to employee no
     public function getEmployeeNo($user_id)
     {
         $employee = DB::table('employee_information')
@@ -22,6 +23,17 @@ class EmployeeService {
                 ->first();
 
         return $employee->employee_no;
+    }
+
+    // employee no. to user id
+    public function getEmployeeUserId($employee_no)
+    {
+         $employee = DB::table('employee_information')
+                ->where('employee_no', $employee_no)
+                ->select('user_id')
+                ->first();
+
+        return $employee->user_id;
     }
 
     public function checkIfEmployeeExists(? string $employee_no = null)

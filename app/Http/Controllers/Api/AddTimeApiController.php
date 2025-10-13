@@ -18,6 +18,8 @@ class AddTimeApiController extends Controller
     protected $timelog_service;
     protected $employee_service;
 
+    protected $user_id;
+
     public function __construct(TimelogsServices $timelog_service, EmployeeService $employee_service)
     {
         $this->timelog_service = $timelog_service;
@@ -28,7 +30,9 @@ class AddTimeApiController extends Controller
     {
         $validatedData = $request->validated();
 
-        $employee_no = $this->employee_service->getEmployeeNo($validatedData['user_id']);
+        $employee_no = $validatedData['user_id']; // adjusted
+
+        $user_id = $this->employee_service->getEmployeeUserId($employee_no);
 
         DB::beginTransaction();
 
@@ -38,13 +42,13 @@ class AddTimeApiController extends Controller
             // Mark existing logs as inactive
             $oldLogs = DB::table('timelogs')
                 ->whereDate('date_time', $date)
-                ->where('user_id', $validatedData['user_id'])   
+                ->where('user_id', $user_id)   
                 ->get();
 
             if ($oldLogs->isNotEmpty()) {
                 DB::table('timelogs')
                     ->whereDate('date_time', $date)
-                    ->where('user_id', $validatedData['user_id'])
+                    ->where('user_id', $user_id)
                     ->update(['is_active' => false]);
             }
 
@@ -63,7 +67,7 @@ class AddTimeApiController extends Controller
                 }
 
                 DB::table('timelogs')->insert([
-                    'user_id'          => $validatedData['user_id'],
+                    'user_id'          => $user_id,
                     'employee_no'      => $employee_no,
                     'date_time'        => Carbon::parse($date . ' ' . $entry['time'])->format('Y-m-d H:i:s'),
                     'shift_id'         => $validatedData['shift'],
@@ -95,12 +99,12 @@ class AddTimeApiController extends Controller
     {
         $validatedData = $request->validated();
 
-        $userId = $validatedData['user_id'];
+        $employee_no = $validatedData['user_id'];
+
+        $user_id = $this->employee_service->getEmployeeUserId($employee_no);
 
         DB::beginTransaction();
         try {
-
-            $employee_no = DB::table('employee_information')->where('user_id', $userId)->value('employee_no');
 
             if($validatedData['status'] === 'approved') {
                 $approver_id = auth()->id();
@@ -109,7 +113,7 @@ class AddTimeApiController extends Controller
 
             $atro = DB::table('overtimes')
                     ->insert([
-                        'user_id'       => $userId,
+                        'user_id'       => $user_id,
                         'employee_no'   => $employee_no,
                         'date'          => $validatedData['date'],
                         'start_time'    => $validatedData['start_time'],
@@ -145,16 +149,19 @@ class AddTimeApiController extends Controller
     {
          // Validate user_id and date
         $validated = $request->validate([
-            'user_id' => ['required', 'exists:users,id'],
+            'user_id' => ['required', 'exists:employee_information,employee_no'],
             'date'    => ['required', 'date'],
         ]);
 
         // Access validated data
-        $userId = $validated['user_id'];
+        $employee_no = $validated['user_id'];
+
+        $user_id = DB::table('employee_information')->where('employee_no', $employee_no)->value('user_id');
+
         $date = Carbon::parse($validated['date']);
 
         $logs = $this->timelog_service->getTimeLogsWithPeriod(
-            $userId,
+            $user_id,
             $date->copy()->startOfDay(),  // start_date
             $date->copy()->endOfDay()     // end_date
         );
