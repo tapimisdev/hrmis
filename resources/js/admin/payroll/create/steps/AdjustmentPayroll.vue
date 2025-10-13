@@ -1,7 +1,28 @@
 <template>
   <div>
-    <ModalVue ref="modal" :title="'Suspension - Holiday'">
-      
+    <ModalVue ref="modal" :headerIcon="'fa-solid fa-gear text-secondary'" :title="'Suspension & Holiday'">
+      <div class="px-3 pt-3 border-bottom pb-3">
+        <label class="form-label">
+          Adjustment Type <span class="text-danger">*</span>
+        </label>
+        <select
+          class="form-select"
+          :class="{ 'is-invalid': errors.type }"
+          v-model="adjustment_type"
+        >
+          <option value="">Select Type</option>
+          <option value="suspension">Suspension</option>
+          <option value="holiday">Holiday</option>
+        </select>
+        <span class="text-danger" v-if="errors.type">{{ errors.type[0] }}</span>
+      </div>
+      <SuspensionForm v-if="adjustment_type === 'suspension'" :date="selectedDate" />
+      <HolidayForm v-else-if="adjustment_type === 'holiday'" :date="selectedDate" />
+      <div class="px-3" v-else>
+        <div class="alert alert-info text-uppercase" role="alert">
+          --  No selected adjustment type  --
+        </div>
+      </div>
     </ModalVue>
 
     <h5 class="mb-1 text-primary text-uppercase">Step 2: Suspensions & Holidays</h5>
@@ -24,9 +45,11 @@ import ModalVue from "../../../../components/ModalVue.vue";
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import SuspensionForm from "./forms/SuspensionForm.vue";
+import HolidayForm from "./forms/HolidayForm.vue";
 
 export default {
-  components: { FullCalendar, ModalVue },
+  components: { FullCalendar, ModalVue, SuspensionForm, HolidayForm },
 
   props: { modelValue: Object },
 
@@ -34,6 +57,9 @@ export default {
     showCalendar: false,
     calendarKey: 0,
     calendarOptions: null,
+    selectedDate: null,
+    errors: [],
+    adjustment_type: ''
   }),
 
   mounted() {
@@ -146,6 +172,7 @@ export default {
 
     handleDateClick(date) {
       this.date = date;
+      this.selectedDate = date;
       this.$refs.modal.open();
     },
   },

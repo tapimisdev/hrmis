@@ -1,82 +1,74 @@
 <template>
-  <div class="container py-4">
-    <div class="row g-4">
-      <!-- Step Navigation -->
-      <div class="col-12 col-md-4">
-        <div class="vertical-stepper">
+  <div class="stepper-container">
+    <div class="stepper-wrapper">
+      <!-- Sidebar Stepper -->
+      <div class="stepper-sidebar">
+        <div class="sidebar-header">
+          <h5>Payroll Setup</h5>
+          <span>Step {{ currentStep + 1 }}/{{ steps.length }}</span>
+        </div>
+        
+        <div class="steps-list">
           <div
             v-for="(step, index) in steps"
             :key="index"
-            class="step-item d-flex align-items-start position-relative p-3 rounded"
+            class="step"
             :class="{ active: currentStep === index, completed: index < currentStep }"
             @click="goToStep(index)"
           >
-            <!-- Step Icon -->
-            <div class="circle flex-shrink-0 me-3 mt-1">
-              <i v-if="index < currentStep" class="fas fa-check text-white"></i>
+            <div class="step-circle">
+              <i v-if="index < currentStep" class="fas fa-check"></i>
               <span v-else>{{ index + 1 }}</span>
             </div>
-
-            <!-- Step Label -->
-            <div>
-              <h6 class="fw-bold mb-1">{{ step.label }}</h6>
-              <p class="small mb-0 text-muted">{{ step.desc }}</p>
+            <div class="step-info">
+              <h6>{{ step.label }}</h6>
+              <p>{{ step.desc }}</p>
             </div>
-
-            <!-- Connector -->
-            <div
-              v-if="index < steps.length - 1"
-              class="connector position-absolute start-4 top-100 translate-middle-x"
-            ></div>
           </div>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill" :style="{ width: ((currentStep + 1) / steps.length * 100) + '%' }"></div>
         </div>
       </div>
 
-      <!-- Step Content -->
-      <div class="col-12 col-md-8">
-        <div class="card border-0 shadow-lg p-4 animate-step position-relative">
-          <LoaderVue :visible="loading" status="loading" message="loading, please wait..." />
+      <!-- Content Area -->
+      <div class="stepper-content">
+        <LoaderVue :visible="loading" status="loading" message="Loading..." />
+        
+        <div class="content-body">
           <keep-alive :include="['CreatePayroll', 'ReviewPayroll', 'ApprovalPayroll']">
-            <component 
-              :is="steps[currentStep].component" 
-              v-model="form"
-              :errors
-              :employees
-            />
+            <component :is="steps[currentStep].component" v-model="form" :errors="errors" :employees="employees" />
           </keep-alive>
+        </div>
 
-          <div class="d-flex justify-content-between mt-3 border-top pt-4">
-            <button
-              class="btn btn-outline-secondary px-4 py-2 rounded-pill"
-              :disabled="currentStep === 0"
-              @click="prevStep"
-            >
-              <i class="fas fa-arrow-left me-2"></i> Back
-            </button>
+        <div class="content-footer">
+          <button class="btn btn-back" :disabled="currentStep === 0" @click="prevStep">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back</span>
+          </button>
 
-            <button
-              v-if="currentStep < steps.length - 1"
-              class="btn btn-outline-primary px-4 py-2 rounded-pill"
-              :disabled="loading"
-              @click="nextStep"
-            >
-              <span v-if="loading">
-                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                Loading...
-              </span>
-              <span v-else>
-                Next <i class="fas fa-arrow-right ms-2"></i>
-              </span>
-            </button>
+          <span class="step-mobile">{{ currentStep + 1 }}/{{ steps.length }}</span>
 
-            <button
-              v-else
-              class="btn btn-primary px-4 py-2 rounded-pill"
-              @click="submitForm"
-            >
-              <i class="fas fa-cog me-2"></i> Generate
-            </button>
-          </div>
+          <button
+            v-if="currentStep < steps.length - 1"
+            class="btn btn-next"
+            :disabled="loading"
+            @click="nextStep"
+          >
+            <span v-if="loading">
+              <span class="spinner-border spinner-border-sm"></span>
+            </span>
+            <template v-else>
+              <span>Next</span>
+              <i class="fas fa-arrow-right"></i>
+            </template>
+          </button>
+
+          <button v-else class="btn btn-submit" @click="submitForm">
+            <i class="fas fa-rocket"></i>
+            <span>Generate</span>
+          </button>
         </div>
       </div>
     </div>
@@ -92,7 +84,7 @@ import ApprovalPayroll from "./steps/ApprovalPayroll.vue";
 import LoaderVue from "../../../components/LoaderVue.vue";
 
 export default {
-  name: 'ParollStepper',
+  name: 'PayrollStepper',
   components: { CreatePayroll, AdjustmentPayroll, ReviewPayroll, ApprovalPayroll, LoaderVue },
   data() {
     return {
@@ -108,26 +100,10 @@ export default {
         date: new Date().toISOString().split("T")[0],
       },
       steps: [
-        {
-          label: "Create Payroll",
-          desc: "Set the basic payroll details.",
-          component: markRaw(CreatePayroll),
-        },
-        {
-          label: "Employee Eligibility Review",
-          desc: "View eligible and ineligible employees with remarks.",
-          component: markRaw(ReviewPayroll),
-        },
-        {
-          label: "Suspensions & Holidays",
-          desc: "Record any suspensions or holidays affecting payroll.",
-          component: markRaw(AdjustmentPayroll),
-        },
-        {
-          label: "Approval & Submission",
-          desc: "Finalize and submit payroll for approval.",
-          component: markRaw(ApprovalPayroll),
-        },
+        { label: "Create Payroll", desc: "Set basic details", component: markRaw(CreatePayroll) },
+        { label: "Employee Review", desc: "View eligibility", component: markRaw(ReviewPayroll) },
+        { label: "Adjustments", desc: "Suspensions & holidays", component: markRaw(AdjustmentPayroll) },
+        { label: "Approval", desc: "Finalize & submit", component: markRaw(ApprovalPayroll) },
       ],
     };
   },
@@ -148,39 +124,21 @@ export default {
     async validateAndGetReview() {
       this.loading = true;
       this.errors = {};
-      const payload = { ...this.form };
-
       try {
-        const res = await axios.post(
-          "/api/payroll/validate-and-fetch-employees",
-          payload,
-          {
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${this.token}`,
-            },
-          }
-        );
-        console.log(res.data.data)
+        const res = await axios.post("/api/payroll/validate-and-fetch-employees", this.form, {
+          headers: { Accept: "application/json", Authorization: `Bearer ${this.token}` }
+        });
         this.employees = res.data.data;
         return true;
       } catch (error) {
         if (error.response?.status === 422) {
           this.errors = error.response.data.errors;
         } else {
-          if(error.response?.data?.message === 'No employees found for this employment type.') {
-           Swal.fire(
-              "No Employees Found",
-              error.response?.data?.message || "Please add employees to this payroll before proceeding.",
-              "info"
-            );
-          } else {
-            Swal.fire(
-              "Error",
-              error.response?.data?.message || "Something went wrong.",
-              "error"
-            );
-          }
+          Swal.fire(
+            error.response?.data?.message === 'No employees found for this employment type.' ? "No Employees Found" : "Error",
+            error.response?.data?.message || "Something went wrong.",
+            error.response?.data?.message === 'No employees found for this employment type.' ? "info" : "error"
+          );
         }
         return false;
       } finally {
@@ -188,7 +146,7 @@ export default {
       }
     },
     submitForm() {
-      Swal.fire("Payroll Generated", "Payroll submitted successfully.", "success");
+      Swal.fire("Success", "Payroll submitted successfully.", "success");
     },
   },
 };
@@ -196,89 +154,273 @@ export default {
 
 <style lang="scss" scoped>
 @import './../../../../sass/variables';
-$border-color: #e9ecef;
-$text-muted: #6c757d;
-$bg-hover: #f8f9fa;
 
-.vertical-stepper {
-  position: relative;
-  .step-item {
-    transition: all 0.3s ease;
-    cursor: pointer;
+.stepper-container {
+  background: lighten($light, 2%);
+  padding: 24px;
+}
 
-    &:hover {
-      transform: translateX(3px);
-    }
-    &.active {
-      
-      .circle {
-        background-color: $primary !important;
-        color: #fff;
-        box-shadow: 0 0 10px rgba($primary, 0.4);
-      }
+.stepper-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+}
 
-      h6, p {
-        color: $primary;
-      }
-    }
+/* Sidebar */
+.stepper-sidebar {
+  background: $white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba($black, 0.08);
+  height: fit-content;
+  position: sticky;
+  top: 64px;
+}
 
-    &.completed {
+.sidebar-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid $light;
 
-      .circle {
-        background-color: $success !important;
-        color: #fff;
-      }
+  h5 {
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, $primary, $secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 0 4px;
+  }
 
-      h6, p {
-        color: $success;
-      }
-      
-      .connector {
-        background-color: $success;
-      }
-    }
-
-    .circle {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background-color: lighten($border-color, 10%);
-      background-color: #efeff0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      flex-shrink: 0;
-      margin-right: 0.75rem;
-    }
-
-    .connector {
-      width: 3px;
-      height: 80px;
-      background-color: $border-color;
-      position: absolute;
-      left: 32px;
-      top: 30% !important;
-      transform: translateY(-50%);
-      z-index: -1;
-    }
+  span {
+    font-size: 13px;
+    color: lighten($dark, 30%);
+    font-weight: 600;
   }
 }
 
-/* --- Animation --- */
-.animate-step {
-  animation: fadeInUp 0.4s ease;
+.steps-list {
+  margin-bottom: 20px;
+}
 
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(15px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+.step {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:last-child { margin-bottom: 0; }
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 40px;
+    width: 2px;
+    height: 32px;
+    background: $light;
+    transition: all 0.3s ease;
   }
+
+  &:hover { transform: translateX(3px); }
+
+  &.active {
+    .step-circle {
+      background: linear-gradient(135deg, $primary, $secondary);
+      color: $white;
+      box-shadow: 0 4px 12px rgba($primary, 0.3);
+    }
+    h6 { color: $primary; font-weight: 700; }
+    p { color: $secondary; }
+  }
+
+  &.completed {
+    .step-circle {
+      background: $success;
+      color: $white;
+    }
+    &::after { background: $success; }
+    h6, p { color: lighten($dark, 20%); }
+  }
+}
+
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: $light;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.step-info {
+  flex: 1;
+  padding-top: 2px;
+
+  h6 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 2px;
+    color: lighten($dark, 20%);
+    transition: all 0.3s ease;
+  }
+
+  p {
+    font-size: 12px;
+    color: lighten($dark, 35%);
+    margin: 0;
+    line-height: 1.4;
+    transition: all 0.3s ease;
+  }
+}
+
+.progress-bar {
+  height: 6px;
+  background: $light;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, $primary, $secondary);
+  transition: width 0.5s ease;
+  box-shadow: 0 2px 6px rgba($primary, 0.3);
+}
+
+/* Content */
+.stepper-content {
+  background: $white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba($black, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.content-body {
+  flex: 1;
+  padding: 32px;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.content-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background: lighten($light, 2%);
+  border-top: 2px solid $light;
+  gap: 12px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba($black, 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+}
+
+.btn-back {
+  background: $white;
+  color: lighten($dark, 15%);
+  border: 2px solid darken($light, 8%);
+
+  &:hover:not(:disabled) {
+    background: $light;
+    color: $dark;
+  }
+}
+
+.btn-next {
+  background: linear-gradient(135deg, $primary, $secondary);
+  color: $white;
+  box-shadow: 0 4px 12px rgba($primary, 0.3);
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, $success, darken($success, 10%));
+  color: $white;
+  box-shadow: 0 4px 12px rgba($success, 0.3);
+}
+
+.step-mobile {
+  display: none;
+  font-weight: 700;
+  color: $primary;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .stepper-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .stepper-sidebar {
+    position: static;
+  }
+
+  .steps-list {
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    padding-bottom: 12px;
+  }
+
+  .step {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 120px;
+    margin: 0;
+
+    &::after { display: none; }
+  }
+
+  .step-info h6 { font-size: 13px; }
+  .step-info p { font-size: 11px; }
+}
+
+@media (max-width: 768px) {
+  .stepper-container { padding: 16px; }
+  .stepper-sidebar, .stepper-content { border-radius: 16px; padding: 20px; }
+  .content-body { padding: 24px 20px; }
+  .content-footer { padding: 16px 20px; }
+  
+  .btn span { display: none; }
+  .btn { min-width: 44px; justify-content: center; }
+  .btn-submit { flex: 1; span { display: inline; } }
+  
+  .step-mobile { display: block; }
 }
 </style>
