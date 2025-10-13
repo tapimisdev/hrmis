@@ -65,12 +65,16 @@
         @include('admin.components.sidebar')
 
         <main>
-            <!-- Top navbar -->
-            @include('admin.components.navbar')
+            <div>
+                <!-- Top navbar -->
+                @include('admin.components.navbar')
 
-            <!-- Main content area (unique per page) -->
-            @yield('content')
-            @include('admin.components.footer')
+                <!-- Main content area (unique per page) -->
+                @yield('content')
+            </div>
+            <div class="mt-5 pt-5">
+                @include('admin.components.footer')
+            </div>
         </main>
     </div>
 
