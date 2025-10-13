@@ -36,7 +36,7 @@
       <div class="col-12 col-md-8">
         <div class="card border-0 shadow-lg p-4 animate-step position-relative">
           <LoaderVue :visible="loading" status="loading" message="loading, please wait..." />
-          <keep-alive>
+          <keep-alive :include="['CreatePayroll', 'ReviewPayroll', 'ApprovalPayroll']">
             <component 
               :is="steps[currentStep].component" 
               v-model="form"
@@ -84,6 +84,7 @@
 </template>
 
 <script>
+import { markRaw } from "vue";
 import CreatePayroll from "./steps/CreatePayroll.vue";
 import AdjustmentPayroll from "./steps/AdjustmentPayroll.vue";
 import ReviewPayroll from "./steps/ReviewPayroll.vue";
@@ -91,6 +92,7 @@ import ApprovalPayroll from "./steps/ApprovalPayroll.vue";
 import LoaderVue from "../../../components/LoaderVue.vue";
 
 export default {
+  name: 'ParollStepper',
   components: { CreatePayroll, AdjustmentPayroll, ReviewPayroll, ApprovalPayroll, LoaderVue },
   data() {
     return {
@@ -109,22 +111,22 @@ export default {
         {
           label: "Create Payroll",
           desc: "Set the basic payroll details.",
-          component: CreatePayroll,
+          component: markRaw(CreatePayroll),
         },
         {
           label: "Employee Eligibility Review",
           desc: "View eligible and ineligible employees with remarks.",
-          component: ReviewPayroll,
+          component: markRaw(ReviewPayroll),
         },
         {
           label: "Suspensions & Holidays",
           desc: "Record any suspensions or holidays affecting payroll.",
-          component: AdjustmentPayroll,
+          component: markRaw(AdjustmentPayroll),
         },
         {
           label: "Approval & Submission",
           desc: "Finalize and submit payroll for approval.",
-          component: ApprovalPayroll,
+          component: markRaw(ApprovalPayroll),
         },
       ],
     };

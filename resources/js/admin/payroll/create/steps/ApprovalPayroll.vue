@@ -16,6 +16,7 @@
 
 <script>
 export default {
+  name: 'ApprovalPayroll',
   props: ["modelValue"],
   emits: ["update:modelValue"],
   data() {

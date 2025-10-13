@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="container-fluid pt-3">
+<div class="container pt-3">
     <header class="border-bottom d-flex flex-wrap pb-2 pt-4 mb-3">
         <div class="d-flex flex-column">
             <h1 class="text-uppercase fw-bolder">Dashboard</h1>

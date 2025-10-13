@@ -320,3 +320,329 @@
   from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+
+
+/* Modern Button Styles */
+.btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  border: none;
+  letter-spacing: -0.01em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+}
+
+/* Primary Button */
+.btn-primary {
+  background: linear-gradient(135deg, $primary 0%, $secondary 100%) !important;
+  color: $white !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba($primary, 0.35) !important;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, darken($primary, 5%) 0%, darken($secondary, 5%) 100%) !important;
+    box-shadow: 0 8px 20px rgba($primary, 0.45) !important;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($primary, 0.2) !important;
+  }
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background: linear-gradient(135deg, $secondary 0%, darken($secondary, 10%) 100%) !important;
+  color: $white !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba($secondary, 0.35) !important;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, darken($secondary, 5%) 0%, darken($secondary, 15%) 100%) !important;
+    box-shadow: 0 8px 20px rgba($secondary, 0.45) !important;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($secondary, 0.2) !important;
+  }
+}
+
+/* Success Button */
+.btn-success {
+  background: linear-gradient(135deg, $success 0%, darken($success, 10%) 100%) !important;
+  color: $white !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba($success, 0.35) !important;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, darken($success, 5%) 0%, darken($success, 15%) 100%) !important;
+    box-shadow: 0 8px 20px rgba($success, 0.45) !important;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($success, 0.2) !important;
+  }
+}
+
+/* Danger Button */
+.btn-danger {
+  background: linear-gradient(135deg, $danger 0%, darken($danger, 10%) 100%) !important;
+  color: $white !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba($danger, 0.35) !important;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, darken($danger, 5%) 0%, darken($danger, 15%) 100%) !important;
+    box-shadow: 0 8px 20px rgba($danger, 0.45) !important;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($danger, 0.2) !important;
+  }
+}
+
+/* Warning Button */
+.btn-warning {
+  background: linear-gradient(135deg, $warning 0%, darken($warning, 10%) 100%) !important;
+  color: $dark !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba($warning, 0.35) !important;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, darken($warning, 5%) 0%, darken($warning, 15%) 100%) !important;
+    box-shadow: 0 8px 20px rgba($warning, 0.45) !important;
+    color: $white !important;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($warning, 0.2) !important;
+  }
+}
+
+/* Info Button */
+.btn-info {
+  background: linear-gradient(135deg, $info 0%, darken($info, 10%) 100%) !important;
+  color: $white !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba($info, 0.35) !important;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, darken($info, 5%) 0%, darken($info, 15%) 100%) !important;
+    box-shadow: 0 8px 20px rgba($info, 0.45) !important;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($info, 0.2) !important;
+  }
+}
+
+/* Light Button */
+.btn-light {
+  background: $light !important;
+  color: $dark !important;
+  border: 2px solid darken($light, 5%) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+
+  &:hover:not(:disabled) {
+    background: darken($light, 3%) !important;
+    color: $black !important;
+    border-color: darken($light, 10%) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($dark, 0.1) !important;
+  }
+}
+
+/* Dark Button */
+.btn-dark {
+  background: linear-gradient(135deg, $dark 0%, darken($dark, 10%) 100%) !important;
+  color: $white !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba($dark, 0.35) !important;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, darken($dark, 5%) 0%, darken($dark, 15%) 100%) !important;
+    box-shadow: 0 8px 20px rgba($dark, 0.45) !important;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 4px rgba($dark, 0.2) !important;
+  }
+}
+
+/* Outline Buttons */
+.btn-outline-primary {
+  background: transparent !important;
+  color: $primary !important;
+  border: 2px solid $primary !important;
+  box-shadow: none !important;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, $primary 0%, $secondary 100%) !important;
+    color: $white !important;
+    border-color: transparent !important;
+  }
+}
+
+.btn-outline-secondary {
+  background: transparent !important;
+  color: $secondary !important;
+  border: 2px solid $secondary !important;
+  box-shadow: none !important;
+
+  &:hover:not(:disabled) {
+    background: $secondary !important;
+    color: $white !important;
+  }
+}
+
+.btn-outline-success {
+  background: transparent !important;
+  color: $success !important;
+  border: 2px solid $success !important;
+  box-shadow: none !important;
+
+  &:hover:not(:disabled) {
+    background: $success !important;
+    color: $white !important;
+  }
+}
+
+.btn-outline-danger {
+  background: transparent !important;
+  color: $danger !important;
+  border: 2px solid $danger !important;
+  box-shadow: none !important;
+
+  &:hover:not(:disabled) {
+    background: $danger !important;
+    color: $white !important;
+  }
+}
+
+.btn-outline-warning {
+  background: transparent !important;
+  color: $warning !important;
+  border: 2px solid $warning !important;
+  box-shadow: none !important;
+
+  &:hover:not(:disabled) {
+    background: $warning !important;
+    color: $dark !important;
+  }
+}
+
+.btn-outline-info {
+  background: transparent !important;
+  color: $info !important;
+  border: 2px solid $info !important;
+  box-shadow: none !important;
+
+  &:hover:not(:disabled) {
+    background: $info !important;
+    color: $white !important;
+  }
+}
+
+.btn-outline-light {
+  background: transparent !important;
+  color: $dark !important;
+  border: 2px solid $light !important;
+  box-shadow: none !important;
+
+  &:hover:not(:disabled) {
+    background: $light !important;
+    color: $dark !important;
+  }
+}
+
+.btn-outline-dark {
+  background: transparent !important;
+  color: $dark !important;
+  border: 2px solid $dark !important;
+  box-shadow: none !important;
+
+  &:hover:not(:disabled) {
+    background: $dark !important;
+    color: $white !important;
+  }
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.btn-lg {
+  padding: 14px 28px;
+  font-size: 16px;
+  border-radius: 12px;
+}
+
+/* Button Group Adjustments */
+.btn-group {
+  .btn {
+    box-shadow: none;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      z-index: 1;
+    }
+  }
+}
+
+/* Loading State */
+.btn {
+  .fa-spinner,
+  .spinner-border {
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  .btn-sm {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+
+  .btn-lg {
+    padding: 12px 24px;
+    font-size: 15px;
+  }
+}
+

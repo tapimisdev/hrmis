@@ -26,7 +26,7 @@ class StoreAtroRequest extends FormRequest
         $userId = request('user_id') ?? Auth::id();
 
         return [
-            'user_id' => ['nullable', 'exists:users,id'], // only for timekeeping adjustment only
+            'user_id' => ['nullable', 'exists:employee_information,employee_no'], // only for timekeeping adjustment only
             'date' => [
                 'required',
                 'date',

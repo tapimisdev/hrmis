@@ -7,15 +7,23 @@
     data-bs-backdrop="static"
     data-bs-keyboard="false"
   >
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content modern-modal">
         
         <!-- Header -->
-        <div class="modal-header py-4">
-          <h5 class="modal-title fw-bolder text-uppercase">{{ computedTitle }}</h5>
+        <div class="modal-header modern-header">
+          <div class="header-content">
+            <div class="icon-wrapper">
+              <i :class="headerIcon"></i>
+            </div>
+            <div class="header-text">
+              <h5 class="modal-title">{{ computedTitle }}</h5>
+              <p class="subtitle mb-0" v-if="subtitle">{{ subtitle }}</p>
+            </div>
+          </div>
           <button 
             type="button" 
-            class="btn-close" 
+            class="btn-close btn-close-white" 
             data-bs-dismiss="modal" 
             aria-label="Close"
           ></button>
@@ -33,13 +41,13 @@
 export default {
   name: "BaseModal",
   props: {
-    type: { type: String, default: "default" }, // NEW
+    type: { type: String, default: "default" },
     title: { type: String, default: "" },
+    subtitle: { type: String, default: "" },
     actions: { type: Array, default: () => [] }
   },
   computed: {
     computedTitle() {
-      // If `title` prop is passed, use it — otherwise infer from `type`
       if (this.title) return this.title;
 
       switch (this.type) {
@@ -51,6 +59,18 @@ export default {
         case "restday": return "Set as Rest Day";
         case "ob": return "Record Official Business";
         default: return "Modal";
+      }
+    },
+    headerIcon() {
+      switch (this.type) {
+        case "adjustment": return "fas fa-clock";
+        case "view_overtime": return "fas fa-business-time";
+        case "leave": return "fas fa-umbrella-beach";
+        case "absent": return "fas fa-user-times";
+        case "overtime": return "fas fa-clock";
+        case "restday": return "fas fa-calendar-day";
+        case "ob": return "fas fa-briefcase";
+        default: return "fas fa-file-alt";
       }
     }
   },

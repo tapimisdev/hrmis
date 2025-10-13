@@ -22,7 +22,7 @@ class StoreTimeLogsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'exists:users,id'],
+            'user_id' => ['required', 'exists:employee_information,employee_no'],
             'date' => ['required', 'date'],
 
             // Times must be in proper format
