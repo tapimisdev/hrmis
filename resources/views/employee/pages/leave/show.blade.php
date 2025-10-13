@@ -16,12 +16,8 @@
                 <td id="leave-type"></td>
             </tr>
             <tr>
-                <th>Start Date:</th>
-                <td id="start-date"></td>
-            </tr>
-            <tr>
-                <th>End Date:</th>
-                <td id="end-date"></td>
+                <th>Dates:</th>
+                <td id="selectedDates"></td>
             </tr>
             <tr>
                 <th>Total Days:</th>

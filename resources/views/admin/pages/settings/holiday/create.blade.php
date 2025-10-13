@@ -111,7 +111,7 @@
                 _token: $('input[name="_token"]').val()
             };
 
-            axios.post(`/admin/settings/holiday`, formData, {
+            axios.post(`{{ route('holiday.store') }}`, formData, {
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'

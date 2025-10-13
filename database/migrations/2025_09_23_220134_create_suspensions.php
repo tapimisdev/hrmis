@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('suspension', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('events_announcements_id');
+            $table->unsignedBigInteger('events_announcements_id')
+                ->nullable();
             $table->string('name');
             $table->longText('description')
                 ->nullable();

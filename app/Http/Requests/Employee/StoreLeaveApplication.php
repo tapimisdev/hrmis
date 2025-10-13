@@ -27,9 +27,7 @@ class StoreLeaveApplication extends FormRequest
             'user_id' => ['nullable', 'exists:users,id'],
             'leave_id' => ['required', 'exists:leaves,id'],
             'reason' => ['required', 'string', 'max:500'],
-            'start_date' => ['required', 'date', 'after:today'],
-            'end_date' => ['required', 'date', 'after:today'],
-
+            'selectedDates' => ['required'],
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 

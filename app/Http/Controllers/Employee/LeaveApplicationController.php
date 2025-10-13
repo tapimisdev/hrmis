@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\User;
+use Carbon\Carbon;
 
 class LeaveApplicationController extends Controller
 {
@@ -25,48 +26,90 @@ class LeaveApplicationController extends Controller
      */
     public function index()
     {
-        $query = DB::table('leave_applications as la')
-                    ->leftJoin('leaves as l', 'la.leave_id', 'l.id')
-                    ->select('la.*', 'l.name as leave_name')
-                    ->where('la.user_id', Auth::user()->id)
-                    ->orderBy('la.created_at', 'desc') // latest first
-                    ->get();
 
         if (request()->ajax()) {
-            return $this->datatable($query);
+
+            $data = $this->getRawData();
+
+            return $this->datatable($data);
         }
 
         return view('employee.pages.leave.index');
     }
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        $leaves = DB::table('leaves')->where('is_active', true)->get();
-        
-        $user = Auth::user()->load('employeeInformation');
-        $employee_no = $user->toArray()['employee_information']['employee_no'];
 
+    public function getRawData(? int $id = null) {
+        
+        $data = DB::table('leave_applications as la')
+            ->leftJoin('leaves as l', 'la.leave_id', '=', 'l.id')
+            ->leftJoin('leave_dates as ld', 'ld.leave_application_id', '=', 'la.id')
+            ->leftJoin('leave_attachments as laa', 'laa.leave_application_id', '=', 'la.id')
+            ->select(
+                'la.*',
+                'l.name as leave_name',
+                DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates'),
+                DB::raw('GROUP_CONCAT(DISTINCT laa.file_name) as attachments')  // assuming `file_name` holds attachment filename
+            )
+            ->where('la.user_id', Auth::id())
+            ->groupBy(
+                'la.id',
+                'l.name',
+                'la.name',
+                'la.user_id',
+                'la.employee_no',
+                'la.leave_id',
+                'la.days',
+                'la.reason',
+                'la.status',
+                'la.created_at',
+                'la.updated_at'
+            )
+            ->orderBy('la.created_at', 'desc')
+            ->when($id, function ($query, $id) {
+                return $query->where('la.id', $id);
+            })
+            ->get();
+
+
+        $results = $data->map(function($item) {
+            $item->dates = $item->dates ? explode(',', $item->dates) : [];
+            return $item;
+        });
+
+        return $results;
+    }
+
+    public function getData()
+    {
+        // Get active leave types
+        $leaves = DB::table('leaves')
+            ->where('is_active', true)
+            ->get();
+
+        // Get current user and employee_no
+        $user = Auth::user()->load('employeeInformation');
+        $employee_no = $user->employeeInformation->employee_no ?? null;
+
+        // Get user's organization
         $organization = DB::table('employee_organization')
             ->where('employee_no', $employee_no)
             ->latest()
             ->first();
 
+        // Get leave approvers for the user's division and unit
         $approvers = DB::table('application_approver')
-            ->leftJoin('application_approver_user', 'application_approver.id', '=', 'application_approver_user.application_approver_id')
-            ->leftJoin('users', 'application_approver_user.user_id', '=', 'users.id')
+            ->leftJoin('application_approver_users', 'application_approver.id', '=', 'application_approver_users.application_approver_id')
+            ->leftJoin('users', 'application_approver_users.user_id', '=', 'users.id')
             ->where('application_approver.type', 'leave')
             ->where('application_approver.division_id', $organization->division_id)
             ->where('application_approver.unit_id', $organization->unit_id)
             ->select(
-                'application_approver.*',
-                'application_approver_user.*',
+                'application_approver_users.level',
                 'users.id as user_id',
                 'users.name as user_name',
             )
             ->get();
 
+        // Group approvers by level
         $approvers = $approvers
             ->groupBy('level')
             ->mapWithKeys(function ($items, $level) {
@@ -76,11 +119,64 @@ class LeaveApplicationController extends Controller
                             'id'   => $item->user_id,
                             'name' => $item->user_name,
                         ];
-                    })->unique('user_id')->values()
+                    })->unique('id')->values()
                 ];
-            })->sortKeys();
+            })
+            ->sortKeys();
+
+        // 1. Get leave application dates (per row)
+        $applications = DB::table('leave_applications as la')
+            ->join('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
+            ->where('la.user_id', $user->id) // optional: filter by current user
+            ->select(
+                DB::raw("'leave' as title"),
+                'la.status',
+                'ld.date'
+            );
+
+        // 2. Get holidays (with fixed 'holiday' name and empty status)
+        $holidays = DB::table('holidays')
+            ->select(
+                'name as title',
+                DB::raw("'holiday' as status"),
+                'date'
+            );
+
+        // 3. Get suspensions (from suspension_dates)
+        $suspensions = DB::table('suspension as s')
+            ->join('suspension_dates as sd', 's.id', '=', 'sd.suspension_id')
+            ->select(
+                'name as title',
+                DB::raw("'suspension' as status"),
+                'sd.date'
+            );
+
+        // Combine all into one collection
+        $allApplications = $applications
+            ->unionAll($holidays)
+            ->unionAll($suspensions)
+            ->orderBy('date')
+            ->get();
+
+        return [
+            'leaves' => $leaves,
+            'approvers' => $approvers,
+            'applications' => $allApplications
+        ];
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
         
-        return view('employee.pages.leave.create', compact('leaves', 'approvers'));
+        $data = $this->getData();
+        $leaves = $data['leaves'];
+        $approvers = $data['approvers'];
+        $applications = $data['applications'];
+
+        return view('employee.pages.leave.create', compact('leaves', 'approvers', 'applications'));
     }
 
     /**
@@ -108,36 +204,44 @@ class LeaveApplicationController extends Controller
 
         try {
 
-            dd($request->all());
-
-            if($approvers->isEmpty()) {
+            if(empty($validatedData['approvers'])) {
                 return response([
                     'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
                     'status'  => 'error'
                 ], 500); 
             }
 
-            $leaveId = DB::table('leave_applications')->insertGetId([
+            $dates = json_decode($validatedData['selectedDates'], true);
+            $approvers = $validatedData['approvers'];
+            $days = count($approvers);
+
+            $applicationID = DB::table('leave_applications')->insertGetId([
                 'user_id'       => $user_id,
-                'employee_no'  => $employee_no,
+                'employee_no'   => $employee_no,
                 'leave_id'      => $validatedData['leave_id'],
-                'start_date'    => $validatedData['start_date'],
-                'end_date'      => $validatedData['end_date'],
+                'days'          => $days,
                 'reason'        => $validatedData['reason'],
                 'status'        => 'pending',
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
         
-            foreach($approvers as $approver) {
-
-                DB::table('application_approvers')->insertGetId([
-                    'leave_application_id' => $leaveId,
-                    'user_id' => $approver->user_id,
-                    'status' => 'pending',
-                    'level' => $approver->level,
+            foreach($dates as $date) {
+                DB::table('leave_dates')->insertGetId([
+                    'leave_application_id' => $applicationID,
+                    'date' => $date,
                 ]);
+            }
 
+            foreach ($approvers as $level => $approverList) {
+                foreach ($approverList as $userId) {
+                    DB::table('leave_approvals')->insertGetId([
+                        'leave_application_id' => $applicationID,
+                        'user_id'              => $userId,
+                        'level'                => $level,
+                        'status'               => 'pending',
+                    ]);
+                }
             }
 
 
@@ -147,7 +251,7 @@ class LeaveApplicationController extends Controller
                     $path = $file->store('leave_attachments', 'public'); // saves in storage/app/public/leave_attachments
 
                     DB::table('leave_attachments')->insert([
-                        'leave_application_id' => $leaveId,
+                        'leave_application_id' => $applicationID,
                         'file_path'            => $path,
                         'file_name'            => $file->getClientOriginalName(),
                         'file_type'            => $file->getMimeType(),
@@ -159,13 +263,11 @@ class LeaveApplicationController extends Controller
 
             DB::commit();
 
-            return response([
-                'data' => [
-                    'leave_id' => $leaveId,
-                    'attachments' => $request->hasFile('attachments') ? count($request->file('attachments')) : 0,
-                ],
-                'message' => 'Leave application stored successfully'
-            ], 200);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Leave application has been submitted',
+                'redirect' => route('leaves.create')
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -180,19 +282,17 @@ class LeaveApplicationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(int $id)
     {
-        $leave = DB::table('leave_applications as la')
-                    ->leftJoin('leaves as l', 'la.leave_id', '=', 'l.id')
-                    ->select('la.*', 'l.name as leave_name')
-                    ->where('la.id', $id)
-                    ->first();
+        
+        $data = $this->getRawData($id)[0] ?? [];
 
-        $attachments = DB::table('leave_attachments')
-                    ->where('leave_application_id', $leave->id)
-                    ->get();
-                    
-        return response(['leave' => $leave, 'attachments' => $attachments, 'status' => 'success'], 200);
+        if(!$data) {
+
+        }
+         
+        // dd($data);
+        return response(['data' => $data, 'status' => 'success'], 200);
     }
 
     
@@ -225,21 +325,11 @@ class LeaveApplicationController extends Controller
     {
         return DataTables::of($query)
             ->addIndexColumn()
-           ->addColumn('date', function ($row) {
-                if ($row->start_date == $row->end_date) {
-                    // Single day leave
-                    return '<span class="badge rounded-pill bg-primary">'
-                            . \Carbon\Carbon::parse($row->start_date)->format('M d, Y') .
-                        '</span>';
-                } else {
-                    // Multi-day leave
-                    return '<span class="badge rounded-pill bg-primary me-1">'
-                            . \Carbon\Carbon::parse($row->start_date)->format('M d, Y') .
-                        '</span>' . 'to ' .
-                        '<span class="badge rounded-pill bg-success">'
-                            . \Carbon\Carbon::parse($row->end_date)->format('M d, Y') .
-                        '</span>';
-                }
+            ->editColumn('name', function($row) {
+                return $row->name;
+            })
+            ->addColumn('date', function ($row) {
+                return formatDateRanges($row->dates);
             })
             ->addColumn('status', function ($row) {
                 $status = strtolower($row->status);

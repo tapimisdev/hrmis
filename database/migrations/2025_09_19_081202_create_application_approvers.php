@@ -29,7 +29,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('application_approver_user', function (Blueprint $table) {
+        Schema::create('application_approver_users', function (Blueprint $table) {
             $table->id();
             $table->foreignId('application_approver_id')
                 ->constrained('application_approver')
@@ -48,8 +48,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('application_approver_user');
-        Schema::dropIfExists('application_approver_org');
+        Schema::dropIfExists('application_approver_users');
         Schema::dropIfExists('application_approver');
     }
 };

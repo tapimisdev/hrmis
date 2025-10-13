@@ -17,6 +17,7 @@
             @csrf
             <div class="card-body">
                 <div class="row g-3">
+                    <input type="hidden" name="selectedDates" id="selectedDates">
                     <div class="col-12 col-md-12 mb-3">
                         <label for="leave_id" class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
                         <select name="leave_id" id="leave_id" class="form-select">
@@ -85,18 +86,15 @@
 @section('scripts')
 <script>
     $(function() {
+        const data = @json($applications);
+        console.log(data);
         const url = $('#form').attr('action');
         post(url);
 
         initCalendar();
 
-        const unavailable = [
-            { title: 'Meeting', date: '2025-10-15', description: 'Team meeting in the conference room.' },
-            { title: 'Busy', date: '2025-11-03', description: 'Out of office for a personal day.' }
-        ];
-
-        const events = generateEventsWithAvailability(unavailable);
-        setEvents(events);
+        const events = generateEventsWithAvailability(data);
+        setEvents(events, data);
 
     });
 </script>

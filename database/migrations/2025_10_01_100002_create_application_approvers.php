@@ -11,24 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('application_approvers', function (Blueprint $table) {
+        Schema::create('applications', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('application_id'); 
             $table->foreignId('leave_application_id')
                 ->constrained('leave_applications')
                 ->onDelete('cascade');
             $table->unsignedInteger('user_id');
-            $table->enum('status', [
-                'cancelled',
-                'pending',
-                'approved',
-                'rejected'
-            ])->default('pending');
-            $table->integer('level');
-            $table->longText('remarks')
-                ->nullable();
-            $table->timestamp('approved_at')
-                ->nullable();
+            $table->integer('total_approvers');
+            $table->integer('no_approved');
+            $table->boolean('isApproved')
+                ->default(false);
             $table->timestamps();
+        });
+
+        Schema::create('applications_approvals', function(Blueprint $table) {
+           
         });
     }
 
@@ -37,6 +35,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('application_approvers');
+        Schema::dropIfExists('applications_approvals');
+        Schema::dropIfExists('applications');
     }
 };

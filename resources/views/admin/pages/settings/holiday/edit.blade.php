@@ -116,7 +116,7 @@ $(function() {
 
         // Get holiday id from a hidden input or JS variable
         let holidayId = "{{ $holiday->id ?? '' }}";
-        axios.put(`/admin/settings/holiday/${holidayId}`, formData)
+        axios.put(`{{ route('holiday.store') }}/${holidayId}`, formData)
             .then(function (response) {
                 Swal.fire({
                     icon: "success",
