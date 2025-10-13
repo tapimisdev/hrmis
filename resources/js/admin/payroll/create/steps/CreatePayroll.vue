@@ -67,6 +67,7 @@
 
 <script>
 export default {
+  name: 'CreatePayroll',
   props: {
     modelValue: Object,
     errors: Object

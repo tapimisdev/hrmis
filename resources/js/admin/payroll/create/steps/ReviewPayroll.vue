@@ -72,7 +72,7 @@
             aria-controls="collapseIneligible"
           >
               <i class="fas fa-circle-xmark me-2"></i>
-              Ineligible Employees ({{ employees.not_eligible?.length }})
+              Ineligible Employees ({{ employees.not_eligible?.length ?? 0 }})
           </button>
         </h2>
         <div
@@ -83,7 +83,7 @@
         >
           <div class="accordion-body">
             <div
-              v-if="employees.not_eligible.length"
+              v-if="employees.not_eligible"
               class="list-group list-group-flush"
             >
               <div
@@ -116,10 +116,11 @@
 
 <script>
 export default {
+  name: 'ReviewPayroll',
   props: {
     modelValue: [String, Number, Object, Array],
     employees: {
-      type: Array,
+      type: Object,
       default: () => ({ eligible: [], not_eligible: [] })
     }
   },
