@@ -1,13 +1,15 @@
 @extends('employee.layout.app')
 
 @section('content')
-<div class="container pt-4">
+<div class="container-fluid pt-3">
 
-    <x-header title="Apply for Official Business Slip" subtitle="Create official business slip application in this module">
+    <header-vue title="DOST TAPI"></header-vue>
+
+    <x-header-employee title="Apply for Official Business Slip" subtitle="Create official business slip application in this module">
         <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">
             <i class="fa-solid fa-arrow-left me-2"></i> Back
         </a>
-    </x-header>
+    </x-header-employee>
 
     <div class="card rounded-3">
         <div class="card-header fw-bold d-flex align-items-center">

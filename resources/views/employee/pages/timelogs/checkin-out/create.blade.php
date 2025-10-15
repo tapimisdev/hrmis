@@ -1,7 +1,7 @@
 @extends('employee.layout.app')
 
 @section('content')
-<div class="container check-in-out pt-4">
+<div class="container-fluid pt-3 check-in-out">
     
     <x-header title="Check In and Out" subtitle="Manage check in and outs in this module">
         <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">

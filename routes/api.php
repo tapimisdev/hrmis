@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Organization;
 use App\Http\Controllers\Employee\LeaveApplicationController;
 use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
 use App\Http\Controllers\Api\CountriesApiController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'logout']);
 
 // Protected routes (require Bearer token from Passport)
 Route::middleware('auth:sanctum')->group(function () {

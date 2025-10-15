@@ -1,0 +1,85 @@
+<!-- Sidebar -->
+    <aside class="sidebar shadow-lg" id="sidebar">
+        <!-- Header -->
+        <header class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="brand-body">
+                    <button id="imgSwitchBtn" class="p-0 border-0 ">
+                        <img src="{{ asset('img/dost-tapi.png') }}" alt="TAPI Logo">
+                    </button>
+                    <h5>Dostrack</h5>
+                </div>
+
+                <button id="switchMenuBtn" class="sidebar-toggle-btn">
+                    <i class="fa-regular fa-chart-bar"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar-nav">
+            <ul class="side-container">
+
+                <!-- Dashboard -->
+                <li class="side-items {{ request()->routeIs('dashboard.*') ? 'active' : '' }}">
+                    <a href="{{ route('dashboard.index') }}" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-gauge"></i>
+                        </span>
+                        <span class="side-text">Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- Timelogs -->
+                <li class="side-items has-submenu {{ request()->routeIs('checkinout.*') ? 'active' : '' }}">
+                    <a href="{{ route('checkinout.index') }}" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-clock"></i>
+                        </span>
+                        <span class="side-text">Timelogs</span>
+                    </a>
+                </li>
+
+                <!-- Payslip -->
+                <li class="side-items has-submenu">
+                    <a href="" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-money-check-dollar"></i>
+                        </span>
+                        <span class="side-text">Payslip</span>
+                    </a>
+                </li>
+
+                <!-- Leave Application -->
+                <li class="side-items has-submenu {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
+                    <a href="{{ route('leaves.index') }}" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </span>
+                        <span class="side-text">Leave Application</span>
+                    </a>
+                </li>
+
+                <!-- Pass Slip -->
+                <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
+                    <a href="{{ route('obs.index') }}" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </span>
+                        <span class="side-text">Pass Slip</span>
+                    </a>
+                </li>
+
+                <!-- Overtime -->
+                <li class="side-items has-submenu {{ request()->routeIs('overtime.*') ? 'active' : '' }}">
+                    <a href="{{ route('overtime.index') }}" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </span>
+                        <span class="side-text">Overtime</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+    </aside>

@@ -18,20 +18,20 @@
                         <i class="fa-solid fa-gear me-2"></i> Actions 
                     </button>
 
-                    <ul class="dropdown-menu dropdown-menu-end w-100" aria-labelledby="employeeActionsDropdown">
+                    <ul class="dropdown-menu dropdown-menu-end w-100 dropdown-menu-modern" aria-labelledby="employeeActionsDropdown">
                         <li>
-                            <a class="dropdown-item fw-bold text-uppercase" href="{{ route('hris.import.index') }}">
-                                Import
+                            <a class="dropdown-item fw-bold text-uppercase d-flex align-items-center" href="{{ route('hris.import.index') }}">
+                                <i class="fa-solid fa-file-import me-2"></i> Import
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item fw-bold text-uppercase" href="{{ route('hris.employee.salary') }}">
-                                Update Salary
+                            <a class="dropdown-item fw-bold text-uppercase d-flex align-items-center" href="{{ route('hris.employee.salary') }}">
+                                <i class="fa-solid fa-peso-sign me-2"></i> Update Salary
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item fw-bold text-uppercase" href="{{ route('hris.employee.transfer') }}">
-                                Transfer Unit
+                            <a class="dropdown-item fw-bold text-uppercase d-flex align-items-center" href="{{ route('hris.employee.transfer') }}">
+                                <i class="fa-solid fa-right-left me-2"></i> Transfer Unit
                             </a>
                         </li>
                     </ul>
@@ -72,7 +72,7 @@
         <div class="card p-3">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover w-100 pb-3" id="myTable">
+                    <table class="table table-striped w-100 pb-3" id="myTable">
                         <thead>
                             <tr>
                                 <th></th>

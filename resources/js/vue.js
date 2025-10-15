@@ -1,7 +1,12 @@
 
 import { createApp } from 'vue';
 
+// employee
 import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
+import DashboardIndex from './employee/dashboard/DashboardIndex.vue'
+import HeaderVue from './employee/components/Header.vue';
+
+// Admin
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
 import DtrViewVue from './admin/timekeeping/DtrViewVue.vue';
 import ImportEmployeeVue from './admin/hris/ImportEmployeeVue.vue';
@@ -14,6 +19,9 @@ import PayrollIndex from './admin/payroll/IndexVue.vue';
 const authApp = createApp({
   components: {
     CheckInOutVue,
+    DashboardIndex,
+    HeaderVue,
+
     DashboardVue,
     DtrViewVue,
     ImportEmployeeVue,

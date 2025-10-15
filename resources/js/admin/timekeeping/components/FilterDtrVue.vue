@@ -30,11 +30,11 @@
         </div>
 
         <div class="header-actions">
-          <button class="action-btn action-btn-secondary" title="Print Report" @click="handlePrint">
+          <button class="btn-action action-btn-secondary" title="Print Report" @click="handlePrint">
             <i class="fa-solid fa-print"></i>
             <span class="btn-label">Print</span>
           </button>
-          <button class="action-btn action-btn-primary" title="Download DTR" @click="handleDownload">
+          <button class="btn-action action-btn-primary" title="Download DTR" @click="handleDownload">
             <i class="fa-solid fa-download"></i>
             <span class="btn-label">Export</span>
           </button>
@@ -297,7 +297,7 @@ export default {
     }
   }
 
-  .action-btn {
+  .btn-action {
     display: flex;
     align-items: center;
     gap: 0.5rem;
