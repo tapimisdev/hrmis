@@ -14,7 +14,7 @@
             </a>
         </x-header-employee>
 
-        <x-table id="myTable">
+        <x-table-employee id="myTable">
             <thead>
                 <tr>
                     <th style="width: 10px">#</th>
@@ -27,7 +27,7 @@
             </thead>
             <tbody>
             </tbody>
-        </x-table>
+        </x-table-employee>
     </div>
 @endsection
 
