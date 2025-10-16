@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-md navbar-light bg-primary sticky-top" style="height: 50px">
+<nav class="navbar admin-nav navbar-expand-md navbar-light sticky-top" style="height: 50px">
     <div class="container d-flex justify-content-md-between">
         <div></div>
         <div class="dropdown d-none d-lg-block">
@@ -22,7 +22,7 @@
                         {{ Auth::user()->name }}
                     </a>
 
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-modern" aria-labelledby="navbarDropdown">
                         <a class="dropdown-item" href="{{ route('logout') }}"
                             onclick="event.preventDefault();
                                             document.getElementById('logout-form').submit();">

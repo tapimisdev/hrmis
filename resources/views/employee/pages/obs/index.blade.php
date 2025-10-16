@@ -3,17 +3,20 @@
 @section('content')
 @include('employee.pages.obs.show') {{-- modal partial for viewing details --}}
 
-<div class="container">
-    <x-header title="Official Business Slip" subtitle="Manage Official Official Business Slip in this module">
+<div class="container-fluid pt-3">
+
+    <header-vue title="DOST TAPI"></header-vue>
+
+    <x-header-employee title="Official Business Slip" subtitle="Manage Official Official Business Slip in this module">
         <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">
             <i class="fa-solid fa-arrow-left me-2"></i> Back
         </a>
         <a href="{{ route('obs.create') }}" class="btn btn-primary py-3 px-4">
             <i class="fa-solid fa-paper-plane me-2"></i> Apply
         </a>
-    </x-header>
+    </x-header-employee>
 
-    <x-table id="myTable">
+    <x-table-employee id="myTable">
         <thead>
             <tr>
                 <th style="width: 10px">#</th>
@@ -25,7 +28,7 @@
             </tr>
         </thead>
         <tbody></tbody>
-    </x-table>
+    </x-table-employee>
 </div>
 @endsection
 

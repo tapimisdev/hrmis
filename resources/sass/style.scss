@@ -158,7 +158,7 @@ footer {
 }
 
 .sidebar {
-    max-width: 280px;
+    max-width: 260px;
     width: 100%;
     height: 100vh;
     overflow: auto;
@@ -166,12 +166,11 @@ footer {
     position: relative;
     z-index: 2;
     border-right: 1px solid rgba($color: $dark, $alpha: .1);
-    font-size: 13px;
+    font-size: 12px;
     transition: all ease 0.3s;
     background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.04);
 
-    // Logo Section
     .sidebar-title {
         display: flex;
         align-items: center;
@@ -181,53 +180,46 @@ footer {
         top: 0;
         background-color: $white;
         z-index: 10;
-        gap: 12px;
-        padding: 28px 20px 20px 20px;
+        gap: 10px;
+        padding: 20px 16px 16px 16px;
         backdrop-filter: blur(10px);
-        
         img { 
             width: auto;
-            height: 56px;
+            height: 42px;
             object-fit: contain;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
             transition: transform 0.3s ease;
-            
-            &:hover {
-                transform: scale(1.05);
-            }
+            &:hover { transform: scale(1.05); }
         }
-        
         .title {
             margin-top: 0px;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 13px;
             padding-top: 4px;
             letter-spacing: 0.5px;
             color: $dark;
         }
-        
         .text {
-            font-size: 11px;
+            font-size: 10px;
             color: rgba($color: $dark, $alpha: 0.6);
         }
     }
 
-    // Navigation List
     .sidebar-list {
         width: 100%;
-        padding: 16px 12px;
+        padding: 12px 10px;
         margin: 0;
         list-style: none;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 3px;
 
         .sidebar-item {
-            transition: all ease 0.3s;
+            transition: all ease 0.1s;
             position: relative;
             color: rgba($color: $dark, $alpha: 0.75);
             cursor: pointer;
-            border-radius: 12px;
+            border-radius: 10px;
             font-weight: 600;
             letter-spacing: 0.3px;
 
@@ -236,79 +228,59 @@ footer {
                 transition: all ease 0.25s;
             }
 
-            // Hover Effect
             &:hover:not(.active) {
                 .sidebar-link {
                     background-color: rgba($color: $primary, $alpha: 0.08);
                     transform: translateX(2px);
-                    
-                    a {
-                        color: $primary !important;
-                    }
-                    
-                    i {
-                        transform: scale(1.1);
-                    }
+                    a { color: $primary !important; }
+                    i { transform: scale(1.1); }
                 }
             }
 
-            // Main Link Styling
             .sidebar-link {
                 display: flex;
                 justify-content: start;
-                gap: 12px;
+                gap: 10px;
                 align-items: center;
                 position: relative;
-                padding: 12px 16px;
+                padding: 10px 12px;
                 text-decoration: none;
                 color: $dark;
-                border-radius: 10px;
+                border-radius: 8px;
                 transition: all ease 0.3s;
-                font-size: 13px;
+                font-size: 12px;
                 text-transform: uppercase;
-                
                 i {
-                    font-size: 16px;
+                    font-size: 14px;
                     transition: all ease 0.3s;
-                    width: 20px;
+                    width: 18px;
                     text-align: center;
                 }
-
-                // Dropdown Toggle Arrow
                 &.dropdown-toggle::after {
                     transition: transform 0.3s ease;
-                    font-size: 12px;
+                    font-size: 11px;
                 }
-
-                &:not(.collapsed)::after {
-                    transform: rotate(180deg);
-                }
+                &:not(.collapsed)::after { transform: rotate(180deg); }
             }
 
-            // Active State
             &.active {
                 .sidebar-link {
                     background: linear-gradient(135deg, $primary 0%, darken($primary, 8%) 100%);
                     color: $white !important;
-                    box-shadow: 0 4px 12px rgba($primary, 0.3);
+                    box-shadow: 0 3px 10px rgba($primary, 0.3);
                     transform: translateX(2px);
-                    
-                    a {
-                        color: $white !important;
-                    }
-                    
+                    a { color: $white !important; }
                     i {
                         color: $white;
                         transform: scale(1.1);
                     }
-
                     &::before {
                         content: '';
                         position: absolute;
                         left: 0;
                         top: 50%;
                         transform: translateY(-50%);
-                        width: 4px;
+                        width: 3px;
                         height: 60%;
                         background-color: $white;
                         border-radius: 0 4px 4px 0;
@@ -319,54 +291,43 @@ footer {
         }
     }
 
-    // Nested/Collapsed Menu Items
     .collapsable {
         transition: all ease 0.3s;
-        
         .nested-list {
-            margin: 8px 0px 12px 12px;
-            padding: 8px 0px 0px 8px;
+            margin: 6px 0px 10px 10px;
+            padding: 6px 0px 0px 6px;
             list-style-type: none;
             border-left: 2px solid rgba($color: $primary, $alpha: 0.12);
-            
             .nested-item {
                 transition: all ease 0.25s;
-                border-radius: 8px;
+                border-radius: 6px;
                 margin-bottom: 2px;
-                
                 a {
                     text-decoration: none;
                     color: rgba($color: $dark, $alpha: 0.7);
                     white-space: nowrap;
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    padding: 10px 12px;
-                    border-radius: 8px;
-                    font-size: 12px;
+                    gap: 8px;
+                    padding: 8px 10px;
+                    border-radius: 6px;
+                    font-size: 11px;
                     font-weight: 600;
                     text-transform: uppercase;
                     transition: all ease 0.25s;
-                    
                     i {
-                        font-size: 14px;
-                        width: 18px;
+                        font-size: 13px;
+                        width: 16px;
                         text-align: center;
                         transition: all ease 0.25s;
                     }
-
                     &:hover {
                         background-color: rgba($color: $primary, $alpha: 0.1);
                         color: $primary;
                         transform: translateX(4px);
-                        padding-left: 16px;
-                        
-                        i {
-                            transform: scale(1.15);
-                        }
+                        padding-left: 14px;
+                        i { transform: scale(1.15); }
                     }
-
-                    // Active nested item
                     &.active {
                         background-color: rgba($color: $primary, $alpha: 0.15);
                         color: $primary;
@@ -377,50 +338,36 @@ footer {
         }
     }
 
-    // Custom Scrollbar
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
-
+    &::-webkit-scrollbar { width: 5px; }
     &::-webkit-scrollbar-track {
         background: transparent;
         margin: 10px 0;
     }
-
     &::-webkit-scrollbar-thumb {
         background: rgba($color: $primary, $alpha: 0.2);
         border-radius: 10px;
         transition: background 0.3s ease;
-
-        &:hover {
-            background: rgba($color: $primary, $alpha: 0.4);
-        }
+        &:hover { background: rgba($color: $primary, $alpha: 0.4); }
     }
-
-    // Firefox scrollbar
     scrollbar-width: thin;
     scrollbar-color: rgba($color: $primary, $alpha: 0.2) transparent;
 }
 
-// Mobile Responsive
 @media (max-width: 992px) {
     .sidebar {
         position: fixed;
-        width: 280px;
+        width: 240px;
         max-width: 85vw;
         display: block;
         background-color: $white;
         z-index: 9999;
-        left: -280px;
+        left: -240px;
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-        
         &.show {
             left: 0 !important;
             box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
         }
     }
-
-    // Overlay for mobile sidebar
     .sidebar-overlay {
         position: fixed;
         top: 0;
@@ -432,7 +379,6 @@ footer {
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.3s ease;
-
         &.show {
             opacity: 1;
             pointer-events: auto;
@@ -440,46 +386,41 @@ footer {
     }
 }
 
-// Tablet adjustments
 @media (max-width: 1200px) and (min-width: 993px) {
     .sidebar {
-        max-width: 260px;
-        
+        max-width: 220px;
         .sidebar-list .sidebar-item .sidebar-link {
-            padding: 10px 14px;
-            font-size: 12px;
+            padding: 8px 12px;
+            font-size: 11px;
         }
     }
 }
 
-// Utility class for badge indicators
 .sidebar-badge {
     position: absolute;
-    top: 8px;
-    right: 12px;
+    top: 6px;
+    right: 10px;
     background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
     color: white;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
+    font-size: 9px;
+    padding: 2px 5px;
+    border-radius: 8px;
     font-weight: 700;
-    min-width: 18px;
+    min-width: 16px;
     text-align: center;
     box-shadow: 0 2px 6px rgba(255, 107, 107, 0.4);
 }
 
-// Loading state for async items
 .sidebar-item.loading {
     .sidebar-link {
         opacity: 0.6;
         pointer-events: none;
-        
         &::after {
             content: '';
             position: absolute;
-            right: 16px;
-            width: 14px;
-            height: 14px;
+            right: 12px;
+            width: 12px;
+            height: 12px;
             border: 2px solid rgba($primary, 0.3);
             border-top-color: $primary;
             border-radius: 50%;
@@ -750,14 +691,81 @@ label {
 }
 
 .mini-logo {
-    height: 32px;
-    width: 32px;
+    height: 24px;
+    width: 24px;
+    filter: drop-shadow(0 0 1px white) drop-shadow(0 0 6px rgba(255, 255, 255, 0.1));
 }
 
+.admin-nav {
+    background: linear-gradient(135deg, $primary 0%, $secondary 100%);
+}
 
+.action-dropdown {
+    display: flex;
+    justify-content: center;
+}
 
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+        background: linear-gradient(135deg, $primary 0%, $secondary 100%);
+        color: white;
+        transform: rotate(90deg);
+    }
+}
+.dropdown-menu-modern {
+    border: none;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 0.5rem;
+    min-width: 200px;
 
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.625rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        
+        i {
+            width: 18px;
+            color: $primary;
+        }
+        
+        &:hover {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            color: $primary;
+        }
+        
+        &.dropdown-item-danger {
+            i { color: #ef4444; }
+            
+            &:hover {
+                background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+                color: #dc2626;
+                
+                i { color: #dc2626; }
+            }
+        }
+    }
+}
 
-
-
-
+.hover-scale {
+    transition: transform 0.3s ease;
+    &:hover {
+        transform: scale(1.02);
+    }
+}

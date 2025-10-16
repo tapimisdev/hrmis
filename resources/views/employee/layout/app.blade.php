@@ -9,68 +9,93 @@
 
     <title>{{ config('app.name', 'Laravel') }}</title>
 
+    <!-- Bunny Fonts (Nunito font family) -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
 
+    <!-- Select2 CSS (for enhanced select dropdowns) -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
+    <!-- Font Awesome 6.5.0 (for icons) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
+    <!-- Bootstrap 5.3.0 CSS (core layout & responsive design) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- DataTables Bootstrap 5.3.0 CSS (for styled data tables) -->
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
+    <!-- FullCalendar CSS (for calendar views) -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
 
+    <!-- Fancybox UI CSS (for image/content lightbox modals) -->
     <link
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/fancybox/fancybox.css"
-        />
+    />
 
+    <!-- Favicon icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
+
+    <!-- SweetAlert2 (for modern alert dialogs) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @yield('styles')
 
-    @vite(['resources/sass/app.scss', 'resources/js/app.js', 'resources/sass/style.scss'])
+    <!-- Vite compiled assets (SASS + JS) -->
+    @vite(['resources/sass/app.scss', 'resources/js/app.js', 'resources/sass/employee.scss'])
 </head>
 <body>
     <div id="app">
-        <div class="loading d-none" id="isLoading">
-            <div class="d-flex justify-content-center">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        </div>
-
+        @include('employee.components.sidebar')
         <main>
-            @include('employee.components.navbar')
+            
             @yield('content')
         </main>
     </div>
 
+    <!-- jQuery 3.6 (dependency for many JS plugins) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    <!-- Axios (for HTTP requests and API calls) -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
+    <!-- Select2 JS (for enhanced select dropdowns) -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    <!-- DataTables Core + Bootstrap Integration JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+    <!-- Fancybox JS (for lightbox-style image and modal popups) -->
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/fancybox/fancybox.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <!-- FullCalendar JS (for dynamic calendar events) -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
 
     @yield('scripts')
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.querySelector('.sidebar');
+            const buttons = [document.getElementById('switchMenuBtn'), document.getElementById('imgSwitchBtn')];
+            const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+            if (collapsed) {
+                sidebar.classList.add('collapsed');
+                buttons.forEach(btn => btn?.classList.add('rotate'));
+            }
+
+            buttons.forEach(btn => btn?.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                btn.classList.toggle('rotate');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            }));
+        });
+
+    </script>
+
 </body>
 </html>

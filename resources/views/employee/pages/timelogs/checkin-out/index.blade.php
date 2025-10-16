@@ -1,17 +1,17 @@
 @extends('employee.layout.app')
 
 @section('content')
-<div class="container check-in-out pt-4">
+<div class="container-fluid pt-3 check-in-out ">
     
-    <x-header title="Timelogs" subtitle="View your timelogs in this module">
-        <a href="{{ route('dashboard.index') }}" class="btn btn-outline-danger py-3 px-4">
-            <i class="fa-solid fa-arrow-left me-2"></i> Back
-        </a>
-    </x-header>
+    <header-vue title="DOST TAPI"></header-vue>
+        
+    <x-header-employee title="Timelogs" subtitle="View your timelogs in this module">
+
+    </x-header-employee>
 
     <check-in-out-vue></check-in-out-vue>
 
-    <x-table id="myTable">
+    <x-table-employee id="myTable">
         <thead>
             <tr>
                 <th style="width: 10px">#</th>
@@ -26,7 +26,7 @@
         </thead>
         <tbody>
         </tbody>
-    </x-table>
+    </x-table-employee>
 </div>
 @endsection
 

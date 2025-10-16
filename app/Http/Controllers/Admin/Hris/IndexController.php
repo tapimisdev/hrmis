@@ -142,39 +142,53 @@ class IndexController extends Controller
                     : '';
             })
             ->addColumn('actions', function ($row) {
-                $div = '<div class="d-block d-md-flex gap-2 justify-content-start">';
+                $div = '<div class="d-block d-md-flex gap-1 justify-content-start">';
 
                 if ($row->account_status != 'archived') {
                     $div .= '
-                        <a href="' . route('hris.employee.transfer', [
-                            'employee_no' => $row->employee_no
-                        ]) . '" 
-                            class="btn btn-outline-primary btn ms-1 my-1" 
-                            title="Transfer Unit">
-                               <i class="fa-solid fa-retweet"></i>
-                        </a>
-                        <a href="' . route('hris.employee.salary', [
-                            'employee_no' => $row->employee_no
-                        ]) . '" 
-                            class="btn btn-outline-primary btn ms-1 my-1" 
-                            title="Update Salary">
-                               <i class="fa-solid fa-money-bills"></i>
-                        </a>
-                        <a href="' . route('hris.employee.information', [
-                            'employee_no' => $row->employee_no
-                        ]) . '" 
-                            class="btn btn-outline-secondary btn ms-1 my-1" 
-                            title="Edit">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
-                        <button id="btn-delete"
-                            class="btn btn-outline-danger btn ms-1 my-1" 
-                            data-target="' . route('hris.employee.remove', [
-                                'employee_no' => $row->employee_no
-                            ]) . '"
-                            title="Delete">
-                                <i class="fa-solid fa-trash-can"></i>
-                        </button>
+                        <div class="dropdown">
+                           <button
+                                class="action-btn"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-modern" aria-labelledby="actionDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="' . route('hris.employee.transfer', [
+                                        'employee_no' => $row->employee_no
+                                    ]) . '">
+                                        <i class="fa-solid fa-retweet"></i> Transfer Unit
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="' . route('hris.employee.salary', [
+                                        'employee_no' => $row->employee_no
+                                    ]) . '">
+                                        <i class="fa-solid fa-money-bills"></i> Update Salary
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="' . route('hris.employee.information', [
+                                        'employee_no' => $row->employee_no
+                                    ]) . '">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button id="btn-delete"
+                                        class="dropdown-item text-danger" 
+                                        data-target="' . route('hris.employee.remove', [
+                                            'employee_no' => $row->employee_no
+                                        ]) . '">
+                                        <i class="fa-solid fa-trash-can"></i> Delete
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
                     ';
                 }
 

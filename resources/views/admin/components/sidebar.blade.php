@@ -98,7 +98,7 @@
         </li>
 
         {{-- Services --}}
-        <li class="sidebar-item {{ Str::contains(request()->path(), 'services') ? 'active' : '' }}">
+        <li class="sidebar-item {{ Str::contains(request()->path(), 'service') ? 'active' : '' }}">
             <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'services') ? '' : 'collapsed' }}"
                data-bs-toggle="collapse" 
                data-bs-target="#services"
