@@ -1,5 +1,7 @@
 @extends('errors.layout')
 
+@section('title', '404 Page Not Found')
+
 @section('content')
 <div class="card">
     <!-- Rocket container -->

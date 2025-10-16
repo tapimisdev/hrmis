@@ -1,5 +1,7 @@
 @extends('errors.layout')
 
+@section('title', '500 Internal Server Error')
+
 @section('content')
 <div class="container-fluid">
   <div class="card">
