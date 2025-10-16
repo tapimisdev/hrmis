@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="container pt-4 px-3">
-        <x-header title="Leave Applications" subtitle="Manage leave applications in this module">
+        <x-header title="Pass Slip Applications" subtitle="Manage pass slip applications in this module">
             
         </x-header>
 
@@ -16,7 +16,6 @@
                     <th>#</th>
                     <th>Employee No</th>
                     <th>Name</th>
-                    <th>Type</th>
                     <th>Dates</th>
                     <th>Status</th>
                     <th style="width: 120px">Action</th>
@@ -40,7 +39,6 @@
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "employee_no", name: 'employee_no' },
                 { data: "name", name: 'name' },
-                { data: "type", name: 'type' },
                 { data: "dates", name: 'dates' },
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },

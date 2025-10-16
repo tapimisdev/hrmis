@@ -77,7 +77,11 @@
                             <ul class="list-unstyled mb-0">
                                 @if (!empty($data->attachments) && count($data->attachments) > 0)
                                     @foreach ($data->attachments as $attachment)
-                                        <li>{{ $attachment }}</li>
+                                        <li>
+                                            <a download href="{{ '/storage/' . $attachment->file_path }}">
+                                                {{ $attachment->file_name }}
+                                            </a>
+                                        </li>
                                     @endforeach
                                 @else
                                     <li>No attachments available.</li>

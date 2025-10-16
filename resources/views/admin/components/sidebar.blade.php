@@ -133,16 +133,16 @@
                         </a>
                     </li>
                     <li class="nested-item">
-                        <a href="#"
+                        <a href="{{ route('services.pass_slip.index') }}"
                            class="{{ request()->routeIs('services.passlip.index') ? 'active' : '' }}">
                             <i class="fa-solid fa-id-card"></i>
-                            <span>Passlip Application</span>
+                            <span>Pass Slip Application</span>
                         </a>
                     </li>
                     <li class="nested-item">
-                        <a href="#"
+                        <a href="{{ route('services.overtime.index') }}"
                            class="{{ request()->routeIs('services.overtime.index') ? 'active' : '' }}">
-                            <i class="fa-solid fa-business-time"></i>
+                            <i class="fa-solid fa-id-card"></i>
                             <span>Overtime Application</span>
                         </a>
                     </li>

@@ -21,17 +21,43 @@ return new class extends Migration
             $table->decimal('total_hours', 5, 2)->nullable();
             $table->text('reason')->nullable();
             $table->enum('status', ['cancelled', 'pending', 'approved', 'rejected'])->default('pending');
-            $table->foreignId('approver_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->longText('remarks')
+                ->nullable();
+            $table->unsignedBigInteger('approver_id')
+                ->nullable(); 
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });
+
+        Schema::create('overtimes_approvals', function(Blueprint $table) {
+            $table->id();
+            $table->foreignId('overtimes_id')
+                ->constrained('overtimes')
+                ->onDelete('cascade');
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->onDelete('cascade');
+            $table->integer('level');
+            $table->enum('status', [
+                'cancelled',
+                'pending',
+                'approved',
+                'rejected'
+            ])->default('pending');
+            $table->longText('remarks')
+                ->nullable();
+            $table->timestamp('action_at')
+                ->nullable();
+        });
+
     }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
-    {
+    {   
+        Schema::dropIfExists('overtimes_approvals');
         Schema::dropIfExists('overtimes');
     }
 };

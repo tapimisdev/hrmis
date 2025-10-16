@@ -41,6 +41,8 @@ use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
 use App\Http\Controllers\Admin\Services\LeaveApplicationController as AdminLeaveApplicationController;
+use App\Http\Controllers\Admin\Services\PassSlipController as AdminPassSlipController;
+use App\Http\Controllers\Admin\Services\OvertimeController as AdminOvertimeController;
 use App\Http\Controllers\Employee\AtroApprovalController;
 use App\Http\Controllers\Employee\LeaveApprovalController;
 use App\Http\Controllers\Employee\ObsApprovalController;
@@ -212,9 +214,14 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         route::post('leave/application/{application}/save', [AdminLeaveApplicationController::class, 'save'])->name('services.leaves.save');
 
         # PASS SLIP APPLICATIONS
+        route::get('pass-slip/application', [AdminPassSlipController::class, 'index'])->name('services.pass_slip.index');
+        route::get('pass-slip/application/{application}', [AdminPassSlipController::class, 'show'])->name('services.pass_slip.show');
+        route::post('pass-slip/application/{application}/save', [AdminPassSlipController::class, 'save'])->name('services.pass_slip.save');
 
         # OVERTIME APPLICATION
-        
+        route::get('overtime/application', [AdminOvertimeController::class, 'index'])->name('services.overtime.index');
+        route::get('overtime/application/{application}', [AdminOvertimeController::class, 'show'])->name('services.overtime.show');
+        route::post('overtime/application/{application}/save', [AdminOvertimeController::class, 'save'])->name('services.overtime.save');
 
     });
 

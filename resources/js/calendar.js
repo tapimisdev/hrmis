@@ -229,7 +229,9 @@ export function generateEventsWithAvailability(unavailable = []) {
     const endDate = new Date(year, 11, 31); // December 31 of current year
 
     // Start from the day after today
-    let currentDate = new Date(today);
+    let currentDate = new Date(year, 0, 1);
+    console.log(currentDate.getDay());  
+
     currentDate.setDate(currentDate.getDate() + 1);
 
     // Group unavailable items by date (array per date)
@@ -248,7 +250,7 @@ export function generateEventsWithAvailability(unavailable = []) {
         const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
         const dateStr = currentDate.toISOString().slice(0, 10);
 
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        if (dayOfWeek > 1) {
             const items = unavailableMap[dateStr];
 
             if (items && items.length > 0) {
@@ -289,6 +291,7 @@ export function generateEventsWithAvailability(unavailable = []) {
                             backgroundColor,
                             borderColor: backgroundColor,
                             order: orderCounter++,
+                            className: 'text-center text-uppercase',
                         });
 
                         // Transparent title event
@@ -297,6 +300,7 @@ export function generateEventsWithAvailability(unavailable = []) {
                             start: dateStr,
                             backgroundColor: 'transparent',
                             textColor: '#0c8384',
+                            className: 'text-center text-uppercase',
                             borderColor: 'transparent',
                             order: orderCounter++,
                         });
@@ -307,6 +311,7 @@ export function generateEventsWithAvailability(unavailable = []) {
                             start: dateStr,
                             allDay: true,
                             backgroundColor,
+                            className: 'text-center text-uppercase',
                             borderColor: backgroundColor,
                             order: orderCounter++,
                         });
@@ -317,6 +322,7 @@ export function generateEventsWithAvailability(unavailable = []) {
                             start: dateStr,
                             backgroundColor: 'transparent',
                             textColor: '#0c8384',
+                            className: 'text-center text-uppercase',
                             borderColor: 'transparent',
                             order: orderCounter++,
                         });
@@ -338,7 +344,7 @@ export function generateEventsWithAvailability(unavailable = []) {
                         backgroundColor: '#888',
                         borderColor: '#888',
                         textColor: '#fff',
-                        className: 'more-event',
+                        className: 'more-event text-uppercase text-center',
                         order: orderCounter++,
                     });
                 } else {
@@ -353,6 +359,7 @@ export function generateEventsWithAvailability(unavailable = []) {
                     allDay: true,
                     backgroundColor: '#0c8384',
                     borderColor: '#0c8384',
+                    className: 'text-center text-uppercase',
                     order: orderCounter++,
                 });
             }
