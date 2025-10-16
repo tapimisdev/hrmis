@@ -13,20 +13,23 @@
 
 #calendar {
     td {
+        height: 100px;
         cursor: pointer;
     }
 }
 
-.fc-event-main {
-    text-align: center;
-    font-weight: 600;
-    text-transform: uppercase;
-    cursor: pointer;
+.fc-event .fc-event-main {
+    text-align: center !important;
 }
 
 .fc .fc-daygrid-day-frame {
     cursor: pointer;
     min-height: 100px;
+}
+
+.fc-h-event .fc-event-main {
+    text-align: center;
+    cursor: pointer;
 }
 
 .fc-daygrid-event {

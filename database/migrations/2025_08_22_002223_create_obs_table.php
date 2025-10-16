@@ -23,12 +23,14 @@ return new class extends Migration
             $table->string('purpose', 500);                     // short purpose/subject
             $table->string('mode_of_transport')->nullable();    // company car, taxi, etc.
             $table->decimal('estimated_expense', 12, 2)->default(0);
-            $table->string('charge_to')->nullable();            // cost center / department
-            $table->text('remarks')->nullable();
+            $table->string('charge_ to')->nullable();            // cost center / department
 
             // Approval flow
             $table->enum('status', ['pending', 'approved', 'rejected', 'cancelled'])->default('pending')->index();
-            $table->foreignId('approver_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->longText('remarks')
+                ->nullable();
+            $table->unsignedBigInteger('approver_id')
+                ->nullable(); 
             $table->timestamp('approved_at')->nullable();
 
             // Audit
@@ -55,6 +57,27 @@ return new class extends Migration
                 ->on('obs')
                 ->onDelete('cascade');
         });
+
+        Schema::create('obs_approvals', function(Blueprint $table) {
+            $table->id();
+            $table->foreignId('obs_id')
+                ->constrained('obs')
+                ->onDelete('cascade');
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->onDelete('cascade');
+            $table->integer('level');
+            $table->enum('status', [
+                'cancelled',
+                'pending',
+                'approved',
+                'rejected'
+            ])->default('pending');
+            $table->longText('remarks')
+                ->nullable();
+            $table->timestamp('action_at')
+                ->nullable();
+        });
     }
 
     /**
@@ -62,6 +85,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('obs_approvals');
         Schema::dropIfExists('obs_attachments');
         Schema::dropIfExists('obs');
     }
