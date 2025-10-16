@@ -81,6 +81,41 @@
                         <span class="side-text">Overtime</span>
                     </a>
                 </li>
+
+
+                <div class="sidebar-seperator"></div>
+
+                <!-- Leave Application -->
+                <li class="side-items has-submenu {{ request()->routeIs('approval-leave.*') ? 'active' : '' }}">
+                    <a href="{{ route('approval-leave.index') }}" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </span>
+                        <span class="side-text">Approval Leave</span>
+                    </a>
+                </li>
+
+                <!-- Pass Slip -->
+                <li class="side-items has-submenu {{ request()->routeIs('approval-obs.*') ? 'active' : '' }}">
+                    <a href="{{ route('approval-obs.index') }}" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </span>
+                        <span class="side-text">Approval Pass Slip</span>
+                    </a>
+                </li>
+
+                <!-- Overtime -->
+                
+                <li class="side-items has-submenu {{ request()->routeIs('approval-overtime.*') ? 'active' : '' }}">
+                    <a href="{{ route('approval-overtime.index') }}" class="side-link">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </span>
+                        <span class="side-text">Approval Overtime</span>
+                    </a>
+                </li>
+
             </ul>
         </nav>
 

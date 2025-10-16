@@ -829,4 +829,9 @@ class TimelogsServices {
             ->first();
     }
 
+    public function checkSuspension($date_today)
+    {
+        
+    }
+
 }

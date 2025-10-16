@@ -43,6 +43,9 @@ use App\Http\Controllers\Employee\LeaveApplicationController;
 use App\Http\Controllers\Admin\Services\LeaveApplicationController as AdminLeaveApplicationController;
 use App\Http\Controllers\Admin\Services\PassSlipController as AdminPassSlipController;
 use App\Http\Controllers\Admin\Services\OvertimeController as AdminOvertimeController;
+use App\Http\Controllers\Employee\AtroApprovalController;
+use App\Http\Controllers\Employee\LeaveApprovalController;
+use App\Http\Controllers\Employee\ObsApprovalController;
 use App\Http\Controllers\Employee\ObsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Employee\timelogs\CheckInOutController;
@@ -311,5 +314,10 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
     #EMPLOYEE TIMELOGS
     Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store')->names('checkinout');
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
+
+    # EMPLOYEE LEAVES, OVERTIME, AND OBS -- APPROVAL --
+    Route::resource('approval-leaves', LeaveApprovalController::class)->names('approval-leave');
+    Route::resource('approval-overtime', AtroApprovalController::class)->names('approval-overtime');
+    Route::resource('approval-official-business-slip', ObsApprovalController::class)->names('approval-obs');
 
 });
