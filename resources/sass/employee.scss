@@ -1,7 +1,7 @@
 @import 'variables.scss';
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
-$sidebar-width: 300px;
+$sidebar-width: 280px;
 
 // app for the employee
 #app {
@@ -19,7 +19,7 @@ $sidebar-width: 300px;
         overflow-x: hidden;
         background-color: $white;
         transition: width 0.3s ease, margin 0.3s ease;
-
+        
         &.collapsed {
             width: 66px; // Collapsed width
             
@@ -145,12 +145,15 @@ $sidebar-width: 300px;
 
                     &.active {
                         background-color: lighten($primary, 10) !important;
-                        color: $light;
+
+                        .side-link {
+                            color: $light;
+                        }
                     }
                     
                     &:hover {
-                        border-color: rgba($dark, 0.3);
-                        background-color: lighten($primary, 60);
+                        border-color: lighten($dark, 50);
+                        background-color: lighten($dark , 70);
                         transform: scale(1.01);
                     }
 
@@ -166,6 +169,8 @@ $sidebar-width: 300px;
                         color: inherit;
                         transition: gap 0.3s ease, justify-content 0.3s ease;
                         font-size: .9rem;
+                        color: lighten($dark, 15);
+                        
                         .side-icon {
                             flex-shrink: 0;
                             transition: transform 0.3s ease;
@@ -212,4 +217,9 @@ $sidebar-width: 300px;
             }
         }
     }
+}
+
+.sidebar-seperator {
+    border-bottom: 1px solid rgba($dark, 0.1);
+    margin: 8px 0px;
 }

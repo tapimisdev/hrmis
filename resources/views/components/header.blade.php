@@ -1,6 +1,6 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-4 mb-4 mt-4">
     <div class="flex-grow-1">
-        <h2 class="fw-bold mb-2" style="font-size: 1.75rem; letter-spacing: -0.02em; color: #1a1a1a;">
+        <h2 class="fw-bold mb-0" style="font-size: 1.75rem; letter-spacing: -0.02em; color: #1a1a1a;">
             {{ $title }}
         </h2>
         @if($subtitle)

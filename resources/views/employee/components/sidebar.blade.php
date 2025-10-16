@@ -50,13 +50,15 @@
                     </a>
                 </li>
 
+                <div class="sidebar-seperator"></div>
+
                 <!-- Leave Application -->
                 <li class="side-items has-submenu {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
                     <a href="{{ route('leaves.index') }}" class="side-link">
                         <span class="side-icon">
                             <i class="fa-solid fa-calendar-days"></i>
                         </span>
-                        <span class="side-text">Leave Application</span>
+                        <span class="side-text">Leave</span>
                     </a>
                 </li>
 

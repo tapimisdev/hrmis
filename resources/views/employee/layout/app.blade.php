@@ -77,7 +77,23 @@
     @yield('scripts')
 
     <script>
-     
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.querySelector('.sidebar');
+            const buttons = [document.getElementById('switchMenuBtn'), document.getElementById('imgSwitchBtn')];
+            const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+            if (collapsed) {
+                sidebar.classList.add('collapsed');
+                buttons.forEach(btn => btn?.classList.add('rotate'));
+            }
+
+            buttons.forEach(btn => btn?.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                btn.classList.toggle('rotate');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            }));
+        });
+
     </script>
 
 </body>
