@@ -249,7 +249,7 @@ class InformationController extends Controller
                     'salary_frequency' => $request->salary_frequency,
                     'salary_cutoff'   => $salary_cutoff,
                     'deduction_applied'     => $request->deduction_applied,
-                    'salary_basis'     => $request->salary_basis,
+                    'salary_basis'     => $request->salary_basis ?? null,
                     'amount'           => $salary->amount,
                     'daily_rate'       => $salary->daily_rate,
                     'effectivity_date' => $now,

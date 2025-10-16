@@ -1,5 +1,5 @@
 <div class="modal fade" id="{{ $id ?? 'myModal' }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered {{ $size ?? '' }}">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable {{ $size ?? '' }}">
     <div class="modal-content modern-modal">
       
       {{-- Header --}}

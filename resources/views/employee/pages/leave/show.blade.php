@@ -3,7 +3,7 @@
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
             <h3 class="fw-bold">Leave Application</h3>
-            <small class="text-muted">Document ID: <span id="doc-id"></span></small>
+            <p class="text-muted text-uppercase fw-bold">Document ID: <span id="doc-id"></span></p>
         </div>
 
         <table class="table table-bordered">
@@ -43,9 +43,12 @@
             </tr>
         </table>
 
-        <div class="d-flex justify-content-end gap-3">
-            <p><strong>Approver:</strong> <span id="approver"></span></p>
-            <p><strong>Approved At:</strong> <span id="approved-at"></span></p>
+        <div class="mt-4 mb-3">
+            <small class="text-uppercase fw-bold text-muted">Your Approvers</small>
+        </div>
+        
+        <div class="w-103">
+            <div id="approvers-by-level" class="mb-2"></div>
         </div>
     </div>
 
@@ -57,3 +60,4 @@
         </div>
     </x-slot>
 </x-modal>
+

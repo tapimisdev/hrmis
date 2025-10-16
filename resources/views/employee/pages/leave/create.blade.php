@@ -87,7 +87,6 @@
 <script>
     $(function() {
         const data = @json($applications);
-        console.log(data);
         const url = $('#form').attr('action');
         post(url);
 

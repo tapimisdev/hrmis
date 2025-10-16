@@ -30,8 +30,6 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-
 <script>
     $(document).ready(function() {
         let = DataTable = $('#myTable').DataTable({
@@ -82,7 +80,7 @@
 
         const myModal = $('#myModal');
 
-        $(document).on('click', '.show-button', function() {
+        $(document).on('click', '.show-button', function () {
             let id = $(this).attr('data-id');
             $('.modal-title').html('Leave Application');
 
@@ -95,12 +93,11 @@
                     $('#employee-no').text(data.employee_no ?? 'N/A');
                     $('#leave-type').text(data.leave_name);
 
-                    // Format and display dates array nicely (e.g. "Oct 14, 16 2025")
+                    // Format and display dates
                     if (Array.isArray(data.dates) && data.dates.length > 0) {
                         const formattedDates = data.dates
                             .map(date => moment(date).format('MMM D'))
                             .join(', ');
-                        // Assuming all dates in same year; append year from first date
                         const year = moment(data.dates[0]).format('YYYY');
                         $('#selectedDates').text(`${formattedDates} ${year}`);
                     } else {
@@ -110,45 +107,87 @@
                     $('#days').text(data.days);
                     $('#reason').text(data.reason);
 
-                    // Status badge styling
+                    // Status badge
                     let statusClass = 'bg-secondary';
                     if (data.status === 'pending') statusClass = 'bg-warning';
                     else if (data.status === 'approved') statusClass = 'bg-success';
                     else if (data.status === 'rejected') statusClass = 'bg-danger';
 
-                    $('#status').attr('class', 'badge ' + statusClass)
-                                .text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
+                    $('#status')
+                        .attr('class', 'badge ' + statusClass)
+                        .text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
 
                     $('#created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
 
-                    // Approver and approval date
-                    $('#approver').text(data.approver_id ?? 'Not Yet Assigned');
-                    $('#approved-at').text(data.approved_at 
-                        ? moment(data.approved_at).format('MMMM D, YYYY h:mm A') 
+                    // === Show Approvers by Level with Accordion ===
+                    $('#approvers-by-level').empty(); // Clear previous content
+
+                    const approvals = data.approvals;
+
+                    if (approvals && Object.keys(approvals).length > 0) {
+                        let accordionHTML = `
+                            <div class="accordion" id="approversAccordion">
+                        `;
+
+                        Object.keys(approvals).sort((a, b) => a - b).forEach((level, index) => {
+                            const approverArray = approvals[level];
+
+                            const approverList = approverArray.length > 0
+                                ? approverArray.map(a =>
+                                    `<li><code>${a.firstname} ${a.lastname} (${a.employee_no})</code></li>`
+                                ).join('')
+                                : '<li><em>None</em></li>';
+
+                            accordionHTML += `
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading-${level}">
+                                        <button style="font-size: 12px;" class="accordion-button fw-bold text-uppercase ${index !== 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${level}" aria-expanded="${index === 0 ? 'true' : 'false'}" aria-controls="collapse-${level}">
+                                            Level ${level} Approvers
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-${level}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" aria-labelledby="heading-${level}" data-bs-parent="#approversAccordion">
+                                        <div class="accordion-body">
+                                            <ul class="mb-0">
+                                                ${approverList}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        accordionHTML += `</div>`;
+                        $('#approvers-by-level').append(accordionHTML);
+
+                    } else {
+                        $('#approvers-by-level').append('<div><em>No approvals yet</em></div>');
+                    }
+
+                    // Approved at
+                    $('#approved-at').text(data.approved_at
+                        ? moment(data.approved_at).format('MMMM D, YYYY h:mm A')
                         : '---');
 
-                    // Attachments list
+                    // Attachments
                     $('#attachments ul').empty();
 
-                    const attachments = response.data.attachments;
-
+                    const attachments = data.attachments;
                     if (attachments && attachments.length > 0) {
                         attachments.forEach(file => {
-                            let fileUrl = `/storage/${file.file_path}`; // adjust path if necessary
+                            let fileUrl = `/storage/${file.file_path}`;
                             let fileName = file.file_name;
 
                             $('#attachments ul').append(
-                                `<li><a href="${fileUrl}" target="_blank" rel="noopener noreferrer">${fileName}</a></li>`
+                                `<li><a download href="${fileUrl}" target="_blank" rel="noopener noreferrer">${fileName}</a></li>`
                             );
                         });
                     } else {
                         $('#attachments ul').append('<li><em>No attachments</em></li>');
                     }
 
-                    // Show the modal
+                    // Show modal
                     $('#myModal').modal('show');
                 })
-
                 .catch(error => {
                     Swal.fire({
                         title: "Oops!",
@@ -158,6 +197,8 @@
                 });
         });
 
+
+      
     });
 </script>
 @endsection

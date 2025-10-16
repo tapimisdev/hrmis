@@ -16,6 +16,7 @@
                 <tr>
                     <th>#</th>
                     <th>Employee No</th>
+                    <th>Name</th>
                     <th>Type</th>
                     <th>Dates</th>
                     <th>Status</th>
@@ -40,6 +41,7 @@
             "columns": [
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "employee_no", name: 'employee_no' },
+                { data: "name", name: 'name' },
                 { data: "type", name: 'type' },
                 { data: "dates", name: 'dates' },
                 { data: "status", name: 'status' },

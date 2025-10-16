@@ -155,7 +155,7 @@
             <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'reports') ? '' : 'collapsed' }}"
                data-bs-toggle="collapse" 
                data-bs-target="#reports"
-               role="button" 
+               role="button"
                aria-expanded="{{ Str::contains(request()->path(), 'reports') ? 'true' : 'false' }}" 
                aria-controls="reports">
                 <i class="fa-solid fa-file-lines"></i>

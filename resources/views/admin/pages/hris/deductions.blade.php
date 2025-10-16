@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container pt-4 px-3">
-        <x-header title="Update Employee Account" subtitle="Update employee's portal account">
+        <x-header title="Update Employee Account" subtitle="Employee's personal data sheet and portal account">
             <x-button-link 
                 :href="route('hris.employee.index')" 
                 icon="fa-solid fa-arrow-left me-2" 

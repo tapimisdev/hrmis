@@ -69,8 +69,6 @@ export function fieldError(error) {
     }
 }
 
-
-
 export function confirmAction(title, text, confirmText = 'Yes, proceed!', callback) {
     Swal.fire({
         title: title || 'Are you sure?',

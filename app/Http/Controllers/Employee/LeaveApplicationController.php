@@ -37,19 +37,24 @@ class LeaveApplicationController extends Controller
         return view('employee.pages.leave.index');
     }
 
-    public function getRawData(? int $id = null) {
-        
-        $data = DB::table('leave_applications as la')
+    public function getRawData(?int $id = null)
+    {
+        $user_id = Auth::id();
+
+        // Fetch main leave applications
+        $applications = DB::table('leave_applications as la')
             ->leftJoin('leaves as l', 'la.leave_id', '=', 'l.id')
             ->leftJoin('leave_dates as ld', 'ld.leave_application_id', '=', 'la.id')
-            ->leftJoin('leave_attachments as laa', 'laa.leave_application_id', '=', 'la.id')
+            ->leftJoin('employee_personal as ep', 'ep.employee_no', '=', 'la.employee_no')
             ->select(
                 'la.*',
                 'l.name as leave_name',
-                DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates'),
-                DB::raw('GROUP_CONCAT(DISTINCT laa.file_name) as attachments')  // assuming `file_name` holds attachment filename
+                DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates')
             )
-            ->where('la.user_id', Auth::id())
+            ->where('la.user_id', $user_id)
+            ->when($id, function ($query, $id) {
+                return $query->where('la.id', $id);
+            })
             ->groupBy(
                 'la.id',
                 'l.name',
@@ -64,19 +69,51 @@ class LeaveApplicationController extends Controller
                 'la.updated_at'
             )
             ->orderBy('la.created_at', 'desc')
-            ->when($id, function ($query, $id) {
-                return $query->where('la.id', $id);
-            })
             ->get();
 
+        // Fetch attachments
+        $attachments = DB::table('leave_attachments')
+            ->select('leave_application_id', 'file_name', 'file_path', 'file_type')
+            ->whereIn('leave_application_id', $applications->pluck('id'))
+            ->get()
+            ->groupBy('leave_application_id');
 
-        $results = $data->map(function($item) {
+        // Fetch approvals and group by level, deduplicated by user
+        $approvalsRaw = DB::table('leave_approvals')
+            ->join('employee_information', 'leave_approvals.user_id', '=', 'employee_information.user_id')
+            ->join('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->select([
+                'leave_approvals.leave_application_id',
+                'leave_approvals.user_id',
+                'leave_approvals.level',
+                'employee_information.employee_no',
+                'employee_personal.firstname',
+                'employee_personal.lastname',
+            ])
+            ->whereIn('leave_approvals.leave_application_id', $applications->pluck('id'))
+            ->get();
+
+        // Group by level and deduplicate by user_id
+        $groupedArray = $approvalsRaw
+            ->groupBy('level')
+            ->map(function ($items) {
+                return $items->unique('user_id')->values();
+            })
+            ->sortKeys()
+            ->toArray();
+
+        // Merge all data into final results
+        $results = $applications->map(function ($item) use ($attachments, $groupedArray) {
             $item->dates = $item->dates ? explode(',', $item->dates) : [];
+            $item->attachments = $attachments->get($item->id)?->values() ?? [];
+            $item->approvals = $groupedArray;
             return $item;
         });
 
         return $results;
     }
+
+
 
     public function getData()
     {
@@ -215,8 +252,14 @@ class LeaveApplicationController extends Controller
             $approvers = $validatedData['approvers'];
             $days = count($approvers);
 
+            $leaveName = DB::table('leaves')
+                ->where('id', $validatedData['leave_id'])
+                ->pluck('name')
+                ->first();
+
             $applicationID = DB::table('leave_applications')->insertGetId([
                 'user_id'       => $user_id,
+                'name'          => $leaveName,
                 'employee_no'   => $employee_no,
                 'leave_id'      => $validatedData['leave_id'],
                 'days'          => $days,
@@ -255,8 +298,6 @@ class LeaveApplicationController extends Controller
                         'file_path'            => $path,
                         'file_name'            => $file->getClientOriginalName(),
                         'file_type'            => $file->getMimeType(),
-                        'created_at'           => now(),
-                        'updated_at'           => now(),
                     ]);
                 }
             }
@@ -288,10 +329,9 @@ class LeaveApplicationController extends Controller
         $data = $this->getRawData($id)[0] ?? [];
 
         if(!$data) {
-
+            return redirect()->route('leave.index');
         }
          
-        // dd($data);
         return response(['data' => $data, 'status' => 'success'], 200);
     }
 

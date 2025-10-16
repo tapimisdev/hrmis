@@ -30,7 +30,7 @@ return new class extends Migration
             $table->foreignId('application_id')
                 ->constrained('applications')
                 ->onDelete('cascade');
-            $table->foreignId('user_id')
+            $table->foreignId( 'user_id')
                 ->constrained('users')
                 ->onDelete('cascade');
             $table->enum('status', [

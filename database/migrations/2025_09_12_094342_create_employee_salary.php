@@ -43,7 +43,7 @@ return new class extends Migration
             $table->enum('salary_basis', [
                 'monthly',
                 'daily'
-            ]);
+            ])->nullable();
 
             $table->string('amount');
             $table->string('daily_rate');

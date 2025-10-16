@@ -11,7 +11,6 @@ use Illuminate\Auth\Events\Validated;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
-
 use function PHPUnit\Framework\isEmpty;
 
 class ImportEmployeeController extends Controller

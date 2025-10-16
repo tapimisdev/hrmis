@@ -170,3 +170,48 @@ if ($('.ckeditor').length) {
 
     gallery.openGallery();
 });
+
+const $toggles = $('.sidebar-link[data-bs-toggle="collapse"]');
+
+// Restore collapse states from localStorage
+$toggles.each(function () {
+    const targetSelector = $(this).data('bs-target');
+    const savedState = localStorage.getItem(targetSelector);
+
+    if (savedState === 'open') {
+        $(targetSelector).addClass('show');
+        $(this).attr('aria-expanded', 'true').removeClass('collapsed');
+    } else {
+        $(targetSelector).removeClass('show');
+        $(this).attr('aria-expanded', 'false').addClass('collapsed');
+    }
+});
+
+// Listen to Bootstrap collapse events on each target
+$toggles.each(function () {
+    const targetSelector = $(this).data('bs-target');
+    const $target = $(targetSelector);
+
+    $target.on('show.bs.collapse', function () {
+        // When this one is about to open, close all others
+        $toggles.each(function () {
+            const otherTargetSelector = $(this).data('bs-target');
+            if (otherTargetSelector !== targetSelector) {
+                const $otherTarget = $(otherTargetSelector);
+                if ($otherTarget.hasClass('show')) {
+                    $otherTarget.collapse('hide');
+                }
+            }
+        });
+    });
+
+    $target.on('shown.bs.collapse', function () {
+        localStorage.setItem(targetSelector, 'open');
+        $(this).prev('.sidebar-link').attr('aria-expanded', 'true').removeClass('collapsed');
+    });
+
+    $target.on('hidden.bs.collapse', function () {
+        localStorage.setItem(targetSelector, 'closed');
+        $(this).prev('.sidebar-link').attr('aria-expanded', 'false').addClass('collapsed');
+    });
+});

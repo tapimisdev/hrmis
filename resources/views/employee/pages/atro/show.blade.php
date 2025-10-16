@@ -3,7 +3,7 @@
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
             <h3 class="fw-bold">Overtime Application</h3>
-            <small class="text-muted">Document ID: <span id="doc-id"></span></small>
+            <p class="text-muted text-uppercase fw-bold">Document ID: <span id="doc-id"></span></small>
         </div>
 
         <table class="table table-bordered">

@@ -5,94 +5,144 @@
 
     <x-header title="Leave Application" subtitle="View leave application details">
         <x-button-link 
-            :href="javascript:history.back()" 
+            href="{{route('services.leaves.index')}}"
             icon="fa-solid fa-arrow-left me-2" 
             text="Back" 
             variant="danger"
         />
     </x-header>
-
-    <div class="card rounded-3 mb-5">
-        <div class="card-header fw-bold d-flex align-items-center">
-            <i class="fa-solid fa-file-pen me-2"></i> Application Details
-        </div>
-
-        <div class="card-body">
-
-            <div class="row g-3">
-                {{-- Leave Type --}}
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Leave Type</label>
-                    <input type="text" class="form-control" 
-                           value="{{ $data->leave_name ?? '' }}" readonly>
-                </div>
-
-                {{-- Number of Days --}}
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Number of Days</label>
-                    <input type="text" class="form-control" 
-                           value="{{ $data->days ?? '' }}" readonly>
-                </div>
+    <div class="alert alert-primary mb-4 text-uppercase fw-bold text-center">
+        This application can be approved directly without requiring approval from level-based approvers because you have admin or superadmin privileges.
+    </div>
+     <form id="form" action="{{ route('services.leaves.save', ['application' => $data->id]) }}" method="POST">
+        @csrf
+        @method('POST')
+        <input type="hidden" name="action" id="action" value="">
+        <div class="card rounded-3 mb-5">
+            <div class="card-header fw-bold d-flex align-items-center">
+                <i class="fa-solid fa-file-pen me-2"></i> Application Details
             </div>
-
-            <div class="row g-3 mt-2">
-                <div class="col-md-12">
-                    <label class="form-label fw-semibold">Date</label>
-                    <input type="text" class="form-control" 
-                           value="{{ \Carbon\Carbon::parse($data->start_date)->format('M d, Y') . ' - ' . \Carbon\Carbon::parse($data->end_date)->format('M d, Y') ?? '' }}" readonly>
-                </div>
-            </div>
-
-            <div class="row g-3 mt-2">
-                {{-- Reason --}}
-                <div class="col-12">
-                    <label class="form-label fw-semibold">Reason</label>
-                    <textarea class="form-control" rows="4" readonly>{{ $data->reason ?? '' }}</textarea>
-                </div>
-            </div>
-
-            <div class="row g-3 mt-2">
-                {{-- Attachments --}}
-                <div class="col-12">
-                    <label class="form-label fw-semibold">Attachments</label>
-                    @if(isset($data->attachments) && count($data->attachments))
-                        <ul class="mb-0">
-                            @foreach ($data->attachments as $file)
-                                <li>
-                                    <a href="{{ asset('storage/'.$file) }}" target="_blank">
-                                        {{ basename($file) }}
-                                    </a>
-                                </li>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="30%">Employee No:</th>
+                        <td id="employee-no">{{$data->employee_no}}</td>
+                    </tr>
+                    <tr>
+                        <th>Leave Type:</th>
+                        <td id="leave-type">{{$data->leave_name}}</td>
+                    </tr>
+                    <tr>
+                        <th>Dates:</th>
+                        <td>
+                            @foreach($data->dates as $date)
+                                {{Carbon\Carbon::parse($date)->format('M d, Y')}}
                             @endforeach
-                        </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Total Days:</th>
+                        <td>{{$data->days}} Day(s)</td>
+                    </tr>
+                    <tr>
+                        <th>Reason:</th>
+                        <td>{{$data->reason}}</td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            <span 
+                                id="status" 
+                                class="badge 
+                                    <?php 
+                                        $statusClass = 'bg-secondary';
+                                        if ($data->status === 'pending') $statusClass = 'bg-warning';
+                                        elseif ($data->status === 'saved') $statusClass = 'bg-success';
+                                        elseif ($data->status === 'rejected') $statusClass = 'bg-danger';
+
+                                        echo $statusClass;
+                                    ?>
+                                ">
+                                <?= htmlspecialchars(ucfirst($data->status)) ?>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Applied At:</th>
+                        <td>{{\Carbon\Carbon::parse($data->created_at)->format('M d, Y')}}</td>
+                    </tr>
+                    <tr>
+                        <th>Attachments:</th>
+                        <td id="attachments">
+                            <ul class="list-unstyled mb-0">
+                                @if (!empty($data->attachments) && count($data->attachments) > 0)
+                                    @foreach ($data->attachments as $attachment)
+                                        <li>{{ $attachment }}</li>
+                                    @endforeach
+                                @else
+                                    <li>No attachments available.</li>
+                                @endif
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+                <div class="mt-4 mb-3">
+                    <small class="text-uppercase fw-bold text-muted">Your Approvers</small>
+
+                    @if (!empty($data->approvals) && count($data->approvals) > 0)
+                        <div class="accordion mt-2" id="approversAccordion">
+                            @foreach ($data->approvals as $level => $approvers)
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingLevel{{ $level }}">
+                                        <button class="accordion-button text-uppercase fw-bold {{ $loop->first ? '' : 'collapsed' }}" 
+                                                style="font-size: 10px" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#collapseLevel{{ $level }}" 
+                                                aria-expanded="{{ $loop->first ? 'true' : 'false' }}" 
+                                                aria-controls="collapseLevel{{ $level }}">
+                                            Level {{ $level }} Approvers
+                                        </button>
+                                    </h2>
+                                    <div id="collapseLevel{{ $level }}" 
+                                        class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}" 
+                                        aria-labelledby="headingLevel{{ $level }}" 
+                                        data-bs-parent="#approversAccordion">
+                                        <div class="accordion-body p-2">
+                                            <ul class="mb-0">
+                                                @foreach ($approvers as $approver)
+                                                    <li>
+                                                        {{ $approver->firstname }} {{ $approver->lastname }} ({{ $approver->employee_no }})
+                                                        @if ($approver->status == 'approved')
+                                                            <i class="fa-solid fa-check bg-primary"></i>
+                                                        @endif
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     @else
-                        <input type="text" class="form-control" value="No attachments" readonly>
+                        <em>No approvers assigned.</em>
                     @endif
                 </div>
             </div>
-
+        
+            {{-- Action Buttons --}}
+            @if($data->status == 'pending')
+                <div class="card-footer bg-light d-flex justify-content-end gap-3 py-3 bg-transparent">
+                    <button type="submit" name="action" value="rejected" id="btn-rejected" class="px-5 py-3 text-uppercase btn btn-danger px-4">
+                        <i class="fa-solid fa-xmark me-2"></i> Decline
+                    </button>
+                    <button type="submit" name="action" value="approve" id="btn-approve" class="px-5 py-3 text-uppercase btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-2"></i> Approve
+                    </button>
+                </div>
+            @endif
         </div>
-
-        {{-- Action Buttons --}}
-        <div class="card-footer bg-light d-flex justify-content-end gap-3 py-3 bg-transparent">
-            <form action="{{ route('services.leaves.index', $data->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <input type="hidden" name="action" id="action" value="rejected">
-                <button type="submit" class="px-5 py-3 text-uppercase btn btn-danger px-4">
-                    <i class="fa-solid fa-xmark me-2"></i> Decline
-                </button>
-            </form>
-            <form action="{{ route('services.leaves.index', $data->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <input type="hidden" name="action" id="action" value="approved">
-                <button type="submit" class="px-5 py-3 text-uppercase btn btn-primary px-4">
-                    <i class="fa-solid fa-check me-2"></i> Approve
-                </button>
-            </form>
-        </div>
-    </div>
+    </form>
 </div>
 @endsection
 
@@ -101,8 +151,16 @@
     $(function () {
      
         const url = $('#form').attr('action');
-        put(url);
-        
+        $('#btn-rejected').on('click', function() {
+            $('#action').val('rejected');
+            post(url, true);
+        });
+
+        $('#btn-approve').on('click', function() {
+            $('#action').val('approve');
+            post(url);
+        });
+            
     });
 </script>
 @endsection
