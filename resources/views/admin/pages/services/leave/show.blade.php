@@ -114,7 +114,7 @@
                                                     <li>
                                                         {{ $approver->firstname }} {{ $approver->lastname }} ({{ $approver->employee_no }})
                                                         @if ($approver->status == 'approved')
-                                                            <i class="fa-solid fa-check bg-primary"></i>
+                                                            <i class="fa-solid fa-check text-primary"></i>
                                                         @endif
                                                     </li>
                                                 @endforeach

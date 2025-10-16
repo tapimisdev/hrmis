@@ -100,7 +100,6 @@ class LeaveApplicationController extends Controller {
     }
 
     public function index() {
-
         if (request()->ajax()) {
             $query = $this->getRawData();
             return $this->datatable($query);
@@ -135,9 +134,9 @@ class LeaveApplicationController extends Controller {
 
         switch ($action) {
             case 'approve':
-                return $this->approve($id); // Return the response
+                return $this->approve($id); 
             case 'rejected':
-                return $this->decline($id, $payload); // Return the response
+                return $this->decline($id, $payload); 
             default:
                 return response()->json([
                     'status' => 'error',
@@ -149,16 +148,12 @@ class LeaveApplicationController extends Controller {
     public function approve(int $id)
     {
         try {
+
             DB::table('leave_applications')
                 ->where('id', $id)
                 ->update([
-                    'status' => 'approved'
-                ]);
-
-            DB::table('leave_approvals')
-                ->where('leave_application_id', $id) // ← Fixed: match with decline method
-                ->update([
-                    'status' => 'approved'
+                    'status' => 'approved',
+                    'approver_id' => Auth::id() ?? null
                 ]);
 
             return response()->json([

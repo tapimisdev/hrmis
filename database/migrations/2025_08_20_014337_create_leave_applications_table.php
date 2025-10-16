@@ -22,6 +22,8 @@ return new class extends Migration
             $table->enum('status', ['cancelled', 'pending', 'approved', 'rejected'])->default('pending');
             $table->longText('remarks')
                 ->nullable();
+            $table->unsignedBigInteger('approver_id')
+                ->nullable(); 
             $table->timestamps();
         });
 
