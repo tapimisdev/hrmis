@@ -54,23 +54,27 @@ class DailyTimeRecordController extends Controller
             ->where('employee_no', $employee_no)
             ->value('user_id');
 
-        // Get month and year from query params, default to current month/year
-        $month = $request->query('month', Carbon::now()->month);
-        $year = $request->query('year', Carbon::now()->year);
+        try {
+            // Get month and year from query params, default to current month/year
+            $month = $request->query('month', Carbon::now()->month);
+            $year = $request->query('year', Carbon::now()->year);
 
-        // Start and end date boundaries for the selected month
-        $startDate = Carbon::createFromDate($year, $month, 1)->startOfDay();
-        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
+            // Start and end date boundaries for the selected month
+            $startDate = Carbon::createFromDate($year, $month, 1)->startOfDay();
+            $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfDay();
 
-        // Fetch daily time records from the service
-        $daily_time_record = $this->daily_time_record_service->getDTR([
-            'user_id'     => $user_id,
-            'employee_no' => $employee_no ?? null,
-            'startDate'   => $startDate->toDateTimeString(),
-            'endDate'     => $endDate->toDateTimeString(),
-        ]);
+            // Fetch daily time records from the service
+            $daily_time_record = $this->daily_time_record_service->getDTR([
+                'user_id'     => $user_id,
+                'employee_no' => $employee_no ?? null,
+                'startDate'   => $startDate->toDateTimeString(),
+                'endDate'     => $endDate->toDateTimeString(),
+            ]);
 
-        return response()->json($daily_time_record, 200);
+            return response()->json($daily_time_record, 200);   
+        } catch (\Exception $e) {
+            return response(['message' => $e->getMessage(), 'status' => 'show dtr fails']);
+        }
     }
 
     public function employee_information_with_summary(Request $request, $employee_no)

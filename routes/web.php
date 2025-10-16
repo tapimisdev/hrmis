@@ -306,6 +306,8 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
 
     #EMPLOYEE TIMELOGS
     Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store')->names('checkinout');
+    Route::get('employee-timelogs/{employee_no}/get', [DailyTimeRecordController::class, 'show']);
+
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 
     # EMPLOYEE LEAVES, OVERTIME, AND OBS -- APPROVAL --

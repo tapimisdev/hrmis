@@ -16,7 +16,7 @@
 
         <div class="w-100 d-flex gap-3 px-4 flex-wrap">
           <button 
-            class="btn btn-outline-primary btn-thick-outline py-3 px-4 fw-semibold"
+            class="btn btn-primary py-3 px-4 fw-semibold"
             @click="setTime(0)" 
             v-if="!isTimeInDisabled"
             :disabled="isTimeInDisabled || buttonLoading === 'timeIn'"
@@ -27,7 +27,7 @@
           </button>
 
           <button 
-            class="btn btn-outline-primary btn-thick-outline py-3 px-4 fw-semibold" 
+            class="btn btn-primary py-3 px-4 fw-semibold" 
             @click="setTime(2)" 
             v-if="!isBreakOutDisabled"
             :disabled="isBreakOutDisabled || buttonLoading === 'breakOut'"
@@ -38,7 +38,7 @@
           </button>
 
           <button 
-            class="btn btn-outline-primary btn-thick-outline py-3 px-4 fw-semibold" 
+            class="btn btn-primary py-3 px-4 fw-semibold" 
             @click="setTime(3)" 
             v-if="!isBreakInDisabled"
             :disabled="isBreakInDisabled || buttonLoading === 'breakIn'"
@@ -49,7 +49,7 @@
           </button>
 
           <button 
-            class="btn btn-danger py-3 px-4 fw-semibold" 
+            class="btn btn-outline-danger py-3 px-4 fw-semibold" 
             @click="setTime(1)"
             :disabled="isTimeOutDisabled || buttonLoading === 'timeOut'"
             style="border-width: 2px;">
@@ -59,7 +59,7 @@
           </button>
 
           <button 
-            class="btn btn-primary btn-thick-outline py-3 px-4 fw-semibold" 
+            class="btn btn-dark py-3 px-4 fw-semibold" 
             @click="setTime(4)"
             v-if="!isOvertimeInDisabled"
             :disabled="isOvertimeInDisabled || buttonLoading === 'overtimeIn'"
@@ -70,7 +70,7 @@
           </button>
 
           <button 
-            class="btn btn-warning text-dark btn-thick-outline py-3 px-4 fw-semibold" 
+            class="btn btn-success text-dark py-3 px-4 fw-semibold" 
             @click="setTime(5)"
             v-if="!isOvertimeOutDisabled"
             :disabled="isOvertimeOutDisabled || buttonLoading === 'overtimeOut'"
@@ -155,11 +155,6 @@ function getDayToday() {
   return new Date().getDate();
 }
 
-function getCurrentTime() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-}
-
 function setTime(type) {
   const buttonNames = {
     0: 'timeIn',
@@ -180,7 +175,7 @@ function setTime(type) {
     if (result.isConfirmed) {
       buttonLoading.value = buttonNames[type];
 
-      axios.post('/employee/check-in-out', { type, date_time: getCurrentTime() })
+      axios.post('/employee/check-in-out', { type })
         .then(response => {
           SuccesToast.fire({
             title: response.data.message || "Time logged successfully"

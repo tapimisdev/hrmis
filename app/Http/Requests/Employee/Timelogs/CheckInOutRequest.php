@@ -29,13 +29,7 @@ class CheckInOutRequest extends FormRequest
             'type' => [
                 'nullable',
                 Rule::in(FnEnum::cases()), // works with enum cases
-            ],
-            'date_time' => [
-                'required',
-                'date',
-                'after_or_equal:' . now()->startOfDay(),
-                'before_or_equal:' . now()->endOfDay(),
-            ],
+            ]
         ];
     }
 

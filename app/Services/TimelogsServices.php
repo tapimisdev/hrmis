@@ -465,17 +465,12 @@ class TimelogsServices {
         $isLeave = false;
         $status = 'pending leave';
 
-        $leave = DB::table('leave_applications')
-            ->where('user_id', $userId)
-            ->where(function($query) use ($date) {
-                $query->whereDate('start_date', '<=', $date)
-                    ->whereDate('end_date', '>=', $date);
-            })
-            ->where(function($query) {
-                $query->where('status', 'approved')
-                    ->orWhere('status', 'pending');
-            })
-            ->first();  
+        $leave = DB::table('leave_applications as la')
+            ->leftJoin('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
+            ->where('la.user_id', $userId)
+            ->whereDate('ld.date', $date)
+            ->first();
+        
 
         if ($leave) {
             $isLeave = true;
@@ -586,7 +581,7 @@ class TimelogsServices {
         if (!$shift) return null;
 
         $workDate = Carbon::parse($date['date']);
-
+            
         $breakDurationMins = $shift->breaktime_hours * 60;
         $shiftDurationHours = $shift->working_hours + $shift->breaktime_hours; // correctly include break hours
 
@@ -831,7 +826,24 @@ class TimelogsServices {
 
     public function checkSuspension($date_today)
     {
-        
+        $is_suspended = false;
+
+        $suspension = DB::table('suspension_dates as sd')
+                    ->leftJoin('suspension as s', 'sd.suspension_id', '=' ,'s.id')
+                    ->whereDate('sd.date', $date_today)
+                    ->where('s.is_active', true)
+                    ->first();
+
+        if($suspension) {
+            $is_suspended = true;
+        }
+
+        return [
+            'is_suspended' => $is_suspended,
+            'type' => $suspension->type ?? null,
+            'from_time' => $suspension->from_time ?? null,
+            'to_time' => $suspension->to_time ?? null,
+        ];
     }
 
 }

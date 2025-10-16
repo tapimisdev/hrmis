@@ -5,6 +5,7 @@ import { createApp } from 'vue';
 import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
 import DashboardIndex from './employee/dashboard/DashboardIndex.vue'
 import HeaderVue from './employee/components/Header.vue';
+import EmployeeTimelog from './employee/check-in-out/EmployeeTimelog.vue';
 
 // Admin
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
@@ -21,6 +22,7 @@ const authApp = createApp({
     CheckInOutVue,
     DashboardIndex,
     HeaderVue,
+    EmployeeTimelog,
 
     DashboardVue,
     DtrViewVue,

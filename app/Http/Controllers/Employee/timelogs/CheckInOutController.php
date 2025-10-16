@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Employee\timelogs;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\Timelogs\CheckInOutRequest;
 use App\Models\User;
+use App\Services\EmployeeService;
 use App\Services\TimelogsServices;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -13,15 +15,19 @@ use Yajra\DataTables\Facades\DataTables;
 class CheckInOutController extends Controller
 {
     protected $timelogsServices;
+    protected $employeeService;
 
-    public function __construct(TimelogsServices $timelogsServices)
+    public function __construct(TimelogsServices $timelogsServices, EmployeeService $employeeService)
     {
         $this->timelogsServices = $timelogsServices;
+        $this->employeeService = $employeeService;
     }
 
     public function index()
     {
         $user_id = auth()->user()->id;
+
+        $employee_no = $this->employeeService->getEmployeeNo($user_id);
 
         $query = $this->timelogsServices->getTimeLogs($user_id);
 
@@ -29,7 +35,7 @@ class CheckInOutController extends Controller
             return $this->datatable($query);
         }
 
-        return view('employee.pages.timelogs.checkin-out.index');
+        return view('employee.pages.timelogs.checkin-out.index', compact('employee_no'));
     }
 
     public function create()
@@ -47,66 +53,71 @@ class CheckInOutController extends Controller
     public function store(CheckInOutRequest $request)
     {
         $validatedData = $request->validated();
-
         $fn = $validatedData['type'] ?? null;
 
         DB::beginTransaction();
 
         try {
-     
             $validatedData['user_id'] = auth()->user()->id;
             $validatedData['employee_no'] = auth()->user()->employee_no;
 
             $user = User::find($validatedData['user_id']);
             $user_schedule = $user->getShiftAndWorkSchedule();
-            // get current timelogs
-            $current_timelog = $this->timelogsServices->getTodaysLogs($validatedData['user_id']);
-            
-            if (    !empty($current_timelog['timeIn']) &&
-                    !empty($current_timelog['breakOut']) &&
-                    !empty($current_timelog['breakIn']) &&
-                    !empty($current_timelog['timeOut']) &&
-                    !empty($current_timelog['overtimeIn']) &&
-                    !empty($current_timelog['overtimeOut']) 
-                ) {
 
+            // Get current timelogs
+            $current_timelog = $this->timelogsServices->getTodaysLogs($validatedData['user_id']);
+
+            // Prevent duplicate logging for today
+            if (
+                !empty($current_timelog['timeIn']) &&
+                !empty($current_timelog['breakOut']) &&
+                !empty($current_timelog['breakIn']) &&
+                !empty($current_timelog['timeOut']) &&
+                !empty($current_timelog['overtimeIn']) &&
+                !empty($current_timelog['overtimeOut'])
+            ) {
                 throw new \Exception('You have already completed all your logs for today. No further action is needed.');
             }
-        
-            // check if there is valid logs and create if no
-            if($validatedData['type'] === 'timeOut') {
+
+            // Use current date and time (Philippine timezone)
+            $now = Carbon::now('Asia/Manila');
+            $validatedData['date_time'] = $now;
+
+            // Handle straight time-out
+            if ($validatedData['type'] === 'timeOut') {
                 $this->timelogsServices->straightToTimeOut($validatedData);
             }
 
+            // Insert time log
             $timelog = DB::table('timelogs')->insert([
                 'user_id'           => $validatedData['user_id'],
-                'employee_no'       => $validatedData['employee_no'] ?? null,
-                'date_time'         => $validatedData['date_time'],
+                'employee_no'       => $validatedData['employee_no'],
+                'date_time'         => $now, // Use $now instead of request input
                 'fn'                => $fn,
-                'shift_id'           => $user_schedule['shift_id'],
-                'work_schedule_id'   => $user_schedule['work_schedule_id'],
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'shift_id'          => $user_schedule['shift_id'],
+                'work_schedule_id'  => $user_schedule['work_schedule_id'],
+                'created_at'        => now('Asia/Manila'),
+                'updated_at'        => now('Asia/Manila'),
             ]);
 
-            $time = \Carbon\Carbon::parse($validatedData['date_time'])->format('h:i:s A');
+            $time = $now->format('h:i:s A');
 
             DB::commit();
 
             return response()->json([
                 'message' => 'Time log entry recorded successfully.',
                 'data'    => $timelog,
-                'time' => $time,
+                'time'    => $time,
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollback();
+
             return response()->json([
                 'message' => 'Failed to record time log entry.',
                 'error'   => $e->getMessage(),
             ], 500);
         }
-        
     }
 
     public function datatable($query)

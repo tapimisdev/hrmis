@@ -207,7 +207,6 @@ class LeaveApplicationController extends Controller
      */
     public function create()
     {
-        
         $data = $this->getData();
         $leaves = $data['leaves'];
         $approvers = $data['approvers'];

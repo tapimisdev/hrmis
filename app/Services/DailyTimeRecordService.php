@@ -5,9 +5,6 @@ namespace App\Services;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-
-use function PHPUnit\Framework\isEmpty;
 
 class DailyTimeRecordService {
 
@@ -129,6 +126,8 @@ class DailyTimeRecordService {
                     continue;
                 }
             }
+
+            $suspension = $this->timelogs_services->checkSuspension($date['date']);
 
             /** ---------------- SHIFT AND WORK SCHEDULE ---------------- **/
             $date['work_schedule_id'] ??= $weeklySchedule_id;
