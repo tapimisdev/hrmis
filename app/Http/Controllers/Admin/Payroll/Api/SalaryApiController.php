@@ -38,4 +38,16 @@ class SalaryApiController extends Controller
 
         return response(['data' => $employees, 'success'], 200);
     }
+
+    public function getAdjustments(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+        ]);
+
+        $holidays = $this->salary_payroll_service->getHolidays($validated);
+
+        return response()->json($holidays);
+    }
 }

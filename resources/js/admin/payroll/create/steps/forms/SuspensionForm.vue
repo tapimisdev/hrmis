@@ -96,7 +96,7 @@
 
   <!-- Actions -->
   <div class="modal-footer">
-    <button @click="close" class="btn py-3 px-4 btn-outline-danger">
+    <button @click="close" class="btn btn-outline-danger">
       <i class="me-2 fas fa-times"></i> Close
     </button>
 
@@ -105,7 +105,7 @@
       form="form"
       :disabled="loading"
       @click="submitForm"
-      class="btn py-3 px-4 btn-primary"
+      class="btn btn-primary"
     >
       <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
       <i v-else class="me-2 fas fa-save"></i>
@@ -150,6 +150,16 @@ export default {
       this.loading = true;
 
       this.loading = false;
+    },
+
+    resetForm() {
+      this.form = {
+        name: '',
+        date: '',
+        type: 'whole_day',
+        from_time: '',
+        to_time: '',
+      };  
     },
 
     convertToDate() {

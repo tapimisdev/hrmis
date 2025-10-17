@@ -7,7 +7,7 @@
     data-bs-backdrop="static"
     data-bs-keyboard="false"
   >
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="size">
       <div class="modal-content modern-modal">
         
         <!-- Header -->
@@ -45,6 +45,7 @@ export default {
     headerIcon: { type: String, default: "fa-solid fa-circle-question" },
     title: { type: String, default: "" },
     subtitle: { type: String, default: "" },
+    size: { type: String, default: "modal-lg" },
   },
   methods: {
     close() {

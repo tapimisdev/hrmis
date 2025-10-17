@@ -85,9 +85,16 @@ class HolidayController extends Controller
     public function edit($id)
     {
         $holiday = DB::table('holidays')->where('id', $id)->first();
+        
         if (!$holiday) {
             abort(404, 'Holiday not found.');
         }
+        
+        // If the request is AJAX or expects JSON (Axios automatically sets this)
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json($holiday);
+        }
+
         return view('admin.pages.settings.holiday.edit', compact('holiday'));
     }
 

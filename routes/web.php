@@ -64,7 +64,17 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return redirect()->route('login');
+    if (!Auth::check()) {
+        return redirect('/login');
+    }
+
+    $user = Auth::user();
+
+    if ($user->hasRole('employee')) {
+        return redirect('/employee/dashboard');
+    }
+
+    return redirect('/admin/dashboard');
 });
 
 Auth::routes([

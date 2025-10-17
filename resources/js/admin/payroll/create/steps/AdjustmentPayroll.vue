@@ -1,26 +1,49 @@
 <template>
   <div>
-    <ModalVue ref="modal" :headerIcon="'fa-solid fa-gear text-secondary'" :title="'Suspension & Holiday'">
+    <ModalVue
+      ref="modal"
+      :size="'modal-lg'"
+      :headerIcon="'fa-solid fa-gear text-secondary'"
+      :title="'Suspension & Holiday'"
+    >
+      <!-- Select Adjustment Type -->
       <div class="px-3 pt-3 border-bottom pb-3">
         <label class="form-label">
           Adjustment Type <span class="text-danger">*</span>
         </label>
         <select
           class="form-select"
-          :class="{ 'is-invalid': errors.type }"
           v-model="adjustment_type"
+          :disabled="idEdit"
         >
           <option value="">Select Type</option>
           <option value="suspension">Suspension</option>
           <option value="holiday">Holiday</option>
         </select>
-        <span class="text-danger" v-if="errors.type">{{ errors.type[0] }}</span>
       </div>
-      <SuspensionForm v-if="adjustment_type === 'suspension'" :date="selectedDate" />
-      <HolidayForm v-else-if="adjustment_type === 'holiday'" :date="selectedDate" />
-      <div class="px-3" v-else>
+
+      <!-- Dynamic Form -->
+      <SuspensionForm
+        ref="suspension_form"
+        v-if="adjustment_type === 'suspension'"
+        :isEdit="idEdit"
+        :date="selectedDate"
+        :suspension_id="suspension_id"
+        @submit="initCalendar"
+      />
+
+      <HolidayForm
+        ref="holiday_form"
+        v-else-if="adjustment_type === 'holiday'"
+        :isEdit="idEdit"
+        :date="selectedDate"
+        :holiday_id="holiday_id"
+        @submit="initCalendar"
+      />
+
+      <div v-else class="px-3">
         <div class="alert alert-info text-uppercase" role="alert">
-          --  No selected adjustment type  --
+          -- No selected adjustment type --
         </div>
       </div>
     </ModalVue>
@@ -29,6 +52,7 @@
     <p class="text-muted mb-4">
       Manage employee suspensions and holidays that may affect this payroll period.
     </p>
+
     <div v-if="showCalendar">
       <FullCalendar :key="calendarKey" ref="calendarRef" :options="calendarOptions" />
     </div>
@@ -47,6 +71,9 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import SuspensionForm from "./forms/SuspensionForm.vue";
 import HolidayForm from "./forms/HolidayForm.vue";
+import axios from "axios";
+
+const token = localStorage.getItem("auth_token");
 
 export default {
   components: { FullCalendar, ModalVue, SuspensionForm, HolidayForm },
@@ -59,7 +86,12 @@ export default {
     calendarOptions: null,
     selectedDate: null,
     errors: [],
-    adjustment_type: ''
+    adjustment_type: "",
+    start_date: "",
+    end_date: "",
+    idEdit: false,
+    holiday_id: null,
+    suspension_id: null,
   }),
 
   mounted() {
@@ -81,33 +113,20 @@ export default {
     async initCalendar() {
       this.setCutoffRange();
       await this.$nextTick();
-      setTimeout(() => {
-        this.showCalendar = true;
-      }, 100);
+      setTimeout(() => (this.showCalendar = true), 100);
     },
 
     async remountCalendar() {
-      // Hide calendar
       this.showCalendar = false;
-      
-      // Wait for DOM cleanup
       await this.$nextTick();
-      
-      // Small delay to ensure cleanup
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // Update options and increment key
+      await new Promise((r) => setTimeout(r, 50));
       this.setCutoffRange();
       this.calendarKey++;
-      
-      // Wait and show calendar
       await this.$nextTick();
-      setTimeout(() => {
-        this.showCalendar = true;
-      }, 50);
+      setTimeout(() => (this.showCalendar = true), 50);
     },
 
-    setCutoffRange() {
+    async setCutoffRange() {
       if (!this.modelValue?.date) return;
 
       const date = new Date(this.modelValue.date);
@@ -116,7 +135,6 @@ export default {
       const days = new Date(year, month, 0).getDate();
       const isFirst = this.modelValue.cutoff === "first_cutoff";
 
-      // Format month with leading zero
       const monthStr = month.toString().padStart(2, "0");
       const startDay = isFirst ? "01" : "16";
       const endDay = isFirst ? "15" : days.toString().padStart(2, "0");
@@ -128,38 +146,64 @@ export default {
         color: isFirst ? "#d1e7dd" : "#f8d7da",
       };
 
-      // Create completely fresh options object
+      this.start_date = cutoff.start;
+      this.end_date = cutoff.end;
+
+      // 🔹 Fetch holidays & suspensions together
+      let adjustments = [];
+      try {
+        const response = await axios.post(
+          "/api/payroll/adjustments",
+          {
+            start_date: this.start_date,
+            end_date: this.end_date,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        adjustments = response.data;
+      } catch (error) {
+        console.error("Failed to load adjustments:", error.response?.data || error.message);
+      }
+
+      const events = [
+        {
+          start: cutoff.start,
+          end: this.addOneDay(cutoff.end),
+          display: "background",
+          color: cutoff.color,
+        },
+        ...adjustments,
+      ];
+
       this.calendarOptions = {
         plugins: [dayGridPlugin, interactionPlugin],
         initialView: "dayGridMonth",
         initialDate: cutoff.start,
-        headerToolbar: { 
+        headerToolbar: {
           left: "prev,next today",
           center: "title",
-          right: "" 
+          right: "",
         },
         editable: false,
         selectable: true,
-        selectMirror: true,
         dayMaxEvents: true,
         weekends: true,
-        validRange: { 
-          start: cutoff.start, 
-          end: this.addOneDay(cutoff.end) 
+        validRange: {
+          start: cutoff.start,
+          end: this.addOneDay(cutoff.end),
         },
-        events: [
-          {
-            start: cutoff.start,
-            end: this.addOneDay(cutoff.end),
-            display: "background",
-            color: cutoff.color,
-          },
-        ],
+        events,
         dateClick: (info) => {
-          const dateStr = info.dateStr;
-          if (dateStr >= cutoff.start && dateStr <= cutoff.end) {
-            this.handleDateClick(dateStr);
-          }
+          this.handleDateClick(info, cutoff);
+        },
+        eventClick: (info) => {
+          this.handleEventClick(info);
         },
       };
     },
@@ -170,10 +214,94 @@ export default {
       return date.toISOString().split("T")[0];
     },
 
-    handleDateClick(date) {
-      this.date = date;
-      this.selectedDate = date;
+    handleDateClick(info, cutoff) {
+      const dateStr = info.dateStr;
+      const calendar = info.view.calendar;
+
+      // Disable click if date already has events
+      const existingEvents = calendar.getEvents().filter(event => {
+        return event.startStr === dateStr && event.display !== "background";
+      });
+
+      if (existingEvents.length > 0) {
+        console.log("Date already has an event — click disabled.");
+        return;
+      }
+
+      if (dateStr < cutoff.start || dateStr > cutoff.end) return;
+
+      this.selectedDate = dateStr;
+      this.idEdit = false;
+      this.holiday_id = null;
+      this.suspension_id = null;
+      this.adjustment_type = "";
+
+      if (this.$refs.suspension_form) this.$refs.suspension_form.resetForm();
+      if (this.$refs.holiday_form) this.$refs.holiday_form.resetForm();
+
       this.$refs.modal.open();
+    },
+
+    async handleEventClick(info) {
+      const event = info.event;
+      const props = event.extendedProps || {};
+
+      // If it's a holiday
+      if (props.type && props.category === "holiday") {
+        this.adjustment_type = "holiday";
+        this.selectedDate = event.startStr;
+        this.idEdit = true;
+        this.holiday_id = props.id;
+
+        this.$refs.modal.open();
+        await this.loadHolidayData(props.id);
+      }
+
+      // If it's a suspension
+      if (props.category === "suspension") {
+        this.adjustment_type = "suspension";
+        this.selectedDate = event.startStr;
+        this.idEdit = true;
+        this.suspension_id = props.id;
+
+        this.$refs.modal.open();
+        await this.loadSuspensionData(props.id);
+      }
+    },
+
+    async loadHolidayData(id) {
+      try {
+        const response = await axios.get(`/admin/maintenance/holiday/${id}/edit`);
+        const holiday = response.data;
+
+        Object.assign(this.$refs.holiday_form.form, {
+          name: holiday.name,
+          date: holiday.date,
+          type: holiday.type,
+          is_repeating: !!holiday.is_repeating,
+          no_work_rate: holiday.no_work_rate,
+          work_rate: holiday.work_rate,
+          overtime_rate: holiday.overtime_rate,
+        });
+      } catch (error) {
+        console.error("Failed to load holiday:", error.response?.data || error.message);
+      }
+    },
+
+    async loadSuspensionData(id) {
+      try {
+        const response = await axios.get(`/admin/maintenance/suspensions/${id}`);
+        const suspension = response.data;
+
+        Object.assign(this.$refs.suspension_form.form, {
+          name: suspension.name,
+          date: suspension.date,
+          reason: suspension.reason,
+          type: suspension.type,
+        });
+      } catch (error) {
+        console.error("Failed to load suspension:", error.response?.data || error.message);
+      }
     },
   },
 };

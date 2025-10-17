@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Database\Seeders\HolidaySeeder;
 use Illuminate\Support\Facades\DB;
 
 use function PHPUnit\Framework\isEmpty;
@@ -818,10 +819,16 @@ class TimelogsServices {
 
     public function getHolidays($date_today)
     {
-        return DB::table('holidays')
+        $holiday = DB::table('holidays')
             ->whereDate('date', $date_today)
             ->where('is_active', true)
             ->first();
+
+        if($holiday) {
+            $holiday->type = ucfirst(str_replace('_', ' ', $holiday->type));
+        }
+
+        return $holiday;
     }
 
     public function checkSuspension($date_today)
