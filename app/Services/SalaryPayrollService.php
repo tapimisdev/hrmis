@@ -153,7 +153,6 @@ class SalaryPayrollService {
         }
     }
 
-
     private function getCutoff()
     {
         $dateObj = new \DateTime($this->date);
@@ -175,6 +174,59 @@ class SalaryPayrollService {
             'endDate'   => $end,
         ];
     }
+
+    public function getHolidays($payload)
+    {
+        $start_date = $payload['start_date'];
+        $end_date = $payload['end_date'];
+
+        $holidays = DB::table('holidays')
+            ->where(function ($query) use ($start_date, $end_date) {
+                $query
+                    // For normal (non-repeating) holidays, use full date range
+                    ->where(function ($q) use ($start_date, $end_date) {
+                        $q->where('is_repeating', false)
+                        ->whereBetween('date', [$start_date, $end_date]);
+                    })
+                    // For repeating holidays, match only month and day
+                    ->orWhere(function ($q) use ($start_date, $end_date) {
+                        $startMonthDay = date('m-d', strtotime($start_date));
+                        $endMonthDay = date('m-d', strtotime($end_date));
+
+                        $q->where('is_repeating', true)
+                        ->whereRaw("DATE_FORMAT(date, '%m-%d') BETWEEN ? AND ?", [$startMonthDay, $endMonthDay]);
+                    });
+            })
+            ->where('is_active', true)
+            ->get()
+            ->map(function($holiday) use ($start_date) {
+                $date = $holiday->is_repeating
+                    ? date('Y', strtotime($start_date)) . '-' . date('m-d', strtotime($holiday->date))
+                    : $holiday->date;
+
+                   return [
+                    'id' => $holiday->id,
+                    'title' => ucfirst(str_replace('_', ' ', $holiday->name)),
+                    'start' => $date,
+                    'allDay' => true,
+                    'backgroundColor' => '#008046ff',
+                    'borderColor' => '#008046ff',
+                    'className' => 'text-white text-center text-shadow-lg d-flex justify-content-center align-items-center h-100 w-100',
+                    'extendedProps' => [
+                        'id' => $holiday->id,
+                        'category' => 'holiday',
+                        'type' => $holiday->type,
+                        'is_repeating' => (bool) $holiday->is_repeating,
+                        'no_work_rate' => $holiday->no_work_rate,
+                        'work_rate' => $holiday->work_rate,
+                        'overtime_rate' => $holiday->overtime_rate,
+                    ],
+                ];
+            });
+
+        return $holidays;
+    }
+
 
 }
     

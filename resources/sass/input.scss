@@ -1,197 +1,88 @@
-
 // Form Control Variables
 $input-bg: $white;
 $input-border-color: #d1d5db;
-$input-border-radius: 0.5rem;
+$input-border-radius: 0.40rem;
 $input-focus-border-color: $primary;
-$input-focus-box-shadow: 0 0 0 3px rgba($primary, 0.1);
-$input-padding-y: 0.625rem;
-$input-padding-x: 0.875rem;
-$input-font-size: 0.9375rem;
-$input-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+$input-focus-box-shadow: 0 0 0 2px rgba($primary, 0.08);
+$input-padding-y: 0.375rem;
+$input-padding-x: 0.625rem;
+$input-font-size: 0.8125rem;
+$input-transition: all 0.15s ease;
 
-// Modern Form Control Styles
-.form-control,
-.form-select {
+// Form Controls
+.form-control, .form-select {
   background-color: $input-bg;
-  border: 1.5px solid $input-border-color;
+  border: 1px solid $input-border-color;
   border-radius: $input-border-radius;
   padding: $input-padding-y $input-padding-x;
   font-size: $input-font-size;
   font-weight: 500;
   color: $dark;
   transition: $input-transition;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
   
-  &::placeholder {
-    color: #9ca3af;
-    font-weight: 400;
-  }
-  
-  &:hover:not(:disabled):not(:focus) {
-    border-color: darken($input-border-color, 8%);
-  }
-  
-  &:focus {
-    background-color: $white;
-    border-color: $input-focus-border-color;
-    box-shadow: $input-focus-box-shadow;
-    outline: 0;
-    color: $dark;
-  }
-  
-  &:disabled {
-    background-color: #f9fafb;
-    border-color: #e5e7eb;
-    color: #9ca3af;
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
+  &::placeholder { color: #9ca3af; font-weight: 400; }
+  &:hover:not(:disabled):not(:focus) { border-color: darken($input-border-color, 8%); }
+  &:focus { background-color: $white; border-color: $input-focus-border-color; box-shadow: $input-focus-box-shadow; outline: 0; color: $dark; }
+  &:disabled { background-color: #f9fafb; border-color: #e5e7eb; color: #9ca3af; cursor: not-allowed; opacity: 0.7; }
 }
 
-// Select Specific Styles
+// Select
 .form-select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23444340' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right $input-padding-x center;
-  background-size: 16px 12px;
+  background-size: 12px 10px;
   padding-right: calc($input-padding-x * 2.5);
   
-  &:focus {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23032985' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-  }
+  &:focus { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23032985' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); }
 }
 
-// Textarea Specific
-textarea.form-control {
-  min-height: 100px;
-  resize: vertical;
-}
+textarea.form-control { min-height: 70px; resize: vertical; }
 
 // Invalid State
-.form-control.is-invalid,
-.form-select.is-invalid,
-.was-validated .form-control:invalid,
-.was-validated .form-select:invalid {
+.form-control.is-invalid, .form-select.is-invalid, .was-validated .form-control:invalid, .was-validated .form-select:invalid {
   border-color: $danger;
   background-color: rgba($danger, 0.02);
-  box-shadow: 0 1px 2px 0 rgba($danger, 0.05);
-  
-  &:focus {
-    border-color: $danger;
-    box-shadow: 0 0 0 3px rgba($danger, 0.12);
-  }
+  box-shadow: 0 1px 2px 0 rgba($danger, 0.04);
+  &:focus { border-color: $danger; box-shadow: 0 0 0 2px rgba($danger, 0.1); }
 }
 
-.form-select.is-invalid,
-.was-validated .form-select:invalid {
+.form-select.is-invalid, .was-validated .form-select:invalid {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e03b3b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-  
-  &:focus {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e03b3b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-  }
+  &:focus { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e03b3b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); }
 }
 
 // Valid State
-.form-control.is-valid,
-.form-select.is-valid,
-.was-validated .form-control:valid,
-.was-validated .form-select:valid {
+.form-control.is-valid, .form-select.is-valid, .was-validated .form-control:valid, .was-validated .form-select:valid {
   border-color: $success;
   background-color: rgba($success, 0.02);
-  box-shadow: 0 1px 2px 0 rgba($success, 0.05);
-  
-  &:focus {
-    border-color: $success;
-    box-shadow: 0 0 0 3px rgba($success, 0.12);
-  }
+  box-shadow: 0 1px 2px 0 rgba($success, 0.04);
+  &:focus { border-color: $success; box-shadow: 0 0 0 2px rgba($success, 0.1); }
 }
 
-.form-select.is-valid,
-.was-validated .form-select:valid {
+.form-select.is-valid, .was-validated .form-select:valid {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2300af00' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-  
-  &:focus {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2300af00' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-  }
+  &:focus { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2300af00' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); }
 }
 
-// Invalid Feedback
-.invalid-feedback {
-  display: block;
-  margin-top: 0.375rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: $danger;
-  
-  &::before {
-    content: "⚠ ";
-    margin-right: 0.25rem;
-  }
-}
+// Feedback
+.invalid-feedback { display: block; margin-top: 0.25rem; font-size: 0.6875rem; font-weight: 500; color: $danger; &::before { content: "⚠ "; margin-right: 0.2rem; } }
+.valid-feedback { display: block; margin-top: 0.25rem; font-size: 0.6875rem; font-weight: 500; color: $success; &::before { content: "✓ "; margin-right: 0.2rem; } }
 
-// Valid Feedback
-.valid-feedback {
-  display: block;
-  margin-top: 0.375rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: $success;
-  
-  &::before {
-    content: "✓ ";
-    margin-right: 0.25rem;
-  }
-}
-
-// Form Label
-.form-label {
-  font-weight: 600;
-  color: $dark;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  letter-spacing: 0.01em;
-}
+// Label
+.form-label { font-weight: 600; color: $dark; margin-bottom: 0.25rem; font-size: 0.75rem; letter-spacing: 0.01em; }
 
 // Input Group
 .input-group {
-  .form-control,
-  .form-select {
-    &:not(:first-child) {
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
-    }
-    
-    &:not(:last-child) {
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
-    }
+  .form-control, .form-select {
+    &:not(:first-child) { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    &:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
   }
 }
 
-.input-group-text {
-  background-color: $light;
-  border: 1.5px solid $input-border-color;
-  color: $dark;
-  font-weight: 500;
-  padding: $input-padding-y $input-padding-x;
-  font-size: $input-font-size;
-  border-radius: $input-border-radius;
-  transition: $input-transition;
-}
+.input-group-text { background-color: $light; border: 1px solid $input-border-color; color: $dark; font-weight: 500; padding: $input-padding-y $input-padding-x; font-size: $input-font-size; border-radius: $input-border-radius; transition: $input-transition; }
 
-// Small Size
-.form-control-sm,
-.form-select-sm {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8125rem;
-  border-radius: 0.375rem;
-}
-
-// Large Size
-.form-control-lg,
-.form-select-lg {
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  border-radius: 0.625rem;
-}
+// Sizes
+.form-control-sm, .form-select-sm { padding: 0.25rem 0.5rem; font-size: 0.6875rem; border-radius: 0.2rem; }
+.form-control-lg, .form-select-lg { padding: 0.5rem 0.75rem; font-size: 0.875rem; border-radius: 0.375rem; }

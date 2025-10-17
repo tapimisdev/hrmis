@@ -44,7 +44,6 @@ export default {
 
   methods: {
     initializeFromQuery() {
-      // ✅ Works with or without Vue Router
       const params = this.$route?.query || Object.fromEntries(new URLSearchParams(window.location.search))
 
       const month = params.month ? parseInt(params.month) : null

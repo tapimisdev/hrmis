@@ -92,7 +92,7 @@ class DailyTimeRecordService {
             $holiday = $holidaysCache[$date['date']];
 
             if ($holiday) {
-                $remarks[] = 'holiday';
+                $remarks[] = $holiday->type . ' ' . 'holiday' ;
                 $TOTAL_HOLIDAY++;
                 $holiday_no_work_rate = $holiday->no_work_rate;
                 $holiday_work_rate = $holiday->work_rate;
