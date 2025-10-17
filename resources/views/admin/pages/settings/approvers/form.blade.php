@@ -191,7 +191,7 @@ $(function() {
         } else {
             $('.divun-container').show();
         }
-    })
+    }).trigger('change')
 
     $('#division_id').on('change', function() {
         const divisionId = $(this).val();
@@ -260,7 +260,7 @@ $(function() {
     if(!isEdit) {
         post(url);
     } else {
-        put(url);
+        put(url);   
     }
 
 });

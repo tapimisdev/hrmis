@@ -127,7 +127,6 @@
                         @empty
                             <div class="text-uppercase fw-bold text-muted fst-italic">No approvers found. Please contact administrators.</div>
                         @endforelse
-                      
                     </div>
                 </div>
             </div>

@@ -16,7 +16,8 @@ return new class extends Migration
             $table->enum('type', [
                 'overtime',
                 'leave',
-                'pass_slip'
+                'pass_slip',
+                'payroll'
             ]);
             $table->foreignId('division_id')
                 ->nullable()

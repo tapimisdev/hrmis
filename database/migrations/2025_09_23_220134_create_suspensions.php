@@ -20,6 +20,7 @@ return new class extends Migration
                 ->nullable();
             $table->boolean('isActive')
                 ->default(true);
+            $table->softDeletes();
             $table->timestamps();
         });
 

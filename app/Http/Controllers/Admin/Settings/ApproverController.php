@@ -98,7 +98,6 @@ class ApproverController extends Controller
 
     public function store(Request $request)
     {
-
         $payload = $request->all();
 
         $this->validate($request, $this->rules($payload));
@@ -106,16 +105,75 @@ class ApproverController extends Controller
         DB::beginTransaction();
 
         try {
+            if ($payload['type'] === 'payroll') {
+                // Handle payroll type: Only one allowed
+                $approver = DB::table('application_approver')
+                    ->where('type', 'payroll')
+                    ->first();
 
-            $approver_id = DB::table('application_approver')->insertGetId([
-                'type'        => $request->type,
-                'division_id' => $request->division_id,
-                'unit_id'     => $request->unit_id,
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ]);
+                if ($approver) {
+                    // Delete existing users
+                    DB::table('application_approver_users')
+                        ->where('application_approver_id', $approver->id)
+                        ->delete();
 
-            foreach ($request->approvers as $level => $userIds) {
+                    // Update existing approver
+                    DB::table('application_approver')
+                        ->where('id', $approver->id)
+                        ->update([
+                            'division_id' => $payload['division_id'] ?? null,
+                            'unit_id'     => $payload['unit_id'] ?? null,
+                            'updated_at'  => now(),
+                        ]);
+
+                    $approver_id = $approver->id;
+                } else {
+                    // Insert new if none exists
+                    $approver_id = DB::table('application_approver')->insertGetId([
+                        'type'        => 'payroll',
+                        'division_id' => $payload['division_id'] ?? null,
+                        'unit_id'     => $payload['unit_id'] ?? null,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                }
+
+            } else {
+                // Handle non-payroll types
+                $approver = DB::table('application_approver')
+                    ->where('type', $payload['type'])
+                    ->where('division_id', $payload['division_id'] ?? null)
+                    ->where('unit_id', $payload['unit_id'] ?? null)
+                    ->first();
+
+                if ($approver) {
+                    // Delete existing users
+                    DB::table('application_approver_users')
+                        ->where('application_approver_id', $approver->id)
+                        ->delete();
+
+                    // Update the existing record (optional: update other fields if needed)
+                    DB::table('application_approver')
+                        ->where('id', $approver->id)
+                        ->update([
+                            'updated_at' => now(),
+                        ]);
+
+                    $approver_id = $approver->id;
+                } else {
+                    // Insert new
+                    $approver_id = DB::table('application_approver')->insertGetId([
+                        'type'        => $payload['type'],
+                        'division_id' => $payload['division_id'] ?? null,
+                        'unit_id'     => $payload['unit_id'] ?? null,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                }
+            }
+
+            // Insert new approvers (users)
+            foreach ($payload['approvers'] as $level => $userIds) {
                 foreach ((array) $userIds as $userId) {
                     DB::table('application_approver_users')->insert([
                         'application_approver_id' => $approver_id,
@@ -130,9 +188,9 @@ class ApproverController extends Controller
             DB::commit();
 
             return response()->json([
-                'status'  => 'success',
-                'message' => 'Approver ' . strtoupper($request->name) . ' Added',
-                'redirect'=> route('settings.approvers.create')
+                'status'   => 'success',
+                'message'  => 'Approver ' . strtoupper($payload['type']) . ' ' . ($payload['type'] === 'payroll' ? 'Updated' : 'Saved'),
+                'redirect' => route('settings.approvers.create')
             ]);
 
         } catch (\Exception $e) {
@@ -140,11 +198,11 @@ class ApproverController extends Controller
 
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Error Occured: ' . $e->getMessage()
+                'message' => 'Error Occurred: ' . $e->getMessage()
             ]);
         }
     }
- 
+
 
     public function edit(string $id)
     {
@@ -230,12 +288,10 @@ class ApproverController extends Controller
 
             'division_id' => [
                 Rule::requiredIf($payload['type'] !== 'payroll'),
-                Rule::exists('divisions', 'id'),
             ],
 
             'unit_id' => [
                 Rule::requiredIf($payload['type'] !== 'payroll'),
-                Rule::exists('units', 'id'),
             ],
         ];
     }
@@ -247,7 +303,7 @@ class ApproverController extends Controller
         $payload = $request->all();
         
         $this->validate($request, $this->rules($payload, $id));
-
+        
         DB::beginTransaction();
 
         try {
@@ -295,6 +351,34 @@ class ApproverController extends Controller
         }
     }
 
+    public function destroy(int $id)
+    {
+        
+        DB::beginTransaction();
+
+        try {
+
+            DB::table('application_approver')
+                ->where('id', $id)
+                ->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Approver has been deleted.',
+                'redirect' => ''
+            ]);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
+        }
+    }
 
     public function datatable($query)
     {
