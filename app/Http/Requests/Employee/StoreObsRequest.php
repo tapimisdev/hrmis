@@ -24,9 +24,20 @@ class StoreObsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'destination' => ['required', 'string', 'max:255'],
+            'destination' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('official_business_slips')->where(function ($query) {
+                    return $query->where('employee_id', $this->employee_id)
+                        ->where('date_from', $this->date_from)
+                        ->where('date_to', $this->date_to)
+                        ->where('purpose', $this->purpose);
+                }),
+            ],
+
             'purpose' => ['required', 'string', 'max:500'],
-            
+
             'date_from' => ['required', 'date', 'after_or_equal:today'],
             'date_to' => ['required', 'date', 'after_or_equal:date_from'],
 
@@ -41,14 +52,9 @@ class StoreObsRequest extends FormRequest
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 
-            // Prevent duplicate OBS application for same employee within same date range
-            Rule::unique('official_business_slips')->where(function ($query) {
-                return $query->where('employee_id', $this->employee_id)
-                    ->where('date_from', $this->date_from)
-                    ->where('date_to', $this->date_to)
-                    ->where('destination', $this->destination)
-                    ->where('purpose', $this->purpose);
-            }),
+            'approvers'     => ['required', 'array', 'min:1'],
+            'approvers.*'   => ['required', 'array', 'min:1'],
+            'approvers.*.*' => ['required', 'exists:users,id'],
         ];
     }
 

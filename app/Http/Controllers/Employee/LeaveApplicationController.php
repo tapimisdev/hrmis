@@ -113,8 +113,6 @@ class LeaveApplicationController extends Controller
         return $results;
     }
 
-
-
     public function getData()
     {
         // Get active leave types
@@ -182,6 +180,7 @@ class LeaveApplicationController extends Controller
         // 3. Get suspensions (from suspension_dates)
         $suspensions = DB::table('suspension as s')
             ->join('suspension_dates as sd', 's.id', '=', 'sd.suspension_id')
+            ->where('s.isActive', true)
             ->select(
                 'name as title',
                 DB::raw("'suspension' as status"),

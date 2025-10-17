@@ -98,7 +98,10 @@ class ApproverController extends Controller
 
     public function store(Request $request)
     {
-        $this->validate($request, $this->rules('store'));
+
+        $payload = $request->all();
+
+        $this->validate($request, $this->rules($payload));
 
         DB::beginTransaction();
 
@@ -216,25 +219,34 @@ class ApproverController extends Controller
         return view('admin.pages.settings.approvers.form', compact('id', 'divisions', 'units', 'usersGrouped', 'isEdit', 'data'));
     }
 
-    public function rules(string $type, ?int $id = null)
+    public function rules(array $payload = null, ?int $id = null)
     {
-        $rules = [
-            'type'          => 'required|in:overtime,leave,pass_slip,payroll',
-            'approvers'     => 'required|array|min:1',
-            'approvers.*'   => 'required|array|min:1',
-            'approvers.*.*' => 'required|exists:users,id',
-            'division_id'   => 'required|exists:divisions,id',
-            'unit_id'       => 'required|exists:units,id',
-        ];
+        return [
+            'type' => ['required', Rule::in(['overtime', 'leave', 'pass_slip', 'payroll'])],
 
-        return $rules;
+            'approvers' => ['required', 'array', 'min:1'],
+            'approvers.*' => ['required', 'array', 'min:1'],
+            'approvers.*.*' => ['required', 'exists:users,id'],
+
+            'division_id' => [
+                Rule::requiredIf($payload['type'] !== 'payroll'),
+                Rule::exists('divisions', 'id'),
+            ],
+
+            'unit_id' => [
+                Rule::requiredIf($payload['type'] !== 'payroll'),
+                Rule::exists('units', 'id'),
+            ],
+        ];
     }
 
 
     public function update(Request $request, $id)
     {
 
-        $this->validate($request, $this->rules('update', $id));
+        $payload = $request->all();
+        
+        $this->validate($request, $this->rules($payload, $id));
 
         DB::beginTransaction();
 

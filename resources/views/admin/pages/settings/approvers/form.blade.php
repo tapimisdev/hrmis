@@ -46,7 +46,10 @@
                                     <label class="mb-2" for="type">Application Type <span class="text-danger">*</span></label>
                                     <select name="type" id="type" class="form-select">
                                         <option value=""> - CHOOSE TYPE - </option>
-                                        @foreach (['leave', 'pass_slip', 'overtime', 'payroll'] as $type)
+                                        @foreach ([
+                                            'leave', 'pass_slip', 
+                                            'overtime', 'payroll'
+                                        ] as $type)
                                             <option value="{{ $type }}"
                                                 {{ old('type', $data['type'] ?? '') == $type ? 'selected' : '' }}>
                                                 {{ ucfirst(str_replace('_', ' ', $type)) }}
@@ -55,7 +58,7 @@
                                     </select>
                                     <div class="error-field"></div>
                                 </div>
-                                <div class="col-12 mb-3">
+                                <div class="col-12 mb-3 divun-container">
                                     <label class="mb-2" for="division">Division <span class="text-danger">*</span></label>
                                     <select name="division_id" id="division_id" class="form-select">
                                         <option value=""> - CHOOSE DIVISION - </option>
@@ -68,7 +71,7 @@
                                     </select>
                                     <div class="error-field"></div>
                                 </div>
-                                <div class="col-12 mb-3">
+                                <div class="col-12 mb-3 divun-container">
                                     <label class="mb-2" for="unit">Unit <span class="text-danger">*</span></label>
                                     <select name="unit_id" id="unit_id" class="form-select">
                                         <option value=""> - CHOOSE UNIT - </option>
@@ -114,6 +117,9 @@
                                                     </optgroup>
                                                 @endforeach
                                             </select>
+                                            <div class="mb-3" id="approvers">
+                                                <div class="error-field"></div>
+                                            </div>
                                         </div>
                                         @if($index > 1)
                                             <button type="button" 
@@ -144,6 +150,9 @@
                                                 </optgroup>
                                             @endforeach
                                         </select>
+                                        <div class="mb-3" id="approvers">
+                                            <div class="error-field"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -173,6 +182,16 @@ $(function() {
     let users = @json($users ?? []); 
     let approverCount = 1;
     const urlEmployees = @json(route('hris.employee.information'));
+
+    $('#type').on('change', function() {
+        const val = $(this).val();
+        console.log(val);
+        if(val === 'payroll') {
+            $('.divun-container').hide();
+        } else {
+            $('.divun-container').show();
+        }
+    })
 
     $('#division_id').on('change', function() {
         const divisionId = $(this).val();
@@ -204,6 +223,9 @@ $(function() {
                         </select>
                     </div>
                     ${approverCount > 1 ? `<button type="button" class="btn btn-danger btn-sm remove-approver" data-id="${approverCount}">✕</button>` : ''}
+                </div>
+                <div class="mb-3" id="approvers.${approverCount}">
+                    <div class="error-field"></div>
                 </div>
             </div>
         `);

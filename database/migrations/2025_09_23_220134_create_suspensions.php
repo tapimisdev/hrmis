@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('name');
             $table->longText('description')
                 ->nullable();
+            $table->boolean('isActive')
+                ->default(true);
             $table->timestamps();
         });
 
@@ -31,10 +33,10 @@ return new class extends Migration
                 'whole_day',
                 'half_day',
             ]);
-            $table->time('from_time')
-                ->nullable();
-            $table->time('to_time')
-                ->nullable();
+            $table->enum('shift', [
+                'morning',
+                'afternoon'
+            ])->nullable();
         });
     }
 

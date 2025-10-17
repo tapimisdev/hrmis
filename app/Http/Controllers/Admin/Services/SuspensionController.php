@@ -55,8 +55,7 @@ class SuspensionController extends Controller
             'suspensions'                 => 'required|array|min:1',
             'suspensions.*.date'          => 'required|date',
             'suspensions.*.type'          => 'required|in:whole_day,half_day',
-            'suspensions.*.from_time'     => 'nullable|required_if:suspensions.*.type,half_day|date_format:H:i',
-            'suspensions.*.to_time'       => 'nullable|required_if:suspensions.*.type,half_day|date_format:H:i',
+            'suspensions.*.shift'     => 'nullable|required_if:suspensions.*.type,half_day|in:morning,afternoon',
         ]);
 
         if ($validator->fails()) {
@@ -84,8 +83,7 @@ class SuspensionController extends Controller
                     'suspension_id' => $suspensionId,
                     'date'          => Carbon::parse($suspensionDate['date'])->format('Y-m-d'),
                     'type'          => $suspensionDate['type'],
-                    'from_time'     => $suspensionDate['from_time'] ?? null,
-                    'to_time'       => $suspensionDate['to_time'] ?? null,
+                    'shift'         => $suspensionDate['shift']
                 ]);
             }
 
@@ -133,7 +131,7 @@ class SuspensionController extends Controller
             $suspensionDates = json_decode(json_encode(
                 DB::table('suspension_dates')
                     ->where('suspension_id', $suspension->id)
-                    ->select('id', 'date', 'type', 'from_time', 'to_time')
+                    ->select('id', 'date', 'type', 'shift')
                     ->get()
             ), true);
         } else {
@@ -166,8 +164,7 @@ class SuspensionController extends Controller
             'suspensions'               => 'required|array|min:1',
             'suspensions.*.date'        => 'required|date',
             'suspensions.*.type'        => 'required|in:whole_day,half_day',
-            'suspensions.*.from_time'   => 'nullable|required_if:suspensions.*.type,half_day|date_format:H:i',
-            'suspensions.*.to_time'     => 'nullable|required_if:suspensions.*.type,half_day|date_format:H:i',
+            'suspensions.*.shift'   => 'nullable|required_if:suspensions.*.type,half_day|in:morning,afternoon',
         ]);
 
         if ($validator->fails()) {
@@ -194,8 +191,7 @@ class SuspensionController extends Controller
                     'suspension_id' => $id,
                     'date'          => Carbon::parse($suspensionDate['date'])->format('Y-m-d'),
                     'type'          => $suspensionDate['type'],
-                    'from_time'     => $suspensionDate['type'] === 'half_day' ? $suspensionDate['from_time'] : null,
-                    'to_time'       => $suspensionDate['type'] === 'half_day' ? $suspensionDate['to_time'] : null,
+                    'shift'     => $suspensionDate['type'] === 'half_day' ? $suspensionDate['shift'] : null,
                 ]);
             }
 

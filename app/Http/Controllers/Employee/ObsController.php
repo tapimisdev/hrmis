@@ -11,6 +11,95 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ObsController extends Controller
 {
+
+    public function getData()
+    {
+        // Get active leave types
+        $leaves = DB::table('leaves')
+            ->where('is_active', true)
+            ->get();
+
+        // Get current user and employee_no
+        $user = Auth::user()->load('employeeInformation');
+        $employee_no = $user->employeeInformation->employee_no ?? null;
+
+        // Get user's organization
+        $organization = DB::table('employee_organization')
+            ->where('employee_no', $employee_no)
+            ->latest()
+            ->first();
+
+        // Get leave approvers for the user's division and unit
+        $approvers = DB::table('application_approver')
+            ->leftJoin('application_approver_users', 'application_approver.id', '=', 'application_approver_users.application_approver_id')
+            ->leftJoin('users', 'application_approver_users.user_id', '=', 'users.id')
+            ->where('application_approver.type', 'pass_slip')
+            ->where('application_approver.division_id', $organization->division_id)
+            ->where('application_approver.unit_id', $organization->unit_id)
+            ->select(
+                'application_approver_users.level',
+                'users.id as user_id',
+                'users.name as user_name',
+            )
+            ->get();
+
+        // Group approvers by level
+        $approvers = $approvers
+            ->groupBy('level')
+            ->mapWithKeys(function ($items, $level) {
+                return [
+                    $level => $items->map(function ($item) {
+                        return [
+                            'id'   => $item->user_id,
+                            'name' => $item->user_name,
+                        ];
+                    })->unique('id')->values()
+                ];
+            })
+            ->sortKeys();
+
+        // 1. Get leave application dates (per row)
+        $applications = DB::table('leave_applications as la')
+            ->join('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
+            ->where('la.user_id', $user->id) // optional: filter by current user
+            ->select(
+                DB::raw("'leave' as title"),
+                'la.status',
+                'ld.date'
+            );
+
+        // 2. Get holidays (with fixed 'holiday' name and empty status)
+        $holidays = DB::table('holidays')
+            ->select(
+                'name as title',
+                DB::raw("'holiday' as status"),
+                'date'
+            );
+
+        // 3. Get suspensions (from suspension_dates)
+        $suspensions = DB::table('suspension as s')
+            ->join('suspension_dates as sd', 's.id', '=', 'sd.suspension_id')
+            ->where('s.isActive', true)
+            ->select(
+                'name as title',
+                DB::raw("'suspension' as status"),
+                'sd.date'
+            );
+
+        // Combine all into one collection
+        $allApplications = $applications
+            ->unionAll($holidays)
+            ->unionAll($suspensions)
+            ->orderBy('date')
+            ->get();
+
+        return [
+            'leaves' => $leaves,
+            'approvers' => $approvers,
+            'applications' => $allApplications
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -33,7 +122,12 @@ class ObsController extends Controller
      */
     public function create()
     {
-        return view('employee.pages.obs.create');
+        $data = $this->getData();
+        $leaves = $data['leaves'];
+        $approvers = $data['approvers'];
+        $applications = $data['applications'];
+
+        return view('employee.pages.obs.create', compact('leaves', 'approvers', 'applications'));
     }
 
      /**

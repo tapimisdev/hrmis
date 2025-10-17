@@ -71,26 +71,16 @@
                                                     </select>
                                                     <div class="error-field"></div>
                                                 </div>
-                                                <div class="col-md-2 mb-3 from-time-container" style="{{ $suspension['type'] == 'half_day' ? '' : 'display:none;' }}">
-                                                    <label class="mb-2">From Time</label>
-                                                    <input
-                                                        type="time"
-                                                        name="suspensions[{{ $index }}][from_time]"
-                                                        id="suspensions.{{ $index }}.from_time"
-                                                        class="form-control from-time"
-                                                        value="{{ \Carbon\Carbon::parse($suspension['from_time'])->format('H:i') }}"
+                                                <div class="col-md-3 mb-3 from-time-container" style="{{ $suspension['type'] == 'half_day' ? '' : 'display:none;' }}">
+                                                    <label class="mb-2">Shift <span class="text-danger">*</span></label>
+                                                    <select
+                                                        name="suspensions[{{ $index }}][shift]"
+                                                        id="suspensions.{{ $index }}.shift"
+                                                        class="form-select"
                                                     >
-                                                    <div class="error-field"></div>
-                                                </div>
-                                                <div class="col-md-2 mb-3 to-time-container" style="{{ $suspension['type'] == 'half_day' ? '' : 'display:none;' }}">
-                                                    <label class="mb-2">To Time</label>
-                                                    <input
-                                                        type="time"
-                                                        name="suspensions[{{ $index }}][to_time]"
-                                                        id="suspensions.{{ $index }}.to_time"
-                                                        class="form-control to-time"
-                                                        value="{{ \Carbon\Carbon::parse($suspension['to_time'])->format('H:i') }}"
-                                                    >
+                                                        <option value="morning" {{ $suspension['shift'] == 'morning' ? 'selected' : '' }}>Morning</option>
+                                                        <option value="afternoon`" {{ $suspension['shift'] == 'afternoon' ? 'selected' : '' }}>Afternoon</option>
+                                                    </select>
                                                     <div class="error-field"></div>
                                                 </div>
                                                 <div class="col-md-2 d-flex align-items-center">
@@ -125,24 +115,16 @@
                                                 </select>
                                                 <div class="error-field"></div>
                                             </div>
-                                            <div class="col-md-2 mb-3 from-time-container" style="display: none;">
-                                                <label class="mb-2">From Time</label>
-                                                <input
-                                                    type="time"
-                                                    name="suspensions[0][from_time]"
-                                                    id="suspensions.0.from_time"
-                                                    class="form-control from-time"
+                                            <div class="col-md-3 mb-3 from-time-container">
+                                                <label class="mb-2">Shift <span class="text-danger">*</span></label>
+                                                <select
+                                                    name="suspensions[0][shift]"
+                                                    id="suspensions.0.shift"
+                                                    class="form-select"
                                                 >
-                                                <div class="error-field"></div>
-                                            </div>
-                                            <div class="col-md-2 mb-3 to-time-container" style="display: none;">
-                                                <label class="mb-2">To Time</label>
-                                                <input
-                                                    type="time"
-                                                    name="suspensions[0][to_time]"
-                                                    id="suspensions.0.to_time"
-                                                    class="form-control to-time"
-                                                >
+                                                    <option value="morning">Morning</option>
+                                                    <option value="afternoon">Afternoon</option>
+                                                </select>
                                                 <div class="error-field"></div>
                                             </div>
                                             <div class="col-md-2 d-flex align-items-center">
@@ -205,24 +187,16 @@
                             </select>
                             <div class="error-field"></div>
                         </div>
-                        <div class="col-md-2 mb-3 from-time-container" style="display: none;">
-                            <label class="mb-2">From Time</label>
-                            <input
-                                type="time"
-                                name="suspensions[${suspensionIndex}][from_time]"
-                                id="suspensions.${suspensionIndex}.from_time"
-                                class="form-control from-time"
+                        <div class="col-md-3 mb-3 from-time-container" style="display: none;">
+                            <label class="mb-2">Shift <span class="text-danger">*</span></label>
+                            <select
+                                name="suspensions[${suspensionIndex}][shift]"
+                                id="suspensions.${suspensionIndex}.shift"
+                                class="form-select"
                             >
-                            <div class="error-field"></div>
-                        </div>
-                        <div class="col-md-2 mb-3 to-time-container" style="display: none;">
-                            <label class="mb-2">To Time</label>
-                            <input
-                                type="time"
-                                name="suspensions[${suspensionIndex}][to_time]"
-                                id="suspensions.${suspensionIndex}.to_time"
-                                class="form-control to-time"
-                            >
+                                <option value="morning">Morning</option>
+                                <option value="afternoon">Afternoon</option>
+                            </select>
                             <div class="error-field"></div>
                         </div>
                         <div class="col-md-2 d-flex align-items-center">

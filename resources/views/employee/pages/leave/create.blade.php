@@ -51,8 +51,8 @@
                 <hr class="mt-5 mb-4">
                 <div class="row g-3 mt-2">
                     <div class="col-12 col-md-12">
-                        <div for="approvers" class="form-label fw-semibold text-uppercase mb-3">Choose Your Approvers</div>
-                        @foreach($approvers as $level => $users)
+                        <div for="approvers" class="form-label fw-semibold mb-3">Choose Your Approvers</div>
+                        @forelse($approvers as $level => $users)
                             <div class="mb-3">
                                 <label for="approvers.{{ $level }}" class="mb-2">{{ ordinal($level) . ' Approver' }}</label>
                                 <select name="approvers[{{$level}}][]" id="approvers.{{ $level }}" class="form-select select2 mb-3" multiple>
@@ -60,9 +60,13 @@
                                         <option value="{{ $user['id'] }}">{{ $user['name'] }}</option>
                                     @endforeach
                                 </select>
-                                <div class="error-field"></div>
+                                <div id="approvers">
+                                    <div class="error-field"></div>
+                                </div>
                             </div>
-                        @endforeach
+                        @empty
+                            <div class="text-uppercase fw-bold text-muted fst-italic">No approvers found. Please contact administrators.</div>
+                        @endforelse
                         <div class="mb-3">
                             <div id="approvers">
                                 <div class="error-field"></div>
