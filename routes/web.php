@@ -217,6 +217,7 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
 
         # SUSPENSIONS
         Route::resource('suspensions', SuspensionController::class)->names('services.suspensions');
+        Route::delete('suspensions-dates/{id}', [SuspensionController::class, 'deleteOnlyDate']);
 
         # LEAVE APPLICATIONS
         route::get('leave/application', [AdminLeaveApplicationController::class, 'index'])->name('services.leaves.index');

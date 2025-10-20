@@ -44,6 +44,7 @@ export default {
 
 .dashboard {
   background: rgba($color: $primary, $alpha: 0.1);
+  padding-bottom: 36px;
   min-height: 100vh;
 }
 .chart-card {

@@ -18,9 +18,6 @@ return new class extends Migration
             $table->string('name');
             $table->longText('description')
                 ->nullable();
-            $table->boolean('isActive')
-                ->default(true);
-            $table->softDeletes();
             $table->timestamps();
         });
 

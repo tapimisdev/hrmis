@@ -227,6 +227,52 @@ class SalaryPayrollService {
         return $holidays;
     }
 
+    public function getSuspensions($payload)
+    {
+        $start_date = $payload['start_date'];
+        $end_date = $payload['end_date'];
+
+        $suspensions = DB::table('suspension_dates')
+            ->leftJoin('suspension', 'suspension_dates.suspension_id', '=', 'suspension.id')
+            ->select('suspension_dates.*', 'suspension.name', 'suspension.description')
+            ->whereBetween('suspension_dates.date', [$start_date, $end_date])
+            ->where('suspension_dates.is_active', true)
+            ->get()
+            ->map(function ($suspension) {
+                $title = ucfirst(str_replace('_', ' ', $suspension->name));
+
+                $color = match ($suspension->type) {
+                    'whole_day' => '#c0392b', // red for full day
+                    'half_day' => '#f39c12',  // orange for half day
+                    default => '#7f8c8d',     // gray for unknown type
+                };
+
+                $desc = $suspension->description 
+                    ? $suspension->description 
+                    : ucfirst($suspension->type) . ' suspension';
+
+                return [
+                    'id' => $suspension->suspension_id,
+                    'title' => $title,
+                    'start' => $suspension->date,
+                    'allDay' => true,
+                    'backgroundColor' => $color,
+                    'borderColor' => $color,
+                    'className' => 'text-white text-center text-shadow-lg d-flex justify-content-center align-items-center h-100 w-100',
+                    'extendedProps' => [
+                        'id' => $suspension->id,
+                        'suspension_id' => $suspension->suspension_id,
+                        'category' => 'suspension',
+                        'type' => $suspension->type,
+                        'shift' => $suspension->shift,
+                        'description' => $desc,
+                    ],
+                ];
+            });
+
+        return $suspensions;
+    }
+
 
 }
     

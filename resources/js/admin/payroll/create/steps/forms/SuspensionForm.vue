@@ -1,175 +1,288 @@
 <template>
-  <div class="modal-body">
-    <form @submit.prevent="submitForm">
-      <div class="row">
-        <!-- From Time -->
-        <div class="col-md-10">
-          <div class="mb-3">
-            <label class="form-label">
-              Name <span class="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              v-model="form.name"
-              class="form-control"
-              :class="{ 'is-invalid': errors.name }"
-              placeholder="Enter name"
-              required
-            />
-            <span class="text-danger" v-if="errors.from_time">{{ errors.from_time[0] }}</span>
+  <div>
+    <div class="modal-body">
+      <form @submit.prevent="submitForm">
+        <div class="row">
+          <!-- Name -->
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Name <span class="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                v-model="form.name"
+                class="form-control"
+                :class="{ 'is-invalid': errors.name }"
+                placeholder="Enter name"
+                required
+              />
+              <span class="text-danger" v-if="errors.name">{{ errors.name[0] }}</span>
+            </div>
+          </div>
+
+          <!-- Date -->
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Date <span class="text-danger">*</span>
+              </label>
+              <input
+                type="date"
+                v-model="form.suspensions[0].date"
+                disabled
+                class="form-control"
+                :class="{ 'is-invalid': errors['suspensions.0.date'] }"
+                required
+              />
+              <span class="text-danger" v-if="errors['suspensions.0.date']">{{ errors['suspensions.0.date'][0] }}</span>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="col-md-12">
+            <div class="mb-3">
+              <label class="form-label">
+                Description <span class="text-danger">*</span>
+              </label>
+              <textarea
+                v-model="form.description"
+                class="form-control"
+                :class="{ 'is-invalid': errors.description }"
+                placeholder="Enter description"
+                rows="4"
+                required
+              ></textarea>
+              <span class="text-danger" v-if="errors.description">{{ errors.description[0] }}</span>
+            </div>
+          </div>
+
+          <!-- Type -->
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Type <span class="text-danger">*</span>
+              </label>
+              <select
+                v-model="form.suspensions[0].type"
+                class="form-select"
+                :class="{ 'is-invalid': errors['suspensions.0.type'] }"
+                required
+              >
+                <option disabled value="">Select Type</option>
+                <option value="whole_day">Whole Day</option>
+                <option value="half_day">Half Day</option>
+              </select>
+              <span class="text-danger" v-if="errors['suspensions.0.type']">{{ errors['suspensions.0.type'][0] }}</span>
+            </div>
+          </div>
+
+          <!-- Shift -->
+          <div class="col-md-6" v-if="form.suspensions[0].type === 'half_day'">
+            <div class="mb-3">
+              <label class="form-label">
+                Shift <span class="text-danger">*</span>
+              </label>
+              <select
+                v-model="form.suspensions[0].shift"
+                class="form-select"
+                :class="{ 'is-invalid': errors['suspensions.0.shift'] }"
+                required
+              >
+                <option disabled value="">Select Shift</option>
+                <option value="morning">Morning</option>
+                <option value="afternoon">Afternoon</option>
+              </select>
+              <span class="text-danger" v-if="errors['suspensions.0.shift']">{{ errors['suspensions.0.shift'][0] }}</span>
+            </div>
           </div>
         </div>
+      </form>
+    </div>
 
-        <!-- Date -->
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label">
-              Date <span class="text-danger">*</span>
-            </label>
-            <input
-              type="date"
-              v-model="form.date"
-              class="form-control"
-              :class="{ 'is-invalid': errors.date }"
-              disabled
-              required
-            />
-            <span class="text-danger" v-if="errors.date">{{ errors.date[0] }}</span>
-          </div>
-        </div>
+    <!-- Actions -->
+    <div class="modal-footer">
+      <!-- Close -->
+      <button
+        v-if="!isEdit"
+        @click="close"
+        type="button"
+        class="btn px-4 btn-danger"
+      >
+        <i class="me-2 fas fa-times"></i> Close
+      </button>
 
-        <!-- Type -->
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label">
-              Type <span class="text-danger">*</span>
-            </label>
-            <select
-              v-model="form.type"
-              class="form-select"
-              :class="{ 'is-invalid': errors.type }"
-              required
-            >
-              <option value="whole_day">Whole Day</option>
-              <option value="half_day">Half Day</option>
-            </select>
-            <span class="text-danger" v-if="errors.type">{{ errors.type[0] }}</span>
-          </div>
-        </div>
+      <!-- Delete (Edit only) -->
+      <button
+        v-if="isEdit"
+        @click="deleteSuspension"
+        type="button"
+        class="btn btn-danger"
+        :disabled="loadingDelete"
+      >
+        <i v-if="loadingDelete" class="fas fa-spinner fa-spin me-2"></i>
+        <i v-else class="me-2 fas fa-trash"></i>
+        {{ loadingDelete ? "Deleting..." : "Delete" }}
+      </button>
 
-        <!-- From Time -->
-        <div class="col-md-6" v-if="form.type === 'half_day'">
-          <div class="mb-3">
-            <label class="form-label">
-              From Time
-            </label>
-            <input
-              type="time"
-              v-model="form.from_time"
-              class="form-control"
-              :class="{ 'is-invalid': errors.from_time }"
-              required
-            />
-            <span class="text-danger" v-if="errors.from_time">{{ errors.from_time[0] }}</span>
-          </div>
-        </div>
-
-        <!-- To Time -->
-        <div class="col-md-6" v-if="form.type === 'half_day'">
-          <div class="mb-3">
-            <label class="form-label">
-              To Time
-            </label>
-            <input
-              type="time"
-              v-model="form.to_time"
-              class="form-control"
-              :class="{ 'is-invalid': errors.to_time }"
-              required
-            />
-            <span class="text-danger" v-if="errors.to_time">{{ errors.to_time[0] }}</span>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <!-- Actions -->
-  <div class="modal-footer">
-    <button @click="close" class="btn btn-outline-danger">
-      <i class="me-2 fas fa-times"></i> Close
-    </button>
-
-    <button
-      type="submit"
-      form="form"
-      :disabled="loading"
-      @click="submitForm"
-      class="btn btn-primary"
-    >
-      <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
-      <i v-else class="me-2 fas fa-save"></i>
-      {{ loading ? 'Saving...' : 'Save' }}
-    </button>
+      <!-- Save / Update -->
+      <button
+        :disabled="loading"
+        @click="submitForm"
+        class="btn"
+        :class="isEdit ? 'btn-secondary' : 'btn-primary'"
+      >
+        <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
+        <i v-else class="me-2 fas fa-save"></i>
+        {{ loading ? "Saving..." : isEdit ? "Update" : "Save" }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
-  name: 'SuspensionForm',
+  name: "SuspensionForm",
   props: {
-    date: {
-      type: String,
-      default: '',
-    },
+    date: String,
+    isEdit: Boolean,
+    suspension_id: Number,
+    suspension_date_id: Number
   },
   data() {
     return {
-      form: {
-        name: '',
-        date: '',
-        type: 'whole_day',
-        from_time: '',
-        to_time: '',
-      },
+      token: localStorage.getItem("auth_token"),
+      form: this.defaultForm(),
       errors: {},
       loading: false,
+      loadingDelete: false,
     };
   },
-  mounted() {
-    this.form.date = this.convertToDate();
-  },
   watch: {
-    date() {
-      this.form.date = this.convertToDate();  
-    }
+    date: {
+      immediate: true,
+      handler(val) {
+        this.form.suspensions[0].date = this.convertToDate(val);
+      },
+    },
+    suspension_id: {
+      immediate: true,
+      handler() {
+        this.errors = {};
+      },
+    },
   },
+  emits: ["close", "submit", "delete"],
   methods: {
-    submitForm() {
-      this.errors = {};
+    defaultForm() {
+      return {
+        name: "",
+        description: "",
+        suspensions: [
+          {
+            date: "",
+            type: "whole_day",
+            shift: "",
+          },
+        ],
+      };
+    },
+
+    convertToDate(dateStr) {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      return isNaN(d) ? "" : d.toISOString().split("T")[0];
+    },
+
+    async submitForm() {
       this.loading = true;
+      this.errors = {};
 
-      this.loading = false;
+      const url = this.isEdit
+        ? `/admin/service/suspensions/${this.suspension_id}`
+        : `/admin/service/suspensions`;
+      const method = this.isEdit ? "put" : "post";
+
+      try {
+        await axios[method](url, this.form, {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            Accept: "application/json",
+          },
+        });
+
+        Swal.fire({
+          title: "Success!",
+          text: this.isEdit
+            ? "Suspension updated successfully."
+            : "Suspension added successfully.",
+          icon: "success",
+        }).then(() => {
+          this.$emit("submit");
+          this.close();
+          if (!this.isEdit) this.resetForm();
+        });
+      } catch (error) {
+        if (error.response?.status === 422) {
+          this.errors = error.response.data.errors;
+        } else {
+          Swal.fire(
+            "Error",
+            error.response?.data?.message || "Something went wrong.",
+            "error"
+          );
+        }
+      } finally {
+        this.loading = false;
+      }
     },
 
-    resetForm() {
-      this.form = {
-        name: '',
-        date: '',
-        type: 'whole_day',
-        from_time: '',
-        to_time: '',
-      };  
-    },
+    async deleteSuspension() {
+      if (!this.suspension_date_id) return;
 
-    convertToDate() {
-      if (!this.date) return '';
-      const d = new Date(this.date);
-      return isNaN(d) ? '' : d.toISOString().split('T')[0];
+      const confirmDelete = await Swal.fire({
+        title: "Are you sure?",
+        text: "This suspension will be permanently deleted.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, delete it!",
+      });
+
+      if (!confirmDelete.isConfirmed) return;
+
+      this.loadingDelete = true;
+      try {
+        await axios.delete(`/admin/service/suspensions-dates/${this.suspension_date_id}`, {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        });
+
+        Swal.fire("Deleted!", "Suspension has been deleted.", "success").then(() => {
+          this.$emit("submit");
+          this.close();
+        });
+      } catch (error) {
+        Swal.fire(
+          "Error",
+          error.response?.data?.message || "Failed to delete suspension.",
+          "error"
+        );
+      } finally {
+        this.loadingDelete = false;
+      }
     },
 
     close() {
-      $('#myModal').modal('hide');
+      $("#myModal").modal("hide");
+    },
+
+    resetForm() {
+      this.form = this.defaultForm();
     },
   },
 };

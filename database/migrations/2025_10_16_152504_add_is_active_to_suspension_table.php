@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::table('suspension', function (Blueprint $table) {
             $table->boolean('is_active')->after('description')->default(true);
         });
+        Schema::table('suspension_dates', function (Blueprint $table) {
+            $table->boolean('is_active')->after('shift')->default(true);
+        });
     }
 
     /**
@@ -23,6 +26,10 @@ return new class extends Migration
     {
         Schema::table('suspension', function (Blueprint $table) {
             $table->dropColumn('is_active');
+        });
+
+         Schema::table('suspension_dates', function (Blueprint $table) {
+            $table->dropIfExists('is_active');
         });
     }
 };

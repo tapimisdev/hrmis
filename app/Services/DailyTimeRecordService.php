@@ -127,8 +127,6 @@ class DailyTimeRecordService {
                 }
             }
 
-            $suspension = $this->timelogs_services->checkSuspension($date['date']);
-
             /** ---------------- SHIFT AND WORK SCHEDULE ---------------- **/
             $date['work_schedule_id'] ??= $weeklySchedule_id;
             $date['shift_id'] ??= $shift_id;
@@ -143,6 +141,9 @@ class DailyTimeRecordService {
                 $remarks[] = $empty_log ? 'restday' : 'restday ot';
                 $is_restday = true;
             }
+
+            /** ---------------- CHECK AND GET SUSPENSION ---------------- **/
+            $suspension = $this->timelogs_services->checkSuspension($date['date']);
 
             /** ---------------- FUTURE/TODAY CHECK ---------------- **/
             if ($logDate->greaterThan($today) || $is_same_day) {
@@ -163,6 +164,36 @@ class DailyTimeRecordService {
             if ($empty_log) {
                 if ($is_future) {
                     $computedData[] = $this->timelogs_services->insertNoData($is_leave ? $leave_status : $remarks, $userId, $date['date']);
+                    continue;
+                }
+
+                if(!$is_future && $suspension['is_suspended'] && $suspension['type'] === 'whole_day') {
+                    $remarks[] = 'suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['type']));
+                    $TOTAL_SUSPENSION++;
+                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    continue;
+                }
+
+                 // If halfday suspended
+                if(!$is_future && $suspension['is_suspended'] && $suspension['type'] === 'half_day') {
+                    $remarks[] = 'suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['shift']));
+                    $TOTAL_SUSPENSION++;
+                    $computedData[] = [
+                        'date'              => $date['date'],
+                        'user_id'           => $userId,
+                        'time_in'           => null,
+                        'time_out'          => null,
+                        'break'             => null,
+                        'overtime'          => null,
+                        'shift_id'          => null,
+                        'work_schedule_id'  => null,
+                        'ot_mins'           => 0,
+                        'total_time_work'    => 240,
+                        'doble'             => $double,
+                        'late_undertime'    => 240,
+                        'paid_hours'        => 0,
+                        'remarks'           => $remarks,
+                    ];
                     continue;
                 }
 
@@ -237,9 +268,11 @@ class DailyTimeRecordService {
             }
 
             /** ---------------- TARDINESS & UNDERTIME ---------------- **/
-            $tar_under = $this->timelogs_services->computeTardinessAndUndertime($date);
+            $tar_under = $this->timelogs_services->computeTardinessAndUndertime($date, $suspension);
             $TOTAL_UT += $tar_under['lost_minutes'];
             if ($tar_under['remark']) $remarks[] = $tar_under['remark'];
+
+            $required_to_work_in_mins = $tar_under['required_to_work_in_mins'];
 
             /** ---------------- COMPUTE TOTALS ---------------- **/
             $total_time_work = $tar_under['actual_work_mins'];
@@ -257,9 +290,9 @@ class DailyTimeRecordService {
                 'shift_id'          => $date['shift_id'],
                 'work_schedule_id'  => $date['work_schedule_id'],
                 'ot_mins'           => $ot_mins,
-                'total_time_work'   => $total_time_work,
+                'total_time_work'   => $required_to_work_in_mins - $tar_under['lost_minutes'],
                 'doble'             => $double,
-                'late_undertime'    => $tar_under['lost_minutes'],
+                'late_undertime'    => max(0, $tar_under['lost_minutes']),
                 'paid_hours'        => $paid_hours,
                 'remarks'           => $remarks,
             ];
