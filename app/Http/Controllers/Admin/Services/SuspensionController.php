@@ -49,6 +49,8 @@ class SuspensionController extends Controller
 
         $payload = $request->all();
 
+        // dd($payload);   
+
         $validator = Validator::make($payload, [
             'name' => 'required|string|max:255',
             'description' => 'nullable',
@@ -111,7 +113,13 @@ class SuspensionController extends Controller
      */
     public function show(int $id)
     {
-        //
+        $suspension = DB::table('suspension_dates')
+                    ->leftJoin('suspension', 'suspension_dates.suspension_id', '=', 'suspension.id')
+                    ->where('suspension_dates.id', $id)
+                    ->where('suspension.is_active', true)
+                    ->first();
+                    
+        return response()->json($suspension);
     }
 
     /**
@@ -243,6 +251,43 @@ class SuspensionController extends Controller
             ]);
         }
     }
+
+    public function deleteOnlyDate($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $suspensionDate = DB::table('suspension_dates')->where('id', $id)->first();
+
+            if (!$suspensionDate) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Suspension date not found.',
+                ], 404);
+            }
+
+            DB::table('suspension_dates')
+                ->where('id', $id)
+                ->update([
+                    'is_active' => false,
+                ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Suspension date has been deleted successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 
     public function datatable($query)
     {

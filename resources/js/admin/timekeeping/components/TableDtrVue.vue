@@ -15,52 +15,15 @@
 
         <!-- Modal -->
         <ModalVue ref="modal" :type="modalType">
-            <div v-if="modalType === 'adjustment'">
-                <AddTimeVue
-                    ref="recordAdjustment"
-                    :employee_id="employee_id"
-                    :month="month"
-                    :year="year"
-                    :index="dateIndex"
-                    @success="loadTimelogs"
-                />
-            </div>
-            <div v-else-if="modalType === 'leave'">
-                <RecordLeaveVue
-                    ref="recordLeave"
-                    :employee_id="employee_id"
-                    :month="month"
-                    :year="year"
-                    :index="dateIndex"
-                    @success="loadTimelogs"
-                />
-            </div>
-            <div v-else-if="modalType === 'overtime'">
-                <AddOvertimeVue
-                    ref="addOvertime"
-                    :employee_id="employee_id"
-                    :month="month"
-                    :year="year"
-                    :index="dateIndex"
-                    @success="loadTimelogs"
-                />
-            </div>
-            <div v-else-if="modalType === 'view_overtime'">
-                <ViewOvertimeVue
-                    :employee_id="employee_id"
-                    :month="month"
-                    :year="year"
-                    :index="dateIndex"
-                />
-            </div>
-            <div v-else-if="modalType === 'absent'">
-                <div class="modal-confirm">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <p>Are you sure you want to mark this employee absent?</p>
-                </div>
-            </div>
-            <div v-else-if="modalType === 'ob'">
-                <p>Record official business details here...</p>
+            <component 
+                :is="modalComponent" 
+                v-if="modalComponent"
+                v-bind="modalProps"
+                @success="loadTimelogs"
+            />
+            <div v-else-if="modalType === 'absent'" class="modal-confirm">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>Are you sure you want to mark this employee absent?</p>
             </div>
         </ModalVue>
 
@@ -75,7 +38,7 @@
                             <th class="col-time">Break</th>
                             <th class="col-time">Time Out</th>
                             <th class="col-overtime">Overtime</th>
-                            <th class="col-hours">Worked HRS</th>
+                            <th class="col-hours">Paid HRS</th>
                             <th class="col-double">Double</th>
                             <th class="col-hours">UT</th>
                             <th class="col-remarks">Remarks</th>
@@ -91,88 +54,54 @@
                         <tr 
                             v-for="(log, index) in logs" 
                             :key="log.id || index" 
-                            :class="{ 
-                                'highlight-today': hasRemark(log.remarks, 'today'),
-                                'row-restday': hasRemark(log.remarks, 'restday'),
-                                'row-leave': hasRemark(log.remarks, 'leave'),
-                                'row-holiday': hasRemark(log.remarks, 'holiday'),
-                                'row-absent': hasRemark(log.remarks, 'absent')
-                            }"
+                            :class="getRowClass(log.remarks)"
                         >
                             <td class="day-cell">
                                 <div class="day-number">{{ index + 1 }}</div>
                             </td>
 
-                            <!-- Rest Day -->
-                            <td v-if="hasRemark(log.remarks, 'restday')" colspan="8" class="status-cell">
-                                <div class="status-badge status-restday">
-                                    <i class="fa-solid fa-mug-hot"></i>
-                                    <span>Rest Day</span>
-                                </div>
-                            </td>
-
-                            <!-- Holiday -->
-                            <td v-else-if="hasRemark(log.remarks, 'holiday') && !log.time_in" colspan="8" class="status-cell">
-                                <div class="status-badge status-holiday">
-                                    <i class="fa-solid fa-calendar-star"></i>
-                                    <span>Holiday</span>
-                                    <span class="badge-extra">(Double = {{ log.doble }})</span>
-                                </div>
-                            </td>
-
-                            <!-- Leave -->
-                            <td v-else-if="hasRemark(log.remarks, 'leave')" colspan="8" class="status-cell">
-                                <div class="status-badge status-leave">
-                                    <i class="fa-solid fa-plane-departure"></i>
-                                    <span>Leave</span>
-                                </div>
-                            </td>
-
-                            <!-- Official Business -->
-                            <td v-else-if="hasRemark(log.remarks, 'ob')" colspan="8" class="status-cell">
-                                <div class="status-badge status-ob">
-                                    <i class="fa-solid fa-briefcase"></i>
-                                    <span>Official Business</span>
-                                </div>
-                            </td>
-
-                            <!-- Absent -->
-                            <td v-else-if="hasRemark(log.remarks, 'absent')" colspan="8" class="status-cell">
-                                <div class="status-badge status-absent">
-                                    <i class="fa-solid fa-user-xmark"></i>
-                                    <span>Absent</span>
-                                </div>
-                            </td>
+                            <!-- Status Badges (Rest Day, Holiday, Leave, etc.) -->
+                            <template v-if="getStatusBadge(log)">
+                                <td colspan="8" class="status-cell">
+                                    <div :class="['status-badge', getStatusBadge(log).class]">
+                                        <i :class="getStatusBadge(log).icon"></i>
+                                        <span>{{ getStatusBadge(log).text }}</span>
+                                        <span v-if="getStatusBadge(log).extra" class="badge-extra">
+                                            {{ getStatusBadge(log).extra }}
+                                        </span>
+                                    </div>
+                                </td>
+                            </template>
 
                             <!-- Regular Log Details -->
                             <template v-else>
                                 <td class="time-cell">
-                                    <span v-if="log.time_in" class="time-value">{{ log.time_in }}</span>
-                                    <span v-else class="time-empty">--:--</span>
+                                    <span :class="log.time_in ? 'time-value' : 'time-empty'">
+                                        {{ log.time_in || '--:--' }}
+                                    </span>
                                 </td>
                                 <td class="time-cell">
-                                    <span v-if="log.break" class="time-value time-small">{{ log.break }}</span>
-                                    <span v-else class="time-empty">--:-- to --:--</span>
+                                    <span :class="log.break ? 'time-value time-small' : 'time-empty'">
+                                        {{ log.break || '--:-- to --:--' }}
+                                    </span>
                                 </td>
                                 <td class="time-cell">
-                                    <span v-if="log.time_out" class="time-value">{{ log.time_out }}</span>
-                                    <span v-else class="time-empty">--:--</span>
+                                    <span :class="log.time_out ? 'time-value' : 'time-empty'">
+                                        {{ log.time_out || '--:--' }}
+                                    </span>
                                 </td>
                                 <td class="overtime-cell">
                                     <div class="overtime-content">
-                                        <div v-if="log.overtime" class="time-value time-small">
-                                            {{ log.overtime }}
+                                        <div :class="log.overtime ? 'time-value time-small' : 'time-empty'">
+                                            {{ log.overtime || '--:-- to --:--' }}
                                         </div>
-                                        <div v-else class="time-empty">--:-- to --:--</div>
                                         
                                         <button
                                             class="overtime-link"
-                                            :disabled="!hasRemark(log.remarks, 'overtime') && !hasRemark(log.remarks, 'pending overtime')"
+                                            :disabled="!hasOvertimeRemark(log.remarks)"
                                             @click="openModal('view_overtime', index)"
                                         >
-                                            <span :class="{ 
-                                                'has-overtime': hasRemark(log.remarks, 'overtime') || hasRemark(log.remarks, 'pending overtime') 
-                                            }">
+                                            <span :class="{ 'has-overtime': hasOvertimeRemark(log.remarks) }">
                                                 {{ convertToReadableTime(log.ot_mins) }}
                                             </span>
                                         </button>
@@ -198,11 +127,7 @@
                                         <span
                                             v-for="(remark, rIndex) in log.remarks || []"
                                             :key="rIndex"
-                                            class="remark-tag"
-                                            :class="{ 
-                                                'remark-danger': remark === 'incomplete log',
-                                                'remark-warning': remark === 'late' || remark === 'undertime'
-                                            }"
+                                            :class="['remark-tag', getRemarkClass(remark)]"
                                         >
                                             {{ remark }}
                                         </span>
@@ -222,28 +147,13 @@
                                         <i class="fa-solid fa-ellipsis-vertical"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-modern">
-                                        <li>
-                                            <button class="dropdown-item" @click="openModal('adjustment', index)">
-                                                <i class="fa-solid fa-clock-rotate-left"></i>
-                                                <span>Add/Adjust Time</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item" @click="openModal('overtime', index)">
-                                                <i class="fa-solid fa-hourglass-half"></i>
-                                                <span>Add Overtime</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item" @click="openModal('leave', index)">
-                                                <i class="fa-solid fa-plane-departure"></i>
-                                                <span>Record Leave</span>
-                                            </button>
-                                        </li>
-                                        <li v-if="!hasRemark(log.remarks, 'absent')">
-                                            <button class="dropdown-item dropdown-item-danger" @click="openModal('absent', index)">
-                                                <i class="fa-solid fa-user-xmark"></i>
-                                                <span>Mark Absent</span>
+                                        <li v-for="action in getActions(log.remarks)" :key="action.type">
+                                            <button 
+                                                :class="['dropdown-item', action.danger ? 'dropdown-item-danger' : '']"
+                                                @click="openModal(action.type, index)"
+                                            >
+                                                <i :class="action.icon"></i>
+                                                <span>{{ action.text }}</span>
                                             </button>
                                         </li>
                                     </ul>
@@ -261,8 +171,6 @@
 import TableSkeletonVue from '../../../components/TableSkeletonVue.vue';
 import axios from 'axios';
 import ModalVue from './modal/ModalVue.vue';
-
-// Modals
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
 import AddTimeVue from './modal/AddTimeVue.vue';
 import AddOvertimeVue from './modal/AddOvertimeVue.vue';
@@ -289,6 +197,23 @@ export default {
             return new Date(this.year, this.month - 1).toLocaleString("default", {
                 month: "long"
             });
+        },
+        modalComponent() {
+            const components = {
+                adjustment: 'AddTimeVue',
+                leave: 'RecordLeaveVue',
+                overtime: 'AddOvertimeVue',
+                view_overtime: 'ViewOvertimeVue'
+            };
+            return components[this.modalType] || null;
+        },
+        modalProps() {
+            return {
+                employee_id: this.employee_id,
+                month: this.month,
+                year: this.year,
+                index: this.dateIndex
+            };
         }
     },
     emits: ['send-summary'],
@@ -296,23 +221,110 @@ export default {
         async loadTimelogs() {
             this.loading = true;
             try {
-                const response = await axios.get(
+                const { data } = await axios.get(
                     `/admin/timekeeping/daily-time-record/${this.employee_id}/show`,
                     { params: { month: this.month, year: this.year } }
                 );
-                this.logs = response.data.computedData;
-                this.summary = response.data.summary;
-                this.$emit('send-summary', response.data.summary);
-                console.log(response.data);
+                this.logs = data.computedData;
+                this.summary = data.summary;
+                this.$emit('send-summary', data.summary);
             } catch (error) {
                 console.error("Error fetching logs:", error);
+            } finally {
+                this.loading = false;
             }
-            this.loading = false;
         },
         hasRemark(remarks, keyword) {
             if (!Array.isArray(remarks)) return false;
             const kw = keyword.trim().toLowerCase();
             return remarks.some(r => String(r).trim().toLowerCase() === kw);
+        },
+        hasOvertimeRemark(remarks) {
+            return this.hasRemark(remarks, 'overtime') || this.hasRemark(remarks, 'pending overtime');
+        },
+        getRowClass(remarks) {
+            if (this.hasRemark(remarks, 'today')) return 'highlight-today';
+            if (this.hasRemark(remarks, 'restday')) return 'row-restday';
+            if (this.hasRemark(remarks, 'suspension')) return 'row-restday';
+            if (this.hasRemark(remarks, 'leave')) return 'row-leave';
+            if (this.hasRemark(remarks, 'holiday')) return 'row-holiday';
+            if (this.hasRemark(remarks, 'absent')) return 'row-absent';
+            return '';
+        },
+       getStatusBadge(log) {
+            const { remarks } = log;
+
+            switch (true) {
+                case this.hasRemark(remarks, 'restday'):
+                    return {
+                        class: 'status-restday',
+                        icon: 'fa-solid fa-mug-hot',
+                        text: 'Rest Day',
+                    };
+
+                 case this.hasRemark(remarks, 'suspension Whole day'):
+                    return {
+                        class: 'status-restday',
+                        icon: 'fa-solid fa-mug-hot',
+                        text: 'Suspended',
+                    };
+
+                case this.hasRemark(remarks, 'holiday') && !log.time_in:
+                    return {
+                        class: 'status-holiday',
+                        icon: 'fa-solid fa-calendar-star',
+                        text: 'Holiday',
+                        extra: `(Double = ${log.doble})`,
+                    };
+
+                case this.hasRemark(remarks, 'leave'):
+                    return {
+                        class: 'status-leave',
+                        icon: 'fa-solid fa-plane-departure',
+                        text: 'Leave',
+                    };
+
+                case this.hasRemark(remarks, 'ob'):
+                    return {
+                        class: 'status-ob',
+                        icon: 'fa-solid fa-briefcase',
+                        text: 'Official Business',
+                    };
+
+                case this.hasRemark(remarks, 'absent'):
+                    return {
+                        class: 'status-absent',
+                        icon: 'fa-solid fa-user-xmark',
+                        text: 'Absent',
+                    };
+
+                default:
+                    return null;
+            }
+        },
+        getRemarkClass(remark) {
+            const remarkLower = String(remark).trim().toLowerCase();
+            if (remarkLower === 'incomplete log') return 'remark-danger';
+            if (remarkLower === 'late' || remarkLower === 'undertime') return 'remark-warning';
+            return '';
+        },
+        getActions(remarks) {
+            const actions = [
+                { type: 'adjustment', icon: 'fa-solid fa-clock-rotate-left', text: 'Add/Adjust Time' },
+                { type: 'overtime', icon: 'fa-solid fa-hourglass-half', text: 'Add Overtime' },
+                { type: 'leave', icon: 'fa-solid fa-plane-departure', text: 'Record Leave' }
+            ];
+            
+            if (!this.hasRemark(remarks, 'absent')) {
+                actions.push({ 
+                    type: 'absent', 
+                    icon: 'fa-solid fa-user-xmark', 
+                    text: 'Mark Absent',
+                    danger: true
+                });
+            }
+            
+            return actions;
         },
         openModal(type, index) {
             this.modalType = type;

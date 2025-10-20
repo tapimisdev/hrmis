@@ -29,7 +29,8 @@
         :isEdit="idEdit"
         :date="selectedDate"
         :suspension_id="suspension_id"
-        @submit="initCalendar"
+        :suspension_date_id="suspension_date_id"
+        @submit="refreshCalendar"
       />
 
       <HolidayForm
@@ -38,7 +39,7 @@
         :isEdit="idEdit"
         :date="selectedDate"
         :holiday_id="holiday_id"
-        @submit="initCalendar"
+        @submit="refreshCalendar"
       />
 
       <div v-else class="px-3">
@@ -77,7 +78,6 @@ const token = localStorage.getItem("auth_token");
 
 export default {
   components: { FullCalendar, ModalVue, SuspensionForm, HolidayForm },
-
   props: { modelValue: Object },
 
   data: () => ({
@@ -91,6 +91,7 @@ export default {
     end_date: "",
     idEdit: false,
     holiday_id: null,
+    suspension_date_id: null,
     suspension_id: null,
   }),
 
@@ -110,12 +111,14 @@ export default {
   },
 
   methods: {
+    //  Initialize the calendar on mount
     async initCalendar() {
       this.setCutoffRange();
       await this.$nextTick();
       setTimeout(() => (this.showCalendar = true), 100);
     },
 
+    //  Recreate calendar if cutoff/date changed
     async remountCalendar() {
       this.showCalendar = false;
       await this.$nextTick();
@@ -126,6 +129,31 @@ export default {
       setTimeout(() => (this.showCalendar = true), 50);
     },
 
+    //  Fetch adjustments from backend
+    async fetchAdjustments() {
+      try {
+        const response = await axios.post(
+          "/api/payroll/adjustments",
+          {
+            start_date: this.start_date,
+            end_date: this.end_date,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Failed to fetch adjustments:", error.response?.data || error.message);
+        return [];
+      }
+    },
+
+    //  Compute cutoff & setup events
     async setCutoffRange() {
       if (!this.modelValue?.date) return;
 
@@ -149,37 +177,7 @@ export default {
       this.start_date = cutoff.start;
       this.end_date = cutoff.end;
 
-      // 🔹 Fetch holidays & suspensions together
-      let adjustments = [];
-      try {
-        const response = await axios.post(
-          "/api/payroll/adjustments",
-          {
-            start_date: this.start_date,
-            end_date: this.end_date,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        adjustments = response.data;
-      } catch (error) {
-        console.error("Failed to load adjustments:", error.response?.data || error.message);
-      }
-
-      const events = [
-        {
-          start: cutoff.start,
-          end: this.addOneDay(cutoff.end),
-          display: "background",
-          color: cutoff.color,
-        },
-        ...adjustments,
-      ];
+      const adjustments = await this.fetchAdjustments();
 
       this.calendarOptions = {
         plugins: [dayGridPlugin, interactionPlugin],
@@ -198,28 +196,33 @@ export default {
           start: cutoff.start,
           end: this.addOneDay(cutoff.end),
         },
-        events,
-        dateClick: (info) => {
-          this.handleDateClick(info, cutoff);
-        },
-        eventClick: (info) => {
-          this.handleEventClick(info);
-        },
+        events: [
+          {
+            start: cutoff.start,
+            end: this.addOneDay(cutoff.end),
+            display: "background",
+            color: cutoff.color,
+          },
+          ...adjustments,
+        ],
+        dateClick: (info) => this.handleDateClick(info, cutoff),
+        eventClick: (info) => this.handleEventClick(info),
       };
     },
 
+    //  Add 1 day utility
     addOneDay(d) {
       const date = new Date(d);
       date.setDate(date.getDate() + 1);
       return date.toISOString().split("T")[0];
     },
 
+    //  Handle clicking empty date cell
     handleDateClick(info, cutoff) {
       const dateStr = info.dateStr;
       const calendar = info.view.calendar;
 
-      // Disable click if date already has events
-      const existingEvents = calendar.getEvents().filter(event => {
+      const existingEvents = calendar.getEvents().filter((event) => {
         return event.startStr === dateStr && event.display !== "background";
       });
 
@@ -234,6 +237,7 @@ export default {
       this.idEdit = false;
       this.holiday_id = null;
       this.suspension_id = null;
+      this.suspension_date_id = null;
       this.adjustment_type = "";
 
       if (this.$refs.suspension_form) this.$refs.suspension_form.resetForm();
@@ -242,65 +246,149 @@ export default {
       this.$refs.modal.open();
     },
 
+    //  Handle clicking existing event
     async handleEventClick(info) {
       const event = info.event;
       const props = event.extendedProps || {};
 
-      // If it's a holiday
-      if (props.type && props.category === "holiday") {
+      if (props.category === "holiday") {
         this.adjustment_type = "holiday";
         this.selectedDate = event.startStr;
         this.idEdit = true;
         this.holiday_id = props.id;
-
+        this.suspension_id = null;
+        this.suspension_date_id = null;
+        
         this.$refs.modal.open();
+        await this.$nextTick();
         await this.loadHolidayData(props.id);
-      }
-
-      // If it's a suspension
-      if (props.category === "suspension") {
+      } else if (props.category === "suspension") {
         this.adjustment_type = "suspension";
         this.selectedDate = event.startStr;
         this.idEdit = true;
-        this.suspension_id = props.id;
-
+        this.suspension_date_id = props.id;
+        this.suspension_id = props.suspension_id;
+        this.holiday_id = null;
+        
         this.$refs.modal.open();
-        await this.loadSuspensionData(props.id);
+        await this.$nextTick();
+        await this.loadSuspensionData(props.suspension_id, props.id);
       }
     },
 
+    //  Load specific holiday for editing
     async loadHolidayData(id) {
       try {
-        const response = await axios.get(`/admin/maintenance/holiday/${id}/edit`);
+        const response = await axios.get(`/admin/maintenance/holiday/${id}/edit`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
         const holiday = response.data;
 
-        Object.assign(this.$refs.holiday_form.form, {
-          name: holiday.name,
-          date: holiday.date,
-          type: holiday.type,
-          is_repeating: !!holiday.is_repeating,
-          no_work_rate: holiday.no_work_rate,
-          work_rate: holiday.work_rate,
-          overtime_rate: holiday.overtime_rate,
-        });
+        if (this.$refs.holiday_form) {
+          Object.assign(this.$refs.holiday_form.form, {
+            name: holiday.name || "",
+            date: holiday.date || "",
+            type: holiday.type || "",
+            is_repeating: !!holiday.is_repeating,
+            no_work_rate: holiday.no_work_rate || 0,
+            work_rate: holiday.work_rate || 0,
+            overtime_rate: holiday.overtime_rate || 0,
+          });
+        }
       } catch (error) {
         console.error("Failed to load holiday:", error.response?.data || error.message);
+        alert("Failed to load holiday data. Please try again.");
       }
     },
 
-    async loadSuspensionData(id) {
+    //  Load specific suspension for editing
+    async loadSuspensionData(suspensionId, suspensionDateId) {
       try {
-        const response = await axios.get(`/admin/maintenance/suspensions/${id}`);
+        const response = await axios.get(`/admin/service/suspensions/${suspensionId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
         const suspension = response.data;
 
-        Object.assign(this.$refs.suspension_form.form, {
-          name: suspension.name,
-          date: suspension.date,
-          reason: suspension.reason,
-          type: suspension.type,
-        });
+        if (this.$refs.suspension_form) {
+          // Find the specific suspension date entry
+          const suspensionDate = suspension.suspension_dates?.find(
+            (sd) => sd.id === suspensionDateId
+          );
+
+          if (suspensionDate) {
+            Object.assign(this.$refs.suspension_form.form, {
+              name: suspension.name || "",
+              reason: suspension.reason || "",
+              description: suspension.description || "",
+              date: suspensionDate.date || "",
+              type: suspensionDate.type || "",
+              suspensions: [
+                {
+                  date: suspensionDate.date || "",
+                  type: suspensionDate.type || "",
+                  shift: suspensionDate.shift || "",
+                },
+              ],
+            });
+          } else {
+            // Fallback if suspension_dates structure is different
+            Object.assign(this.$refs.suspension_form.form, {
+              name: suspension.name || "",
+              date: suspension.date || this.selectedDate,
+              reason: suspension.reason || "",
+              type: suspension.type || "",
+              description: suspension.description || "",
+              suspensions: [
+                {
+                  date: suspension.date || this.selectedDate,
+                  type: suspension.type || "",
+                  shift: suspension.shift || "",
+                },
+              ],
+            });
+          }
+        }
       } catch (error) {
         console.error("Failed to load suspension:", error.response?.data || error.message);
+        alert("Failed to load suspension data. Please try again.");
+      }
+    },
+
+    //  Refresh calendar events after submitting forms
+    async refreshCalendar() {
+      this.$refs.modal.close();
+      
+      // Reset form state
+      this.adjustment_type = "";
+      this.idEdit = false;
+      this.holiday_id = null;
+      this.suspension_id = null;
+      this.suspension_date_id = null;
+      this.selectedDate = null;
+
+      // Fetch updated adjustments
+      const newAdjustments = await this.fetchAdjustments();
+      const calendarApi = this.$refs.calendarRef?.getApi?.();
+
+      if (calendarApi) {
+        // Remove only non-background events
+        const allEvents = calendarApi.getEvents();
+        allEvents.forEach((event) => {
+          if (event.display !== "background") {
+            event.remove();
+          }
+        });
+
+        // Add new events
+        newAdjustments.forEach((event) => {
+          calendarApi.addEvent(event);
+        });
       }
     },
   },

@@ -47,7 +47,10 @@ class SalaryApiController extends Controller
         ]);
 
         $holidays = $this->salary_payroll_service->getHolidays($validated);
+        $suspensions = $this->salary_payroll_service->getSuspensions($validated);
 
-        return response()->json($holidays);
+        $events = $holidays->merge($suspensions);
+
+        return response()->json($events);
     }
 }
