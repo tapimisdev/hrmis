@@ -25,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('suspension', function (Blueprint $table) {
-            $table->dropIfExists('is_active');
+            $table->dropColumn('is_active');
         });
 
          Schema::table('suspension_dates', function (Blueprint $table) {

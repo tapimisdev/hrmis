@@ -90,7 +90,9 @@
             if(d.unit_name && d.unit_name.length) {
                 d.unit_name.forEach(function(user, key) {
                     html += `
-                        <li style="font-size: 12px;" class="list-group-item">(${d.unit_code[key]}) | ${d.unit_name[key]}</li>
+                        <li style="font-size: 12px;" class="list-group-item">
+                            ${d.type === 'payroll' ? 'Payroll' : `(${d.unit_code[key]}) | ${d.unit_name[key]}`}
+                        </li>
                     `;
                 });
             } else {

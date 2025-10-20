@@ -29,6 +29,7 @@ return new class extends Migration
 
             $table->boolean('is_repeating')->default(false); // repeats yearly?
             $table->boolean('is_active')->default(true);
+            $table->softDeletes();
             $table->timestamps();
         });
     }
