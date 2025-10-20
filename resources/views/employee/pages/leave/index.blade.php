@@ -30,7 +30,7 @@
 
 @section('scripts')
 <script>
-    $(document).ready(function() {
+    $(function() {
         let = DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
@@ -79,7 +79,7 @@
 
         const myModal = $('#myModal');
 
-        $(document).on('click', '.show-button', function () {
+       $(document).on('click', '.show-button', function () {
             let id = $(this).attr('data-id');
             $('.modal-title').html('Leave Application');
 
@@ -88,7 +88,7 @@
                     const data = response.data.data;
 
                     // Fill in modal fields
-                    $('#doc-id').text(data.id);
+                    $('#doc-id').text('#' + data.id);
                     $('#employee-no').text(data.employee_no ?? 'N/A');
                     $('#leave-type').text(data.leave_name);
 
@@ -106,6 +106,12 @@
                     $('#days').text(data.days);
                     $('#reason').text(data.reason);
 
+                    if (data.status === 'rejected') {
+                        $('.extended').removeClass('d-none');
+                    }
+
+                    $('#remarks').text(data.remarks);
+
                     // Status badge
                     let statusClass = 'bg-secondary';
                     if (data.status === 'pending') statusClass = 'bg-warning';
@@ -118,29 +124,73 @@
 
                     $('#created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
 
-                    // === Show Approvers by Level with Accordion ===
-                    $('#approvers-by-level').empty(); // Clear previous content
+                    // === Approval Breadcrumbs ===
+                    const levelApprovals = data.level_approvals ?? {};
+                    const sortedLevels = Object.keys(levelApprovals).map(Number).sort((a, b) => a - b);
 
-                    const approvals = data.approvals;
+                    $('#approval-breadcrumbs').empty();
 
-                    if (approvals && Object.keys(approvals).length > 0) {
-                        let accordionHTML = `
-                            <div class="accordion" id="approversAccordion">
+                    let breadcrumbHTML = `
+                        <nav style="--bs-breadcrumb-divider: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%278%27 height=%278%27%3E%3Cpath d=%27M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z%27 fill=%276c757d%27/%3E%3C/svg%3E');" aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                    `;
+
+                    const statusClasses = {
+                        approved: 'text-success fw-bold',
+                        rejected: 'text-danger fw-bold',
+                        pending: 'text-warning fw-bold'
+                    };
+
+                    sortedLevels.forEach(level => {
+                        const status = levelApprovals[level]?.toLowerCase() || 'unknown';
+                        const colorClass = statusClasses[status] ?? 'text-muted';
+
+                        breadcrumbHTML += `
+                            <li class="breadcrumb-item ${colorClass}">
+                                Level ${level} - ${status.charAt(0).toUpperCase() + status.slice(1)}
+                            </li>
                         `;
+                    });
+
+                    breadcrumbHTML += `
+                            </ol>
+                        </nav>
+                    `;
+
+                    $('#approval-breadcrumbs').html(breadcrumbHTML);
+
+                    // === Approvers by Level (Accordion) ===
+                    $('#approvers-by-level').empty();
+                    const approvals = data.approvals;
+                    if (approvals && Object.keys(approvals).length > 0) {
+                        let accordionHTML = `<div class="accordion" id="approversAccordion">`;
 
                         Object.keys(approvals).sort((a, b) => a - b).forEach((level, index) => {
                             const approverArray = approvals[level];
+                            const levelStatus = levelApprovals[level]
+                                ? levelApprovals[level].charAt(0).toUpperCase() + levelApprovals[level].slice(1)
+                                : 'Unknown';
 
                             const approverList = approverArray.length > 0
-                                ? approverArray.map(a =>
-                                    `<li><code>${a.firstname} ${a.lastname} (${a.employee_no})</code></li>`
-                                ).join('')
+                                ? approverArray.map(a => {
+                                    let statusLabel = '';
+
+                                    switch (a.status) {
+                                        case 'approved':
+                                        case 'rejected': 
+                                            statusLabel = '<i class="fa-solid fa-circle-check text-primary"></i>';
+                                            break;
+                                    }
+
+                                    return `<li><code>${a.firstname} ${a.lastname} (${a.employee_no})</code> <span class="ms-1 text-primary">${statusLabel}</span></li>`;
+                                }).join('')
                                 : '<li><em>None</em></li>';
+
 
                             accordionHTML += `
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="heading-${level}">
-                                        <button style="font-size: 12px;" class="accordion-button fw-bold text-uppercase ${index !== 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${level}" aria-expanded="${index === 0 ? 'true' : 'false'}" aria-controls="collapse-${level}">
+                                        <button style="font-size: 12px;" class="accordion-button fw-bold text-uppercase d-flex justify-content-between ${index !== 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${level}" aria-expanded="${index === 0 ? 'true' : 'false'}" aria-controls="collapse-${level}">
                                             Level ${level} Approvers
                                         </button>
                                     </h2>
@@ -157,7 +207,6 @@
 
                         accordionHTML += `</div>`;
                         $('#approvers-by-level').append(accordionHTML);
-
                     } else {
                         $('#approvers-by-level').append('<div><em>No approvals yet</em></div>');
                     }
@@ -169,8 +218,8 @@
 
                     // Attachments
                     $('#attachments ul').empty();
-
                     const attachments = data.attachments;
+
                     if (attachments && attachments.length > 0) {
                         attachments.forEach(file => {
                             let fileUrl = `/storage/${file.file_path}`;
@@ -195,6 +244,7 @@
                     });
                 });
         });
+
 
 
       

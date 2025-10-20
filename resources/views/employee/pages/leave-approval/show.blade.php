@@ -1,20 +1,17 @@
-@extends('admin.layouts.app')
+@extends('employee.layout.app')
 
 @section('content')
 <div class="container pt-4">
 
     <x-header title="Leave Application" subtitle="View leave application details">
         <x-button-link 
-            href="{{route('services.leaves.index')}}"
+            href="{{route('approval-leave.index')}}"
             icon="fa-solid fa-arrow-left me-2" 
             text="Back" 
             variant="danger"
         />
     </x-header>
-    <div class="alert alert-primary mb-4 text-uppercase fw-bold text-center">
-        This application can be approved directly without requiring approval from level-based approvers because you have admin or superadmin privileges.
-    </div>
-     <form id="form" action="{{ route('services.leaves.save', ['application' => $data->id]) }}" method="POST">
+     <form id="form" action="{{ route('approval-leave.save', ['level' => $data->level, 'id' => $data->id]) }}" method="POST">
         @csrf
         @method('POST')
         <input type="hidden" name="action" id="action" value="">
@@ -29,14 +26,20 @@
                         <td id="employee-no">{{$data->employee_no}}</td>
                     </tr>
                     <tr>
+                        <th width="30%">Name</th>
+                        <td id="employee-no">
+                            {{$data->firstname . ' ' . $data->lastname}}
+                        </td>
+                    </tr>
+                    <tr>
                         <th>Leave Type:</th>
-                        <td id="leave-type">{{$data->leave_name}}</td>
+                        <td id="leave-type">{{$data->name}}</td>
                     </tr>
                     <tr>
                         <th>Dates:</th>
                         <td>
                             @foreach($data->dates as $date)
-                                {{Carbon\Carbon::parse($date)->format('M d, Y')}}
+                                {{Carbon\Carbon::parse($date->date)->format('M d, Y')}}
                             @endforeach
                         </td>
                     </tr>
@@ -90,48 +93,6 @@
                         </td>
                     </tr>
                 </table>
-                <div class="mt-4 mb-3">
-                    <small class="text-uppercase fw-bold text-muted">Your Approvers</small>
-
-                    @if (!empty($data->approvals) && count($data->approvals) > 0)
-                        <div class="accordion mt-2" id="approversAccordion">
-                            @foreach ($data->approvals as $level => $approvers)
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="headingLevel{{ $level }}">
-                                        <button class="accordion-button text-uppercase fw-bold {{ $loop->first ? '' : 'collapsed' }}" 
-                                                style="font-size: 10px" 
-                                                type="button" 
-                                                data-bs-toggle="collapse" 
-                                                data-bs-target="#collapseLevel{{ $level }}" 
-                                                aria-expanded="{{ $loop->first ? 'true' : 'false' }}" 
-                                                aria-controls="collapseLevel{{ $level }}">
-                                            Level {{ $level }} Approvers
-                                        </button>
-                                    </h2>
-                                    <div id="collapseLevel{{ $level }}" 
-                                        class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}" 
-                                        aria-labelledby="headingLevel{{ $level }}" 
-                                        data-bs-parent="#approversAccordion">
-                                        <div class="accordion-body p-2">
-                                            <ul class="mb-0">
-                                                @foreach ($approvers as $approver)
-                                                    <li>
-                                                        {{ $approver->firstname }} {{ $approver->lastname }} ({{ $approver->employee_no }})
-                                                        @if ($approver->status == 'approved')
-                                                            <i class="fa-solid fa-check text-primary"></i>
-                                                        @endif
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="fst-italic text-muted text-uppercase mt-3">No approvers assigned.</div>
-                    @endif
-                </div>
             </div>
         
             {{-- Action Buttons --}}

@@ -82,23 +82,20 @@
 
         // Show modal
         const myModal = $('#myModal');
+
         $(document).on('click', '.show-button', function () {
-            let id = $(this).attr('data-id');
+            let id = $(this).data('id');
             $('.modal-title').html('Official Business Slip');
 
             axios.get(`/employee/official-business-slip/${id}`)
                 .then((response) => {
-                    const data = response.data.obs;
+                    const data = response.data.data;
+                    console.log(data);
 
-                    $('#obs-doc-id').text(data.obs_no);
-                    $('#obs-employee-no').text(data.employee_no);
-                    $('#obs-destination').text(data.destination);
-                    $('#obs-purpose').text(data.purpose);
-
-                    // Date range
-                    $('#obs-date-from').text(moment(data.date_from).format('MMMM D, YYYY'));
-                    $('#obs-date-to').text(moment(data.date_to).format('MMMM D, YYYY'));
-
+                    // === Basic Details ===
+                    $('#obs-doc-id').text(data.obs_no ?? '—');
+                    $('#obs-destination').text(data.destination ?? '—');
+                    $('#obs-purpose').text(data.purpose ?? '—');
                     $('#obs-time-out').text(data.time_out ?? '—');
                     $('#obs-time-in').text(data.time_in ?? '—');
                     $('#obs-transport').text(data.mode_of_transport ?? '—');
@@ -106,30 +103,136 @@
                     $('#obs-charge-to').text(data.charge_to ?? '—');
                     $('#obs-remarks').text(data.remarks ?? '—');
 
-                    // Status badge
+                    // === Dates ===
+                    $('#obs-date-from').text(moment(data.date_from).format('MMMM D, YYYY'));
+                    $('#obs-date-to').text(moment(data.date_to).format('MMMM D, YYYY'));
+
+                    // === Status Badge ===
                     let statusClass = 'bg-secondary';
                     if (data.status === 'pending') statusClass = 'bg-warning';
                     else if (data.status === 'approved') statusClass = 'bg-success';
                     else if (data.status === 'rejected') statusClass = 'bg-danger';
                     else if (data.status === 'cancelled') statusClass = 'bg-dark';
 
-                    $('#obs-status').attr('class', 'badge ' + statusClass).text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
+                    $('#obs-status')
+                        .attr('class', 'badge ' + statusClass)
+                        .text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
 
                     $('#obs-created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
-                    $('#obs-approver').text(data.approver ?? 'Not Yet Assigned');
                     $('#obs-approved-at').text(data.approved_at ? moment(data.approved_at).format('MMMM D, YYYY h:mm A') : '—');
+                    $('#obs-approver').text(data.approver ?? 'Not Yet Assigned');
 
-                    // Attachments
-                    let attachmentList = $('#obs-attachments ul');
-                    attachmentList.empty();
-                    if (data.attachments && data.attachments.length > 0) {
-                        data.attachments.forEach(file => {
-                            attachmentList.append(`<li><a href="${file.url}" target="_blank">${file.name}</a></li>`);
+                    // === Approval Breadcrumbs ===
+                    const levelApprovals = data.level_approvals ?? {};
+                    const sortedLevels = Object.keys(levelApprovals).map(Number).sort((a, b) => a - b);
+                    $('#approval-breadcrumbs').empty();
+
+                    let breadcrumbHTML = `
+                        <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                    `;
+
+                    const statusClasses = {
+                        approved: 'text-success fw-bold',
+                        rejected: 'text-danger fw-bold',
+                        pending: 'text-warning fw-bold'
+                    };
+
+                    sortedLevels.forEach(level => {
+                        const status = levelApprovals[level]?.toLowerCase() || 'unknown';
+                        const colorClass = statusClasses[status] ?? 'text-muted';
+
+                        breadcrumbHTML += `
+                            <li class="breadcrumb-item ${colorClass}">
+                                Level ${level} - ${status.charAt(0).toUpperCase() + status.slice(1)}
+                            </li>
+                        `;
+                    });
+
+                    breadcrumbHTML += `
+                            </ol>
+                        </nav>
+                    `;
+
+                    $('#approval-breadcrumbs').html(breadcrumbHTML);
+
+                    // === Approvers by Level (Accordion) ===
+                    $('#approvers-by-level').empty();
+                    const approvals = data.approvals;
+
+                    if (approvals && Object.keys(approvals).length > 0) {
+                        let accordionHTML = `<div class="accordion" id="obsApproversAccordion">`;
+
+                        Object.keys(approvals).sort((a, b) => a - b).forEach((level, index) => {
+                            const approverArray = approvals[level];
+                            const levelStatus = levelApprovals[level]
+                                ? levelApprovals[level].charAt(0).toUpperCase() + levelApprovals[level].slice(1)
+                                : 'Unknown';
+
+                             const approverList = approverArray.length > 0
+                                ? approverArray.map(a => {
+                                    let statusLabel = '';
+
+                                    switch (a.status) {
+                                        case 'approved':
+                                        case 'rejected': 
+                                            statusLabel = '<i class="fa-solid fa-circle-check text-primary"></i>';
+                                            break;
+                                    }
+
+                                    return `<li><code>${a.firstname} ${a.lastname} (${a.employee_no})</code> <span class="ms-1 text-primary">${statusLabel}</span></li>`;
+                                }).join('')
+                                : '<li><em>None</em></li>';
+
+                            accordionHTML += `
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading-${level}">
+                                        <button class="accordion-button fw-bold text-uppercase ${index !== 0 ? 'collapsed' : ''}"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#collapse-${level}"
+                                            aria-expanded="${index === 0 ? 'true' : 'false'}"
+                                            aria-controls="collapse-${level}">
+                                            Level ${level} Approvers - ${levelStatus}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-${level}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}"
+                                        aria-labelledby="heading-${level}"
+                                        data-bs-parent="#obsApproversAccordion">
+                                        <div class="accordion-body">
+                                            <ul class="mb-0">
+                                                ${approverList}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
                         });
+
+                        accordionHTML += `</div>`;
+                        $('#approvers-by-level').append(accordionHTML);
                     } else {
-                        attachmentList.append('<li>No attachments</li>');
+                        $('#approvers-by-level').append('<div><em>No approvals yet</em></div>');
                     }
 
+                    // === Attachments ===
+                    $('#obs-attachments ul').empty();
+                    const attachments = data.attachments;
+
+                    if (attachments && attachments.length > 0) {
+                        attachments.forEach(file => {
+                            let fileUrl = `/storage/${file.file_path}`;
+                            let fileName = file.file_name;
+
+                            $('#obs-attachments ul').append(
+                                `<li><a download href="${fileUrl}" target="_blank" rel="noopener noreferrer">${fileName}</a></li>`
+                            );
+                        });
+                    } else {
+                        $('#obs-attachments ul').append('<li><em>No attachments</em></li>');
+                    }
+
+                    // === Show Modal ===
                     myModal.modal('show');
                 })
                 .catch(error => {
@@ -140,6 +243,8 @@
                     });
                 });
         });
+
+
 
     });
 </script>

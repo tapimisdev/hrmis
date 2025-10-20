@@ -23,7 +23,8 @@ return new class extends Migration
             $table->longText('remarks')
                 ->nullable();
             $table->unsignedBigInteger('approver_id')
-                ->nullable(); 
+                ->nullable();
+            $table->integer('level'); 
             $table->timestamps();
         });
 

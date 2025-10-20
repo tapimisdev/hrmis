@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('purpose', 500);                     // short purpose/subject
             $table->string('mode_of_transport')->nullable();    // company car, taxi, etc.
             $table->decimal('estimated_expense', 12, 2)->default(0);
-            $table->string('charge_ to')->nullable();            // cost center / department
+            $table->string('charge_to')->nullable();            // cost center / department
 
             // Approval flow
             $table->enum('status', ['pending', 'approved', 'rejected', 'cancelled'])->default('pending')->index();
@@ -33,6 +33,7 @@ return new class extends Migration
                 ->nullable();
             $table->unsignedBigInteger('approver_id')
                 ->nullable(); 
+            $table->integer('level'); 
             $table->timestamp('approved_at')->nullable();
 
             // Audit

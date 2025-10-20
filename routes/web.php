@@ -321,14 +321,20 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
     Route::resource('overtime', AtroController::class)->except('edit', 'update');
     Route::resource('official-business-slip', ObsController::class)->except('edit', 'update')->names('obs');
 
-    #EMPLOYEE TIMELOGS
+    # EMPLOYEE TIMELOGS
     Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store')->names('checkinout');
     Route::get('employee-timelogs/{employee_no}/get', [DailyTimeRecordController::class, 'show']);
 
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 
     # EMPLOYEE LEAVES, OVERTIME, AND OBS -- APPROVAL --
-    Route::resource('approval-leaves', LeaveApprovalController::class)->names('approval-leave');
+    Route::get('approval-leaves/{level?}', [LeaveApprovalController::class, 'index'])
+        ->name('approval-leave.index');
+    Route::get('approval-leaves/{level}/{id}', [LeaveApprovalController::class, 'show'])
+        ->name('approval-leave.show');
+    Route::post('approval-leaves/{level}/{id}/save', [LeaveApprovalController::class, 'save'])
+        ->name('approval-leave.save');
+
     Route::resource('approval-overtime', AtroApprovalController::class)->names('approval-overtime');
     Route::resource('approval-official-business-slip', ObsApprovalController::class)->names('approval-obs');
 

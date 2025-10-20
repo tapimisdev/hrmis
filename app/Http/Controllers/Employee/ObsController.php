@@ -12,7 +12,92 @@ use Yajra\DataTables\Facades\DataTables;
 class ObsController extends Controller
 {
 
-    public function getData()
+    public function getRawData(?int $id = null)
+    {
+        $user_id = Auth::id();
+
+        // Fetch main OBS applications
+        $applications = DB::table('obs as ob')
+            ->leftJoin('employee_personal as ep', 'ep.employee_no', '=', DB::raw("(SELECT employee_no FROM employee_information WHERE user_id = ob.user_id LIMIT 1)"))
+            ->select(
+                'ob.*',
+                DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name")
+            )
+            ->where('ob.user_id', $user_id)
+            ->when($id, function ($query, $id) {
+                return $query->where('ob.id', $id);
+            })
+            ->orderBy('ob.created_at', 'desc')
+            ->get();
+
+        $applicationIds = $applications->pluck('id');
+
+        // Fetch attachments
+        $attachments = DB::table('obs_attachments')
+            ->select('obs_id', 'file_name', 'file_path', 'file_type')
+            ->whereIn('obs_id', $applicationIds)
+            ->get()
+            ->groupBy('obs_id');
+
+        // Fetch approvals and group by level, deduplicated by user
+        $approvalsRaw = DB::table('obs_approvals')
+            ->join('employee_information', 'obs_approvals.user_id', '=', 'employee_information.user_id')
+            ->join('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->select([
+                'obs_approvals.obs_id',
+                'obs_approvals.user_id',
+                'obs_approvals.level',
+                'obs_approvals.status',
+                'employee_information.employee_no',
+                'employee_personal.firstname',
+                'employee_personal.lastname',
+            ])
+            ->whereIn('obs_approvals.obs_id', $applicationIds)
+            ->get();
+
+        // Group approvals by application id for further use
+        $approvalsByApplication = $approvalsRaw->groupBy('obs_id');
+
+        // Prepare level_approvals (status per level per application)
+        $levelApprovals = DB::table('obs_approvals')
+            ->select('obs_id', 'level', 'status')
+            ->whereIn('obs_id', $applicationIds)
+            ->orderBy('level')
+            ->get()
+            ->groupBy('obs_id')
+            ->map(function ($group) {
+                return $group->groupBy('level')->map(function ($levelGroup) {
+                    // Prioritize approved or rejected, fallback to first status
+                    foreach ($levelGroup as $row) {
+                        if (in_array($row->status, ['approved', 'rejected'])) {
+                            return $row->status;
+                        }
+                    }
+                    return $levelGroup->first()->status;
+                });
+            });
+
+        // Group approvals by level across all applications (for display)
+        $groupedArray = $approvalsRaw
+            ->groupBy('level')
+            ->map(function ($items) {
+                return $items->unique('user_id')->values();
+            })
+            ->sortKeys()
+            ->toArray();
+
+        // Merge all data into final results
+        $results = $applications->map(function ($item) use ($attachments, $groupedArray, $levelApprovals) {
+            $item->attachments = $attachments->get($item->id)?->values() ?? [];
+            $item->approvals = $groupedArray;
+            $item->level_approvals = $levelApprovals->get($item->id)?->toArray() ?? [];
+            return $item;
+        });
+
+        return $results;
+    }
+
+     public function getData()
     {
         // Get active leave types
         $leaves = DB::table('leaves')
@@ -105,13 +190,11 @@ class ObsController extends Controller
      */
     public function index()
     {
-        $query = DB::table('obs')
-                    ->where('user_id', Auth::user()->id)
-                    ->orderBy('created_at', 'desc') // latest first
-                    ->get();
-        
         if (request()->ajax()) {
-            return $this->datatable($query);
+
+            $data = $this->getRawData();
+
+            return $this->datatable($data);
         }
 
         return view('employee.pages.obs.index');
@@ -138,7 +221,16 @@ class ObsController extends Controller
         $validatedData = $request->validated();
 
         DB::beginTransaction();
+
         try {
+
+            if(empty($validatedData['approvers'])) {
+                return response([
+                    'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
+                    'status'  => 'error'
+                ], 500); 
+            }
+
             // Generate unique obs_no (e.g., OBS-2025-08-0001)
             $year = now()->format('Y');
             $month = now()->format('m');
@@ -149,6 +241,7 @@ class ObsController extends Controller
                 ->first();
             $nextNumber = $lastObs ? ((int)substr($lastObs->obs_no, -4)) + 1 : 1;
             $obsNo = 'OBS-' . $year . '-' . $month . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            $approvers = $validatedData['approvers'];
 
             // Insert obs record
             $obsId = DB::table('obs')->insertGetId([
@@ -165,6 +258,7 @@ class ObsController extends Controller
                 'charge_to'          => $validatedData['charge_to'] ?? null,
                 'remarks'            => $validatedData['remarks'] ?? null,
                 'status'             => 'pending',
+                'level'              => 1,
                 'created_by'         => Auth::user()->id,
                 'updated_by'         => Auth::user()->id,
                 'created_at'         => now(),
@@ -186,15 +280,24 @@ class ObsController extends Controller
                 }
             }
 
+            foreach ($approvers as $level => $approverList) {
+                foreach ($approverList as $userId) {
+                    DB::table('obs_approvals')->insertGetId([
+                        'obs_id' => $obsId,
+                        'user_id'              => $userId,
+                        'level'                => $level,
+                        'status'               => 'pending',
+                    ]);
+                }
+            }
+
             DB::commit();
 
-            return response([
-                'data' => [
-                    'obs_id' => $obsId,
-                    'attachments' => $request->hasFile('attachments') ? count($request->file('attachments')) : 0,
-                ],
-                'message' => 'OBS application stored successfully'
-            ], 200);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pass slip application has been submitted',
+                'redirect' => route('obs.create')
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -208,17 +311,16 @@ class ObsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(int $id)
     {
-        $obs = DB::table('obs')
-                    ->where('id', $id)
-                    ->first();
-
-        $attachments = DB::table('obs_attachments')
-                    ->where('obs_id', $obs->id)
-                    ->get();
         
-        return response(['obs' => $obs, 'attachments' => $attachments, 'status' => 'success'], 200);
+        $data = $this->getRawData($id)[0] ?? [];
+
+        if(!$data) {
+            return redirect()->route('leave.index');
+        }
+         
+        return response(['data' => $data, 'status' => 'success'], 200);
     }
 
     /**

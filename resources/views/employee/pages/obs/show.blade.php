@@ -3,14 +3,12 @@
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
             <h3 class="fw-bold">Official Business Slip</h3>
-            <small class="text-muted">OBS No: <span id="obs-doc-id"></span></small>
+            <small class="text-muted">File No: <span id="obs-doc-id"></span></small>
         </div>
+        <div id="approval-breadcrumbs">
 
+        </div>
         <table class="table table-bordered">
-            <tr>
-                <th width="30%">Employee No:</th>
-                <td id="obs-employee-no"></td>
-            </tr>
             <tr>
                 <th>Destination:</th>
                 <td id="obs-destination"></td>
@@ -52,10 +50,6 @@
                 <td id="obs-remarks"></td>
             </tr>
             <tr>
-                <th>Status:</th>
-                <td><span id="obs-status" class="badge"></span></td>
-            </tr>
-            <tr>
                 <th>Created At:</th>
                 <td id="obs-created-at"></td>
             </tr>
@@ -65,11 +59,18 @@
                     <ul class="list-unstyled mb-0"></ul>
                 </td>
             </tr>
+            <tr>
+                <th>Status:</th>
+                <td><span id="obs-status" class="badge"></span></td>
+            </tr>
+            <tr class="extended d-none">
+                <th>Remarks:</th>
+                <td><span id="remarks"></span></td>
+            </tr>
         </table>
 
-        <div class="d-flex justify-content-end gap-3">
-            <p><strong>Approver:</strong> <span id="obs-approver"></span></p>
-            <p><strong>Approved At:</strong> <span id="obs-approved-at"></span></p>
+        <div class="w-100">
+            <div id="approvers-by-level" class="mb-2"></div>
         </div>
     </div>
 
