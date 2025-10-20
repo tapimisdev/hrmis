@@ -336,7 +336,13 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
     Route::post('approval-leaves/{level}/{id}/save', [LeaveApprovalController::class, 'save'])
         ->name('approval-leave.save');
 
+    Route::get('approval-pass-slip/{level?}', [ObsApprovalController::class, 'index'])
+        ->name('approval-obs.index');
+    Route::get('approval-pass-slip/{level}/{id}', [ObsApprovalController::class, 'show'])
+        ->name('approval-obs.show');
+    Route::post('approval-pass-slip/{level}/{id}/save', [ObsApprovalController::class, 'save'])
+        ->name('approval-obs.save');
+
     Route::resource('approval-overtime', AtroApprovalController::class)->names('approval-overtime');
-    Route::resource('approval-official-business-slip', ObsApprovalController::class)->names('approval-obs');
 
 });

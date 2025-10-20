@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
 
 class ObsApprovalController extends Controller
 {
@@ -28,7 +31,7 @@ class ObsApprovalController extends Controller
 
         $query = DB::table('obs_approvals')
             ->leftJoin('obs', 'obs.id', '=', 'obs_approvals.obs_id')
-            ->leftJoin('employee_personal as ep', 'obs.user_id', '=', 'ep.user_id')
+            ->leftJoin('employee_personal as ep', 'la.employee_no', '=', 'ep.employee_no')
             ->select(
                 'obs.id',
                 'obs.obs_no',
@@ -158,7 +161,7 @@ class ObsApprovalController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(?int $level = null)
     {
 
         if (request()->ajax()) {
@@ -172,7 +175,7 @@ class ObsApprovalController extends Controller
             return redirect()->route('approval-obs.index', ['level' => $levels[0]]);
         }
 
-        return view('employee.pages.obs-approval.index');
+        return view('employee.pages.obs-approval.index', compact('levels', 'level'));
     }
 
     public function show(int $level, int $id) {
@@ -186,16 +189,25 @@ class ObsApprovalController extends Controller
         return view('employee.pages.leave-obs.show', compact('id', 'data'));
     }
 
-    public function datatable($level, $query)
+    public function datatable($query)
     {
         return DataTables::of($query)
             ->addIndexColumn()
-            ->editColumn('name', function($row) {
-                return $row->name;
-            })
-            ->addColumn('date', function ($row) {
-                $datesString = $row->dates->pluck('date')->toArray() ?? [];
-                return formatDateRanges($datesString);
+           ->addColumn('date_range', function ($row) {
+                if ($row->date_from == $row->date_to) {
+                    // Single day leave
+                    return '<span class="badge rounded-pill bg-primary">'
+                            . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
+                        '</span>';
+                } else {
+                    // Multi-day leave
+                    return '<span class="badge rounded-pill bg-primary me-1">'
+                            . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
+                        '</span>' . 'to ' .
+                        '<span class="badge rounded-pill bg-success">'
+                            . \Carbon\Carbon::parse($row->date_to)->format('M d, Y') .
+                        '</span>';
+                }
             })
             ->addColumn('status', function ($row) {
                 $status = strtolower($row->status);
@@ -208,7 +220,7 @@ class ObsApprovalController extends Controller
                     default     => 'info',
                 };
 
-                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status)  . '</span>';
+                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
             })
             ->addColumn('actions', function ($row) use ($level) {
                 $buttons = '
@@ -223,7 +235,8 @@ class ObsApprovalController extends Controller
 
                 return $buttons;
             })
-            ->rawColumns(['actions', 'status', 'date'])
+            ->rawColumns(['actions', 'status', 'date_range'])
             ->make(true);
     }
+
 }
