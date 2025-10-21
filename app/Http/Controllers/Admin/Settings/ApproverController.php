@@ -75,6 +75,10 @@ class ApproverController extends Controller
         return view('admin.pages.settings.approvers.index');
     }
 
+    public function view() {
+        return view('admin.pages.settings.approvers.view');
+    }
+
 
     public function create() {
 
@@ -189,7 +193,7 @@ class ApproverController extends Controller
 
             return response()->json([
                 'status'   => 'success',
-                'message'  => 'Approver ' . strtoupper($payload['type']) . ' ' . ($payload['type'] === 'payroll' ? 'Updated' : 'Saved'),
+                'message'  => 'Approver ' . strtoupper(str_replace('_', ' ', $row['type'])) . ' ' . ($payload['type'] === 'payroll' ? 'Updated' : 'Saved'),
                 'redirect' => route('settings.approvers.create')
             ]);
 
@@ -337,7 +341,7 @@ class ApproverController extends Controller
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Approver ' . strtoupper($request->name) . ' Updated',
+                'message' => 'Approver ' . strtoupper(str_replace('_', ' ', $request->name)) . ' Updated',
                 'redirect'=> '_self'
             ]);
 
@@ -386,7 +390,7 @@ class ApproverController extends Controller
         return DataTables::of($query)
             ->addIndexColumn()
             ->editColumn('type', function ($row) {
-                return $row['type'];
+                return str_replace('_', ' ', $row['type']);
             })
             ->editColumn('level_approvers', function ($row) {
                 return max(array_keys($row['level_counts'])) . ' levels';

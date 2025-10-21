@@ -236,9 +236,16 @@ class LeaveApplicationController extends Controller
      */
     public function create()
     {
+        $myId = Auth::id();
         $data = $this->getData();
         $leaves = $data['leaves'];
         $approvers = $data['approvers'];
+        $approvers = $approvers->map(function ($collection) use ($myId) {
+            return $collection->reject(function ($approver) use ($myId) {
+                return $approver['id'] === $myId;
+            })->values();
+        });
+
         $applications = $data['applications'];
 
         return view('employee.pages.leave.create', compact('leaves', 'approvers', 'applications'));

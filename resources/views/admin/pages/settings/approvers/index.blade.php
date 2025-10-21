@@ -4,10 +4,16 @@
     <div class="container pt-4 px-3">
         <x-header title="All Approvers" subtitle="Manage approvers in this module">
             <x-button-link 
+                :href="route('settings.approvers.view')" 
+                icon="fa-solid fa-eye" 
+                text="View Approvers" 
+                variant="secondary"
+            />
+            <x-button-link 
                 :href="route('settings.approvers.create')" 
                 icon="fa-solid fa-plus" 
                 text="Add Approvers" 
-                variant="secondary"
+                variant="primary"
             />
         </x-header>
         <div class="row mb-3">

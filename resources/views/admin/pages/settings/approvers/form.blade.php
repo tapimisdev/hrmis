@@ -174,7 +174,6 @@
     </div>
 @endsection
 
-
 @section('scripts')
 <script>
 $(function() {
@@ -209,9 +208,23 @@ $(function() {
         return users.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
     }
 
+    function ordinalSuffix(i) {
+        const j = i % 10, k = i % 100;
+        if (j === 1 && k !== 11) return "st";
+        if (j === 2 && k !== 12) return "nd";
+        if (j === 3 && k !== 13) return "rd";
+        return "th";
+    }
+
     function addApprover() {
+        if (approverCount >= 5) {
+            alert('info', 'Approval is restricted to level 5 or below.')
+            return;
+        }
+
         approverCount++;
         $('.level_approver').val(approverCount);
+
         const newSelect = $(`
             <div class="col-12 mb-2 approver-item" id="approver_item_${approverCount}">
                 <div class="d-flex align-items-center gap-2">
@@ -228,16 +241,9 @@ $(function() {
                 </div>
             </div>
         `);
+
         $('#input-container').append(newSelect);
         newSelect.find('.select2').select2({ width: '100%' });
-    }
-
-    function ordinalSuffix(i) {
-        const j = i % 10, k = i % 100;
-        if (j === 1 && k !== 11) return "st";
-        if (j === 2 && k !== 12) return "nd";
-        if (j === 3 && k !== 13) return "rd";
-        return "th";
     }
 
     $('#add-input').on('click', addApprover);
@@ -265,3 +271,4 @@ $(function() {
 });
 </script>
 @endsection
+

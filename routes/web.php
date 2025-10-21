@@ -307,7 +307,15 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         Route::any('tranche/{id}/destroy', [TrancheController::class, 'destroy'])->name('settings.tranche.destroy');
 
         # APPROVERS
-        Route::resource('approvers', ApproverController::class)->names('settings.approvers');
+        Route::get('approvers', [ApproverController::class, 'index'])->name('settings.approvers.index');
+        Route::get('approvers/all', [ApproverController::class, 'view'])->name('settings.approvers.view');
+        Route::get('approvers/create', [ApproverController::class, 'create'])->name('settings.approvers.create');
+        Route::post('approvers', [ApproverController::class, 'store'])->name('settings.approvers.store');
+        Route::get('approvers/{approver}', [ApproverController::class, 'show'])->name('settings.approvers.show');
+        Route::get('approvers/{approver}/edit', [ApproverController::class, 'edit'])->name('settings.approvers.edit');
+        Route::put('approvers/{approver}', [ApproverController::class, 'update'])->name('settings.approvers.update');
+        Route::delete('approvers/{approver}', [ApproverController::class, 'destroy'])->name('settings.approvers.destroy');
+
 
     });
 });
