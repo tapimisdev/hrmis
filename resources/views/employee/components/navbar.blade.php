@@ -36,7 +36,7 @@
         </ul>
 
         <!-- Hamburger Links -->
-        <div class="hamburger d-lg-none">
+        <div class="hamburger ">
             <input class="checkbox" type="checkbox" id="toggleSidebar" />
             <div class="hamburger-lines">
                 <span class="line line1 bg-dark"></span>

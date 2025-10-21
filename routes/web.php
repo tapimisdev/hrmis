@@ -47,6 +47,7 @@ use App\Http\Controllers\Employee\AtroApprovalController;
 use App\Http\Controllers\Employee\LeaveApprovalController;
 use App\Http\Controllers\Employee\ObsApprovalController;
 use App\Http\Controllers\Employee\ObsController;
+use App\Http\Controllers\Employee\ProfileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Employee\timelogs\CheckInOutController;
 use Illuminate\Support\Facades\Auth;
@@ -332,5 +333,7 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
     Route::resource('approval-leaves', LeaveApprovalController::class)->names('approval-leave');
     Route::resource('approval-overtime', AtroApprovalController::class)->names('approval-overtime');
     Route::resource('approval-official-business-slip', ObsApprovalController::class)->names('approval-obs');
+
+    Route::get('profile', [ProfileController::class, 'index'])->name('employee.profile');
 
 });

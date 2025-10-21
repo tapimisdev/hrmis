@@ -7,7 +7,7 @@
         <header-vue title="DOST TAPI"></header-vue>
 
         <x-header-employee title="Overtime" subtitle="Manage overtime in this module" >
-            <a href="{{ route('overtime.create') }}" class="btn btn-primary py-3 px-4">
+            <a href="{{ route('overtime.create') }}" class="btn btn-warning py-3 px-4">
                 <i class="fa-solid fa-paper-plane me-2"></i> File Overtime
             </a>
         </x-header-employee>

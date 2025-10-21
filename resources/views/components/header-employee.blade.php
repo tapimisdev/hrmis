@@ -1,11 +1,11 @@
 <div class="position-relative mb-4 mx-1">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
         <div class="flex-grow-1">
-            <h4 class="fw-bold mb-0" >
-                {{ $title }}
-            </h4>
+            <div class="fs-4 mb-1 fw-bolder text-uppercase text-warning text-stroke" >
+               <span>Pages / </span> {{ $title }}
+            </div>
             @if($subtitle)
-                <p class="mb-0 text-muted" style="font-size: 0.938rem; font-weight: 500;">
+                <p class="mb-0 text-light" style="font-size: 0.738rem;">
                     {{ $subtitle }}
                 </p>
             @endif

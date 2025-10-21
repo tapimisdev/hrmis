@@ -5,8 +5,8 @@
 
     <header-vue title="DOST TAPI"></header-vue>
 
-    <x-header-employee title="Apply for Overtime" subtitle="Create overtime application in this module">
-        <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">
+    <x-header-employee title=" Overtime / Apply" subtitle="Create overtime application in this module">
+        <a href="javascript:history.back()" class="btn btn-danger py-3 px-4">
             <i class="fa-solid fa-arrow-left me-2"></i> Back
         </a>
     </x-header-employee>

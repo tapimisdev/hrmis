@@ -2,8 +2,10 @@
   <header class="d-flex justify-content-between align-items-center mb-3 py-3">
     <div class="d-flex align-items-center gap-2">
       <img :src="logoUrl" alt="DOST Logo" height="28">
-      <h5 class="fw-bold mb-0"> {{ title }} </h5>
+      <h5 class="fw-bold mb-0 text-light" > {{ title }} </h5>
     </div>
+
+    <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰ Menu</button>
     
     <div class="d-flex gap-3 align-items-center">
       <!-- Notification Dropdown -->
@@ -16,7 +18,7 @@
           aria-expanded="false"
           style="cursor: pointer;"
           @click="loadNotifications">
-          <i class="fa-regular fa-bell text-dark" style="font-size: 1.5rem;"></i>
+          <i class="fa-regular fa-bell text-light" style="font-size: 1.5rem;"></i>
           <span 
             v-if="unreadCount > 0"
             class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
@@ -126,7 +128,7 @@
             <div class="text-muted" style="font-size: 0.75rem;">{{ user.email }}</div>
           </li>
           <li>
-            <a class="dropdown-item py-2 px-3" href="/profile">
+            <a class="dropdown-item py-2 px-3" href="/employee/profile">
               <i class="fa-regular fa-user me-2" style="width: 18px;"></i>
               My Account
             </a>
@@ -311,6 +313,13 @@ export default {
       if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
       
       return date.toLocaleDateString();
+    },
+    toggleMobileMenu() {
+      const aside = document.querySelector('aside');
+      const overlay = document.querySelector('.sidebar-overlay');
+
+      if (aside) aside.classList.toggle('mobile-open');
+      if (overlay) overlay.classList.toggle('active');
     }
   }
 };

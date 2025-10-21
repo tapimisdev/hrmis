@@ -47,11 +47,28 @@
     @vite(['resources/sass/app.scss', 'resources/js/app.js', 'resources/sass/employee.scss'])
 </head>
 <body>
+    <div class="top-space"></div>
     <div id="app">
+        <div class="top" style="background-image: url('{{ asset('img/tapi-front.png') }}');">
+        </div>
+
         @include('employee.components.sidebar')
         <main>
-            
             @yield('content')
+            <footer class="container-fluid">
+                <div>
+                    © 2025, made with heart by <span class="fw-bold">MIS Unit</span> for a better experience.
+                </div>
+                <div>
+                    <ul>
+                        <li><a href="">FAQS</a></li>
+                        <li><a href="">ABOUT</a></li>
+                        <li><a href="">TAPI</a></li>
+                        <li><a href="">DTOMS</a></li>
+                        <li><a href="">DTORS</a></li>
+                    </ul>
+                </div>
+            </footer>
         </main>
     </div>
 
@@ -79,22 +96,26 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const app = document.getElementById('app');
             const sidebar = document.querySelector('.sidebar');
             const buttons = [document.getElementById('switchMenuBtn'), document.getElementById('imgSwitchBtn')];
             const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
 
+            // Apply saved state on load
             if (collapsed) {
                 sidebar.classList.add('collapsed');
+                app.classList.add('sidebar-collapsed');
                 buttons.forEach(btn => btn?.classList.add('rotate'));
             }
 
+            // Toggle sidebar on button click
             buttons.forEach(btn => btn?.addEventListener('click', () => {
                 sidebar.classList.toggle('collapsed');
+                app.classList.toggle('sidebar-collapsed');
                 btn.classList.toggle('rotate');
                 localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
             }));
         });
-
     </script>
 
 </body>

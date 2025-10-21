@@ -1,27 +1,165 @@
 @import 'variables.scss';
+@import './hamburger.scss';
+
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
-$sidebar-width: 280px;
+$sidebar-width: 220px;
 
-// app for the employee
+// Responsive app for the employee
+
 #app {
-    display: flex !important;
-    height: 100vh;
+    min-height: 100vh;
     background-color: rgba($primary, 0.1);
     font-family: "Lato", sans-serif;
+
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 8px;
+    
+    // Mobile first - sidebar hidden by default on mobile
+    @media (max-width: 767px) {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    // Tablet
+    @media (min-width: 768px) and (max-width: 1023px) {
+        grid-template-columns: 80px repeat(9, 1fr);
+        gap: 6px;
+    }
+    
+    // Laptop
+    @media (min-width: 1024px) and (max-width: 1439px) {
+        grid-template-columns: repeat(10, 1fr);
+    }
+    
+    // Large screens
+    @media (min-width: 1440px) {
+        grid-template-columns: repeat(12, 1fr);
+    }
+    
+    &.sidebar-collapsed {
+        grid-template-columns: 66px repeat(9, 1fr);
+        
+        @media (max-width: 767px) {
+            grid-template-columns: 1fr;
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+            grid-template-columns: 66px repeat(9, 1fr);
+        }
+        
+        @media (min-width: 1440px) {
+            grid-template-columns: 66px repeat(11, 1fr);
+        }
+    }
+    
+    aside, main {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .top {
+        position: absolute;
+        height: 320px;
+        width: 100%;
+        background-size: cover;
+        filter:contrast(3);
+        background-position: center;
+        z-index: -5;
+        
+        @media (max-width: 767px) {
+            height: 200px;
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+            height: 240px;
+        }
+        
+        &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(
+                to right,
+                rgba($secondary, 0.6),
+                rgba($secondary, 0.6)
+            );
+            z-index: 1;
+        }
+    }
+
+    aside {
+        grid-column: span 2 / span 2;
+        grid-row: span 5 / span 5;
+        position: relative;
+        padding: 28px 0px 0px 0px;
+        z-index: 10;
+        overflow: hidden;
+        @media (max-width: 767px) {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            padding: 16px 0px 0px 8px;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+
+            
+            &.mobile-open {
+                transform: translateX(0);
+            }
+            
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+            grid-column: span 1 / span 1;
+            padding: 20px 0px 0px 8px;
+        }
+        
+        @media (min-width: 1440px) {
+            grid-column: span 2 / span 2;
+            padding: 28px 0px 0px 20px;
+        }
+    }
+    
+    &.sidebar-collapsed aside {
+        grid-column: span 1 / span 1;
+        padding: 28px 0px 0px 12px;
+        
+        @media (max-width: 767px) {
+            padding: 16px 0px 0px 8px;
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+            padding: 20px 0px 0px 8px;
+        }
+    }
     
     .sidebar {
-        width: $sidebar-width;
-        margin: 8px 0px 0px 12px;
-        border-radius: 10px 10px 0px 0px;
-        position: relative;
+        width: 90;
+        border-radius: 18px 18px 0px 0px;
+        height: 100%;
+        position: fixed;
         overflow-y: scroll;
         overflow-x: hidden;
         background-color: $white;
-        transition: width 0.3s ease, margin 0.3s ease;
+        transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 3;
+
+        @media (max-width: 767px) {
+            max-width: 280px;
+            border-radius: 0 18px 0 0;
+        }
         
-        &.collapsed {
-            width: 66px; // Collapsed width
+        @media (min-width: 768px) and (max-width: 1023px) {
+            max-width: 70px;
             
             .sidebar-brand .brand-body h5,
             .side-text {
@@ -30,17 +168,54 @@ $sidebar-width: 280px;
                 overflow: hidden;
             }
             
+            .side-items .side-link {
+                justify-content: center;
+                gap: 0 !important;
+                
+                i {
+                    margin-left: 0px !important;
+                    width: 100%;
+                }
+            }
+        }
+
+        @media (min-width: 1366px) {
+            &:not(.collapsed) {
+                min-width: 14vw;
+            }
+        }
+        
+        &.collapsed {
+            max-width: 60px;
+            
+            @media (max-width: 767px) {
+                max-width: 60px;
+            }
+            
+            .sidebar-brand .brand-body h5,
+            .side-text {
+                opacity: 0;
+                width: 0;
+                overflow: hidden;
+                transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                           width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
             .sidebar-brand .brand-body {
                 justify-content: center;
+                transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
             
             .side-items {
                 .side-link {
                     justify-content: center;
                     gap: 0;
+                    transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                               justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     i {
                         margin-left: 10px;
                         width: 100%;
+                        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     }
                 }
             }
@@ -65,6 +240,10 @@ $sidebar-width: 280px;
         
         .sidebar-header .sidebar-brand, .sidebar-nav {
             padding: 12px 6px 8px 9px;
+            
+            @media (max-width: 767px) {
+                padding: 10px 6px 6px 9px;
+            }
         }
         
         .sidebar-header {
@@ -85,11 +264,20 @@ $sidebar-width: 280px;
                     align-items: center;
                     gap: 12px;
                     padding: 0px 9px;
-                    transition: justify-content 0.3s ease;
+                    transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    
+                    @media (max-width: 767px) {
+                        gap: 8px;
+                        padding: 0px 6px;
+                    }
                     
                     img {
                         height: 24px;
                         flex-shrink: 0;
+                        
+                        @media (max-width: 767px) {
+                            height: 20px;
+                        }
                     }
                     
                     h5 {
@@ -98,7 +286,17 @@ $sidebar-width: 280px;
                         font-weight: 800;
                         font-size: 1.2rem;
                         white-space: nowrap;
-                        transition: opacity 0.3s ease, width 0.3s ease;
+                        transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                                   width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                        
+                        @media (max-width: 767px) {
+                            font-size: 1rem;
+                        }
+                        
+                        @media (min-width: 768px) and (max-width: 1023px) {
+                            opacity: 0;
+                            width: 0;
+                        }
                     }
                 }
             }
@@ -108,16 +306,20 @@ $sidebar-width: 280px;
                 border: none;
                 border-radius: 8px;
                 padding: 6px 12px;
-                transition: all 0.3s ease;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 flex-shrink: 0;
                 cursor: pointer;
+                
+                @media (max-width: 767px) {
+                    padding: 4px 8px;
+                }
                 
                 &:hover {
                     background-color: darken($white, 4%);
                 }
                 
                 i {
-                    transition: transform 0.3s ease;
+                    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
                     &:hover {
                         transform: scale(1.08);
@@ -138,10 +340,16 @@ $sidebar-width: 280px;
                 .side-items {
                     padding: 2px 9px 0px 9px;
                     margin-bottom: 1px;
-                    border-radius: 6px;
+                    border-radius: 14px;
                     border: 1px solid lighten($light, 20%);
                     transition: all 0.2s ease-in-out;
                     width: 100%;
+                    margin-bottom: 2px;
+                    
+                    @media (max-width: 767px) {
+                        padding: 2px 6px 0px 6px;
+                        margin-bottom: 2px;
+                    }
 
                     &.active {
                         background-color: lighten($primary, 10) !important;
@@ -167,9 +375,20 @@ $sidebar-width: 280px;
                         gap: 10px;
                         text-decoration: none;
                         color: inherit;
-                        transition: gap 0.3s ease, justify-content 0.3s ease;
+                        transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                                   justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                         font-size: .9rem;
                         color: lighten($dark, 15);
+                        
+                        @media (max-width: 767px) {
+                            font-size: .85rem;
+                            gap: 8px;
+                        }
+                        
+                        @media (min-width: 768px) and (max-width: 1023px) {
+                            justify-content: center;
+                            gap: 0;
+                        }
                         
                         .side-icon {
                             flex-shrink: 0;
@@ -180,11 +399,27 @@ $sidebar-width: 280px;
                             font-size: 16px;
                             width: 20px;
                             text-align: center;
+                            
+                            @media (max-width: 767px) {
+                                font-size: 14px;
+                                width: 18px;
+                            }
+                            
+                            @media (min-width: 768px) and (max-width: 1023px) {
+                                margin-left: 10px;
+                                width: 100%;
+                            }
                         }
                         
                         .side-text {
                             white-space: nowrap;
                             transition: opacity 0.3s ease, width 0.3s ease;
+                            
+                            @media (min-width: 768px) and (max-width: 1023px) {
+                                opacity: 0;
+                                width: 0;
+                                overflow: hidden;
+                            }
                         }
                     }
                 }
@@ -193,13 +428,42 @@ $sidebar-width: 280px;
     }
     
     main {
+        grid-column: span 8 / span 8;
+        grid-row: span 5 / span 5;
+        grid-column-start: 3;
         width: 100%;
         overflow-y: scroll;
-        transition: margin-left 0.3s ease;
+        transition: grid-column-start 0.3s ease;
+        
+        @media (max-width: 767px) {
+            grid-column: 1 / -1;
+            grid-column-start: 1;
+            padding: 0 8px;
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+            grid-column: span 9 / span 9;
+            grid-column-start: 2;
+            padding: 0 12px;
+        }
+        
+        @media (min-width: 1024px) and (max-width: 1439px) {
+            grid-column: span 8 / span 8;
+            grid-column-start: 3;
+        }
+        
+        @media (min-width: 1440px) {
+            grid-column: span 10 / span 10;
+            grid-column-start: 3;
+        }
 
          // Custom Scrollbar
         &::-webkit-scrollbar {
             width: 6px;
+            
+            @media (max-width: 767px) {
+                width: 4px;
+            }
         }
 
         &::-webkit-scrollbar-track {
@@ -217,9 +481,119 @@ $sidebar-width: 280px;
             }
         }
     }
+    
+    &.sidebar-collapsed main {
+        grid-column: span 9 / span 9;
+        grid-column-start: 2;
+        
+        @media (max-width: 767px) {
+            grid-column: 1 / -1;
+            grid-column-start: 1;
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+            grid-column: span 9 / span 9;
+            grid-column-start: 2;
+        }
+        
+        @media (min-width: 1440px) {
+            grid-column: span 11 / span 11;
+            grid-column-start: 2;
+        }
+    }
 }
+
+// Mobile menu toggle button (add this to your HTML)
+.mobile-menu-toggle {
+    display: none;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 1001;
+    background-color: $white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    @media (max-width: 767px) {
+        display: block;
+    }
+    
+    &:hover {
+        background-color: darken($white, 5%);
+        transform: scale(1.05);
+    }
+    
+    i {
+        font-size: 20px;
+        color: $primary;
+    }
+}
+
+// Overlay for mobile menu
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    
+    @media (max-width: 767px) {
+        &.active {
+            display: block;
+            opacity: 1;
+        }
+    }
+}
+
+@media (max-width: 767px) {
+  #app:has(aside.mobile-open) {
+    overflow: hidden;
+    height: 100vh;
+  }
+}
+
+
+
 
 .sidebar-seperator {
     border-bottom: 1px solid rgba($dark, 0.1);
     margin: 8px 0px;
+}
+
+footer {
+    margin-bottom: 5vh !important;
+    display:flex;
+    justify-content: space-between;
+    font-weight: 300;
+    padding: 20px 24px !important;
+    div:first-child {
+
+    }
+
+    div:last-child {
+        ul {
+            display: flex;
+            gap: 14px;
+            list-style: none;
+
+            li a {
+                color: lighten($dark, 30%);
+                font-size: 0.9rem;
+                text-decoration: none;
+            }
+        }
+    }
+}
+
+.text-stroke {
+    -webkit-text-stroke: .2px $primary;
 }

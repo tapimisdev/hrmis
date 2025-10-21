@@ -3,7 +3,8 @@
 @section('content')
 <div class="container-fluid pt-3">
 
-    <header-vue title="Dashboard" ></header-vue>
+    <header-vue title="Dashboard"></header-vue>
+
 
     <dashboard-index/>
 
