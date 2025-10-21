@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('suspension', function (Blueprint $table) {
-            $table->boolean('is_active')->after('description')->default(true);
+            $table->boolean('isActive')->after('description')->default(true);
         });
         Schema::table('suspension_dates', function (Blueprint $table) {
-            $table->boolean('is_active')->after('shift')->default(true);
+            $table->boolean('isActive')->after('shift')->default(true);
         });
     }
 

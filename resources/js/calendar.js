@@ -230,7 +230,6 @@ export function generateEventsWithAvailability(unavailable = []) {
 
     // Start from the day after today
     let currentDate = new Date(year, 0, 1);
-    console.log(currentDate.getDay());  
 
     currentDate.setDate(currentDate.getDate() + 1);
 

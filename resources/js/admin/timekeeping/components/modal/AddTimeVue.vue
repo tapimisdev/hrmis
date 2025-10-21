@@ -229,7 +229,6 @@ export default {
         async loadTimelog() {
             this.initial_loading = true;
             this.errors = {};
-            console.log(this.employee_id);
             try {
                 const res = await axios.get("/api/fetch-timelogs", {
                     headers: {
@@ -242,7 +241,6 @@ export default {
                 });
 
                 const logs = res.data.data; // assuming the JSON you provided
-                console.log(logs);
                 if (logs.length > 0) {
                     const log = logs[0]; // take the first record
 

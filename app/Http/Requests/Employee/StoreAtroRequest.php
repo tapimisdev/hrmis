@@ -30,7 +30,7 @@ class StoreAtroRequest extends FormRequest
             'date' => [
                 'required',
                 'date',
-                Rule::unique('overtimes')->where(function ($query) use ($userId) {
+                Rule::unique('overtime_applications')->where(function ($query) use ($userId) {
                     return $query->where('user_id', $userId);
                 }),
             ],
@@ -39,6 +39,10 @@ class StoreAtroRequest extends FormRequest
             'total_hours' => ['required', 'numeric', 'min:0'],
             'reason' => ['nullable', 'string', 'max:500'],
             'status' => ['nullable', Rule::in(['pending', 'approved'])], // only for timekeeping adjustment only
+            
+            'approvers'     => ['required', 'array', 'min:1'],
+            'approvers.*'   => ['required', 'array', 'min:1'],
+            'approvers.*.*' => ['required', 'exists:users,id'],
         ];
     }
 

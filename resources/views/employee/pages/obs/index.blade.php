@@ -7,7 +7,7 @@
 
     <header-vue title="DOST TAPI"></header-vue>
 
-    <x-header-employee title="Official Business Slip" subtitle="Manage Official Official Business Slip in this module">
+    <x-header-employee title="Pass Slip" subtitle="Manage Pass Slip in this module">
         <a href="{{ route('obs.create') }}" class="btn btn-primary py-3 px-4">
             <i class="fa-solid fa-paper-plane me-2"></i> Apply
         </a>
@@ -16,9 +16,9 @@
     <x-table-employee id="myTable">
         <thead>
             <tr>
-                <th style="width: 10px">#</th>
-                <th>OBS No.</th>
-                <th>Date</th>
+                <th>File No.</th>
+                <th>Name</th>
+                <th>Dates</th>
                 <th>Destination</th>
                 <th>Status</th>
                 <th style="width: 120px">Action</th>
@@ -38,8 +38,8 @@
             "serverSide": true,
             "ajax": '{{ route('obs.index') }}',
             "columns": [
-                { data: "DT_RowIndex", name: 'index' },
-                { data: "obs_no", name: 'obs_no' },
+                { data: "application_no", name: 'application_no' },
+                { data: "name", name: 'name' },
                 { data: "date_range", name: 'date_range' },
                 { data: "destination", name: 'destination' },
                 { data: "status", name: 'status', orderable: false, searchable: false },
@@ -85,15 +85,14 @@
 
         $(document).on('click', '.show-button', function () {
             let id = $(this).data('id');
-            $('.modal-title').html('Official Business Slip');
+            $('.modal-title').html('Pass Slip');
 
-            axios.get(`/employee/official-business-slip/${id}`)
+            axios.get(`/employee/pass-slip/${id}`)
                 .then((response) => {
                     const data = response.data.data;
-                    console.log(data);
 
                     // === Basic Details ===
-                    $('#obs-doc-id').text(data.obs_no ?? '—');
+                    $('#obs-doc-id').text(data.application_no ?? '—');
                     $('#obs-destination').text(data.destination ?? '—');
                     $('#obs-purpose').text(data.purpose ?? '—');
                     $('#obs-time-out').text(data.time_out ?? '—');

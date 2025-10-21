@@ -85,7 +85,6 @@
         });
 
         function format(d) {
-            console.log(d);
             var html = '<ul class="list-group">';
             if(d.unit_name && d.unit_name.length) {
                 d.unit_name.forEach(function(user, key) {

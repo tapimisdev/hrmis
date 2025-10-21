@@ -14,11 +14,11 @@
         <x-table-employee id="myTable">
             <thead>
                 <tr>
-                    <th style="width: 10px">#</th>
-                    <th>Status</th>
+                    <th>File No.</th>
+                    <th>Name</th>
                     <th>Leave Type</th>
-                    <th>Date</th>
-                    <th>No. of Days</th>
+                    <th>Dates</th>
+                    <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -36,11 +36,11 @@
             "serverSide": true,
             "ajax": '{{ route('leaves.index') }}',
             "columns": [
-                { data: "DT_RowIndex", name: 'index' },
+                { data: "application_no", name: 'application_no' },
                 { data: "name", name: 'name' },
-                { data: "status", name: 'status' },
+                { data: "leave", name: 'leave' },
                 { data: "date", name: 'date' },
-                { data: "days", name: 'days' },
+                { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
         });
@@ -79,7 +79,7 @@
 
         const myModal = $('#myModal');
 
-       $(document).on('click', '.show-button', function () {
+        $(document).on('click', '.show-button', function () {
             let id = $(this).attr('data-id');
             $('.modal-title').html('Leave Application');
 
@@ -88,7 +88,7 @@
                     const data = response.data.data;
 
                     // Fill in modal fields
-                    $('#doc-id').text('#' + data.id);
+                    $('#doc-id').text(data.application_no);
                     $('#employee-no').text(data.employee_no ?? 'N/A');
                     $('#leave-type').text(data.leave_name);
 
@@ -243,11 +243,7 @@
                         icon: "error"
                     });
                 });
+            });
         });
-
-
-
-      
-    });
 </script>
 @endsection

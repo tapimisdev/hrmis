@@ -8,14 +8,22 @@
 
         <x-header-employee title="Overtime Approval" subtitle="Review and approve overtime applications here">
         </x-header-employee>
-
+        <ul class="nav nav-pills mt-5 mb-4">
+            @foreach($levels as $key => $item)
+                <li class="nav-item">
+                    <a href="{{route('approval-leave.index', ['level' => $item])}}" class="nav-link {{ $level == $item ? 'active' : '' }}" aria-current="page" href="#">
+                        {{ordinal($item)}} Approver
+                    </a>
+                </li>
+            @endforeach
+        </ul>
         <x-table-employee id="myTable">
             <thead>
                 <tr>
                     <th style="width: 10px">#</th>
                     <th>Date</th>
-                    <th>Status</th>
                     <th>Total Hours</th>
+                    <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -33,12 +41,12 @@
         let = DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
-            "ajax": '{{ route('overtime.index') }}',
+            "ajax": '{{ route('approval-overtime.index', ['level' => $level]) }}',
             "columns": [
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "date", name: 'date' },
-                { data: "status", name: 'status' },
                 { data: "total_hours", name: 'total_hours' },
+                { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
         });
@@ -83,7 +91,6 @@
             axios.get(`/employee/overtime/${id}`)
                 .then((response) => {
                     const data = response.data.atro;
-                    console.log(data);
                     // Fill in modal
                     $('#doc-id').text(data.id);
                     $('#date').text(moment(data.date).format('MMMM D, YYYY'));

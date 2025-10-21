@@ -62,7 +62,6 @@
             axios.get(`holiday/${id}`)
                 .then((response) => {
                     const data = response.data.holiday; // adjust according to your API response
-                    console.log(data);
 
                     // Fill modal fields
                     $('#holiday-id').text(data.id);

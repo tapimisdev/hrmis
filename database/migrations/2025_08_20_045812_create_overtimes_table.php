@@ -11,28 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('overtimes', function (Blueprint $table) {
+        Schema::create('overtime_applications', function (Blueprint $table) {
             $table->id();
+            $table->string('application_no')->unique();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('employee_no')->nullable();
+            $table->string('employee_no');
             $table->date('date');
             $table->time('start_time');
             $table->time('end_time');
             $table->decimal('total_hours', 5, 2)->nullable();
             $table->text('reason')->nullable();
             $table->enum('status', ['cancelled', 'pending', 'approved', 'rejected'])->default('pending');
-            $table->longText('remarks')
-                ->nullable();
-            $table->unsignedBigInteger('approver_id')
-                ->nullable(); 
+            $table->longText('remarks')->nullable();
+            $table->integer('level');
+            $table->unsignedBigInteger('approver_id')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });
 
-        Schema::create('overtimes_approvals', function(Blueprint $table) {
+        Schema::create('overtime_approvals', function(Blueprint $table) {
             $table->id();
-            $table->foreignId('overtimes_id')
-                ->constrained('overtimes')
+            $table->foreignId('overtime_applications_id')  // fixed FK name to match first table
+                ->constrained('overtime_applications')
                 ->onDelete('cascade');
             $table->foreignId('user_id')
                 ->constrained('users')
@@ -44,20 +44,19 @@ return new class extends Migration
                 'approved',
                 'rejected'
             ])->default('pending');
-            $table->longText('remarks')
-                ->nullable();
-            $table->timestamp('action_at')
-                ->nullable();
+            $table->longText('remarks')->nullable();
+            $table->timestamp('action_at')->nullable();
+            $table->timestamps();  // added timestamps for consistency
         });
-
     }
+
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {   
-        Schema::dropIfExists('overtimes_approvals');
-        Schema::dropIfExists('overtimes');
+        Schema::dropIfExists('overtime_approvals');
+        Schema::dropIfExists('overtime_applications');
     }
 };

@@ -3,15 +3,15 @@
 @section('content')
 <div class="container pt-4">
 
-    <x-header title="Leave Application" subtitle="View leave application details">
+    <x-header title="Overtime Approval" subtitle="View overtime application details">
         <x-button-link 
-            href="{{route('approval-leave.index')}}"
+            href="{{route('approval-overtime.index')}}"
             icon="fa-solid fa-arrow-left me-2" 
             text="Back" 
             variant="danger"
         />
     </x-header>
-     <form id="form" action="{{ route('approval-leave.save', ['level' => $data->level, 'id' => $data->id]) }}" method="POST">
+     <form id="form" action="{{ route('approval-overtime.save', ['level' => $data->level, 'id' => $data->id]) }}" method="POST">
         @csrf
         @method('POST')
         <input type="hidden" name="action" id="action" value="">
@@ -23,41 +23,43 @@
                 <table class="table table-bordered">
                     <tr>
                         <th width="30%">File No:</th>
-                        <td id="file-no">{{$data->application_no}}</td>
+                        <td id="file-no">{{ $data->application_no }}</td>
                     </tr>
                     <tr>
                         <th width="30%">Employee No:</th>
-                        <td id="employee-no">{{$data->employee_no}}</td>
+                        <td id="employee-no">{{ $data->employee_no }}</td>
                     </tr>
                     <tr>
-                        <th width="30%">Name</th>
-                        <td id="employee-no">
-                            {{$data->firstname . ' ' . $data->lastname}}
+                        <th width="30%">Name:</th>
+                        <td id="employee-name">
+                            {{ $data->firstname . ' ' . $data->lastname }}
                         </td>
                     </tr>
                     <tr>
-                        <th>Leave Type:</th>
-                        <td id="leave-type">{{$data->name}}</td>
+                        <th>Date:</th>
+                        <td>{{ \Carbon\Carbon::parse($data->date)->format('M d, Y') }}</td>
                     </tr>
                     <tr>
-                        <th>Dates:</th>
-                        <td>
-                            @foreach($data->dates as $date)
-                                {{Carbon\Carbon::parse($date->date)->format('M d, Y')}}
-                            @endforeach
-                        </td>
+                        <th>Start Time:</th>
+                        <td>{{ \Carbon\Carbon::parse($data->start_time)->format('h:i A') }}</td>
                     </tr>
                     <tr>
-                        <th>Total Days:</th>
-                        <td>{{$data->days}} Day(s)</td>
+                        <th>End Time:</th>
+                        <td>{{ \Carbon\Carbon::parse($data->end_time)->format('h:i A') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Hours:</th>
+                        <td>{{ $data->total_hours }} hour(s)</td>
                     </tr>
                     <tr>
                         <th>Reason:</th>
-                        <td>{{$data->reason}}</td>
+                        <td>{{ $data->reason }}</td>
                     </tr>
                     <tr>
                         <th>Applied At:</th>
-                        <td>{{\Carbon\Carbon::parse($data->created_at)->format('M d, Y')}}</td>
+                        <td>
+                            {{ $data->created_at ? \Carbon\Carbon::parse($data->created_at)->format('M d, Y') : 'N/A' }}
+                        </td>
                     </tr>
                     <tr>
                         <th>Attachments:</th>
@@ -80,13 +82,13 @@
                     <tr>
                         <th>Status:</th>
                         <td>
-                            <span 
-                                id="status" 
-                                class="badge 
-                                    <?php 
+                            <span
+                                id="status"
+                                class="badge
+                                    <?php
                                         $statusClass = 'bg-secondary';
                                         if ($data->status === 'pending') $statusClass = 'bg-warning';
-                                        elseif ($data->status === 'saved') $statusClass = 'bg-success';
+                                        elseif ($data->status === 'approved') $statusClass = 'bg-success';
                                         elseif ($data->status === 'rejected') $statusClass = 'bg-danger';
 
                                         echo $statusClass;
@@ -96,17 +98,9 @@
                             </span>
                         </td>
                     </tr>
-                    @if($data->status == 'rejected')
-                        <tr>
-                        <th>Remarks:</th>
-                        <td>
-                            {{$data->remarks}}
-                        </td>
-                    </tr>
-                    @endif
                 </table>
             </div>
-        
+                    
             {{-- Action Buttons --}}
             @if($data->status == 'pending')
                 <div class="card-footer bg-light d-flex justify-content-end gap-3 py-3 bg-transparent">

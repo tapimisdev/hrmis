@@ -60,7 +60,6 @@
             axios.get(`deductions/${id}`)
                 .then((response) => {
                     const data = response.data.deduction; // adjust according to your API response
-                    console.log(data);
 
                     // Fill modal fields
                     $('#deduction-id').text(data.id);

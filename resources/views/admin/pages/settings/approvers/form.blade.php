@@ -185,7 +185,6 @@ $(function() {
 
     $('#type').on('change', function() {
         const val = $(this).val();
-        console.log(val);
         if(val === 'payroll') {
             $('.divun-container').hide();
         } else {

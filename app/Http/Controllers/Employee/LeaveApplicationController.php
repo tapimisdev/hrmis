@@ -34,7 +34,9 @@ class LeaveApplicationController extends Controller
             ->select(
                 'la.*',
                 'l.name as leave_name',
-                DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates')
+                DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates'),
+                DB::raw('MAX(ep.firstname) as firstname'),
+                DB::raw('MAX(ep.lastname) as lastname')
             )
             ->where('la.user_id', $user_id)
             ->when($id, function ($query, $id) {
@@ -55,6 +57,7 @@ class LeaveApplicationController extends Controller
             )
             ->orderBy('la.created_at', 'desc')
             ->get();
+
 
         $applicationIds = $applications->pluck('id');
 
@@ -282,7 +285,10 @@ class LeaveApplicationController extends Controller
                 ->pluck('name')
                 ->first();
 
+            $application_no = generateApplicationNo('leave_applications', 'LV');
+
             $applicationID = DB::table('leave_applications')->insertGetId([
+                'application_no' => $application_no,
                 'user_id'       => $user_id,
                 'name'          => $leaveName,
                 'employee_no'   => $employee_no,
@@ -350,14 +356,13 @@ class LeaveApplicationController extends Controller
      * Display the specified resource.
      */
     public function show(int $id)
-    {
-        
+    {        
         $data = $this->getRawData($id)[0] ?? [];
 
         if(!$data) {
-            return redirect()->route('leave.index');
+            return redirect()->route('leaves.index');
         }
-         
+        
         return response(['data' => $data, 'status' => 'success'], 200);
     }
 
@@ -391,8 +396,11 @@ class LeaveApplicationController extends Controller
     {
         return DataTables::of($query)
             ->addIndexColumn()
-            ->editColumn('name', function($row) {
+            ->editColumn('leave', function($row) {
                 return $row->name;
+            })
+            ->editColumn('name', function($row) {
+                return $row->firstname . ' ' . $row->lastname;
             })
             ->addColumn('date', function ($row) {
                 return formatDateRanges($row->dates);

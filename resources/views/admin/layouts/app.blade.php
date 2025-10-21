@@ -99,7 +99,6 @@
     <script>
         @if(session('auth_token'))
             localStorage.setItem('auth_token', "{{ session('auth_token') }}");
-            console.log("{{ session('auth_token') }}");
             
             // Clear it from session
             {{ session()->forget('auth_token') }}

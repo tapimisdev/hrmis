@@ -5,10 +5,8 @@
 
     <header-vue title="DOST TAPI"></header-vue>
 
-    <x-header-employee title="Apply for Official Business Slip" subtitle="Create official business slip application in this module">
-        <a href="javascript:history.back()" class="btn btn-outline-danger py-3 px-4">
-            <i class="fa-solid fa-arrow-left me-2"></i> Back
-        </a>
+    <x-header-employee title="Apply for Pass Slip" subtitle="Create a pass slip application in this module">
+      
     </x-header-employee>
 
     <div class="card rounded-3">
@@ -91,9 +89,9 @@
                         <div class="error-field"></div>
                     </div>
 
-                    {{-- Remarks --}}
+                    {{-- Note --}}
                     <div class="col-md-12">
-                        <label for="remarks" class="form-label fw-semibold">Remarks</label>
+                        <label for="note" class="form-label fw-semibold">Note</label>
                         <textarea name="remarks" id="remarks" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
                         <div class="error-field"></div>
                     </div>

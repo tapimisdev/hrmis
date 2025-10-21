@@ -18,16 +18,15 @@
                 </li>
             @endforeach
         </ul>
-
-
+        
         <x-table-employee id="myTable">
             <thead>
                 <tr>
-                    <th style="width: 10px">#</th>
+                    <th>File No.</th>
                     <th>Name</th>
-                    <th>Status</th>
+                    <th>Leave</th>
                     <th>Date(s)</th>
-                    <th>No. of Day(s)</th>
+                    <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -46,11 +45,11 @@
             "serverSide": true,
             "ajax": '{{ route('approval-leave.index', ['level' => $level]) }}',
             "columns": [
-                { data: "DT_RowIndex", name: 'index' },
+                { data: "application_no", name: 'application_no' },
                 { data: "name", name: 'name' },
-                { data: "status", name: 'status' },
+                { data: "leave", name: 'leave' },
                 { data: "date", name: 'date' },
-                { data: "days", name: 'days' },
+                { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
         });

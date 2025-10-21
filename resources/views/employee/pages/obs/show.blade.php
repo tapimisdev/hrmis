@@ -1,8 +1,8 @@
 <!-- Official Business Slip Show Modal -->
-<x-modal id="myModal" title="Official Business Slip" size="modal-lg">
+<x-modal id="myModal" title="Pass Slip" size="modal-lg">
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
-            <h3 class="fw-bold">Official Business Slip</h3>
+            <h3 class="fw-bold">Pass Slip</h3>
             <small class="text-muted">File No: <span id="obs-doc-id"></span></small>
         </div>
         <div id="approval-breadcrumbs">
@@ -69,6 +69,9 @@
             </tr>
         </table>
 
+        <div class="mt-4 mb-3">
+            <small class="text-uppercase fw-bold text-muted">Your Chosen Approvers For Each Level</small>
+        </div>
         <div class="w-100">
             <div id="approvers-by-level" class="mb-2"></div>
         </div>

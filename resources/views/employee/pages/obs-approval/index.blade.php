@@ -7,7 +7,7 @@
 
     <header-vue title="DOST TAPI"></header-vue>
 
-    <x-header-employee title="Pass slip Approval" subtitle="Review and approve pass slip here">
+    <x-header-employee title="Pass Slip Approval" subtitle="Review and approve pass slip here">
     </x-header-employee>
     <ul class="nav nav-pills mt-5 mb-4">
         @foreach($levels as $key => $item)
@@ -21,9 +21,9 @@
     <x-table-employee id="myTable">
         <thead>
             <tr>
-                <th style="width: 10px">#</th>
-                <th>OBS No.</th>
-                <th>Date</th>
+                <th>File No.</th>
+                <th>Name</th>
+                <th>Dates</th>
                 <th>Destination</th>
                 <th>Status</th>
                 <th style="width: 120px">Action</th>
@@ -43,8 +43,8 @@
             "serverSide": true,
             "ajax": '{{ route('approval-obs.index', ['level' => $level]) }}',
             "columns": [
-                { data: "DT_RowIndex", name: 'index' },
-                { data: "obs_no", name: 'obs_no' },
+                { data: "application_no", name: 'application_no' },
+                { data: "name", name: 'name' },
                 { data: "date_range", name: 'date_range' },
                 { data: "destination", name: 'destination' },
                 { data: "status", name: 'status', orderable: false, searchable: false },

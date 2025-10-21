@@ -43,7 +43,6 @@ export function fieldError(error) {
             const $field = $(`[id="${fieldName}"]`);
             $field.addClass('is-invalid');
             $field.closest('.mb-3').find('.error-field').text(errorMessage[0]);
-            console.log(fieldName)
             if (!firstErrorField) {
                 firstErrorField = $field;
             }

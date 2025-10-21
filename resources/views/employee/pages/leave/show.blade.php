@@ -43,7 +43,7 @@
                 <th>Status:</th>
                 <td><span id="status" class="badge"></span></td>
             </tr>
-             <tr class="extended d-none">
+            <tr class="extended d-none">
                 <th>Remarks:</th>
                 <td><span id="remarks"></span></td>
             </tr>

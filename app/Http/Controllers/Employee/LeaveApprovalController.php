@@ -22,7 +22,7 @@ class LeaveApprovalController extends Controller
                 return $query->where('leave_application_id', $id);
             });
 
-        return $query->pluck('level') ?? [];
+        return $query->distinct()->pluck('level') ?? [];
     }
 
     public function getRawData(int $level, int $id = null)
@@ -34,6 +34,7 @@ class LeaveApprovalController extends Controller
             ->leftJoin('employee_personal as ep', 'la.employee_no', '=', 'ep.employee_no')
             ->select(
                 'la.id',
+                'la.application_no',
                 'la.name as leave_application',
                 'la.user_id',
                 'la.employee_no',
@@ -68,6 +69,7 @@ class LeaveApprovalController extends Controller
             
             return (object)[
                 'id' => $item->id,
+                'application_no' => $item->application_no,
                 'firstname' => $item->firstname,
                 'lastname' => $item->lastname,
                 'name' => $item->leave_application,
@@ -80,7 +82,9 @@ class LeaveApprovalController extends Controller
                 'level' => $item->level,
                 'dates' => $leaveDates,
                 'attachments' => $attachments,
-                'created_at' => $item->created_at
+                'created_at' => $item->created_at,
+                'firstname' => $item->firstname,
+                'lastname' => $item->lastname
             ];
         }
 
@@ -97,6 +101,7 @@ class LeaveApprovalController extends Controller
 
             return (object)[
                 'id' => $item->id,
+                'application_no' => $item->application_no,
                 'name' => $item->leave_application,
                 'user_id' => $item->user_id,
                 'employee_no' => $item->employee_no,
@@ -107,6 +112,8 @@ class LeaveApprovalController extends Controller
                 'level' => $item->level,
                 'dates' => $leaveDates,
                 'attachments' => $attachments,
+                'firstname' => $item->firstname,
+                'lastname' => $item->lastname
             ];
         });
 
@@ -118,15 +125,27 @@ class LeaveApprovalController extends Controller
      */
     public function index(?int $level = null)
     {
-        if (request()->ajax()) {
-            $data = $this->getRawData($level);
-            return $this->datatable($level, $data);
+        $levels = $this->getLevels(false)->toArray();
+
+        if (empty($levels)) {
+            if ($level !== null) {
+                return redirect()->route('approval-leave.index');
+            }
+            return $this->handleRequest($level, $levels);
         }
 
-        $levels = $this->getLevels(false)->toArray() ?? [];
-
-        if (!empty($levels) && is_null($level) || !in_array($level, $levels)) {
+        if ($level === null || !in_array($level, $levels)) {
             return redirect()->route('approval-leave.index', ['level' => $levels[0]]);
+        }
+
+        return $this->handleRequest($level, $levels);
+    }
+
+    protected function handleRequest(?int $level, array $levels)
+    {
+        if (request()->ajax()) {
+            $data = $level !== null ? $this->getRawData($level) ?? [] : [];
+            return $this->datatable($level, $data);
         }
 
         return view('employee.pages.leave-approval.index', compact('levels', 'level'));
@@ -271,6 +290,9 @@ class LeaveApprovalController extends Controller
         return DataTables::of($query)
             ->addIndexColumn()
             ->editColumn('name', function($row) {
+                return $row->firstname . ' ' . $row->lastname;
+            })
+            ->editColumn('leave', function($row) {
                 return $row->name;
             })
             ->addColumn('date', function ($row) {

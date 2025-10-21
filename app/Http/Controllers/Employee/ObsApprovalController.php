@@ -19,78 +19,67 @@ class ObsApprovalController extends Controller
             ->when(!$forApproval, function ($query) use ($user_id) {
                 return $query->where('user_id', $user_id);
             }, function ($query) use ($id) {
-                return $query->where('obs_id', $id);
+                return $query->where('obs_applications_id', $id);
             });
 
-        return $query->pluck('level') ?? [];
+        return $query->distinct()->pluck('level') ?? [];
     }
 
     public function getRawData(int $level, int $id = null)
     {
         $user_id = Auth::id();
 
-        $query = DB::table('obs_approvals')
-            ->leftJoin('obs', 'obs.id', '=', 'obs_approvals.obs_id')
-            ->leftJoin('employee_personal as ep', 'la.employee_no', '=', 'ep.employee_no')
+        // Base query for approval data
+        $query = DB::table('obs_approvals as oa')
+            ->leftJoin('obs_applications as ob', 'ob.id', '=', 'oa.obs_applications_id')
+            ->leftJoin('employee_personal as ep', 'ob.employee_no', '=', 'ep.employee_no')
             ->select(
-                'obs.id',
-                'obs.obs_no',
-                'obs.user_id',
-                'obs.date_from',
-                'obs.date_to',
-                'obs.time_out',
-                'obs.time_in',
-                'obs.destination',
-                'obs.purpose',
-                'obs.mode_of_transport',
-                'obs.estimated_expense',
-                'obs.charge_to',
-                'obs.status',
-                'obs.remarks',
-                'obs.level',
-                'obs.created_at',
-                'obs.approved_at',
+                'ob.id',
+                'ob.application_no',
+                'ob.user_id',
+                'ob.employee_no',
+                'ob.date_from',
+                'ob.date_to',
+                'ob.time_out',
+                'ob.time_in',
+                'ob.destination',
+                'ob.purpose',
+                'ob.mode_of_transport',
+                'ob.estimated_expense',
+                'ob.charge_to',
+                'ob.status',
+                'ob.remarks',
+                'ob.level',
+                'ob.created_at',
+                'ob.approved_at',
+                'ob.approval_remarks',
                 'ep.firstname',
-                'ep.lastname'
+                'ep.lastname',
             )
-            ->where('obs_approvals.user_id', $user_id)
-            ->where('obs_approvals.level', $level)
-            ->whereColumn('obs_approvals.level', '=', 'obs.level');
+            ->where('oa.user_id', $user_id)
+            ->where('oa.level', $level)
+            ->whereColumn('oa.level', 'ob.level');
 
+        // If a specific application ID is provided
         if ($id !== null) {
-            $query->where('obs.id', $id);
+            $query->where('ob.id', $id);
             $item = $query->first();
 
             if (!$item) {
                 return null;
             }
 
-            // Get approvals grouped by level with their statuses
-            $approvals = DB::table('obs_approvals')
-                ->where('obs_id', $item->id)
-                ->get()
-                ->groupBy('level')
-                ->map(function ($group) {
-                    return $group->map(function ($approval) {
-                        return (object)[
-                            'user_id' => $approval->user_id,
-                            'status' => $approval->status,
-                            'remarks' => $approval->remarks,
-                            'action_at' => $approval->action_at,
-                        ];
-                    })->toArray();
-                })->toArray();
-
             $attachments = DB::table('obs_attachments')
-                ->where('obs_id', $item->id)
+                ->where('obs_applications_id', $item->id)
                 ->get();
 
             return (object)[
                 'id' => $item->id,
-                'obs_no' => $item->obs_no,
+                'application_no' => $item->application_no,
                 'firstname' => $item->firstname,
                 'lastname' => $item->lastname,
                 'user_id' => $item->user_id,
+                'employee_no' => $item->employee_no,
                 'date_from' => $item->date_from,
                 'date_to' => $item->date_to,
                 'time_out' => $item->time_out,
@@ -105,37 +94,30 @@ class ObsApprovalController extends Controller
                 'level' => $item->level,
                 'created_at' => $item->created_at,
                 'approved_at' => $item->approved_at,
-                'approvals' => $approvals,
+                'approval_remarks' => $item->approval_remarks,
                 'attachments' => $attachments,
             ];
         }
 
+        // Fetch all matching records
         $data = $query->get();
 
-        $data = $data->map(function ($item) {
-            $approvals = DB::table('obs_approvals')
-                ->where('obs_id', $item->id)
-                ->get()
-                ->groupBy('level')
-                ->map(function ($group) {
-                    return $group->map(function ($approval) {
-                        return (object)[
-                            'user_id' => $approval->user_id,
-                            'status' => $approval->status,
-                            'remarks' => $approval->remarks,
-                            'action_at' => $approval->action_at,
-                        ];
-                    })->toArray();
-                })->toArray();
+        // Collect all application IDs in one go to avoid multiple queries
+        $applicationIds = $data->pluck('id');
 
-            $attachments = DB::table('obs_attachments')
-                ->where('obs_id', $item->id)
-                ->get();
+        $allAttachments = DB::table('obs_attachments')
+            ->whereIn('obs_applications_id', $applicationIds)
+            ->get()
+            ->groupBy('obs_applications_id');
 
+        return $data->map(function ($item) use ($allAttachments) {
             return (object)[
                 'id' => $item->id,
-                'obs_no' => $item->obs_no,
+                'application_no' => $item->application_no,
+                'firstname' => $item->firstname,
+                'lastname' => $item->lastname,
                 'user_id' => $item->user_id,
+                'employee_no' => $item->employee_no,
                 'date_from' => $item->date_from,
                 'date_to' => $item->date_to,
                 'time_out' => $item->time_out,
@@ -150,12 +132,9 @@ class ObsApprovalController extends Controller
                 'level' => $item->level,
                 'created_at' => $item->created_at,
                 'approved_at' => $item->approved_at,
-                'approvals' => $approvals,
-                'attachments' => $attachments,
+                'attachments' => $allAttachments->get($item->id)?->values() ?? [],
             ];
         });
-
-        return $data;
     }
 
     /**
@@ -164,15 +143,28 @@ class ObsApprovalController extends Controller
     public function index(?int $level = null)
     {
 
-        if (request()->ajax()) {
-            $data = $this->getRawData($level);
-            return $this->datatable($level, $data);
+        $levels = $this->getLevels(false)->toArray();
+
+        if (empty($levels)) {
+            if ($level !== null) {
+                return redirect()->route('approval-obs.index');
+            }
+            return $this->handleRequest($level, $levels);
         }
 
-        $levels = $this->getLevels(false)->toArray() ?? [];
-
-        if (!empty($levels) && is_null($level) || !in_array($level, $levels)) {
+        if ($level === null || !in_array($level, $levels)) {
             return redirect()->route('approval-obs.index', ['level' => $levels[0]]);
+        }
+
+        return $this->handleRequest($level, $levels);
+
+    }
+
+    protected function handleRequest(?int $level, array $levels)
+    {
+        if (request()->ajax()) {
+            $data = $level !== null ? $this->getRawData($level) ?? [] : [];
+            return $this->datatable($level, $data);
         }
 
         return view('employee.pages.obs-approval.index', compact('levels', 'level'));
@@ -186,57 +178,182 @@ class ObsApprovalController extends Controller
             return redirect()->back();
         }
 
-        return view('employee.pages.leave-obs.show', compact('id', 'data'));
+        return view('employee.pages.obs-approval.show', compact('id', 'data'));
     }
 
-    public function datatable($query)
+
+    public function save(int $level, int $id, Request $request)
+    {
+
+        $payload = $request->all();
+        $action = $payload['action'] ?? null;
+        $query = DB::table('obs_applications')
+            ->where('id', $id);
+        
+        if(!$query->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unable to find this application in the system',
+                'redirect' => ''
+            ]);
+        }
+
+        switch ($action) {
+            case 'approve':
+                return $this->approve($level, $id); 
+            case 'rejected':
+                return $this->rejected($level, $id, $payload); 
+            default:
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid action provided.'
+                ], 400);
+        }
+    }
+
+    public function approve(int $level, int $id)
+    {
+        try {
+
+            $allLevels = $this->getLevels(true, $id)->toArray() ?? [];
+            $maxLevel = max($allLevels);
+            $user_id = Auth::id();
+
+            DB::table('obs_approvals')
+                ->where('obs_applications_id', $id)
+                ->where('user_id', $user_id)
+                ->where('level', $level)
+                ->update([
+                    'status' => 'approved'
+                ]);
+            
+            if($level == $maxLevel) {
+                DB::table('obs_applications')
+                    ->where('id', $id)
+                    ->update([
+                        'status' => 'approved'
+                    ]);
+            }
+            
+            if($level < $maxLevel) {
+                $nextLevel = $level += 1;
+                DB::table('obs_applications')
+                    ->where('id', $id)
+                    ->update([
+                        'level' => $nextLevel
+                    ]);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pass slip application has been approved!',
+                'redirect' => route('approval-obs.index', ['level' => $level])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function rejected(int $level, int $id, array $payload)
+    {
+        try {
+            $allLevels = $this->getLevels(true, $id)->toArray() ?? [];
+            $maxLevel = max($allLevels);
+            $remarks = $payload['remarks'] ?? null;
+            $user_id = Auth::id();
+
+            for ($i = $level; $i <= $maxLevel; $i++) {
+                $query = DB::table('obs_approvals')
+                    ->where('obs_applications_id', $id)
+                    ->where('level', $i);
+
+                if ($i === $level) {
+                    $query->where('user_id', $user_id)->update([
+                        'status' => 'rejected',
+                        'approval_remarks' => $remarks,
+                    ]);
+                } else {
+                    $query->update([
+                        'status' => 'rejected',
+                        'approval_remarks' => null,
+                    ]);
+                }
+            }
+
+            DB::table('obs_applications')
+                ->where('id', $id)
+                ->update([
+                    'status' => 'rejected',
+                    'remarks' => $remarks,
+                ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pass slip application has been rejected!',
+                'redirect' => route('approval-obs.index', ['level' => $level])
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function datatable($level, $query)
     {
         return DataTables::of($query)
             ->addIndexColumn()
-           ->addColumn('date_range', function ($row) {
-                if ($row->date_from == $row->date_to) {
-                    // Single day leave
-                    return '<span class="badge rounded-pill bg-primary">'
-                            . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
-                        '</span>';
-                } else {
-                    // Multi-day leave
-                    return '<span class="badge rounded-pill bg-primary me-1">'
-                            . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
-                        '</span>' . 'to ' .
-                        '<span class="badge rounded-pill bg-success">'
-                            . \Carbon\Carbon::parse($row->date_to)->format('M d, Y') .
-                        '</span>';
-                }
+            ->editColumn('name', function($row) {
+                return $row->firstname . ' ' . $row->lastname ?? 'N/A';
             })
-            ->addColumn('status', function ($row) {
-                $status = strtolower($row->status);
+            ->addColumn('date_range', function ($row) {
+                    if ($row->date_from == $row->date_to) {
+                        // Single day leave
+                        return '<span class="badge rounded-pill bg-primary">'
+                                . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
+                            '</span>';
+                    } else {
+                        // Multi-day leave
+                        return '<span class="badge rounded-pill bg-primary me-1">'
+                                . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
+                            '</span>' . 'to ' .
+                            '<span class="badge rounded-pill bg-success">'
+                                . \Carbon\Carbon::parse($row->date_to)->format('M d, Y') .
+                            '</span>';
+                    }
+                })
+                ->addColumn('status', function ($row) {
+                    $status = strtolower($row->status);
 
-                $badgeClass = match ($status) {
-                    'pending'   => 'warning',
-                    'approved'  => 'success',
-                    'rejected'  => 'dark',
-                    'cancelled' => 'danger',
-                    default     => 'info',
-                };
+                    $badgeClass = match ($status) {
+                        'pending'   => 'warning',
+                        'approved'  => 'success',
+                        'rejected'  => 'dark',
+                        'cancelled' => 'danger',
+                        default     => 'info',
+                    };
 
-                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
-            })
-            ->addColumn('actions', function ($row) use ($level) {
-                $buttons = '
-                    <div class="d-flex align-items-center">
-                         <a href="'.route('approval-leave.show', ['level' => $level, 'id' => $row->id]).'" 
-                            class="btn btn-outline-primary btn show-button ms-1 my-1" 
-                            title="Show">
-                            <i class="fa-solid fa-eye"></i>
-                        </a>
-                ';
-                $buttons .= '</div>';
+                    return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
+                })
+                ->addColumn('actions', function ($row) use ($level) {
+                    $buttons = '
+                        <div class="d-flex align-items-center">
+                            <a href="'.route('approval-obs.show', ['level' => $level, 'id' => $row->id]).'" 
+                                class="btn btn-outline-primary btn show-button ms-1 my-1" 
+                                title="Show">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                    ';
+                    $buttons .= '</div>';
 
-                return $buttons;
-            })
-            ->rawColumns(['actions', 'status', 'date_range'])
-            ->make(true);
+                    return $buttons;
+                })
+                ->rawColumns(['actions', 'status', 'date_range'])
+                ->make(true);
     }
 
 }
