@@ -95,11 +95,10 @@
     
     <!-- Fancybox (lightbox for images, videos, and inline content) -->
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/fancybox/fancybox.umd.js"></script>
-
+    <script src="https://balkan.app/js/familytree.js"></script>
     <script>
         @if(session('auth_token'))
             localStorage.setItem('auth_token', "{{ session('auth_token') }}");
-            console.log("{{ session('auth_token') }}");
             
             // Clear it from session
             {{ session()->forget('auth_token') }}

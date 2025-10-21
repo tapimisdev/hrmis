@@ -129,7 +129,7 @@
                             @endforeach
                         </div>
                     @else
-                        <em>No approvers assigned.</em>
+                        <div class="fst-italic text-muted text-uppercase mt-3">No approvers assigned.</div>
                     @endif
                 </div>
             </div>

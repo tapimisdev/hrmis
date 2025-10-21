@@ -55,7 +55,6 @@
                         $(this).removeClass('dropdown-item').attr('href', '');
                     });
                 });
-                console.log('Switched to collapse mode');
             }
 
             // 🔹 Define dropdown mode
@@ -83,6 +82,5 @@
                         $(this).addClass('dropdown-item').attr('href', '#');
                     });
                 });
-                console.log('Switched to dropdown mode');
             }
     });

@@ -3,9 +3,11 @@
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
             <h3 class="fw-bold">Leave Application</h3>
-            <p class="text-muted text-uppercase fw-bold">Document ID: <span id="doc-id"></span></p>
+            <p class="text-muted text-uppercase fw-bold">File No: <span id="doc-id"></span></p>
         </div>
+        <div id="approval-breadcrumbs">
 
+        </div>
         <table class="table table-bordered">
             <tr>
                 <th width="30%">Employee No:</th>
@@ -28,10 +30,6 @@
                 <td id="reason"></td>
             </tr>
             <tr>
-                <th>Status:</th>
-                <td><span id="status" class="badge"></span></td>
-            </tr>
-            <tr>
                 <th>Created At:</th>
                 <td id="created-at"></td>
             </tr>
@@ -41,13 +39,21 @@
                     <ul class="list-unstyled mb-0"></ul>
                 </td>
             </tr>
+            <tr>
+                <th>Status:</th>
+                <td><span id="status" class="badge"></span></td>
+            </tr>
+            <tr class="extended d-none">
+                <th>Remarks:</th>
+                <td><span id="remarks"></span></td>
+            </tr>
         </table>
 
         <div class="mt-4 mb-3">
-            <small class="text-uppercase fw-bold text-muted">Your Approvers</small>
+            <small class="text-uppercase fw-bold text-muted">Your Chosen Approvers For Each Level</small>
         </div>
         
-        <div class="w-103">
+        <div class="w-100">
             <div id="approvers-by-level" class="mb-2"></div>
         </div>
     </div>

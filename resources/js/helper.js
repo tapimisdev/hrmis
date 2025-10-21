@@ -3,7 +3,8 @@ import * as bootstrap from 'bootstrap';
 export function alert(type, message, redirect = '') {
     const config = {
         success: { title: "Yey!", icon: "success" },
-        error: { title: "Oops!", icon: "error" }
+        error: { title: "Oops!", icon: "error" },
+        info: { title: "Please be informed!", icon: "info" }
     };
 
     if (!config[type]) return;
@@ -16,7 +17,6 @@ export function alert(type, message, redirect = '') {
             $('table').DataTable().ajax.reload(null, false);
         }
     }
-
 
     Swal.fire({
         title: config[type].title,
@@ -43,7 +43,6 @@ export function fieldError(error) {
             const $field = $(`[id="${fieldName}"]`);
             $field.addClass('is-invalid');
             $field.closest('.mb-3').find('.error-field').text(errorMessage[0]);
-            console.log(fieldName)
             if (!firstErrorField) {
                 firstErrorField = $field;
             }

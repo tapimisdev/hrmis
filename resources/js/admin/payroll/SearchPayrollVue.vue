@@ -127,7 +127,6 @@ export default {
           }
         })
         .then((response) => {
-          console.log(response.data);
           this.$emit("payroll-list", response.data.data, false);
           this.loading = false
         })

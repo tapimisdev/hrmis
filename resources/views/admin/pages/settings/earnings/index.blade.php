@@ -62,7 +62,6 @@
             axios.get(`earnings/${id}`)
                 .then((response) => {
                     const data = response.data.earnings; // adjust according to your API response
-                    console.log(data);
 
                     // Fill modal fields
                     $('#earning-name').text(data.id);

@@ -108,7 +108,6 @@
                 dataType: "json",
                 success: function (response) {
                     const res = response;
-                    console.log(res);
 
                     const $tranche = $('#tranche_id')
                     $('#tranche_id').html('<option value=""> - CHOOSE TRANCHE - </option>'); 

@@ -74,7 +74,6 @@ export default {
             })
         },
         handleEmployeeFromUpload(inf) {
-            console.log(inf);
             this.employees_data = inf;
             this.upload = false;
         },

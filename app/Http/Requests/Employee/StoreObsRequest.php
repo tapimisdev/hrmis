@@ -28,12 +28,6 @@ class StoreObsRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('official_business_slips')->where(function ($query) {
-                    return $query->where('employee_id', $this->employee_id)
-                        ->where('date_from', $this->date_from)
-                        ->where('date_to', $this->date_to)
-                        ->where('purpose', $this->purpose);
-                }),
             ],
 
             'purpose' => ['required', 'string', 'max:500'],

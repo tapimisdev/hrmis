@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\User;
+
 use Carbon\Carbon;
 
 class LeaveApplicationController extends Controller
@@ -19,22 +20,6 @@ class LeaveApplicationController extends Controller
     public function __construct(EmployeeService $employee_service)
     {
         $this->employee_service = $employee_service;
-    }
-
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-
-        if (request()->ajax()) {
-
-            $data = $this->getRawData();
-
-            return $this->datatable($data);
-        }
-
-        return view('employee.pages.leave.index');
     }
 
     public function getRawData(?int $id = null)
@@ -49,7 +34,9 @@ class LeaveApplicationController extends Controller
             ->select(
                 'la.*',
                 'l.name as leave_name',
-                DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates')
+                DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates'),
+                DB::raw('MAX(ep.firstname) as firstname'),
+                DB::raw('MAX(ep.lastname) as lastname')
             )
             ->where('la.user_id', $user_id)
             ->when($id, function ($query, $id) {
@@ -71,10 +58,13 @@ class LeaveApplicationController extends Controller
             ->orderBy('la.created_at', 'desc')
             ->get();
 
+
+        $applicationIds = $applications->pluck('id');
+
         // Fetch attachments
         $attachments = DB::table('leave_attachments')
             ->select('leave_application_id', 'file_name', 'file_path', 'file_type')
-            ->whereIn('leave_application_id', $applications->pluck('id'))
+            ->whereIn('leave_application_id', $applicationIds)
             ->get()
             ->groupBy('leave_application_id');
 
@@ -86,14 +76,37 @@ class LeaveApplicationController extends Controller
                 'leave_approvals.leave_application_id',
                 'leave_approvals.user_id',
                 'leave_approvals.level',
+                'leave_approvals.status',
                 'employee_information.employee_no',
                 'employee_personal.firstname',
                 'employee_personal.lastname',
             ])
-            ->whereIn('leave_approvals.leave_application_id', $applications->pluck('id'))
+            ->whereIn('leave_approvals.leave_application_id', $applicationIds)
             ->get();
 
-        // Group by level and deduplicate by user_id
+        // Group approvals by application id for further use
+        $approvalsByApplication = $approvalsRaw->groupBy('leave_application_id');
+
+        // Prepare level_approvals (status per level per application)
+        $levelApprovals = DB::table('leave_approvals')
+            ->select('leave_application_id', 'level', 'status')
+            ->whereIn('leave_application_id', $applicationIds)
+            ->orderBy('level')
+            ->get()
+            ->groupBy('leave_application_id')
+            ->map(function ($group) {
+                return $group->groupBy('level')->map(function ($levelGroup) {
+                    // Prioritize approved or rejected, fallback to first status
+                    foreach ($levelGroup as $row) {
+                        if (in_array($row->status, ['approved', 'rejected'])) {
+                            return $row->status;
+                        }
+                    }
+                    return $levelGroup->first()->status;
+                });
+            });
+
+        // Group for approvals by level + unique users (as before)
         $groupedArray = $approvalsRaw
             ->groupBy('level')
             ->map(function ($items) {
@@ -103,15 +116,17 @@ class LeaveApplicationController extends Controller
             ->toArray();
 
         // Merge all data into final results
-        $results = $applications->map(function ($item) use ($attachments, $groupedArray) {
+        $results = $applications->map(function ($item) use ($attachments, $groupedArray, $levelApprovals) {
             $item->dates = $item->dates ? explode(',', $item->dates) : [];
             $item->attachments = $attachments->get($item->id)?->values() ?? [];
             $item->approvals = $groupedArray;
+            $item->level_approvals = $levelApprovals->get($item->id)?->toArray() ?? [];
             return $item;
         });
 
         return $results;
     }
+
 
     public function getData()
     {
@@ -202,13 +217,35 @@ class LeaveApplicationController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        if (request()->ajax()) {
+
+            $data = $this->getRawData();
+
+            return $this->datatable($data);
+        }
+
+        return view('employee.pages.leave.index');
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
+        $myId = Auth::id();
         $data = $this->getData();
         $leaves = $data['leaves'];
         $approvers = $data['approvers'];
+        $approvers = $approvers->map(function ($collection) use ($myId) {
+            return $collection->reject(function ($approver) use ($myId) {
+                return $approver['id'] === $myId;
+            })->values();
+        });
+
         $applications = $data['applications'];
 
         return view('employee.pages.leave.create', compact('leaves', 'approvers', 'applications'));
@@ -255,7 +292,10 @@ class LeaveApplicationController extends Controller
                 ->pluck('name')
                 ->first();
 
+            $application_no = generateApplicationNo('leave_applications', 'LV');
+
             $applicationID = DB::table('leave_applications')->insertGetId([
+                'application_no' => $application_no,
                 'user_id'       => $user_id,
                 'name'          => $leaveName,
                 'employee_no'   => $employee_no,
@@ -263,6 +303,7 @@ class LeaveApplicationController extends Controller
                 'days'          => $days,
                 'reason'        => $validatedData['reason'],
                 'status'        => 'pending',
+                'level'         => 1,
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
@@ -322,14 +363,13 @@ class LeaveApplicationController extends Controller
      * Display the specified resource.
      */
     public function show(int $id)
-    {
-        
+    {        
         $data = $this->getRawData($id)[0] ?? [];
 
         if(!$data) {
-            return redirect()->route('leave.index');
+            return redirect()->route('leaves.index');
         }
-         
+        
         return response(['data' => $data, 'status' => 'success'], 200);
     }
 
@@ -363,8 +403,11 @@ class LeaveApplicationController extends Controller
     {
         return DataTables::of($query)
             ->addIndexColumn()
-            ->editColumn('name', function($row) {
+            ->editColumn('leave', function($row) {
                 return $row->name;
+            })
+            ->editColumn('name', function($row) {
+                return $row->firstname . ' ' . $row->lastname;
             })
             ->addColumn('date', function ($row) {
                 return formatDateRanges($row->dates);

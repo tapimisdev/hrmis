@@ -227,7 +227,6 @@ export default {
       });
 
       if (existingEvents.length > 0) {
-        console.log("Date already has an event — click disabled.");
         return;
       }
 

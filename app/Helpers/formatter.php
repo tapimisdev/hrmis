@@ -97,3 +97,43 @@ if (!function_exists('formatDateRanges')) {
         return implode(', ', $resultParts);
     }
 }
+
+if(!function_exists('generateApplicationNo')) {
+    function generateApplicationNo($table, $prefix = 'APP', $column = 'application_no')
+    {
+        $year = now()->format('Y');
+        $month = now()->format('m');
+
+        do {
+            $lastRecord = DB::table($table)
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->orderByDesc('id')
+                ->first();
+
+            if ($lastRecord && isset($lastRecord->$column)) {
+                $lastNumber = (int)substr($lastRecord->$column, -4);
+                $nextNumber = $lastNumber + 1;
+            } else {
+                $nextNumber = 1;
+            }
+
+            $applicationNo = $prefix . '-' . $year . '-' . $month . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+            $exists = DB::table($table)->where($column, $applicationNo)->exists();
+
+            if ($exists) {
+                DB::table($table)
+                    ->whereYear('created_at', $year)
+                    ->whereMonth('created_at', $month)
+                    ->where($column, $applicationNo)
+                    ->orderByDesc('id')
+                    ->first();
+            }
+
+        } while ($exists);
+
+        return $applicationNo;
+    }
+
+}

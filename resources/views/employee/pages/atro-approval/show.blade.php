@@ -1,0 +1,137 @@
+@extends('employee.layout.app')
+
+@section('content')
+<div class="container pt-4">
+
+    <x-header title="Overtime Approval" subtitle="View overtime application details">
+        <x-button-link 
+            href="{{route('approval-overtime.index')}}"
+            icon="fa-solid fa-arrow-left me-2" 
+            text="Back" 
+            variant="danger"
+        />
+    </x-header>
+     <form id="form" action="{{ route('approval-overtime.save', ['level' => $data->level, 'id' => $data->id]) }}" method="POST">
+        @csrf
+        @method('POST')
+        <input type="hidden" name="action" id="action" value="">
+        <div class="card rounded-3 mb-5">
+            <div class="card-header fw-bold d-flex align-items-center">
+                <i class="fa-solid fa-file-pen me-2"></i> Application Details
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="30%">File No:</th>
+                        <td id="file-no">{{ $data->application_no }}</td>
+                    </tr>
+                    <tr>
+                        <th width="30%">Employee No:</th>
+                        <td id="employee-no">{{ $data->employee_no }}</td>
+                    </tr>
+                    <tr>
+                        <th width="30%">Name:</th>
+                        <td id="employee-name">
+                            {{ $data->firstname . ' ' . $data->lastname }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Date:</th>
+                        <td>{{ \Carbon\Carbon::parse($data->date)->format('M d, Y') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Start Time:</th>
+                        <td>{{ \Carbon\Carbon::parse($data->start_time)->format('h:i A') }}</td>
+                    </tr>
+                    <tr>
+                        <th>End Time:</th>
+                        <td>{{ \Carbon\Carbon::parse($data->end_time)->format('h:i A') }}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Hours:</th>
+                        <td>{{ $data->total_hours }} hour(s)</td>
+                    </tr>
+                    <tr>
+                        <th>Reason:</th>
+                        <td>{{ $data->reason }}</td>
+                    </tr>
+                    <tr>
+                        <th>Applied At:</th>
+                        <td>
+                            {{ $data->created_at ? \Carbon\Carbon::parse($data->created_at)->format('M d, Y') : 'N/A' }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Attachments:</th>
+                        <td id="attachments">
+                            <ul class="list-unstyled mb-0">
+                                @if (!empty($data->attachments) && count($data->attachments) > 0)
+                                    @foreach ($data->attachments as $attachment)
+                                        <li>
+                                            <a download href="{{ '/storage/' . $attachment->file_path }}">
+                                                {{ $attachment->file_name }}
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                @else
+                                    <li>No attachments available.</li>
+                                @endif
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            <span
+                                id="status"
+                                class="badge
+                                    <?php
+                                        $statusClass = 'bg-secondary';
+                                        if ($data->status === 'pending') $statusClass = 'bg-warning';
+                                        elseif ($data->status === 'approved') $statusClass = 'bg-success';
+                                        elseif ($data->status === 'rejected') $statusClass = 'bg-danger';
+
+                                        echo $statusClass;
+                                    ?>
+                                ">
+                                <?= htmlspecialchars(ucfirst($data->status)) ?>
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+                    
+            {{-- Action Buttons --}}
+            @if($data->status == 'pending')
+                <div class="card-footer bg-light d-flex justify-content-end gap-3 py-3 bg-transparent">
+                    <button type="submit" name="action" value="rejected" id="btn-rejected" class="px-5 py-3 text-uppercase btn btn-danger px-4">
+                        <i class="fa-solid fa-xmark me-2"></i> Decline
+                    </button>
+                    <button type="submit" name="action" value="approve" id="btn-approve" class="px-5 py-3 text-uppercase btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-2"></i> Approve
+                    </button>
+                </div>
+            @endif
+        </div>
+    </form>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+    $(function () {
+     
+        const url = $('#form').attr('action');
+        $('#btn-rejected').on('click', function() {
+            $('#action').val('rejected');
+            post(url, true);
+        });
+
+        $('#btn-approve').on('click', function() {
+            $('#action').val('approve');
+            post(url);
+        });
+            
+    });
+</script>
+@endsection

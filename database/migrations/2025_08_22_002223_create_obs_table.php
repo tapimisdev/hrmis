@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('obs', function (Blueprint $table) {
+        Schema::create('obs_applications', function (Blueprint $table) {
             $table->id();
-            $table->string('obs_no')->unique();                 // e.g., OBS-2025-0001
+            $table->string('application_no')->unique();         
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();   // requester/employee
+            $table->string('employee_no');
             $table->date('date_from');
             $table->date('date_to');
             $table->time('time_out')->nullable();               // start time
@@ -23,7 +24,7 @@ return new class extends Migration
             $table->string('purpose', 500);                     // short purpose/subject
             $table->string('mode_of_transport')->nullable();    // company car, taxi, etc.
             $table->decimal('estimated_expense', 12, 2)->default(0);
-            $table->string('charge_ to')->nullable();            // cost center / department
+            $table->string('charge_to')->nullable();            // cost center / department
 
             // Approval flow
             $table->enum('status', ['pending', 'approved', 'rejected', 'cancelled'])->default('pending')->index();
@@ -33,6 +34,7 @@ return new class extends Migration
                 ->nullable();
             $table->unsignedBigInteger('approver_id')
                 ->nullable(); 
+            $table->integer('level'); 
             $table->timestamp('approved_at')->nullable();
 
             // Audit
@@ -47,23 +49,23 @@ return new class extends Migration
 
         Schema::create('obs_attachments', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('obs_id');
+            $table->unsignedBigInteger('obs_applications_id');
             $table->string('file_path'); // stored file path
             $table->string('file_name')->nullable(); // original filename
             $table->string('file_type')->nullable(); // mime type (jpg, pdf, etc.)
             $table->timestamps();
 
             // Foreign key
-            $table->foreign('obs_id')
+            $table->foreign('obs_applications_id')
                 ->references('id')
-                ->on('obs')
+                ->on('obs_applications')
                 ->onDelete('cascade');
         });
 
         Schema::create('obs_approvals', function(Blueprint $table) {
             $table->id();
-            $table->foreignId('obs_id')
-                ->constrained('obs')
+            $table->foreignId('obs_applications_id')
+                ->constrained('obs_applications')
                 ->onDelete('cascade');
             $table->foreignId('user_id')
                 ->constrained('users')
@@ -89,6 +91,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('obs_approvals');
         Schema::dropIfExists('obs_attachments');
-        Schema::dropIfExists('obs');
+        Schema::dropIfExists('obs_applications');
     }
 };

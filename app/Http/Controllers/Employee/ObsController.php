@@ -12,12 +12,92 @@ use Yajra\DataTables\Facades\DataTables;
 class ObsController extends Controller
 {
 
+    public function getRawData(?int $id = null)
+    {
+        $user_id = Auth::id();
+
+        // Fetch main OBS applications with employee name
+        $applications = DB::table('obs_applications as ob')
+            ->leftJoin('employee_personal as ep', 'ep.employee_no', '=', 'ob.employee_no')
+            ->select(
+                'ob.*',
+                DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name")
+            )
+            ->where('ob.user_id', $user_id)
+            ->when($id, function ($query, $id) {
+                return $query->where('ob.id', $id);
+            })
+            ->orderBy('ob.created_at', 'desc')
+            ->get();
+
+        $applicationIds = $applications->pluck('id');
+
+        // Fetch attachments
+        $attachments = DB::table('obs_attachments')
+            ->select('obs_applications_id', 'file_name', 'file_path', 'file_type')
+            ->whereIn('obs_applications_id', $applicationIds)
+            ->get()
+            ->groupBy('obs_applications_id');
+
+        // Fetch approvals with employee details
+        $approvalsRaw = DB::table('obs_approvals')
+            ->join('employee_information', 'obs_approvals.user_id', '=', 'employee_information.user_id')
+            ->join('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->select([
+                'obs_approvals.obs_applications_id',
+                'obs_approvals.user_id',
+                'obs_approvals.level',
+                'obs_approvals.status',
+                'employee_information.employee_no',
+                'employee_personal.firstname',
+                'employee_personal.lastname',
+            ])
+            ->whereIn('obs_approvals.obs_applications_id', $applicationIds)
+            ->get();
+
+        // Group approvals by application
+        $approvalsByApplication = $approvalsRaw->groupBy('obs_applications_id');
+
+        // Level-based approval status
+        $levelApprovals = DB::table('obs_approvals')
+            ->select('obs_applications_id', 'level', 'status')
+            ->whereIn('obs_applications_id', $applicationIds)
+            ->orderBy('level')
+            ->get()
+            ->groupBy('obs_applications_id')
+            ->map(function ($group) {
+                return $group->groupBy('level')->map(function ($levelGroup) {
+                    foreach ($levelGroup as $row) {
+                        if (in_array($row->status, ['approved', 'rejected'])) {
+                            return $row->status;
+                        }
+                    }
+                    return $levelGroup->first()->status;
+                });
+            });
+
+        // Group approvals by level across all applications (for display)
+        $groupedArray = $approvalsRaw
+            ->groupBy('level')
+            ->map(function ($items) {
+                return $items->unique('user_id')->values();
+            })
+            ->sortKeys()
+            ->toArray();
+
+        // Merge all data into final results
+        $results = $applications->map(function ($item) use ($attachments, $groupedArray, $levelApprovals) {
+            $item->attachments = $attachments->get($item->id)?->values() ?? [];
+            $item->approvals = $groupedArray;
+            $item->level_approvals = $levelApprovals->get($item->id)?->toArray() ?? [];
+            return $item;
+        });
+
+        return $results;
+    }
+
     public function getData()
     {
-        // Get active leave types
-        $leaves = DB::table('leaves')
-            ->where('is_active', true)
-            ->get();
 
         // Get current user and employee_no
         $user = Auth::user()->load('employeeInformation');
@@ -94,7 +174,6 @@ class ObsController extends Controller
             ->get();
 
         return [
-            'leaves' => $leaves,
             'approvers' => $approvers,
             'applications' => $allApplications
         ];
@@ -105,13 +184,10 @@ class ObsController extends Controller
      */
     public function index()
     {
-        $query = DB::table('obs')
-                    ->where('user_id', Auth::user()->id)
-                    ->orderBy('created_at', 'desc') // latest first
-                    ->get();
-        
         if (request()->ajax()) {
-            return $this->datatable($query);
+
+            $data = $this->getRawData();
+            return $this->datatable($data);
         }
 
         return view('employee.pages.obs.index');
@@ -122,12 +198,17 @@ class ObsController extends Controller
      */
     public function create()
     {
+        $myId = Auth::id();
         $data = $this->getData();
-        $leaves = $data['leaves'];
         $approvers = $data['approvers'];
+        $approvers = $approvers->map(function ($collection) use ($myId) {
+            return $collection->reject(function ($approver) use ($myId) {
+                return $approver['id'] === $myId;
+            })->values();
+        });
         $applications = $data['applications'];
 
-        return view('employee.pages.obs.create', compact('leaves', 'approvers', 'applications'));
+        return view('employee.pages.obs.create', compact('approvers', 'applications'));
     }
 
      /**
@@ -137,23 +218,29 @@ class ObsController extends Controller
     {
         $validatedData = $request->validated();
 
-        DB::beginTransaction();
-        try {
-            // Generate unique obs_no (e.g., OBS-2025-08-0001)
-            $year = now()->format('Y');
-            $month = now()->format('m');
-            $lastObs = DB::table('obs')
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $month)
-                ->orderByDesc('id')
-                ->first();
-            $nextNumber = $lastObs ? ((int)substr($lastObs->obs_no, -4)) + 1 : 1;
-            $obsNo = 'OBS-' . $year . '-' . $month . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        $user = Auth::user()->load('employeeInformation');
+        $employee_no = $user->toArray()['employee_information']['employee_no'];
 
+        DB::beginTransaction();
+
+        try {
+
+            if(empty($validatedData['approvers'])) {
+                return response([
+                    'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
+                    'status'  => 'error'
+                ], 500); 
+            }
+
+            $application_no = generateApplicationNo('obs_applications', 'PSL');
+            
+            $approvers = $validatedData['approvers'];
+        
             // Insert obs record
-            $obsId = DB::table('obs')->insertGetId([
-                'obs_no'             => $obsNo,
+            $obsId = DB::table('obs_applications')->insertGetId([
+                'application_no'     => $application_no,
                 'user_id'            => Auth::user()->id,
+                'employee_no'        => $employee_no,
                 'date_from'          => $validatedData['date_from'],
                 'date_to'            => $validatedData['date_to'],
                 'time_out'           => $validatedData['time_out'] ?? null,
@@ -165,6 +252,7 @@ class ObsController extends Controller
                 'charge_to'          => $validatedData['charge_to'] ?? null,
                 'remarks'            => $validatedData['remarks'] ?? null,
                 'status'             => 'pending',
+                'level'              => 1,
                 'created_by'         => Auth::user()->id,
                 'updated_by'         => Auth::user()->id,
                 'created_at'         => now(),
@@ -176,7 +264,7 @@ class ObsController extends Controller
                 foreach ($request->file('attachments') as $file) {
                     $path = $file->store('obs_attachments', 'public');
                     DB::table('obs_attachments')->insert([
-                        'obs_id'     => $obsId,
+                        'obs_applications_id'     => $obsId,
                         'file_path'  => $path,
                         'file_name'  => $file->getClientOriginalName(),
                         'file_type'  => $file->getMimeType(),
@@ -186,15 +274,24 @@ class ObsController extends Controller
                 }
             }
 
+            foreach ($approvers as $level => $approverList) {
+                foreach ($approverList as $userId) {
+                    DB::table('obs_approvals')->insertGetId([
+                        'obs_applications_id' => $obsId,
+                        'user_id'              => $userId,
+                        'level'                => $level,
+                        'status'               => 'pending',
+                    ]);
+                }
+            }
+
             DB::commit();
 
-            return response([
-                'data' => [
-                    'obs_id' => $obsId,
-                    'attachments' => $request->hasFile('attachments') ? count($request->file('attachments')) : 0,
-                ],
-                'message' => 'OBS application stored successfully'
-            ], 200);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pass slip application has been submitted',
+                'redirect' => route('obs.create')
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -208,17 +305,16 @@ class ObsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(int $id)
     {
-        $obs = DB::table('obs')
-                    ->where('id', $id)
-                    ->first();
-
-        $attachments = DB::table('obs_attachments')
-                    ->where('obs_id', $obs->id)
-                    ->get();
         
-        return response(['obs' => $obs, 'attachments' => $attachments, 'status' => 'success'], 200);
+        $data = $this->getRawData($id)[0] ?? [];
+
+        if(!$data) {
+            return redirect()->route('obs.index');
+        }
+         
+        return response(['data' => $data, 'status' => 'success'], 200);
     }
 
     /**
@@ -228,7 +324,7 @@ class ObsController extends Controller
     {
         DB::beginTransaction();
         try {
-            $affected = DB::table('obs')
+            $affected = DB::table('obs_applications')
                 ->where('id', $id)
                 ->update(['status' => 'cancelled']);
 
@@ -250,61 +346,64 @@ class ObsController extends Controller
     {
         return DataTables::of($query)
             ->addIndexColumn()
-           ->addColumn('date_range', function ($row) {
-                if ($row->date_from == $row->date_to) {
-                    // Single day leave
-                    return '<span class="badge rounded-pill bg-primary">'
-                            . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
-                        '</span>';
-                } else {
-                    // Multi-day leave
-                    return '<span class="badge rounded-pill bg-primary me-1">'
-                            . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
-                        '</span>' . 'to ' .
-                        '<span class="badge rounded-pill bg-success">'
-                            . \Carbon\Carbon::parse($row->date_to)->format('M d, Y') .
-                        '</span>';
-                }
+            ->editColumn('name', function($row) {
+                return $row->employee_name;
             })
-            ->addColumn('status', function ($row) {
-                $status = strtolower($row->status);
+            ->addColumn('date_range', function ($row) {
+                    if ($row->date_from == $row->date_to) {
+                        // Single day leave
+                        return '<span class="badge rounded-pill bg-primary">'
+                                . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
+                            '</span>';
+                    } else {
+                        // Multi-day leave
+                        return '<span class="badge rounded-pill bg-primary me-1">'
+                                . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
+                            '</span>' . 'to ' .
+                            '<span class="badge rounded-pill bg-success">'
+                                . \Carbon\Carbon::parse($row->date_to)->format('M d, Y') .
+                            '</span>';
+                    }
+                })
+                ->addColumn('status', function ($row) {
+                    $status = strtolower($row->status);
 
-                $badgeClass = match ($status) {
-                    'pending'   => 'warning',
-                    'approved'  => 'success',
-                    'rejected'  => 'dark',
-                    'cancelled' => 'danger',
-                    default     => 'info',
-                };
+                    $badgeClass = match ($status) {
+                        'pending'   => 'warning',
+                        'approved'  => 'success',
+                        'rejected'  => 'dark',
+                        'cancelled' => 'danger',
+                        default     => 'info',
+                    };
 
-                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
-            })
-            ->addColumn('actions', function ($row) {
-                $buttons = '
-                    <div class="d-flex">
-                        <button data-id="' . $row->id . '" 
-                            class="btn btn-primary btn-sm ms-1 show-button" 
-                            title="Show">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                ';
-
-                // Only show cancel if status is pending or approved
-                if (in_array($row->status, ['pending', 'approved'])) {
-                    $buttons .= '
-                        <button data-id="' . $row->id . '" 
-                            class="btn btn-danger btn-sm ms-1 cancel-button" 
-                            title="Cancel">
-                            <i class="fa-solid fa-ban"></i>
-                        </button>
+                    return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
+                })
+                ->addColumn('actions', function ($row) {
+                    $buttons = '
+                        <div class="d-flex">
+                            <button data-id="' . $row->id . '" 
+                                class="btn btn-primary btn-sm ms-1 show-button" 
+                                title="Show">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
                     ';
-                }
 
-                $buttons .= '</div>';
+                    // Only show cancel if status is pending or approved
+                    if (in_array($row->status, ['pending', 'approved'])) {
+                        $buttons .= '
+                            <button data-id="' . $row->id . '" 
+                                class="btn btn-danger btn-sm ms-1 cancel-button" 
+                                title="Cancel">
+                                <i class="fa-solid fa-ban"></i>
+                            </button>
+                        ';
+                    }
 
-                return $buttons;
-            })
-            ->rawColumns(['actions', 'status', 'date_range'])
-            ->make(true);
+                    $buttons .= '</div>';
+
+                    return $buttons;
+                })
+                ->rawColumns(['actions', 'status', 'date_range'])
+                ->make(true);
     }
 }

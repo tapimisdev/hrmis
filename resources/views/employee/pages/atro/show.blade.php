@@ -3,7 +3,7 @@
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
             <h3 class="fw-bold">Overtime Application</h3>
-            <p class="text-muted text-uppercase fw-bold">Document ID: <span id="doc-id"></span></small>
+            <p class="text-muted text-uppercase fw-bold">File No: <span id="doc-id"></span></small>
         </div>
 
         <table class="table table-bordered">
@@ -28,18 +28,24 @@
                 <td id="reason"></td>
             </tr>
             <tr>
-                <th>Status:</th>
-                <td><span id="status" class="badge"></span></td>
-            </tr>
-            <tr>
                 <th>Created At:</th>
                 <td id="created-at"></td>
             </tr>
+            <tr>
+                <th>Status:</th>
+                <td><span id="status" class="badge"></span></td>
+            </tr>
+            <tr class="extended d-none">
+                <th>Remarks:</th>
+                <td><span id="remarks"></span></td>
+            </tr>
         </table>
-
-        <div class="d-flex justify-content-end gap-3">
-            <p><strong>Approver:</strong> <span id="approver"></span></p>
-            <p><strong>Approved At:</strong> <span id="approved-at"></span></p>
+        <div class="mt-4 mb-3">
+            <small class="text-uppercase fw-bold text-muted">Your Chosen Approvers For Each Level</small>
+        </div>
+        
+        <div class="w-100">
+            <div id="approvers-by-level" class="mb-2"></div>
         </div>
     </div>
 

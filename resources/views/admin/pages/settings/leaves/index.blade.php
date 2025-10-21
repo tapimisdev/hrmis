@@ -59,7 +59,6 @@
             axios.get(`leaves/${id}`)
                 .then((response) => {
                     const data = response.data.leave; // adjust according to your API response
-                    console.log(data);
 
                     // Fill modal fields
                     $('#leave-id').text(data.id);

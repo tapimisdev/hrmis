@@ -92,8 +92,6 @@
 
         let selectedEmployees = @json($selectedEmployee ?? []);
 
-        console.log(selectedEmployees);
-
         $('#employees').val(selectedEmployees).trigger('change');
 
         const url = $('#form').attr('action');

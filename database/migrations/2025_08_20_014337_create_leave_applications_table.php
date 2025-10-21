@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('leave_applications', function (Blueprint $table) {
             $table->id();
+            $table->string('application_no')->unique();
             $table->string('name');
             $table->unsignedBigInteger('user_id'); 
-            $table->string('employee_no')->nullable();
+            $table->string('employee_no');
             $table->foreignId('leave_id')->constrained('leaves');
             $table->integer('days')->default(1);
             $table->text('reason');
@@ -23,7 +24,8 @@ return new class extends Migration
             $table->longText('remarks')
                 ->nullable();
             $table->unsignedBigInteger('approver_id')
-                ->nullable(); 
+                ->nullable();
+            $table->integer('level'); 
             $table->timestamps();
         });
 

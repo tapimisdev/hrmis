@@ -7,15 +7,23 @@
 
     <header-vue title="DOST TAPI"></header-vue>
 
-    <x-header-employee title="Pass slip Approval" subtitle="Review and approve pass slip here">
+    <x-header-employee title="Pass Slip Approval" subtitle="Review and approve pass slip here">
     </x-header-employee>
-
+    <ul class="nav nav-pills mt-5 mb-4">
+        @foreach($levels as $key => $item)
+            <li class="nav-item">
+                <a href="{{route('approval-leave.index', ['level' => $item])}}" class="nav-link {{ $level == $item ? 'active' : '' }}" aria-current="page" href="#">
+                    {{ordinal($item)}} Approver
+                </a>
+            </li>
+        @endforeach
+    </ul>
     <x-table-employee id="myTable">
         <thead>
             <tr>
-                <th style="width: 10px">#</th>
-                <th>OBS No.</th>
-                <th>Date</th>
+                <th>File No.</th>
+                <th>Name</th>
+                <th>Dates</th>
                 <th>Destination</th>
                 <th>Status</th>
                 <th style="width: 120px">Action</th>
@@ -33,111 +41,16 @@
         let DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
-            "ajax": '{{ route('obs.index') }}',
+            "ajax": '{{ route('approval-obs.index', ['level' => $level]) }}',
             "columns": [
-                { data: "DT_RowIndex", name: 'index' },
-                { data: "obs_no", name: 'obs_no' },
+                { data: "application_no", name: 'application_no' },
+                { data: "name", name: 'name' },
                 { data: "date_range", name: 'date_range' },
                 { data: "destination", name: 'destination' },
                 { data: "status", name: 'status', orderable: false, searchable: false },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
         });
-
-        // Cancel OBS
-        $(document).on('click', '.cancel-button', function() {
-            let id = $(this).attr('data-id');
-            Swal.fire({
-                title: "Are you sure?",
-                text: "This OBS will be cancelled.",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, cancel it!"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    axios.delete(`/employee/official-business-slip/${id}`)
-                        .then(response => {
-                            DataTable.ajax.reload();
-                            Swal.fire({
-                                title: "Cancelled!",
-                                text: "Your official business slip has been cancelled.",
-                                icon: "success"
-                            });
-                        })
-                        .catch(error => {
-                            Swal.fire({
-                                title: "Oops!",
-                                text: "Something went wrong, try again later!",
-                                icon: "error"
-                            });
-                        })
-                }
-            });
-        });
-
-        // Show modal
-        const myModal = $('#myModal');
-        $(document).on('click', '.show-button', function () {
-            let id = $(this).attr('data-id');
-            $('.modal-title').html('Official Business Slip');
-
-            axios.get(`/employee/official-business-slip/${id}`)
-                .then((response) => {
-                    const data = response.data.obs;
-
-                    $('#obs-doc-id').text(data.obs_no);
-                    $('#obs-employee-no').text(data.employee_no);
-                    $('#obs-destination').text(data.destination);
-                    $('#obs-purpose').text(data.purpose);
-
-                    // Date range
-                    $('#obs-date-from').text(moment(data.date_from).format('MMMM D, YYYY'));
-                    $('#obs-date-to').text(moment(data.date_to).format('MMMM D, YYYY'));
-
-                    $('#obs-time-out').text(data.time_out ?? '—');
-                    $('#obs-time-in').text(data.time_in ?? '—');
-                    $('#obs-transport').text(data.mode_of_transport ?? '—');
-                    $('#obs-expense').text(data.estimated_expense ? `₱${parseFloat(data.estimated_expense).toFixed(2)}` : '—');
-                    $('#obs-charge-to').text(data.charge_to ?? '—');
-                    $('#obs-remarks').text(data.remarks ?? '—');
-
-                    // Status badge
-                    let statusClass = 'bg-secondary';
-                    if (data.status === 'pending') statusClass = 'bg-warning';
-                    else if (data.status === 'approved') statusClass = 'bg-success';
-                    else if (data.status === 'rejected') statusClass = 'bg-danger';
-                    else if (data.status === 'cancelled') statusClass = 'bg-dark';
-
-                    $('#obs-status').attr('class', 'badge ' + statusClass).text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
-
-                    $('#obs-created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
-                    $('#obs-approver').text(data.approver ?? 'Not Yet Assigned');
-                    $('#obs-approved-at').text(data.approved_at ? moment(data.approved_at).format('MMMM D, YYYY h:mm A') : '—');
-
-                    // Attachments
-                    let attachmentList = $('#obs-attachments ul');
-                    attachmentList.empty();
-                    if (data.attachments && data.attachments.length > 0) {
-                        data.attachments.forEach(file => {
-                            attachmentList.append(`<li><a href="${file.url}" target="_blank">${file.name}</a></li>`);
-                        });
-                    } else {
-                        attachmentList.append('<li>No attachments</li>');
-                    }
-
-                    myModal.modal('show');
-                })
-                .catch(error => {
-                    Swal.fire({
-                        title: "Oops!",
-                        text: error.message,
-                        icon: "error"
-                    });
-                });
-        });
-
     });
 </script>
 @endsection

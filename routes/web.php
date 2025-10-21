@@ -308,7 +308,15 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         Route::any('tranche/{id}/destroy', [TrancheController::class, 'destroy'])->name('settings.tranche.destroy');
 
         # APPROVERS
-        Route::resource('approvers', ApproverController::class)->names('settings.approvers');
+        Route::get('approvers', [ApproverController::class, 'index'])->name('settings.approvers.index');
+        Route::get('approvers/all', [ApproverController::class, 'view'])->name('settings.approvers.view');
+        Route::get('approvers/create', [ApproverController::class, 'create'])->name('settings.approvers.create');
+        Route::post('approvers', [ApproverController::class, 'store'])->name('settings.approvers.store');
+        Route::get('approvers/{approver}', [ApproverController::class, 'show'])->name('settings.approvers.show');
+        Route::get('approvers/{approver}/edit', [ApproverController::class, 'edit'])->name('settings.approvers.edit');
+        Route::put('approvers/{approver}', [ApproverController::class, 'update'])->name('settings.approvers.update');
+        Route::delete('approvers/{approver}', [ApproverController::class, 'destroy'])->name('settings.approvers.destroy');
+
 
     });
 });
@@ -321,18 +329,36 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
     # EMPLOYEE LEAVES, OVERTIME, AND OBS
     Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');
     Route::resource('overtime', AtroController::class)->except('edit', 'update');
-    Route::resource('official-business-slip', ObsController::class)->except('edit', 'update')->names('obs');
+    Route::resource('pass-slip', ObsController::class)->except('edit', 'update')->names('obs');
 
-    #EMPLOYEE TIMELOGS
+    # EMPLOYEE TIMELOGS
     Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store')->names('checkinout');
     Route::get('employee-timelogs/{employee_no}/get', [DailyTimeRecordController::class, 'show']);
 
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 
     # EMPLOYEE LEAVES, OVERTIME, AND OBS -- APPROVAL --
-    Route::resource('approval-leaves', LeaveApprovalController::class)->names('approval-leave');
-    Route::resource('approval-overtime', AtroApprovalController::class)->names('approval-overtime');
-    Route::resource('approval-official-business-slip', ObsApprovalController::class)->names('approval-obs');
+    Route::get('approval-leaves/{level?}', [LeaveApprovalController::class, 'index'])
+        ->name('approval-leave.index');
+    Route::get('approval-leaves/{level}/{id}', [LeaveApprovalController::class, 'show'])
+        ->name('approval-leave.show');
+    Route::post('approval-leaves/{level}/{id}/save', [LeaveApprovalController::class, 'save'])
+        ->name('approval-leave.save');
+
+    Route::get('approval-pass-slip/{level?}', [ObsApprovalController::class, 'index'])
+        ->name('approval-obs.index');
+    Route::get('approval-pass-slip/{level}/{id}', [ObsApprovalController::class, 'show'])
+        ->name('approval-obs.show');
+    Route::post('approval-pass-slip/{level}/{id}/save', [ObsApprovalController::class, 'save'])
+        ->name('approval-obs.save');
+
+    Route::get('approval-overtime/{level?}', [AtroApprovalController::class, 'index'])
+        ->name('approval-overtime.index');
+    Route::get('approval-overtime/{level}/{id}', [AtroApprovalController::class, 'show'])
+        ->name('approval-overtime.show');
+    Route::post('approval-overtime/{level}/{id}/save', [AtroApprovalController::class, 'save'])
+        ->name('approval-overtime.save');
+
 
     Route::get('profile', [ProfileController::class, 'index'])->name('employee.profile');
 

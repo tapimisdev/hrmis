@@ -60,7 +60,6 @@
             axios.get(`shift/${id}`)
                 .then((response) => {
                     const data = response.data.shift; // adjust according to your API response
-                    console.log(data);
 
                     // Fill modal fields
                     $('#shift-id').text(data.id);
