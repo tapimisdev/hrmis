@@ -935,7 +935,7 @@ class TimelogsServices {
         $suspension = DB::table('suspension_dates as sd')
                     ->leftJoin('suspension as s', 'sd.suspension_id', '=' ,'s.id')
                     ->whereDate('sd.date', $date_today)
-                    ->where('s.is_active', true)
+                    ->where('s.isActive', true)
                     ->first();
 
         if($suspension) {

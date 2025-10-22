@@ -50,7 +50,7 @@ class TrancheController extends Controller
         $payload = $request->all();
 
         $validator = Validator::make($payload, [
-            'employment_type_id'   => 'required|exists:employment_types,id|unique:tranche,id',
+            'employment_type_id'   => 'required|exists:employment_types,id',
             'date'              => 'required|date',
             'file'              => 'required|mimes:csv,txt',
         ]);

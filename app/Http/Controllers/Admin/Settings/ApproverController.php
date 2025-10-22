@@ -193,7 +193,7 @@ class ApproverController extends Controller
 
             return response()->json([
                 'status'   => 'success',
-                'message'  => 'Approver ' . strtoupper(str_replace('_', ' ', $row['type'])) . ' ' . ($payload['type'] === 'payroll' ? 'Updated' : 'Saved'),
+                'message'  => 'Approver ' . strtoupper(str_replace('_', ' ', $payload['type'])) . ' ' . ($payload['type'] === 'payroll' ? 'Updated' : 'Saved'),
                 'redirect' => route('settings.approvers.create')
             ]);
 
