@@ -194,7 +194,7 @@ export default {
 @import './../../../../sass/variables';
 
 .welcome-header {
-  background: linear-gradient(135deg, $primary 0%, $secondary 100%);
+  background: linear-gradient(135deg, $secondary 0%, $primary 100%);
   border-radius: 10px;
   padding: 1.75rem 1.5rem;
   position: relative;
@@ -206,9 +206,9 @@ export default {
     position: absolute;
     top: -30%;
     right: -15%;
-    width: 300px;
-    height: 300px;
-    background: rgba(255, 255, 255, 0.08);
+    width: 700px;
+    height: 700px;
+    background: rgba(0, 0, 0, 0.08);
     border-radius: 50%;
     z-index: 0;
   }
@@ -228,13 +228,12 @@ export default {
     max-width: 100%;
     height: auto;
     max-height: 240px;
-    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.1));
-    animation: float 2s ease-in-out infinite reverse;
+    animation: float 3s ease-in-out infinite reverse;
   }
 }
 
 .welcome-content {
-  color: white;
+  color: $light;
   
   .greeting {
     display: inline-flex;

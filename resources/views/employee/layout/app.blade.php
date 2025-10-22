@@ -115,6 +115,14 @@
                 btn.classList.toggle('rotate');
                 localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
             }));
+
+            $('.x-mark').on('click', function() {
+                const $aside = $('aside');
+                const $overlay = $('.sidebar-overlay');
+
+                if ($aside.length) $aside.toggleClass('mobile-open');
+                if ($overlay.length) $overlay.toggleClass('active');
+            });
         });
     </script>
 

@@ -5,7 +5,7 @@
 
     <header-vue title="DOST TAPI"></header-vue>
 
-    <x-header-employee title="Apply for Pass Slip" subtitle="Create a pass slip application in this module">
+    <x-header-employee title="Pass Slip / Apply" subtitle="Create a pass slip application in this module">
         <a href="javascript:history.back()" class="btn btn-danger py-3 px-4">
             <i class="fa-solid fa-arrow-left me-2"></i> Back
         </a>
