@@ -17,7 +17,6 @@
             @csrf
             <div class="card-body">
                 <div class="row g-3">
-                    <input type="hidden" name="selectedDates" id="selectedDates">
                     <div class="col-12 col-md-12 mb-3">
                         <label for="leave_id" class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
                         <select name="leave_id" id="leave_id" class="form-select">
@@ -31,6 +30,7 @@
                     <div class="col-12 col-md-12 mb-3">
                         <label for="calendar" class="form-label fw-semibold">Choose Dates <span class="text-danger">*</span></label>
                         <div id="calendar" class="full-calendar"></div>
+                        <input type="hidden" name="selectedDates" id="selectedDates">
                         <div class="error-field"></div>
                     </div>
                 </div>
@@ -67,11 +67,6 @@
                         @empty
                             <div class="text-uppercase fw-bold text-muted fst-italic">No approvers found. Please contact administrators.</div>
                         @endforelse
-                        <div class="mb-3">
-                            <div id="approvers">
-                                <div class="error-field"></div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -81,6 +76,9 @@
                         <i class="fa-solid fa-paper-plane me-2"></i> Submit
                     </button>
                 </div>
+            </div>
+            <div id="slot-modal">
+            
             </div>
         </form>
     </div>

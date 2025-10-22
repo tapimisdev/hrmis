@@ -8,43 +8,38 @@ use Illuminate\Validation\Rule;
 
 class StoreLeaveApplication extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation()
+    {
+        if (is_string($this->selectedDates)) {
+            $this->merge([
+                'selectedDates' => json_decode($this->selectedDates, true) ?? [],
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
-            'user_id' => ['nullable', 'exists:users,id'],
-            'leave_id' => ['required', 'exists:leaves,id'],
-            'reason' => ['required', 'string', 'max:500'],
-            'selectedDates' => ['required'],
-            'attachments' => ['nullable', 'array'],
+            'user_id'       => ['nullable', 'exists:users,id'],
+            'leave_id'      => ['required', 'exists:leaves,id'],
+            'reason'        => ['required', 'string', 'max:500'],
+            'selectedDates' => ['required', 'array', 'min:1'],
+            'selectedDates.*.date'  => ['required', 'date'],
+            'selectedDates.*.shift' => ['required', 'in:morning,afternoon,wholeday'],
+
+            'attachments'   => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 
-            'approvers'     => 'required|array|min:1',
-            'approvers.*'   => 'required|array|min:1',
-            'approvers.*.*' => 'required|exists:users,id',
-            
-            // Prevent duplicate leave applications with same dates and type
-            Rule::unique('leave_applications')->where(function ($query) {
-                return $query->where('employee_id', $this->employee_id)
-                    ->where('leave_id', $this->leave_id)
-                    ->where('start_date', $this->start_date)
-                    ->where('end_date', $this->end_date);
-            }),
+            'approvers'     => ['required', 'array', 'min:1'],
+            'approvers.*'   => ['required', 'array', 'min:1'],
+            'approvers.*.*' => ['required', 'exists:users,id'],
         ];
     }
-
 
     public function messages(): array
     {
@@ -57,11 +52,9 @@ class StoreLeaveApplication extends FormRequest
             'end_date.required' => 'End date is required.',
             'leave_applications.unique' => 'This leave request already exists.',
 
-            // Attachment messages
             'attachment.file' => 'The attachment must be a file.',
             'attachment.mimes' => 'The attachment must be a PDF, JPG, PNG, DOC, or DOCX file.',
             'attachment.max' => 'The attachment size must not exceed 2MB.',
         ];
     }
-
 }

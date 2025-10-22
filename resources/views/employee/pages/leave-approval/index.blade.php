@@ -12,13 +12,13 @@
         <ul class="nav nav-pills mt-5 mb-4">
             @foreach($levels as $key => $item)
                 <li class="nav-item">
-                    <a href="{{route('approval-leave.index', ['level' => $item])}}" class="nav-link {{ $level == $item ? 'active' : '' }}" aria-current="page" href="#">
+                    <a href="{{route('approval-leave.index', ['level' => $item])}}" class="bg-secondary nav-link {{ $level == $item ? 'active' : '' }}" aria-current="page" href="#">
                         {{ordinal($item)}} Approver
                     </a>
                 </li>
             @endforeach
         </ul>
-        
+
         <x-table-employee id="myTable">
             <thead>
                 <tr>

@@ -34,6 +34,11 @@ return new class extends Migration
             $table->foreignId('leave_application_id')
                 ->constrained('leave_applications')
                 ->onDelete('cascade');
+            $table->enum('shift', [
+                'morning',
+                'afternoon',
+                'wholeday'
+            ]);
             $table->date('date');
         });
 

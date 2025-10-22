@@ -247,7 +247,7 @@ class LeaveApplicationController extends Controller
         });
 
         $applications = $data['applications'];
-
+        
         return view('employee.pages.leave.create', compact('leaves', 'approvers', 'applications'));
     }
 
@@ -283,7 +283,16 @@ class LeaveApplicationController extends Controller
                 ], 500); 
             }
 
-            $dates = json_decode($validatedData['selectedDates'], true);
+            $datesInput = $validatedData['selectedDates'];
+
+            if (is_string($datesInput)) {
+                $dates = json_decode($datesInput, true);
+            } elseif (is_array($datesInput)) {
+                $dates = $datesInput;
+            } else {
+                $dates = [];
+            }
+
             $approvers = $validatedData['approvers'];
             $days = count($approvers);
 
@@ -308,10 +317,11 @@ class LeaveApplicationController extends Controller
                 'updated_at'    => now(),
             ]);
         
-            foreach($dates as $date) {
+            foreach($dates as $item) {
                 DB::table('leave_dates')->insertGetId([
                     'leave_application_id' => $applicationID,
-                    'date' => $date,
+                    'date' => $item['date'],
+                    'shift'=> $item['shift'],
                 ]);
             }
 
