@@ -8,7 +8,7 @@
 
         <x-header-employee title="Overtime Approval" subtitle="Review and approve overtime applications here">
         </x-header-employee>
-        <ul class="nav nav-pills mt-5 mb-4">
+        <ul class="nav nav-pills mb-4">
             @foreach($levels as $key => $item)
                 <li class="nav-item">
                     <a href="{{route('approval-leave.index', ['level' => $item])}}" class="bg-secondary nav-link {{ $level == $item ? 'active' : '' }}" aria-current="page" href="#">

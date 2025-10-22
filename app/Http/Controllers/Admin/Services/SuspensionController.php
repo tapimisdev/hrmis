@@ -269,7 +269,7 @@ class SuspensionController extends Controller
             DB::table('suspension_dates')
                 ->where('id', $id)
                 ->update([
-                    'is_active' => false,
+                    'isActive' => false,
                 ]);
 
             DB::commit();

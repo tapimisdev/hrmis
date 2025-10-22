@@ -2,12 +2,26 @@
   <div>
     <h5 class="mb-3 text-primary text-uppercase">Step 4: Approval & Submission</h5>
     <p class="text-muted mb-4">Select approvers and finalize the payroll.</p>
-    <!-- APPROVERS (Select2 Multiple) -->
-    <div class="mb-3">
-      <label class="form-label fw-semibold">Approving Officers</label>
-      <select ref="approversSelect" class="form-select" multiple>
-        <option v-for="user in users" :key="user.id" :value="user.id">
-          {{ user.name }}
+
+    <!-- APPROVERS BY LEVEL -->
+    <div v-for="(group, level) in groupedUsers" :key="level" class="mb-4">
+      <label class="form-label fw-semibold d-flex align-items-center">
+        Level {{ level }} Approver
+        <span class="text-danger ms-1">*</span>
+      </label>
+
+      <select
+        class="form-select approver-select"
+        :ref="el => setSelectRef(el, level)"
+        multiple
+        required
+      >
+        <option
+          v-for="user in group"
+          :key="user.user_id"
+          :value="user.user_id"
+        >
+          {{ user.firstname }} {{ user.lastname }}
         </option>
       </select>
     </div>
@@ -17,17 +31,34 @@
 <script>
 export default {
   name: 'ApprovalPayroll',
-  props: ["modelValue"],
+  props: {
+    modelValue: {
+      type: Object,
+      default: () => ({})
+    }
+  },
   emits: ["update:modelValue"],
   data() {
     const token = localStorage.getItem("auth_token");
     return {
       token,
       users: [],
+      selectRefs: {}, // Store refs manually
       localForm: {
-        approved_by: this.modelValue.approved_by || [],
+        approved_by: this.modelValue?.approved_by || {}, // structure: { 1: [id1, id2], 2: [id3] }
       },
     };
+  },
+  computed: {
+    groupedUsers() {
+      // Group users by level
+      const grouped = {};
+      this.users.forEach(user => {
+        if (!grouped[user.level]) grouped[user.level] = [];
+        grouped[user.level].push(user);
+      });
+      return grouped;
+    },
   },
   watch: {
     localForm: {
@@ -36,49 +67,105 @@ export default {
         this.$emit("update:modelValue", newVal);
       },
     },
-  },
-  mounted() {
-    this.fetchUsers().then(() => {
-      this.initSelect2();
-    });
-  },
-  beforeUnmount() {
-    // destroy Select2 instance to avoid memory leaks
-    if (this.$refs.approversSelect) {
-      $(this.$refs.approversSelect).select2("destroy");
+    modelValue: {
+      deep: true,
+      handler(newVal) {
+        if (newVal && JSON.stringify(newVal) !== JSON.stringify(this.localForm)) {
+          this.localForm = {
+            approved_by: newVal.approved_by || {}
+          };
+          this.$nextTick(() => this.syncSelect2Values());
+        }
+      }
+    },
+    // Reinitialize Select2 if new users come in (dynamic updates)
+    users() {
+      this.$nextTick(() => this.initSelect2());
     }
   },
+  async mounted() {
+    await this.fetchApprover();
+    this.$nextTick(() => this.initSelect2());
+  },
+  beforeUnmount() {
+    // Destroy all Select2 instances
+    Object.keys(this.selectRefs).forEach(level => {
+      const ref = this.selectRefs[level];
+      if (ref && $(ref).data('select2')) {
+        $(ref).off('change'); // Remove event listeners
+        $(ref).select2("destroy");
+      }
+    });
+  },
   methods: {
-    async fetchUsers() {
+    setSelectRef(el, level) {
+      if (el) {
+        this.selectRefs[level] = el;
+        if (!this.localForm.approved_by[level]) {
+          this.localForm.approved_by[level] = [];
+        }
+      }
+    },
+    async fetchApprover() {
       try {
-        const response = await axios.get("/api/users", {
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${this.token}`, // or localStorage.getItem('token')
-          },
+        const response = await axios.get("/api/payroll/approvers", {
+          headers: { "Authorization": `Bearer ${this.token}` },
         });
         this.users = response.data;
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     },
+    syncSelect2Values() {
+      // Update Select2 dropdowns with current values
+      Object.keys(this.groupedUsers).forEach(level => {
+        const ref = this.selectRefs[level];
+        if (ref && $(ref).data('select2')) {
+          const values = this.localForm.approved_by[level] || [];
+          $(ref).val(values).trigger('change.select2');
+        }
+      });
+    },
     initSelect2() {
-      const select = $(this.$refs.approversSelect);
-
-      select.select2({
-        placeholder: "Select Approving Officers",
-        width: "100%",
+      // Destroy old instances before re-initializing
+      Object.keys(this.selectRefs).forEach(level => {
+        const ref = this.selectRefs[level];
+        if (ref && $(ref).data('select2')) {
+          $(ref).off('change');
+          $(ref).select2("destroy");
+        }
       });
 
-      // Sync Vue model when changed
-      select.on("change", (e) => {
-        this.localForm.approved_by = $(e.target).val() || [];
-      });
+      // Initialize fresh Select2 instances
+      Object.keys(this.groupedUsers).forEach(level => {
+        const ref = this.selectRefs[level];
+        if (ref) {
+          const select = $(ref);
+          select.select2({
+            placeholder: `Select Level ${level} Approver(s)`,
+            width: "100%",
+          });
 
-      // Initialize with existing values
-      if (this.localForm.approved_by.length > 0) {
-        select.val(this.localForm.approved_by).trigger("change");
-      }
+          // Sync changes to Vue model
+          select.on("change", (e) => {
+            const selected = $(e.target).val() || [];
+            // Convert string values to numbers if needed
+            const selectedIds = selected.map(id => parseInt(id) || id);
+            
+            // Use Vue.set for Vue 2 or direct assignment for Vue 3
+            if (this.$set) {
+              this.$set(this.localForm.approved_by, level, selectedIds);
+            } else {
+              this.localForm.approved_by[level] = selectedIds;
+            }
+          });
+
+          // Load existing selections if present
+          if (this.localForm.approved_by[level] && this.localForm.approved_by[level].length > 0) {
+            select.val(this.localForm.approved_by[level]).trigger('change.select2');
+          }
+        }
+      });
     },
   },
 };

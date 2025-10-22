@@ -5,7 +5,7 @@
       <h5 class="fw-bold mb-0 text-light" > {{ title }} </h5>
     </div>
 
-    <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰ Menu</button>
+    <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰</button>
     
     <div class="d-flex gap-3 align-items-center">
       <!-- Notification Dropdown -->
@@ -333,6 +333,18 @@ export default {
     background-color: lighten($primary, 60);
     color: $dark;
     transition: background-color 0.2s ease;
+  }
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: $light;
+  cursor: pointer;
+  transition: transform 0.1s ease-in-out;
+  &:hover {
+      transform: scale(1.03);
   }
 }
 

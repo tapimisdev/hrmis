@@ -1,7 +1,7 @@
 <nav class="navbar admin-nav navbar-expand-md navbar-light sticky-top" style="height: 50px">
     <div class="container d-flex justify-content-md-between">
         <div></div>
-        <div class="dropdown d-none d-lg-block">
+        <div class="dropdown">
             <a class="nav-link text-white text-capitalize d-flex align-items-center gap-2" href="" role="button">
                 <img class="mini-logo" src="{{ asset('img/dost-tapi.png') }}" alt="">
 

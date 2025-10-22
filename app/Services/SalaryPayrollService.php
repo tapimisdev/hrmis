@@ -236,7 +236,7 @@ class SalaryPayrollService {
             ->leftJoin('suspension', 'suspension_dates.suspension_id', '=', 'suspension.id')
             ->select('suspension_dates.*', 'suspension.name', 'suspension.description')
             ->whereBetween('suspension_dates.date', [$start_date, $end_date])
-            ->where('suspension_dates.is_active', true)
+            ->where('suspension_dates.isActive', true)
             ->get()
             ->map(function ($suspension) {
                 $title = ucfirst(str_replace('_', ' ', $suspension->name));

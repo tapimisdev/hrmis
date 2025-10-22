@@ -1,5 +1,6 @@
 <!-- Sidebar -->
     <aside>
+        <button @click="toggleMobileMenu" class="d-md-none x-mark"><i class="fa-solid fa-xmark"></i></button>
         <div class="sidebar shadow-lg" id="sidebar">
             <!-- Header -->
             <header class="sidebar-header">
