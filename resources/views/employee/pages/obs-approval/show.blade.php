@@ -5,7 +5,7 @@
 
     <x-header title="Pass Slip Application" subtitle="View pass slip application details">
         <x-button-link 
-            href="{{route('approval-leave.index')}}"
+            href="{{route('approval-obs.index')}}"
             icon="fa-solid fa-arrow-left me-2" 
             text="Back" 
             variant="danger"

@@ -132,7 +132,6 @@ class ApproverController extends Controller
             ];
         }
 
-        // Optional: convert associative array to consistent structure (sorted)
         $data = $formatted;
         ksort($data);
 

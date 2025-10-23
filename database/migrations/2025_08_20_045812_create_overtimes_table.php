@@ -24,6 +24,7 @@ return new class extends Migration
             $table->enum('status', ['cancelled', 'pending', 'approved', 'rejected'])->default('pending');
             $table->longText('remarks')->nullable();
             $table->integer('level');
+            $table->json('levels');
             $table->unsignedBigInteger('approver_id')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();

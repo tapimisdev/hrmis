@@ -8,29 +8,13 @@
     <header-vue title="DOST TAPI"></header-vue>
 
     <x-header-employee title="Pass Slip Approval" subtitle="Review and approve pass slip here">
+        <x-button-link 
+            href="{{route('approval-obs.index')}}"
+            icon="fa-solid fa-arrow-left me-2" 
+            text="Back" 
+            variant="danger"
+        />
     </x-header-employee>
-    
-    <div class="d-flex justify-content-between">
-        <ul class="nav nav-pills mb-4 gap-2">
-            @foreach($levels as $key => $item)
-                <li class="nav-item">
-                    <a href="{{route('approval-obs.index', ['level' => $item])}}" class="bg-secondary nav-link {{ $level == $item ? 'active' : '' }}" aria-current="page" href="#">
-                        {{ordinal($item)}} Approver
-                    </a>
-                </li>
-            @endforeach
-        </ul>
-
-        <ul class="nav nav-pills mb-4 gap-2">
-            @if(count($levels) > 0) 
-                <li class="nav-item">
-                    <a href="{{route('approval-obs.view', ['level' => 'all'])}}" class="bg-secondary nav-link {{ $level == $item ? 'active' : '' }}" aria-current="page" href="#">
-                        View All
-                    </a>
-                </li>
-            @endif
-        </ul>
-    </div>
 
     <x-table-employee id="myTable">
         <thead>
@@ -55,7 +39,7 @@
         let DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
-            "ajax": '{{ route('approval-obs.index', ['level' => $level]) }}',
+            "ajax": '{{ route('approval-obs.view', ['level' => $level]) }}',
             "columns": [
                 { data: "application_no", name: 'application_no' },
                 { data: "name", name: 'name' },
