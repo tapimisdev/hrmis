@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreObsRequest;
+use App\Http\Controllers\Admin\Services\ApplicationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,171 +13,11 @@ use Yajra\DataTables\Facades\DataTables;
 class ObsController extends Controller
 {
 
-    public function getRawData(?int $id = null)
+    protected $applicationService;
+
+    public function __construct(ApplicationController $applicationService)
     {
-        $user_id = Auth::id();
-
-        // Fetch main OBS applications with employee name
-        $applications = DB::table('obs_applications as ob')
-            ->leftJoin('employee_personal as ep', 'ep.employee_no', '=', 'ob.employee_no')
-            ->select(
-                'ob.*',
-                DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name")
-            )
-            ->where('ob.user_id', $user_id)
-            ->when($id, function ($query, $id) {
-                return $query->where('ob.id', $id);
-            })
-            ->orderBy('ob.created_at', 'desc')
-            ->get();
-
-        $applicationIds = $applications->pluck('id');
-
-        // Fetch attachments
-        $attachments = DB::table('obs_attachments')
-            ->select('obs_applications_id', 'file_name', 'file_path', 'file_type')
-            ->whereIn('obs_applications_id', $applicationIds)
-            ->get()
-            ->groupBy('obs_applications_id');
-
-        // Fetch approvals with employee details
-        $approvalsRaw = DB::table('obs_approvals')
-            ->join('employee_information', 'obs_approvals.user_id', '=', 'employee_information.user_id')
-            ->join('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
-            ->select([
-                'obs_approvals.obs_applications_id',
-                'obs_approvals.user_id',
-                'obs_approvals.level',
-                'obs_approvals.status',
-                'employee_information.employee_no',
-                'employee_personal.firstname',
-                'employee_personal.lastname',
-            ])
-            ->whereIn('obs_approvals.obs_applications_id', $applicationIds)
-            ->get();
-
-        // Group approvals by application
-        $approvalsByApplication = $approvalsRaw->groupBy('obs_applications_id');
-
-        // Level-based approval status
-        $levelApprovals = DB::table('obs_approvals')
-            ->select('obs_applications_id', 'level', 'status')
-            ->whereIn('obs_applications_id', $applicationIds)
-            ->orderBy('level')
-            ->get()
-            ->groupBy('obs_applications_id')
-            ->map(function ($group) {
-                return $group->groupBy('level')->map(function ($levelGroup) {
-                    foreach ($levelGroup as $row) {
-                        if (in_array($row->status, ['approved', 'rejected'])) {
-                            return $row->status;
-                        }
-                    }
-                    return $levelGroup->first()->status;
-                });
-            });
-
-        // Group approvals by level across all applications (for display)
-        $groupedArray = $approvalsRaw
-            ->groupBy('level')
-            ->map(function ($items) {
-                return $items->unique('user_id')->values();
-            })
-            ->sortKeys()
-            ->toArray();
-
-        // Merge all data into final results
-        $results = $applications->map(function ($item) use ($attachments, $groupedArray, $levelApprovals) {
-            $item->attachments = $attachments->get($item->id)?->values() ?? [];
-            $item->approvals = $groupedArray;
-            $item->level_approvals = $levelApprovals->get($item->id)?->toArray() ?? [];
-            return $item;
-        });
-
-        return $results;
-    }
-
-    public function getData()
-    {
-
-        // Get current user and employee_no
-        $user = Auth::user()->load('employeeInformation');
-        $employee_no = $user->employeeInformation->employee_no ?? null;
-
-        // Get user's organization
-        $organization = DB::table('employee_organization')
-            ->where('employee_no', $employee_no)
-            ->latest()
-            ->first();
-
-        // Get leave approvers for the user's division and unit
-        $approvers = DB::table('application_approver')
-            ->leftJoin('application_approver_users', 'application_approver.id', '=', 'application_approver_users.application_approver_id')
-            ->leftJoin('users', 'application_approver_users.user_id', '=', 'users.id')
-            ->where('application_approver.type', 'pass_slip')
-            ->where('application_approver.division_id', $organization->division_id)
-            ->where('application_approver.unit_id', $organization->unit_id)
-            ->select(
-                'application_approver_users.level',
-                'users.id as user_id',
-                'users.name as user_name',
-            )
-            ->get();
-
-        // Group approvers by level
-        $approvers = $approvers
-            ->groupBy('level')
-            ->mapWithKeys(function ($items, $level) {
-                return [
-                    $level => $items->map(function ($item) {
-                        return [
-                            'id'   => $item->user_id,
-                            'name' => $item->user_name,
-                        ];
-                    })->unique('id')->values()
-                ];
-            })
-            ->sortKeys();
-
-        // 1. Get leave application dates (per row)
-        $applications = DB::table('leave_applications as la')
-            ->join('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
-            ->where('la.user_id', $user->id) // optional: filter by current user
-            ->select(
-                DB::raw("'leave' as title"),
-                'la.status',
-                'ld.date'
-            );
-
-        // 2. Get holidays (with fixed 'holiday' name and empty status)
-        $holidays = DB::table('holidays')
-            ->select(
-                'name as title',
-                DB::raw("'holiday' as status"),
-                'date'
-            );
-
-        // 3. Get suspensions (from suspension_dates)
-        $suspensions = DB::table('suspension as s')
-            ->join('suspension_dates as sd', 's.id', '=', 'sd.suspension_id')
-            ->where('s.isActive', true)
-            ->select(
-                'name as title',
-                DB::raw("'suspension' as status"),
-                'sd.date'
-            );
-
-        // Combine all into one collection
-        $allApplications = $applications
-            ->unionAll($holidays)
-            ->unionAll($suspensions)
-            ->orderBy('date')
-            ->get();
-
-        return [
-            'approvers' => $approvers,
-            'applications' => $allApplications
-        ];
+        $this->applicationService = $applicationService;
     }
 
     /**
@@ -186,7 +27,7 @@ class ObsController extends Controller
     {
         if (request()->ajax()) {
 
-            $data = $this->getRawData();
+            $data = $this->applicationService->getRawData('obs');
             return $this->datatable($data);
         }
 
@@ -199,13 +40,14 @@ class ObsController extends Controller
     public function create()
     {
         $myId = Auth::id();
-        $data = $this->getData();
+        $data = $this->applicationService->getData('leave');
         $approvers = $data['approvers'];
         $approvers = $approvers->map(function ($collection) use ($myId) {
             return $collection->reject(function ($approver) use ($myId) {
                 return $approver['id'] === $myId;
             })->values();
         });
+        
         $applications = $data['applications'];
 
         return view('employee.pages.obs.create', compact('approvers', 'applications'));
@@ -235,7 +77,9 @@ class ObsController extends Controller
             $application_no = generateApplicationNo('obs_applications', 'PSL');
             
             $approvers = $validatedData['approvers'];
-        
+            $data = $this->applicationService->getData('leave');
+            $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
+
             // Insert obs record
             $obsId = DB::table('obs_applications')->insertGetId([
                 'application_no'     => $application_no,
@@ -253,6 +97,7 @@ class ObsController extends Controller
                 'remarks'            => $validatedData['remarks'] ?? null,
                 'status'             => 'pending',
                 'level'              => 1,
+                'levels'             => json_encode($levels),
                 'created_by'         => Auth::user()->id,
                 'updated_by'         => Auth::user()->id,
                 'created_at'         => now(),
@@ -308,7 +153,7 @@ class ObsController extends Controller
     public function show(int $id)
     {
         
-        $data = $this->getRawData($id)[0] ?? [];
+        $data = $this->applicationService->getRawData('obs', $id)[0] ?? [];
 
         if(!$data) {
             return redirect()->route('obs.index');

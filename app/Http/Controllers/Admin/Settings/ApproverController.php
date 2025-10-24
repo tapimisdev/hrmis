@@ -76,7 +76,66 @@ class ApproverController extends Controller
     }
 
     public function view() {
-        return view('admin.pages.settings.approvers.view');
+
+        $data = DB::table('application_approver as ap')
+            ->leftJoin('units as un', 'ap.unit_id', '=', 'un.id')
+            ->leftJoin('application_approver_users as apu', 'ap.id', '=', 'apu.application_approver_id')
+            ->leftJoin('employee_information as ei', 'ei.id', '=', 'apu.user_id')
+            ->leftJoin('employee_personal as ep', 'ep.employee_no', '=', 'ei.employee_no')
+            ->leftJoin('employee_organization as eo', 'eo.employee_no', '=', 'ei.employee_no')
+            ->leftJoin('positions as p', 'p.id', '=', 'eo.position_id')
+            ->select(
+                'ap.type as type',
+                'un.name as agency_name',
+                'apu.level as level',
+                DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as name"),
+                'p.name as position_name',
+                'ep.employee_no as employee_no',
+                'ep.profile as profile'
+            )
+            ->whereNotNull('ap.type')
+            ->orderBy('ap.id')
+            ->orderBy('apu.level')
+            ->get();
+
+        // Group by agency and level
+        $formatted = [];
+
+        foreach ($data as $row) {
+            $agency = $row->agency_name ?: 'Unknown Agency';
+            $level = 'Level ' . ($row->level ?: 0);
+
+            // Initialize agency array if not yet set
+            if (!isset($formatted[$agency])) {
+                $formatted[$agency] = [];
+            }
+
+            // Initialize level array under agency if not yet set
+            if (!isset($formatted[$agency][$level])) {
+                $formatted[$agency][$level] = [];
+            }
+
+            if (!is_null($row->profile)) {
+                $profile = Storage::url('uploads/employees/' . $employee_no . '/profile/' . $row->profile);
+            } else {
+                $profile = 'https://ui-avatars.com/api/?name=' 
+                    . urlencode($row->name) 
+                    . '&background=random&color=fff&font-size=0.5';
+            }
+
+            // Add employee under this agency-level
+            $formatted[$agency][$level][] = [
+                'name' => $row->name ?? 'Unknown',
+                'position' => $row->position_name ?? 'N/A',
+                'employee_no' => $row->employee_no,
+                'profile' => $profile
+            ];
+        }
+
+        $data = $formatted;
+        ksort($data);
+
+        return view('admin.pages.settings.approvers.view', compact('data'));
     }
 
 
@@ -107,7 +166,7 @@ class ApproverController extends Controller
         $this->validate($request, $this->rules($payload));
 
         DB::beginTransaction();
-
+        
         try {
             if ($payload['type'] === 'payroll') {
                 // Handle payroll type: Only one allowed
@@ -141,7 +200,6 @@ class ApproverController extends Controller
                         'updated_at'  => now(),
                     ]);
                 }
-
             } else {
                 // Handle non-payroll types
                 $approver = DB::table('application_approver')
@@ -207,10 +265,8 @@ class ApproverController extends Controller
         }
     }
 
-
     public function edit(string $id)
     {
-
         $data = DB::table('application_approver as aa')
             ->leftJoin('application_approver_users as aau', 'aa.id', '=', 'aau.application_approver_id')
             ->leftJoin('divisions as d', 'aa.division_id', '=', 'd.id')
@@ -299,7 +355,6 @@ class ApproverController extends Controller
             ],
         ];
     }
-
 
     public function update(Request $request, $id)
     {

@@ -25,7 +25,8 @@ return new class extends Migration
                 ->nullable();
             $table->unsignedBigInteger('approver_id')
                 ->nullable();
-            $table->integer('level'); 
+            $table->integer('level');
+            $table->json('levels');
             $table->timestamps();
         });
 
@@ -34,6 +35,11 @@ return new class extends Migration
             $table->foreignId('leave_application_id')
                 ->constrained('leave_applications')
                 ->onDelete('cascade');
+            $table->enum('shift', [
+                'morning',
+                'afternoon',
+                'wholeday'
+            ]);
             $table->date('date');
         });
 

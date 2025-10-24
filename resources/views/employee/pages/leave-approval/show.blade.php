@@ -11,7 +11,7 @@
             variant="danger"
         />
     </x-header>
-     <form id="form" action="{{ route('approval-leave.save', ['level' => $data->level, 'id' => $data->id]) }}" method="POST">
+    <form id="form" action="{{ route('approval-leave.save', ['level' => $data->level, 'id' => $data->id]) }}" method="POST">
         @csrf
         @method('POST')
         <input type="hidden" name="action" id="action" value="">
@@ -37,7 +37,7 @@
                     </tr>
                     <tr>
                         <th>Leave Type:</th>
-                        <td id="leave-type">{{$data->name}}</td>
+                        <td id="leave-type">{{$data->application_name}}</td>
                     </tr>
                     <tr>
                         <th>Dates:</th>

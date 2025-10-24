@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\Services\ApprovalsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,130 +12,10 @@ use Yajra\DataTables\Facades\DataTables;
 class ObsApprovalController extends Controller
 {
 
-    public function getLevels(bool $forApproval = false, int $id = null)
-    {
-        $user_id = Auth::id();
+    protected $approvalService;
 
-        $query = DB::table('obs_approvals')
-            ->when(!$forApproval, function ($query) use ($user_id) {
-                return $query->where('user_id', $user_id);
-            }, function ($query) use ($id) {
-                return $query->where('obs_applications_id', $id);
-            });
-
-        return $query->distinct()->pluck('level') ?? [];
-    }
-
-    public function getRawData(int $level, int $id = null)
-    {
-        $user_id = Auth::id();
-
-        // Base query for approval data
-        $query = DB::table('obs_approvals as oa')
-            ->leftJoin('obs_applications as ob', 'ob.id', '=', 'oa.obs_applications_id')
-            ->leftJoin('employee_personal as ep', 'ob.employee_no', '=', 'ep.employee_no')
-            ->select(
-                'ob.id',
-                'ob.application_no',
-                'ob.user_id',
-                'ob.employee_no',
-                'ob.date_from',
-                'ob.date_to',
-                'ob.time_out',
-                'ob.time_in',
-                'ob.destination',
-                'ob.purpose',
-                'ob.mode_of_transport',
-                'ob.estimated_expense',
-                'ob.charge_to',
-                'ob.status',
-                'ob.remarks',
-                'ob.level',
-                'ob.created_at',
-                'ob.approved_at',
-                'ob.approval_remarks',
-                'ep.firstname',
-                'ep.lastname',
-            )
-            ->where('oa.user_id', $user_id)
-            ->where('oa.level', $level)
-            ->whereColumn('oa.level', 'ob.level');
-
-        // If a specific application ID is provided
-        if ($id !== null) {
-            $query->where('ob.id', $id);
-            $item = $query->first();
-
-            if (!$item) {
-                return null;
-            }
-
-            $attachments = DB::table('obs_attachments')
-                ->where('obs_applications_id', $item->id)
-                ->get();
-
-            return (object)[
-                'id' => $item->id,
-                'application_no' => $item->application_no,
-                'firstname' => $item->firstname,
-                'lastname' => $item->lastname,
-                'user_id' => $item->user_id,
-                'employee_no' => $item->employee_no,
-                'date_from' => $item->date_from,
-                'date_to' => $item->date_to,
-                'time_out' => $item->time_out,
-                'time_in' => $item->time_in,
-                'destination' => $item->destination,
-                'purpose' => $item->purpose,
-                'mode_of_transport' => $item->mode_of_transport,
-                'estimated_expense' => $item->estimated_expense,
-                'charge_to' => $item->charge_to,
-                'status' => $item->status,
-                'remarks' => $item->remarks,
-                'level' => $item->level,
-                'created_at' => $item->created_at,
-                'approved_at' => $item->approved_at,
-                'approval_remarks' => $item->approval_remarks,
-                'attachments' => $attachments,
-            ];
-        }
-
-        // Fetch all matching records
-        $data = $query->get();
-
-        // Collect all application IDs in one go to avoid multiple queries
-        $applicationIds = $data->pluck('id');
-
-        $allAttachments = DB::table('obs_attachments')
-            ->whereIn('obs_applications_id', $applicationIds)
-            ->get()
-            ->groupBy('obs_applications_id');
-
-        return $data->map(function ($item) use ($allAttachments) {
-            return (object)[
-                'id' => $item->id,
-                'application_no' => $item->application_no,
-                'firstname' => $item->firstname,
-                'lastname' => $item->lastname,
-                'user_id' => $item->user_id,
-                'employee_no' => $item->employee_no,
-                'date_from' => $item->date_from,
-                'date_to' => $item->date_to,
-                'time_out' => $item->time_out,
-                'time_in' => $item->time_in,
-                'destination' => $item->destination,
-                'purpose' => $item->purpose,
-                'mode_of_transport' => $item->mode_of_transport,
-                'estimated_expense' => $item->estimated_expense,
-                'charge_to' => $item->charge_to,
-                'status' => $item->status,
-                'remarks' => $item->remarks,
-                'level' => $item->level,
-                'created_at' => $item->created_at,
-                'approved_at' => $item->approved_at,
-                'attachments' => $allAttachments->get($item->id)?->values() ?? [],
-            ];
-        });
+    public function __construct(ApprovalsController $ApprovalsController) {
+        $this->approvalService = $ApprovalsController;
     }
 
     /**
@@ -143,7 +24,7 @@ class ObsApprovalController extends Controller
     public function index(?int $level = null)
     {
 
-        $levels = $this->getLevels(false)->toArray();
+        $levels = $this->approvalService->getLevels('pass_slip', false)->toArray();
 
         if (empty($levels)) {
             if ($level !== null) {
@@ -163,22 +44,32 @@ class ObsApprovalController extends Controller
     protected function handleRequest(?int $level, array $levels)
     {
         if (request()->ajax()) {
-            $data = $level !== null ? $this->getRawData($level) ?? [] : [];
+            $data = $level !== null ? $this->approvalService->getData('pass_slip', $level, null, true) ?? [] : [];
             return $this->datatable($level, $data);
         }
 
         return view('employee.pages.obs-approval.index', compact('levels', 'level'));
     }
 
-    public function show(int $level, int $id) {
+    public function show($level, int $id) {
 
-        $data = $this->getRawData($level, $id) ?? [];
+        $data = $this->approvalService->getData('pass_slip', $level, $id) ?? [];
 
         if(!$data) {
             return redirect()->back();
         }
 
         return view('employee.pages.obs-approval.show', compact('id', 'data'));
+    }
+
+    public function view($level = null) {
+
+        if (request()->ajax()) {
+            $data = $level !== null ? $this->approvalService->getData('pass_slip', $level) ?? [] : [];
+            return $this->datatable($level, $data);
+        }
+
+        return view('employee.pages.obs-approval.view', compact('level'));
     }
 
 
@@ -215,7 +106,7 @@ class ObsApprovalController extends Controller
     {
         try {
 
-            $allLevels = $this->getLevels(true, $id)->toArray() ?? [];
+            $allLevels = $this->approvalService->getLevels('pass_slip', true, $id)->toArray() ?? [];
             $maxLevel = max($allLevels);
             $user_id = Auth::id();
 
@@ -260,7 +151,7 @@ class ObsApprovalController extends Controller
     public function rejected(int $level, int $id, array $payload)
     {
         try {
-            $allLevels = $this->getLevels(true, $id)->toArray() ?? [];
+            $allLevels = $this->approvalService->getLevels('pass_slip', true, $id)->toArray() ?? [];
             $maxLevel = max($allLevels);
             $remarks = $payload['remarks'] ?? null;
             $user_id = Auth::id();
@@ -308,7 +199,7 @@ class ObsApprovalController extends Controller
         return DataTables::of($query)
             ->addIndexColumn()
             ->editColumn('name', function($row) {
-                return $row->firstname . ' ' . $row->lastname ?? 'N/A';
+                return $row->firstname . ' ' . $row->lastname;
             })
             ->addColumn('date_range', function ($row) {
                     if ($row->date_from == $row->date_to) {

@@ -340,6 +340,8 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
     # EMPLOYEE LEAVES, OVERTIME, AND OBS -- APPROVAL --
     Route::get('approval-leaves/{level?}', [LeaveApprovalController::class, 'index'])
         ->name('approval-leave.index');
+    Route::get('approval-leaves/{level?}/view', [LeaveApprovalController::class, 'view'])
+        ->name('approval-leave.view');
     Route::get('approval-leaves/{level}/{id}', [LeaveApprovalController::class, 'show'])
         ->name('approval-leave.show');
     Route::post('approval-leaves/{level}/{id}/save', [LeaveApprovalController::class, 'save'])
@@ -347,6 +349,8 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
 
     Route::get('approval-pass-slip/{level?}', [ObsApprovalController::class, 'index'])
         ->name('approval-obs.index');
+    Route::get('approval-pass-slip/{level?}/view', [ObsApprovalController::class, 'view'])
+        ->name('approval-obs.view');
     Route::get('approval-pass-slip/{level}/{id}', [ObsApprovalController::class, 'show'])
         ->name('approval-obs.show');
     Route::post('approval-pass-slip/{level}/{id}/save', [ObsApprovalController::class, 'save'])
@@ -354,6 +358,8 @@ Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(fun
 
     Route::get('approval-overtime/{level?}', [AtroApprovalController::class, 'index'])
         ->name('approval-overtime.index');
+    Route::get('approval-overtime/{level?}/view', [AtroApprovalController::class, 'view'])
+        ->name('approval-overtime.view');
     Route::get('approval-overtime/{level}/{id}', [AtroApprovalController::class, 'show'])
         ->name('approval-overtime.show');
     Route::post('approval-overtime/{level}/{id}/save', [AtroApprovalController::class, 'save'])

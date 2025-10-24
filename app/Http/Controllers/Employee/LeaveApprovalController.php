@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Employee;
 
+use App\Http\Controllers\Admin\Services\ApprovalsController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,113 +12,10 @@ use Yajra\DataTables\Facades\DataTables;
 class LeaveApprovalController extends Controller
 {
 
-    public function getLevels(bool $forApproval = false, int $id = null)
-    {
-        $user_id = Auth::id();
+    protected $approvalService;
 
-        $query = DB::table('leave_approvals')
-            ->when(!$forApproval, function ($query) use ($user_id) {
-                return $query->where('user_id', $user_id);
-            }, function ($query) use ($id) {
-                return $query->where('leave_application_id', $id);
-            });
-
-        return $query->distinct()->pluck('level') ?? [];
-    }
-
-    public function getRawData(int $level, int $id = null)
-    {
-        $user_id = Auth::id();
-
-        $query = DB::table('leave_approvals')
-            ->leftJoin('leave_applications as la', 'la.id', '=', 'leave_approvals.leave_application_id')
-            ->leftJoin('employee_personal as ep', 'la.employee_no', '=', 'ep.employee_no')
-            ->select(
-                'la.id',
-                'la.application_no',
-                'la.name as leave_application',
-                'la.user_id',
-                'la.employee_no',
-                'la.days',
-                'la.reason',
-                'leave_approvals.status',
-                'la.remarks',
-                'la.level',
-                'la.created_at',
-                'ep.firstname',
-                'ep.lastname'
-            )
-            ->where('leave_approvals.user_id', $user_id)
-            ->where('leave_approvals.level', $level)
-            ->whereColumn('leave_approvals.level', '=', 'la.level');
-
-        if ($id !== null) {
-            $query->where('la.id', $id);
-            $item = $query->first();
-
-            if (!$item) {
-                return null;
-            }
-
-            $leaveDates = DB::table('leave_dates')
-                ->where('leave_application_id', $item->id)
-                ->get();
-
-            $attachments = DB::table('leave_attachments')
-                ->where('leave_application_id', $item->id)
-                ->get();
-            
-            return (object)[
-                'id' => $item->id,
-                'application_no' => $item->application_no,
-                'firstname' => $item->firstname,
-                'lastname' => $item->lastname,
-                'name' => $item->leave_application,
-                'user_id' => $item->user_id,
-                'employee_no' => $item->employee_no,
-                'days' => $item->days,
-                'reason' => $item->reason,
-                'status' => $item->status,
-                'remarks' => $item->remarks,
-                'level' => $item->level,
-                'dates' => $leaveDates,
-                'attachments' => $attachments,
-                'created_at' => $item->created_at,
-                'firstname' => $item->firstname,
-                'lastname' => $item->lastname
-            ];
-        }
-
-        $data = $query->get();
-
-        $data = $data->map(function ($item) {
-            $leaveDates = DB::table('leave_dates')
-                ->where('leave_application_id', $item->id)
-                ->get();
-
-            $attachments = DB::table('leave_attachments')
-                ->where('leave_application_id', $item->id)
-                ->get();
-
-            return (object)[
-                'id' => $item->id,
-                'application_no' => $item->application_no,
-                'name' => $item->leave_application,
-                'user_id' => $item->user_id,
-                'employee_no' => $item->employee_no,
-                'days' => $item->days,
-                'reason' => $item->reason,
-                'status' => $item->status,
-                'remarks' => $item->remarks,
-                'level' => $item->level,
-                'dates' => $leaveDates,
-                'attachments' => $attachments,
-                'firstname' => $item->firstname,
-                'lastname' => $item->lastname
-            ];
-        });
-
-        return $data;
+    public function __construct(ApprovalsController $ApprovalsController) {
+        $this->approvalService = $ApprovalsController;
     }
 
     /**
@@ -125,7 +23,7 @@ class LeaveApprovalController extends Controller
      */
     public function index(?int $level = null)
     {
-        $levels = $this->getLevels(false)->toArray();
+        $levels = $this->approvalService->getLevels('leave', false)->toArray();
 
         if (empty($levels)) {
             if ($level !== null) {
@@ -144,23 +42,31 @@ class LeaveApprovalController extends Controller
     protected function handleRequest(?int $level, array $levels)
     {
         if (request()->ajax()) {
-            $data = $level !== null ? $this->getRawData($level) ?? [] : [];
+            $data = $level !== null ? $this->approvalService->getData('leave', $level, null, true) ?? [] : [];
             return $this->datatable($level, $data);
         }
 
         return view('employee.pages.leave-approval.index', compact('levels', 'level'));
     }
 
-
     public function show(int $level, int $id) {
 
-        $data = $this->getRawData($level, $id) ?? [];
-
+        $data = $this->approvalService->getData('leave', $level, $id) ?? [];
         if(!$data) {
             return redirect()->back();
         }
 
         return view('employee.pages.leave-approval.show', compact('id', 'data'));
+    }
+
+    public function view($level = null) {
+
+        if (request()->ajax()) {
+            $data = $level !== null ? $this->approvalService->getData('leave', $level) ?? [] : [];
+            return $this->datatable($level, $data);
+        }
+
+        return view('employee.pages.leave-approval.view', compact('level'));
     }
 
     public function save(int $level, int $id, Request $request)
@@ -197,7 +103,7 @@ class LeaveApprovalController extends Controller
     {
         try {
 
-            $allLevels = $this->getLevels(true, $id)->toArray() ?? [];
+            $allLevels = $this->approvalService->getLevels('leave', true, $id)->toArray() ?? [];
             $maxLevel = max($allLevels);
             $user_id = Auth::id();
 
@@ -242,7 +148,7 @@ class LeaveApprovalController extends Controller
     public function rejected(int $level, int $id, array $payload)
     {
         try {
-            $allLevels = $this->getLevels(true, $id)->toArray() ?? [];
+            $allLevels = $this->approvalService->getLevels('leave', true, $id)->toArray() ?? [];
             $maxLevel = max($allLevels);
             $remarks = $payload['remarks'] ?? null;
             $user_id = Auth::id();
@@ -293,7 +199,7 @@ class LeaveApprovalController extends Controller
                 return $row->firstname . ' ' . $row->lastname;
             })
             ->editColumn('leave', function($row) {
-                return $row->name;
+                return $row->application_name;
             })
             ->addColumn('date', function ($row) {
                 $datesString = $row->dates->pluck('date')->toArray() ?? [];
@@ -312,10 +218,10 @@ class LeaveApprovalController extends Controller
 
                 return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status)  . '</span>';
             })
-            ->addColumn('actions', function ($row) use ($level) {
+            ->addColumn('actions', function ($row) {
                 $buttons = '
                     <div class="d-flex align-items-center">
-                         <a href="'.route('approval-leave.show', ['level' => $level, 'id' => $row->id]).'" 
+                         <a href="'.route('approval-leave.show', ['level' => $row->level, 'id' => $row->id]).'" 
                             class="btn btn-outline-primary btn show-button ms-1 my-1" 
                             title="Show">
                             <i class="fa-solid fa-eye"></i>
