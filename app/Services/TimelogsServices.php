@@ -514,7 +514,7 @@ class TimelogsServices {
         $timelogHours = (double) $computedTimeLogOvertime['decimal'];
 
         // Find overtime record (only approved or pending)
-        $overtime = DB::table('overtimes')
+        $overtime = DB::table('overtime_applications')
             ->where('user_id', $userId)
             ->whereDate('date', $date)
             ->whereIn('status', ['approved', 'pending'])

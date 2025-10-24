@@ -28,12 +28,12 @@ class StoreLeaveApplication extends FormRequest
             'leave_id' => ['required', 'exists:leaves,id'],
             'reason' => ['required', 'string', 'max:500'],
             'selectedDates' => ['required'],
-            'attachments' => ['nullable', 'array'],
+            'attachments' => ['nullable', 'array'], 
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 
-            'approvers'     => 'required|array|min:1',
-            'approvers.*'   => 'required|array|min:1',
-            'approvers.*.*' => 'required|exists:users,id',
+            'approvers'     => 'nullable|array|min:1',
+            'approvers.*'   => 'nullable|array|min:1',
+            'approvers.*.*' => 'nullable|exists:users,id',
             
             // Prevent duplicate leave applications with same dates and type
             Rule::unique('leave_applications')->where(function ($query) {

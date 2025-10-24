@@ -20,22 +20,28 @@ class StoreSalaryRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+
     public function rules(): array
     {
         return [
-            'label'              => 'required|string|max:50',
-            'employment_type_id' => 'required|integer|exists:employment_types,id',
-            'cutoff'             => [
-                'required',
-                'string',
-                Rule::in(['first_cutoff', 'second_cutoff'])
-            ],
-            'date' => 'required|date|before_or_equal:today',
-            'aprrovers.*'        => 'required|array',
-            'approvers.*.id'     => [
-                'required',
-                Rule::exists('users', 'id')->where('role', 'HR'),
-            ],
+            'label' => ['required', 'string', 'max:255'],
+            'cutoff' => ['required', 'string', 'in:first_cutoff,second_cutoff'],
+            'employment_type_id' => ['required', 'integer', 'exists:employment_types,id'],
+            'date' => ['required', 'date'],
+
+            'approved_by' => ['required', 'array'],
+            'approved_by.*' => ['array', 'min:1'],
+            'approved_by.*.*' => ['integer', 'exists:users,id'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'label.required' => 'The label field is required.',
+            'cutoff.in' => 'The cutoff must be either first_cutoff or second_cutoff.',
+            'employees.eligible.*.firstname.required' => 'Each eligible employee must have a first name.',
+            'employees.eligible.*.lastname.required' => 'Each eligible employee must have a last name.',
         ];
     }
 }

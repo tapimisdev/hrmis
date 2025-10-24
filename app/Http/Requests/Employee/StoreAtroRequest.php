@@ -40,9 +40,9 @@ class StoreAtroRequest extends FormRequest
             'reason' => ['nullable', 'string', 'max:500'],
             'status' => ['nullable', Rule::in(['pending', 'approved'])], // only for timekeeping adjustment only
             
-            'approvers'     => ['required', 'array', 'min:1'],
-            'approvers.*'   => ['required', 'array', 'min:1'],
-            'approvers.*.*' => ['required', 'exists:users,id'],
+            'approvers'     => ['nullable', 'array', 'min:1'],
+            'approvers.*'   => ['nullable', 'array', 'min:1'],
+            'approvers.*.*' => ['nullable', 'exists:users,id'],
         ];
     }
 

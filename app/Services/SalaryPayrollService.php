@@ -2,9 +2,16 @@
 
 namespace App\Services;
 
+use App\Jobs\Admin\Payroll\PayrollRegistryReport;
+use App\Models\User;
+use App\Notifications\PayrollBatchCompleted;
+use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 use function PHPSTORM_META\map;
 
@@ -153,6 +160,88 @@ class SalaryPayrollService {
         }
     }
 
+    public function generatePayrollRegistryReport($payload, $payroll_id)
+    {
+        $employees = collect($this->getEligibleEmployees($payload));
+        $eligibleEmployees = $employees->get('eligible', []);
+
+        if (empty($eligibleEmployees)) {
+            Log::warning("No eligible employees found for payroll ID: {$payroll_id}");
+            return null;
+        }
+
+        $batch = Bus::batch([])
+        ->then(function (Batch $batch) {
+            $admin = \App\Models\User::role('admin')->first();
+            if ($admin) {
+                $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'success'));
+            } else {
+                Log::warning('Admin not found while notifying payroll batch success.');
+            }
+        })
+        ->catch(function (Batch $batch, \Throwable $e) {
+            $admin = \App\Models\User::role('admin')->first();
+            if ($admin) {
+                $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'failed', $e));
+            } else {
+                Log::error('Admin not found while notifying payroll batch failure.');
+            }
+            Log::error("Payroll batch failed: {$e->getMessage()}");
+        })
+        ->name("Payroll Registry Report #{$payroll_id}")
+        ->dispatch();
+
+        foreach ($eligibleEmployees as $employee) {
+            $batch->add(new PayrollRegistryReport($employee, $payroll_id));
+        }
+
+        return $batch;
+    }
+
+    public function createPayroll($payload)
+    {
+        // Insert payroll and get its ID
+        $payroll_id = DB::table('payroll_salary')->insertGetId([
+            'label' => $payload['label'],
+            'payroll_no' => generateNo('REF-', 4),
+
+            'period_covered' => // month year from 1 - 15 or 16 - end of month
+                \Carbon\Carbon::parse($payload['date'])->format('F Y') . ' ' .
+                ($payload['cutoff'] === 'first_cutoff' ? '1-15' : '16-' . \Carbon\Carbon::parse($payload['date'])->endOfMonth()->format('d')),
+            
+            'no_employee' => 0,
+            'gross_amount' => 0,
+            'deduction_amount' => 0,
+            'netpay_amount' => 0,
+            'processed_by_id' => auth()->id(),
+            'payroll_date' => $payload['date'],
+            'cutoff' => $payload['cutoff'],
+            'employment_type_id' => $payload['employment_type_id'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Insert approvers for this payroll
+        $ems = collect($payload['approved_by'])
+            ->flatMap(function ($approvers, $level) use ($payroll_id) {
+                return collect($approvers)->map(function ($user_id) use ($payroll_id, $level) {
+                    return [
+                        'payroll_salary_id' => $payroll_id,
+                        'user_id' => $user_id,
+                        'level' => (int) $level,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                });
+            })
+            ->pipe(function ($records) {
+                DB::table('payroll_salary_approvers')->insert($records->toArray());
+            });
+
+        // Return inserted payroll ID or record
+        return $payroll_id;
+    }
+
     private function getCutoff()
     {
         $dateObj = new \DateTime($this->date);
@@ -273,6 +362,6 @@ class SalaryPayrollService {
         return $suspensions;
     }
 
-
+    
 }
     

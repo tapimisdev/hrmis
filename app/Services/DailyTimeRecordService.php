@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DailyTimeRecordService {
 
@@ -15,6 +16,28 @@ class DailyTimeRecordService {
         $this->timelogs_services = $timelogs_services;
     }
 
+    /**
+     * Retrieves and computes the Daily Time Record (DTR) for a user within a specified date range.
+     *
+     * This function performs the following steps:
+     * 1. Extracts the user ID and date range from the payload.
+     * 2. Generates a date period from startDate to endDate.
+     * 3. Fetches the user's time logs within the period.
+     * 4. Maps each date in the period to the corresponding time log (if any).
+     * 5. Calls the compute() method to calculate detailed work log information, including
+     *    attendance, leaves, overtime, tardiness, and total hours worked.
+     *
+     * @param array $payload {
+     *     The input data containing:
+     *     @type int|string 'user_id'   The ID of the user.
+     *     @type string 'startDate'     Start date of the DTR period (Y-m-d format).
+     *     @type string 'endDate'       End date of the DTR period (Y-m-d format).
+     * }
+     *
+     * @return array Returns the computed DTR data, including:
+     *   - 'computedData': Array of daily work log records with time, overtime, remarks, etc.
+     *   - 'summary': Array of aggregated totals (hours worked, leaves, overtime, absences, etc.).
+     */
     public function getDTR(array $payload)
     {
         $userId = $payload['user_id'];
@@ -28,6 +51,25 @@ class DailyTimeRecordService {
         return $this->compute($mapPeriodToTimelogs, $userId);
     }
 
+    /**
+     * Maps a date period to the corresponding time logs for a user.
+     *
+     * This function ensures that every date in the given period has an associated time log,
+     * defaulting to null values for dates without logs. It simplifies downstream DTR computation
+     * by providing a consistent structure for each day.
+     *
+     * @param \Carbon\CarbonPeriod $period The range of dates to map.
+     * @param array|\Illuminate\Support\Collection $timelogs Array or collection of time logs, each containing 'date' and time entries.
+     *
+     * @return \Illuminate\Support\Collection Returns a collection of daily time log records, each containing:
+     *   - 'date': The date in Y-m-d format.
+     *   - 'time_in': Time in, or null if missing.
+     *   - 'break_out': Break start time, or null if missing.
+     *   - 'break_in': Break end time, or null if missing.
+     *   - 'time_out': Time out, or null if missing.
+     *   - 'shift_id': Shift ID, or null if missing.
+     *   - 'work_schedule_id': Work schedule ID, or null if missing.
+     */
     private function mapPeriodToTimelogs($period, $timelogs)
     {
         // Key timelogs by date for easy lookup
@@ -52,6 +94,27 @@ class DailyTimeRecordService {
         return $dateLogs;
     }
 
+    /**
+     * Computes the detailed work log and payroll data for a given user over a set of dates.
+     *
+     * This function processes each date to determine:
+     * - Attendance status (present, absent, incomplete log)
+     * - Leaves (approved, pending)
+     * - Holidays and rest days
+     * - Suspensions (whole day or half day)
+     * - Overtime
+     * - Tardiness and undertime
+     * - Total work hours and paid hours
+     *
+     * It caches repeated database lookups (shifts, holidays, rest days) for efficiency.
+     *
+     * @param array $dates Array of date records containing time in/out, breaks, and overtime info.
+     * @param int|string $userId The ID of the user for whom the computation is performed.
+     *
+     * @return array Returns an array containing:
+     *   - 'computedData': Array of computed daily records including time logs, total worked minutes, overtime, remarks, etc.
+     *   - 'summary': Array of aggregated totals, including total hours, incomplete logs, leaves, overtime, tardiness, absences, holidays, and suspensions.
+     */
     protected function compute($dates, $userId)
     {
         $computedData = [];
@@ -72,6 +135,7 @@ class DailyTimeRecordService {
         $TOTAL_PENDING_LEAVES = 0;
         $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
         $TOTAL_OVERTIME = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
+        $DOUBLE_EXCESS = 0;
 
         foreach ($dates as $date) {
             $remarks = [];
@@ -99,8 +163,12 @@ class DailyTimeRecordService {
 
                 if (!$empty_log) {
                     $double = $holiday_work_rate;
+                    $DOUBLE_EXCESS += $holiday_work_rate - 1;
+                    // Log::info("Holiday work day for user ID: {$userId} on {$date['date']} with rate: {$holiday_work_rate - 1}");
                 } else {
                     $double = $holiday_no_work_rate;
+                    $DOUBLE_EXCESS += $holiday_no_work_rate - 1;
+                    // Log::info("Holiday no work day for user ID: {$userId} on {$date['date']} with rate: {$holiday_no_work_rate - 1}");
 
                     if (!isset($shiftsCache[$shift_id])) {
                         $shiftsCache[$shift_id] = DB::table('shifts')->find($shift_id);
@@ -259,10 +327,10 @@ class DailyTimeRecordService {
             if ($otInCarbon && $otOutCarbon) {
                 $computed_ot = $this->timelogs_services->overtimeDifference($otInCarbon, $otOutCarbon);
                 $ot_data = $this->timelogs_services->checkOvertime($logDate, $userId, $computed_ot);
-
-                if ($ot_data['is_overtime']) {
-                    $TOTAL_OVERTIME += $ot_data['overtime_mins'];
+                
+                if (!empty($ot_data['is_overtime'])) {
                     $ot_mins = $ot_data['overtime_mins'];
+                    $TOTAL_OVERTIME += $ot_data['overtime_mins'];
                     $remarks[] = $ot_data['status'];
                 }
             }
@@ -300,23 +368,53 @@ class DailyTimeRecordService {
 
         /** ---------------- SUMMARY ---------------- **/
         $summary = [
-            ['label' => 'Total HRS',        'value' => intval($TOTAL_HOURS / 60) . ' HRS'],
-            ['label' => 'Incomplete Logs',  'value' => $TOTAL_INCOMPLETE_LOGS],
-            ['label' => 'Pending Leaves',   'value' => $TOTAL_PENDING_LEAVES],
-            ['label' => 'Overtime',         'value' => $TOTAL_OVERTIME . ' MINS'],
-            ['label' => 'Late / Undertime', 'value' => $TOTAL_UT . ' MINS'],
-            ['label' => 'Absent',           'value' => $TOTAL_ABSENT . ' Days'],
-            ['label' => 'Leaves',           'value' => $TOTAL_LEAVES . ' Day' . ($TOTAL_LEAVES != 1 ? 's' : '')],
-            ['label' => 'Holiday',          'value' => $TOTAL_HOLIDAY . ' Day' . ($TOTAL_HOLIDAY != 1 ? 's' : '')],
-            ['label' => 'Suspensions',      'value' => $TOTAL_SUSPENSION],
+            ['label' => 'Total HRS',        'value' => intval($TOTAL_HOURS / 60) . ' HRS', 'actual_value' => intval($TOTAL_HOURS / 60) ],
+            ['label' => 'Incomplete Logs',  'value' => $TOTAL_INCOMPLETE_LOGS, 'actual_value' => $TOTAL_INCOMPLETE_LOGS ],
+            ['label' => 'Pending Leaves',   'value' => $TOTAL_PENDING_LEAVES, 'actual_value' => $TOTAL_PENDING_LEAVES ],
+            ['label' => 'Overtime',         'value' => $TOTAL_OVERTIME . ' MINS', 'actual_value' => $TOTAL_OVERTIME ],
+            ['label' => 'Late / Undertime', 'value' => $TOTAL_UT . ' MINS', 'actual_value' => $TOTAL_UT ],
+            ['label' => 'Absent',           'value' => $TOTAL_ABSENT . ' Days', 'actual_value' => $TOTAL_ABSENT ],
+            ['label' => 'Leaves',           'value' => $TOTAL_LEAVES . ' Day' . ($TOTAL_LEAVES != 1 ? 's' : ''), 'actual_value' => $TOTAL_LEAVES ],
+            ['label' => 'Holiday',          'value' => $TOTAL_HOLIDAY . ' Day' . ($TOTAL_HOLIDAY != 1 ? 's' : ''), 'actual_value' => $TOTAL_HOLIDAY ],
+            ['label' => 'Suspensions',      'value' => $TOTAL_SUSPENSION, 'actual_value' => $TOTAL_SUSPENSION ],
+            ['label' => 'Excess',           'value' => $DOUBLE_EXCESS, 'actual_value' => $DOUBLE_EXCESS ],
+        ];
+
+        $payroll_value = [
+            'total_hours'        => intval($TOTAL_HOURS / 60),
+            'incomplete_logs'    => $TOTAL_INCOMPLETE_LOGS,
+            'pending_leaves'     => $TOTAL_PENDING_LEAVES,
+            'overtime'           => $TOTAL_OVERTIME,
+            'late_undertime'     => $TOTAL_UT,
+            'absent'             => $TOTAL_ABSENT,
+            'leaves'             => $TOTAL_LEAVES,
+            'holiday'            => $TOTAL_HOLIDAY,
+            'suspensions'        => $TOTAL_SUSPENSION,
+            'excess'             => $DOUBLE_EXCESS,
         ];
 
         return [
             'computedData' => $computedData,
             'summary'      => $summary,
+            'payroll_value'      => $payroll_value,
         ];
     }
 
+    /**
+     * Retrieves the default shift and work schedule for a given user.
+     *
+     * This function fetches the employee number, assigned shift ID, and work schedule ID
+     * from the database for the specified user. It is used as the baseline for computing
+     * the user's Daily Time Record (DTR) when no specific date-level overrides exist.
+     *
+     * @param int|string $user_id The ID of the user.
+     *
+     * @return object|null Returns an object containing:
+     *   - 'employee_no': The employee number.
+     *   - 'shift_id': The default shift ID assigned to the employee.
+     *   - 'work_schedule_id': The default work schedule ID assigned to the employee.
+     *   Returns null if the user is not found.
+     */
     protected function getUserDefault($user_id)
     {
         return  DB::table('employee_information as ei')

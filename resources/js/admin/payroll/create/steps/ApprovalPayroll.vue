@@ -15,6 +15,7 @@
         :ref="el => setSelectRef(el, level)"
         multiple
         required
+        
       >
         <option
           v-for="user in group"
@@ -24,6 +25,12 @@
           {{ user.firstname }} {{ user.lastname }}
         </option>
       </select>
+      <small
+        v-if="errors[`approved_by.${level}`]"
+        class="text-danger"
+      >
+        {{ errors[`approved_by.${level}`][0] }}
+      </small>
     </div>
   </div>
 </template>
@@ -31,12 +38,10 @@
 <script>
 export default {
   name: 'ApprovalPayroll',
-  props: {
-    modelValue: {
-      type: Object,
-      default: () => ({})
-    }
-  },
+  props: { 
+    modelValue: Object,
+    errors: Object
+   },
   emits: ["update:modelValue"],
   data() {
     const token = localStorage.getItem("auth_token");
@@ -64,16 +69,22 @@ export default {
     localForm: {
       deep: true,
       handler(newVal) {
-        this.$emit("update:modelValue", newVal);
+        // Merge instead of replacing
+        this.$emit("update:modelValue", {
+          ...this.modelValue,
+          approved_by: newVal.approved_by
+        });
       },
     },
     modelValue: {
       deep: true,
       handler(newVal) {
-        if (newVal && JSON.stringify(newVal) !== JSON.stringify(this.localForm)) {
-          this.localForm = {
-            approved_by: newVal.approved_by || {}
-          };
+        if (!newVal) return;
+
+        // Only handle approved_by update — ignore other parent changes
+        if (newVal.approved_by && 
+            JSON.stringify(newVal.approved_by) !== JSON.stringify(this.localForm.approved_by)) {
+          this.localForm.approved_by = { ...newVal.approved_by };
           this.$nextTick(() => this.syncSelect2Values());
         }
       }

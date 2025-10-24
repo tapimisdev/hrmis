@@ -1,5 +1,6 @@
 <template>
   <div class="stepper-container">
+    {{ form.approved_by }}
     <div class="stepper-wrapper">
       <!-- Sidebar Stepper -->
       <div class="stepper-sidebar">
@@ -38,7 +39,7 @@
         
         <div class="content-body">
           <keep-alive :include="['CreatePayroll', 'ReviewPayroll', 'ApprovalPayroll']">
-            <component :is="steps[currentStep].component" v-model="form" :errors="errors" :employees="employees" />
+            <component :is="steps[currentStep].component" v-model="form" :errors="errors" />
           </keep-alive>
         </div>
 
@@ -96,8 +97,10 @@ export default {
       form: {
         label: "",
         cutoff: "",
+        employees: [],
         employment_type_id: "",
         date: new Date().toISOString().split("T")[0],
+        approved_by: {}
       },
       steps: [
         { label: "Create Payroll", desc: "Set basic details", component: markRaw(CreatePayroll) },
@@ -128,7 +131,7 @@ export default {
         const res = await axios.post("/api/payroll/validate-and-fetch-employees", this.form, {
           headers: { Accept: "application/json", Authorization: `Bearer ${this.token}` }
         });
-        this.employees = res.data.data;
+        this.form.employees = res.data.data;
         return true;
       } catch (error) {
         if (error.response?.status === 422) {
@@ -145,8 +148,29 @@ export default {
         this.loading = false;
       }
     },
-    submitForm() {
-      Swal.fire("Success", "Payroll submitted successfully.", "success");
+    async submitForm() {
+      this.loading = true;
+      this.errors = {};
+      try {
+        const res = await axios.post("/api/payroll/generate-salary-payroll", this.form, {
+          headers: { Accept: "application/json", Authorization: `Bearer ${this.token}` }
+        });
+        this.form.employees = res.data.data;
+        return true;
+      } catch (error) {
+        if (error.response?.status === 422) {
+          this.errors = error.response.data.errors;
+        } else {
+          Swal.fire(
+            error.response?.data?.message === 'No employees found for this employment type.' ? "No Employees Found" : "Error",
+            error.response?.data?.message || "Something went wrong.",
+            error.response?.data?.message === 'No employees found for this employment type.' ? "info" : "error"
+          );
+        }
+        return false;
+      } finally {
+        this.loading = false;
+      }
     },
   },
 };

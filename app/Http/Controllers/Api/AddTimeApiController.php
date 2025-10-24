@@ -111,18 +111,18 @@ class AddTimeApiController extends Controller
                 $approved_at = now();
             }
 
-            $atro = DB::table('overtimes')
+            $atro = DB::table('overtime_applications')
                     ->insert([
-                        'user_id'       => $user_id,
-                        'employee_no'   => $employee_no,
-                        'date'          => $validatedData['date'],
-                        'start_time'    => $validatedData['start_time'],
-                        'end_time'      => $validatedData['end_time'],
-                        'total_hours'   => $validatedData['total_hours'],
-                        'reason'        => $validatedData['reason'],
-                        'status'        => $validatedData['status'] ?? 'pending',
-                        'approver_id'   => $approver_id ?? null,
-                        'approved_at'   => $approved_at ?? null,
+                        'application_no' =>  generateApplicationNo('overtime_applications', 'PSL'),
+                        'user_id' => $user_id,
+                        'employee_no' => $employee_no,
+                        'date' => $validatedData['date'],
+                        'start_time' => $validatedData['start_time'],
+                        'end_time' => $validatedData['end_time'],
+                        'total_hours' => $validatedData['total_hours'],
+                        'reason' => $validatedData['reason'],
+                        'status' => $validatedData['status'] ?? 'pending',
+                        'level' => 1,
                         'created_at'    => now(),
                         'updated_at'    => now()
                     ]);

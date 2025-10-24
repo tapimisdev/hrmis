@@ -18,7 +18,7 @@
             aria-controls="collapseEligible"
           >
             <i class="fas fa-circle-check me-2"></i>
-            Eligible Employees ({{ employees.eligible?.length ?? 0 }})
+            Eligible Employees ({{ modelValue.employees.eligible?.length ?? 0 }})
           </button>
         </h2>
         <div
@@ -29,11 +29,11 @@
         >
           <div class="accordion-body">
             <div
-                v-if="employees.eligible.length"
+                v-if="modelValue.employees.eligible.length"
                 class="list-group list-group-flush"
               >
               <div
-                  v-for="employee in employees.eligible"
+                  v-for="employee in modelValue.employees.eligible"
                   :key="employee.id"
                   class="list-group-item d-flex justify-content-between align-items-center"
                 >
@@ -72,7 +72,7 @@
             aria-controls="collapseIneligible"
           >
               <i class="fas fa-circle-xmark me-2"></i>
-              Ineligible Employees ({{ employees.not_eligible?.length ?? 0 }})
+              Ineligible Employees ({{ modelValue.employees.not_eligible?.length ?? 0 }})
           </button>
         </h2>
         <div
@@ -83,11 +83,11 @@
         >
           <div class="accordion-body">
             <div
-              v-if="employees.not_eligible"
+              v-if="modelValue.employees.not_eligible"
               class="list-group list-group-flush"
             >
               <div
-                v-for="employee in employees.not_eligible"
+                v-for="employee in modelValue.employees.not_eligible"
                 :key="employee.id"
                 class="list-group-item"
               >
@@ -119,10 +119,6 @@ export default {
   name: 'ReviewPayroll',
   props: {
     modelValue: [String, Number, Object, Array],
-    employees: {
-      type: Object,
-      default: () => ({ eligible: [], not_eligible: [] })
-    }
   },
   data() {
     return {
