@@ -42,9 +42,11 @@
                     <tr>
                         <th>Dates:</th>
                         <td>
-                            @foreach($data->dates as $date)
-                                {{Carbon\Carbon::parse($date->date)->format('M d, Y')}}
-                            @endforeach
+                           <ul>
+                                @foreach($data->dates as $date)
+                                    <li>{{Carbon\Carbon::parse($date->date)->format('M d, Y (D)')}} - {{strtoupper($date->shift)}}</li>
+                                @endforeach
+                           </ul>
                         </td>
                     </tr>
                     <tr>

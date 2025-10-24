@@ -273,6 +273,7 @@ class ApplicationController extends Controller
 
         // --- Optional: include leaves collection for "leave" type only ---
         $leaves = collect();
+        
         if ($type === 'leave') {
             $leaves = DB::table('leaves')
                 ->where('is_active', true)

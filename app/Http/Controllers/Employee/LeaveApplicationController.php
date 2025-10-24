@@ -102,7 +102,7 @@ class LeaveApplicationController extends Controller
             $data = $this->applicationService->getData('leave');
             $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
             $approvers = $validatedData['approvers'];
-            $days = count($approvers);
+            $days = count($datesInput);
 
             $leaveName = DB::table('leaves')
                 ->where('id', $validatedData['leave_id'])

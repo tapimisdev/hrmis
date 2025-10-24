@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Enums\EmploymentTypesEnum;
 
 use function PHPSTORM_META\map;
 
@@ -264,6 +265,37 @@ class EmployeeService {
             ->update([
                 'account_status' => 'active',
             ]);
+    }
+
+    public function getLeaveTypes(string $employee_no) {
+
+        $employment_type_id = DB::table('employee_organization')
+            ->where('employee_no', $employee_no)
+            ->latest('id')
+            ->value('employment_type_id');
+
+        $regular_id = EmploymentTypesEnum::REGULAR->value;
+       
+        if($employment_type_id == $regular_id) {
+
+            $data = DB::table('leaves as l')
+                    ->leftJoin('employee_leave_credits as c', 'l.id', '=', 'c.leave_id')
+                    ->get();
+
+            dd($data);
+
+
+            return [
+                'status' => 'eligible',
+                'data' => $data
+            ];
+        }
+
+        return [
+            'status' => 'ineligible',
+            'data' => null
+        ];
+        
     }
 
 }

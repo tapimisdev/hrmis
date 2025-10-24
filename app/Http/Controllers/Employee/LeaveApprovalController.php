@@ -52,6 +52,7 @@ class LeaveApprovalController extends Controller
     public function show(int $level, int $id) {
 
         $data = $this->approvalService->getData('leave', $level, $id) ?? [];
+        // dd($data);
         if(!$data) {
             return redirect()->back();
         }
@@ -216,7 +217,7 @@ class LeaveApprovalController extends Controller
                     default     => 'info',
                 };
 
-                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status)  . '</span>';
+                return '<span  class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status)  . '</span>';
             })
             ->addColumn('actions', function ($row) {
                 $buttons = '

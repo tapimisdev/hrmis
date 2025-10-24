@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\Services\ApplicationController;
 use App\Http\Requests\Api\StoreTimeLogsRequest;
 use App\Http\Requests\Employee\StoreAtroRequest;
 use App\Services\TimelogsServices;
@@ -20,10 +21,11 @@ class AddTimeApiController extends Controller
 
     protected $user_id;
 
-    public function __construct(TimelogsServices $timelog_service, EmployeeService $employee_service)
+    public function __construct(TimelogsServices $timelog_service, EmployeeService $employee_service, ApplicationController $applicationService)
     {
         $this->timelog_service = $timelog_service;
         $this->employee_service = $employee_service;
+        $this->applicationService = $applicationService;
     }
 
     public function add_time(StoreTimeLogsRequest $request)
@@ -100,16 +102,12 @@ class AddTimeApiController extends Controller
         $validatedData = $request->validated();
 
         $employee_no = $validatedData['user_id'];
-
         $user_id = $this->employee_service->getEmployeeUserId($employee_no);
-
+        
         DB::beginTransaction();
+
         try {
 
-            if($validatedData['status'] === 'approved') {
-                $approver_id = auth()->id();
-                $approved_at = now();
-            }
 
             $atro = DB::table('overtime_applications')
                     ->insert([
@@ -121,8 +119,11 @@ class AddTimeApiController extends Controller
                         'end_time' => $validatedData['end_time'],
                         'total_hours' => $validatedData['total_hours'],
                         'reason' => $validatedData['reason'],
-                        'status' => $validatedData['status'] ?? 'pending',
-                        'level' => 1,
+                        'status' => 'approved',
+                        'approver_id' => Auth::id(),
+                        'approved_at' => now(),
+                        'level' => null,
+                        'levels' => null,
                         'created_at'    => now(),
                         'updated_at'    => now()
                     ]);

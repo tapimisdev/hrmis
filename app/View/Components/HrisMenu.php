@@ -81,12 +81,17 @@ class HrisMenu extends Component
                 'active' => $this->active == 'account' ? 'active' : '',
             ],
             [
-                'name' => 'X. Earnings',
+                'name' => 'X. Leave Credits',
+                'route' => route('hris.employee.leave-credits', ['employee_no' => $this->employee_no]),
+                'active' => $this->active == 'leave-credits' ? 'active' : '',
+            ],
+            [
+                'name' => 'XI. Earnings',
                 'route' => route('hris.employee.earnings', ['employee_no' => $this->employee_no]),
                 'active' => $this->active == 'earnings' ? 'active' : '',
             ],
             [
-                'name' => 'XI. Deductions',
+                'name' => 'XII. Deductions',
                 'route' => route('hris.employee.deductions', ['employee_no' => $this->employee_no]),
                 'active' => $this->active == 'deductions' ? 'active' : '',
             ],

@@ -34,8 +34,10 @@ return new class extends Migration
                 ->nullable();
             $table->unsignedBigInteger('approver_id')
                 ->nullable(); 
-            $table->integer('level');
-            $table->json('levels');
+            $table->integer('level')
+                ->nullable();
+            $table->json('levels')
+                ->nullable();
             $table->timestamp('approved_at')->nullable();
 
             // Audit

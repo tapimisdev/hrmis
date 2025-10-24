@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\Hris\TrainingsController;
 use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
 use App\Http\Controllers\Admin\Hris\AccountController;
+use App\Http\Controllers\Admin\Hris\LeaveCreditController;
 use App\Http\Controllers\Admin\Hris\EarningsController as HrisEarningsController;
 use App\Http\Controllers\Admin\Hris\DeductionsController as HrisDeductionsController;
 use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
@@ -194,6 +195,12 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
             ->name('hris.employee.account');
         Route::put('employee/account/{employee_no}', [AccountController::class, 'save'])
             ->name('hris.employee.account');
+
+         # ACCOUNT
+        Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'index'])
+            ->name('hris.employee.leave-credits');
+        Route::put('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'save'])
+            ->name('hris.employee.leave-credits');
 
         # EARNINGS
         Route::get('employee/earnings/{employee_no}', [HrisEarningsController::class, 'index'])

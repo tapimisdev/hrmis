@@ -28,7 +28,7 @@
                 </div>
 
                 <!-- Start Time -->
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">Start Time <span class="text-danger">*</span></label>
                         <input type="time"
@@ -41,7 +41,7 @@
                 </div>
 
                 <!-- End Time -->
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="mb-3">
                         <label class="form-label">End Time <span class="text-danger">*</span></label>
                         <input type="time"
@@ -50,21 +50,6 @@
                             :class="{ 'is-invalid': errors.end_time }"
                             required />
                         <span class="text-danger" v-if="errors.end_time">{{ errors.end_time[0] }}</span>
-                    </div>
-                </div>
-
-                <!-- Status -->
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label class="form-label">Status <span class="text-danger">*</span></label>
-                        <select v-model="form.status"
-                            class="form-select"
-                            :class="{ 'is-invalid': errors.status }"
-                            required>
-                            <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
-                        </select>
-                        <span class="text-danger" v-if="errors.status">{{ errors.status[0] }}</span>
                     </div>
                 </div>
 
@@ -124,7 +109,6 @@ export default {
                 end_time: "",
                 total_hours: 0,
                 reason: "",
-                status: "pending"
             }
         };
     },
@@ -171,7 +155,6 @@ export default {
                 end_time: "",
                 total_hours: 0,
                 reason: "",
-                status: "pending"
             };
             this.errors = {};
         },
