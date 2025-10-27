@@ -40,7 +40,9 @@ class DeductionController extends Controller
         $validated = $request->validated();
 
         DB::beginTransaction();
+
         try {
+            
             $deduction = DB::table('deductions')->insert([
                 'name'          => $validated['name'],
                 'first_term'    => $validated['first_term'],
@@ -48,17 +50,21 @@ class DeductionController extends Controller
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
+
             DB::commit();
+
             return response()->json([
-                'message' => 'Earning saved successfully.',
-                'deduction' => $deduction
-            ], 201);
+                'status'   => 'success',
+                'message'  => 'Deduction ' . $validated['name'] . ' added successfully',
+                'redirect' => '_self'
+            ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'An error occurred while saving the holiday.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status'   => 'error',
+                'message'  => 'Error: ' . $e->getMessage(),
+            ]);
         }
     }
 
@@ -98,23 +104,32 @@ class DeductionController extends Controller
         $validated = $request->validated();
         
         DB::beginTransaction();
+
         try {
+
             DB::table('deductions')->where('id', $id)->update([
                 'name'          => $validated['name'],
                 'first_term'    => $validated['first_term'],
                 'second_term'   => $validated['second_term'],
                 'updated_at' => now(),
             ]);
+
             DB::commit();
+
             return response()->json([
-                'message' => 'Deduction updated successfully.'
-            ], 200);
+                'status'   => 'success',
+                'message'  => 'Deduction ' . $validated['name'] . ' updated successfully',
+                'redirect' => ''
+            ]);
+
         } catch (\Exception $e) {
+
             DB::rollback();
+
             return response()->json([
-                'message' => 'An error occured while updating deduction',
-                'error' => $e->getMessage()
-            ], 200);
+                'status'   => 'error',
+                'message'  => 'Error: ' . $e->getMessage(),
+            ]);
         }        
     }
 
@@ -123,24 +138,36 @@ class DeductionController extends Controller
      */
     public function destroy(string $id)
     {
+
         DB::beginTransaction();
+
         try {
+            
             $deduction = DB::table('deductions')->where('id', $id)->where('is_active', true)->first();
+            
             if (!$deduction) {
                 abort(404, 'Deduction not found.');
             }
+            
             DB::table('deductions')->where('id', $id)->update([
                 'is_active' => false,
                 'updated_at' => now(),
             ]);
+            
             DB::commit();
+
             return response()->json([
-                'message' => 'Deduction deleted successfully.'
-            ], 200);
+                'status' => 'success',
+                'message' => 'Deduction has been deleted',
+                'redirect' => ''
+            ]);
+           
         } catch (\Exception $e) {
+
             DB::rollback();
+
             return response()->json([
-                'message' => 'An error occurred while deleting the holiday.',
+                'message' => 'An error occurred while deleting this deduction.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -148,26 +175,31 @@ class DeductionController extends Controller
 
     public function datatable($query)
     {
-        return DataTables::of($query)
-        ->addIndexColumn()
-        ->addColumn('actions', function ($row) {
 
-            return '<div class="d-flex">' .
-                '<button data-id="' . $row->id . '" class="btn btn-outline-primary btn ms-1 my-1 show-button" title="View">' .
-                    '<i class="fas fa-eye"></i>' .
-                '</button>' .
-                '<a href="' . route('deductions.edit', $row->id) . '" 
-                    class="btn btn-outline-secondary btn ms-1 my-1" 
-                    title="Edit">
-                        <i class="fas fa-edit"></i>
-                </a>' .
-                '<button data-id="' . $row->id . '" class="btn btn-outline-danger btn ms-1 my-1 delete-button" title="Delete">' .
-                    '<i class="fas fa-trash-alt"></i>' .
-                '</button>' .
-            '</div>';
-            
-        })
-        ->rawColumns(['actions', 'is_taxable'])
-        ->make(true);
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->addColumn('actions', function ($row) {
+
+                $deleteRoute = route('deductions.destroy', [
+                        'deduction' => $row->id, 
+                    ]);
+
+                return '<div class="d-flex">' .
+                    '<button data-id="' . $row->id . '" class="btn btn-outline-primary btn ms-1 my-1 show-button" title="View">' .
+                        '<i class="fas fa-eye"></i>' .
+                    '</button>' .
+                    '<a href="' . route('deductions.edit', $row->id) . '" 
+                        class="btn btn-outline-secondary btn ms-1 my-1" 
+                        title="Edit">
+                            <i class="fas fa-edit"></i>
+                    </a>' .
+                    '<button id="btn-delete" data-target="'.$deleteRoute.'" class="btn btn-outline-danger btn ms-1 my-1" title="Delete">' .
+                        '<i class="fas fa-trash-alt"></i>' .
+                    '</button>' .
+                '</div>';
+                
+            })
+            ->rawColumns(['actions', 'is_taxable'])
+            ->make(true);
     }
 }

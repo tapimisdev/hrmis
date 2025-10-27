@@ -28,7 +28,7 @@ class EmploymentTypesController extends Controller
 
         if(request()->ajax()) {
             $query = DB::table('employment_types')
-                ->orderByDesc('id')
+                ->orderBy('id', 'asc')
                 ->get();
             
             return $this->datatable($query);
@@ -54,7 +54,6 @@ class EmploymentTypesController extends Controller
      */
     public function store(Request $request)
     {
-        
 
         $validator = Validator::make($request->all(), [
             'code' => 'required|string|max:255',

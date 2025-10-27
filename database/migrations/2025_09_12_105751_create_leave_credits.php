@@ -20,6 +20,7 @@ return new class extends Migration
                 ->onDelete('set null');
             $table->string('amount')
                 ->nullable();
+            $table->timestamp('effectivity_date');
             $table->timestamps();
         });
 

@@ -52,7 +52,7 @@ class LeaveApprovalController extends Controller
     public function show(int $level, int $id) {
 
         $data = $this->approvalService->getData('leave', $level, $id) ?? [];
-        // dd($data);
+
         if(!$data) {
             return redirect()->back();
         }
@@ -104,6 +104,8 @@ class LeaveApprovalController extends Controller
     {
         try {
 
+            $data = $this->approvalService->getData('leave', $level, $id, false);
+
             $allLevels = $this->approvalService->getLevels('leave', true, $id)->toArray() ?? [];
             $maxLevel = max($allLevels);
             $user_id = Auth::id();
@@ -117,10 +119,20 @@ class LeaveApprovalController extends Controller
                 ]);
             
             if($level == $maxLevel) {
+                $deduction = $this->approvalService->leaveDeduction($data->employee_no, $id);
+
                 DB::table('leave_applications')
                     ->where('id', $id)
                     ->update([
                         'status' => 'approved'
+                    ]);
+
+                DB::table('employee_leave_credits')
+                    ->insert([
+                        'employee_no' => $deduction['employee_no'],
+                        'leave_id' => $deduction['leave_id'],
+                        'amount' => $deduction['remainingBalance'],
+                        'effectivity_date' => now()
                     ]);
             }
             
@@ -138,6 +150,7 @@ class LeaveApprovalController extends Controller
                 'message' => 'Leave application has been approved!',
                 'redirect' => route('approval-leave.index', ['level' => $level])
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -184,6 +197,7 @@ class LeaveApprovalController extends Controller
                 'message' => 'Leave application has been rejected!',
                 'redirect' => route('approval-leave.index', ['level' => $level])
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',

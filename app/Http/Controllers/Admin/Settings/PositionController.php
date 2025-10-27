@@ -245,7 +245,6 @@ class PositionController extends Controller
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
 
-            // Check for foreign key constraint violation (SQLSTATE[23000])
             if ($e->getCode() === '23000') {
                 return response()->json([
                     'status' => 'error',
@@ -280,6 +279,7 @@ class PositionController extends Controller
                     'employment_type_id' => $row->employment_type_id,
                     'id' => $row->id
                 ]);
+
                 $deleteRoute = route('positions.destroy', [
                     'employment_type_id' => $row->employment_type_id, 
                     'id' => $row->id

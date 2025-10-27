@@ -15,7 +15,7 @@
             variant="danger"
         />
     </x-header>
-    <form id="form" method="post">
+    <form id="form" action="{{route('deductions.store')}}" method="post">
         @csrf
         <div class="card shadow p-3">
             <div class="card-header bg-transparent">
@@ -45,7 +45,7 @@
                 </div>
             </div>
             <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
-                <button type="button" id="submit-button"
+                <button type="submit" id="submit-button"
                         class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
                     Save
                 </button>
@@ -59,59 +59,8 @@
 @section('scripts')
 <script>
     $(function() {
-
-        $('#submit-button').click(e => {
-            e.preventDefault();
-            $('#submit-button').prop('disabled', true);
-
-            // Clear previous errors
-            $('.is-invalid').removeClass('is-invalid');
-            $('.error-field').text('');
-
-            const formData = {
-                name: $('#name').val(),
-                first_term: $('#first_term').val(),
-                second_term: $('#second_term').val(),
-                _token: $('input[name="_token"]').val()
-            };
-
-            axios.post(`/admin/settings/deductions`, formData, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then((response) => {
-                Swal.fire({
-                    title: "Success!",
-                    text: "Deduction has been saved.",
-                    icon: "success"
-                }).then(() => {
-                    window.location.href = "{{ route('deductions.index') }}";
-                });
-            })
-            .catch(error => {
-                if (error.response && error.response.status === 422) {
-                    // Remove previous error states
-                    $('.is-invalid').removeClass('is-invalid');
-                    $('.error-field').text('');
-                    // Show new errors
-                    $.each(error.response.data.errors, function(field, errorMessage) {
-                        $(`#${field}`).addClass('is-invalid');
-                        $(`.${field}_error`).text(errorMessage[0]);
-                    });
-                } else {
-                    Swal.fire({
-                        title: "Oops!",
-                        text: "Something went wrong, try again later!",
-                        icon: "error"
-                    });
-                }
-            }).finally(() => {
-                $('#submit-button').prop('disabled', false);
-            });
-        });
-
+        const url = $('#form').attr('action');
+        post(url);
     });
 </script>
 @endsection

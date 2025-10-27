@@ -27,7 +27,6 @@ class StoreDeductionsRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('deductions', 'name')->ignore($this->route('deduction')),
             ],
             'first_term' => 'required|numeric|min:0',
             'second_term' => 'required|numeric|min:0',

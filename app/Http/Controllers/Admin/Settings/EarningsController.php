@@ -49,17 +49,21 @@ class EarningsController extends Controller
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
+            
             DB::commit();
+          
             return response()->json([
-                'message' => 'Earning saved successfully.',
-                'holiday' => $earnings
-            ], 201);
+                'status'   => 'success',
+                'message'  => 'Earnings ' . $validated['name'] . ' added successfully',
+                'redirect' => '_self'
+            ]);
+
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
-                'message' => 'An error occurred while saving the holiday.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status'   => 'error',
+                'message'  => 'Error: ' . $e->getMessage(),
+            ]);
         }
     }
 
@@ -111,14 +115,16 @@ class EarningsController extends Controller
             ]);
             DB::commit();
             return response()->json([
-                'message' => 'Earning updated successfully.'
-            ], 200);
+                'status'   => 'success',
+                'message'  => 'Earnings ' . $validated['name'] . ' updated successfully',
+                'redirect' => ''
+            ]);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
-                'message' => 'An error occurred while updating the holiday.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status'   => 'error',
+                'message'  => 'Error: ' . $e->getMessage(),
+            ]);
         }
     }
 
@@ -137,14 +143,19 @@ class EarningsController extends Controller
                 'is_active' => false,
                 'updated_at' => now(),
             ]);
+
             DB::commit();
+
             return response()->json([
-                'message' => 'Earning deleted successfully.'
-            ], 200);
+                'status' => 'success',
+                'message' => 'Earning has been deleted',
+                'redirect' => ''
+            ]);
+
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
-                'message' => 'An error occurred while deleting the holiday.',
+                'message' => 'An error occurred while deleting this earning.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -153,30 +164,34 @@ class EarningsController extends Controller
     public function datatable($query)
     {
         return DataTables::of($query)
-        ->addIndexColumn()
-        ->addColumn('is_taxable', function ($row) {
-            return $row->is_taxable
-            ? '<span class="badge bg-success">Yes</span>'
-            : '<span class="badge bg-secondary">No</span>';
-        })
-        ->addColumn('actions', function ($row) {
+            ->addIndexColumn()
+            ->addColumn('is_taxable', function ($row) {
+                return $row->is_taxable
+                ? '<span class="badge bg-success">Yes</span>'
+                : '<span class="badge bg-secondary">No</span>';
+            })
+            ->addColumn('actions', function ($row) {
 
-            return '<div class="d-flex">' .
-                '<button data-id="' . $row->id . '" class="btn btn-outline-primary btn ms-1 my-1 show-button" title="View">' .
-                    '<i class="fas fa-eye"></i>' .
-                '</button>' .
-                '<a href="' . route('earnings.edit', $row->id) . '" 
-                    class="btn btn-outline-secondary btn ms-1 my-1" 
-                    title="Edit">
-                        <i class="fas fa-edit"></i>
-                </a>' .
-                '<button data-id="' . $row->id . '" class="btn btn-outline-danger btn ms-1 my-1 delete-button" title="Delete">' .
-                    '<i class="fas fa-trash-alt"></i>' .
-                '</button>' .
-            '</div>';
-            
-        })
-        ->rawColumns(['actions', 'is_taxable'])
-        ->make(true);
+                $deleteRoute = route('earnings.destroy', [
+                        'earning' => $row->id, 
+                    ]);
+                
+                return '<div class="d-flex">' .
+                    '<button data-id="' . $row->id . '" class="btn btn-outline-primary btn ms-1 my-1 show-button" title="View">' .
+                        '<i class="fas fa-eye"></i>' .
+                    '</button>' .
+                    '<a href="' . route('earnings.edit', $row->id) . '" 
+                        class="btn btn-outline-secondary btn ms-1 my-1" 
+                        title="Edit">
+                            <i class="fas fa-edit"></i>
+                    </a>' .
+                    '<button id="btn-delete" data-target="'.$deleteRoute.'"  class="btn btn-outline-danger btn ms-1 my-1 delete-button" title="Delete">' .
+                        '<i class="fas fa-trash-alt"></i>' .
+                    '</button>' .
+                '</div>';
+                
+            })
+            ->rawColumns(['actions', 'is_taxable'])
+            ->make(true);
     }
 }

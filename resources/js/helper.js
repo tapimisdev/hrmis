@@ -9,7 +9,7 @@ export function alert(type, message, redirect = '') {
 
     if (!config[type]) return;
 
-    if (type === 'success') {
+    if (type == 'success') {
         $('.form-control').removeClass('is-invalid');
         $('.error-field').text('');
 

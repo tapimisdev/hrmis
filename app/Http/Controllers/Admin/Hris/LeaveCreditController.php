@@ -42,18 +42,9 @@ class LeaveCreditController extends Controller
         return view('admin.pages.hris.leave-credits', compact('isEdit', 'id', 'data', 'employee_no', 'isExists', 'leaves'));
     }
 
-    public function rules() {
-        return [
-            'password' => ['required', 'string', 'min:8'],
-            'confirm_password' => ['required', 'string', 'min:8', 'same:password'],
-        ];
-    }
-
     public function save(string $employee_no, Request $request) {
 
         $payload = $request->all();
-
-        $request->validate($this->rules());          
 
         DB::beginTransaction();
 
@@ -70,20 +61,30 @@ class LeaveCreditController extends Controller
                 ], 404);
             }
 
-            if (!empty($payload['password'])) {
-                $data['password'] = Hash::make($payload['password']);
-                DB::table('users')
-                    ->where('id', $employee->user_id)
-                    ->update($data);
+            $leave_ids = array_filter($payload['leave_id'], function ($value) {
+                return $value != 0;
+            });
 
-                DB::commit();
-
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Password has been updated.',
-                    'redirect' => route('hris.employee.leave-credits', ['employee_no' => $employee_no])
-                ]);
+            if(!empty($leave_ids)) {
+                foreach($leave_ids as $id => $value) {
+                    DB::table('employee_leave_credits')->insert([
+                        'employee_no' => $employee_no,
+                        'leave_id'    => $id,
+                        'amount'      => $value,
+                        'effectivity_date' => now(),
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                }
             }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Leave credits saved successfully.',
+                'redirect' => route('hris.employee.leave-credits', ['employee_no' => $employee_no])
+            ]);
 
         } catch (\Exception $e) {
 

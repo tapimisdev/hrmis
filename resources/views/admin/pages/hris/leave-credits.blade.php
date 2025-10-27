@@ -30,8 +30,10 @@
                             </h2>
                             <div id="flush-leave-credits" class="accordion-collapse collapse show">
                                 <div class="accordion-body">
+                                    <div class="d-flex justify-content-end mb-4">
+                                        <a href="" class="btn btn-outline-primary">Leave Card</a>
+                                    </div>
                                     @if($leaves['status'] == 'eligible')
-
                                         <div class="row">
                                             @forelse($leaves['data'] as $leave)
                                                 <div class="col-12 col-md-6 mb-3">
@@ -42,8 +44,8 @@
                                                         <div class="card-body">
                                                             <div class="row">
                                                                 <div class="col-12 col-md-12 mb-3">
-                                                                    <label for="name" class="mb-1">Total Credits</label>
-                                                                    <input type="text" name="{{$leave->id}}" class="form-control" value="0">
+                                                                    <label for="name" class="mb-1">Remaining Credits</label>
+                                                                    <input type="text" name="leave_id[{{ $leave->leave_id }}]" class="form-control" value="{{$leave->amount}}">
                                                                 </div>
                                                             </div>
                                                         </div>

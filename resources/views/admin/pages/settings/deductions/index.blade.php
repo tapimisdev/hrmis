@@ -33,7 +33,6 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
 <script>
     $(function() {
 
@@ -47,7 +46,6 @@
                 { data: "first_term", name: 'first_term' },
                 { data: "second_term", name: 'second_term' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
-
             ],
         });
 
@@ -79,38 +77,7 @@
                     });
                 });
         });
-
-        $(document).on('click', '.delete-button', function() {
-            id = $(this).attr('data-id');
-            Swal.fire({
-                title: "Are you sure?",
-                text: "You won't be able to revert this!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, delete it!"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    axios.delete(`deductions/${id}`)
-                    .then(response => {
-                        DataTable.ajax.reload();
-                        Swal.fire({
-                            title: "Deleted!",
-                            text: "Your data has been deleted.",
-                            icon: "success"
-                        });
-                    })
-                    .catch(error => {
-                        Swal.fire({
-                            title: "Oops!",
-                            text: error.response?.data?.message || "Something went wrong.",
-                            icon: "error"
-                        });
-                    })
-                }
-            }); // swal end
-        });
+       
 
     });
 </script>

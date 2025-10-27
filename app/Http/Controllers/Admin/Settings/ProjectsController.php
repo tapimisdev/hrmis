@@ -242,6 +242,7 @@ class ProjectsController extends Controller
             ]);
 
         } catch(\Exception $e) {
+            
             DB::rollBack();
 
             return response()->json([

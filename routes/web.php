@@ -196,7 +196,7 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         Route::put('employee/account/{employee_no}', [AccountController::class, 'save'])
             ->name('hris.employee.account');
 
-         # ACCOUNT
+        # LEAVE CREDITS
         Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'index'])
             ->name('hris.employee.leave-credits');
         Route::put('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'save'])

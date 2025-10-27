@@ -15,7 +15,7 @@
             variant="danger"
         />
     </x-header>
-    <form id="form" method="post">
+    <form id="form" action="{{route('earnings.update', ['earning' => $earnings->id])}}" method="post">
         @csrf
         <div class="card shadow p-3">
             <div class="card-header bg-transparent">
@@ -56,7 +56,7 @@
                 </div>
             </div>
             <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
-                <button type="button" id="update-button"
+                <button type="submit" id="update-button"
                         class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
                     Update
                 </button>
@@ -70,53 +70,9 @@
 
 @section('scripts')
 <script>
-$(function() {
-
-    // Handle form submission for update
-    $(document).on("click", "#update-button", function (e) {
-        e.preventDefault();
-        $(".error-field").text("");
-
-        let formData = {
-            _token: $("input[name=_token]").val(),
-            name: $("#name").val(),
-            first_term: $("#first_term").val(),
-            second_term: $("#second_term").val(),
-            is_taxable: $('#is_taxable').val(),
-            date: $("#date").val(),
-        };
-
-        let earningsId = "{{ $earnings->id ?? '' }}";
-
-        axios.put(`/admin/settings/earnings/${earningsId}`, formData)
-            .then(function (response) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Updated!",
-                    text: response.data.message,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            })
-            .catch(function (error) {
-                if (error.response && error.response.status === 422) {
-                    $('.is-invalid').removeClass('is-invalid');
-                    $('.error-field').text('');
-
-                    $.each(error.response.data.errors, function(field, errorMessage) {
-                        $(`#${field}`).addClass('is-invalid');
-                        $(`.${field}_error`).text(errorMessage[0]);
-                    });
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Oops...",
-                        text: "Something went wrong!",
-                    });
-                }
-            });
+    $(function() {
+        const url = $('#form').attr('action');
+        put(url);
     });
-});
 </script>
-
 @endsection

@@ -83,7 +83,7 @@ $(document).on('click', '#btn-delete', function() {
                     alert(res.status, res.message, res.redirect);
                 })
                 .catch(err => {
-                    alert(res.status, res.message, res.redirect);
+                    alert(err.status, err.message, err.redirect);
                 });
         }
     );

@@ -8,9 +8,16 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Carbon\Carbon;
+use App\Services\EmployeeService;
 
 class ApprovalsController extends Controller
 {
+
+    protected $employeeService;
+
+    public function __construct(EmployeeService $employeeService) {
+        $this->employeeService = $employeeService;
+    }
 
     public function getLevels(string $type, bool $forApproval = false, int $id = null)
     {
@@ -214,6 +221,49 @@ class ApprovalsController extends Controller
         });
     }
 
+    public function leaveDeduction(string $employee_no, int $leave_id) {
 
+        $employeeLeave = $this->employeeService->checkLeaveCredits($employee_no, $leave_id);
+        $leaveSettings = $this->employeeService->getLeaveSettings($leave_id);
+        $leave = $this->employeeService->getLeave($leave_id);
+        
+        if(!$employeeLeave) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No leave credits found',
+                'redirect' => ''
+            ]);
+        }
+
+        if(!$leaveSettings || $leaveSettings->credit_to_deduct < 1) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Leave id ' . $leave_id . ' does not exists',
+                'redirect' => ''
+            ]);
+        }
+
+        $days = $leave->days;
+        $leaveBalance = $employeeLeave->amount;
+        $toBeDeducted = $days * $leaveSettings->credit_to_deduct;
+        $remainingBalance = (float) $leaveBalance - (float) $toBeDeducted;
+
+        if($toBeDeducted > $leaveBalance) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unable to approve this leave application due to insufficient leave credits.'
+            ], 500);
+        }
+
+        return [
+            'employee_no' => $employee_no,
+            'leave_id' => $leave_id,
+            'days' => $days,
+            'leaveBalance' => $leaveBalance,
+            'toBeDeducted' => $toBeDeducted,
+            'remainingBalance' => $remainingBalance
+        ];
+
+    }
 
 }

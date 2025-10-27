@@ -14,6 +14,7 @@
                 variant="primary"
             />
         </x-header>
+        
         <x-table id="myTable">
             <thead>
                 <tr>

@@ -10,10 +10,6 @@ use App\Enums\EmploymentTypesEnum;
 use function PHPSTORM_META\map;
 
 class EmployeeService {
-    
-    public function __construct() {
-
-    }
 
     // user id to employee no
     public function getEmployeeNo($user_id)
@@ -267,23 +263,42 @@ class EmployeeService {
             ]);
     }
 
-    public function getLeaveTypes(string $employee_no) {
-
+    public function getLeaveTypes(string $employee_no)
+    {
         $employment_type_id = DB::table('employee_organization')
             ->where('employee_no', $employee_no)
             ->latest('id')
             ->value('employment_type_id');
 
         $regular_id = EmploymentTypesEnum::REGULAR->value;
-       
-        if($employment_type_id == $regular_id) {
+
+        if ($employment_type_id == $regular_id) {
+
+            $latestCredits = DB::table('employee_leave_credits as c1')
+                ->select('c1.*')
+                ->where('c1.employee_no', $employee_no)
+                ->whereRaw('c1.effectivity_date = (
+                    SELECT MAX(c2.effectivity_date)
+                    FROM employee_leave_credits AS c2
+                    WHERE c2.employee_no = c1.employee_no
+                    AND c2.leave_id = c1.leave_id
+                )');
 
             $data = DB::table('leaves as l')
-                    ->leftJoin('employee_leave_credits as c', 'l.id', '=', 'c.leave_id')
-                    ->get();
-
-            dd($data);
-
+                ->leftJoinSub($latestCredits, 'c', function ($join) {
+                    $join->on('l.id', '=', 'c.leave_id');
+                })
+                ->select(
+                    DB::raw('COALESCE(c.id, 0) as id'),
+                    DB::raw('COALESCE(c.employee_no, "") as employee_no'),
+                    DB::raw('COALESCE(c.amount, 0) as amount'),
+                    'l.name',
+                    'l.id as leave_id',
+                    'l.is_cumulative',
+                    'l.credit_to_deduct',
+                    'l.is_active'
+                )
+                ->get();
 
             return [
                 'status' => 'eligible',
@@ -295,7 +310,28 @@ class EmployeeService {
             'status' => 'ineligible',
             'data' => null
         ];
-        
+    }
+
+    public function checkLeaveCredits(string $employee_no, int $leave_id) {
+        $employeeLeaveCredits = DB::table('employee_leave_credits')
+            ->where('employee_no', $employee_no)
+            ->where('leave_id', $leave_id)
+            ->latest('effectivity_date')
+            ->first();
+
+        return $employeeLeaveCredits;
+    }
+
+    public function getLeaveSettings(int $leave_id) {
+        return DB::table('leaves')
+            ->where('id', $leave_id)
+            ->first();
+    }
+
+    public function getLeave(int $leave_id) {
+        return DB::table('leave_applications')
+            ->where('id', $leave_id)
+            ->first();
     }
 
 }
