@@ -51,24 +51,14 @@
     <div id="app">
         <div class="top" style="background-image: url('{{ asset('img/tapi-front.png') }}');">
         </div>
-
         @include('employee.components.sidebar')
         <main>
-            @yield('content')
-            <footer class="container-fluid">
-                <div>
-                    © 2025, made with heart by <span class="fw-bold">MIS Unit</span> for a better experience.
-                </div>
-                <div>
-                    <ul>
-                        <li><a href="">FAQS</a></li>
-                        <li><a href="">ABOUT</a></li>
-                        <li><a href="">TAPI</a></li>
-                        <li><a href="">DTOMS</a></li>
-                        <li><a href="">DTORS</a></li>
-                    </ul>
-                </div>
-            </footer>
+            <div>
+                 @yield('content')
+            </div>
+            <div>
+                @include('employee.components.footer')
+            </div>
         </main>
     </div>
 

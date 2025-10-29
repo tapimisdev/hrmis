@@ -62,6 +62,29 @@ class EmployeeController extends Controller
                 return $divisionGroup->groupBy('unit_name');
             });
 
+        if(!empty($selectedEmployee)) {
+            $employment_type = DB::table('employee_organization as eo')
+                ->where('eo.employee_no', $selectedEmployee)
+                ->orderByDesc('eo.effectivity_date')
+                ->orderByDesc('eo.id') 
+                ->first();
+
+            $employee_salary = DB::table('employee_salary as es')
+                ->where('es.employee_no', $selectedEmployee)
+                ->orderByDesc('es.effectivity_date')
+                ->orderByDesc('es.id')
+                ->first();
+
+            $selectedEmployee = [
+                'employee_no' => $selectedEmployee,
+                'employment_type_id' => $employment_type ? $employment_type->employment_type_id : null,
+                'tranche_id' => $employee_salary->tranche_id ?? null,
+                'salary_grade' => $employee_salary->salary_grade ?? null,
+                'step' => $employee_salary->step ?? null,
+                'effectivity_date' => $employee_salary->effectivity_date ?? null,
+            ];
+        }
+
         return view('admin.pages.hris.salary', compact(
             'divisions', 'division_id', 'unit_id', 'employees', 'employment_types', 'tranches', 'selectedEmployee'
         ));
@@ -100,7 +123,8 @@ class EmployeeController extends Controller
                 'employees'   => ['required', 'array', 'min:1'], 
                 'employees.*' => ['required', 'string', 'exists:employee_information,employee_no'],
                 'tranche_id' => ['required', 'exists:tranche,id'],
-                'step_id' => ['required', 'between:1,8']
+                'step_id' => ['required', 'between:1,8'],
+                'effectivity_date' => ['required', 'date'],
             ];
         }
 
@@ -154,27 +178,31 @@ class EmployeeController extends Controller
         $payload = $request->all();
 
         $request->validate($this->rules('salary', $payload));
-
+    
         DB::beginTransaction();
 
         try {
 
-            $now = now();
+            $now = Carbon::parse($request->effectivity_date)->format('Y-m-d');
 
             $stepColumn = 'step_' . $request->step_id;
+            $tranche_id = $request->tranche_id;
+            $salary_grade = $request->salary_grade;
+            
             $data = DB::table('tranche_items')
-                ->where('tranche_id', $request->tranch_id)
-                ->where('salary_grade', $request->salary_grade)
+                ->where('tranche_id', $tranche_id)
+                ->where('salary_grade', $salary_grade)
                 ->select($stepColumn . ' as salary') 
                 ->first();
 
             $salary = $data ? str_replace(',', '', $data->salary) : 0;
-            $daily_rate = $salary / 22;
+            $daily_rate = number_format($salary / 22, 2);
 
             foreach ($request->employees as $employee_no) {
                 DB::table('employee_salary')->insert([
                     'employee_no'        => $employee_no,
                     'tranche_id'         => $request->tranche_id,
+                    'salary_grade'        => $request->salary_grade,
                     'step'               => $request->step_id,
                     'amount'             => $salary,
                     'daily_rate'         => $daily_rate,
@@ -189,7 +217,7 @@ class EmployeeController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Employees ' . implode(', ', $request->employees) . ' salary was updated successfully.',
-                'redirect' => route('hris.employee.salary')
+                'redirect' => ''
             ]);
 
         } catch (\Exception $e) {
@@ -200,5 +228,4 @@ class EmployeeController extends Controller
             ]);
         }
     }
-
 }

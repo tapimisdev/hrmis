@@ -3,7 +3,7 @@
 @section('content')
     <div class="container pt-4 px-3">
         @if(isset($isEdit) && $isEdit == true)
-            <x-header title="Update Project" subtitle="update this employee project">
+            <x-header title="Update Project" subtitle="Update this employee project">
                 <x-button-link 
                     :href="route('projects.index')" 
                     icon="fa-solid fa-arrow-left me-2" 
@@ -12,7 +12,7 @@
                 />
             </x-header>
         @else
-            <x-header title="Add New Project" subtitle="create new project for employees" >
+            <x-header title="Add New Project" subtitle="Create new project for employees" >
                 <x-button-link 
                     :href="route('projects.index')" 
                     icon="fa-solid fa-arrow-left me-2" 
@@ -55,6 +55,16 @@
                                     </optgroup>
                                 @endforeach
                             </select>
+                            <div class="error-field"></div>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="mb-2" for="start_date">Start Date <span class="text-danger">*</span></label>
+                            <input type="date" id="start_date" name="start_date" class="form-control" value="{{$isEdit ? $data['start_date'] : ''}}">
+                            <div class="error-field"></div>
+                        </div>
+                         <div class="col-12 col-md-6 mb-3">
+                            <label class="mb-2" for="end_date">End Date <span class="text-danger">*</span></label>
+                            <input type="date" id="end_date" name="end_date" class="form-control" value="{{$isEdit ? $data['end_date'] : ''}}">
                             <div class="error-field"></div>
                         </div>
                     </div> 

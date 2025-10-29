@@ -134,7 +134,7 @@
                     </li>
                     <li class="nested-item">
                         <a href="{{ route('services.pass_slip.index') }}"
-                           class="{{ request()->routeIs('services.passlip.index') ? 'active' : '' }}">
+                           class="{{ request()->routeIs('services.pass_slip.index') ? 'active' : '' }}">
                             <i class="fa-solid fa-id-card"></i>
                             <span>Pass Slip Application</span>
                         </a>
