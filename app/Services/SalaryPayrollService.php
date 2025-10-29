@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\EmploymentTypesEnum;
+use App\Enums\FnEnum;
 use App\Jobs\Admin\Payroll\PayrollRegistryReport;
 use App\Models\User;
 use App\Notifications\PayrollBatchCompleted;
@@ -74,6 +76,8 @@ class SalaryPayrollService {
 
                 'positions.name as position',
                 'divisions.name as division',
+
+                'eo.employment_type_id',
 
                 'ei.user_id', 
                 'ei.employee_no', 
@@ -155,6 +159,15 @@ class SalaryPayrollService {
             ];
         }
 
+        if (!$this->hasProject($employee->employee_no) 
+            && $employee->employment_type_id == EmploymentTypesEnum::COS->value) {
+            
+            $eligibleRemarks[] = [
+                'text' => 'COS employee has no assigned project during the payroll date. Please update.',
+                'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
+            ];
+        }
+
         // Check incomplete logs
         if ($incompleteLogs > 0) {
             $remarks[] = [
@@ -227,6 +240,34 @@ class SalaryPayrollService {
 
         return !is_null($employee_salary);
     }
+
+    private function hasProject($emp_no) {
+
+        $date = $this->date;
+
+        $projects_employee = DB::table('employee_projects')
+                ->where('employee_no', $emp_no)
+                ->whereDate('start_date', '<=', $this->date)
+                ->where(function ($query) use ($date) {
+                    $query->whereDate('end_date', '>=', $date)
+                        ->orWhereNull('end_date');
+                })
+                ->orderByDesc('start_date')
+                ->first();
+
+        Log::info("Emp: " . $emp_no);
+        Log::info("BOOL: " . !is_null($projects_employee));
+        Log::info("Project: " . print_r($projects_employee, true));
+        
+        if(!is_null($projects_employee)) {
+            return true;
+        }
+
+        return false;
+
+    }
+
+
 
     public function generatePayrollRegistryReport($payload, $payroll_id)
     {
@@ -438,7 +479,5 @@ class SalaryPayrollService {
 
         return $suspensions;
     }
-
-    
 }
     

@@ -76,8 +76,6 @@ class SalaryApiController extends Controller
                     })
                     ->select('projects.id', 'projects.name')
                     ->get()->unique('id');
-        
-        // dd($projects);
 
         $enriched = $pse->map(function ($d) use ($payroll_date) {
             
@@ -125,7 +123,6 @@ class SalaryApiController extends Controller
             ];
         });
         
-
         // Group employees by project
         $projectGroups = [];
         
@@ -135,8 +132,6 @@ class SalaryApiController extends Controller
             
             $projectId = $emp_project->id ?? 'others';
             $projectName = $emp_project->name ?? 'No Projects';
-            
-            // dd($projectId, $projectName);
 
             if(!isset($projectGroups[$projectId])) {
                 $projectGroups[$projectId] = [
@@ -162,18 +157,13 @@ class SalaryApiController extends Controller
                 'net_salary' => $employee->net_pay
             ];
 
-            // dd($projectGroups);
         }
 
-        // dd($projectGroups);
         
         // Convert to indexed array
         $projects = array_values($projectGroups);
         
         return response()->json($projects);
-        // return [
-        //     'projects' => $projects
-        // ];
     }
 
     public function approvers()
