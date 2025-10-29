@@ -60,4 +60,16 @@ class PayrollRegistryReport implements ShouldQueue
 
         Log::info("Completed payroll registry generation for Payroll ID: {$this->payroll_id}");
     }
+
+    public function failed(\Throwable $exception)
+    {
+        // This is called automatically if the job fails
+        Log::error("Job failed: " . $exception->getMessage());
+
+        DB::table('payroll_salary')
+        ->where('id', $this->payroll_id)
+        ->update([
+            'status'      => 'failed',
+        ]);
+    }
 }

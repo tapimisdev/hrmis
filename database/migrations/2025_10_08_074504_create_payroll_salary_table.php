@@ -33,7 +33,8 @@ return new class extends Migration
                 'approved',
                 'for_releasing',
                 'completed',
-                'cancelled'
+                'cancelled',
+                'failed'
             ])->default('draft');
             $table->timestamps();
         });

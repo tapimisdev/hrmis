@@ -56,12 +56,30 @@ class SalaryApiController extends Controller
 
    public function getPayrollRegistry($payroll_id) 
    {
-        
-        $pse = DB::table('payroll_salary_employee as pse')
-                    ->where('payroll_salary_id', $payroll_id)
-                    ->get();
+        $payroll_date = DB::table('payroll_salary')
+            ->where('id', '=', $payroll_id)
+            ->value('payroll_date');
 
-        $enriched = $pse->map(function ($d) {
+        $pse = DB::table('payroll_salary_employee as pse')
+                    ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+                    ->where('payroll_salary_id', $payroll_id)
+                    ->select('pse.*', 'ps.payroll_date')
+                    ->get();
+        
+        // Get all projects for this employee
+        $projects = DB::table('employee_projects as ep')
+                    ->join('projects', 'ep.project_id', '=', 'projects.id')
+                    ->whereDate('start_date', '<=', $payroll_date)
+                    ->where(function ($query) use ($payroll_date) {
+                        $query->whereDate('end_date', '>=', $payroll_date)
+                            ->orWhereNull('end_date');
+                    })
+                    ->select('projects.id', 'projects.name')
+                    ->get()->unique('id');
+        
+        // dd($projects);
+
+        $enriched = $pse->map(function ($d) use ($payroll_date) {
             
             $deductions = DB::table('payroll_salary_employee_edeductions')
                             ->where('payroll_se_id', $d->id)
@@ -70,13 +88,16 @@ class SalaryApiController extends Controller
             $earnings = DB::table('payroll_salary_employee_earnings')
                             ->where('payroll_se_id', $d->id)
                             ->get();
-                            
-            // Get all projects for this employee
-            $projects = DB::table('employee_projects')
-                        ->join('projects', 'employee_projects.project_id', '=', 'projects.id')
-                        ->where('employee_projects.employee_no', $d->employee_no)
-                        ->select('projects.id', 'projects.name') // Adjust field names as needed
-                        ->get();
+
+            $project_id = DB::table('employee_projects')
+                ->where('employee_no', $d->employee_no)
+                ->whereDate('start_date', '<=', $payroll_date)
+                ->where(function ($query) use ($payroll_date) {
+                    $query->whereDate('end_date', '>=', $payroll_date)
+                        ->orWhereNull('end_date');
+                })
+                ->orderByDesc('start_date')
+                ->value('project_id');
 
             return (object) [
                 'employee_no' => $d->employee_no,
@@ -100,50 +121,59 @@ class SalaryApiController extends Controller
                 'salary_adjustment' => $d->salary_adjustment,
                 'deductions' => $deductions,
                 'earnings' => $earnings,
-                'projects' => $projects
+                'project_id' => $project_id
             ];
         });
+        
 
         // Group employees by project
         $projectGroups = [];
         
         foreach ($enriched as $employee) {
-            foreach ($employee->projects as $project) {
-                $projectId = $project->id;
-                $projectName = $project->name;
-                
-                if (!isset($projectGroups[$projectId])) {
-                    $projectGroups[$projectId] = [
-                        'name' => $projectName,
-                        'employees' => []
-                    ];
-                }
-                
-                // Calculate values based on your desired output structure
-                $projectGroups[$projectId]['employees'][] = [
-                    'employee_no' => $employee->employee_no,
-                    'name' => $employee->name,
-                    'position' => $employee->position,
-                    'monthly_rate' => $employee->monthly_rate,
-                    'salary_earned' => $employee->basic_pay, // Or calculate as needed
-                    'uat' => $employee->ut + $employee->absences,
-                    'overtime' => $employee->overtime,
-                    'holiday' => $employee->holiday,
-                    'total_salary' => $employee->gross_pay,
-                    'deductions'    => $employee->deductions,
-                    'earnings'    => $employee->earnings,
-                    'adjustment'    => $employee->salary_adjustment,
-                    'net_salary' => $employee->net_pay
+
+            $emp_project = $projects->firstWhere('id', $employee->project_id);
+            
+            $projectId = $emp_project->id ?? 'others';
+            $projectName = $emp_project->name ?? 'No Projects';
+            
+            // dd($projectId, $projectName);
+
+            if(!isset($projectGroups[$projectId])) {
+                $projectGroups[$projectId] = [
+                    'name' => $projectName,
+                    'employees' => []
                 ];
             }
+
+            // Calculate values based on your desired output structure
+            $projectGroups[$projectId]['employees'][] = [
+                'employee_no' => $employee->employee_no,
+                'name' => $employee->name,
+                'position' => $employee->position,
+                'monthly_rate' => $employee->monthly_rate,
+                'salary_earned' => $employee->basic_pay, // Or calculate as needed
+                'uat' => $employee->ut + $employee->absences,
+                'overtime' => $employee->overtime,
+                'holiday' => $employee->holiday,
+                'total_salary' => $employee->gross_pay,
+                'deductions'    => $employee->deductions,
+                'earnings'    => $employee->earnings,
+                'adjustment'    => $employee->salary_adjustment,
+                'net_salary' => $employee->net_pay
+            ];
+
+            // dd($projectGroups);
         }
+
+        // dd($projectGroups);
         
         // Convert to indexed array
         $projects = array_values($projectGroups);
         
-        return [
-            'projects' => $projects
-        ];
+        return response()->json($projects);
+        // return [
+        //     'projects' => $projects
+        // ];
     }
 
     public function approvers()

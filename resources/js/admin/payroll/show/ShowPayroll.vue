@@ -59,7 +59,7 @@ export default {
         });
 
         console.log(response.data);
-        this.employees = response.data.projects;
+        this.employees = response.data;
       } catch (error) {
         console.error(
           'Failed to fetch registry:',

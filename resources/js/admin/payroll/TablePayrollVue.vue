@@ -44,7 +44,8 @@
                 'badge bg-secondary bg-opacity-10 text-secondary border border-secondary': payroll.status === 'pending_approval',
                 'badge bg-success bg-opacity-10 text-success border border-success': payroll.status === 'approved',
                 'badge bg-danger bg-opacity-10 text-danger border border-danger': payroll.status === 'cancelled',
-                'badge bg-info bg-opacity-10 text-info border border-info': payroll.status === 'completed'
+                'badge bg-info bg-opacity-10 text-info border border-info': payroll.status === 'completed',
+                'badge bg-dark bg-opacity-10 text-dark border border-dark': payroll.status === 'failed'
               }"
             >
               {{ payroll.status.replace('_', ' ') }}

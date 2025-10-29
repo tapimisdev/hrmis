@@ -92,6 +92,7 @@ class ProjectsController extends Controller
                 DB::table('employee_projects')->insert([
                     'project_id' => $project_id,
                     'employee_no' => $employee_no,
+                    'start_date' => now()->toDateString(),
                 ]);
             }
 

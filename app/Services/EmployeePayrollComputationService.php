@@ -154,6 +154,8 @@ class EmployeePayrollComputationService {
                 'updated_at'            => now(),
             ]);
 
+            Log::info("Insert ID returned: " . var_export($pseId, true));
+
             foreach ($deductions as $deduction) {
                 Log::info("
                     ================ DEDUCTION INFO ================

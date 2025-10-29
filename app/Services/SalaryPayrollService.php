@@ -6,6 +6,7 @@ use App\Jobs\Admin\Payroll\PayrollRegistryReport;
 use App\Models\User;
 use App\Notifications\PayrollBatchCompleted;
 use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -140,6 +141,20 @@ class SalaryPayrollService {
             ];
         }
 
+        if(!$this->hasInformation($employee->employee_no)) {
+            $remarks[] = [
+                'text' => 'Employee record is incomplete. Please verify personal, organizational, and position details.',
+                'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
+            ];
+        }
+
+        if (!$this->hasSalary($employee->employee_no)) {
+            $remarks[] = [
+                'text' => 'No valid salary record found for this employee as of the payroll date. Please update their salary details.',
+                'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
+            ];
+        }
+
         // Check incomplete logs
         if ($incompleteLogs > 0) {
             $remarks[] = [
@@ -187,6 +202,32 @@ class SalaryPayrollService {
         return false;
     }
 
+    private function hasInformation($emp_no)
+    {
+        $info = DB::table('employee_organization')
+            ->leftJoin('employee_information', 'employee_organization.employee_no', '=', 'employee_information.employee_no')
+            ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
+            ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
+            ->where('employee_organization.employee_no', $emp_no)
+            ->select('employee_information.id as employee_information_id', 'employee_personal.id as employee_personal_id', 'positions.id as positions_id', 'users.id as users_id')
+            ->first();
+
+        // Make sure all critical relationships exist
+        return $info && $info->employee_information_id && $info->employee_personal_id && $info->positions_id && $info->users_id;
+    }
+
+    private function hasSalary($emp_no)
+    {
+        $employee_salary = DB::table('employee_salary')
+            ->where('employee_no', $emp_no)
+            ->whereDate('effectivity_date', '<=', $this->date)
+            ->orderByDesc('effectivity_date')
+            ->first();
+
+        return !is_null($employee_salary);
+    }
+
     public function generatePayrollRegistryReport($payload, $payroll_id)
     {
         $employees = collect($this->getEligibleEmployees($payload));
@@ -232,7 +273,7 @@ class SalaryPayrollService {
     public function createPayroll($payload)
     {
         $payroll_no = generateNo('REF-', 4);
-
+        
         // Insert payroll and get its ID
         $payroll_id = DB::table('payroll_salary')->insertGetId([
             'label' => $payload['label'],
@@ -246,7 +287,7 @@ class SalaryPayrollService {
             'gross_amount' => 0,
             'deduction_amount' => 0,
             'netpay_amount' => 0,
-            'processed_by_id' => auth()->id(),
+            'processed_by_id' => auth('sanctum')->user()->id,
             'payroll_date' => $payload['date'],
             'cutoff' => $payload['cutoff'],
             'employment_type_id' => $payload['employment_type_id'],

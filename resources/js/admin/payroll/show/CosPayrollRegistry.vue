@@ -233,6 +233,7 @@ export default {
         for_releasing: { label: "For Releasing", icon: "fa-paper-plane", color: "#9b59b6", bg: "#f5eef8" },
         completed: { label: "Completed", icon: "fa-circle-check", color: "#16a085", bg: "#e8f8f5" },
         cancelled: { label: "Cancelled", icon: "fa-ban", color: "#e74c3c", bg: "#fadbd8" },
+        failed: { label: "Failed", icon: "fa-ban", color: "#454444", bg: "#949292" },
       };
       return configs[this.status] || configs.draft;
     },
@@ -432,7 +433,6 @@ export default {
   }
 
   .project-header {
-    background-color: rgba($secondary, 0.3);
     .row-number {
       text-align: center;
       font-size: 11px;
@@ -468,10 +468,9 @@ export default {
 }
 
 .project-total {
-  background-color: rgba($warning, 0.3);
+  background-color: rgba($warning, 0.2);
   td {
     font-weight: bold;
-    // border-top: 2px solid rgba($dark, 0.5);
   }
 }
 
