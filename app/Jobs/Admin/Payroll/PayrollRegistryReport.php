@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PayrollRegistryReport implements ShouldQueue
@@ -46,7 +47,16 @@ class PayrollRegistryReport implements ShouldQueue
 
         $employeeNo = $employee['employee_no'] ?? 'unknown';
 
-        $employee_service->processEmployee($employeeNo, $this->payroll_id);
+        $processedData = $employee_service->processEmployeeSalary($employeeNo, $this->payroll_id);
+
+        DB::table('payroll_salary')
+        ->where('id', $this->payroll_id)
+        ->update([
+            'no_employee'      => DB::raw('no_employee + 1'),
+            'gross_amount'     => DB::raw("gross_amount + {$processedData['gross_amount']}"),
+            'deduction_amount' => DB::raw("deduction_amount + {$processedData['deduction_amount']}"),
+            'netpay_amount'    => DB::raw("netpay_amount + {$processedData['net_pay_amount']}")
+        ]);
 
         Log::info("Completed payroll registry generation for Payroll ID: {$this->payroll_id}");
     }

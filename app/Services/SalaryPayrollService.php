@@ -31,25 +31,25 @@ class SalaryPayrollService {
 
     public function getPayrolls($payload)
     {
-        $query = DB::table('payroll_salary');
+        $query = DB::table('payroll_salary as ps')
+                ->leftJoin('employment_types as et', 'ps.employment_type_id', '=', 'et.id')
+                ->select('ps.*', 'et.name as employment_name', 'et.code as employment_code');
 
         if (!empty($payload['year'])) {
-            $query->whereYear('payroll_date', $payload['year']);
+            $query->whereYear('ps.payroll_date', $payload['year']);
         }
 
         if (!empty($payload['month'])) {
-            $query->whereMonth('payroll_date', $payload['month']);
+            $query->whereMonth('ps.payroll_date', $payload['month']);
         }
 
         if (!empty($payload['cutoff'])) {
-            $query->where('cutoff', $payload['cutoff']);
+            $query->where('ps.cutoff', $payload['cutoff']);
         }
 
         if (!empty($payload['status'])) {
-            $query->where('status', $payload['status']);
+            $query->where('ps.status', $payload['status']);
         }
-
-        // dd($query->get());
 
         return $query->get();
     }
@@ -89,8 +89,8 @@ class SalaryPayrollService {
         }
 
         $seperatedEmployee = [
-            'eligible' => $this->eligibile,
-            'not_eligible' => $this->not_eligibile,
+            'eligible' => $this->eligibile ?? [],
+            'not_eligible' => $this->not_eligibile ?? [],
         ];
 
         return $seperatedEmployee;
@@ -133,6 +133,13 @@ class SalaryPayrollService {
             ];
         }
 
+        if(!$this->hasWorkAndShift($employee->employee_no)) {
+            $remarks[] = [
+                'text' => 'This Employee has no work or shift schedule during this payroll date',
+                'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
+            ];
+        }
+
         // Check incomplete logs
         if ($incompleteLogs > 0) {
             $remarks[] = [
@@ -158,6 +165,26 @@ class SalaryPayrollService {
         } else {
             $this->not_eligibile[] = $employee;
         }
+    }
+
+    private function hasWorkAndShift($emp_no)
+    {
+        $schedule = DB::table('employee_shift_work_schedule as esw')
+            ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
+            ->select(
+                'esw.shift_id',
+                'esw.work_schedule_id',
+                's.working_hours'
+            )
+            ->where('esw.employee_no', $emp_no)
+            ->where('esw.effectivity_date', '<=', $this->date)
+            ->first();
+
+        if($schedule) {
+            return true;
+        }
+
+        return false;
     }
 
     public function generatePayrollRegistryReport($payload, $payroll_id)
@@ -191,19 +218,25 @@ class SalaryPayrollService {
         ->name("Payroll Registry Report #{$payroll_id}")
         ->dispatch();
 
+        DB::table('payroll_salary')
+            ->where('id', $payroll_id)
+            ->update(['batch_id' => $batch->id]);
+
         foreach ($eligibleEmployees as $employee) {
             $batch->add(new PayrollRegistryReport($employee, $payroll_id));
         }
 
-        return $batch;
+        return $batch->id;
     }
 
     public function createPayroll($payload)
     {
+        $payroll_no = generateNo('REF-', 4);
+
         // Insert payroll and get its ID
         $payroll_id = DB::table('payroll_salary')->insertGetId([
             'label' => $payload['label'],
-            'payroll_no' => generateNo('REF-', 4),
+            'payroll_no' => $payroll_no,
 
             'period_covered' => // month year from 1 - 15 or 16 - end of month
                 \Carbon\Carbon::parse($payload['date'])->format('F Y') . ' ' .
@@ -239,7 +272,10 @@ class SalaryPayrollService {
             });
 
         // Return inserted payroll ID or record
-        return $payroll_id;
+        return [
+            'payroll_no' => $payroll_no,
+            'payroll_id' => $payroll_id,
+        ];
     }
 
     private function getCutoff()

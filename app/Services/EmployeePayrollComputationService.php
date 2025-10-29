@@ -34,6 +34,7 @@ class EmployeePayrollComputationService {
     protected $payroll_date;
     protected $cutoff;
 
+    protected $actual_presence;
     protected $shift_id;
     protected $work_schedule_id;
     protected $working_hours;
@@ -43,7 +44,7 @@ class EmployeePayrollComputationService {
         $this->daily_time_record_service = $daily_time_record_service;
     }
 
-    public function processEmployee($employee_no, $payroll_id) 
+    public function processEmployeeSalary($employee_no, $payroll_id) 
     {
         $this->employee_no = $employee_no;
         $this->payroll_id = $payroll_id;
@@ -67,40 +68,46 @@ class EmployeePayrollComputationService {
 
         $total_summary_of_dtr = $dtr['payroll_value'];
 
-        $absences       = $total_summary_of_dtr['absent'];
-        $late_undertime = $total_summary_of_dtr['late_undertime'];
-        $holiday_excess = $total_summary_of_dtr['excess'];
-        $overtime       = $total_summary_of_dtr['overtime'];
-        
-      if ($this->employment_type == EmploymentTypesEnum::COS->value) {
+        $absences         = $total_summary_of_dtr['absent'];
+        $late_undertime   = $total_summary_of_dtr['late_undertime'];
+        $holiday_excess   = $total_summary_of_dtr['excess'];
+        $overtime         = $total_summary_of_dtr['overtime'];
+        $this->actual_presence  = $total_summary_of_dtr['actual_presence'];
 
+        $deductions = $this->getDeductions();
+        $sum_of_deduction = $deductions->sum('amount');
+        
+        if ($this->employment_type == EmploymentTypesEnum::COS->value) {
+            // Initialize
             $holiday_excess_amount = 0;
 
+            // Compute components with full precision first
             if ($holiday_excess > 0) {
                 $holiday_excess_amount = $this->daily_rate * $holiday_excess;
             }
 
             $basic_salary = $this->salary_amount;
-            $overtime_amount = $this->min_rate * $overtime;
-            $absences_amount = $this->daily_rate * $absences;
-            $late_undertime_amount = $this->min_rate * $late_undertime;
 
-            // Round individual components
-            $holiday_excess_amount = round($holiday_excess_amount, 2);
-            $absences_amount = round($absences_amount, 2);
-            $late_undertime_amount = round($late_undertime_amount, 2);
-            $overtime_amount = round($overtime_amount, 2);
+            // --- Compute detailed amounts ---
+            $overtime_amount        = round($this->min_rate * $overtime, 4);
+            $holiday_excess_amount  = round($this->daily_rate * $holiday_excess, 4);
+            $absences_amount        = round($this->daily_rate * $absences, 4);
+            $late_undertime_amount  = round($this->min_rate * $late_undertime, 4);
 
-            // COMPUTATIONS
-            $total_earnings = $overtime_amount + $holiday_excess_amount;
-            $total_deductions = $absences_amount + $late_undertime_amount;
+            // --- Compute totals (still full precision) ---
+            $total_earnings   = $overtime_amount + $holiday_excess_amount;
+            $total_deductions = $sum_of_deduction;
 
-            $gross = $basic_salary + $total_earnings - $total_deductions;
-            $gross = round($gross, 2);
+            // --- Round for currency display / storage ---
+            $basic_salary     = round($basic_salary, 2);
+            $total_earnings   = round($total_earnings, 2);
+            $total_deductions = round($total_deductions, 2);
 
-            $net = $gross; // no gov deductions for COS
+            // --- Final computations ---
+            $gross = round($basic_salary - $absences_amount - $late_undertime_amount + $total_earnings, 2);
+            $net   = round($gross - $total_deductions, 2);
 
-              Log::info("
+            Log::info("
                 ================ SALARY INFO ================
                 Name            : {$this->name}
                 Position        : {$this->position}
@@ -111,14 +118,18 @@ class EmployeePayrollComputationService {
                 Absences Amount : {$absences_amount}
                 UT mins         : {$late_undertime}
                 UT Amount       : {$late_undertime_amount}
-                Overtime mins   :  {$overtime}
-                Overtime Amount :  {$overtime_amount}
+                Overtime mins   : {$overtime}
+                Overtime Amount : {$overtime_amount}
                 ---------------------------------------------
-                Gross           : {$gross}
+                Basic Salary    : {$basic_salary}
+                Total Earnings  : {$total_earnings}
+                Total Deductions: {$total_deductions}
+                Gross Pay       : {$gross}
+                Net Pay         : {$net}
                 =============================================
             ");
 
-            DB::table('payroll_salary_employee')->insert([
+            $pseId = DB::table('payroll_salary_employee')->insertGetId([
                 'payroll_salary_id'     => $this->payroll_id,
                 'employee_no'           => $this->employee_no,
                 'name'                  => $this->name,
@@ -127,27 +138,56 @@ class EmployeePayrollComputationService {
                 'ut'                    => $late_undertime_amount,
                 'absences'              => $absences_amount,
                 'overtime'              => $overtime_amount,
+                'holiday'               => $holiday_excess_amount,
                 'gsis'                  => 0,
                 'philhealth'            => 0,
                 'pagibig'               => 0,
                 'w_tax'                 => 0,
                 'total_deductions'      => $total_deductions,
                 'total_earnings'        => $total_earnings,
-                'monthly_rate'          => $basic_salary,
+                'monthly_rate'          => round($this->salary_amount * 2, 2),
                 'basic_pay'             => $basic_salary,
                 'gross_pay'             => $gross,
                 'net_pay'               => $net,
+                'salary_adjustment'     => 0,
+                'created_at'            => now(),
+                'updated_at'            => now(),
             ]);
+
+            foreach ($deductions as $deduction) {
+                Log::info("
+                    ================ DEDUCTION INFO ================
+                    Name            : {$deduction->deduction_type}
+                    Type            : {$deduction->type}
+                    Cut Off         : {$deduction->cutoff}
+                    Amount          : {$deduction->amount}
+                    ---------------------------------------------
+                    Total Deductions: {$sum_of_deduction}
+                    =============================================
+                ");
+
+                DB::table('payroll_salary_employee_edeductions')->insert([
+                    'payroll_se_id'  => $pseId,
+                    'deduction_type' => $deduction->deduction_type,
+                    'amount'         => $deduction->amount,
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+            }
         }
-
-
 
         if($this->employment_type == EmploymentTypesEnum::REGULAR->value) {
             Log::info("Processing REGULAR employee: {$this->employee_no} for Payroll ID: {$this->payroll_id}");
 
-            $deductions = $this->getDeductions();
-            $earnings = $this->getEarnings();   
+            $earnings = $this->getEarnings();
+            $sum_of_earnings = $earnings->sum('amount');
         }
+
+        return [
+            'gross_amount' => $gross,
+            'deduction_amount' => $total_deductions,
+            'net_pay_amount' => $net,
+        ];
  
     }
 
@@ -253,12 +293,107 @@ class EmployeePayrollComputationService {
 
     private function getDeductions()
     {
+        $date = $this->payroll_date;
 
+        $deductions = DB::table('employee_deductions as ed')
+            ->leftJoin('deductions as d', 'ed.deduction_id', '=', 'd.id')
+            ->where('ed.employee_no', $this->employee_no)
+            ->where('ed.isActive', true)
+            ->whereDate('ed.start_date', '<=', $date)
+            ->where(function ($query) use ($date) {
+                $query->whereDate('ed.end_date', '>=', $date)
+                    ->orWhereNull('ed.end_date');
+            })
+            ->select(
+                'd.name',
+                'ed.first_term',
+                'ed.second_term',
+                'ed.type',
+                'ed.start_date',
+                'ed.end_date'
+            )
+            ->get();
+
+        $enriched = $deductions->map(function ($d) {
+            $amount_to_deduct = 0;
+
+            if (isset($this->cutoff)) {
+                $amount_to_deduct = match ($this->cutoff) {
+                    'first_cutoff'  => $d->first_term ?? 0,
+                    'second_cutoff' => ($d->type === 'monthly') ? ($d->second_term ?? 0) : ($d->first_term ?? 0),
+                    default => 0,
+                };
+
+                if ($d->type === 'daily') {
+                    $amount_to_deduct *= $this->actual_presence;
+                } elseif ($d->type === 'divided_by_22') {
+                    $amount_to_deduct = ($amount_to_deduct / 22) * $this->actual_presence;
+                }
+            }
+
+            return (object) [
+                'deduction_type' => $d->name,
+                'type'           => $d->type,
+                'cutoff'         => $this->cutoff,
+                'amount'         => $amount_to_deduct,
+            ];
+        });
+
+        return $enriched;
     }
+
 
     private function getEarnings()
     {
+        $date = $this->payroll_date;
 
+        $deductions = DB::table('employee_earnings as ee')
+            ->leftJoin('earnings as e', 'ee.earning_id', '=', 'e.id')
+            ->where('ee.employee_no', $this->employee_no)
+            ->where('ee.isActive', true)
+            ->whereDate('ee.start_date', '<=', $date)
+            ->where(function ($query) use ($date) {
+                $query->whereDate('ee.end_date', '>=', $date)
+                    ->orWhereNull('ee.end_date');
+            })
+            ->select(
+                'e.name',
+                'ee.first_term',
+                'ee.second_term',
+                'ee.type',
+                'ee.isTaxable',
+                'ee.start_date',
+                'ee.end_date',
+            )
+            ->get();
+
+        $enriched = $deductions->map(function ($d) {
+            $amount_to_add = 0;
+
+            if (isset($this->cutoff)) {
+                $amount_to_add = match ($this->cutoff) {
+                    'first_cutoff'  => $d->first_term ?? 0,
+                    'second_cutoff' => ($d->type === 'monthly') ? ($d->second_term ?? 0) : ($d->first_term ?? 0),
+                    default => 0,
+                };
+
+                if ($d->type === 'daily') {
+                    $amount_to_add *= $this->actual_presence;
+                } elseif ($d->type === 'divided_by_22') {
+                    $amount_to_add = ($amount_to_add / 22) * $this->actual_presence;
+                }
+            }
+
+            return (object) [
+                'is_taxable'     => $d->isTaxable,
+                'deduction_type' => $d->name,
+                'type'           => $d->type,
+                'cutoff'         => $this->cutoff,
+                'amount'         => $amount_to_add,
+            ];
+        });
+
+        return $enriched;
     }
 
     private function computeWithHoldingTax()

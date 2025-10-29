@@ -10,7 +10,6 @@
   </div>
 </template>
 <script>
-const token = localStorage.getItem('auth_token');
 import SearchPayrollVue from './SearchPayrollVue.vue';
 import TablePayrollVue from './TablePayrollVue.vue';
 export default {

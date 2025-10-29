@@ -74,11 +74,16 @@ Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'log
     # PAYROLL
     Route::prefix('payroll')->group(function() {
         Route::post('salary', [SalaryApiController::class, 'getList']);
+        Route::get('salary/{payroll_id}', [SalaryApiController::class, 'getPayrollRegistry']);
         Route::post('generate-salary-payroll', [SalaryController::class, 'store']);
         
         # Adjustment
         Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);
         Route::get('approvers', [SalaryApiController::class, 'approvers']);
+
+        Route::get('/progress/{batchId}', [SalaryController::class, 'getBatchProgress']);
+        Route::post('/cancel/{batchId}', [SalaryController::class, 'cancelBatch']);
+        
     });
 
     # TIMEKEEPING
