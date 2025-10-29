@@ -4,77 +4,88 @@
     <table class="table table-sm table-striped align-middle">
       <thead>
         <tr>
-          <th>Payroll #</th>
-          <th>Label</th>
-          <th>Cutoff</th>
-          <th>Period Covered</th>
-          <th>Emp</th>
-          <th>Gross</th>
-          <th>Deductions</th>
-          <th>Net Pay</th>
+          <th>Payroll Details</th>
+          <th>Period</th>
+          <th>Emp Count</th>
+          <th>Financial Summary</th>
           <th>Status</th>
-          <th>Processed By</th>
-          <th>Date</th>
+          <th>Processed Info</th>
           <th>Action</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="payroll in payrolls" :key="payroll.id">
-          <td>{{ payroll.label }}</td>
-          <td>{{ payroll.payroll_no }}</td>
-          <td>{{ payroll.cutoff }}</td>
-          <td>{{ payroll.period_covered }}</td>
-          <td>{{ payroll.no_employee }}</td>
-          <td>{{ formatCurrency(payroll.gross_amount) }}</td>
-          <td>{{ formatCurrency(payroll.deduction_amount) }}</td>
-          <td>{{ formatCurrency(payroll.netpay_amount) }}</td>
+          <td>
+            <div><strong>{{ payroll.label }}</strong></div>
+            <div class="text-muted small">{{ payroll.employment_code }} - {{ payroll.employment_name }}</div>
+            <div class="text-muted small">Ref: {{ payroll.payroll_no }}</div>
+          </td>
+          <td>
+            <div>
+              <span :class="{
+                'badge bg-success': payroll.cutoff === 'first_cutoff',
+                'badge bg-danger': payroll.cutoff === 'second_cutoff',
+              }">
+                {{ payroll.cutoff.replace('_', ' ') }}
+              </span>
+            </div>
+            <div class="small mt-1">{{ payroll.period_covered }}</div>
+          </td>
+          <td>{{ payroll.no_employee }} Employees</td>
+          <td>
+            <div><strong>Net:</strong> {{ formatCurrency(payroll.netpay_amount) }}</div>
+            <div class="small text-muted">Gross: {{ formatCurrency(payroll.gross_amount) }}</div>
+            <div class="small text-muted">Deduct: {{ formatCurrency(payroll.deduction_amount) }}</div>
+          </td>
           <td>
             <span
               :class="{
-                'badge bg-secondary': payroll.status === 'draft',
-                'badge bg-warning': payroll.status === 'pending_approval',
-                'badge bg-primary': payroll.status === 'approved',
-                'badge bg-danger': payroll.status === 'cancelled',
-                'badge bg-dark': payroll.status === 'on_hold'
+                'badge bg-warning bg-opacity-10 text-warning border border-warning': payroll.status === 'draft',
+                'badge bg-secondary bg-opacity-10 text-secondary border border-secondary': payroll.status === 'pending_approval',
+                'badge bg-success bg-opacity-10 text-success border border-success': payroll.status === 'approved',
+                'badge bg-danger bg-opacity-10 text-danger border border-danger': payroll.status === 'cancelled',
+                'badge bg-info bg-opacity-10 text-info border border-info': payroll.status === 'completed'
               }"
             >
-              {{ payroll.status.replace('_', ' ').toUpperCase() }}
+              {{ payroll.status.replace('_', ' ') }}
             </span>
           </td>
-          <td>{{ payroll.processed_by }}</td>
-          <td>{{ payroll.payroll_date }}</td>
-            <td>
-              <button
-                class="btn btn-sm btn-primary me-1"
-                title="Manage"
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                data-bs-title="Manage Payroll"
-              >
+          <td>
+            <div class="small fw-medium">{{ payroll.processed_by }}</div>
+            <div class="text-muted small opacity-75">{{ new Date(payroll.payroll_date).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) }}</div>
+          </td>
+          <td>
+            <a
+              :href="`/admin/payroll/salary/${payroll.payroll_no}?batch_id=${payroll.batch_id}`"
+              class="btn btn-sm btn-primary me-1"
+              title="Manage"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              data-bs-title="Manage Payroll"
+            >
               <i class="fa fa-cogs"></i>
-              </button>
-              <button
-                class="btn btn-sm btn-danger"
-                title="Cancel"
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
-                data-bs-title="Cancel Payroll"
-              >
+            </a>
+            <a
+              class="btn btn-sm btn-danger"
+              title="Cancel"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              data-bs-title="Cancel Payroll"
+            >
               <i class="fa fa-ban"></i>
-              </button>
-            </td>
+            </a>
+          </td>
         </tr>
         <tr v-if="!loading && payrolls.length === 0">
-          <td colspan="12" class="text-center text-muted py-3">
+          <td colspan="7" class="text-center text-muted py-3">
             No payroll records found.
           </td>
         </tr>
         <tr v-if="loading">
-          <td colspan="12" class="text-center text-muted py-3">
+          <td colspan="7" class="text-center text-muted py-3">
             Loading...
           </td>
         </tr>
-
       </tbody>
     </table>
   </div>
@@ -112,11 +123,52 @@ export default {
 
 <style lang="scss" scoped>
 .table {
+  font-size: .75rem;
   th {
     white-space: nowrap;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: .65rem;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    border-bottom: 2px solid #dee2e6;
+    padding: 0.75rem 0.5rem;
   }
+  
   td {
     vertical-align: middle;
+    word-wrap: break-word;
+    white-space: normal;
+    padding: 0.875rem 0.5rem;
   }
+  
+  tbody tr {
+    transition: background-color 0.15s ease;
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+  }
+  
+  .badge {
+    padding: 0.35rem 0.65rem;
+    font-weight: 500;
+    font-size: 0.7rem;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+  }
+  
+  .fw-semibold {
+    font-weight: 600;
+  }
+  
+  .fw-medium {
+    font-weight: 500;
+  }
+}
+
+.card {
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 </style>

@@ -14,6 +14,7 @@ import DtrViewVue from './admin/timekeeping/DtrViewVue.vue';
 import ImportEmployeeVue from './admin/hris/ImportEmployeeVue.vue';
 import UploadTimelogVue from './admin/timekeeping/UploadTimelogVue.vue';
 import PayrollStepper from './admin/payroll/create/PayrollStepper.vue';
+import ShowPayroll from './admin/payroll/show/ShowPayroll.vue';
 
 // payroll
 import PayrollIndex from './admin/payroll/IndexVue.vue';
@@ -31,7 +32,8 @@ const authApp = createApp({
     ImportEmployeeVue,
     UploadTimelogVue,
     PayrollIndex,
-    PayrollStepper
+    PayrollStepper,
+    ShowPayroll
   },
 });
 

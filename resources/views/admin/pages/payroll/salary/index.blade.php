@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid pt-4 px-3">
         <x-header title="Salary Payroll" subtitle="View salary payroll in this module">
 
             <x-button-link 

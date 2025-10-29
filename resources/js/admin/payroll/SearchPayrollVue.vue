@@ -106,9 +106,7 @@ export default {
   methods: {
     fetchData(stateKey, url, useDataWrapper = false) {
       axios
-        .get(url, {
-          headers: { Authorization: `Bearer ${this.token}` }
-        })
+        .get(url, { headers: { Authorization: `Bearer ${this.token}` } })
         .then((response) => {
           this[stateKey] = useDataWrapper ? response.data.data : response.data;
         })
@@ -119,6 +117,7 @@ export default {
       this.errors = {};
       this.loading = true;
       this.$emit("payroll-list", [], this.loading);
+
       axios
         .post("/api/payroll/salary", this.form, {
           headers: {
@@ -128,18 +127,38 @@ export default {
         })
         .then((response) => {
           this.$emit("payroll-list", response.data.data, false);
-          this.loading = false
+          this.loading = false;
         })
         .catch((error) => {
-          if (error.response?.status === 401) {
-          } else if (error.response?.status === 422) {
+          if (error.response?.status === 422) {
             this.errors = error.response.data.errors;
           } else {
             Swal.fire("Error", error.response?.data?.message || "Something went wrong.", "error");
           }
-          this.loading = false
+          this.loading = false;
           this.$emit("payroll-list", [], false);
-        })
+        });
+    }
+  },
+
+  watch: {
+    form: {
+      deep: true,
+      handler(newVal) {
+        const params = new URLSearchParams(newVal).toString();
+        const newUrl = `${window.location.pathname}?${params}`;
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  },
+
+  mounted() {
+    const params = new URLSearchParams(window.location.search);
+    for (const [key, value] of params.entries()) {
+      if (this.form.hasOwnProperty(key)) {
+        // Convert to number for year/month if needed
+        this.form[key] = isNaN(value) ? value : Number(value);
+      }
     }
   }
 };
