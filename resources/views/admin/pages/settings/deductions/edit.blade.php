@@ -79,7 +79,7 @@ $(function() {
 
         let deductionId = "{{ $deduction->id ?? '' }}";
 
-        axios.put(`/admin/settings/deductions/${deductionId}`, formData)
+        axios.put(`/admin/maintenance/deductions/${deductionId}`, formData)
             .then(function (response) {
                 Swal.fire({
                     icon: "success",

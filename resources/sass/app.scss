@@ -1,6 +1,20 @@
 // Fonts
 @import url('https://fonts.bunny.net/css?family=Nunito');
 
+@font-face {
+  font-family: 'MyFont';
+  src: url('../fonts/Verdana.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'MyFont';
+  src: url('../fonts/Verdana-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
 // Variables
 @import 'variables';
 
@@ -12,6 +26,7 @@
 @import 'modal.scss';
 
 @import 'input.scss';
+
 
 .btn {
     border-radius: 8px;

@@ -13,4 +13,4 @@
         {{ $slot }}
     </div>
 </div>
-<div class="mb-4" style="height: 1px; background: linear-gradient(to right, #e5e7eb 0%, #d1d5db 50%, #e5e7eb 100%);"></div>
+<div class="mb-4" style="height: 2px; background: linear-gradient(to right, #e5e7eb 0%, #d1d5db 50%, #e5e7eb 100%);"></div>

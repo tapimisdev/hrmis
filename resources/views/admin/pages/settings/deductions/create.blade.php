@@ -75,7 +75,7 @@
                 _token: $('input[name="_token"]').val()
             };
 
-            axios.post(`/admin/settings/deductions`, formData, {
+            axios.post(`/admin/maintenance/deductions`, formData, {
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'

@@ -88,7 +88,7 @@ $(function() {
 
         let earningsId = "{{ $earnings->id ?? '' }}";
 
-        axios.put(`/admin/settings/earnings/${earningsId}`, formData)
+        axios.put(`/admin/maintenance/earnings/${earningsId}`, formData)
             .then(function (response) {
                 Swal.fire({
                     icon: "success",

@@ -253,7 +253,7 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
 
     Route::prefix('payroll')->group(function() {
         # SALARY PAYROLL
-        Route::resource('salary', SalaryController::class)->only('index', 'create', 'store', 'destroy');
+        Route::resource('salary', SalaryController::class)->only('index', 'create', 'show', 'store', 'destroy');
     });
 
     Route::prefix('maintenance')->group(function() {

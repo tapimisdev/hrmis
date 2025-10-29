@@ -1,6 +1,5 @@
 <template>
   <div class="stepper-container">
-    {{ form.approved_by }}
     <div class="stepper-wrapper">
       <!-- Sidebar Stepper -->
       <div class="stepper-sidebar">
@@ -54,7 +53,7 @@
           <button
             v-if="currentStep < steps.length - 1"
             class="btn btn-next"
-            :disabled="loading"
+            :disabled="loading || (nextDisabled && currentStep == 1)"
             @click="nextStep"
           >
             <span v-if="loading">
@@ -92,6 +91,7 @@ export default {
       token: localStorage.getItem("auth_token"),
       currentStep: 0,
       loading: false,
+      nextDisabled: false,
       errors: {},
       employees: [],
       form: {
@@ -132,6 +132,11 @@ export default {
           headers: { Accept: "application/json", Authorization: `Bearer ${this.token}` }
         });
         this.form.employees = res.data.data;
+        if(this.form.employees.eligible.length == 0) {
+          this.nextDisabled = true;
+        } else {
+          this.nextDisabled = false;
+        }
         return true;
       } catch (error) {
         if (error.response?.status === 422) {
@@ -156,6 +161,10 @@ export default {
           headers: { Accept: "application/json", Authorization: `Bearer ${this.token}` }
         });
         this.form.employees = res.data.data;
+        console.log(res.data.batch_id);
+        const batch_id = res.data.batch_id;
+        const payroll_no = res.data.payroll_no;
+        window.location.href = `/admin/payroll/salary/${payroll_no}?batch_id=${batch_id}`
         return true;
       } catch (error) {
         if (error.response?.status === 422) {
@@ -180,7 +189,6 @@ export default {
 @import './../../../../sass/variables';
 
 .stepper-container {
-  background: lighten($light, 2%);
   padding: 24px;
 }
 

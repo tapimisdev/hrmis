@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Payroll;
 
+use App\Enums\EmploymentTypesEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Payroll\StoreSalaryRequest;
 use App\Services\SalaryPayrollService;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\Rule;
 use Throwable;
 
@@ -32,6 +34,59 @@ class SalaryController extends Controller
         return view('admin.pages.payroll.salary.create');
     }
 
+    public function show($payroll_no)
+    {
+        $batch_id = request()->query('batch_id');
+
+        if (!$batch_id) {
+            abort(404, 'Batch ID not provided.');
+        }
+
+        // Fetch payroll record
+        $payroll = DB::table('payroll_salary')->where('payroll_no', $payroll_no)->first();
+
+        if (!$payroll) {
+            abort(404, 'Payroll not found.');
+        }
+
+        $payroll_id = $payroll->id;
+
+        // Find the batch using Laravel's Bus helper
+        $batch = Bus::findBatch($batch_id);
+
+        if (!$batch) {
+            abort(404, 'Batch not found.');
+        }
+
+        // Determine the batch status
+        if ($batch->finished()) {
+            $batchStatus = 'completed';
+        } elseif ($batch->cancelled()) {
+            $batchStatus = 'cancelled';
+        } elseif ($batch->failedJobs > 0) {
+            $batchStatus = 'failed';
+        } else {
+            $batchStatus = 'processing';
+        }
+
+        // Include progress info (optional)
+        $batchProgress = $batch->progress(); // 0–100 %
+
+        $employymentEnums = collect(EmploymentTypesEnum::cases())
+                            ->firstWhere('value', $payroll->employment_type_id);
+
+        $employmentTypeName = $employymentEnums->name; // REGULAR or COS
+
+        return view('admin.pages.payroll.salary.show', compact(
+            'payroll',
+            'batch_id',
+            'batch',
+            'batchStatus',
+            'batchProgress',
+            'employmentTypeName'
+        ));
+    }
+
     public function store(StoreSalaryRequest $request)
     {
         $validatedData = $request->validated();
@@ -40,16 +95,21 @@ class SalaryController extends Controller
 
         try {
             // Wrap only the critical DB operation in a transaction
-            $payroll_id = DB::transaction(function () use ($validatedData) {
+            $payroll = DB::transaction(function () use ($validatedData) {
                 return $this->payroll_salary_service->createPayroll($validatedData);
             });
 
+            $payroll_id = $payroll['payroll_id'];
+            $payroll_no = $payroll['payroll_no'];
+
             // Dispatch the payroll registry generation asynchronously
-            $this->payroll_salary_service->generatePayrollRegistryReport($validatedData, $payroll_id);
+            $batch_id = $this->payroll_salary_service->generatePayrollRegistryReport($validatedData, $payroll_id);
 
             return response()->json([
+                'batch_id' => $batch_id, 
                 'message' => 'Payroll created successfully.',
-                'payroll_id' => $payroll_id
+                'payroll_id' => $payroll_id,
+                'payroll_no' => $payroll_no
             ], 201);
 
         } catch (\Throwable $e) {
@@ -61,6 +121,62 @@ class SalaryController extends Controller
         }
     }
 
+    public function getBatchProgress($batch_id)
+    {
+        $batch = Bus::findBatch($batch_id);
+
+        if (! $batch) {
+            return response()->json([
+                'error' => 'Batch not found'
+            ], 404);
+        }
+
+        // Determine the batch status
+        $status = 'processing';
+
+        if ($batch->cancelled()) {
+            $status = 'cancelled';
+        } elseif ($batch->failedJobs > 0) {
+            $status = 'failed';
+        } elseif ($batch->finished()) {
+            $status = 'finished';
+        }
+
+        return response()->json([
+            'progress' => round($batch->progress()),
+            'processedJobs' => $batch->processedJobs(),
+            'totalJobs' => $batch->totalJobs,
+            'pendingJobs' => $batch->pendingJobs,
+            'failedJobs' => $batch->failedJobs,
+            'status' => $status,
+            'cancelled_at' => $batch->cancelledAt,
+        ]);
+    }
+
+    public function cancelBatch($id)
+    {
+        $batch = Bus::findBatch($id);
+
+        if (!$batch) {
+            return response()->json([
+                'status' => 'not_found',
+                'message' => 'Batch not found.',
+            ], 404);
+        }
+
+        // Cancel the batch
+        $batch->cancel();
+
+        // Optional: manually mark in your database (if you track progress)
+        // Example: BatchProgress::where('batch_id', $id)->update(['status' => 'cancelled']);
+
+        return response()->json([
+            'status' => 'cancelled',
+            'batch_id' => $batch->id,
+            'name' => $batch->name,
+            'progress' => $batch->progress(),
+        ]);
+    }
 
     public function destroy($id)
     {

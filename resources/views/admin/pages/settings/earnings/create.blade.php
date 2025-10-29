@@ -84,7 +84,7 @@
                 _token: $('input[name="_token"]').val()
             };
 
-            axios.post(`/admin/settings/earnings`, formData, {
+            axios.post(`/admin/maintenance/earnings`, formData, {
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'

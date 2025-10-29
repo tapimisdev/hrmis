@@ -134,7 +134,7 @@ class DailyTimeRecordService {
         $TOTAL_INCOMPLETE_LOGS = 0;
         $TOTAL_PENDING_LEAVES = 0;
         $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
-        $TOTAL_OVERTIME = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
+        $TOTAL_OVERTIME = $TOTAL_ACTUAL_PRESENCE = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
         $DOUBLE_EXCESS = 0;
 
         foreach ($dates as $date) {
@@ -277,6 +277,8 @@ class DailyTimeRecordService {
                     $TOTAL_PENDING_LEAVES++;
                     continue;
                 }
+            } else {
+                $TOTAL_ACTUAL_PRESENCE++;
             }
 
             /** ---------------- PARSE TIMES ---------------- **/
@@ -391,6 +393,7 @@ class DailyTimeRecordService {
             'holiday'            => $TOTAL_HOLIDAY,
             'suspensions'        => $TOTAL_SUSPENSION,
             'excess'             => $DOUBLE_EXCESS,
+            'actual_presence'    => $TOTAL_ACTUAL_PRESENCE,
         ];
 
         return [
