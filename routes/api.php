@@ -91,11 +91,14 @@ Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'log
         Route::post('import-timelogs', [UploadTimeLogController::class, 'store']);
     });
 
-    Route::get('metrics', [DashboardApiController::class, 'metrics']);
-    Route::get('birthdays', [DashboardApiController::class, 'birthdays']);
-    Route::get('attendances', [DashboardApiController::class, 'attendances']);
-    Route::get('employment-types', [DashboardApiController::class, 'employment_types']);
-    Route::get('employee-movement', [DashboardApiController::class, 'employee_movement']);
+    # PREFIX
+    Route::prefix('dashboard')->group(function() {
+        Route::get('metrics', [DashboardApiController::class, 'metrics']);
+        Route::get('birthdays', [DashboardApiController::class, 'birthdays']);
+        Route::get('attendances', [DashboardApiController::class, 'attendances']);
+        Route::get('employment-types', [DashboardApiController::class, 'employment_types']);
+        Route::get('employee-movement', [DashboardApiController::class, 'employee_movement']);
+    });
 
     Route::resource('leaves', LeaveApplicationController::class)
         ->only('store', 'update');
