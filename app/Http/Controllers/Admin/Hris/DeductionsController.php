@@ -44,12 +44,13 @@ class DeductionsController extends Controller
         }
 
         $id = null;
+        
         $data = DB::table('employee_deductions')
             ->where('employee_no', $employee_no)
             ->where('isActive', true)
             ->get();
 
-        $deductions = DB::table('deductions')->get();
+        $deductions = DB::table('deductions')->where('is_active', 1)->get();
 
         return view('admin.pages.hris.deductions', compact('id', 'deductions', 'data', 'employee_no', 'isExists'));
     }
@@ -142,8 +143,6 @@ class DeductionsController extends Controller
                         'updated_at' => now(),
                     ]);
             }
-
-            
 
             DB::commit();
 
