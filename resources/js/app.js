@@ -4,13 +4,24 @@ import './vue';
 import axios from 'axios';
 
 // Get the token from the meta tag
-const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+const token = localStorage.getItem('auth_token');
 
-if (token) {
-  axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+
+if (csrf) {
+    
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf;
+
+    $.ajaxSetup({
+        headers: {
+            'Authorization': 'Bearer ' + token
+        }
+    });
+
 } else {
   console.error('CSRF token not found!');
 }
+
 
 import { post, put } from './action';
 import { 

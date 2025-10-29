@@ -142,7 +142,7 @@ class DeductionController extends Controller
         DB::beginTransaction();
 
         try {
-            
+
             $deduction = DB::table('deductions')->where('id', $id)->where('is_active', true)->first();
             
             if (!$deduction) {
@@ -175,7 +175,6 @@ class DeductionController extends Controller
 
     public function datatable($query)
     {
-
         return DataTables::of($query)
             ->addIndexColumn()
             ->addColumn('actions', function ($row) {

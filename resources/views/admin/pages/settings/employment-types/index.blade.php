@@ -41,7 +41,6 @@
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
         });
-        
     });
 </script>
 @endsection

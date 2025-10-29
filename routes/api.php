@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\Payroll\Api\SalaryApiController;
 use App\Http\Controllers\Admin\Payroll\SalaryController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Api\AddTimeApiController;
+use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\Employee;
 use App\Http\Controllers\Api\LeavesApiController;
 use App\Http\Controllers\Api\Organization;
@@ -39,7 +40,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'logout']);
 
 // Protected routes (require Bearer token from Passport)
-Route::middleware('auth:sanctum')->group(function () {
+// Route::middleware('auth:sanctum')->group(function () {
     # ORGANIZATION
     Route::get('employment-types', [EmploymentTypesController::class, 'index']);
     Route::get('get-employment-types', [EmploymentTypesController::class, 'getEmploymentTypes']);
@@ -60,7 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
             ->name('api.employee.children');
     });
 
-    # payroll
+    # Payroll
     Route::prefix('payroll')->group(function () {
         Route::post('validate-and-fetch-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
     });
@@ -85,13 +86,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('import-timelogs', [UploadTimeLogController::class, 'store']);
     });
 
-    # LEAVES
-    Route::get('leaves', [LeavesApiController::class, 'getLeaves'])
-            ->name('api.get-leaves');
+    Route::get('metrics', [DashboardApiController::class, 'metrics']);
+    Route::get('birthdays', [DashboardApiController::class, 'birthdays']);
+    Route::get('attendances', [DashboardApiController::class, 'attendances']);
+    Route::get('employment-types', [DashboardApiController::class, 'employment_types']);
+    Route::get('employee-movement', [DashboardApiController::class, 'employee_movement']);
 
-    Route::resource('leaves', LeaveApplicationController::class)->only('store', 'update');
+    Route::resource('leaves', LeaveApplicationController::class)
+        ->only('store', 'update');
 
-    Route::get('countries', [CountriesApiController::class, 'index'])->name('api.countries');
+    Route::get('countries', [CountriesApiController::class, 'index'])
+        ->name('api.countries');
+
     Route::get('education', [Employee::class, 'education'])
         ->name('api.employee.education');
 
@@ -107,7 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('trainings', [Employee::class, 'trainings'])
         ->name('api.employee.trainings');
 
-    Route::get('skikls', [Employee::class, 'skills'])
+    Route::get('skills', [Employee::class, 'skills'])
         ->name('api.employee.skills');
 
     Route::get('shifts', [ShiftController::class, 'index']);
@@ -118,4 +124,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('add-overtime', [AddTimeApiController::class, 'add_overtime']);
     Route::get('get-overtime', [AddTimeApiController::class, 'getOvertime']);
 
-});
+// });

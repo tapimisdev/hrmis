@@ -192,8 +192,6 @@ class ApplicationController extends Controller
         return $results;
     }
 
-
-
     public function getData(string $type)
     {
         $user = Auth::user()->load('employeeInformation');

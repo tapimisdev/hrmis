@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container pt-4 px-3">
-        <x-header title="Update Employee Account" subtitle="Employee's personal data sheet and portal account">
+        <x-header title="Update Employee Records" subtitle="Employee's personal data sheet and portal account">
             <x-button-link 
                 :href="route('hris.employee.index')" 
                 icon="fa-solid fa-arrow-left me-2" 
@@ -277,13 +277,23 @@ $(function() {
             </div>
         `;
 
+        if(groupIndex == 0) {
+            $('#fields-container').empty();
+        }
+
         $('#fields-container').append(newGroup);
         groupIndex++;
     });
 
     // Remove group handler
     $('#fields-container').on('click', '.remove-group-btn', function() {
+        groupIndex--;
         $(this).closest('.grouped-field').remove();
+        if(groupIndex == 0) {
+            $('#fields-container').html(`
+                <div class="alert alert-danger text-uppercase fw-bold text-center">No Deductions Found</div>
+            `);
+        }
     });
 
     // Handle earning select change for both existing and newly added groups

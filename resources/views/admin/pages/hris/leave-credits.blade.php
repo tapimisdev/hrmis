@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container pt-4 px-3">
-        <x-header title="Update Employee Leave Credits" subtitle="Employee's personal data sheet and portal leave-credits">
+        <x-header title="Update Employee Records" subtitle="Employee's personal data sheet and portal leave-credits">
             <x-button-link 
                 :href="route('hris.employee.index')" 
                 icon="fa-solid fa-arrow-left me-2" 
@@ -55,7 +55,6 @@
                                                 <div class="alert alert-danger text-uppercase fw-bold mt-4">Oops! Sorry, No leave type(s) found. Please contact administrator or the HR personnel(s).</div>
                                             @endforelse
                                         </div>  
-
                                     @else
                                         <div class="alert alert-danger text-uppercase fw-bold mt-4">Oops! Sorry, Leave credits are only allowed for regular employee(s).</div>
                                     @endif

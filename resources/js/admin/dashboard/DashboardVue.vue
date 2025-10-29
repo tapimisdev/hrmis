@@ -35,7 +35,7 @@ export default {
   components: { HrisVue, TimelogVue },
   data() {
     return {
-      activeTab: "hris", // Default selected tab
+      activeTab: "hris",
       tabs: [
         { name: "hris", label: "HRIS", component: "HrisVue" },
         { name: "timelog", label: "Timelogs", component: "TimelogVue" },

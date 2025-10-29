@@ -54,80 +54,98 @@ class EarningsController extends Controller
         return view('admin.pages.hris.earnings', compact('id', 'earnings', 'data', 'employee_no', 'isExists'));
     }
 
-    public function rules()
+    public function rules(array $payload)
     {
-        return [
-            'earning' => ['required', 'array'],
-            'earning.*' => ['required', 'exists:earnings,id', 'distinct'],
+        
+        if(isset($payload['earning'])) {
+            return [
+                'earning' => ['required', 'array'],
+                'earning.*' => ['required', 'exists:earnings,id', 'distinct'],
 
-            'first_term' => ['required', 'array'],
-            'first_term.*' => ['required', 'numeric'],
+                'first_term' => ['required', 'array'],
+                'first_term.*' => ['required', 'numeric'],
 
-            'second_term' => ['required', 'array'],
-            'second_term.*' => ['required', 'numeric'],
+                'second_term' => ['required', 'array'],
+                'second_term.*' => ['required', 'numeric'],
 
-            'type' => ['required', 'array'],
-            'type.*' => ['required', 'in:daily,monthly,divided_by_22'],
+                'type' => ['required', 'array'],
+                'type.*' => ['required', 'in:daily,monthly,divided_by_22'],
 
-            'start_date' => ['required', 'array'],
-            'start_date.*' => ['required', 'date'],
+                'start_date' => ['required', 'array'],
+                'start_date.*' => ['required', 'date'],
 
-            'end_date' => ['nullable', 'array'],
-            'end_date.*' => ['nullable', 'date', 'after_or_equal:start_date.*'],
+                'end_date' => ['nullable', 'array'],
+                'end_date.*' => ['nullable', 'date', 'after_or_equal:start_date.*'],
 
-            'is_taxable' => ['nullable', 'array'],
-            'is_taxable.*' => ['boolean'],
-        ];
+                'is_taxable' => ['nullable', 'array'],
+                'is_taxable.*' => ['boolean'],
+            ];
+        }
+
+        return [];
+
     }
 
     public function save(string $employee_no, Request $request)
     {
         $payload = $request->all();
 
-        $request->validate($this->rules());
+        $request->validate($this->rules($payload));
 
         DB::beginTransaction();
 
         try {
-            $submittedEarningIds = array_filter($payload['earning'] ?? []);
 
-            DB::table('employee_earnings')
-                ->where('employee_no', $employee_no)
-                ->whereNotIn('earning_id', $submittedEarningIds)
-                ->update([
-                    'isActive' => false,
-                    'updated_at' => now(),
-                ]);
-
-            foreach ($submittedEarningIds as $key => $earning_id) {
-                $firstTerm  = $payload['first_term'][$key];
-                $secondTerm = $payload['second_term'][$key];
-                $type       = $payload['type'][$key];
-                $startDate  = $payload['start_date'][$key];
-                $endDate    = $payload['end_date'][$key] ?? null;
-                $isTaxable  = isset($payload['is_taxable'][$key]) ? true : false;
+            if(isset($payload['earning'])) {
+            
+                $submittedEarningIds = array_filter($payload['earning'] ?? []);
 
                 DB::table('employee_earnings')
                     ->where('employee_no', $employee_no)
-                    ->where('earning_id', $earning_id)
+                    ->whereNotIn('earning_id', $submittedEarningIds)
                     ->update([
                         'isActive' => false,
                         'updated_at' => now(),
                     ]);
 
-                DB::table('employee_earnings')->insert([
-                    'employee_no'  => $employee_no,
-                    'earning_id'   => $earning_id,
-                    'first_term'   => $firstTerm,
-                    'second_term'  => $secondTerm,
-                    'type'         => $type,
-                    'start_date'   => $startDate,
-                    'end_date'     => $endDate,
-                    'isTaxable'    => $isTaxable,
-                    'isActive'     => true,
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
-                ]);
+                foreach ($submittedEarningIds as $key => $earning_id) {
+                    $firstTerm  = $payload['first_term'][$key];
+                    $secondTerm = $payload['second_term'][$key];
+                    $type       = $payload['type'][$key];
+                    $startDate  = $payload['start_date'][$key];
+                    $endDate    = $payload['end_date'][$key] ?? null;
+                    $isTaxable  = isset($payload['is_taxable'][$key]) ? true : false;
+
+                    DB::table('employee_earnings')
+                        ->where('employee_no', $employee_no)
+                        ->where('earning_id', $earning_id)
+                        ->update([
+                            'isActive' => false,
+                            'updated_at' => now(),
+                        ]);
+
+                    DB::table('employee_earnings')->insert([
+                        'employee_no'  => $employee_no,
+                        'earning_id'   => $earning_id,
+                        'first_term'   => $firstTerm,
+                        'second_term'  => $secondTerm,
+                        'type'         => $type,
+                        'start_date'   => $startDate,
+                        'end_date'     => $endDate,
+                        'isTaxable'    => $isTaxable,
+                        'isActive'     => true,
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ]);
+                }
+            } else {
+                
+                DB::table('employee_earnings')
+                    ->where('employee_no', $employee_no)
+                    ->update([
+                        'isActive' => false,
+                        'updated_at' => now(),
+                    ]);
             }
 
             DB::commit();
@@ -138,6 +156,7 @@ class EarningsController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            
             DB::rollBack();
 
             return response()->json([

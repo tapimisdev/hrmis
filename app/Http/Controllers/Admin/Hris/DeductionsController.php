@@ -54,78 +54,96 @@ class DeductionsController extends Controller
         return view('admin.pages.hris.deductions', compact('id', 'deductions', 'data', 'employee_no', 'isExists'));
     }
 
-    public function rules()
+    public function rules(array $payload)
     {
-        return [
-            'deduction' => ['required', 'array'],
-            'deduction.*' => ['required', 'exists:deductions,id', 'distinct'],
 
-            'first_term' => ['required', 'array'],
-            'first_term.*' => ['required', 'numeric'],
+        if(isset($payload['deduction'])) {
+            return [
+                'deduction' => ['required', 'array'],
+                'deduction.*' => ['required', 'exists:deductions,id', 'distinct'],
 
-            'second_term' => ['required', 'array'],
-            'second_term.*' => ['required', 'numeric'],
+                'first_term' => ['required', 'array'],
+                'first_term.*' => ['required', 'numeric'],
 
-            'type' => ['required', 'array'],
-            'type.*' => ['required', 'in:daily,monthly,divided_by_22'],
+                'second_term' => ['required', 'array'],
+                'second_term.*' => ['required', 'numeric'],
 
-            'start_date' => ['required', 'array'],
-            'start_date.*' => ['required', 'date'],
+                'type' => ['required', 'array'],
+                'type.*' => ['required', 'in:daily,monthly,divided_by_22'],
 
-            'end_date' => ['nullable', 'array'],
-            'end_date.*' => ['nullable', 'date', 'after_or_equal:start_date.*'],
-        ];
+                'start_date' => ['required', 'array'],
+                'start_date.*' => ['required', 'date'],
+
+                'end_date' => ['nullable', 'array'],
+                'end_date.*' => ['nullable', 'date', 'after_or_equal:start_date.*'],
+            ];
+        }
+
+        return [];
+        
     }
 
     public function save(string $employee_no, Request $request)
     {
         $payload = $request->all();
 
-        $request->validate($this->rules());
+        $request->validate($this->rules($payload));
 
         DB::beginTransaction();
 
         try {
 
-            $submitteddeductionIds = array_filter($payload['deduction'] ?? []);
+            if(isset($payload['deduction'])) {
 
-            DB::table('employee_deductions')
-                ->where('employee_no', $employee_no)
-                ->whereNotIn('deduction_id', $submitteddeductionIds)
-                ->update([
-                    'isActive' => false,
-                    'updated_at' => now(),
-                ]);
-
-            foreach ($submitteddeductionIds as $key => $deduction_id) {
-                $firstTerm  = $payload['first_term'][$key];
-                $secondTerm = $payload['second_term'][$key];
-                $type       = $payload['type'][$key];
-                $startDate  = $payload['start_date'][$key];
-                $endDate    = $payload['end_date'][$key] ?? null;
+                $submitteddeductionIds = array_filter($payload['deduction'] ?? []);
 
                 DB::table('employee_deductions')
                     ->where('employee_no', $employee_no)
-                    ->where('deduction_id', $deduction_id)
+                    ->whereNotIn('deduction_id', $submitteddeductionIds)
                     ->update([
                         'isActive' => false,
                         'updated_at' => now(),
                     ]);
 
-                // Insert new active record
-                DB::table('employee_deductions')->insert([
-                    'employee_no'  => $employee_no,
-                    'deduction_id'   => $deduction_id,
-                    'first_term'   => $firstTerm,
-                    'second_term'  => $secondTerm,
-                    'type'         => $type,
-                    'start_date'   => $startDate,
-                    'end_date'     => $endDate,
-                    'isActive'     => true,
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
-                ]);
+                foreach ($submitteddeductionIds as $key => $deduction_id) {
+                    $firstTerm  = $payload['first_term'][$key];
+                    $secondTerm = $payload['second_term'][$key];
+                    $type       = $payload['type'][$key];
+                    $startDate  = $payload['start_date'][$key];
+                    $endDate    = $payload['end_date'][$key] ?? null;
+
+                    DB::table('employee_deductions')
+                        ->where('employee_no', $employee_no)
+                        ->where('deduction_id', $deduction_id)
+                        ->update([
+                            'isActive' => false,
+                            'updated_at' => now(),
+                        ]);
+
+                    // Insert new active record
+                    DB::table('employee_deductions')->insert([
+                        'employee_no'  => $employee_no,
+                        'deduction_id'   => $deduction_id,
+                        'first_term'   => $firstTerm,
+                        'second_term'  => $secondTerm,
+                        'type'         => $type,
+                        'start_date'   => $startDate,
+                        'end_date'     => $endDate,
+                        'isActive'     => true,
+                        'created_at'   => now(),
+                        'updated_at'   => now(),
+                    ]);
+                }
+            } else {
+                 DB::table('employee_deductions')
+                    ->where('employee_no', $employee_no)
+                    ->update([
+                        'isActive' => false,
+                        'updated_at' => now(),
+                    ]);
             }
+
+            
 
             DB::commit();
 
