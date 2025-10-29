@@ -34,7 +34,6 @@
 <script>
     $(function() {
 
-
         let = DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,

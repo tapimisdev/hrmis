@@ -38,9 +38,6 @@
                             <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
                             <select id="tranche_id" name="tranche_id" class="form-select">
                                 <option value=""> - CHOOSE - </option>
-                                @foreach($tranches as $tranche)
-                                    <option value="{{ $tranche->id }}">{{ strtoupper($tranche->date) }}</option>
-                                @endforeach
                             </select>
                             <div class="error-field"></div>
                         </div>
@@ -62,12 +59,17 @@
                             </select>
                             <div class="error-field"></div>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-12 col-md-4 mb-3">
+                            <label class="mb-2" for="effectivity_date">Effectivity Date <span class="text-danger">*</span></label>
+                            <input type="date" name="effectivity_date" id="effectivity_date" class="form-control">
+                            <div class="error-field"></div>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label class="mb-2" for="salary">Monthly Rate <span class="text-danger">*</span></label>
                             <input type="text" id="salary" name="salary" class="form-control restricted" value="0" disabled>
                             <div class="error-field"></div>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="mb-2" for="daily_rate">Daily Rate <span class="text-danger">*</span></label>
                             <input type="text" id="daily_rate" name="daily_rate" class="form-control restricted" value="0" disabled>
                             <div class="error-field"></div>
@@ -86,83 +88,106 @@
 
 @section('scripts')
 <script>
-    $(function() {
+$(function () {
+    const infoUrl = @json(route('hris.employee.information'));
+    const selectedEmployee = @json($selectedEmployee);
+    const url = $('#form').attr('action');
 
-        const infoUrl = @json(route('hris.employee.information'));
-        let selectedEmployees = @json($selectedEmployee ?? []);
+    const initializeEmployeeInfo = () => {
+        const $employmentType = $('#employment_type_id');
+        const $tranche = $('#tranche_id');
+        const $salaryGrade = $('#salary_grade');
+        const $step = $('#step_id');
+        const $salary = $('#salary');
+        const $dailyRate = $('#daily_rate');
+        const $effectivityDate = $('#effectivity_date');
+        const $employees = $('#employees');
 
-        $('#employees').val(selectedEmployees).trigger('change');
-
-        const url = $('#form').attr('action');
-        post(url);
-
-        $('#employment_type_id').on('change', function() {
+        $employmentType.on('change', function () {
             const id = $(this).val();
-            $('#salary').val(0)
+            $salary.val(0);
+
             $.ajax({
                 type: "GET",
                 url: infoUrl,
-                data: {
-                    'employment_type_id': id
-                },
+                data: { employment_type_id: id },
                 dataType: "json",
                 success: function (response) {
-                    const res = response;
+                    const { tranches, employees } = response;
 
-                    const $tranche = $('#tranche_id')
-                    $('#tranche_id').html('<option value=""> - CHOOSE TRANCHE - </option>'); 
-                    res.tranches.forEach(item => {
-                        const date = new Date(item.date);
-                        const formatted = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    $tranche.html('<option value=""> - CHOOSE TRANCHE - </option>');
+                    tranches.forEach(item => {
+                        const formatted = new Date(item.date).toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                        });
                         $tranche.append(`<option value="${item.id}">${formatted}</option>`);
                     });
 
-                    const $employees = $('#employees');
                     $employees.html('<option value=""> - CHOOSE - </option>');
-                    const uniqueEmployees = [];
-
-                    res.employees.forEach(emp => {
-                        if (!uniqueEmployees.includes(emp.employee_no)) {
-                            uniqueEmployees.push(emp.employee_no);
-                            const fullName = `${emp.firstname} ${emp.lastname}`;
-                            $employees.append(`<option value="${emp.employee_no}">${fullName}</option>`);
+                    const seen = new Set();
+                    employees.forEach(emp => {
+                        if (!seen.has(emp.employee_no)) {
+                            seen.add(emp.employee_no);
+                            $employees.append(`<option value="${emp.employee_no}">${emp.firstname} ${emp.lastname}</option>`);
                         }
                     });
+
+                    if (selectedEmployee.employee_no) {
+                        $employees.val(selectedEmployee.employee_no).trigger('change.select2');
+                    }
+
+                    if (selectedEmployee.tranche_id) {
+                        $tranche.val(selectedEmployee.tranche_id).trigger('change');
+                    }
                 },
-                error: function(xhr, status, error) {
+                error: function (xhr, status, error) {
                     console.error(status, error);
                 }
             });
         });
 
-        
-        $('#tranche_id').on('change', function () {
+        $tranche.on('change', function () {
             const tranche_id = $(this).val();
+            if (!tranche_id) return;
+
             $.get(infoUrl, { forSalaryGrade: true, tranche_id }, function (response) {
-                const $select = $('#salary_grade');
-                $select.empty().append('<option value=""> - CHOOSE - </option>');
-                $.each(response.data, function (_, value) {
-                    $select.append(`<option value="${value}">${value}</option>`);
+                $salaryGrade.empty().append('<option value=""> - CHOOSE - </option>');
+                $.each(response.data, (_, value) => {
+                    $salaryGrade.append(`<option value="${value}">${value}</option>`);
                 });
-                $select.trigger('change');
-            }, 'json');
-        });
 
-        $('#tranche_id, #step_id, #salary_grade').on('change', function () {
-            const tranche_id = $('#tranche_id').val();
-            const step_id = $('#step_id').val();
-            const salary_grade = $('#salary_grade').val();
-
-            $.get(infoUrl, { tranche_id, step_id, salary_grade }, function (response) {
-                if (response.data) {
-                    const amount = parseFloat(response.data.salary || 0);
-                    $('#salary').val(amount.toFixed(2));
-                    $('#daily_rate').val((amount / 22).toFixed(2));
+                if (selectedEmployee.salary_grade) {
+                    $salaryGrade.val(selectedEmployee.salary_grade).trigger('change');
                 }
             }, 'json');
         });
 
+        $salaryGrade.add($step).add($tranche).on('change', function () {
+            const tranche_id = $tranche.val();
+            const step_id = $step.val();
+            const salary_grade = $salaryGrade.val();
 
-    });
+            if (!tranche_id || !step_id || !salary_grade) return;
+
+            $.get(infoUrl, { tranche_id, step_id, salary_grade }, function (response) {
+                if (response.data) {
+                    const amount = parseFloat(response.data.salary || 0);
+                    $salary.val(amount.toFixed(2));
+                    $dailyRate.val((amount / 22).toFixed(2));
+                }
+            }, 'json');
+        });
+
+        // Initialize selected employee values
+        if (selectedEmployee && Object.keys(selectedEmployee).length > 0) {
+            $employmentType.val(selectedEmployee.employment_type_id).trigger('change');
+            $step.val(selectedEmployee.step);
+            $effectivityDate.val(selectedEmployee.effectivity_date || '');
+        }
+    };
+
+    initializeEmployeeInfo();
+    post(url);
+});
 </script>
 @endsection

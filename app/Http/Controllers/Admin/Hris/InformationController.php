@@ -72,7 +72,20 @@ class InformationController extends Controller
                 ->get();
 
             $employees = DB::table('employee_personal as ep')
-                ->leftJoin('employee_organization as eo', 'ep.employee_no', '=', 'eo.employee_no')
+                ->leftJoinSub(
+                    DB::table('employee_organization')
+                        ->select('employee_no', 'employment_type_id')
+                        ->whereIn('id', function ($query) {
+                            $query->select(DB::raw('MAX(id)'))
+                                ->from('employee_organization as eo2')
+                                ->whereColumn('eo2.employee_no', 'employee_organization.employee_no')
+                                ->groupBy('eo2.employee_no');
+                        }),
+                    'eo',
+                    'ep.employee_no',
+                    '=',
+                    'eo.employee_no'
+                )
                 ->where('eo.employment_type_id', $employment_type_id)
                 ->select('ep.employee_no', 'ep.firstname', 'ep.lastname')
                 ->get();

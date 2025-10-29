@@ -14,8 +14,9 @@
             variant="danger"
         />
     </x-header>
-    <form id="form" id="myForm" method="post">
+    <form id="form" action="{{ route('shift.store') }}" id="myForm" method="post">
         @csrf
+        @method('POST')
         <div class="card shadow p-3">
             <div class="card-header bg-transparent">
                 <h4 class="m-0 mb-1 pt-3 text-uppercase fw-medium">
@@ -28,15 +29,15 @@
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="name">Shift Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" name="name" class="form-control">
-                        <div class="name_error"></div>
+                        <div class="error-field"></div>
                     </div>
                     <div class="col-12 col-md-6 mb-3">
-                        <label class="mb-2" for="is_night_shift">Flexible</label>
-                        <select id="is_flexible" name="is_night_shift" class="form-select">
+                        <label class="mb-2" for="is_flexible">Flexible</label>
+                        <select id="is_flexible" name="is_flexible" class="form-select">
                             <option value="0" selected>No</option>
                             <option value="1">Yes</option>
                         </select>
-                        <div class="is_flexible_error"></div>
+                        <div class="error-field"></div>
                     </div>
                 </div>
 
@@ -44,26 +45,26 @@
                     <div class="col-12 col-md-4 mb-3 d-none" id="earliest_time_container">
                         <label class="mb-2" for="earliest_time">Earliest Time <span class="text-danger">*</span></label>
                         <input type="time" id="earliest_time" name="earliest_time" class="form-control">
-                        <div class="earliest_time_error"></div>
+                        <div class="error-field"></div>
                     </div>
 
                     <div class="col-12 col-md-4 mb-3">
                         <label class="mb-2" for="start_time">Start Time <span class="text-danger">*</span></label>
                         <input type="time" id="start_time" name="start_time" class="form-control">
-                        <div class="start_time_error"></div>
+                        <div class="error-field"></div>
                     </div>
 
                     <div class="col-12 col-md-4" id="end_time_container">
                         <label class="mb-2" for="end_time">End Time <span class="text-danger">*</span></label>
                         <input type="time" id="end_time" name="end_time" class="form-control">
-                        <div class="end_time_error"></div>
+                        <div class="error-field"></div>
                     </div>
 
                     <div class="col-12 col-md-4 mb-3">
                         <label class="mb-2" for="minimum_overtime_hours">Minimum Overtime Hours</label>
                         <input type="number" step="0.01" min="0" id="minimum_overtime_hours" name="minimum_overtime_hours"
                             class="form-control">
-                        <div class="minimum_overtime_hours_error"></div>
+                        <div class="error-field"></div>
                     </div>
                 </div>
 
@@ -71,13 +72,13 @@
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="break_out_time">Break Out Time</label>
                         <input type="time" id="break_out_time" name="break_out_time" class="form-control">
-                        <div class="break_out_time_error"></div>
+                        <div class="error-field"></div>
                     </div>
 
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="break_in_time">Break In Time</label>
                         <input type="time" id="break_in_time" name="break_in_time" class="form-control">
-                        <div class="break_in_time_error"></div>
+                       <div class="error-field"></div>
                     </div>
                 </div>
 
@@ -89,7 +90,7 @@
                             <option value="1" selected>Yes</option>
                             <option value="0">No</option>
                         </select>
-                        <div class="is_break_required_error"></div>
+                       <div class="error-field"></div>
                     </div>
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="is_night_shift">Night Shift</label>
@@ -97,14 +98,14 @@
                             <option value="0" selected>No</option>
                             <option value="1">Yes</option>
                         </select>
-                        <div class="is_night_shift_error"></div>
+                       <div class="error-field"></div>
                     </div>
                 </div>
 
             </div>
 
             <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
-                <button type="button" id="submit-button"
+                <button type="submit" id="submit-button"
                         class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
                     Save
                 </button>
@@ -139,64 +140,9 @@
 
         });
 
-        $('#submit-button').click(e => {
-            e.preventDefault();
-            $('#submit-button').prop('disabled', true);
-
-            // Clear previous errors
-            $('.is-invalid').removeClass('is-invalid');
-            $('.error-field').text('');
-
-            const formData = {
-                name: $('#name').val(),
-                earliest_time: $('#earliest_time').val(),
-                start_time: $('#start_time').val(),
-                end_time: $('#end_time').val(),
-                minimum_overtime_hours: $('#minimum_overtime_hours').val(),
-                break_out_time: $('#break_out_time').val(),
-                break_in_time: $('#break_in_time').val(),
-                is_break_required: $('#is_break_required').val(),
-                is_night_shift: $('#is_night_shift').val(),
-                is_flexible: $('#is_flexible').val(),
-                _token: $('input[name="_token"]').val()
-            };
-
-            axios.post(`/admin/settings/shift`, formData, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then((response) => {
-                Swal.fire({
-                    title: "Success!",
-                    text: "Shift has been saved.",
-                    icon: "success"
-                }).then(() => {
-                    window.location.href = "{{ route('shift.index') }}";
-                });
-            })
-            .catch(error => {
-                if (error.response && error.response.status === 422) {
-                    // Remove previous error states
-                    $('.is-invalid').removeClass('is-invalid');
-                    $('.error-field').text('');
-                    // Show new errors
-                    $.each(error.response.data.errors, function(field, errorMessage) {
-                        $(`#${field}`).addClass('is-invalid');
-                        $(`.${field}_error`).text(errorMessage[0]);
-                    });
-                } else {
-                    Swal.fire({
-                        title: "Oops!",
-                        text: "Something went wrong, try again later!",
-                        icon: "error"
-                    });
-                }
-            }).finally(() => {
-                $('#submit-button').prop('disabled', false);
-            });
-        });
+        const url = $('#form').attr('action');
+        post(url);
+        
     });
 </script>
 @endsection

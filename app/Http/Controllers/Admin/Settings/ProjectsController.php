@@ -68,7 +68,9 @@ class ProjectsController extends Controller
         $validator = Validator::make($payload, [
             'name' => 'required|string|max:255',
             'employee_nos' => 'required|array',
-            'employee_nos.*' => 'required|exists:employee_information,employee_no'
+            'employee_nos.*' => 'required|exists:employee_information,employee_no',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date'
         ]);
 
         if ($validator->fails()) {
@@ -82,6 +84,7 @@ class ProjectsController extends Controller
         DB::beginTransaction();
 
         try {
+
             $project_id = DB::table('projects')->insertGetId([
                 'name' => $payload['name'],
                 'created_at' => now(),
@@ -92,7 +95,8 @@ class ProjectsController extends Controller
                 DB::table('employee_projects')->insert([
                     'project_id' => $project_id,
                     'employee_no' => $employee_no,
-                    'start_date' => now()->toDateString(),
+                    'start_date' => Carbon::parse($payload['start_date'])->format('Y-m-d'),
+                    'end_date' => Carbon::parse($payload['end_date'])->format('Y-m-d'),
                 ]);
             }
 
@@ -136,14 +140,15 @@ class ProjectsController extends Controller
             return redirect()->route('projects.index');
         }
 
-        $employee_nos = DB::table('employee_projects')
+        $employee_projects = DB::table('employee_projects')
             ->where('project_id', $id)
-            ->pluck('employee_no')
-            ->toArray();
+            ->get();
 
         $data = [
             'name' => $project->name,
-            'employee_nos' => $employee_nos
+            'employee_nos' => $employee_projects->pluck('employee_no')->toArray(),
+            'start_date' => optional($employee_projects->first())->start_date,
+            'end_date' => optional($employee_projects->first())->end_date,
         ];
 
         $isEdit = true;
@@ -171,7 +176,9 @@ class ProjectsController extends Controller
         $validator = Validator::make($payload, [
             'name' => 'required|string|max:255',
             'employee_nos' => 'required|array',
-            'employee_nos.*' => 'required|exists:employee_information,employee_no'
+            'employee_nos.*' => 'required|exists:employee_information,employee_no',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date'
         ]);
 
         if ($validator->fails()) {
@@ -185,6 +192,7 @@ class ProjectsController extends Controller
         DB::beginTransaction();
 
         try {
+           
             DB::table('projects')
                 ->where('id', $id)
                 ->update([
@@ -194,10 +202,12 @@ class ProjectsController extends Controller
 
             DB::table('employee_projects')->where('project_id', $id)->delete();
 
-            $insertData = collect($payload['employee_nos'])->map(function ($employeeNo) use ($id) {
+            $insertData = collect($payload['employee_nos'])->map(function ($employee_no) use ($id, $payload) {
                 return [
                     'project_id' => $id,
-                    'employee_no' => $employeeNo
+                    'employee_no' => $employee_no,
+                    'start_date' => Carbon::parse($payload['start_date'])->format('Y-m-d'),
+                    'end_date' => Carbon::parse($payload['end_date'])->format('Y-m-d'),
                 ];
             })->toArray();
 
@@ -208,7 +218,7 @@ class ProjectsController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Project ' . strtoupper($payload['name']) . ' updated',
-                'redirect' => '_self'
+                'redirect' => ''
             ]);
 
         } catch (\Exception $e) {

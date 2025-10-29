@@ -70,16 +70,17 @@ class ShiftController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Shift saved successfully.',
-                'shift' => $shift
-            ], 201);
+                'status'   => 'success',
+                'message'  => 'Shift ' . $validatedData['name'] . ' added successfully',
+                'redirect' => '_self'
+            ]);
 
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
-                'message' => 'An error occurred while saving the shift.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status'   => 'error',
+                'message'  => 'Error: ' . $e->getMessage(),
+            ]);
         }
 
     }
@@ -122,7 +123,9 @@ class ShiftController extends Controller
         $validatedData = $request->validated();
 
         DB::beginTransaction();
+        
         try {
+
             $shift = DB::table('shifts')->where('id', $id)->first();
 
             if (!$shift) {
@@ -131,11 +134,11 @@ class ShiftController extends Controller
 
             DB::table('shifts')->where('id', $id)->update([
                 'name' => $validatedData['name'],
-                'earliest_time' => $validatedData['earliest_time'],
-                'start_time' => $validatedData['start_time'],
+                'earliest_time' => $validatedData['earliest_time'] ?? null,
+                'start_time' => $validatedData['start_time'] ?? null,
                 'break_out_time' => $validatedData['break_out_time'] ?? null,
                 'break_in_time' => $validatedData['break_in_time'] ?? null,
-                'end_time' => $validatedData['end_time'],
+                'end_time' => $validatedData['end_time'] ?? null,
                 'minimum_overtime_hours' => $validatedData['minimum_overtime_hours'] ?? 0,
                 'is_break_required' => $request->input('is_break_required', 1),
                 'is_night_shift' => $request->input('is_night_shift', 0),
@@ -146,15 +149,17 @@ class ShiftController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Shift updated successfully.'
-            ], 200);
+                'status'   => 'success',
+                'message'  => 'Shift ' . $validatedData['name'] . ' updated successfully',
+                'redirect' => ''
+            ]);
 
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
-                'message' => 'An error occurred while updating the shift.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status'   => 'error',
+                'message'  => 'Error: ' . $e->getMessage(),
+            ]);
         }
     }
 
