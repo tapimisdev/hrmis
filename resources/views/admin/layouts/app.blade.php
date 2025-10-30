@@ -72,9 +72,7 @@
                 <!-- Main content area (unique per page) -->
                 @yield('content')
             </div>
-            <div class="mt-5 pt-5">
-                @include('admin.components.footer')
-            </div>
+            @include('admin.components.footer')
         </main>
     </div>
 

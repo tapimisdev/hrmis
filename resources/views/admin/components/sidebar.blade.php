@@ -1,7 +1,7 @@
 <div class="sidebar">
     <!-- Logo Section -->
     <div class="sidebar-title">
-        <img src="{{ asset('img/HR EN ROLL.png') }}" alt="HR Payroll Logo">
+        <img src="{{ asset('img/orbit.png') }}" alt="Orbit">
     </div>
 
     <!-- Navigation List -->
@@ -115,7 +115,7 @@
                         <a href="{{ route('services.events.index') }}"
                            class="{{ request()->routeIs('services.events.index') ? 'active' : '' }}">
                             <i class="fa-solid fa-calendar-days"></i>
-                            <span>Events & Announcements</span>
+                            <span>Events & <br> Announcements</span>
                         </a>
                     </li>
                     <li class="nested-item">

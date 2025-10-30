@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Hris;
 
+use App\Events\RefreshData;
 use App\Http\Controllers\Controller;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
@@ -296,6 +297,8 @@ class InformationController extends Controller
 
 
             DB::commit();
+
+            broadcast(new \App\Events\RefreshData());
 
             return response()->json([
                 'status' => 'success',

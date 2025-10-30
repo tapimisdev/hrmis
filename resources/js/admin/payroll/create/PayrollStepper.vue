@@ -34,7 +34,7 @@
 
       <!-- Content Area -->
       <div class="stepper-content">
-        <LoaderVue :visible="loading" status="loading" message="Loading..." />
+        <LoaderVue :hasBackground="true" :visible="loading" status="loading" message="Loading..." />
         
         <div class="content-body">
           <keep-alive :include="['CreatePayroll', 'ReviewPayroll', 'ApprovalPayroll']">
@@ -181,6 +181,19 @@ export default {
         this.loading = false;
       }
     },
+  },
+  mounted() {
+    window.Echo.channel('refresh')
+      .listen('.RefreshData', (e) => {
+        console.log('Got refresh event!', e);
+        this.validateAndGetReview();
+      })
+      .error((error) => {
+        console.error('Error:', error);
+      });
+  },
+  beforeDestroy() {
+    window.Echo.leave('refresh');
   },
 };
 </script>

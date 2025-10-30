@@ -1,4 +1,5 @@
 import './bootstrap';
+import './laravel-echo';
 import './vue';
 
 import axios from 'axios';

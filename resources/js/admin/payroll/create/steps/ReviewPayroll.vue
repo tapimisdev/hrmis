@@ -133,6 +133,9 @@ export default {
         '_blank',
         'toolbar=yes,scrollbars=yes,resizable=yes,width=800,height=600'
       );
+    },
+    refetchData() {
+      alert('test');
     }
   },
   computed: {
