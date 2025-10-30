@@ -6,7 +6,7 @@
 
 @section('content')
 @include('admin.pages.settings.weekly-schedules.show')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Weekly Schedules" subtitle="Manage weekly schedule in this module">
             <x-button-link 
                 :href="route('weekly-schedules.create')" 

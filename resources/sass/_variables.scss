@@ -1,24 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
-// Body
+// Body (Light theme)
 $body-bg: #ffffff;
+$body-secondary-bg: #f8f9fa;
+$body-tertiary-bg: #e9ecef;
 
 // Typography
-$font-family-sans-serif: "National Park", sans-serif;
+$font-family-sans-serif: "Montserrat", sans-serif;
 $font-size-base: 0.9rem;
 $line-height-base: 1.6;
 
-// $primary: #0c8384;
-$primary: #001465;
+// Theme colors
+$primary: #002265;
 $secondary: #6895fd;
-
 $success: #00af00;
 $danger: #e03b3b;
-$warning: #FDCF09;  
+$warning: #FDCF09;
 $info: #04a0ee;
-// $light: #F6F5F5;
 $light: #f1f1f1;
 $dark: #444340;
 
 $black: #444340;
 $white: #ffffff;
+
+// Dark theme customization
+$body-bg-dark: #1a1d24;
+$body-secondary-bg-dark: #252830;
+$body-tertiary-bg-dark: #2f3440;
+
+// Lighten primary colors for dark theme
+$primary-dark: lighten($primary, 30%); // #4d6fa8
+$secondary-dark: lighten($secondary, 10%); // #8daffe
+$success-dark: lighten($success, 15%); // #33c233
+$danger-dark: lighten($danger, 15%); // #e96a6a
+$warning-dark: $warning; // Keep warning as is
+$info-dark: lighten($info, 10%); // #36b4f2
+
+// Import Bootstrap

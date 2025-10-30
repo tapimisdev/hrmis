@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Tranche" subtitle="update this tranche">
                 <x-button-link 

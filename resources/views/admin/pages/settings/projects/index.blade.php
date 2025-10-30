@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Projects" subtitle="Manage projects for this employment type">
             <x-button-link 
                 :href="route('projects.create')" 

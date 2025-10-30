@@ -1,5 +1,5 @@
-<nav class="navbar admin-nav navbar-expand-md bg-white navbar-light border-bottom sticky-top" style="height: 50px">
-    <div class="container d-flex justify-content-md-between">
+<nav class="navbar admin-nav navbar-expand-md bg-body-tertiary navbar-light border-bottom  sticky-top" style="height: 50px">
+    <div class="container-fluid d-flex justify-content-md-between">
         <div></div>
         <div class="dropdown">
             <a class="nav-link text-capitalize d-flex align-items-center gap-2" href="" role="button">

@@ -1,8 +1,6 @@
 @import 'variables.scss';
 @import './hamburger.scss';
 
-@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
-
 $sidebar-width: 220px;
 
 // Responsive app for the employee
@@ -10,8 +8,6 @@ $sidebar-width: 220px;
 #app {
     min-height: 100vh;
     background-color: rgba($primary, 0.1);
-    font-family: "Lato", sans-serif;
-
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(5, 1fr);
@@ -576,9 +572,6 @@ $sidebar-width: 220px;
     height: 100vh;
   }
 }
-
-
-
 
 .sidebar-seperator {
     border-bottom: 1px solid rgba($dark, 0.1);

@@ -5,12 +5,13 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Employee List" subtitle="Manage employee's informations in this module" >
-            <div class="d-flex flex-wrap gap-3 justify-content-end">
+            <div class="d-flex flex-wrap gap-2 justify-content-end">
                 <!-- Dropdown Button -->
                 <div class="dropdown">
-                    <button class="btn-modern ghost text-uppercase fw-bold px-5 py-3" 
+                    <!-- class="btn-modern ghost"  -->
+                    <button class="btn btn-outline-primary"
                             type="button" 
                             id="employeeActionsDropdown" 
                             data-bs-toggle="dropdown" 
@@ -69,25 +70,20 @@
                 </select>
             </div>
         </div>
-        <div class="card p-3">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped w-100 pb-3" id="myTable">
-                        <thead>
-                            <tr>
-                                <th></th>
-                                <th>Employee No</th>
-                                <th>Name</th>
-                                <th>Date Hired</th>
-                                <th style="width: 120px">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        
+        <x-table id="myTable">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Employee No</th>
+                    <th>Name</th>
+                    <th>Date Hired</th>
+                    <th style="width: 120px">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </x-table>
     </div>
 @endsection
 

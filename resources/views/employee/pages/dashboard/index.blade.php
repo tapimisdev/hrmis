@@ -1,7 +1,7 @@
 @extends('employee.layout.app')
 
 @section('content')
-<div class="container-fluid pt-3">
+<div class="container-fluid">
 
     <header-vue title="Dashboard"></header-vue>
 

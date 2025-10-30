@@ -1,7 +1,7 @@
 @extends('employee.layout.app')
 
 @section('content')
-<div class="container-fluid pt-3 pb-4 check-in-out ">
+<div class="container-fluid pb-4 check-in-out ">
     
     <header-vue title="DOST TAPI"></header-vue>
         

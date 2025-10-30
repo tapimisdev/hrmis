@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="container pt-4 px-3">
+<div class="container-fluid">
     <x-header title="All Approvers" subtitle="View all approvers in every units">
         <x-button-link :href="route('settings.approvers.index')" icon="fa-solid fa-arrow-left me-2" text="Back" variant="danger" />
     </x-header>

@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container-fluid pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Payroll Label: {{ $payroll->label }}" subtitle="Payroll reference no: {{ $payroll->payroll_no }}">
             <x-button-link 
                 :href="route('salary.index')" 

@@ -1,4 +1,4 @@
-<div class="sidebar">
+<div class="sidebar boder bg-light-subtle shadow">
     <!-- Logo Section -->
     <div class="sidebar-title">
         <img src="{{ asset('img/orbit.png') }}" alt="Orbit">
@@ -65,7 +65,7 @@
                         <a href="{{ route('import.timelogs.index') }}"
                            class="{{ request()->routeIs('import.timelogs.index') ? 'active' : '' }}">
                             <i class="fa-solid fa-file-import"></i>
-                            <span>Import Timelogs</span>
+                            <span>Import</span>
                         </a>
                     </li>
                 </ul>

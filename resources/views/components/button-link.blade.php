@@ -6,7 +6,7 @@
 ])
 
 <a href="{{ $href }}"
-   {{ $attributes->merge(['class' => "$variant btn-modern"]) }}>
+   {{ $attributes->merge(['class' => " btn btn-$variant btn-modern"]) }}>
     @if ($icon)
         <i class="{{ $icon }} me-2"></i>
     @endif

@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         {{-- Header --}}
         @if($isEdit ?? false)
             <x-header title="Update Approver" subtitle="Update approver/s">

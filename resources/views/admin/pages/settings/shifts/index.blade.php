@@ -6,7 +6,7 @@
 
 @section('content')
 @include('admin.pages.settings.shifts.show')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Shift Schedules" subtitle="Manage shift schedule in this module">
             <x-button-link 
                 :href="route('shift.create')" 

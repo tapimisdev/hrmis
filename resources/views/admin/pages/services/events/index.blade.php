@@ -14,7 +14,7 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <div class="pb-5">
             <x-header title="All Events" subtitle="Manage all created events and announcements in this module">
                 <a href="{{ route('services.events.create') }}" class="btn btn-outline-primary py-3 px-4 text-uppercase fw-medium">

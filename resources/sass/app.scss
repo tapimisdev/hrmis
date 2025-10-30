@@ -21,6 +21,29 @@
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
 
+// Dark theme overrides
+[data-bs-theme="dark"] {
+  --bs-body-bg: #{$body-bg-dark};
+  --bs-body-bg-rgb: #{to-rgb($body-bg-dark)};
+  --bs-secondary-bg: #{$body-secondary-bg-dark};
+  --bs-secondary-bg-rgb: #{to-rgb($body-secondary-bg-dark)};
+  --bs-tertiary-bg: #{$body-tertiary-bg-dark};
+  --bs-tertiary-bg-rgb: #{to-rgb($body-tertiary-bg-dark)};
+  
+  --bs-primary: #{$primary-dark};
+  --bs-primary-rgb: #{to-rgb($primary-dark)};
+  --bs-secondary: #{$secondary-dark};
+  --bs-secondary-rgb: #{to-rgb($secondary-dark)};
+  --bs-success: #{$success-dark};
+  --bs-success-rgb: #{to-rgb($success-dark)};
+  --bs-danger: #{$danger-dark};
+  --bs-danger-rgb: #{to-rgb($danger-dark)};
+  --bs-warning: #{$warning-dark};
+  --bs-warning-rgb: #{to-rgb($warning-dark)};
+  --bs-info: #{$info-dark};
+  --bs-info-rgb: #{to-rgb($info-dark)};
+}
+
 @import 'buttons.scss';
 
 @import 'modal.scss';
