@@ -27,6 +27,8 @@ return new class extends Migration
         Schema::create('employee_leave_card', function(Blueprint $table) {
             $table->id();
             $table->string('employee_no');
+            $table->string('period');
+            $table->string('year');
             $table->longText('particulars')
                 ->nullable();
             $table->string('vl_earned');

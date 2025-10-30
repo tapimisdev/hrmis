@@ -138,7 +138,7 @@
                             <i class="fa-solid fa-id-card"></i>
                             <span>Pass Slip Application</span>
                         </a>
-                    </li>
+                    </li> 
                     <li class="nested-item">
                         <a href="{{ route('services.overtime.index') }}"
                            class="{{ request()->routeIs('services.overtime.index') ? 'active' : '' }}">

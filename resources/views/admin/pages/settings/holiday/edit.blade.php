@@ -15,8 +15,9 @@
             variant="danger"
         />
     </x-header>
-    <form id="form" method="post">
+    <form id="form" action="{{ route('holiday.update', $holiday->id) }}" method="post">
         @csrf
+        @method('PUT')
         <div class="card shadow p-3">
             <div class="card-header bg-transparent">
                 <h4 class="m-0 mb-1 pt-3 text-uppercase fw-medium">
@@ -29,13 +30,13 @@
                         <label class="mb-2" for="name">Holiday Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" name="name" class="form-control" 
                                value="{{ $holiday->name ?? '' }}">
-                        <div class="text-danger name_error error-field"></div>
+                        <div class="error-field"></div>
                     </div>
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="date">Date <span class="text-danger">*</span></label>
                         <input type="date" id="date" name="date" class="form-control" 
                                value="{{ isset($holiday->date) ? \Carbon\Carbon::parse($holiday->date)->format('Y-m-d') : '' }}">
-                        <div class="text-danger date_error error-field"></div>
+                         <div class="error-field"></div>
                     </div>
                 </div>
 
@@ -48,7 +49,7 @@
                             <option value="special_non_working" {{ (isset($holiday) && $holiday->type == 'special_non_working') ? 'selected' : '' }}>Special Non-working Day</option>
                             <option value="company" {{ (isset($holiday) && $holiday->type == 'company') ? 'selected' : '' }}>Company-declared Holiday</option>
                         </select>
-                        <div class="text-danger type_error error-field"></div>
+                         <div class="error-field"></div>
                     </div>
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="is_repeating">Repeats Yearly?</label>
@@ -56,7 +57,7 @@
                             <option value="0" {{ (isset($holiday) && !$holiday->is_repeating) ? 'selected' : '' }}>No</option>
                             <option value="1" {{ (isset($holiday) && $holiday->is_repeating) ? 'selected' : '' }}>Yes</option>
                         </select>
-                        <div class="text-danger is_repeating_error error-field"></div>
+                        <div class="error-field"></div>
                     </div>
                 </div>
 
@@ -66,24 +67,24 @@
                         <label class="mb-2" for="no_work_rate">No Work Rate (%) <span class="text-danger">*</span></label>
                         <input type="number" step="0.01" id="no_work_rate" name="no_work_rate" class="form-control" 
                                value="{{ $holiday->no_work_rate ?? '' }}" placeholder="e.g., 1.00">
-                        <div class="text-danger no_work_rate_error error-field"></div>
+                        <div class="error-field"></div>
                     </div>
                     <div class="col-12 col-md-4 mb-3">
                         <label class="mb-2" for="work_rate">Work Rate (%) <span class="text-danger">*</span></label>
                         <input type="number" step="0.01" id="work_rate" name="work_rate" class="form-control" 
                                value="{{ $holiday->work_rate ?? '' }}" placeholder="e.g., 1.30">
-                        <div class="text-danger work_rate_error error-field"></div>
+                        <div class="error-field"></div>
                     </div>
                     <div class="col-12 col-md-4 mb-3">
                         <label class="mb-2" for="overtime_rate">Overtime Rate (%) <span class="text-danger">*</span></label>
                         <input type="number" step="0.01" id="overtime_rate" name="overtime_rate" class="form-control" 
                                value="{{ $holiday->overtime_rate ?? '' }}" placeholder="e.g., 1.50">
-                        <div class="text-danger overtime_rate_error error-field"></div>
+                        <div class="error-field"></div>
                     </div>
                 </div>
             </div>
             <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
-                <button type="button" id="update-button"
+                <button type="submit" id="update-button"
                         class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
                     Update
                 </button>
@@ -96,55 +97,9 @@
 
 @section('scripts')
 <script>
-$(function() {
-
-    // Handle form submission for update
-    $(document).on("click", "#update-button", function (e) {
-        e.preventDefault();
-        $(".error-field").text("");
-
-        let formData = {
-            _token: $("input[name=_token]").val(),
-            name: $("#name").val(),
-            date: $("#date").val(),
-            type: $("#type").val(),
-            is_repeating: $("#is_repeating").val(),
-            no_work_rate: $("#no_work_rate").val(),
-            work_rate: $("#work_rate").val(),
-            overtime_rate: $("#overtime_rate").val(),
-        };
-
-        // Get holiday id from a hidden input or JS variable
-        let holidayId = "{{ $holiday->id ?? '' }}";
-        axios.put(`{{ route('holiday.store') }}/${holidayId}`, formData)
-            .then(function (response) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Updated!",
-                    text: "Holiday has been updated successfully.",
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            })
-            .catch(function (error) {
-                if (error.response && error.response.status === 422) {
-                     // Remove previous error states
-                    $('.is-invalid').removeClass('is-invalid');
-                    $('.error-field').text('');
-                    // Show new errors
-                    $.each(error.response.data.errors, function(field, errorMessage) {
-                        $(`#${field}`).addClass('is-invalid');
-                        $(`.${field}_error`).text(errorMessage[0]);
-                    });
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Oops...",
-                        text: "Something went wrong!",
-                    });
-                }
-            });
+    $(function() {
+        const url = $('#form').attr('action');
+         put(url);
     });
-});
 </script>
 @endsection

@@ -141,6 +141,8 @@ class EmployeeService {
             'voluntary-works' => ['table' => 'employee_voluntary_works', 'method' => 'get'],
             'skills' => ['table' => 'employee_skills_hobbies', 'method' => 'get'],
             'account' => ['table' => 'users', 'method' => 'first'],
+            'leave-credits' => ['table' => 'employee_leave_credits', 'method' => 'first'],
+            'leave-card' => ['table' => 'employee_leave_card', 'method' => 'get'],
         ];
 
         if (!isset($tables[$type])) {
@@ -274,6 +276,7 @@ class EmployeeService {
 
         if ($employment_type_id == $regular_id) {
 
+            // Subquery: get latest leave credit per leave_id
             $latestCredits = DB::table('employee_leave_credits as c1')
                 ->select('c1.*')
                 ->where('c1.employee_no', $employee_no)
@@ -292,11 +295,31 @@ class EmployeeService {
                     DB::raw('COALESCE(c.id, 0) as id'),
                     DB::raw('COALESCE(c.employee_no, "") as employee_no'),
                     DB::raw('COALESCE(c.amount, 0) as amount'),
+                    DB::raw('COALESCE(c.effectivity_date, NULL) as effectivity_date'),
                     'l.name',
                     'l.id as leave_id',
                     'l.is_cumulative',
                     'l.credit_to_deduct',
-                    'l.is_active'
+                    'l.is_active',
+                    DB::raw("
+                        CASE WHEN EXISTS (
+                            SELECT 1 FROM employee_leave_card elc
+                            WHERE elc.employee_no = '$employee_no'
+                            LIMIT 1
+                        )
+                        THEN true ELSE false END as hasLeaveCredit
+                    ")
+                )
+                ->groupBy(
+                    'l.id',
+                    'l.name',
+                    'l.is_cumulative',
+                    'l.credit_to_deduct',
+                    'l.is_active',
+                    'c.id',
+                    'c.employee_no',
+                    'c.amount',
+                    'c.effectivity_date'
                 )
                 ->get();
 

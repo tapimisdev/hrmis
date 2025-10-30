@@ -51,17 +51,23 @@ class HolidayController extends Controller
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
+            
             DB::commit();
+           
             return response()->json([
-                'message' => 'Holiday saved successfully.',
-                'holiday' => $holiday
-            ], 201);
+                'status' => 'success',
+                'message' => 'New Holiday Added',
+                'redirect' => '_self'
+            ]);
+
         } catch (\Exception $e) {
+
             DB::rollback();
+
             return response()->json([
-                'message' => 'An error occurred while saving the holiday.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
         }
     }
 
@@ -121,16 +127,22 @@ class HolidayController extends Controller
                 'overtime_rate' => $validated['overtime_rate'],
                 'updated_at' => now(),
             ]);
+            
             DB::commit();
+            
             return response()->json([
-                'message' => 'Holiday updated successfully.'
-            ], 200);
+                'status' => 'success',
+                'message' => 'Holiday Updated',
+                'redirect' => ''
+            ]);
+
         } catch (\Exception $e) {
             DB::rollback();
+
             return response()->json([
-                'message' => 'An error occurred while updating the holiday.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
         }
     }
 
@@ -149,16 +161,23 @@ class HolidayController extends Controller
                 'is_active' => false,
                 'updated_at' => now(),
             ]);
+
             DB::commit();
+
             return response()->json([
-                'message' => 'Holiday deleted successfully.'
-            ], 200);
+                'status' => 'success',
+                'message' => 'Holiday deleted successfully.',
+                'redirect' => '_self'
+            ]);
+
         } catch (\Exception $e) {
+            
             DB::rollback();
+
             return response()->json([
-                'message' => 'An error occurred while deleting the holiday.',
-                'error' => $e->getMessage()
-            ], 500);
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
         }
     }
 

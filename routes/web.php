@@ -197,10 +197,16 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
             ->name('hris.employee.account');
 
         # LEAVE CREDITS
-        Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'index'])
+        Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'leave_credits'])
             ->name('hris.employee.leave-credits');
-        Route::put('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'save'])
+        Route::put('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'save_credits'])
             ->name('hris.employee.leave-credits');
+
+        # LEAVE CARD
+        Route::get('employee/leave-card/{employee_no}', [LeaveCreditController::class, 'leave_card'])
+            ->name('hris.employee.leave-card');
+        Route::put('employee/leave-card/{employee_no}', [LeaveCreditController::class, 'save_card'])
+            ->name('hris.employee.leave-card');
 
         # EARNINGS
         Route::get('employee/earnings/{employee_no}', [HrisEarningsController::class, 'index'])

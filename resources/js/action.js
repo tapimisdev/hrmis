@@ -1,7 +1,7 @@
 import { alert, fieldError, confirmAction} from './helper';
 
 function handleFormSubmit(method, url, hasRemarks = false) {
-    $('#form').on('submit', function (e) {
+    $('[id^="form"]').on('submit', function (e) {
         e.preventDefault();
 
         const form = this;

@@ -60,9 +60,8 @@
 
             axios.get(`holiday/${id}`)
                 .then((response) => {
-                    const data = response.data.holiday; // adjust according to your API response
+                    const data = response.data.holiday; 
 
-                    // Fill modal fields
                     $('#holiday-id').text(data.id);
                     $('#holiday-name').text(data.name);
                     $('#holiday-date').text(data.date ? moment(data.date).format('MMMM D, YYYY') : '---');
