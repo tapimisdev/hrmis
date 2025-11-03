@@ -1,4 +1,4 @@
-<ul class="nav nav-pills mb-3 d-block pb-4 sticky-top bg-white z-3" style="top: 80px;" id="pills-tab" role="tablist">
+<ul class="nav nav-pills mb-3 d-block pb-4 sticky-top z-3" style="top: 80px;" id="pills-tab" role="tablist">
     @foreach ($menus as $menu)
         <li class="nav-item" role="presentation">
             <a href="{{ $menu['route'] }}" 

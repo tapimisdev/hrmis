@@ -31,7 +31,7 @@
                             <div id="flush-leave-credits" class="accordion-collapse collapse show">
                                 <div class="accordion-body">
                                     <div class="d-flex justify-content-end mb-4">
-                                        <a href="" class="btn btn-outline-primary">Leave Card</a>
+                                        <a href="" class="btn btn-primary">Leave Card</a>
                                     </div>
                                     @if($leaves['status'] == 'eligible')
                                         <div class="row">

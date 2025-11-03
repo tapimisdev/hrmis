@@ -182,7 +182,7 @@
                                             </div>
                                         @endif
                                     </div>
-                                    <button type="button" id="add-group-btn" class="btn btn-outline-primary text-uppercase fw-bold px-4 py-2">Add Items</button>
+                                    <button type="button" id="add-group-btn" class="btn btn-primary text-uppercase fw-bold px-4 py-2">Add Items</button>
                                 </div>
                             </div>
                         </div>

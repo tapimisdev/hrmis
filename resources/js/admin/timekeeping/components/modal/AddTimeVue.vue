@@ -147,7 +147,7 @@
 
     <!-- Actions -->
     <div class="modal-footer">
-        <button @click="close" class="btn py-3 px-4 btn-outline-danger">
+        <button @click="close" class="btn py-3 px-4 btn-danger">
             <i class="me-2 fas fa-times"></i>
             Close
         </button>

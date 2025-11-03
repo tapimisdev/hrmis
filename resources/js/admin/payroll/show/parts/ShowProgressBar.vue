@@ -3,7 +3,7 @@
     <div class="progress-container">
       <div class="left-section">
         <div class="img-container">
-          <img src="./data_processing.png" alt="Processing">
+          <img src="./../img/data_processing.png" alt="Processing">
         </div>
         
         <div class="progress-header">
@@ -192,7 +192,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import './../../../../sass/variables';
+@import './../../../../../sass/variables';
 
 // Design tokens
 $max-width: 900px;
@@ -246,7 +246,7 @@ $error: #dc2626;
         margin: 0;
         font-size: 1.5rem;
         font-weight: 600;
-        color: $text-dark;
+        color: var(--bs-body);
       }
 
       .status-badge {
@@ -257,16 +257,16 @@ $error: #dc2626;
         white-space: nowrap;
 
         &.processing { 
-          background: rgba($primary, 0.15); 
-          color: darken($primary, 10%); 
+          background: rgba(var(--bs-primary), 0.15); 
+          color: var(--bs-primary);
         }
         &.warning { 
-          background: rgba($warning, 0.15); 
-          color: darken($warning, 15%); 
+          background: rgba(var(--bs-warning), 0.15); 
+          color: var(--bs-warning);
         }
         &.finished { 
-          background: rgba($success, 0.15); 
-          color: darken($success, 10%); 
+          background: rgba(var(--bs-success), 0.15); 
+          color: var(--bs-success);
         }
       }
     }
@@ -286,22 +286,22 @@ $error: #dc2626;
 
         .progress-fill {
           height: 100%;
-          background: linear-gradient(90deg, lighten($primary, 15%), $secondary);
+          background: linear-gradient(90deg, var(--bs-primary), var(--bs-secondary));
           transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           border-radius: 8px;
 
           &.complete { 
-            background: linear-gradient(90deg, lighten($success, 15%), $success); 
+            background: linear-gradient(90deg, var(--bs-success), var(--bs-success)); 
           }
           &.error { 
-            background: linear-gradient(90deg, lighten($warning, 15%), $warning); 
+            background: linear-gradient(90deg, var(--bs-warning), var(--bs-warning)); 
           }
         }
       }
 
       .progress-text {
         font-weight: 700;
-        color: $text-dark;
+        color: var(--bs-body);
         font-size: 1.125rem;
         min-width: 55px;
         text-align: right;
@@ -321,14 +321,14 @@ $error: #dc2626;
       grid-template-columns: repeat(2, 1fr);
       gap: $spacing-unit;
       padding: $spacing-unit * 1.5;
-      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+      background-color: var(--bs-tertiary-bg) !important;
       border-radius: $border-radius;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       
       .stat-item {
         text-align: center;
         padding: $spacing-unit;
-        background: white;
+        background: var(--bs-body-bg);
         border-radius: $border-radius - 2px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
@@ -344,7 +344,7 @@ $error: #dc2626;
         .stat-value {
           font-weight: 700;
           font-size: 2rem;
-          color: $text-dark;
+          color: var(--bs-body);
           line-height: 1;
 
           &.error { 

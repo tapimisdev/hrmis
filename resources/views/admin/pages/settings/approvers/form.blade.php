@@ -159,7 +159,7 @@
                         @endif
                     </div>
                     <div class="d-flex justify-content-end">
-                        <button type="button" id="add-input" class="btn btn-outline-primary px-4 py-2 mt-2 text-uppercase">
+                        <button type="button" id="add-input" class="btn btn-primary px-4 py-2 mt-2 text-uppercase">
                             Add Approver
                         </button>
                     </div>

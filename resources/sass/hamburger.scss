@@ -52,7 +52,7 @@
       height: 4px;
       width: 100%;
       border-radius: 10px;
-      background: $primary;
+      background: var(--bs-primary);
 
       &.line1 {
         transform-origin: 0% 0%;

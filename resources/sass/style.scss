@@ -40,7 +40,7 @@
 
 .image-container {
     display: flex;
-    border: 1px dotted $primary;
+    border: 1px dotted var(--bs-primary);
     padding-bottom: 8px;
     border-radius: 18px;
    .image_path {
@@ -56,7 +56,7 @@
         .upload-label {
             cursor: pointer;
             text-align: center;
-            color: $primary;
+            color: var(--bs-primary);
             font-weight: 500;
         }
     }
@@ -110,7 +110,7 @@ table {
 
 .border-success {
     border: 2px solid rgba($color: $dark, $alpha: .1) !important;
-    border-left: 5px solid rgba($color: $primary, $alpha: 1) !important;
+    border-left: 5px solid rgba($color: var(--bs-primary), $alpha: 1) !important;
 }
 
 .container {
@@ -127,7 +127,7 @@ table {
     width: 100%;
     overflow: hidden;
     position: relative;
-    border: 1px solid rgba($color: $primary, $alpha: .3);
+    border: 1px solid rgba($color: var(--bs-primary), $alpha: .3);
     display: flex;
     aspect-ratio: 8 / 8;
     flex-direction: column;
@@ -143,7 +143,7 @@ table {
     .folder {
         font-size: 120px;
         transition: all ease 0.3s;
-        color: $primary;
+        color: var(--bs-primary);
         position: relative;
     }
     .album-image {
@@ -155,10 +155,10 @@ table {
         width: 90px;
         object-fit: cover;
         border-radius: 8px;
-        border: 1px solid rgba($color: $primary, $alpha: 0.6);
+        border: 1px solid rgba($color: var(--bs-primary), $alpha: 0.6);
     }
     &:hover {
-        border: 1px solid $primary;
+        border: 1px solid var(--bs-primary);
         .folder, .album-image {
             transform: scale(1.1);
         }   
@@ -235,7 +235,7 @@ table {
 
 .custom-card {
     width: 100%;
-    border: 1px solid rgba($color: $primary, $alpha: 0.3);
+    border: 1px solid rgba($color: var(--bs-primary), $alpha: 0.3);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -251,7 +251,7 @@ table {
         h1 {
             font-size: 60px;
             font-weight: 800;
-            color: $primary;
+            color: var(--bs-primary);
         }
     }
 }
@@ -297,13 +297,20 @@ label {
 
 .select2-container--default .select2-selection--multiple {
     min-height: 100px;
+    background-color: var(--bs-body-bg);
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__choice,
+.select2-container--default .select2-results>.select2-results__options,
 .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-    background-color: var(--bs-primary);
-    color: $white;
+    background-color: var(--bs-body-bg);
 }
+
+.select2-results__option.select2-results__option--selectable.select2-results__option--selected {
+  background-color: var(--bs-primary);
+  color: #fff;
+}
+
 
 .mini-logo {
     height: 24px;
@@ -321,7 +328,7 @@ label {
     height: 32px;
     border-radius: 8px;
     border: none;
-    background: #f8fafc;
+    background: var(--bs-body-bg);
     color: #64748b;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -330,7 +337,7 @@ label {
     justify-content: center;
     
     &:hover {
-        background: linear-gradient(135deg, $primary 0%, $secondary 100%);
+        background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-secondary) 100%);
         color: white;
         transform: rotate(90deg);
     }
@@ -353,12 +360,12 @@ label {
         
         i {
             width: 18px;
-            color: $primary;
+            color: var(--bs-primary);
         }
         
         &:hover {
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            color: $primary;
+            color: var(--bs-primary);
         }
         
         &.dropdown-item-danger {

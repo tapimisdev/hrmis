@@ -21,8 +21,8 @@
 
 <script>
 import axios from "axios";
-import ShowProgressBar from "./ShowProgressBar.vue";
-import CosPayrollRegistry from "./CosPayrollRegistry.vue";
+import ShowProgressBar from "./parts/ShowProgressBar.vue";
+import CosPayrollRegistry from "./parts/CosPayrollRegistry.vue";
 
 export default {
   name: 'Show Payroll',

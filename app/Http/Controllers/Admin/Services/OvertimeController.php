@@ -232,7 +232,7 @@ class OvertimeController extends Controller {
                 return '
                     <div cotass="d-block d-md-flex gap-2 justify-content-start">
                         <a href="'.route('services.overtimes.show', ['application' => $row->id]).'" 
-                            cotass="btn btn-outline-primary btn show-button ms-1 my-1" 
+                            cotass="btn btn-primary btn show-button ms-1 my-1" 
                             title="Show">
                             <i cotass="fa-solid fa-eye"></i>
                         </a>

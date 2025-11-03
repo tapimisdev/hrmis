@@ -5,7 +5,7 @@
     <div class="row g-3">
       <!-- Label Field -->
       <div class="col-12 col-md-5">
-        <label class="form-label fw-bold">Label</label>
+        <label class="form-label text-body fw-bold">Label</label>
         <input
           type="text"
           class="form-control"
@@ -17,7 +17,7 @@
 
       <!-- Date Field -->
       <div class="col-12 col-md-6">
-        <label class="form-label fw-bold">Date</label>
+        <label class="form-label text-body fw-bold">Date</label>
         <input
           type="date"
           class="form-control"
@@ -29,7 +29,7 @@
 
       <!-- Cutoff Select -->
       <div class="col-12 col-md-7">
-        <label class="form-label fw-bold">Cutoff</label>
+        <label class="form-label text-body fw-bold">Cutoff</label>
         <select
           class="form-select"
           v-model="localForm.cutoff"
@@ -44,7 +44,7 @@
 
       <!-- Employment Type Select (Static) -->
       <div class="col-12 col-md-5">
-        <label class="form-label fw-bold">Employment Type</label>
+        <label class="form-label text-body fw-bold">Employment Type</label>
         <select
           class="form-select"
           v-model="localForm.employment_type_id"

@@ -6,7 +6,7 @@
           <!-- Name -->
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Name <span class="text-danger">*</span>
               </label>
               <input
@@ -24,7 +24,7 @@
           <!-- Date -->
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Date <span class="text-danger">*</span>
               </label>
               <input
@@ -42,7 +42,7 @@
           <!-- Description -->
           <div class="col-md-12">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Description <span class="text-danger">*</span>
               </label>
               <textarea
@@ -60,7 +60,7 @@
           <!-- Type -->
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Type <span class="text-danger">*</span>
               </label>
               <select
@@ -80,7 +80,7 @@
           <!-- Shift -->
           <div class="col-md-6" v-if="form.suspensions[0].type === 'half_day'">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Shift <span class="text-danger">*</span>
               </label>
               <select

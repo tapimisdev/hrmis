@@ -388,12 +388,12 @@ class OrganizationController extends Controller
 
                 return '
                     <a href="' . $editRoute . '" 
-                        class="btn btn-outline-secondary btn ms-1" 
+                        class="btn btn-secondary btn ms-1" 
                         title="Edit">
                             <i class="fa-solid fa-pen-to-square"></i>
                     </a>
                     <button id="btn-delete"
-                        class="btn btn-outline-danger btn ms-1" 
+                        class="btn btn-danger btn ms-1" 
                         data-target="' . $deleteRoute . '"
                         title="Delete">
                             <i class="fa-solid fa-trash-can"></i>

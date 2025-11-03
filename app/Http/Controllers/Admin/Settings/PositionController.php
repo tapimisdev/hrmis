@@ -288,17 +288,17 @@ class PositionController extends Controller
                 return '
                     <div class="d-block d-md-flex gap-2 justify-content-start">
                         <a href="" 
-                            class="btn btn-outline-primary btn ms-1 my-1" 
+                            class="btn btn-primary btn ms-1 my-1" 
                             title="Show">
                                 <i class="fa-solid fa-eye"></i>
                         </a>
                         <a href="' . $editRoute . '" 
-                            class="btn btn-outline-secondary btn ms-1 my-1" 
+                            class="btn btn-secondary btn ms-1 my-1" 
                             title="Edit">
                                 <i class="fa-solid fa-pen-to-square"></i>
                         </a>
                         <button id="btn-delete"
-                            class="btn btn-outline-danger btn ms-1 my-1" 
+                            class="btn btn-danger btn ms-1 my-1" 
                             data-target="' . $deleteRoute . '"
                             title="Delete">
                                 <i class="fa-solid fa-trash-can"></i>

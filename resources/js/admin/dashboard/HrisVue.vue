@@ -80,15 +80,14 @@ export default {
 @import './../../../sass/variables';
 
 .dashboard {
-  background: rgba($primary, 0.1);
   padding-bottom: 36px;
   min-height: 100vh;
 }
 
 .chart-card {
-  background: $white;
+  background: var(--bs-secondary-bg);
   height: 100%;
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 20px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;

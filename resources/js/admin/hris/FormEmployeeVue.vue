@@ -140,7 +140,7 @@
                 <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
                     <!-- Submit Button -->
                     <div class="text-end">
-                        <button type="submit" class="btn btn-primary px-4 py-3">
+                        <button type="submit" class="btn btn-primary">
                             <i class="fa-solid fa-upload me-2"></i> Upload
                         </button>
                     </div>

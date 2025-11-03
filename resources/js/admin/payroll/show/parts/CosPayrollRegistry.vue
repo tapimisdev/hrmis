@@ -1,5 +1,5 @@
 <template>
-  <div class="payroll-registry-container" :class="status">
+  <div class="payroll-registry-container" :class="status" :data-bs-theme="theme">
     <!-- Toolbar -->
     <div class="excel-toolbar">
       <div class="status-badge">
@@ -183,27 +183,18 @@
 </template>
 
 <script>
-import { isNullOrUndef } from 'chart.js/helpers';
-
 export default {
   name: "CosPayrollRegistry",
   props: {
-    projects: {
-      type: Array,
-      required: true,
-    },
-    status: {
-      type: String,
-      required: true
-    }
+    projects: { type: Array, required: true },
+    status: { type: String, required: true },
   },
   data() {
     return {
-
+      theme: document.documentElement.getAttribute("data-bs-theme") || "light",
     };
   },
   computed: {
-    /** Extract all unique deduction names across all employees */
     dynamicDeductions() {
       const names = new Set();
       this.projects.forEach((p) =>
@@ -213,8 +204,6 @@ export default {
       );
       return Array.from(names);
     },
-
-    /** Extract all unique earning names across all employees */
     dynamicEarnings() {
       const names = new Set();
       this.projects.forEach((p) =>
@@ -224,16 +213,15 @@ export default {
       );
       return Array.from(names);
     },
-
     statusConfig() {
       const configs = {
-        draft: { label: "Draft", icon: "fa-file-pen", color: "#f39c12", bg: "#fef9e7" },
-        pending: { label: "Pending Review", icon: "fa-clock", color: "#3498db", bg: "#ebf5fb" },
-        approved: { label: "Approved", icon: "fa-circle-check", color: "#27ae60", bg: "#eafaf1" },
-        for_releasing: { label: "For Releasing", icon: "fa-paper-plane", color: "#9b59b6", bg: "#f5eef8" },
-        completed: { label: "Completed", icon: "fa-circle-check", color: "#16a085", bg: "#e8f8f5" },
-        cancelled: { label: "Cancelled", icon: "fa-ban", color: "#e74c3c", bg: "#fadbd8" },
-        failed: { label: "Failed", icon: "fa-ban", color: "#454444", bg: "#949292" },
+        draft: { label: "Draft", icon: "fa-file-pen", color: "#f39c12", bg: "#fef9e7", darkColor: "#f5a623", darkBg: "#3a2a0f" },
+        pending: { label: "Pending Review", icon: "fa-clock", color: "#3498db", bg: "#ebf5fb", darkColor: "#5dade2", darkBg: "#1a2f3a" },
+        approved: { label: "Approved", icon: "fa-circle-check", color: "#27ae60", bg: "#eafaf1", darkColor: "#2ecc71", darkBg: "#1a3a28" },
+        for_releasing: { label: "For Releasing", icon: "fa-paper-plane", color: "#9b59b6", bg: "#f5eef8", darkColor: "#af7ac5", darkBg: "#2d1f35" },
+        completed: { label: "Completed", icon: "fa-circle-check", color: "#16a085", bg: "#e8f8f5", darkColor: "#1abc9c", darkBg: "#183a32" },
+        cancelled: { label: "Cancelled", icon: "fa-ban", color: "#e74c3c", bg: "#fadbd8", darkColor: "#ec7063", darkBg: "#3a1f1c" },
+        failed: { label: "Failed", icon: "fa-ban", color: "#454444", bg: "#949292", darkColor: "#7f8c8d", darkBg: "#2c2c2c" },
       };
       return configs[this.status] || configs.draft;
     },
@@ -253,43 +241,53 @@ export default {
       const earning = emp.earnings?.find((e) => e.name === type);
       return earning ? Number(earning.amount) : 0;
     },
-    applyStatusTheme() {
-      const { color, bg } = this.statusConfig;
-      const root = this.$el;
-      root.style.setProperty("--status-color", color);
-      root.style.setProperty("--status-bg", bg);
-    },
     projectTotals(project, field, subfield = null) {
       let total = 0;
-      project.employees.forEach(emp => {
-        if (field === 'earnings') {
-          total += this.getEarningAmount(emp, subfield);
-        } else if (field === 'deductions') {
-          total += this.getDeductionAmount(emp, subfield);
-        } else {
-          total += Number(emp[field]) || 0;
-        }
+      project.employees.forEach((emp) => {
+        if (field === "earnings") total += this.getEarningAmount(emp, subfield);
+        else if (field === "deductions") total += this.getDeductionAmount(emp, subfield);
+        else total += Number(emp[field]) || 0;
       });
       return total;
     },
     grandTotals(field, subfield = null) {
-      let total = 0;
-      this.projects.forEach(project => {
-        total += this.projectTotals(project, field, subfield);
-      });
-      return total;
+      return this.projects.reduce(
+        (total, project) => total + this.projectTotals(project, field, subfield),
+        0
+      );
     },
-
     updateValue(event, emp, field) {
-      let newValue = event.target.innerText.trim();
-      newValue = newValue.replace(/[^0-9.-]/g, '');
-
+      let newValue = event.target.innerText.trim().replace(/[^0-9.-]/g, "");
       emp[field] = newValue;
-    }
-
+    },
+    applyStatusTheme() {
+      const { color, bg, darkColor, darkBg } = this.statusConfig;
+      const root = this.$el;
+      if (this.theme === "dark") {
+        root.style.setProperty("--status-color", darkColor);
+        root.style.setProperty("--status-bg", darkBg);
+      } else {
+        root.style.setProperty("--status-color", color);
+        root.style.setProperty("--status-bg", bg);
+      }
+    },
+    watchGlobalTheme() {
+      const observer = new MutationObserver(() => {
+        const newTheme = document.documentElement.getAttribute("data-bs-theme");
+        if (newTheme && newTheme !== this.theme) {
+          this.theme = newTheme;
+          this.applyStatusTheme();
+        }
+      });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-bs-theme"],
+      });
+    },
   },
   mounted() {
     this.applyStatusTheme();
+    this.watchGlobalTheme();
   },
   watch: {
     status() {
@@ -299,17 +297,29 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-@import '../../../../sass/variables';
-
+<style scoped>
 .payroll-registry-container {
   --status-color: #ccc;
   --status-bg: #f9f9f9;
+  
+  --bs-success-rgb: 25, 135, 84;
+  --bs-danger-rgb: 220, 53, 69;
+  --bs-primary-rgb: 13, 110, 253;
+  --bs-warning-rgb: 255, 193, 7;
+  --bs-dark-rgb: 33, 37, 41;
+  
   background: var(--status-bg);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
   transition: all 0.3s ease;
   padding-bottom: 24px;
+  color: var(--bs-body-color);
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .payroll-registry-container {
+  --status-bg: #1a1d20;
+  background: var(--bs-secondary-bg, #212529);
 }
 
 /* Toolbar */
@@ -321,69 +331,74 @@ export default {
   padding: 8px 16px;
   color: white;
   transition: background 0.3s ease;
+}
 
-  .toolbar-left {
-    display: flex;
-    gap: 4px;
-  }
-  .toolbar-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 3px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
+.toolbar-left {
+  display: flex;
+  gap: 4px;
+}
 
-    &:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
+.toolbar-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
 
-    i {
-      margin-right: 6px;
-    }
-  }
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
 
-  .status-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: white;
-    color: var(--status-color);
-    padding: 4px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 600;
-  }
+.toolbar-btn i {
+  margin-right: 6px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  color: var(--status-color);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* Excel Sheet */
 .excel-sheet {
-  background: white;
+  background: var(--bs-body-bg, white);
   margin: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--bs-border-color, #d0d0d0);
+}
+
+[data-bs-theme="dark"] .excel-sheet {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .sheet-header {
   padding: 24px 24px 8px 24px;
   text-align: center;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--bs-border-color, #e0e0e0);
+}
 
-  .sheet-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #333;
-    margin: 0 0 8px 0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
+.sheet-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--bs-body-color, #333);
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 
-  .sheet-subtitle {
-    font-size: 12px;
-    color: #666;
-  }
+.sheet-subtitle {
+  font-size: 12px;
+  color: var(--bs-secondary-color, #666);
 }
 
 .sheet-info {
@@ -391,94 +406,120 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  background: #f9f9f9;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--bs-secondary-bg, #f9f9f9);
+  border-bottom: 1px solid var(--bs-border-color, #e0e0e0);
+}
+
+[data-bs-theme="dark"] .sheet-info {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .excel-table {
   width: 100%;
   border-collapse: collapse;
-
-  th,
-  td {
-    border: 1px solid #d0d0d0;
-    padding: 2px 8px;
-    font-size: 11px;
-    // text-align: center;
-  }
-
-  .header-labels th {
-    text-align: center;
-    font-weight: 700;
-    color: var(--status-color);
-  }
-
-  .earning {
-    background-color: rgba($success, 0.1);
-    max-width: 76px;
-    word-wrap: break-word;
-    white-space: normal;
-  }
-
-  .deduction {
-    background-color: rgba($danger, 0.1);
-    max-width: 76px;
-    word-wrap: break-word;
-    white-space: normal;
-  }
-
-  .net-salary {
-    background-color: rgba($primary, 0.1);
-    font-weight: bold;
-  }
-
-  .project-header {
-    .row-number {
-      text-align: center;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 4px;
-    }
-    
-    .project-cell {
-      padding: 8px 12px;
-      font-weight: bold;
-      font-size: 12px;
-      text-transform: uppercase;
-      text-align: center;
-      color: $dark;
-    }
-  }
-
-  .data-row {
-      .name-cell {
-      .employee-name {
-        font-weight: bold;
-      }
-      .employee-position {
-        font-style: italic;
-        font-size: 8px;
-      }
-    }
-  }
 }
+
+.excel-table th,
+.excel-table td {
+  border: 1px solid var(--bs-border-color, #d0d0d0);
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.header-labels th {
+  text-align: center;
+  font-weight: 700;
+  color: var(--status-color);
+  background: var(--bs-table-bg, white);
+}
+
+[data-bs-theme="dark"] .header-labels th {
+  background: var(--bs-body-bg);
+}
+
+.earning {
+  background-color: rgba(var(--bs-success-rgb), 0.1);
+  max-width: 76px;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+[data-bs-theme="dark"] .earning {
+  background-color: rgba(var(--bs-success-rgb), 0.2);
+}
+
+.deduction {
+  background-color: rgba(var(--bs-danger-rgb), 0.1);
+  max-width: 76px;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+[data-bs-theme="dark"] .deduction {
+  background-color: rgba(var(--bs-danger-rgb), 0.2);
+}
+
+.net-salary {
+  background-color: rgba(var(--bs-primary-rgb), 0.1);
+  font-weight: bold;
+}
+
+[data-bs-theme="dark"] .net-salary {
+  background-color: rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.project-header .row-number {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px;
+}
+
+.project-header .project-cell {
+  padding: 8px 12px;
+  font-weight: bold;
+  font-size: 12px;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--bs-body-color);
+}
+
+.data-row .name-cell .employee-name {
+  font-weight: bold;
+}
+
+.data-row .name-cell .employee-position {
+  font-style: italic;
+  font-size: 8px;
+}
+
 .total {
-  border-top: 2px solid rgba($dark, 0.4);
+  border-top: 2px solid rgba(var(--bs-dark-rgb), 0.4);
   font-weight: bold;
 }
 
 .project-total {
-  background-color: rgba($warning, 0.2);
-  td {
-    font-weight: bold;
-  }
+  background-color: rgba(var(--bs-warning-rgb), 0.2);
+}
+
+[data-bs-theme="dark"] .project-total {
+  background-color: rgba(var(--bs-warning-rgb), 0.15);
+}
+
+.project-total td {
+  font-weight: bold;
 }
 
 .grand-total {
-  border-top: 2px solid rgba($dark, 1);
+  border-top: 2px solid rgba(var(--bs-dark-rgb), 1);
   font-weight: bolder;
   height: 60px;
   background-color: var(--status-color);
   color: var(--status-bg);
+}
+
+[data-bs-theme="dark"] .grand-total {
+  background-color: var(--status-color);
+  color: white;
 }
 </style>

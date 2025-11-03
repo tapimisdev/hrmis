@@ -48,11 +48,11 @@ export default {
 <style lang="scss" scoped>
 @import './../../../sass/variables';
 .nav-tabs .nav-link {
-  border: 2px solid rgba($color: $primary, $alpha: 0.2);
+  border: 2px solid rgba($color: var(--bs-primary), $alpha: 0.2);
 }
 .nav-tabs .nav-link.active {
   font-weight: 600;
-  background-color: $primary;
-  color: white;
+  background-color: var(--bs-primary);
+  color: $light;
 }
 </style>

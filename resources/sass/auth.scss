@@ -72,8 +72,8 @@
                         transition: all 0.2s ease-in-out;
 
                         &:focus {
-                            border-color: $primary;
-                            box-shadow: 0 0 0 3px rgba($primary, 0.15);
+                            border-color: var(--bs-primary);
+                            box-shadow: 0 0 0 3px rgba(var(--bs-primary), 0.15);
                             background-color: #fff;
                         }
 
@@ -107,15 +107,15 @@
                             padding: 12px 0;
                             font-size: 16px;
                             font-weight: 500;
-                            background-color: $primary;
+                            background-color: var(--bs-primary);
                             color: #fff;
                             border: none;
                             cursor: pointer;
                             transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 
                             &:hover {
-                                background-color: $primary;
-                                box-shadow: 0 4px 12px rgba($primary, 0.3);
+                                background-color: var(--bs-primary);
+                                box-shadow: 0 4px 12px rgba(var(--bs-primary), 0.3);
                             }
 
                             &:disabled {

@@ -146,7 +146,7 @@
                                                 <div class="mt-2 d-flex justify-content-center text-uppercase">
                                                     <a href="{{ Storage::url('uploads/employees/' . $data->employee_no . '/birth_certificate/' . $data->birth_certificate) }}"
                                                         download="{{ $data->birth_certificate }}"
-                                                        class="btn btn-sm btn-outline-primary fw-bold px-5">
+                                                        class="btn btn-sm btn-primary fw-bold px-5">
                                                             Download Birth Certificate
                                                         </a>
                                                 </div>
@@ -162,7 +162,7 @@
                                                 <div class="mt-2 d-flex justify-content-center text-uppercase">
                                                     <a href="{{ Storage::url('uploads/employees/' . $data->employee_no . '/marriage_certificate/' . $data->marriage_certificate) }}" 
                                                     download="{{ $data->marriage_certificate }}"
-                                                    class="btn btn-sm btn-outline-primary fw-bold px-5">
+                                                    class="btn btn-sm btn-primary fw-bold px-5">
                                                         Download Marriage Certificate
                                                     </a>
                                                 </div>

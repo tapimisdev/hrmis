@@ -2,7 +2,7 @@
   <div class="stepper-container">
     <div class="stepper-wrapper">
       <!-- Sidebar Stepper -->
-      <div class="stepper-sidebar">
+      <div class="stepper-sidebar border">
         <div class="sidebar-header">
           <h5>Payroll Setup</h5>
           <span>Step {{ currentStep + 1 }}/{{ steps.length }}</span>
@@ -33,7 +33,7 @@
       </div>
 
       <!-- Content Area -->
-      <div class="stepper-content">
+      <div class="stepper-content border">
         <LoaderVue :hasBackground="true" :visible="loading" status="loading" message="Loading..." />
         
         <div class="content-body">
@@ -215,7 +215,7 @@ export default {
 
 /* Sidebar */
 .stepper-sidebar {
-  background: $white;
+  background:  var(--bs-secondary-bg);
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 4px 20px rgba($black, 0.08);
@@ -227,12 +227,12 @@ export default {
 .sidebar-header {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid $light;
+  border-bottom: 2px solid var(--bs-body-bg);
 
   h5 {
     font-size: 20px;
     font-weight: 800;
-    background: linear-gradient(135deg, $primary, $secondary);
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0 0 4px;
@@ -265,7 +265,7 @@ export default {
     top: 40px;
     width: 2px;
     height: 32px;
-    background: $light;
+    background: var(--bs-body-bg);
     transition: all 0.3s ease;
   }
 
@@ -273,12 +273,12 @@ export default {
 
   &.active {
     .step-circle {
-      background: linear-gradient(135deg, $primary, $secondary);
+      background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
       color: $white;
-      box-shadow: 0 4px 12px rgba($primary, 0.3);
+      box-shadow: 0 4px 12px rgba(var(--bs-primary), 0.3);
     }
-    h6 { color: $primary; font-weight: 700; }
-    p { color: $secondary; }
+    h6 { color: var(--bs-primary); font-weight: 700; }
+    p { color: var(--bs-secondary); }
   }
 
   &.completed {
@@ -295,7 +295,7 @@ export default {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: $light;
+  background: var(--bs-body-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -328,7 +328,7 @@ export default {
 
 .progress-bar {
   height: 6px;
-  background: $light;
+  background: var(--bs-body-bg);
   border-radius: 10px;
   overflow: hidden;
   margin-top: 20px;
@@ -336,14 +336,14 @@ export default {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, $primary, $secondary);
+  background: linear-gradient(90deg, var(--bs-primary), var(--bs-secondary));
   transition: width 0.5s ease;
-  box-shadow: 0 2px 6px rgba($primary, 0.3);
+  box-shadow: 0 2px 6px rgba(var(--bs-primary), 0.3);
 }
 
 /* Content */
 .stepper-content {
-  background: $white;
+  background: var(--bs-secondary-bg);
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba($black, 0.08);
   display: flex;
@@ -367,8 +367,8 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 20px 32px;
-  background: lighten($light, 2%);
-  border-top: 2px solid $light;
+  background: var(--bs-secondary-bg);
+  border-top: 2px solid var(--bs-body-bg);
   gap: 12px;
 }
 
@@ -399,18 +399,18 @@ export default {
 .btn-back {
   background: $white;
   color: lighten($dark, 15%);
-  border: 2px solid darken($light, 8%);
+  border: 2px solid var(--bs-body-bg);
 
   &:hover:not(:disabled) {
-    background: $light;
+    background: var(--bs-body-bg);
     color: $dark;
   }
 }
 
 .btn-next {
-  background: linear-gradient(135deg, $primary, $secondary);
+  background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
   color: $white;
-  box-shadow: 0 4px 12px rgba($primary, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary), 0.3);
 }
 
 .btn-submit {
@@ -422,7 +422,7 @@ export default {
 .step-mobile {
   display: none;
   font-weight: 700;
-  color: $primary;
+  color: var(--bs-primary);
 }
 
 /* Responsive */

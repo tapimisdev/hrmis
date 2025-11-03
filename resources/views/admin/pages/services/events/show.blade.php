@@ -44,10 +44,10 @@
 @section('content')
     <div class="container-fluid">
         <div class="d-flex justify-content-start gap-2 mt-3 pb-4">
-            <a href="{{route('services.events.index')}}" class="btn btn-outline-danger py-3 px-4 text-uppercase fw-medium">
+            <a href="{{route('services.events.index')}}" class="btn btn-danger py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-arrow-left me-2"></i>Go Back
             </a>
-            <a href="{{route('services.events.edit', ['event' => $data['slug']])}}" class="btn btn-outline-primary py-3 px-4 text-uppercase fw-medium">
+            <a href="{{route('services.events.edit', ['event' => $data['slug']])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
                 <i class="fa-solid fa-pen-to-square"></i> Update
             </a>
         </div>

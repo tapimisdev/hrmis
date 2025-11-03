@@ -11,19 +11,19 @@
       <div class="modal-content modern-modal">
         
         <!-- Header -->
-        <div class="modal-header modern-header">
+        <div class="modal-header modern-header border-bottom">
           <div class="header-content">
             <div class="icon-wrapper">
-              <i class="text-light" :class="headerIcon"></i>
+              <i class="text-body" :class="headerIcon"></i>
             </div>
             <div class="header-text">
-              <h5 class="modal-title text-uppercase">{{ title }}</h5>
-              <p class="subtitle mb-0" v-if="subtitle">{{ subtitle }}</p>
+              <h5 class="modal-title text-body text-uppercase">{{ title }}</h5>
+              <p class="subtitle text-body mb-0" v-if="subtitle">{{ subtitle }}</p>
             </div>
           </div>
           <button 
             type="button" 
-            class="btn-close btn-close-white" 
+            class="btn-close" 
             data-bs-dismiss="modal" 
             aria-label="Close"
           ></button>

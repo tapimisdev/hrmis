@@ -11,7 +11,7 @@
       <div class="modal-content modern-modal">
         
         <!-- Header -->
-        <div class="modal-header modern-header">
+        <div class="modal-header modern-header border-bottom">
           <div class="header-content">
             <div class="icon-wrapper">
               <i :class="headerIcon"></i>
@@ -23,7 +23,7 @@
           </div>
           <button 
             type="button" 
-            class="btn-close btn-close-white" 
+            class="btn-close" 
             data-bs-dismiss="modal" 
             aria-label="Close"
           ></button>

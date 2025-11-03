@@ -28,23 +28,31 @@ export default {
     },
     hires: {
       type: Array,
-      default: () => [5, 10, 7, 12, 8, 15, 10] 
+      default: () => [5, 10, 7, 12, 8, 15, 10]
     },
     resignations: {
       type: Array,
       default: () => [2, 3, 1, 4, 3, 5, 2]
     }
   },
+  data() {
+    return {
+      theme: document.documentElement.getAttribute('data-bs-theme') || 'light'
+    }
+  },
   computed: {
     chartData() {
+      const hireColor = this.theme === 'dark' ? '#6ea8fe' : '#032985'
+      const resignColor = this.theme === 'dark' ? '#f67280' : '#000000'
+
       return {
         labels: this.labels,
         datasets: [
           {
             label: 'New Hires',
             data: this.hires,
-            borderColor: '#032985',
-            backgroundColor: '#032985',
+            borderColor: hireColor,
+            backgroundColor: hireColor + '33',
             tension: 0.3,
             fill: true,
             pointRadius: 5
@@ -52,8 +60,8 @@ export default {
           {
             label: 'Resignations',
             data: this.resignations,
-            borderColor: '#000000',
-            backgroundColor: '#000000',
+            borderColor: resignColor,
+            backgroundColor: resignColor + '33',
             tension: 0.3,
             fill: true,
             pointRadius: 5
@@ -62,28 +70,68 @@ export default {
       }
     },
     chartOptions() {
+      const isDark = this.theme === 'dark'
+      const textColor = isDark ? '#e9ecef' : '#212529'
+      const gridColor = isDark ? '#495057' : '#dee2e6'
+
       return {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'top' as const
+            position: 'top',
+            labels: {
+              color: textColor
+            }
           },
           title: {
             display: true,
-            text: 'Employee Movement (Monthly)'
+            text: 'Employee Movement (Monthly)',
+            color: textColor
           }
         },
         scales: {
+          x: {
+            ticks: {
+              color: textColor
+            },
+            grid: {
+              color: gridColor
+            }
+          },
           y: {
             beginAtZero: true,
             ticks: {
+              color: textColor,
               precision: 0
+            },
+            grid: {
+              color: gridColor
             }
           }
         }
       } as ChartOptions<'line'>
     }
+  },
+  mounted() {
+    // Observe changes in theme dynamically
+    const observer = new MutationObserver(() => {
+      const newTheme = document.documentElement.getAttribute('data-bs-theme') || 'light'
+      if (newTheme !== this.theme) {
+        this.theme = newTheme
+      }
+    })
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-bs-theme']
+    })
   }
 }
 </script>
+
+<style scoped>
+.cardiness {
+  height: 350px;
+}
+</style>

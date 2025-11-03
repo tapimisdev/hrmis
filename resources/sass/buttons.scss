@@ -1,417 +1,140 @@
-// // Clean & Compact Button Design
-// .btn-modern {
-//   position: relative;
-//   display: inline-flex;
-//   align-items: center;
-//   justify-content: center;
-//   gap: 0.4rem;
-//   padding: 0.5rem 1.25rem;
-//   font-family: $font-family-sans-serif;
-//   font-weight: 500;
-//   font-size: 0.875rem;
-//   color: $white;
-//   border: none;
-//   border-radius: 6px;
-//   cursor: pointer;
-//   user-select: none;
-//   text-decoration: none;
-//   transition: all 0.15s ease;
-
-//   &:hover:not(:disabled) {
-//     filter: brightness(1.05);
-//   }
-
-//   &:active {
-//     transform: scale(0.98);
-//   }
-
-//   &:focus-visible {
-//     outline: 2px solid currentColor;
-//     outline-offset: 2px;
-//   }
-
-//   &:disabled {
-//     opacity: 0.5;
-//     cursor: not-allowed;
-//   }
-
-//   i, svg {
-//     font-size: 1em;
-//   }
-// }
-
-// /* Color Variants */
-// .btn-modern.primary {
-//   background: linear-gradient(165deg, $primary, $secondary);
-// }
-
-// .btn-modern.secondary {
-//   background: $secondary;
-// }
-
-// .btn-modern.success {
-//   background: $success;
-// }
-
-// .btn-modern.danger {
-//   background: $danger;
-// }
-
-// .btn-modern.warning {
-//   background: $warning;
-//   color: $dark;
-// }
-
-// .btn-modern.info {
-//   background: $info;
-// }
-
-// .btn-modern.dark {
-//   background: $dark;
-// }
-
-// .btn-modern.light {
-//   background: $light;
-//   color: $dark;
-// }
-
-// /* Ghost & Outline */
-// .btn-modern.ghost {
-//   background: transparent;
-//   color: $primary;
-//   border: 1.5px solid currentColor;
-
-//   &:hover:not(:disabled) {
-//     background: rgba($primary, 0.08);
-//   }
-// }
-
-// .btn-modern.outline-primary {
-//   background: transparent;
-//   color: $primary;
-//   border: 1.5px solid $primary;
-
-//   &:hover:not(:disabled) {
-//     background: $primary;
-//     color: $white;
-//   }
-// }
-
-// .btn-modern.outline-secondary {
-//   background: transparent;
-//   color: $secondary;
-//   border: 1.5px solid $secondary;
-
-//   &:hover:not(:disabled) {
-//     background: $secondary;
-//     color: $white;
-//   }
-// }
-
-// /* Sizes */
-// .btn-modern.sm {
-//   padding: 0.375rem 0.875rem;
-//   font-size: 0.8125rem;
-//   border-radius: 5px;
-// }
-
-// .btn-modern.lg {
-//   padding: 0.625rem 1.5rem;
-//   font-size: 0.9375rem;
-//   border-radius: 7px;
-// }
-
-// .btn-modern.xl {
-//   padding: 0.75rem 1.75rem;
-//   font-size: 1rem;
-//   border-radius: 8px;
-// }
-
-// /* Pill & Block */
-// .btn-modern.pill {
-//   border-radius: 50px;
-// }
-
-// .btn-modern.block {
-//   display: flex;
-//   width: 100%;
-// }
-
-// /* Icon-only */
-// .btn-modern.icon-only {
-//   width: 36px;
-//   height: 36px;
-//   padding: 0;
-//   border-radius: 6px;
-
-//   &.sm {
-//     width: 30px;
-//     height: 30px;
-//   }
-
-//   &.lg {
-//     width: 42px;
-//     height: 42px;
-//   }
-// }
-
-// /* Loading */
-// .btn-modern.loading {
-//   color: transparent;
-//   pointer-events: none;
-
-//   &::before {
-//     content: '';
-//     position: absolute;
-//     width: 14px;
-//     height: 14px;
-//     border: 2px solid rgba(255, 255, 255, 0.3);
-//     border-top-color: white;
-//     border-radius: 50%;
-//     animation: spin 0.6s linear infinite;
-//   }
-// }
-
-// @keyframes spin {
-//   to { transform: rotate(360deg); }
-// }
-
-// /* Button Group */
-// .btn-group {
-//   display: inline-flex;
-//   border-radius: 6px;
-
-//   .btn-modern {
-//     border-radius: 0;
-
-//     &:first-child { border-radius: 6px 0 0 6px; }
-//     &:last-child { border-radius: 0 6px 6px 0; }
-//     &:not(:last-child) { border-right: 1px solid rgba(255, 255, 255, 0.2); }
-//   }
-// }
-
-// /* === Bootstrap Button Overrides === */
-
-// .btn {
-//   padding: 0.5rem 1.25rem;
-//   border-radius: 6px;
-//   font-size: 0.875rem;
-//   font-weight: 500;
-//   display: inline-flex;
-//   align-items: center;
-//   gap: 0.4rem;
-//   transition: all 0.15s ease;
-//   border: none;
-
-//   &:hover:not(:disabled) {
-//     filter: brightness(1.05);
-//   }
-
-//   &:active {
-//     transform: scale(0.98);
-//   }
-
-//   &:disabled {
-//     opacity: 0.5;
-//     cursor: not-allowed;
-//   }
-// }
-
-// /* Primary Button */
-// .btn-primary {
-//   background: $primary !important;
-//   color: $white !important;
-//   border: none !important;
-// }
-
-// /* Secondary Button */
-// .btn-secondary {
-//   background: $secondary !important;
-//   color: $white !important;
-//   border: none !important;
-// }
-
-// /* Success Button */
-// .btn-success {
-//   background: $success !important;
-//   color: $white !important;
-//   border: none !important;
-// }
-
-// /* Danger Button */
-// .btn-danger {
-//   background: $danger !important;
-//   color: $white !important;
-//   border: none !important;
-// }
-
-// /* Warning Button */
-// .btn-warning {
-//   background: $warning !important;
-//   color: $dark !important;
-//   border: none !important;
-// }
-
-// /* Info Button */
-// .btn-info {
-//   background: $info !important;
-//   color: $white !important;
-//   border: none !important;
-// }
-
-// /* Light Button */
-// .btn-light {
-//   background: $light !important;
-//   color: $dark !important;
-//   border: none !important;
-// }
-
-// /* Dark Button */
-// .btn-dark {
-//   background: $dark !important;
-//   color: $white !important;
-//   border: none !important;
-// }
-
-// /* Outline Buttons */
-// .btn-outline-primary {
-//   background: transparent !important;
-//   color: $primary !important;
-//   border: 1.5px solid $primary !important;
-
-//   &:hover:not(:disabled) {
-//     background: $primary !important;
-//     color: $white !important;
-//   }
-// }
-
-// .btn-outline-secondary {
-//   background: transparent !important;
-//   color: $secondary !important;
-//   border: 1.5px solid $secondary !important;
-
-//   &:hover:not(:disabled) {
-//     background: $secondary !important;
-//     color: $white !important;
-//   }
-// }
-
-// .btn-outline-success {
-//   background: transparent !important;
-//   color: $success !important;
-//   border: 1.5px solid $success !important;
-
-//   &:hover:not(:disabled) {
-//     background: $success !important;
-//     color: $white !important;
-//   }
-// }
-
-// .btn-outline-danger {
-//   background: transparent !important;
-//   color: $danger !important;
-//   border: 1.5px solid $danger !important;
-
-//   &:hover:not(:disabled) {
-//     background: $danger !important;
-//     color: $white !important;
-//   }
-// }
-
-// .btn-outline-warning {
-//   background: transparent !important;
-//   color: $warning !important;
-//   border: 1.5px solid $warning !important;
-
-//   &:hover:not(:disabled) {
-//     background: $warning !important;
-//     color: $dark !important;
-//   }
-// }
-
-// .btn-outline-info {
-//   background: transparent !important;
-//   color: $info !important;
-//   border: 1.5px solid $info !important;
-
-//   &:hover:not(:disabled) {
-//     background: $info !important;
-//     color: $white !important;
-//   }
-// }
-
-// .btn-outline-light {
-//   background: transparent !important;
-//   color: $dark !important;
-//   border: 1.5px solid $light !important;
-
-//   &:hover:not(:disabled) {
-//     background: $light !important;
-//     color: $dark !important;
-//   }
-// }
-
-// .btn-outline-dark {
-//   background: transparent !important;
-//   color: $dark !important;
-//   border: 1.5px solid $dark !important;
-
-//   &:hover:not(:disabled) {
-//     background: $dark !important;
-//     color: $white !important;
-//   }
-// }
-
-// /* Button Sizes */
-// .btn-sm {
-//   padding: 0.375rem 0.875rem;
-//   font-size: 0.8125rem;
-//   border-radius: 5px;
-// }
-
-// .btn-lg {
-//   padding: 0.625rem 1.5rem;
-//   font-size: 0.9375rem;
-//   border-radius: 7px;
-// }
-
-// /* Dropdown Toggle */
-// .btn.dropdown-toggle::after {
-//   margin-left: 0.4rem;
-//   vertical-align: middle;
-//   content: "\f078";
-//   font-family: "Font Awesome 6 Free";
-//   font-weight: 900;
-//   border: none !important;
-// }
-
-// .dropdown-menu {
-//   margin-top: 0.25rem;
-//   border-radius: 6px;
-//   border: 1px solid rgba(0, 0, 0, 0.08);
-//   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-// }
-
-// .dropdown-item {
-//   padding: 0.5rem 0.875rem;
-//   font-size: 0.875rem;
-//   transition: background-color 0.15s ease;
-
-//   &:hover {
-//     background-color: rgba($primary, 0.08);
-//     color: $primary;
-//   }
-
-//   &:active {
-//     background-color: $primary;
-//     color: $white;
-//   }
-// }
-
-// /* Responsive */
-// @media (max-width: 768px) {
-//   .btn-modern, .btn {
-//     padding: 0.45rem 1rem;
-//     font-size: 0.8125rem;
-//   }
-// }
+@each $variant in (primary, secondary, success, danger, warning, info) {
+  /* === FILLED BUTTONS === */
+  .btn-#{$variant} {
+    --bs-btn-bg: var(--bs-#{$variant});
+    --bs-btn-border-color: var(--bs-#{$variant});
+    --bs-btn-color: if($variant == warning, #000, #fff);
+
+    /* Hover state */
+    &:hover {
+      --bs-btn-bg: color-mix(in srgb, var(--bs-#{$variant}) 85%, #000);
+      --bs-btn-border-color: color-mix(in srgb, var(--bs-#{$variant}) 80%, #000);
+    }
+
+    /* Focus state */
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-#{$variant}-rgb), 0.4);
+    }
+
+    /* Active state */
+    &:active,
+    &.active {
+      --bs-btn-bg: color-mix(in srgb, var(--bs-#{$variant}) 70%, #000);
+      --bs-btn-border-color: color-mix(in srgb, var(--bs-#{$variant}) 65%, #000);
+    }
+
+    /* Disabled */
+    &:disabled,
+    &.disabled {
+      opacity: 0.6;
+    }
+  }
+
+  /* === OUTLINE BUTTONS === */
+  .btn-outline-#{$variant} {
+    --bs-btn-color: var(--bs-#{$variant});
+    --bs-btn-border-color: var(--bs-#{$variant});
+
+    &:hover {
+      --bs-btn-bg: var(--bs-#{$variant});
+      --bs-btn-border-color: var(--bs-#{$variant});
+      --bs-btn-color: if($variant == warning, #000, #fff);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-#{$variant}-rgb), 0.4);
+    }
+
+    &:active,
+    &.active {
+      --bs-btn-bg: color-mix(in srgb, var(--bs-#{$variant}) 70%, #000);
+      --bs-btn-border-color: color-mix(in srgb, var(--bs-#{$variant}) 70%, #000);
+      --bs-btn-color: if($variant == warning, #000, #fff);
+    }
+
+    &:disabled,
+    &.disabled {
+      opacity: 0.5;
+    }
+  }
+}
+
+
+        @import "https://unpkg.com/open-props/easings.min.css";
+
+.sun-and-moon > :is(.moon, .sun, .sun-beams) {
+  transform-origin: center;
+}
+
+.sun-and-moon > :is(.moon, .sun) {
+  fill: var(--icon-fill);
+}
+
+.theme-toggle:is(:hover, :focus-visible) > .sun-and-moon > :is(.moon, .sun) {
+  fill: var(--icon-fill-hover);
+}
+
+.sun-and-moon > .sun-beams {
+  stroke: var(--icon-fill);
+  stroke-width: 2px;
+}
+
+.theme-toggle:is(:hover, :focus-visible) .sun-and-moon > .sun-beams {
+  stroke: var(--icon-fill-hover);
+}
+
+[data-theme="dark"] .sun-and-moon > .sun {
+  transform: scale(1.75);
+}
+
+[data-theme="dark"] .sun-and-moon > .sun-beams {
+  opacity: 0;
+}
+
+[data-theme="dark"] .sun-and-moon > .moon > circle {
+  transform: translateX(-7px);
+}
+
+@supports (cx: 1) {
+  [data-theme="dark"] .sun-and-moon > .moon > circle {
+    cx: 17;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sun-and-moon > .sun {
+    transition: transform .5s var(--ease-elastic-3);
+  }
+
+  .sun-and-moon > .sun-beams {
+    transition: transform .5s var(--ease-elastic-4), opacity .5s var(--ease-3);
+  }
+
+  .sun-and-moon .moon > circle {
+    transition: transform .25s var(--ease-out-5);
+  }
+
+  @supports (cx: 1) {
+    .sun-and-moon .moon > circle {
+      transition: cx .25s var(--ease-out-5);
+    }
+  }
+
+  [data-theme="dark"] .sun-and-moon > .sun {
+    transition-timing-function: var(--ease-3);
+    transition-duration: .25s;
+    transform: scale(1.75);
+  }
+
+  [data-theme="dark"] .sun-and-moon > .sun-beams {
+    transition-duration: .15s;
+    transform: rotateZ(-25deg);
+  }
+
+  [data-theme="dark"] .sun-and-moon > .moon > circle {
+    transition-duration: .5s;
+    transition-delay: .25s;
+  }
+}
+        

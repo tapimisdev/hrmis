@@ -21,6 +21,7 @@
 // Bootstrap
 @import 'bootstrap/scss/bootstrap';
 
+
 // Dark theme overrides
 [data-bs-theme="dark"] {
   --bs-body-bg: #{$body-bg-dark};
@@ -50,6 +51,7 @@
 
 @import 'input.scss';
 
+@import 'dark-mode.scss';
 
 .btn {
     border-radius: 8px;

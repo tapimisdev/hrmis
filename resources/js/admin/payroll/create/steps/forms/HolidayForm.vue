@@ -6,7 +6,7 @@
           <!-- Holiday Name -->
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Holiday Name <span class="text-danger">*</span>
               </label>
               <input
@@ -24,7 +24,7 @@
           <!-- Date -->
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Date <span class="text-danger">*</span>
               </label>
               <input
@@ -42,7 +42,7 @@
           <!-- Type -->
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Type <span class="text-danger">*</span>
               </label>
               <select
@@ -64,7 +64,7 @@
           <!-- Repeat Yearly -->
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label">
+              <label class="form-label text-body">
                 Repeat Yearly <span class="text-danger">*</span>
               </label>
               <select
@@ -83,7 +83,7 @@
           <!-- Rates -->
           <div class="col-md-4">
             <div class="mb-3">
-              <label class="form-label">No Work Rate (%)</label>
+              <label class="form-label text-body">No Work Rate (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -99,7 +99,7 @@
 
           <div class="col-md-4">
             <div class="mb-3">
-              <label class="form-label">Work Rate (%)</label>
+              <label class="form-label text-body">Work Rate (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -115,7 +115,7 @@
 
           <div class="col-md-4">
             <div class="mb-3">
-              <label class="form-label">Overtime Rate (%)</label>
+              <label class="form-label text-body">Overtime Rate (%)</label>
               <input
                 type="number"
                 step="0.01"

@@ -1,6 +1,6 @@
 <template>
 
-  <div class="card shadow p-3">
+  <div class="card" style="max-width: 820px;">
     <LoaderVue :visible="loading" status="uploading" message="Uploading, please wait..." />
     <div class="card-header bg-transparent">
         <h4 class="mb-1 pt-3 text-uppercase fw-medium">
@@ -85,7 +85,7 @@
         <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
           <!-- Submit Button -->
           <div class="text-end">
-            <button type="submit" class="btn btn-primary px-4 py-3">
+            <button type="submit" class="btn btn-primary">
               <i class="fa-solid fa-upload me-2"></i> Upload
             </button>
           </div>
@@ -169,20 +169,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../sass/variables';
 .upload-box {
   cursor: pointer;
   &:hover {
     transition: all 0.3s ease;
-    background-color: $light;
   }
 }
 
 .is-invalid-file {
-  border-color: $danger !important; 
-  color: $danger !important; 
+  border-color: var(--bs-secondary) !important; 
+  color: var(--bs-secondary) !important; 
   i {
-    color: $danger !important; 
+    color: var(--bs-secondary) !important; 
   }
 } 
 </style>

@@ -11,7 +11,7 @@
                 <!-- Dropdown Button -->
                 <div class="dropdown">
                     <!-- class="btn-modern ghost"  -->
-                    <button class="btn btn-outline-primary"
+                    <button class="btn btn-secondary dropdown-toggle"
                             type="button" 
                             id="employeeActionsDropdown" 
                             data-bs-toggle="dropdown" 

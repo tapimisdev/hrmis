@@ -31,10 +31,10 @@ $body-tertiary-bg-dark: #2f3440;
 
 // Lighten primary colors for dark theme
 $primary-dark: lighten($primary, 30%); // #4d6fa8
-$secondary-dark: lighten($secondary, 10%); // #8daffe
-$success-dark: lighten($success, 15%); // #33c233
-$danger-dark: lighten($danger, 15%); // #e96a6a
+$secondary-dark: $secondary; // #8daffe
+$success-dark: $success; // #33c233
+$danger-dark: $danger; // #e96a6a
 $warning-dark: $warning; // Keep warning as is
-$info-dark: lighten($info, 10%); // #36b4f2
+$info-dark: $info; // #36b4f2
 
 // Import Bootstrap

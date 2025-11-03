@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="mt-4">
     <filter-dtr-vue
       :employee_id="employee_id"
       :month="month"

@@ -1,5 +1,5 @@
 <template>
-  <div class="chart-card">
+  <div class="chart-card border">
     <div class="icon-wrapper">
       <i :class="icon"></i>
     </div>
@@ -39,7 +39,7 @@ export default {
   text-overflow: ellipsis;
 
   .icon-wrapper {
-    background: rgba($primary, 0.08);
+    background: rgba(var(--bs-primary), 0.08);
     border-radius: 12px;
     padding: 12px;
     display: flex;
@@ -49,7 +49,7 @@ export default {
 
     i {
       font-size: 28px;
-      color: $primary;
+      color: var(--bs-primary);
     }
   }
 

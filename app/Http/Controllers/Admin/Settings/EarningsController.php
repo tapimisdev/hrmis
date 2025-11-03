@@ -177,15 +177,15 @@ class EarningsController extends Controller
                     ]);
                 
                 return '<div class="d-flex">' .
-                    '<button data-id="' . $row->id . '" class="btn btn-outline-primary btn ms-1 my-1 show-button" title="View">' .
+                    '<button data-id="' . $row->id . '" class="btn btn-primary btn ms-1 my-1 show-button" title="View">' .
                         '<i class="fas fa-eye"></i>' .
                     '</button>' .
                     '<a href="' . route('earnings.edit', $row->id) . '" 
-                        class="btn btn-outline-secondary btn ms-1 my-1" 
+                        class="btn btn-secondary btn ms-1 my-1" 
                         title="Edit">
                             <i class="fas fa-edit"></i>
                     </a>' .
-                    '<button id="btn-delete" data-target="'.$deleteRoute.'"  class="btn btn-outline-danger btn ms-1 my-1 delete-button" title="Delete">' .
+                    '<button id="btn-delete" data-target="'.$deleteRoute.'"  class="btn btn-danger btn ms-1 my-1 delete-button" title="Delete">' .
                         '<i class="fas fa-trash-alt"></i>' .
                     '</button>' .
                 '</div>';

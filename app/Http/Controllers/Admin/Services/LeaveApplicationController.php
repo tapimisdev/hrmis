@@ -232,7 +232,7 @@ class LeaveApplicationController extends Controller {
                 return '
                     <div class="d-block d-md-flex gap-2 justify-content-start">
                         <a href="'.route('services.leaves.show', ['application' => $row->id]).'" 
-                            class="btn btn-outline-primary btn show-button ms-1 my-1" 
+                            class="btn btn-primary btn show-button ms-1 my-1" 
                             title="Show">
                             <i class="fa-solid fa-eye"></i>
                         </a>
