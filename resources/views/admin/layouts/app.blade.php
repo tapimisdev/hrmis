@@ -47,6 +47,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+
     <script>
     (function() {
         const storageKey = 'theme-preference';
@@ -57,8 +59,6 @@
     })();
     </script>
 
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
     <!-- Extra styles pushed from child views -->
     @yield('styles')
     @stack('styles')
