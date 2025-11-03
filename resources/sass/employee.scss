@@ -7,7 +7,6 @@ $sidebar-width: 220px;
 
 #app {
     min-height: 100vh;
-    background-color: rgba($primary, 0.1);
     display: grid;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(5, 1fr);
@@ -54,7 +53,7 @@ $sidebar-width: 220px;
     aside, main {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
     .top {
         position: absolute;
         height: 320px;
@@ -161,7 +160,8 @@ $sidebar-width: 220px;
         position: fixed;
         overflow-y: scroll;
         overflow-x: hidden;
-        background-color: $white;
+        border: 1px solid var(--bs-border-color);
+        background-color: var(--bs-body-bg);
         transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 3;
 
@@ -353,7 +353,6 @@ $sidebar-width: 220px;
                     padding: 2px 9px 0px 9px;
                     margin-bottom: 1px;
                     border-radius: 14px;
-                    border: 1px solid lighten($light, 20%);
                     transition: all 0.2s ease-in-out;
                     width: 100%;
                     margin-bottom: 2px;
@@ -364,16 +363,16 @@ $sidebar-width: 220px;
                     }
 
                     &.active {
-                        background-color: lighten($primary, 10) !important;
+                        background-color: var(--bs-primary) !important;
 
                         .side-link {
-                            color: $light;
+                            color: $light !important;
                         }
                     }
                     
                     &:hover {
                         border-color: lighten($dark, 50);
-                        background-color: lighten($dark , 70);
+                        background-color: var(--bs-tertiary-bg, 100);
                         transform: scale(1.01);
                     }
 
@@ -389,8 +388,7 @@ $sidebar-width: 220px;
                         color: inherit;
                         transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
                                    justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        font-size: .9rem;
-                        color: lighten($dark, 15);
+                        font-size: .865rem;
                         
                         @media (max-width: 767px) {
                             font-size: .85rem;
@@ -446,6 +444,9 @@ $sidebar-width: 220px;
         width: 100%;
         overflow-y: scroll;
         transition: grid-column-start 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
         
         @media (max-width: 767px) {
             grid-column: 1 / -1;
@@ -574,14 +575,14 @@ $sidebar-width: 220px;
 }
 
 .sidebar-seperator {
-    border-bottom: 1px solid rgba($dark, 0.1);
+    border-bottom: 1px solid var(--bs-tertiary-bg);
     margin: 8px 0px;
 }
 
 footer {
-    margin-bottom: 5vh !important;
     display:flex;
     justify-content: space-between;
+    align-items: center;
     font-weight: 300;
     padding: 20px 24px !important;
     div:first-child {
@@ -591,7 +592,11 @@ footer {
     div:last-child {
         ul {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
             gap: 14px;
+            padding: 0;
+            margin: 0;
             list-style: none;
 
             li a {
@@ -605,4 +610,32 @@ footer {
 
 .text-stroke {
     -webkit-text-stroke: .2px $primary;
+}
+
+.page-name {
+    color: var(--bs-warning);
+}
+[data-bs-theme="dark"] {
+    #app {
+        .page-name {
+            color: var(--bs-body-color);
+        }
+        .top {
+            filter:contrast(2);
+            &::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 100%;
+                background: linear-gradient(
+                    to right,
+                    rgba($dark, 0.95),
+                    rgba($dark, 0.9)
+                );
+                z-index: 1;
+            }
+        }
+    }
 }

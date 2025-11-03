@@ -28,13 +28,6 @@
 </head>
 <body>
     <div id="auth">
-        <div class="loading d-none" id="isLoading">
-            <div class="d-flex justify-content-center">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        </div>
         <main>
             @yield('content')
         </main>

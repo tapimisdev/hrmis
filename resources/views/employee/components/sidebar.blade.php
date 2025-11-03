@@ -24,7 +24,7 @@
 
                     <!-- Dashboard -->
                     <li class="side-items {{ request()->routeIs('dashboard.*') ? 'active' : '' }}">
-                        <a href="{{ route('dashboard.index') }}" class="side-link">
+                        <a href="{{ route('dashboard.index') }}" class="side-link text-body">
                             <span class="side-icon">
                                 <i class="fa-solid fa-gauge"></i>
                             </span>
@@ -34,7 +34,7 @@
 
                     <!-- Timelogs -->
                     <li class="side-items has-submenu {{ request()->routeIs('checkinout.*') ? 'active' : '' }}">
-                        <a href="{{ route('checkinout.index') }}" class="side-link">
+                        <a href="{{ route('checkinout.index') }}" class="side-link text-body">
                             <span class="side-icon">
                                 <i class="fa-solid fa-clock"></i>
                             </span>
@@ -44,7 +44,7 @@
 
                     <!-- Payslip -->
                     <li class="side-items has-submenu">
-                        <a href="" class="side-link">
+                        <a href="" class="side-link text-body">
                             <span class="side-icon">
                                 <i class="fa-solid fa-money-check-dollar"></i>
                             </span>
@@ -56,7 +56,7 @@
 
                     <!-- Leave Application -->
                     <li class="side-items has-submenu {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
-                        <a href="{{ route('leaves.index') }}" class="side-link">
+                        <a href="{{ route('leaves.index') }}" class="side-link text-body">
                             <span class="side-icon">
                                 <i class="fa-solid fa-calendar-days"></i>
                             </span>
@@ -66,7 +66,7 @@
 
                     <!-- Pass Slip -->
                     <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
-                        <a href="{{ route('obs.index') }}" class="side-link">
+                        <a href="{{ route('obs.index') }}" class="side-link text-body">
                             <span class="side-icon">
                                 <i class="fa-solid fa-file-lines"></i>
                             </span>
@@ -76,7 +76,7 @@
 
                     <!-- Overtime -->
                     <li class="side-items has-submenu {{ request()->routeIs('overtime.*') ? 'active' : '' }}">
-                        <a href="{{ route('overtime.index') }}" class="side-link">
+                        <a href="{{ route('overtime.index') }}" class="side-link text-body">
                             <span class="side-icon">
                                 <i class="fa-solid fa-hourglass-half"></i>
                             </span>
@@ -90,7 +90,7 @@
                     @if($approvals['leave']['allowed'])
                         <!-- Leave Application -->
                         <li class="side-items has-submenu {{ request()->routeIs('approval-leave.*') ? 'active' : '' }}">
-                            <a href="{{ route('approval-leave.index') }}" class="side-link">
+                            <a href="{{ route('approval-leave.index') }}" class="side-link text-body">
                                 <span class="side-icon">
                                     <i class="fa-solid fa-calendar-days"></i>
                                 </span>
@@ -102,7 +102,7 @@
                     @if($approvals['pass_slip']['allowed'])
                         <!-- Pass Slip -->
                         <li class="side-items has-submenu {{ request()->routeIs('approval-obs.*') ? 'active' : '' }}">
-                            <a href="{{ route('approval-obs.index') }}" class="side-link">
+                            <a href="{{ route('approval-obs.index') }}" class="side-link text-body">
                                 <span class="side-icon">
                                     <i class="fa-solid fa-file-lines"></i>
                                 </span>
@@ -114,7 +114,7 @@
                     @if($approvals['overtime']['allowed'])
                         <!-- Overtime -->
                         <li class="side-items has-submenu {{ request()->routeIs('approval-overtime.*') ? 'active' : '' }}">
-                            <a href="{{ route('approval-overtime.index') }}" class="side-link">
+                            <a href="{{ route('approval-overtime.index') }}" class="side-link text-body">
                                 <span class="side-icon">
                                     <i class="fa-solid fa-hourglass-half"></i>
                                 </span>

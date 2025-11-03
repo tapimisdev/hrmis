@@ -1,4 +1,5 @@
 @import './variables';
+@import './dark-mode';
 #auth {
     background-image: url('/public/img/hr_n_roll_background.png');
     background-size: cover;
@@ -6,7 +7,8 @@
     background-position: center;
     height: 100vh;
     width: 100vw;
-
+    position: relative;
+    
     .wrapper {
         display: flex;
         justify-content: end;

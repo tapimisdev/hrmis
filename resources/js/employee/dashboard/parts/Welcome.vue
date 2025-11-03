@@ -193,8 +193,16 @@ export default {
 <style lang="scss" scoped>
 @import './../../../../sass/variables';
 
+[data-bs-theme="dark"] {
+  .welcome-header {
+      background: linear-gradient(135deg, var(--bs-body-bg) 0%, var(--bs-secondary-bg) 100%);
+      border: 1px solid var(--bs-border-color);
+      box-shadow: none;
+  }
+}
+
 .welcome-header {
-  background: linear-gradient(135deg, $secondary 0%, $primary 100%);
+  background: linear-gradient(135deg, var(--bs-secondary) 0%, var(--bs-primary) 100%);
   border-radius: 10px;
   padding: 1.75rem 1.5rem;
   position: relative;

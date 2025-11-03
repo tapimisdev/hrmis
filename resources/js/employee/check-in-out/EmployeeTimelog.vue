@@ -284,13 +284,12 @@ export default {
 
 <style lang="scss" scoped>
 @import '../../../sass/variables';
-
 .attendance-container {
     .attendance-header {
-        background: white;
-        border-radius: 18px 18px 0 0;
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #e2e8f0;
+        background: var(--bs-body-bg);
+        border-radius: 12px 12px 0 0;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--bs-border-color);
         
         .header-content {
             display: flex;
@@ -305,16 +304,13 @@ export default {
                 
                 i {
                     font-size: 1.5rem;
-                    background: linear-gradient(135deg, $primary 0%, $secondary 100%);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
+                    color: var(--bs-primary);
                 }
                 
                 .title {
-                    font-size: 1rem;
-                    font-weight: 700;
-                    color: #1e293b;
+                    font-size: 1.125rem;
+                    font-weight: 600;
+                    color: var(--bs-body-color);
                     margin: 0;
                 }
             }
@@ -324,23 +320,24 @@ export default {
                 gap: 0.5rem;
                 
                 .form-select {
-                    padding: 0.375rem 0.75rem;
+                    padding: 0.5rem 0.75rem;
                     font-size: 0.875rem;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    background: white;
+                    border: 1px solid var(--bs-border-color);
+                    border-radius: 6px;
+                    background: var(--bs-body-bg);
+                    color: var(--bs-body-color);
                     cursor: pointer;
                     transition: all 0.2s ease;
                     min-width: 120px;
                     
                     &:focus {
-                        border-color: $primary;
+                        border-color: var(--bs-primary);
                         outline: none;
-                        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+                        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
                     }
                     
                     &:hover {
-                        border-color: $primary;
+                        border-color: var(--bs-primary);
                     }
                 }
             }
@@ -348,9 +345,10 @@ export default {
     }
     
     .table-card {
-        background: white;
+        background: var(--bs-body-bg);
         border-radius: 0 0 12px 12px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--bs-border-color);
+        border-top: none;
         overflow: hidden;
     }
     
@@ -360,17 +358,21 @@ export default {
         overflow-x: auto;
         
         &::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
         }
         
         &::-webkit-scrollbar-track {
-            background: #f1f5f9;
+            background: var(--bs-secondary-bg);
         }
         
         &::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, $primary 0%, $secondary 100%);
-            border-radius: 3px;
+            background: var(--bs-border-color);
+            border-radius: 4px;
+            
+            &:hover {
+                background: var(--bs-secondary-color);
+            }
         }
     }
     
@@ -378,28 +380,25 @@ export default {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.8125rem;
+        font-size: 0.875rem;
         
         thead {
             th {
                 position: sticky;
                 top: 0;
-                background: linear-gradient(135deg, $primary 0%, $secondary 100%);
-                color: $light;
+                background: var(--bs-primary);
+                color: white;
                 font-weight: 600;
-                font-size: 0.75rem;
+                font-size: 0.8125rem;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
-                padding: 0.5rem 0.5rem;
+                letter-spacing: 0.3px;
+                padding: 0.75rem 0.5rem;
                 text-align: center;
                 z-index: 10;
-
-                tr {
-                  border: 1px solid;
-                }
+                border-bottom: 2px solid var(--bs-border-color);
                 
-                &.col-day { min-width: 50px; }
-                &.col-time { min-width: 80px; }
+                &.col-day { min-width: 60px; }
+                &.col-time { min-width: 90px; }
                 &.col-hours { min-width: 80px; }
                 &.col-double { min-width: 50px; }
                 &.col-remarks { min-width: 150px; }
@@ -408,35 +407,43 @@ export default {
         
         tbody {
             tr {
-                transition: background 0.2s ease;
-                background: white;
+                transition: background 0.15s ease;
+                background: var(--bs-body-bg);
                 
-                &:nth-child(even) { background: #f8fafc; }
-                &:hover { background: #f1f5f9; }
-                
-                &.highlight-today {
-                    background: linear-gradient(90deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-                    border-left: 3px solid $primary;
+                &:nth-child(even) { 
+                    background: var(--bs-secondary-bg);
                 }
                 
-                &.row-restday { background: rgba(16, 185, 129, 0.04); }
-                &.row-leave { background: rgba(59, 130, 246, 0.04); }
-                &.row-holiday { background: rgba(245, 158, 11, 0.04); }
-                &.row-absent { background: rgba(239, 68, 68, 0.04); }
+                &:hover { 
+                    background: var(--bs-tertiary-bg);
+                }
+                
+                &.highlight-today {
+                    background: rgba(var(--bs-primary-rgb), 0.1);
+                    border-left: 3px solid var(--bs-primary);
+                }
+                
+                &.row-restday { background: rgba(var(--bs-success-rgb), 0.05); }
+                &.row-leave { background: rgba(var(--bs-info-rgb), 0.05); }
+                &.row-holiday { background: rgba(var(--bs-warning-rgb), 0.05); }
+                &.row-absent { background: rgba(var(--bs-danger-rgb), 0.05); }
             }
             
             td {
-                padding: 0.4rem 0.3rem;
+                padding: 0.625rem 0.5rem;
                 text-align: center;
-                border-bottom: 1px solid #e2e8f0;
-                color: #475569;
+                border-bottom: 1px solid var(--bs-border-color);
+                color: var(--bs-body-color);
             }
         }
     }
     
     .skeleton-loader {
-        height: 16px;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        height: 18px;
+        background: linear-gradient(90deg, 
+            var(--bs-secondary-bg) 25%, 
+            var(--bs-tertiary-bg) 50%, 
+            var(--bs-secondary-bg) 75%);
         background-size: 200% 100%;
         animation: loading 1.5s infinite;
         border-radius: 4px;
@@ -451,15 +458,9 @@ export default {
     
     .day-cell {
         .day-number {
-            width: 26px;
-            height: 26px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.8125rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--bs-body-color);
         }
     }
     
@@ -467,67 +468,74 @@ export default {
         .status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.4rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 16px;
+            gap: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
             font-weight: 500;
-            font-size: 0.75rem;
+            font-size: 0.8125rem;
             
-            i { font-size: 0.75rem; }
+            i { font-size: 0.875rem; }
             
             .badge-extra {
-                font-size: 0.7rem;
-                opacity: 0.85;
+                font-size: 0.75rem;
+                opacity: 0.9;
             }
             
-            &.status-restday { background: #10b981; color: white; }
-            &.status-holiday { background: #f59e0b; color: white; }
-            &.status-leave { background: #3b82f6; color: white; }
-            &.status-ob { background: #8b5cf6; color: white; }
-            &.status-absent { background: #ef4444; color: white; }
+            &.status-restday { background: var(--bs-success); color: white; }
+            &.status-holiday { background: var(--bs-warning); color: white; }
+            &.status-leave { background: var(--bs-info); color: white; }
+            &.status-ob { background: var(--bs-purple, #6f42c1); color: white; }
+            &.status-absent { background: var(--bs-danger); color: white; }
         }
     }
     
     .time-cell {
         .time-value {
-            font-weight: 600;
-            color: #1e293b;
+            font-weight: 500;
+            color: var(--bs-body-color);
             
-            &.time-small { font-size: 0.7rem; }
+            &.time-small { 
+                font-size: 0.75rem;
+                color: var(--bs-secondary-color);
+            }
+            
             &.has-overtime {
-                color: $primary;
-                font-weight: 700;
+                color: var(--bs-primary);
+                font-weight: 600;
             }
         }
         
         .time-empty {
-            color: #cbd5e1;
+            color: var(--bs-secondary-color);
             font-weight: 400;
+            font-size: 0.8125rem;
         }
     }
     
     .hours-cell {
         .hours-badge {
             display: inline-block;
-            padding: 0.25rem 0.5rem;
-            background: #e0f2fe;
-            color: #0284c7;
+            padding: 0.25rem 0.625rem;
+            background: rgba(var(--bs-info-rgb), 0.1);
+            color: var(--bs-info);
             border-radius: 4px;
             font-weight: 600;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
+            border: 1px solid rgba(var(--bs-info-rgb), 0.2);
         }
         
         .ut-badge {
-            background: #fde68a;
-            color: #d97706;
+            background: rgba(var(--bs-warning-rgb), 0.1);
+            color: var(--bs-warning);
+            border-color: rgba(var(--bs-warning-rgb), 0.2);
         }
     }
     
     .double-cell {
         .double-value {
-            font-weight: 700;
-            color: $primary;
-            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--bs-primary);
+            font-size: 0.9375rem;
         }
     }
     
@@ -535,28 +543,31 @@ export default {
         .remarks-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.3rem;
+            gap: 0.375rem;
             justify-content: center;
         }
         
         .remark-tag {
             display: inline-block;
-            padding: 0.2rem 0.4rem;
-            background: #bfdbfe;
-            color: #1e40af;
+            padding: 0.25rem 0.5rem;
+            background: rgba(var(--bs-info-rgb), 0.1);
+            color: var(--bs-info);
             border-radius: 4px;
-            font-size: 0.65rem;
-            font-weight: 600;
+            font-size: 0.6875rem;
+            font-weight: 500;
             text-transform: capitalize;
+            border: 1px solid rgba(var(--bs-info-rgb), 0.2);
             
             &.remark-danger {
-                background: #fecaca;
-                color: #991b1b;
+                background: rgba(var(--bs-danger-rgb), 0.1);
+                color: var(--bs-danger);
+                border-color: rgba(var(--bs-danger-rgb), 0.2);
             }
             
             &.remark-warning {
-                background: #fde68a;
-                color: #92400e;
+                background: rgba(var(--bs-warning-rgb), 0.1);
+                color: var(--bs-warning);
+                border-color: rgba(var(--bs-warning-rgb), 0.2);
             }
         }
     }

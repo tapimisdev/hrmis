@@ -1,7 +1,7 @@
 <div class="position-relative mb-4 mx-1">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
         <div class="flex-grow-1">
-            <div class="fs-4 mb-1 fw-bolder text-uppercase text-warning text-stroke" >
+            <div class="page-name fs-4 mb-1 fw-bolder text-uppercase text-stroke" >
                <span>Pages / </span> {{ $title }}
             </div>
             @if($subtitle)

@@ -25,7 +25,7 @@ const setPreference = () => {
 
 const reflectPreference = () => {
   document.firstElementChild
-    .setAttribute('data-bs-theme', theme.value) // ✅ changed for Bootstrap
+    .setAttribute('data-bs-theme', theme.value) // changed for Bootstrap
 
   document
     .querySelector('#theme-toggle')

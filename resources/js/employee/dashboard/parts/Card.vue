@@ -137,13 +137,13 @@ export default {
   .section-title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: $dark;
+    color: var(--bs-body-color);
     margin: 0 0 0.25rem 0;
   }
   
   .section-subtitle {
     font-size: 0.85rem;
-    color: #6c757d;
+    color: var(--bs-tertiary-color);
     margin: 0;
   }
 }
@@ -159,8 +159,8 @@ export default {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--bs-secondary-bg);
+  border: 1px solid var(--bs-border-color);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
@@ -171,9 +171,9 @@ export default {
   color: $dark;
   
   &:hover {
-    background: $primary;
+    background: var(--bs-primary);
     color: white;
-    border-color: $primary;
+    border-color: var(--bs-primary);
     transform: translateY(-50%) scale(1.05);
   }
   
@@ -197,11 +197,11 @@ export default {
 
 .card {
   min-width: 220px;
-  background: white;
+  background: var(--bs-secondary-bg);
   border-radius: 12px;
   padding: 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px var(--bs-shadow-color);
+  border: 1px solid var(--bs-border-color);
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -234,8 +234,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--card-color) 10%, white);
-  color: var(--card-color);
+  background: color-mix(in srgb, var(--card-color) 10%, var(--bs-light));
+  color: var(--bs-primary);
   margin-bottom: 0.75rem;
   
   i { font-size: 1.5rem; }
@@ -244,14 +244,14 @@ export default {
 .card-title {
   font-size: 1rem;
   font-weight: 700;
-  color: $dark;
+  color: var(--bs-body-color);
   margin: 0 0 0.5rem 0;
   line-height: 1.2;
 }
 
 .card-desc {
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--bs-tertiary-color);
   margin: 0 0 0.75rem 0;
   line-height: 1.3;
 }

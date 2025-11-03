@@ -50,13 +50,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 
     <script>
-    (function() {
-        const storageKey = 'theme-preference';
-        const storedTheme = localStorage.getItem(storageKey);
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = storedTheme || (prefersDark ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-bs-theme', theme);
-    })();
+        (function() {
+            const storageKey = 'theme-preference';
+            const storedTheme = localStorage.getItem(storageKey);
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
     </script>
 
     <!-- Extra styles pushed from child views -->

@@ -10,8 +10,8 @@
     <div v-else>
       <div class="d-flex gap-2 align-items-center border-bottom pb-3 mb-3">
         <div class="d-flex flex-column align-items-center border-end px-5">
-          <h4 class="text-danger fw-bold p-0 m-0 text-uppercase">{{ getMonthShort() }}</h4>
-          <h1 class="p-0 m-0 fw-bold text-dark">{{ getDayToday() }}</h1>
+          <h4 class="month fw-bold p-0 m-0 text-uppercase">{{ getMonthShort() }}</h4>
+          <h1 class="text-body p-0 m-0 fw-bold">{{ getDayToday() }}</h1>
         </div>
 
         <div class="w-100 d-flex gap-3 px-4 flex-wrap">
@@ -86,37 +86,37 @@
         <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end pe-3">
             <h5 class="text-secondary mb-2 fw-semibold">Clock In</h5>
-            <p class="fs-5 text-dark fw-medium mb-0">{{ log.timeIn || '--:--:--' }}</p>
+            <p class="fs-5 text-body fw-medium mb-0">{{ log.timeIn || '--:--:--' }}</p>
           </div>
         </div>
         <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end pe-3">
             <h5 class="text-secondary mb-2 fw-semibold">Break</h5>
-            <p class="fs-5 text-dark fw-medium mb-0">{{ log.breakOut || '--:--:--' }}</p>
+            <p class="fs-5 text-body fw-medium mb-0">{{ log.breakOut || '--:--:--' }}</p>
           </div>
         </div>
         <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end pe-3">
             <h5 class="text-secondary mb-2 fw-semibold">Back to Work</h5>
-            <p class="fs-5 text-dark fw-medium mb-0">{{ log.breakIn || '--:--:--' }}</p>
+            <p class="fs-5 text-body fw-medium mb-0">{{ log.breakIn || '--:--:--' }}</p>
           </div>
         </div>
         <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end pe-3">
             <h5 class="text-secondary mb-2 fw-semibold">Clock Out</h5>
-            <p class="fs-5 text-dark fw-medium mb-0">{{ log.timeOut || '--:--:--' }}</p>
+            <p class="fs-5 text-body fw-medium mb-0">{{ log.timeOut || '--:--:--' }}</p>
           </div>
         </div>
         <div class="col-md-2 col-sm-4 col-12">
           <div class="border-end pe-3">
             <h5 class="text-secondary mb-2 fw-semibold">Overtime In</h5>
-            <p class="fs-5 text-dark fw-medium mb-0">{{ log.overtimeIn || '--:--:--' }}</p>
+            <p class="fs-5 text-body fw-medium mb-0">{{ log.overtimeIn || '--:--:--' }}</p>
           </div>
         </div>
         <div class="col-md-2 col-sm-4 col-12">
           <div class="pe-3">
             <h5 class="text-secondary mb-2 fw-semibold">Overtime Out</h5>
-            <p class="fs-5 text-dark fw-medium mb-0">{{ log.overtimeOut || '--:--:--' }}</p>
+            <p class="fs-5 text-body fw-medium mb-0">{{ log.overtimeOut || '--:--:--' }}</p>
           </div>
         </div>
       </div>
@@ -222,3 +222,18 @@ onMounted(() => {
   getTodayLogs();
 });
 </script>
+
+<style lang="scss" scoped>
+@import './../../../sass/variables';
+
+.month {
+  color: $danger
+}
+
+[data-bs-theme="dark"] {
+  .month {
+    color: var(--bs-body-color)  
+  }
+}
+
+</style>

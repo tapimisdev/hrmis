@@ -148,20 +148,20 @@ export default {
   .section-title {
     font-size: 1.1rem;
     font-weight: 700;
-    color: $dark;
+    color: var(--bs-body-color);
     margin: 0 0 0.25rem 0;
   }
 
   .section-subtitle {
     font-size: 0.85rem;
-    color: #6c757d;
+    color: var(--bs-tertiary-color);
     margin: 0;
   }
   
   .view-all-link {
     font-size: 0.85rem;
     font-weight: 600;
-    color: $primary;
+    color: var(--bs-primary);
     text-decoration: none;
     display: flex;
     align-items: center;
@@ -170,7 +170,7 @@ export default {
     
     &:hover {
       gap: 0.5rem;
-      color: darken($primary, 10%);
+      // color: darken(var(--bs-primary), 10%);
     }
     
     i {
@@ -186,7 +186,7 @@ export default {
 }
 
 .announcement-card {
-  background: white;
+  background: var(--bs-secondary-bg);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -217,7 +217,7 @@ export default {
   position: relative;
   height: 180px;
   overflow: hidden;
-  background: linear-gradient(135deg, $primary 0%, $secondary 100%);
+  background: linear-gradient(135deg, var(--bs-primary) 0%, $secondary 100%);
   
   img {
     width: 100%;
@@ -240,7 +240,7 @@ export default {
   
   .read-badge {
     background: white;
-    color: $primary;
+    color: var(--bs-primary);
     padding: 0.5rem 1rem;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -266,9 +266,15 @@ export default {
   flex-wrap: wrap;
 }
 
+[data-bs-theme="dark"] {
+  .tag {
+    background: lighten($primary, 30%);
+  }
+}
+
 .tag {
-  background: lighten($primary, 45%);
-  color: $primary;
+  background: $primary;
+  color: var(--bs-light);
   padding: 0.25rem 0.65rem;
   border-radius: 12px;
   font-size: 0.7rem;
@@ -279,7 +285,7 @@ export default {
 .card-title {
   font-size: 1rem;
   font-weight: 700;
-  color: $dark;
+  color: var(--bg-body-color);
   margin: 0 0 0.75rem 0;
   line-height: 1.3;
   display: -webkit-box;

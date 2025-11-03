@@ -1,6 +1,6 @@
 <!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<!-- <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="dark"> -->
+<!-- <html lang="{{     str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="light"> -->
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="dark">
 
 <head>
     <meta charset="utf-8">
@@ -43,6 +43,24 @@
     <!-- SweetAlert2 (for modern alert dialogs) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <script>
+        (function() {
+            const storageKey = 'theme-preference';
+            const storedTheme = localStorage.getItem(storageKey);
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+
+        // SIDEBAR - apply immediately before content is painted
+        (function() {
+            const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+            if (collapsed) {
+                document.documentElement.classList.add('sidebar-collapsed');
+            }
+        })();
+    </script>
+
     @yield('styles')
 
     <!-- Vite compiled assets (SASS + JS) -->
@@ -58,9 +76,7 @@
             <div>
                  @yield('content')
             </div>
-            <div>
-                @include('employee.components.footer')
-            </div>
+            @include('employee.components.footer')
         </main>
     </div>
 
@@ -116,6 +132,33 @@
                 if ($overlay.length) $overlay.toggleClass('active');
             });
         });
+           // full sidebar toggle
+        (function() {
+            const storageKey = 'sidebar-collapsed';
+            const app = document.getElementById('app');
+            const sidebar = document.querySelector('.sidebar');
+            const buttons = [document.getElementById('switchMenuBtn'), document.getElementById('imgSwitchBtn')];
+
+            // Apply saved state
+            if (localStorage.getItem(storageKey) === 'true') {
+                sidebar?.classList.add('collapsed');
+                app?.classList.add('sidebar-collapsed');
+                buttons.forEach(btn => btn?.classList.add('rotate'));
+            }
+
+            // Toggle on click
+            buttons.forEach(btn => btn?.addEventListener('click', () => {
+                sidebar?.classList.toggle('collapsed');
+                app?.classList.toggle('sidebar-collapsed');
+                btn?.classList.toggle('rotate');
+                localStorage.setItem(storageKey, sidebar.classList.contains('collapsed'));
+            }));
+
+            $('.x-mark').on('click', function() {
+                $('aside')?.toggleClass('mobile-open');
+                $('.sidebar-overlay')?.toggleClass('active');
+            });
+        })();
     </script>
 
 </body>
