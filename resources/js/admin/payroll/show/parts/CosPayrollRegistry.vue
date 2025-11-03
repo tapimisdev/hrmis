@@ -8,13 +8,14 @@
       </div>
       <div class="toolbar-left">
         <button class="toolbar-btn"><i class="fa-solid fa-print"></i> Print</button>
-        <button class="toolbar-btn"><i class="fa-solid fa-download"></i> Download</button>
+        <button class="toolbar-btn" @click="downloadPayroll(payroll_no)"><i class="fa-solid fa-download"></i> Download</button>
       </div>
     </div>
 
     <!-- Sheet -->
     <div class="excel-sheet">
       <div class="sheet-header">
+
         <h1 class="sheet-title">PAYROLL FOR CONTRACT PRICE OF PROJECT PERSONNEL</h1>
         <p class="sheet-subtitle">Source of Fund: GAA, LITIGATION, ISSP, TECHNICOM</p>
       </div>
@@ -188,6 +189,7 @@ export default {
   props: {
     projects: { type: Array, required: true },
     status: { type: String, required: true },
+    payroll_no: { type: String, required: true },
   },
   data() {
     return {
@@ -227,6 +229,30 @@ export default {
     },
   },
   methods: {
+    async downloadPayroll(payroll_no) {
+      try {
+        const response = await fetch(`/api/payroll/salary/${payroll_no}/download`, {
+          method: 'GET',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to download file.');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `payroll_registry_${payroll_no}.xlsx`; 
+        document.body.appendChild(a);
+        a.click();
+
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error downloading payroll:', error);
+      }
+    },
     formatNumber(value) {
       const num = Number(value);
       return !isNaN(num) && num !== 0

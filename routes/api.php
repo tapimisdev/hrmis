@@ -75,6 +75,7 @@ Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'log
     Route::prefix('payroll')->group(function() {
         Route::post('salary', [SalaryApiController::class, 'getList']);
         Route::get('salary/{payroll_id}', [SalaryApiController::class, 'getPayrollRegistry']);
+        Route::get('salary/{payroll_no}/download', [SalaryApiController::class, 'downloadPayrollRegistry']);
         Route::post('generate-salary-payroll', [SalaryController::class, 'store']);
         
         # Adjustment
