@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Update Employee Records" subtitle="Employee's personal data sheet and portal account">
             <x-button-link 
                 :href="route('hris.employee.index')" 
@@ -161,7 +161,7 @@
                                             </div>
                                         @endif
                                     </div>
-                                    <button type="button" id="add-group-btn" class="btn btn-outline-primary text-uppercase fw-bold px-4 py-2">Add Items</button>
+                                    <button type="button" id="add-group-btn" class="btn btn-primary text-uppercase fw-bold px-4 py-2">Add Items</button>
                                 </div>
                             </div>
                         </div>

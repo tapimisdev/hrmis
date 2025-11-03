@@ -32,7 +32,7 @@
         <button
           type="button"
           id="submit-button"
-          class="btn btn-outline-primary text-uppercase"
+          class="btn btn-warning text-uppercase"
           @click="search"
           :disabled="loading"
         >

@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="All Approvers" subtitle="Manage approvers in this module">
             <x-button-link 
                 :href="route('settings.approvers.view')" 

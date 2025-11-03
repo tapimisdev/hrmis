@@ -1,5 +1,5 @@
 <template>
-  <div class="table-responsive card p-3">
+  <div class="table-responsive px-1">
     <LoaderVue :visible="loading" status="uploading" message="Uploading, please wait..." />
     <table class="table table-sm table-striped align-middle">
       <thead>
@@ -167,9 +167,9 @@ export default {
   }
 }
 
-.card {
-  border: 1px solid #e9ecef;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
+// .card {
+//   border: 1px solid #e9ecef;
+//   border-radius: 0.5rem;
+//   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+// }
 </style>

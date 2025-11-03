@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Employment Type" subtitle="update this employment type" >
                 <x-button-link 

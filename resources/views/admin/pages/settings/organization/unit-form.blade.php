@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Unit" subtitle="Update this unit in your organization">
                 <x-button-link 

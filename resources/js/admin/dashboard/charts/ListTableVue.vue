@@ -57,6 +57,6 @@ export default {
   height: 30px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid $primary;
+  border: 2px solid var(--bs-primary);
 }
 </style>

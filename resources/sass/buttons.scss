@@ -1,653 +1,140 @@
-// Modern Button Redesign - Clean & Minimal
-.btn-modern {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.75rem;
-  font-family: $font-family-sans-serif;
-  font-weight: 600;
-  font-size: 0.9375rem;
-  letter-spacing: -0.01em;
-  color: $white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  overflow: hidden;
-  user-select: none;
-  text-decoration: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+@each $variant in (primary, secondary, success, danger, warning, info) {
+  /* === FILLED BUTTONS === */
+  .btn-#{$variant} {
+    --bs-btn-bg: var(--bs-#{$variant});
+    --bs-btn-border-color: var(--bs-#{$variant});
+    --bs-btn-color: if($variant == warning, #000, #fff);
 
-  // Subtle ripple effect
-  &::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    transform: translate(-50%, -50%);
-    opacity: 0;
-    transition: width 0.5s ease, height 0.5s ease, opacity 0.6s ease;
+    /* Hover state */
+    &:hover {
+      --bs-btn-bg: color-mix(in srgb, var(--bs-#{$variant}) 85%, #000);
+      --bs-btn-border-color: color-mix(in srgb, var(--bs-#{$variant}) 80%, #000);
+    }
+
+    /* Focus state */
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-#{$variant}-rgb), 0.4);
+    }
+
+    /* Active state */
+    &:active,
+    &.active {
+      --bs-btn-bg: color-mix(in srgb, var(--bs-#{$variant}) 70%, #000);
+      --bs-btn-border-color: color-mix(in srgb, var(--bs-#{$variant}) 65%, #000);
+    }
+
+    /* Disabled */
+    &:disabled,
+    &.disabled {
+      opacity: 0.6;
+    }
   }
 
-  &:active::after {
-    width: 160px;
-    height: 160px;
-    opacity: 1;
-    transition: 0s;
-  }
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  }
-
-  &:active {
-    transform: translateY(0) scale(0.98);
-  }
-
-  &:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
-    opacity: 0.9;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  i,
-  svg {
-    font-size: 1.1em;
-    transition: transform 0.25s ease;
-  }
-
-  &:hover:not(:disabled) i,
-  &:hover:not(:disabled) svg {
-    transform: translateX(2px);
-  }
-}
-
-/* Primary */
-.btn-modern.primary {
-  background: linear-gradient(135deg, $primary 0%, lighten($primary, 8%) 100%);
-
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, darken($primary, 5%) 0%, $primary 100%);
-  }
-}
-
-/* Secondary */
-.btn-modern.secondary {
-  background: linear-gradient(135deg, $secondary 0%, lighten($secondary, 8%) 100%);
-
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, darken($secondary, 5%) 0%, $secondary 100%);
-  }
-}
-
-/* Success */
-.btn-modern.success {
-  background: $success;
-
-  &:hover:not(:disabled) {
-    background: darken($success, 8%);
-  }
-}
-
-/* Danger */
-.btn-modern.danger {
-  background: $danger;
-
-  &:hover:not(:disabled) {
-    background: darken($danger, 8%);
-  }
-}
-
-/* Warning */
-.btn-modern.warning {
-  background: $warning;
-  color: $dark;
-
-  &::after {
-    background: rgba(0, 0, 0, 0.15);
-  }
-
-  &:hover:not(:disabled) {
-    background: darken($warning, 8%);
-    color: $dark;
-  }
-}
-
-/* Info */
-.btn-modern.info {
-  background: $info;
-
-  &:hover:not(:disabled) {
-    background: darken($info, 8%);
-  }
-}
-
-/* Dark */
-.btn-modern.dark {
-  background: $dark;
-
-  &:hover:not(:disabled) {
-    background: lighten($dark, 10%);
-  }
-}
-
-/* Light */
-.btn-modern.light {
-  background: $light;
-  color: $dark;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-
-  &::after {
-    background: rgba(0, 0, 0, 0.08);
-  }
-
-  &:hover:not(:disabled) {
-    background: darken($light, 5%);
-    color: $dark;
-  }
-}
-
-/* Ghost */
-.btn-modern.ghost {
-  background: transparent;
-  color: $primary;
-  border: 2px solid currentColor;
-  box-shadow: none;
-
-  &:hover:not(:disabled) {
-    background: rgba($primary, 0.08);
-    box-shadow: 0 2px 8px rgba($primary, 0.15);
-  }
-}
-
-/* Outline Variants */
-.btn-modern.outline-primary {
-  background: transparent;
-  color: $primary;
-  border: 2px solid $primary;
-  box-shadow: none;
-
-  &:hover:not(:disabled) {
-    background: $primary;
-    color: $white;
-  }
-}
-
-.btn-modern.outline-secondary {
-  background: transparent;
-  color: $secondary;
-  border: 2px solid $secondary;
-  box-shadow: none;
-
-  &:hover:not(:disabled) {
-    background: $secondary;
-    color: $white;
-  }
-}
-
-/* Sizes */
-.btn-modern.sm {
-  padding: 0.5rem 1.25rem;
-  font-size: 0.875rem;
-  border-radius: 8px;
-}
-
-.btn-modern.lg {
-  padding: 1rem 2.25rem;
-  font-size: 1.0625rem;
-  border-radius: 14px;
-}
-
-.btn-modern.xl {
-  padding: 1.25rem 2.75rem;
-  font-size: 1.125rem;
-  border-radius: 16px;
-}
-
-/* Pill & Block */
-.btn-modern.pill {
-  border-radius: 9999px;
-}
-
-.btn-modern.block {
-  display: flex;
-  width: 100%;
-}
-
-/* Icon-only */
-.btn-modern.icon-only {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  justify-content: center;
-  padding: 0;
-
-  &.sm {
-    width: 36px;
-    height: 36px;
-  }
-
-  &.lg {
-    width: 52px;
-    height: 52px;
-  }
-}
-
-/* Loading */
-.btn-modern.loading {
-  color: transparent;
-  pointer-events: none;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-  }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Button group */
-.btn-group {
-  display: inline-flex;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-
-  .btn-modern {
-    border-radius: 0;
-    box-shadow: none;
-
-    &:first-child { border-radius: 12px 0 0 12px; }
-    &:last-child { border-radius: 0 12px 12px 0; }
-    &:not(:last-child) { border-right: 1px solid rgba(255, 255, 255, 0.2); }
+  /* === OUTLINE BUTTONS === */
+  .btn-outline-#{$variant} {
+    --bs-btn-color: var(--bs-#{$variant});
+    --bs-btn-border-color: var(--bs-#{$variant});
 
     &:hover {
-      z-index: 1;
+      --bs-btn-bg: var(--bs-#{$variant});
+      --bs-btn-border-color: var(--bs-#{$variant});
+      --bs-btn-color: if($variant == warning, #000, #fff);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-#{$variant}-rgb), 0.4);
+    }
+
+    &:active,
+    &.active {
+      --bs-btn-bg: color-mix(in srgb, var(--bs-#{$variant}) 70%, #000);
+      --bs-btn-border-color: color-mix(in srgb, var(--bs-#{$variant}) 70%, #000);
+      --bs-btn-color: if($variant == warning, #000, #fff);
+    }
+
+    &:disabled,
+    &.disabled {
+      opacity: 0.5;
     }
   }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .btn-modern {
-    padding: 0.65rem 1.5rem;
-    font-size: 0.875rem;
-  }
 
-  .btn-modern.lg {
-    padding: 0.875rem 1.875rem;
-    font-size: 1rem;
+        @import "https://unpkg.com/open-props/easings.min.css";
+
+.sun-and-moon > :is(.moon, .sun, .sun-beams) {
+  transform-origin: center;
+}
+
+.sun-and-moon > :is(.moon, .sun) {
+  fill: var(--icon-fill);
+}
+
+.theme-toggle:is(:hover, :focus-visible) > .sun-and-moon > :is(.moon, .sun) {
+  fill: var(--icon-fill-hover);
+}
+
+.sun-and-moon > .sun-beams {
+  stroke: var(--icon-fill);
+  stroke-width: 2px;
+}
+
+.theme-toggle:is(:hover, :focus-visible) .sun-and-moon > .sun-beams {
+  stroke: var(--icon-fill-hover);
+}
+
+[data-theme="dark"] .sun-and-moon > .sun {
+  transform: scale(1.75);
+}
+
+[data-theme="dark"] .sun-and-moon > .sun-beams {
+  opacity: 0;
+}
+
+[data-theme="dark"] .sun-and-moon > .moon > circle {
+  transform: translateX(-7px);
+}
+
+@supports (cx: 1) {
+  [data-theme="dark"] .sun-and-moon > .moon > circle {
+    cx: 17;
+    transform: translateX(0);
   }
 }
 
-/* === Bootstrap 5 Dropdown Compatibility === */
-
-.btn-modern.dropdown-toggle {
-  position: relative;
-  overflow: visible;
-}
-
-.btn-modern.dropdown-toggle::after {
-  display: inline-block;
-  margin-left: 0.45rem;
-  vertical-align: middle;
-  content: "\f078";
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
-  border: none !important;
-}
-
-.btn-group .dropdown-menu {
-  margin-top: 0.5rem;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  animation: dropdownFade 0.2s ease-out;
-  z-index: 1050;
-}
-
-.dropdown-item {
-  padding: 0.625rem 1rem;
-  font-weight: 500;
-  transition: background-color 0.15s ease;
-
-  &:hover {
-    background-color: rgba($primary, 0.1);
-    color: $primary;
+@media (prefers-reduced-motion: no-preference) {
+  .sun-and-moon > .sun {
+    transition: transform .5s var(--ease-elastic-3);
   }
 
-  &:active {
-    background-color: $primary;
-    color: $white;
-  }
-}
-
-@keyframes dropdownFade {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* === Standard Bootstrap Button Overrides === */
-
-.btn {
-  padding: 0.625rem 1.5rem;
-  border-radius: 10px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
-  letter-spacing: -0.01em;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  .sun-and-moon > .sun-beams {
+    transition: transform .5s var(--ease-elastic-4), opacity .5s var(--ease-3);
   }
 
-  &:active {
-    transform: translateY(0) scale(0.98);
+  .sun-and-moon .moon > circle {
+    transition: transform .25s var(--ease-out-5);
   }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
-  }
-}
-
-/* Primary Button */
-.btn-primary {
-  background: linear-gradient(135deg, $primary 0%, lighten($primary, 8%) 100%) !important;
-  color: $white !important;
-  border: none !important;
-
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, darken($primary, 5%) 0%, $primary 100%) !important;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgba($primary, 0.2) !important;
-  }
-}
-
-/* Secondary Button */
-.btn-secondary {
-  background: $secondary !important;
-  color: $white !important;
-  border: none !important;
-
-  &:hover:not(:disabled) {
-    background: darken($secondary, 8%) !important;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgba($secondary, 0.2) !important;
-  }
-}
-
-/* Success Button */
-.btn-success {
-  background: $success !important;
-  color: $white !important;
-  border: none !important;
-
-  &:hover:not(:disabled) {
-    background: darken($success, 8%) !important;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgba($success, 0.2) !important;
-  }
-}
-
-/* Danger Button */
-.btn-danger {
-  background: $danger !important;
-  color: $white !important;
-  border: none !important;
-
-  &:hover:not(:disabled) {
-    background: darken($danger, 8%) !important;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgba($danger, 0.2) !important;
-  }
-}
-
-/* Warning Button */
-.btn-warning {
-  background: $warning !important;
-  color: $dark !important;
-  border: none !important;
-
-  &:hover:not(:disabled) {
-    background: darken($warning, 8%) !important;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgba($warning, 0.2) !important;
-  }
-}
-
-/* Info Button */
-.btn-info {
-  background: $info !important;
-  color: $white !important;
-  border: none !important;
-
-  &:hover:not(:disabled) {
-    background: darken($info, 8%) !important;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgba($info, 0.2) !important;
-  }
-}
-
-/* Light Button */
-.btn-light {
-  background: $light !important;
-  color: $dark !important;
-  border: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-
-  &:hover:not(:disabled) {
-    background: darken($light, 5%) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgba($dark, 0.08) !important;
-  }
-}
-
-/* Dark Button */
-.btn-dark {
-  background: $dark !important;
-  color: $white !important;
-  border: none !important;
-
-  &:hover:not(:disabled) {
-    background: lighten($dark, 10%) !important;
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgba($dark, 0.2) !important;
-  }
-}
-
-/* Outline Buttons */
-.btn-outline-primary {
-  background: transparent !important;
-  color: $primary !important;
-  border: 2px solid $primary !important;
-  box-shadow: none !important;
-
-  &:hover:not(:disabled) {
-    background: $primary !important;
-    color: $white !important;
-  }
-}
-
-.btn-outline-secondary {
-  background: transparent !important;
-  color: $secondary !important;
-  border: 2px solid $secondary !important;
-  box-shadow: none !important;
-
-  &:hover:not(:disabled) {
-    background: $secondary !important;
-    color: $white !important;
-  }
-}
-
-.btn-outline-success {
-  background: transparent !important;
-  color: $success !important;
-  border: 2px solid $success !important;
-  box-shadow: none !important;
-
-  &:hover:not(:disabled) {
-    background: $success !important;
-    color: $white !important;
-  }
-}
-
-.btn-outline-danger {
-  background: transparent !important;
-  color: $danger !important;
-  border: 2px solid $danger !important;
-  box-shadow: none !important;
-
-  &:hover:not(:disabled) {
-    background: $danger !important;
-    color: $white !important;
-  }
-}
-
-.btn-outline-warning {
-  background: transparent !important;
-  color: $warning !important;
-  border: 2px solid $warning !important;
-  box-shadow: none !important;
-
-  &:hover:not(:disabled) {
-    background: $warning !important;
-    color: $dark !important;
-  }
-}
-
-.btn-outline-info {
-  background: transparent !important;
-  color: $info !important;
-  border: 2px solid $info !important;
-  box-shadow: none !important;
-
-  &:hover:not(:disabled) {
-    background: $info !important;
-    color: $white !important;
-  }
-}
-
-.btn-outline-light {
-  background: transparent !important;
-  color: $dark !important;
-  border: 2px solid $light !important;
-  box-shadow: none !important;
-
-  &:hover:not(:disabled) {
-    background: $light !important;
-    color: $dark !important;
-  }
-}
-
-.btn-outline-dark {
-  background: transparent !important;
-  color: $dark !important;
-  border: 2px solid $dark !important;
-  box-shadow: none !important;
-
-  &:hover:not(:disabled) {
-    background: $dark !important;
-    color: $white !important;
-  }
-}
-
-/* Button Sizes */
-.btn-sm {
-  padding: 0.5rem 1.25rem;
-  font-size: 0.875rem;
-  border-radius: 8px;
-}
-
-.btn-lg {
-  padding: 0.875rem 2rem;
-  font-size: 1.0625rem;
-  border-radius: 12px;
-}
-
-/* Button Group Adjustments */
-.btn-group {
-  .btn {
-    box-shadow: none;
-
-    &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      z-index: 1;
+  @supports (cx: 1) {
+    .sun-and-moon .moon > circle {
+      transition: cx .25s var(--ease-out-5);
     }
   }
-}
 
-/* Loading State */
-.btn {
-  .fa-spinner,
-  .spinner-border {
-    animation: spin 1s linear infinite;
+  [data-theme="dark"] .sun-and-moon > .sun {
+    transition-timing-function: var(--ease-3);
+    transition-duration: .25s;
+    transform: scale(1.75);
+  }
+
+  [data-theme="dark"] .sun-and-moon > .sun-beams {
+    transition-duration: .15s;
+    transform: rotateZ(-25deg);
+  }
+
+  [data-theme="dark"] .sun-and-moon > .moon > circle {
+    transition-duration: .5s;
+    transition-delay: .25s;
   }
 }
-
-/* Responsive */
-@media (max-width: 576px) {
-  .btn {
-    padding: 0.5625rem 1.25rem;
-    font-size: 0.875rem;
-  }
-
-  .btn-sm {
-    padding: 0.4375rem 1rem;
-    font-size: 0.8125rem;
-  }
-
-  .btn-lg {
-    padding: 0.75rem 1.75rem;
-    font-size: 1rem;
-  }
-}
+        

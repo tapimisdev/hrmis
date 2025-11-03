@@ -1,6 +1,7 @@
 import './bootstrap';
 import './laravel-echo';
 import './vue';
+import './dark-mode';
 
 import axios from 'axios';
 

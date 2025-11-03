@@ -1,10 +1,10 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-4 mb-4 mt-4">
     <div class="flex-grow-1">
-        <h2 class="fw-bold mb-0" style="font-size: 1.75rem; letter-spacing: -0.02em; color: #1a1a1a;">
+        <h4 class="fw-bold text-uppercase mb-0">
             {{ $title }}
-        </h2>
+        </h4>
         @if($subtitle)
-            <p class="mb-0" style="font-size: 0.95rem; color: #6b7280; font-weight: 500;">
+            <p class="mb-0" style="font-size: 0.75rem; color: #6b7280; font-weight: 500;">
                 {{ $subtitle }}
             </p>
         @endif

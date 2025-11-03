@@ -3,12 +3,12 @@
     <ModalVue
       ref="modal"
       :size="'modal-lg'"
-      :headerIcon="'fa-solid fa-gear text-secondary'"
+      :headerIcon="'fa-solid fa-gear text-body'"
       :title="'Suspension & Holiday'"
     >
       <!-- Select Adjustment Type -->
       <div class="px-3 pt-3 border-bottom pb-3">
-        <label class="form-label">
+        <label class="form-label text-body">
           Adjustment Type <span class="text-danger">*</span>
         </label>
         <select

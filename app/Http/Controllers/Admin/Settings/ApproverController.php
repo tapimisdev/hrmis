@@ -460,16 +460,16 @@ class ApproverController extends Controller
             })
             ->addColumn('actions', function ($row) {
                 return '<div class="d-flex gap-2">' .
-                    '<button data-id="' . $row['approver_id'] . '" class="btn btn-outline-primary btn ms-1 my-1 show-button" title="View">' .
+                    '<button data-id="' . $row['approver_id'] . '" class="btn btn-primary btn ms-1 my-1 show-button" title="View">' .
                         '<i class="fas fa-eye"></i>' .
                     '</button>' .
                     '<a href="' . route('settings.approvers.edit', ['approver' => $row['approver_id']]) . '" 
-                        class="btn btn-outline-secondary btn ms-1 my-1" 
+                        class="btn btn-secondary btn ms-1 my-1" 
                         title="Edit">
                             <i class="fas fa-edit"></i>
                     </a>' .
                     '<button id="btn-delete"
-                        class="btn btn-outline-danger btn ms-1 my-1" 
+                        class="btn btn-danger btn ms-1 my-1" 
                         data-target="'.route('settings.approvers.destroy', ['approver' => $row['approver_id']]).'"
                         title="Delete">
                             <i class="fa-solid fa-trash-can"></i>

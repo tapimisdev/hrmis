@@ -89,7 +89,7 @@ class RolesAndPermissionController extends Controller
                return '
                 <div class="d-block d-md-flex gap-2 justify-content-start">
                     <a href="' . route('role-and-permission.edit', $row->id) . '" 
-                    class="btn btn-outline-primary btn ms-1 my-1" 
+                    class="btn btn-primary btn ms-1 my-1" 
                     title="Edit">
                     <i class="fa-solid fa-key"></i>
                     </a>

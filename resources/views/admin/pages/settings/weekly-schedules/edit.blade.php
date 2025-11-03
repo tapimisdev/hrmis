@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
- <div class="container pt-4 px-3">
+ <div class="container-fluid">
 
     <x-header title="Weekly Schedule" subtitle="Edit weekly schedule in this module">
         <x-button-link 

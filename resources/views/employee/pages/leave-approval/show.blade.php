@@ -1,7 +1,7 @@
 @extends('employee.layout.app')
 
 @section('content')
-<div class="container pt-4">
+<div class="container-fluid">
 
     <x-header title="Leave Application" subtitle="View leave application details">
         <x-button-link 

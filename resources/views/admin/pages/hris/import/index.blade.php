@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
        <x-header title="Import Employees" subtitle="Upload and manage employee records by importing files into the system.">
             <x-button-link 
                 :href="route('hris.employee.index')" 

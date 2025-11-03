@@ -35,7 +35,7 @@
       <!-- Pagination -->
       <div class="d-flex justify-content-between align-items-center mt-3">
         <button
-          class="btn btn-outline-primary btn-sm"
+          class="btn btn-primary btn-sm"
           @click="prevPage"
           :disabled="page === 1"
         >
@@ -45,7 +45,7 @@
         <span class="fw-semibold">Page {{ page }} of {{ totalPages }}</span>
 
         <button
-          class="btn btn-outline-primary btn-sm"
+          class="btn btn-primary btn-sm"
           @click="nextPage"
           :disabled="page === totalPages"
         >

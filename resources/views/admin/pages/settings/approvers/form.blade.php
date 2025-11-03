@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         {{-- Header --}}
         @if($isEdit ?? false)
             <x-header title="Update Approver" subtitle="Update approver/s">
@@ -159,7 +159,7 @@
                         @endif
                     </div>
                     <div class="d-flex justify-content-end">
-                        <button type="button" id="add-input" class="btn btn-outline-primary px-4 py-2 mt-2 text-uppercase">
+                        <button type="button" id="add-input" class="btn btn-primary px-4 py-2 mt-2 text-uppercase">
                             Add Approver
                         </button>
                     </div>

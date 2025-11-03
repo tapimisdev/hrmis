@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Employment Types" subtitle="Manage employment types in this module">
 
         </x-header>

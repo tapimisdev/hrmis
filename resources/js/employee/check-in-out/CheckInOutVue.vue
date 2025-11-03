@@ -49,7 +49,7 @@
           </button>
 
           <button 
-            class="btn btn-outline-danger py-3 px-4 fw-semibold" 
+            class="btn btn-danger py-3 px-4 fw-semibold" 
             @click="setTime(1)"
             :disabled="isTimeOutDisabled || buttonLoading === 'timeOut'"
             style="border-width: 2px;">

@@ -220,7 +220,7 @@ class AtroApprovalController extends Controller
                 $buttons = '
                     <div class="d-flex align-items-center">
                         <a href="'.route('approval-overtime.show', ['level' => $level, 'id' => $row->id]).'" 
-                            class="btn btn-outline-primary btn show-button ms-1 my-1" 
+                            class="btn btn-primary btn show-button ms-1 my-1" 
                             title="Show">
                             <i class="fa-solid fa-eye"></i>
                         </a>

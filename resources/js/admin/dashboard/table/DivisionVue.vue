@@ -1,5 +1,5 @@
 <template>
-  <div class="chart-card">
+  <div class="chart-card border shadow">
     <h5 class="text-uppercase fw-bold pb-2 mb-3 border-bottom">Division One</h5>
 
     <!-- Tabs Navigation -->

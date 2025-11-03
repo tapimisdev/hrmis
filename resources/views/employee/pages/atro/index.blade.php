@@ -2,7 +2,7 @@
 
 @section('content')
 @include('employee.pages.atro.show')
-    <div class="container-fluid pt-3">
+    <div class="container-fluid">
         
         <header-vue title="DOST TAPI"></header-vue>
 

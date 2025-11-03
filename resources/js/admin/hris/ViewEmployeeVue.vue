@@ -348,13 +348,13 @@
 
                 <!-- Footer -->
                 <div class="card-footer bg-transparent mt-3 pt-3 d-flex justify-content-end gap-3">
-                    <button type="button" @click="backToForm" class="btn btn-outline-danger px-4 py-3">
+                    <button type="button" @click="backToForm" class="btn btn-danger px-4 py-3">
                         <i class="fa-solid fa-arrow-left me-2"></i> Return
                     </button>
                     <button 
                         type="button" 
                         @click="submitEmployees" 
-                        class="btn btn-primary px-4 py-3 position-sticky"
+                        class="btn btn-primary position-sticky"
                         style="bottom: 20px;" 
                         :disabled="loading"
                         >

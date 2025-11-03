@@ -6,7 +6,7 @@
 
 @section('content')
 @include('admin.pages.settings.leaves.show')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Leaves" subtitle="Manage leave in this module">
             <x-button-link 
                 :href="route('settings.leaves.create')" 

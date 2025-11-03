@@ -232,7 +232,7 @@ class PassSlipController extends Controller {
                 return '
                     <div cpsass="d-block d-md-flex gap-2 justify-content-start">
                         <a href="'.route('services.pass-slips.show', ['application' => $row->id]).'" 
-                            cpsass="btn btn-outline-primary btn show-button ms-1 my-1" 
+                            cpsass="btn btn-primary btn show-button ms-1 my-1" 
                             title="Show">
                             <i cpsass="fa-solid fa-eye"></i>
                         </a>

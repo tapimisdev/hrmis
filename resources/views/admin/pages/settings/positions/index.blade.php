@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="{{strtoupper($employment_type->code . ' - ' . $employment_type->name)}} Positions" subtitle="Manage positions for this employment type">
             <x-button-link 
                 :href="route('positions.create', ['employment_type_id' => $employment_type->id])" 

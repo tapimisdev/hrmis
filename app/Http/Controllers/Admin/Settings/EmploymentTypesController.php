@@ -217,7 +217,7 @@ class EmploymentTypesController extends Controller
                return '
                 <div class="d-block d-md-flex gap-2 justify-content-start">
                     <a href="' . route('employment-types.edit', $row->id) . '" 
-                        class="btn btn-outline-secondary btn ms-1 my-1" 
+                        class="btn btn-secondary btn ms-1 my-1" 
                         title="Edit">
                             <i class="fa-solid fa-pen-to-square"></i>
                     </a>
@@ -226,7 +226,7 @@ class EmploymentTypesController extends Controller
                 ';
 
                 // <button id="btn-delete"
-                //     class="btn btn-outline-danger btn ms-1 my-1" 
+                //     class="btn btn-danger btn ms-1 my-1" 
                 //     data-target="'.route('employment-types.destroy', ['employment_type' => $row->id]).'"
                 //     title="Delete">
                 //         <i class="fa-solid fa-trash-can"></i>

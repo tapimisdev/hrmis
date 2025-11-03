@@ -5,10 +5,10 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Organization" subtitle="Manage your organization settings here">
            <div class="dropdown">
-                <button class="btn-modern ghost text-uppercase fw-bold px-5 py-3" 
+                <button class="btn btn-primary dropdown-toggle" 
                         type="button" 
                         id="addNewDropdown" 
                         data-bs-toggle="dropdown" 

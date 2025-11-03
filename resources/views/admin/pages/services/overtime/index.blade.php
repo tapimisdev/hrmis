@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="container pt-4 px-3">
+    <div class="container-fluid">
         <x-header title="Overtime Applications" subtitle="Manage overtime applications in this module">
             
         </x-header>

@@ -43,18 +43,17 @@ export default {
 @import './../../../sass/variables';
 
 .dashboard {
-  background: rgba($color: $primary, $alpha: 0.1);
+  background: rgba($color: var(--bs-primary), $alpha: 0.1);
   padding-bottom: 36px;
   min-height: 100vh;
 }
 .chart-card {
-    background: $white;
+    background: var(--bs-secondary-bg);
     height: 100%;
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 18px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
     transition: all 0.2s ease;
-
     &:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
