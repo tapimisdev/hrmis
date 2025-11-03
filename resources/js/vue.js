@@ -1,6 +1,5 @@
 
 import { createApp } from 'vue';
-
 // employee
 import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
 import DashboardIndex from './employee/dashboard/DashboardIndex.vue'
@@ -37,4 +36,5 @@ const authApp = createApp({
   },
 });
 
+console.log('Vue is Working');
 authApp.mount('#app');
