@@ -1,8 +1,6 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import Vue from '@vitejs/plugin-vue';
-import { createHtmlPlugin } from 'vite-plugin-html'
-import vueDevTools from 'vite-plugin-vue-devtools'
 
 export default defineConfig({
     plugins: [
@@ -20,8 +18,6 @@ export default defineConfig({
             refresh: true,
         }),
         Vue(),
-        vueDevTools(),
-        createHtmlPlugin({})
     ],
     resolve: {
         alias: {
