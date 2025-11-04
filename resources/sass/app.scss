@@ -43,6 +43,7 @@
   --bs-warning-rgb: #{to-rgb($warning-dark)};
   --bs-info: #{$info-dark};
   --bs-info-rgb: #{to-rgb($info-dark)};
+  --bs-nav-pills-link-active-bg: #{$primary-dark};
 }
 
 @import 'buttons.scss';
@@ -55,6 +56,17 @@
 
 .btn {
     border-radius: 8px;
+}
+
+.dataTables_length label, 
+.dataTables_filter label {
+    color: var(--bs-body-color);
+}
+
+#app {
+    label {
+          color: var(--bs-body-color);
+    }
 }
 
 .error-field {

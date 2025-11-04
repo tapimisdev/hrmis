@@ -5,7 +5,9 @@
 
 <div class="container-fluid">
 
-    <header-vue title="DOST TAPI"></header-vue>
+    <x-employee-navbar>
+        <header-vue title="DOST TAPI"></header-vue>
+    </x-employee-navbar>
 
     <x-header-employee title="Pass Slip" subtitle="Manage pass slip in this module">
         <a href="{{ route('obs.create') }}" class="btn btn-warning py-3 px-4">

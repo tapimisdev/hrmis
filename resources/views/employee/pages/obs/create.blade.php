@@ -2,8 +2,9 @@
 
 @section('content')
 <div class="container-fluid">
-
-    <header-vue title="DOST TAPI"></header-vue>
+    <x-employee-navbar>
+        <header-vue title="DOST TAPI"></header-vue>
+    </x-employee-navbar>
 
     <x-header-employee title="Pass Slip / Apply" subtitle="Create a pass slip application in this module">
         <a href="javascript:history.back()" class="btn btn-danger py-3 px-4">

@@ -48,19 +48,19 @@
         </x-header>
         <div class="row mb-3">
             <div class="col-12 col-md-4 mb-3">
-                <label for="division" class="mb-3">Filter By Divisions</label>
+                <label for="division" class="mb-3 text-body">Filter By Divisions</label>
                 <select id="division" class="form-select text-uppercase">
                     <option value=""> - CHOOSE -</option>
                 </select>
             </div>
             <div class="col-12 col-md-4 mb-3">
-                <label for="units" class="mb-3">Filter By Units</label>
+                <label for="units" class="mb-3 text-body">Filter By Units</label>
                 <select id="units" class="form-select text-uppercase">
                     <option value=""> - CHOOSE -</option>
                 </select>
             </div>
              <div class="col-12 col-md-3 mb-3">
-                <label for="account_status" class="mb-3">Filter By Account Status</label>
+                <label for="account_status" class="mb-3 text-body">Filter By Account Status</label>
                 <select id="account_status" class="form-select text-uppercase">
                     @foreach (['active', 'inactive', 'archived'] as $menu)
                         <option value="{{$menu}}">

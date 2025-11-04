@@ -104,7 +104,7 @@
                                 Employment Details
                                 </button>
                             </h2>
-                            <div id="collapseEmp" class="accordion-collapsecollapse show">
+                            <div id="collapseEmp" class="accordion-collapse collapse show">
                                 <div class="accordion-body">
                                     <div class="row">
                                         <div class="col-md-6 mb-3">

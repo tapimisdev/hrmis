@@ -235,7 +235,7 @@
   cursor: pointer;
   &:hover {
     transition: all 0.3s ease;
-    background-color: $light;
+    background-color: var(--bs-secondary-bg);
   }
 }
 

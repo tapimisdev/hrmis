@@ -1,193 +1,186 @@
 <template>
-  <header class="d-flex justify-content-between align-items-center mb-3 py-3">
-    <div class="d-flex align-items-center gap-2">
-      <img :src="logoUrl" alt="DOST Logo" height="28">
-      <h5 class="fw-bold mb-0 text-light" > {{ title }} </h5>
+  <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰</button>
+  <div class="d-flex gap-3 align-items-center">
+    <div class="toggle-container">
+      <button class="theme-toggle" id="theme-toggle" title="Toggles light & dark" aria-label="light" aria-live="polite">
+          <div class="toggle-icon sun">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="5" fill="#FFD700" stroke="#FFD700"/>
+                  <line x1="12" y1="1" x2="12" y2="3" stroke="#FFD700"/>
+                  <line x1="12" y1="21" x2="12" y2="23" stroke="#FFD700"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="#FFD700"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="#FFD700"/>
+                  <line x1="1" y1="12" x2="3" y2="12" stroke="#FFD700"/>
+                  <line x1="21" y1="12" x2="23" y2="12" stroke="#FFD700"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="#FFD700"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="#FFD700"/>
+              </svg>
+          </div>
+          <div class="toggle-icon moon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#93C5FD" stroke="#93C5FD"/>
+              </svg>
+          </div>
+      </button>
+      <div class="tooltip">
+          <span class="tooltip-text"></span>
+      </div>
     </div>
 
-    <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰</button>
-    
-    <div class="d-flex gap-3 align-items-center">
-
-      <div class="toggle-container">
-        <button class="theme-toggle" id="theme-toggle" title="Toggles light & dark" aria-label="light" aria-live="polite">
-            <div class="toggle-icon sun">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="5" fill="#FFD700" stroke="#FFD700"/>
-                    <line x1="12" y1="1" x2="12" y2="3" stroke="#FFD700"/>
-                    <line x1="12" y1="21" x2="12" y2="23" stroke="#FFD700"/>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="#FFD700"/>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="#FFD700"/>
-                    <line x1="1" y1="12" x2="3" y2="12" stroke="#FFD700"/>
-                    <line x1="21" y1="12" x2="23" y2="12" stroke="#FFD700"/>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="#FFD700"/>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="#FFD700"/>
-                </svg>
-            </div>
-            <div class="toggle-icon moon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#93C5FD" stroke="#93C5FD"/>
-                </svg>
-            </div>
-        </button>
-        <div class="tooltip">
-            <span class="tooltip-text"></span>
-        </div>
-      </div>
-
-      <!-- Notification Dropdown -->
-      <div class="dropdown position-relative">
-        <a 
-          class="text-decoration-none position-relative d-inline-block" 
-          href="#"
-          id="notificationDropdown" 
-          data-bs-toggle="dropdown" 
-          aria-expanded="false"
-          style="cursor: pointer;"
-          @click="loadNotifications">
-          <i class="fa-regular fa-bell text-light" style="font-size: 1.5rem;"></i>
-          <span 
-            v-if="unreadCount > 0"
-            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-            style="font-size: 0.65rem; padding: 0.25rem 0.45rem;">
-            {{ unreadCount }}
-            <span class="visually-hidden">unread notifications</span>
-          </span>
-        </a>
+    <!-- Notification Dropdown -->
+    <div class="dropdown position-relative">
+      <a 
+        class="text-decoration-none position-relative d-inline-block" 
+        href="#"
+        id="notificationDropdown" 
+        data-bs-toggle="dropdown" 
+        aria-expanded="false"
+        style="cursor: pointer;"
+        @click="loadNotifications">
+        <i class="fa-regular fa-bell text-light" style="font-size: 1.5rem;"></i>
+        <span 
+          v-if="unreadCount > 0"
+          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+          style="font-size: 0.65rem; padding: 0.25rem 0.45rem;">
+          {{ unreadCount }}
+          <span class="visually-hidden">unread notifications</span>
+        </span>
+      </a>
+      
+      <ul 
+        class="dropdown-menu dropdown-menu-end shadow-sm mt-2 p-0" 
+        aria-labelledby="notificationDropdown" 
+        style="min-width: 320px; max-width: 380px; border: 1px solid #e0e0e0;">
         
-        <ul 
-          class="dropdown-menu dropdown-menu-end shadow-sm mt-2 p-0" 
-          aria-labelledby="notificationDropdown" 
-          style="min-width: 320px; max-width: 380px; border: 1px solid #e0e0e0;">
-          
-          <!-- Header -->
-          <li class="px-3 py-2 border-bottom bg-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <h6 class="mb-0 fw-semibold">Notifications</h6>
-              <span v-if="unreadCount > 0" class="badge bg-danger rounded-pill">{{ unreadCount }}</span>
-            </div>
-          </li>
-          
-          <!-- Loading State -->
-          <li v-if="loadingNotifications" class="text-center py-4">
-            <div class="spinner-border spinner-border-sm text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-          </li>
-          
-          <!-- Empty State -->
-          <li v-else-if="notifications.length === 0" class="text-center py-4 text-muted">
-            <i class="fa-regular fa-bell-slash mb-2" style="font-size: 2rem;"></i>
-            <p class="mb-0">No notifications</p>
-          </li>
-          
-          <!-- Notification Items -->
-          <li v-else v-for="notification in notifications" :key="notification.id">
-            <a 
-              class="dropdown-item py-3 px-3 border-bottom" 
-              href="#" 
-              style="white-space: normal;"
-              @click.prevent="markAsRead(notification.id)">
-              <div class="d-flex gap-2">
-                <div class="flex-shrink-0">
-                  <div 
-                    class="rounded-circle d-flex align-items-center justify-content-center" 
-                    :class="getNotificationIconClass(notification.type)"
-                    style="width: 40px; height: 40px;">
-                    <i :class="getNotificationIcon(notification.type)"></i>
-                  </div>
-                </div>
-                <div class="flex-grow-1">
-                  <p class="mb-1 fw-semibold text-dark" style="font-size: 0.9rem;">
-                    {{ notification.title }}
-                  </p>
-                  <p class="mb-1 text-muted" style="font-size: 0.8rem;">
-                    {{ notification.message }}
-                  </p>
-                  <small class="text-muted" style="font-size: 0.75rem;">
-                    <i class="fa-regular fa-clock me-1"></i>{{ formatTime(notification.created_at) }}
-                  </small>
+        <!-- Header -->
+        <li class="px-3 py-2 border-bottom bg-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold">Notifications</h6>
+            <span v-if="unreadCount > 0" class="badge bg-danger rounded-pill">{{ unreadCount }}</span>
+          </div>
+        </li>
+        
+        <!-- Loading State -->
+        <li v-if="loadingNotifications" class="text-center py-4">
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </li>
+        
+        <!-- Empty State -->
+        <li v-else-if="notifications.length === 0" class="text-center py-4 text-muted">
+          <i class="fa-regular fa-bell-slash mb-2" style="font-size: 2rem;"></i>
+          <p class="mb-0">No notifications</p>
+        </li>
+        
+        <!-- Notification Items -->
+        <li v-else v-for="notification in notifications" :key="notification.id">
+          <a 
+            class="dropdown-item py-3 px-3 border-bottom" 
+            href="#" 
+            style="white-space: normal;"
+            @click.prevent="markAsRead(notification.id)">
+            <div class="d-flex gap-2">
+              <div class="flex-shrink-0">
+                <div 
+                  class="rounded-circle d-flex align-items-center justify-content-center" 
+                  :class="getNotificationIconClass(notification.type)"
+                  style="width: 40px; height: 40px;">
+                  <i :class="getNotificationIcon(notification.type)"></i>
                 </div>
               </div>
-            </a>
-          </li>
-          
-          <!-- Footer -->
-          <li class="border-top">
-            <a 
-              class="dropdown-item text-center py-2 text-primary fw-semibold" 
-              href="#" 
-              style="font-size: 0.9rem;"
-              @click.prevent="viewAllNotifications">
-              View all notifications
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Profile Dropdown -->
-      <div class="dropdown">
-        <a 
-          class="text-decoration-none position-relative d-inline-block" 
-          href="#"
-          id="profileDropdown" 
-          data-bs-toggle="dropdown" 
-          aria-expanded="false"
-          style="cursor: pointer;">
-          <img 
-            :src="userAvatar" 
-            alt="Profile" 
-            class="rounded-circle" 
-            style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #e0e0e0;">
-          <span 
-            class="position-absolute bg-primary rounded-circle d-flex align-items-center justify-content-center" 
-            style="width: 18px; height: 18px; bottom: -2px; right: -2px; border: 2px solid white;">
-            <i class="fa-solid fa-chevron-down text-white" style="font-size: 0.5rem;"></i>
-          </span>
-        </a>
+              <div class="flex-grow-1">
+                <p class="mb-1 fw-semibold text-dark" style="font-size: 0.9rem;">
+                  {{ notification.title }}
+                </p>
+                <p class="mb-1 text-muted" style="font-size: 0.8rem;">
+                  {{ notification.message }}
+                </p>
+                <small class="text-muted" style="font-size: 0.75rem;">
+                  <i class="fa-regular fa-clock me-1"></i>{{ formatTime(notification.created_at) }}
+                </small>
+              </div>
+            </div>
+          </a>
+        </li>
         
-        <ul 
-          class="dropdown-menu dropdown-menu-end shadow-sm mt-2" 
-          aria-labelledby="profileDropdown" 
-          style="min-width: 220px; border: 1px solid #e0e0e0;">
-          <li class="px-3 py-2 border-bottom">
-            <div class="fw-semibold text-dark small">{{ user.name }}</div>
-            <div class="text-muted" style="font-size: 0.75rem;">{{ user.email }}</div>
-          </li>
-          <li>
-            <a class="dropdown-item py-2 px-3" href="/employee/profile">
-              <i class="fa-regular fa-user me-2" style="width: 18px;"></i>
-              My Account
-            </a>
-          </li>
-          <li>
-            <a class="dropdown-item py-2 px-3" href="/settings">
-              <i class="fa-solid fa-gear me-2" style="width: 18px;"></i>
-              Settings
-            </a>
-          </li>
-          <li><hr class="dropdown-divider my-1"></li>
-          <li>
-            <button 
-              @click="logout" 
-              class="dropdown-item py-2 px-3 text-danger w-100 text-start"
-              :disabled="loggingOut">
-              <i class="fa-solid fa-right-from-bracket me-2" style="width: 18px;"></i>
-              {{ loggingOut ? 'Logging out...' : 'Logout' }}
-            </button>
-          </li>
-        </ul>
-      </div>
+        <!-- Footer -->
+        <li class="border-top">
+          <a 
+            class="dropdown-item text-center py-2 text-primary fw-semibold" 
+            href="#" 
+            style="font-size: 0.9rem;"
+            @click.prevent="viewAllNotifications">
+            View all notifications
+          </a>
+        </li>
+      </ul>
     </div>
-  </header>
+
+    <!-- Profile Dropdown -->
+    <div class="dropdown">
+      <a 
+        class="text-decoration-none position-relative d-inline-block" 
+        href="#"
+        id="profileDropdown" 
+        data-bs-toggle="dropdown" 
+        aria-expanded="false"
+        style="cursor: pointer;">
+        <img 
+          :src="userAvatar" 
+          alt="Profile" 
+          class="rounded-circle" 
+          style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #e0e0e0;">
+        <span 
+          class="position-absolute bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+          style="width: 18px; height: 18px; bottom: -2px; right: -2px; border: 2px solid white;">
+          <i class="fa-solid fa-chevron-down text-white" style="font-size: 0.5rem;"></i>
+        </span>
+      </a>
+      
+      <ul 
+        class="dropdown-menu dropdown-menu-end shadow-sm mt-2" 
+        aria-labelledby="profileDropdown" 
+        style="min-width: 220px; border: 1px solid #e0e0e0;">
+        <li class="px-3 py-2 border-bottom">
+          <div class="fw-semibold text-dark small">{{ user.name }}</div>
+          <div class="text-muted" style="font-size: 0.75rem;">{{ user.email }}</div>
+        </li>
+        <li>
+          <a class="dropdown-item py-2 px-3" href="/employee/profile">
+            <i class="fa-regular fa-user me-2" style="width: 18px;"></i>
+            My Account
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item py-2 px-3" href="/settings">
+            <i class="fa-solid fa-gear me-2" style="width: 18px;"></i>
+            Settings
+          </a>
+        </li>
+        <li><hr class="dropdown-divider my-1"></li>
+        <li>
+          <button 
+            @click="logout" 
+            class="dropdown-item py-2 px-3 text-danger w-100 text-start"
+            :disabled="loggingOut">
+            <i class="fa-solid fa-right-from-bracket me-2" style="width: 18px;"></i>
+            {{ loggingOut ? 'Logging out...' : 'Logout' }}
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
 </template>
 
 <script>
 const token = localStorage.getItem('auth_token');
 import axios from 'axios';
+import FormSkeletonVue from '../../components/FormSkeletonVue.vue';
 
 export default {
   name: 'AppHeader',
+  components: { FormSkeletonVue },
   props: {
     title: {
       type: String,
@@ -203,6 +196,7 @@ export default {
       },
       notifications: [],
       unreadCount: 0,
+      loading: true,
       loadingNotifications: false,
       loggingOut: false,
       logoUrl: '/img/dost.png'

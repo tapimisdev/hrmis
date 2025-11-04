@@ -3,7 +3,10 @@
 @section('content')
 @include('employee.pages.leave.show')
     <div class="container-fluid">
-        <header-vue title="DOST TAPI"></header-vue>
+        
+        <x-employee-navbar>
+            <header-vue title="DOST TAPI"></header-vue>
+        </x-employee-navbar>
 
         <x-header-employee title="Leave Applications" subtitle="Manage Leave Applications in this module" >
             <a href="{{ route('leaves.create') }}" class="btn btn-warning py-3 px-4">

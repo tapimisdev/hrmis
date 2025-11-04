@@ -3,9 +3,9 @@
         <!-- Common Info (Ultra Compact) -->
         <CommonInfo :details="formattedDetails" />
 
-        <div class="card p-3 position-relative" id="card-container">
+        <div class="card position-relative" id="card-container">
             <!-- Header -->
-            <div class="card-header bg-white border-0 py-2">
+            <div class="card-header border-0 py-4 bg-body-secondary">
                 <h5 class="text-primary fw-bold mb-0">
                     <i class="fa-solid fa-users me-2"></i> Uploaded List
                 </h5>
@@ -13,13 +13,13 @@
 
             <div class="card-body">
                 <!-- Employee Accordion -->
-                <div class="accordion" id="employeeAccordion">
+                <div class="accordion mb-4" id="employeeAccordion">
                     <div class="accordion-item border-0 mb-3"
                         v-for="(employee, index) in employees"
                         :key="index">
                         <!-- Accordion Header (Balanced Layout) -->
                         <h2 class="accordion-header " :id="'heading' + index">
-                            <button class="accordion-button collapsed rounded px-3 py-2 d-flex align-items-center bg-primary bg-opacity-10"
+                            <button class="accordion-button collapsed rounded px-3 py-2 d-flex align-items-center bg-body-secondary"
                                     type="button"
                                     data-bs-toggle="collapse"
                                     :data-bs-target="'#collapse' + index"
@@ -36,10 +36,10 @@
 
                                     <!-- Employee Info -->
                                     <div class="flex-grow-1 lh-sm">
-                                        <div class="fw-semibold text-dark">
+                                        <div class="fw-semibold text-body">
                                             {{ employee.lastname }}, {{ employee.firstname }} {{ employee.middlename }}
                                         </div>
-                                        <div class="small text-muted text-capitalize">
+                                        <div class="small text-body-secondary text-capitalize">
                                             {{ employee.employee_no }} · <i>{{ employee.position }}</i>
                                         </div>
                                     </div>
@@ -354,7 +354,7 @@
                     <button 
                         type="button" 
                         @click="submitEmployees" 
-                        class="btn btn-primary position-sticky"
+                        class="btn btn-primary px-4 py-3 position-sticky"
                         style="bottom: 20px;" 
                         :disabled="loading"
                         >
