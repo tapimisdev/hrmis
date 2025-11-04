@@ -1,5 +1,6 @@
 <template>
   <div class="p-3">
+  
     <ShowProgressBar
         v-if="!isFinished"
         :batchId="batch_id"
@@ -12,6 +13,7 @@
     <CosPayrollRegistry v-else-if="employment_type === 'COS'"
       :projects="employees"
       :status="status"
+      :payroll_no="payroll_no"
     />
     <div v-else-if="employment_type === 'REGULAR'">
       <div class="alert alert-primary">REGULAR TO HA</div>
