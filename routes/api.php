@@ -75,7 +75,6 @@ Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'log
     Route::prefix('payroll')->group(function() {
         Route::post('salary', [SalaryApiController::class, 'getList']);
         Route::get('salary/{payroll_id}', [SalaryApiController::class, 'getPayrollRegistry']);
-        Route::get('salary/{payroll_no}/download', [SalaryApiController::class, 'downloadPayrollRegistry']);
         Route::post('generate-salary-payroll', [SalaryController::class, 'store']);
         
         # Adjustment
@@ -84,6 +83,15 @@ Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'log
 
         Route::get('/progress/{batchId}', [SalaryController::class, 'getBatchProgress']);
         Route::post('/cancel/{batchId}', [SalaryController::class, 'cancelBatch']);
+
+        # DOWNLOADS
+        Route::get('salary/{payroll_no}/download', [SalaryApiController::class, 'downloadPayrollRegistry'])
+            ->name('api.payroll.salary.download');
+        Route::get('absences-leaves/{payroll_no}/download', [SalaryApiController::class, 'downloadAbsencesLeaves'])
+            ->name('api.payroll.absences-leaves.download');
+        Route::get('payslip/{payroll_no}/download', [SalaryApiController::class, 'downloadPayslip'])
+            ->name('api.payroll.payslip.download');
+
         
     });
 

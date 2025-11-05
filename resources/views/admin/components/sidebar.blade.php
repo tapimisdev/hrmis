@@ -151,60 +151,34 @@
         </li>
 
         {{-- Reports --}}
+        {{-- Services --}}
         <li class="sidebar-item {{ Str::contains(request()->path(), 'reports') ? 'active' : '' }}">
             <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'reports') ? '' : 'collapsed' }}"
-            data-bs-toggle="collapse" 
-            data-bs-target="#reports"
-            role="button"
-            aria-expanded="{{ Str::contains(request()->path(), 'reports') ? 'true' : 'false' }}" 
-            aria-controls="reports">
-                <i class="fa-solid fa-file-lines"></i>
+               data-bs-toggle="collapse" 
+               data-bs-target="#reports"
+               role="button" 
+               aria-expanded="{{ Str::contains(request()->path(), 'reports') ? 'true' : 'false' }}" 
+               aria-controls="reports">
+                <i class="fa-solid fa-briefcase"></i>
                 <span>Reports</span>
             </a>
-
-            <div class="collapse collapsable {{ Str::contains(request()->path(), 'reports') ? 'show' : '' }}" id="reports">
+            <div class="collapse collapsable {{ Str::contains(request()->path(), 'reports') ? 'show' : '' }}" 
+                 id="reports">
                 <ul class="nested-list">
-
-                    {{-- REGULAR REPORTS --}}
                     <li class="nested-item">
-                        <a class="dropdown-toggle collapsed" data-bs-toggle="collapse" href="#regularReports" role="button"
-                        aria-expanded="false" aria-controls="regularReports">
-                            <i class="fa-solid fa-user-tie"></i>
+                        <a href=""
+                           class="{{ request()->routeIs('reports.events.index') ? 'active' : '' }}">
+                            <i class="fa-solid fa-calendar-days"></i>
                             <span>Regular</span>
                         </a>
-                        <div class="collapse" id="regularReports">
-                            <ul class="nested-sublist">
-                                <li><a href="#" class="{{ request()->routeIs('reports.midyear') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Mid-Year Bonus</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.payroll') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Payroll</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.payslip') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Payslip</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.longevity') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Longevity (LP)</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.pera') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> PERA & RATA</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.salarytax') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Salary Tax</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.hptax') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> HP Tax</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.longevitytax') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Longevity Tax</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.actualpresence') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Actual Presence HP</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.hazardpay') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Hazard Pay (HP)</a></li>
-                            </ul>
-                        </div>
                     </li>
-
-                    {{-- COS REPORTS --}}
                     <li class="nested-item">
-                        <a class="dropdown-toggle collapsed" data-bs-toggle="collapse" href="#cosReports" role="button"
-                        aria-expanded="false" aria-controls="cosReports">
-                            <i class="fa-solid fa-user-clock"></i>
+                        <a href=""
+                           class="{{ request()->routeIs('reports.events.index') ? 'active' : '' }}">
+                            <i class="fa-solid fa-calendar-days"></i>
                             <span>COS</span>
                         </a>
-                        <div class="collapse" id="cosReports">
-                            <ul class="nested-sublist">
-                                <li><a href="#" class="{{ request()->routeIs('reports.cospayroll') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Payroll</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.cospayslip') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Payslip</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.coshazard') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Hazard Pay</a></li>
-                                <li><a href="#" class="{{ request()->routeIs('reports.costax') ? 'active' : '' }}"><i class="fa-solid fa-chart-line"></i> Tax Summary</a></li>
-                            </ul>
-                        </div>
                     </li>
-
                 </ul>
             </div>
         </li>
