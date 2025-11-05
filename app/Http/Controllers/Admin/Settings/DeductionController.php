@@ -14,10 +14,9 @@ class DeductionController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
-        $query = DB::table('deductions')->where('is_active', true)->get();
-        
+    {        
         if (request()->ajax()) {
+            $query = DB::table('deductions')->where('is_active', true)->get();
             return $this->datatable($query);
         }
 

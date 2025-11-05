@@ -38,6 +38,7 @@ use App\Http\Controllers\Admin\Settings\ApproverController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
+use App\Http\Controllers\Admin\Payroll\ReportsController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
@@ -269,6 +270,11 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
         Route::resource('salary', SalaryController::class)->only('index', 'create', 'show', 'store', 'destroy');
     });
 
+    # REPORTS
+
+    Route::get('reports/{employment_type}', [ReportsController::class, 'index'])
+        ->name('reports.index');
+
     Route::prefix('maintenance')->group(function() {
         # ROLES AND PERMISSIONS
         Route::resource('role-and-permission', RolesAndPermissionController::class);
@@ -332,6 +338,8 @@ Route::prefix('admin')->middleware(['auth', 'checkrole:admin'])->group(function 
 
 
     });
+
+    
 });
 
 Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(function () {

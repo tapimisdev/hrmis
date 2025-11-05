@@ -12,17 +12,24 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Font;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class SalaryApiController extends Controller
 {
+
     protected $salary_payroll_service;
 
     public function __construct(SalaryPayrollService $salary_payroll_service)
     {
         $this->salary_payroll_service = $salary_payroll_service;
     }
+
     public function getList(Request $request)
     {
         $validated = $request->validate([
@@ -207,7 +214,6 @@ class SalaryApiController extends Controller
             $payroll_id = $data->id;
             return $this->COSRegistry($payroll_id, $data);
         } else {
-            // For REGULAR and other types, you can implement RegularRegistry similarly
             return response()->json(['message' => 'Regular Registry download not implemented yet.'], 501);
         }
 
@@ -410,11 +416,11 @@ class SalaryApiController extends Controller
                     ],
                     'borders' => [
                         'outline' => [
-                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'borderStyle' => Border::BORDER_THIN,
                             'color' => ['argb' => 'FF000000'],
                         ],
                         'inside' => [
-                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'borderStyle' => Border::BORDER_THIN,
                             'color' => ['argb' => 'FF000000'],
                         ],
                     ],
@@ -452,6 +458,417 @@ class SalaryApiController extends Controller
         (new Xlsx($spreadsheet))->save($tempPath);
         return response()->download($tempPath)->deleteFileAfterSend(true);
     }
+
+    public function downloadAbsencesLeaves($payroll_no)
+    {
+
+        $templatePath = public_path('templates/cos/absences-leaves.xlsx');
+        $spreadsheet = IOFactory::load($templatePath);
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $payroll = $this->payrollDetails($payroll_no);
+        $data = $this->getEmployeeRates($payroll->id);
+
+        [$month, $year, $period] = explode(' ', $payroll->period_covered);
+        $cutoff = "$period $month $year";
+
+        $startRow = 10;
+        $templateStart = 10;
+        $templateEnd = 15;
+
+        $sheet->setCellValue("A8", strtoupper($cutoff));
+        $sheet->getStyle("A8")->applyFromArray([
+            'font' => [
+                'name' => 'Arial',
+                'size' => 12,
+                'bold' => true,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+
+        foreach ($data as $unitName => $employees) {
+
+            // -------------------------------
+            // UNIT NAME ROW (RED FILL)
+            // -------------------------------
+            $sheet->insertNewRowBefore($startRow, 2);
+
+            // Set unit name in column A only
+            $sheet->setCellValue("A{$startRow}", strtoupper($unitName));
+            $sheet->getRowDimension($startRow)->setRowHeight(21);
+
+            // Apply styles
+            $sheet->getStyle("A{$startRow}:L{$startRow}")->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'size' => 12,
+                    'name' => 'Arial',
+                    'underline' => Font::UNDERLINE_SINGLE,
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'F2DCDB'],
+                ],
+            ]);
+
+
+            $startRow++;
+
+            foreach ($employees as $employee) {
+
+                // Duplicate template rows
+                $sheet->insertNewRowBefore($startRow, ($templateEnd - $templateStart + 1));
+                
+                // Duplicate template rows
+                for ($i = 0; $i <= ($templateEnd - $templateStart); $i++) {
+                    $sourceRow = $templateStart + $i;
+                    $targetRow = $startRow + $i;
+                    // Apply white fill to all employee rows
+                    $sheet->getStyle("A{$targetRow}:L{$targetRow}")
+                        ->applyFromArray([
+                            'font' => [
+                                'name' => 'Calibri', 
+                                'bold' => true, 'size' => 10,
+                                'underline' => Font::UNDERLINE_NONE,
+                            ],
+                            'alignment' => [
+                                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                                'vertical' => Alignment::VERTICAL_CENTER,
+                            ],
+                            'borders' => [
+                                'outline' => [
+                                    'borderStyle' => Border::BORDER_THIN,
+                                    'color' => ['argb' => 'D9D9D9'],
+                                ],
+                                'inside' => [
+                                    'borderStyle' => Border::BORDER_THIN,
+                                    'color' => ['argb' => 'D9D9D9'],
+                                ],
+                            ],
+                            'fill' => [
+                                'fillType' => Fill::FILL_SOLID,
+                                'startColor' => ['argb' => 'FFFFFFFF'], // WHITE fill
+                            ],
+                        ]);
+                }
+
+                $font = [
+                    'font' => ['name' => 'Arial', 'size' => 10, 'bold' => false],
+                ];
+                
+                $alignLeft = ['alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT]];
+                $alignRight = ['alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT]];
+                $alignCenter = ['alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]];
+
+                // Name - bold, left-aligned
+                $sheet->setCellValue("A{$startRow}", $employee['name']);
+                $sheet->getStyle("A{$startRow}")->applyFromArray($font);
+                $sheet->getStyle("A{$startRow}")->applyFromArray($alignLeft);
+                $sheet->getStyle("A{$startRow}")->getFont()->setBold(true);
+
+                // Row 1 - Monthly rate & days - right-aligned
+                $sheet->setCellValue("B{$startRow}", 'Php' . number_format($employee['monthly_rate'], 2));
+                $sheet->setCellValue("D{$startRow}", 22);
+                $sheet->getStyle("B{$startRow}:C{$startRow}")->applyFromArray($alignRight);
+                $sheet->getStyle("B{$startRow}:C{$startRow}")->applyFromArray($font);
+
+                // Position - italic, left-aligned
+                $sheet->setCellValue("A" . ($startRow + 1), $employee['position']);
+                $sheet->getStyle("A" . ($startRow + 1))->applyFromArray($font);
+                $sheet->getStyle("A" . ($startRow + 1))->applyFromArray($alignLeft);
+                $sheet->getStyle("A" . ($startRow + 1))->getFont()->setItalic(true);
+
+                // Row 3: Rate/day
+                $sheet->setCellValue("A" . ($startRow + 2), "Rate/day");
+                $sheet->setCellValue("B" . ($startRow + 2), $employee['monthly_rate']);
+                $sheet->setCellValue("C" . ($startRow + 2), "/");
+                $sheet->setCellValue("D" . ($startRow + 2), 22);
+                $sheet->setCellValue("E" . ($startRow + 2), "/8");
+                $sheet->setCellValue("F" . ($startRow + 2), "=");
+                $sheet->setCellValue("G" . ($startRow + 2), $employee['daily_rate']);
+                $sheet->setCellValue("H" . ($startRow + 2), "X");
+                $sheet->setCellValue("I" . ($startRow + 2), 0);
+                $sheet->setCellValue("J" . ($startRow + 2), "---------");
+                $sheet->setCellValue("K" . ($startRow + 2), "₱");
+                $sheet->setCellValue("L" . ($startRow + 2), number_format(0 * 2, 2));
+                $sheet->getStyle("A" . ($startRow + 2) . ":L" . ($startRow + 2))->applyFromArray($font);
+                $sheet->getStyle("A" . ($startRow + 2) . ":L" . ($startRow + 2))->applyFromArray($alignRight);
+                $sheet->getStyle("D" . ($startRow + 2) . ":L" . ($startRow + 2))->applyFromArray($alignCenter);
+                $sheet->getStyle("F" . ($startRow + 2) . ":L" . ($startRow + 2))->applyFromArray($alignRight);
+
+                // Row 4: Rate/hr
+                $sheet->setCellValue("A" . ($startRow + 3), "Rate/hr");
+                $sheet->setCellValue("B" . ($startRow + 3), $employee['monthly_rate']);
+                $sheet->setCellValue("C" . ($startRow + 3), "/");
+                $sheet->setCellValue("D" . ($startRow + 3), 22);
+                $sheet->setCellValue("E" . ($startRow + 3), "/8");
+                $sheet->setCellValue("F" . ($startRow + 3), "=");
+                $sheet->setCellValue("G" . ($startRow + 3), $employee['hourly_rate']);
+                $sheet->setCellValue("H" . ($startRow + 3), "X");
+                $sheet->setCellValue("I" . ($startRow + 3), 0);
+                $sheet->setCellValue("J" . ($startRow + 3), "---------");
+                $sheet->setCellValue("K" . ($startRow + 3), "₱");
+                $sheet->setCellValue("L" . ($startRow + 3), number_format(0 * 2, 2));
+                $sheet->getStyle("A" . ($startRow + 3) . ":L" . ($startRow + 3))->applyFromArray($font);
+                $sheet->getStyle("A" . ($startRow + 3) . ":L" . ($startRow + 3))->applyFromArray($alignRight);
+                $sheet->getStyle("D" . ($startRow + 3) . ":L" . ($startRow + 3))->applyFromArray($alignCenter);
+                $sheet->getStyle("F" . ($startRow + 3) . ":L" . ($startRow + 3))->applyFromArray($alignRight);
+
+                // Row 5: Rate/min
+                $sheet->setCellValue("A" . ($startRow + 4), "Rate/min");
+                $sheet->setCellValue("B" . ($startRow + 4), $employee['monthly_rate']);
+                $sheet->setCellValue("C" . ($startRow + 4), "/");
+                $sheet->setCellValue("D" . ($startRow + 4), 22);
+                $sheet->setCellValue("E" . ($startRow + 4), "/8/60");
+                $sheet->setCellValue("F" . ($startRow + 4), "=");
+                $sheet->setCellValue("G" . ($startRow + 4), $employee['minute_rate']);
+                $sheet->setCellValue("H" . ($startRow + 4), "X");
+                $sheet->setCellValue("I" . ($startRow + 4), 0);
+                $sheet->setCellValue("J" . ($startRow + 4), "---------");
+                $sheet->setCellValue("K" . ($startRow + 4), "₱");
+                $sheet->setCellValue("L" . ($startRow + 4), number_format(0 * 2, 2));
+                $sheet->getStyle("A" . ($startRow + 4) . ":L" . ($startRow + 4))->applyFromArray($font);
+                $sheet->getStyle("A" . ($startRow + 4) . ":L" . ($startRow + 4))->applyFromArray($alignRight);
+                $sheet->getStyle("D" . ($startRow + 4) . ":L" . ($startRow + 4))->applyFromArray($alignCenter);
+                $sheet->getStyle("F" . ($startRow + 4) . ":L" . ($startRow + 4))->applyFromArray($alignRight);
+
+                // Row 6: TOTAL
+                $sheet->setCellValue("J" . ($startRow + 5), "TOTAL");
+                $sheet->setCellValue("K" . ($startRow + 5), "₱");
+                $sheet->setCellValue("L" . ($startRow + 5), number_format(0 * 2, 2));
+                $sheet->getStyle("J" . ($startRow + 5) . ":L" . ($startRow + 5))->applyFromArray($font);
+                $sheet->getStyle("J" . ($startRow + 5) . ":L" . ($startRow + 5))->applyFromArray($alignRight);
+
+                // Next block
+                $startRow += ($templateEnd - $templateStart + 1);
+            }
+        }
+
+        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $outputPath = storage_path('app/public/absences-leaves-filled.xlsx');
+        $writer->save($outputPath);
+
+        return response()->download($outputPath);
+    }
+
+    private function getEmployeeRates($payroll_id)
+    {
+        $employees = DB::table('payroll_salary_employee as pse')
+            ->where('pse.payroll_salary_id', $payroll_id)
+            ->leftJoinSub(
+                DB::table('employee_projects as ep')
+                    ->select('ep.*')
+                    ->whereRaw('ep.id IN (SELECT MAX(id) FROM employee_projects GROUP BY employee_no)'),
+                'latest_proj',
+                'pse.employee_no',
+                '=',
+                'latest_proj.employee_no'
+            )
+            ->leftJoin('projects as p', 'latest_proj.project_id', '=', 'p.id')
+            ->select(
+                'pse.*',
+                'latest_proj.*',
+                'p.name as project_name'
+            )
+            ->get()
+            ->map(function ($employee) {
+                $employee->aut = $employee->ut + $employee->absences;
+
+                
+
+                return $employee;
+            });
+
+        $grouped = $employees->groupBy('project_name');
+
+        $data = [];
+
+        foreach ($grouped as $unitName => $unitEmployees) {
+            $data[$unitName] = $unitEmployees->map(function ($employee) {
+                return [
+                    'name'         => $employee->name,
+                    'position'     => $employee->position,
+                    'monthly_rate' => $employee->monthly_rate,
+                    'daily_rate'   => number_format($employee->monthly_rate / 22, 2),
+                    'hourly_rate'  => number_format(($employee->monthly_rate / 22) / 8, 2),
+                    'minute_rate'  => number_format((($employee->monthly_rate / 22) / 8) / 60, 2),
+                ];
+            })->toArray(); 
+        }
+
+        return $data;
+
+    }
+        
+
+    public function downloadPayslip($payroll_no)
+    {
+        $payroll    = $this->payrollDetails($payroll_no);
+        $payroll_id = $payroll->id;
+        $groups     = $this->getEmployeePayslip($payroll_id)->toArray();
+
+        $templatePath = public_path('templates/cos/payslip.xlsx');
+        $spreadsheet  = IOFactory::load($templatePath);
+        $sheet        = $spreadsheet->getActiveSheet();
+
+        $sheet->getPageSetup()->clearPrintArea();
+
+        // Page setup
+        $sheet->getPageSetup()->setFitToPage(true)->setFitToWidth(1)->setFitToHeight(0);
+        $sheet->getPageMargins()->setTop(0.25)->setBottom(0.25)->setLeft(0.25)->setRight(0.25);
+
+        $templateStart  = 1;
+        $templateEnd    = 20;
+        $templateHeight = $templateEnd - $templateStart + 1;
+
+        // Store original drawings
+        $originalDrawings = $sheet->getDrawingCollection();
+        $currentRow = $templateEnd + 1;
+
+        foreach ($groups as $index => $employee) {
+
+            // 1. Insert space for new payslip
+            $sheet->insertNewRowBefore($currentRow, $templateHeight);
+
+            // 2. Copy each row + style + formulas
+            for ($row = $templateStart; $row <= $templateEnd; $row++) {
+                $newRow = $currentRow + ($row - $templateStart);
+
+                foreach ($sheet->getColumnIterator() as $column) {
+                    $col = $column->getColumnIndex();
+                    $cell = $sheet->getCell($col . $row);
+
+                    $sheet->setCellValue($col . $newRow, $cell->getValue());
+                    $sheet->duplicateStyle($sheet->getStyle($col . $row), $col . $newRow);
+                }
+
+                // Copy merged cells for this row
+                foreach ($sheet->getMergeCells() as $merged) {
+                    [$start, $end] = explode(':', $merged);
+                    [$startCol, $startRow] = Coordinate::coordinateFromString($start);
+                    [$endCol, $endRow]     = Coordinate::coordinateFromString($end);
+
+                    if ($startRow == $row && $endRow == $row) {
+                        $newStart = $startCol . $newRow;
+                        $newEnd   = $endCol . $newRow;
+                        $sheet->mergeCells("$newStart:$newEnd");
+                    }
+                }
+            }
+
+            // Set row heights
+            $sheet->getRowDimension($currentRow + (3 - $templateStart))->setRowHeight(22.20);
+            $sheet->getRowDimension($currentRow + (5 - $templateStart))->setRowHeight(33);
+
+            // Header merge + styling
+            $headerRow1 = $currentRow + (2 - $templateStart);
+            $headerRow2 = $headerRow1 + 1;
+            $headerMerge = "A{$headerRow1}:M{$headerRow2}";
+            $sheet->mergeCells($headerMerge);
+            $sheet->getStyle($headerMerge)->getFont()->setBold(true);
+            $sheet->getStyle($headerMerge)->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                ->setVertical(Alignment::VERTICAL_CENTER);
+
+            // Duplicate logos
+            foreach ($originalDrawings as $drawing) {
+                if ($drawing instanceof Drawing) {
+                    $coord = $drawing->getCoordinates();
+                    [$col, $row] = Coordinate::coordinateFromString($coord);
+
+                    if ($row >= 1 && $row <= 2) {
+                        $zip = new \ZipArchive();
+                        if ($zip->open($templatePath) === true) {
+                            $internal = str_replace('zip://' . $templatePath . '#', '', $drawing->getPath());
+                            $stream = $zip->getStream($internal);
+
+                            if ($stream) {
+                                $imgData = stream_get_contents($stream);
+                                fclose($stream);
+
+                                $tmpImg = public_path('temp_logo_' . uniqid() . '.png');
+                                file_put_contents($tmpImg, $imgData);
+
+                                $newLogo = new Drawing();
+                                $newLogo->setName($drawing->getName());
+                                $newLogo->setDescription($drawing->getDescription());
+                                $newLogo->setPath($tmpImg);
+                                $newLogo->setOffsetX($drawing->getOffsetX());
+                                $newLogo->setOffsetY($drawing->getOffsetY());
+                                $newLogo->setHeight($drawing->getHeight());
+                                $newLogo->setWidth($drawing->getWidth());
+                                $newLogo->setCoordinates($col . ($currentRow + ($row - $templateStart)));
+                                $newLogo->setWorksheet($sheet);
+                            }
+                            $zip->close();
+                        }
+                    }
+                }
+            }
+
+            // Insert employee name
+            $nameRow = $currentRow + (6 - $templateStart);
+            $sheet->setCellValue("C{$nameRow}", $employee->name ?? '');
+
+            $currentRow += $templateHeight;
+
+            if (($index + 1) % 2 == 0) {
+                $sheet->setBreak("A" . $currentRow, \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::BREAK_ROW);
+            }
+        }
+
+        // After looping, remove the original template rows (1-20)
+        $sheet->removeRow(1, $templateHeight);
+
+        // Save to new Excel
+        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $outputPath = storage_path('app/public/payslip.xlsx');
+        $writer->save($outputPath);
+
+        // Cleanup temp images
+        foreach (glob(public_path('temp_logo_*.png')) as $tmp) {
+            @unlink($tmp);
+        }
+
+        return response()->download($outputPath);
+    }
+
+
+
+
+
+    private function getEmployeePayslip($payroll_id)
+    {
+        $employees = DB::table('payroll_salary_employee as pse')
+            ->where('pse.payroll_salary_id', $payroll_id)
+            ->leftJoinSub(
+                DB::table('employee_projects as ep')
+                    ->select('ep.*')
+                    ->whereRaw('ep.id IN (SELECT MAX(id) FROM employee_projects GROUP BY employee_no)'),
+                'latest_proj',
+                'pse.employee_no',
+                '=',
+                'latest_proj.employee_no'
+            )
+            ->leftJoin('projects as p', 'latest_proj.project_id', '=', 'p.id')
+            ->select(
+                'pse.*',
+                'latest_proj.*',
+                'p.name as project_name'
+            )
+            ->get();
+
+        return $employees;
+    }
+
 
 
 
