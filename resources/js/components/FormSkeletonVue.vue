@@ -2,7 +2,7 @@
 <template>
   <div class="skeleton-form mb-3">
     <div v-for="row in rows" :key="row" class="skeleton-row">
-      <div class="skeleton-label"></div>
+      <div v-if="haslabel" class="skeleton-label"></div>
       <div class="skeleton-input" v-for="col in columns" :key="col"></div>
     </div>
   </div>
@@ -19,6 +19,10 @@ export default {
     columns: {
       type: Number,
       default: 1
+    },
+    haslabel: {
+      type: Boolean,
+      default: true
     }
   }
 };
@@ -43,9 +47,9 @@ export default {
   border-radius: 4px;
   background: linear-gradient(
     90deg,
-    #e0e0e0 25%,
-    #f0f0f0 50%,
-    #e0e0e0 75%
+    var(--bs-body-bg) 25%,
+    var(--bs-secondary-bg) 50%,
+    var(--bs-tertiary-bg) 75%
   );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
@@ -57,9 +61,9 @@ export default {
   border-radius: 4px;
   background: linear-gradient(
     90deg,
-    #e0e0e0 25%,
-    #f0f0f0 50%,
-    #e0e0e0 75%
+    var(--bs-body-bg) 25%,
+    var(--bs-secondary-bg) 50%,
+    var(--bs-tertiary-bg) 75%
   );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;

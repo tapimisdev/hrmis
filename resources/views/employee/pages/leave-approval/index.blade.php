@@ -3,7 +3,10 @@
 @section('content')
 @include('employee.pages.leave.show')
     <div class="container-fluid">
-        <header-vue title="DOST TAPI"></header-vue>
+        
+        <x-employee-navbar>
+            <header-vue title="DOST TAPI"></header-vue>
+        </x-employee-navbar>
 
         <x-header-employee title="Leaves Approval" subtitle="Review and approve leave applications here">
         

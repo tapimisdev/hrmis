@@ -195,9 +195,18 @@ export default {
 
 [data-bs-theme="dark"] {
   .welcome-header {
-      background: linear-gradient(135deg, var(--bs-body-bg) 0%, var(--bs-secondary-bg) 100%);
+      background: linear-gradient(135deg, var(--bs-secondary-bg) 0%, var(--bs-body-bg) 100%);
       border: 1px solid var(--bs-border-color);
       box-shadow: none;
+  }
+
+  .btn-warning {
+    border: none;
+    background-color: var(--bs-primary);
+    color: var(--bs-body-color);
+    &:hover {
+      transform: translateY(-2px);
+    }
   }
 }
 

@@ -3,8 +3,9 @@
 @section('content')
 @include('employee.pages.atro.show')
     <div class="container-fluid">
-        
-        <header-vue title="DOST TAPI"></header-vue>
+        <x-employee-navbar>
+            <header-vue title="DOST TAPI"></header-vue>
+        </x-employee-navbar>
 
         <x-header-employee title="Overtime" subtitle="Manage overtime in this module" >
             <a href="{{ route('overtime.create') }}" class="btn btn-warning py-3 px-4">

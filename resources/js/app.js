@@ -9,7 +9,6 @@ import axios from 'axios';
 const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 const token = localStorage.getItem('auth_token');
 
-
 if (csrf) {
     
     axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf;

@@ -5,7 +5,9 @@
 
 <div class="container-fluid">
 
-    <header-vue title="DOST TAPI"></header-vue>
+    <x-employee-navbar>
+        <header-vue title="DOST TAPI"></header-vue>
+    </x-employee-navbar>
 
     <x-header-employee title="Pass Slip Approval" subtitle="Review and approve pass slip here">
         <x-button-link 

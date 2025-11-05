@@ -2,12 +2,11 @@
 
 @section('content')
 <div class="container-fluid">
-
-    <header-vue title="Dashboard"></header-vue>
-
+    <x-employee-navbar>
+        <header-vue title="Dashboard"></header-vue>
+    </x-employee-navbar>
 
     <dashboard-index/>
-
 </div>
 @endsection
 

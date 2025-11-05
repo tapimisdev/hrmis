@@ -1,5 +1,5 @@
 <template>
-  <div class="card rounded-4 py-4 mb-3 shadow-sm">
+  <div class="card bg-body-secondary rounded-4 py-4 mb-3 shadow-sm">
     <!-- Show loading while fetching logs -->
     <div v-if="loading" class="d-flex justify-content-center align-items-center py-5">
       <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>

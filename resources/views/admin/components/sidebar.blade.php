@@ -1,4 +1,4 @@
-<div class="sidebar boder bg-light-subtle border-right">
+<div class="sidebar boder bg-body-secondary border-right">
     <!-- Logo Section -->
     <div class="sidebar-title">
         <img src="{{ asset('img/orbit.png') }}" alt="Orbit">

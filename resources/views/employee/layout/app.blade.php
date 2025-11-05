@@ -1,11 +1,10 @@
 <!doctype html>
-<!-- <html lang="{{     str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="light"> -->
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="light">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -42,9 +41,11 @@
 
     <!-- SweetAlert2 (for modern alert dialogs) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
-        (function() {
+        // init-theme-sidebar.js
+
+        (function () {
+            // 🌙 Theme setup
             const storageKey = 'theme-preference';
             const storedTheme = localStorage.getItem(storageKey);
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -52,19 +53,26 @@
             document.documentElement.setAttribute('data-bs-theme', theme);
         })();
 
-        // SIDEBAR - apply immediately before content is painted
-        (function() {
+        (function () {
+            // 📐 Sidebar collapse setup
             const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-            if (collapsed) {
-                document.documentElement.classList.add('sidebar-collapsed');
+            const sidebar = document.querySelector('.sidebar');
+
+            if (collapsed && sidebar) {
+                sidebar.classList.add('collapsed');
             }
         })();
+
     </script>
 
     @yield('styles')
 
     <!-- Vite compiled assets (SASS + JS) -->
-    @vite(['resources/sass/app.scss', 'resources/js/app.js', 'resources/sass/employee.scss'])
+    @vite([
+        'resources/sass/app.scss', 
+        'resources/js/app.js',
+        'resources/sass/employee.scss',
+    ])
 </head>
 <body>
     <div class="top-space"></div>
@@ -132,33 +140,6 @@
                 if ($overlay.length) $overlay.toggleClass('active');
             });
         });
-           // full sidebar toggle
-        (function() {
-            const storageKey = 'sidebar-collapsed';
-            const app = document.getElementById('app');
-            const sidebar = document.querySelector('.sidebar');
-            const buttons = [document.getElementById('switchMenuBtn'), document.getElementById('imgSwitchBtn')];
-
-            // Apply saved state
-            if (localStorage.getItem(storageKey) === 'true') {
-                sidebar?.classList.add('collapsed');
-                app?.classList.add('sidebar-collapsed');
-                buttons.forEach(btn => btn?.classList.add('rotate'));
-            }
-
-            // Toggle on click
-            buttons.forEach(btn => btn?.addEventListener('click', () => {
-                sidebar?.classList.toggle('collapsed');
-                app?.classList.toggle('sidebar-collapsed');
-                btn?.classList.toggle('rotate');
-                localStorage.setItem(storageKey, sidebar.classList.contains('collapsed'));
-            }));
-
-            $('.x-mark').on('click', function() {
-                $('aside')?.toggleClass('mobile-open');
-                $('.sidebar-overlay')?.toggleClass('active');
-            });
-        })();
     </script>
 
 </body>
