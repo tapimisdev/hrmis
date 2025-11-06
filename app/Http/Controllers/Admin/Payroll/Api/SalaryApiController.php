@@ -19,6 +19,7 @@ use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class SalaryApiController extends Controller
 {
@@ -68,38 +69,38 @@ class SalaryApiController extends Controller
         return response()->json($events);
     }
 
-    public function getPayrollRegistry($payroll_id) 
+    public function getPayrollRegistry(string $payroll_id, bool $isGrouped = false) 
     {
         $payroll_date = DB::table('payroll_salary')
-            ->where('id', '=', $payroll_id)
+            ->where('id', $payroll_id)
             ->value('payroll_date');
 
         $pse = DB::table('payroll_salary_employee as pse')
-                    ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
-                    ->where('payroll_salary_id', $payroll_id)
-                    ->select('pse.*', 'ps.payroll_date')
-                    ->get();
-        
-        // Get all projects for this employee
+            ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+            ->where('payroll_salary_id', $payroll_id)
+            ->select('pse.*', 'ps.payroll_date')
+            ->get();
+
+        // Get all projects for this payroll date
         $projects = DB::table('employee_projects as ep')
-                    ->join('projects', 'ep.project_id', '=', 'projects.id')
-                    ->whereDate('start_date', '<=', $payroll_date)
-                    ->where(function ($query) use ($payroll_date) {
-                        $query->whereDate('end_date', '>=', $payroll_date)
-                            ->orWhereNull('end_date');
-                    })
-                    ->select('projects.id', 'projects.name')
-                    ->get()->unique('id');
+            ->join('projects', 'ep.project_id', '=', 'projects.id')
+            ->whereDate('start_date', '<=', $payroll_date)
+            ->where(function ($query) use ($payroll_date) {
+                $query->whereDate('end_date', '>=', $payroll_date)
+                    ->orWhereNull('end_date');
+            })
+            ->select('projects.id', 'projects.name')
+            ->get()->unique('id');
 
         $enriched = $pse->map(function ($d) use ($payroll_date) {
-            
+
             $deductions = DB::table('payroll_salary_employee_edeductions')
-                            ->where('payroll_se_id', $d->id)
-                            ->get();
+                ->where('payroll_se_id', $d->id)
+                ->get();
 
             $earnings = DB::table('payroll_salary_employee_earnings')
-                            ->where('payroll_se_id', $d->id)
-                            ->get();
+                ->where('payroll_se_id', $d->id)
+                ->get();
 
             $project_id = DB::table('employee_projects')
                 ->where('employee_no', $d->employee_no)
@@ -136,48 +137,66 @@ class SalaryApiController extends Controller
                 'project_id' => $project_id
             ];
         });
-        
-        // Group employees by project
-        $projectGroups = [];
-        
-        foreach ($enriched as $employee) {
 
-            $emp_project = $projects->firstWhere('id', $employee->project_id);
-            
-            $projectId = $emp_project->id ?? 'others';
-            $projectName = $emp_project->name ?? 'No Projects';
+        if ($isGrouped) {
+            // Group employees by project
+            $projectGroups = [];
 
-            if(!isset($projectGroups[$projectId])) {
-                $projectGroups[$projectId] = [
-                    'name' => $projectName,
-                    'employees' => []
+            foreach ($enriched as $employee) {
+                $emp_project = $projects->firstWhere('id', $employee->project_id);
+
+                $projectId = $emp_project->id ?? 'others';
+                $projectName = $emp_project->name ?? 'No Projects';
+
+                if (!isset($projectGroups[$projectId])) {
+                    $projectGroups[$projectId] = [
+                        'name' => $projectName,
+                        'employees' => []
+                    ];
+                }
+
+                $projectGroups[$projectId]['employees'][] = [
+                    'employee_no' => $employee->employee_no,
+                    'name' => $employee->name,
+                    'position' => $employee->position,
+                    'monthly_rate' => $employee->monthly_rate,
+                    'salary_earned' => $employee->basic_pay,
+                    'ut' => $employee->ut + $employee->absences,
+                    'overtime' => $employee->overtime,
+                    'holiday' => $employee->holiday,
+                    'total_salary' => $employee->gross_pay,
+                    'deductions' => $employee->deductions,
+                    'earnings' => $employee->earnings,
+                    'adjustment' => $employee->salary_adjustment,
+                    'net_salary' => $employee->net_pay
                 ];
             }
 
-            // Calculate values based on your desired output structure
-            $projectGroups[$projectId]['employees'][] = [
-                'employee_no' => $employee->employee_no,
-                'name' => $employee->name,
-                'position' => $employee->position,
-                'monthly_rate' => $employee->monthly_rate,
-                'salary_earned' => $employee->basic_pay, // Or calculate as needed
-                'uat' => $employee->ut + $employee->absences,
-                'overtime' => $employee->overtime,
-                'holiday' => $employee->holiday,
-                'total_salary' => $employee->gross_pay,
-                'deductions'    => $employee->deductions,
-                'earnings'    => $employee->earnings,
-                'adjustment'    => $employee->salary_adjustment,
-                'net_salary' => $employee->net_pay
-            ];
+            return response()->json(array_values($projectGroups));
 
+        } else {
+            // Return flat list without grouping
+            $flatList = $enriched->map(function ($employee) {
+                return [
+                    'employee_no' => $employee->employee_no,
+                    'name' => $employee->name,
+                    'position' => $employee->position,
+                    'monthly_rate' => $employee->monthly_rate,
+                    'salary_earned' => $employee->basic_pay,
+                    'ut' => $employee->ut + $employee->absences,
+                    'overtime' => $employee->overtime,
+                    'holiday' => $employee->holiday,
+                    'total_salary' => $employee->gross_pay,
+                    'deductions' => $employee->deductions,
+                    'earnings' => $employee->earnings,
+                    'adjustment' => $employee->salary_adjustment,
+                    'net_salary' => $employee->net_pay,
+                    'project_id' => $employee->project_id
+                ];
+            });
+
+            return response()->json($flatList);
         }
-
-        
-        // Convert to indexed array
-        $projects = array_values($projectGroups);
-        
-        return response()->json($projects);
     }
 
     public function approvers()
@@ -224,7 +243,7 @@ class SalaryApiController extends Controller
         [$month, $year, $period] = explode(' ', $data->period_covered);
         $cutoff = "$period $month $year";
 
-        $registry = json_decode($this->getPayrollRegistry($payroll_id)->getContent(), true);
+        $registry = json_decode($this->getPayrollRegistry($payroll_id, true)->getContent(), true);
 
         $templatePath = public_path('templates/cos/payroll_registry.xlsx');
         $spreadsheet = IOFactory::load($templatePath);
@@ -707,13 +726,14 @@ class SalaryApiController extends Controller
         return $data;
 
     }
-        
 
     public function downloadPayslip($payroll_no)
     {
         $payroll    = $this->payrollDetails($payroll_no);
         $payroll_id = $payroll->id;
-        $groups     = $this->getEmployeePayslip($payroll_id)->toArray();
+        $registry = json_decode($this->getPayrollRegistry($payroll_id)->getContent(), true);
+        
+        // dd($registry);
 
         $templatePath = public_path('templates/cos/payslip.xlsx');
         $spreadsheet  = IOFactory::load($templatePath);
@@ -733,7 +753,7 @@ class SalaryApiController extends Controller
         $originalDrawings = $sheet->getDrawingCollection();
         $currentRow = $templateEnd + 1;
 
-        foreach ($groups as $index => $employee) {
+        foreach ($registry as $index => $employee) {
 
             // 1. Insert space for new payslip
             $sheet->insertNewRowBefore($currentRow, $templateHeight);
@@ -814,14 +834,110 @@ class SalaryApiController extends Controller
                 }
             }
 
-            // Insert employee name
-            $nameRow = $currentRow + (6 - $templateStart);
-            $sheet->setCellValue("C{$nameRow}", $employee->name ?? '');
+            $totalDeductions = 0;
 
+            // Set current row for employee info
+            $curRow = $currentRow + (6 - $templateStart);
+
+            // Insert employee name
+            $sheet->setCellValue("C{$curRow}", $employee['name'] ?? '');
+
+            // Insert salary label and amount
+            $salaryRow = $curRow + 4;
+            $sheet->setCellValue("A{$salaryRow}", 'Monthly Salary');
+            $sheet->setCellValue("D{$salaryRow}", $employee['monthly_rate'] ?? 0);
+            $sheet->getStyle("D{$salaryRow}")
+                ->getNumberFormat()
+                ->setFormatCode('_("₱"* #,##0.00_);_("₱"* (#,##0.00);_("₱"* "-"??_);_(@_)');
+
+            // Start deductions on the same row as monthly salary
+            $deductionStartRow = $salaryRow; 
+            $totalRow = $deductionStartRow; // initialize total row to salary row
+
+            if (!empty($employee['deductions'])) {
+                foreach ($employee['deductions'] as $i => $deduction) {
+                    $row = $deductionStartRow + $i;
+                    $totalRow = $row; // last deduction row
+
+                    $amount = isset($deduction['amount']) ? (float)$deduction['amount'] : 0;
+                    $totalDeductions += $amount;
+
+                    // Insert deduction type and amount
+                    $sheet->setCellValue("F{$row}", $deduction['deduction_type'] ?? '');
+                    $sheet->setCellValue("I{$row}", $amount);
+
+                    // Copy style from salary row
+                    $sheet->duplicateStyle($sheet->getStyle("F{$salaryRow}"), "F{$row}");
+                    $sheet->duplicateStyle($sheet->getStyle("I{$salaryRow}"), "I{$row}");
+
+                    // Apply peso currency format
+                    $sheet->getStyle("I{$row}")
+                        ->getNumberFormat()
+                        ->setFormatCode('_("₱"* #,##0.00_);_("₱"* (#,##0.00);_("₱"* "-"??_);_(@_)');
+                }
+            }
+
+            // Move to row after last deduction (or salary if no deductions)
+            $totalRow += 2;
+
+            // Insert totals in aligned row: D = monthly salary, I = total deductions
+            $sheet->setCellValue("D{$totalRow}", $employee['monthly_rate'] ?? 0);
+            $sheet->getStyle("D{$totalRow}")
+                ->getNumberFormat()
+                ->setFormatCode('_("₱"* #,##0.00_);_("₱"* (#,##0.00);_("₱"* "-"??_);_(@_)');
+            $sheet->getStyle("D{$totalRow}")->getBorders()->applyFromArray([
+                'font' => [
+                    'color' => ['argb' => 'C00000'],
+                ],
+                'top' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+                'bottom' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
+                ],
+                'left' => [
+                    'borderStyle' => Border::BORDER_NONE,
+                ],
+                'right' => [
+                    'borderStyle' => Border::BORDER_NONE,
+                ],
+            ]);
+
+            $sheet->mergeCells("I{$totalRow}:J{$totalRow}");
+            $sheet->setCellValue("I{$totalRow}", $totalDeductions);
+            $sheet->getStyle("I{$totalRow}:J{$totalRow}")->getFont()->getColor()->setARGB('C00000');
+            $sheet->getStyle("I{$totalRow}:J{$totalRow}")
+                ->getNumberFormat()
+                ->setFormatCode('_("₱"* #,##0.00_);_("₱"* (#,##0.00);_("₱"* "-"??_);_(@_)');
+            $sheet->getStyle("I{$totalRow}:J{$totalRow}")->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'color' => ['argb' => 'C00000'],
+                ],
+                'borders' => [
+                    'top' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['argb' => 'FF000000'],
+                    ],
+                    'bottom' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['argb' => 'FF000000'],
+                    ],
+                    'left' => [
+                        'borderStyle' => Border::BORDER_NONE,
+                    ],
+                    'right' => [
+                        'borderStyle' => Border::BORDER_NONE,
+                    ],
+                ],
+            ]);
+            
             $currentRow += $templateHeight;
 
             if (($index + 1) % 2 == 0) {
-                $sheet->setBreak("A" . $currentRow, \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet::BREAK_ROW);
+                $sheet->setBreak("A" . $currentRow, Worksheet::BREAK_ROW);
             }
         }
 
