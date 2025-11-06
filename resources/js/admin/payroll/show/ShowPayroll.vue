@@ -1,6 +1,5 @@
 <template>
   <div class="p-3">
-  
     <ShowProgressBar
         v-if="!isFinished"
         :batchId="batch_id"

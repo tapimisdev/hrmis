@@ -69,7 +69,7 @@ class SalaryApiController extends Controller
         return response()->json($events);
     }
 
-    public function getPayrollRegistry(string $payroll_id, bool $isGrouped = false) 
+    public function getPayrollRegistry(string $payroll_id, bool $isGrouped = true) 
     {
         $payroll_date = DB::table('payroll_salary')
             ->where('id', $payroll_id)
@@ -132,8 +132,8 @@ class SalaryApiController extends Controller
                 'gross_pay' => $d->gross_pay,
                 'net_pay' => $d->net_pay,
                 'salary_adjustment' => $d->salary_adjustment,
-                'deductions' => $deductions,
-                'earnings' => $earnings,
+                'deductions' => $deductions ?? [],
+                'earnings' => $earnings ?? [],
                 'project_id' => $project_id
             ];
         });
@@ -731,7 +731,7 @@ class SalaryApiController extends Controller
     {
         $payroll    = $this->payrollDetails($payroll_no);
         $payroll_id = $payroll->id;
-        $registry = json_decode($this->getPayrollRegistry($payroll_id)->getContent(), true);
+        $registry = json_decode($this->getPayrollRegistry($payroll_id, false)->getContent(), true);
         
         // dd($registry);
 
