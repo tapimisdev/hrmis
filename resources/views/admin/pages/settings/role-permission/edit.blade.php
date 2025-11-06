@@ -14,70 +14,36 @@
             variant="danger"
         />
     </x-header>
-    <form action="{{ route('role-and-permission.update', $role->id) }}" method="POST">
-        <div class="card">
-            <div class="card-body p-4">
-                @csrf
-                @method('PUT')
-                <table class="table table-striped p-3 pb-5">
-                    <thead>
-                        <tr>
-                            <th width="50">#</th>
-                            <th>Module</th>
-                            <th class="text-center">Create</th>
-                            <th class="text-center">Read</th>
-                            <th class="text-center">Edit</th>
-                            <th class="text-center">Delete</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php $row = 1; @endphp
-                        @foreach($grouped as $module => $actions)
-                            <tr>
-                                <td>{{ $row++ }}</td>
-                                <td>{{ ucfirst($module) }}</td>
-                                <td class="text-center">
-                                    @if(isset($actions['create']))
-                                        <input type="checkbox" 
-                                            name="permissions[]" 
-                                            value="{{ $actions['create']['name'] }}"
-                                            {{ $role->permissions->contains('name', $actions['create']['name']) ? 'checked' : '' }}>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    @if(isset($actions['view']) || isset($actions['read']))
-                                        @php $perm = $actions['view'] ?? $actions['read']; @endphp
-                                        <input type="checkbox" 
-                                            name="permissions[]" 
-                                            value="{{ $perm['name'] }}"
-                                            {{ $role->permissions->contains('name', $perm['name']) ? 'checked' : '' }}>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    @if(isset($actions['edit']))
-                                        <input type="checkbox" 
-                                            name="permissions[]" 
-                                            value="{{ $actions['edit']['name'] }}"
-                                            {{ $role->permissions->contains('name', $actions['edit']['name']) ? 'checked' : '' }}>
-                                    @endif
-                                </td>
-                                <td class="text-center">
-                                    @if(isset($actions['delete']))
-                                        <input type="checkbox" 
-                                            name="permissions[]" 
-                                            value="{{ $actions['delete']['name'] }}"
-                                            {{ $role->permissions->contains('name', $actions['delete']['name']) ? 'checked' : '' }}>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
+    <form action="{{ route('role-and-permission.update', $role->id) }}" class="bg-body-secondary rounded-3 border" method="POST">
+        @csrf
+        @method('PUT')
+        @php $row = 1; @endphp
+        @foreach($grouped as $module => $actions)
+            <div class="row border-bottom mx-1 py-3 px-2">
+                <div class="col-md-6 d-flex gap-2">
+                    <div class="text-body-secondary fw-bold">#{{ $row++ }}</div>
+                    <div>{{ ucfirst(str_replace('_', ' ', $module)) }}</div>
+                </div>
+                <div class="col-md-4">
+                    @foreach($actions as $action) 
+                        <ul class="p-0 m-0">
+                            <li class="d-flex gap-2 mb-1">
+                                <input type="checkbox" 
+                                    name="permissions[]" 
+                                    value="{{ $action['name'] }}"
+                                    {{ $role->permissions->contains('name', $action['name']) ? 'checked' : '' }}>
+                                <label for="">{{ ucfirst($action['short_name']) }}</label>
+                            </li>
+                        </ul>
+                    @endforeach
+                </div>
             </div>
-            <div class="card-footer d-flex justify-content-end bg-transparent border-0 pb-4">
-                <button type="submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">Update</button>
-            </div>
+        @endforeach
+        <div class="d-flex justify-content-end my-4 mx-3">
+            <x-button type="submit">
+                <i class="fa-duotone fa-solid fa-floppy-disk"></i>
+                Save
+            </x-button>
         </div>
     </form>
 </div>

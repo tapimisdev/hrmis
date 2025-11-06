@@ -5,9 +5,9 @@
         @csrf
         <div class="modal-body">
             <div class="mb-2">
-                <label for="tax_name" class="form-label">Name</label>
-                <input type="text" name="tax_name" class="form-control form-control-sm" id="tax_name" placeholder="Enter name here...">
-                <span id="tax_name_error" class="text-danger d-none"></span>
+                <label for="name" class="form-label">Name</label>
+                <input type="text" name="name" class="form-control form-control-sm" id="name" placeholder="Enter name here...">
+                <span id="name_error" class="text-danger d-none"></span>
             </div>
         </div>
     </form>

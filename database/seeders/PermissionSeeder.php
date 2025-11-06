@@ -15,12 +15,7 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         $modules = [
-            'hris' => ['view', 'create', 'edit', 'delete'],
-            'timekeeping' => ['view', 'file', 'approve', 'reject'],
-            'service' => ['view', 'generate', 'edit'],
-            'payroll' => ['view', 'generate', 'edit'],
-            'reports' => ['view', 'export'],
-            'users' => ['view', 'create', 'edit', 'delete'],
+           
         ];
 
         // Generate permissions automatically

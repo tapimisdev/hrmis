@@ -5,8 +5,16 @@
 @endsection
 
 @section('content')
+@include('admin.pages.settings.role-permission.create')
     <div class="container p-4">
         <x-header title="Role and Permission" subtitle="Manage role and permission in this module" >
+            <x-button
+                type="button"
+                variant="primary"
+            >
+                <i class="fa-solid fa-plus"></i>
+                Add Role 
+            </x-button>
         </x-header>
         <x-table id="myTable">
             <thead>

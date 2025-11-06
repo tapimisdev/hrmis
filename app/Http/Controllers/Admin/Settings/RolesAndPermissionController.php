@@ -13,29 +13,49 @@ class RolesAndPermissionController extends Controller
 {
     public function index()
     {
-        
         if (request()->ajax()) {
-            $query = Role::all();
+            $query = Role::where('name', '!=', 'super_admin')->get();
             return $this->datatable($query);
         }
 
         return view('admin.pages.settings.role-permission.index');
     }
 
+    public function create()
+    {
+        return view('admin.pages.settings.role-permission.create');
+    }
+
     public function edit($id)
     {
         $role = Role::findOrFail($id);
+        $prefix = strstr($role->name, '_', true) . '.';
 
-        $permissions = Permission::all();
+        $permissions = Permission::where('name', 'like', $prefix.'%')->get();
 
         $grouped = [];
 
         foreach ($permissions as $perm) {
-            [$action, $module] = explode(' ', $perm['name'], 2);
+            // Split permission name into [action, module]
+            $parts = explode('.', $perm->name, 3);
 
+            if (count($parts) === 3) {
+                [$hr, $module, $action] = $parts;
+            } else {
+                // Handle permissions without module part
+                $hr = 'hr';
+                $module = $parts[0];
+                $action = 'genera';
+            }
+
+            // Group them like: $grouped['hris']['view'] = Permission(...)
             $grouped[$module][$action] = $perm;
+            $action = str_replace('_', ' ', $action);
+            $perm['short_name'] = $action;
         }
 
+        // Sort modules alphabetically for clean display (optional)
+        ksort($grouped);
 
         return view('admin.pages.settings.role-permission.edit', compact('role', 'grouped'));
     }
@@ -62,8 +82,6 @@ class RolesAndPermissionController extends Controller
             DB::rollback();
             return response(['data' => $e->getMessage(), 'message' => 'update role failed'], 500);
         }
-
-        
     }
 
     public function update(Request $request, $id)
@@ -78,7 +96,7 @@ class RolesAndPermissionController extends Controller
         // sync permissions
         $role->syncPermissions($request->permissions ?? []);
 
-        return redirect()->route('roles.index')->with('success', 'Permissions updated successfully!');
+        return back()->with('success', 'Permissions updated successfully!');
     }
 
     public function datatable($query)

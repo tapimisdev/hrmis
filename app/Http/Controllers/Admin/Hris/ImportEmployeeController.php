@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Hris\StoreEmployeeImportRequest;
 use App\Http\Requests\Admin\Hris\UploadEmployeeRequest;
 use App\Models\User;
+use Exception;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -143,7 +144,13 @@ class ImportEmployeeController extends Controller
                     'password' => Hash::make($default_password)
                 ]);
 
-                $user->assignRole('employee');
+                if($validatedData['details']['employment_type_id'] === EmploymentTypesEnum::COS->value) {
+                    $user->assignRole('emp_contractual');
+                } else if ($validatedData['details']['employment_type_id'] === EmploymentTypesEnum::REGULAR->value) {
+                    $user->assignRole('emp_regular');
+                } else {
+                    throw new \Exception('Invalid employment type. Cannot assign role.');
+                }
 
                 DB::table('employee_information')->insert([
                     'employee_no'       => $emp['employee_no'],

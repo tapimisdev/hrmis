@@ -1,5 +1,5 @@
 <template>
-  <div class="chart-card border">
+  <div class="chart-card shadow-sm border border-body-secondary">
     <div class="icon-wrapper">
       <i :class="icon"></i>
     </div>

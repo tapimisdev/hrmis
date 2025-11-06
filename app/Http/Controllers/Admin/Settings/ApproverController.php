@@ -138,13 +138,12 @@ class ApproverController extends Controller
         return view('admin.pages.settings.approvers.view', compact('data'));
     }
 
-
     public function create() {
 
         $divisions = DB::table('divisions')->get();
         $users = User::with('roles')
             ->whereDoesntHave('roles', function ($q) {
-                $q->whereNot('name', 'employee');
+                $q->whereNotIn('name', ['emp_contractual', 'emp_contractual']);
             })
             ->get();
 

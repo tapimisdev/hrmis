@@ -10,12 +10,12 @@
     <!-- Row: Birthdays + Attendance -->
     <div class="row g-3 p-3 pt-1">
       <div class="col-md-6">
-        <div class="chart-card">
+        <div class="chart-card shadow-sm border border-body-secondary">
           <ListTableVue title="🎂 Upcoming Birthdays" :people="birthdays" />
         </div>
       </div>
       <div class="col-md-6">
-        <div class="chart-card">
+        <div class="chart-card shadow-sm border border-body-secondary">
           <BarVue />
         </div>
       </div>
@@ -24,7 +24,7 @@
     <!-- Row: Workforce Charts -->
     <div class="row g-3 p-3 pt-1">
       <div class="col-md-5">
-        <div class="chart-card">
+        <div class="chart-card shadow-sm border border-body-secondary">
           <DonutVue
             :labels="['Regular', 'Contractual', 'Intern']"
             :dataset="[85, 15, 8]"
@@ -33,7 +33,7 @@
         </div>
       </div>
       <div class="col-md-7">
-        <div class="chart-card">
+        <div class="chart-card shadow-sm border border-body-secondary">
           <LineVue
             :labels="['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']"
             :hires="[4, 7, 10, 12, 6, 9, 8]"
