@@ -141,8 +141,8 @@ const loading = ref(true);
 const buttonLoading = ref(null);
 
 const isTimeInDisabled = computed(() => !!log.timeIn);
-const isBreakOutDisabled = computed(() => !log.timeIn || !!log.breakOut);
-const isBreakInDisabled = computed(() => !log.breakOut || !!log.breakIn);
+const isBreakOutDisabled = computed(() => !log.timeIn || !!log.breakOut || log.timeOut);
+const isBreakInDisabled = computed(() => (!log.breakOut || !!log.breakIn) || log.timeOut);
 const isTimeOutDisabled = computed(() => !log.timeIn || !!log.timeOut);
 const isOvertimeInDisabled = computed(() => !log.timeOut || !!log.overtimeIn);
 const isOvertimeOutDisabled = computed(() => !log.overtimeIn || !!log.overtimeOut);
