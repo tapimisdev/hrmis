@@ -13,7 +13,7 @@ use App\Http\Controllers\Employee\ObsController;
 use App\Http\Controllers\Employee\ProfileController;
 use App\Http\Controllers\Employee\timelogs\CheckInOutController;
 
-Route::prefix('employee')->middleware(['auth', 'checkrole:employee'])->group(function () {
+Route::prefix('employee')->middleware(['auth', 'role:employee'])->group(function () {
 
     # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
