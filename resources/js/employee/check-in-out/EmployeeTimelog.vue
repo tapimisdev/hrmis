@@ -1,145 +1,100 @@
 <template>
     <div class="attendance-container">
-        <!-- Header Section -->
-        <div class="attendance-header">
-            <div class="header-content">
-                <div class="header-title">
-                    <i class="fa-solid fa-calendar-days"></i>
-                    <h5 class="title">Employee Attendance</h5>
-                </div>
-                <div class="date-filters">
-                    <select v-model="selectedMonth" class="form-select" @change="loadTimelogs">
-                        <option v-for="(month, index) in months" :key="index" :value="index + 1">
-                            {{ month }}
-                        </option>
-                    </select>
-                    <select v-model="selectedYear" class="form-select" @change="loadTimelogs">
-                        <option v-for="year in years" :key="year" :value="year">
-                            {{ year }}
-                        </option>
-                    </select>
-                </div>
+        <!-- Header -->
+        <div class="header">
+            <h5 class="title">
+                <i class="fa-solid fa-calendar-days"></i>
+                Employee Attendance
+            </h5>
+            <div class="filters">
+                <select v-model="selectedMonth" @change="loadTimelogs">
+                    <option v-for="(month, index) in months" :key="index" :value="index + 1">
+                        {{ month }}
+                    </option>
+                </select>
+                <select v-model="selectedYear" @change="loadTimelogs">
+                    <option v-for="year in years" :key="year" :value="year">
+                        {{ year }}
+                    </option>
+                </select>
             </div>
         </div>
 
-        <!-- Table Card -->
-        <div class="table-card">
-            <div class="table-wrapper">
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th class="col-day">Date</th>
-                            <th class="col-day">Day</th>
-                            <th class="col-time">In</th>
-                            <th class="col-time">Break</th>
-                            <th class="col-time">Out</th>
-                            <th class="col-time">OT</th>
-                            <th class="col-hours">Hours</th>
-                            <th class="col-double">X2</th>
-                            <th class="col-hours">UT</th>
-                            <th class="col-remarks">Remarks</th>
-                        </tr>
-                    </thead>
+        <!-- Table -->
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>In</th>
+                        <th>Break</th>
+                        <th>Out</th>
+                        <th>OT</th>
+                        <th>Hours</th>
+                        <th>X2</th>
+                        <th>UT</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
 
-                    <!-- Skeleton Loader -->
-                    <tbody v-if="loading">
-                        <tr v-for="n in 15" :key="n">
-                            <td v-for="col in 9" :key="col">
-                                <div class="skeleton-loader"></div>
+                <!-- Loading -->
+                <tbody v-if="loading">
+                    <tr v-for="n in 15" :key="n">
+                        <td v-for="col in 10" :key="col">
+                            <div class="skeleton"></div>
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- Data -->
+                <tbody v-else>
+                    <tr v-for="(log, index) in logs" :key="log.id || index" :class="getRowClass(log.remarks)">
+                        <td>{{ index + 1 }}</td>
+                        <td>{{ getDayName(index) }}</td>
+
+                        <!-- Status Row -->
+                        <td v-if="hasStatus(log.remarks)" colspan="8" class="status-cell">
+                            <span class="status" :class="getStatusClass(log.remarks)">
+                                <i :class="getStatusIcon(log.remarks)"></i>
+                                {{ getStatusText(log.remarks) }}
+                                <span v-if="hasRemark(log.remarks, 'holiday') && log.doble">
+                                    (X2: {{ log.doble }})
+                                </span>
+                            </span>
+                        </td>
+
+                        <!-- Regular Row -->
+                        <template v-else>
+                            <td>{{ log.time_in || '--:--' }}</td>
+                            <td class="small-text">{{ log.break || '--:--' }}</td>
+                            <td>{{ log.time_out || '--:--' }}</td>
+                            <td>
+                                <div v-if="log.overtime" class="small-text">{{ log.overtime }}</div>
+                                <div v-else class="small-text empty">--:-- to --:--</div>
+                                <span :class="{ 'highlight': hasRemark(log.remarks, 'overtime') || hasRemark(log.remarks, 'pending overtime') }">
+                                    {{ convertToReadableTime(log.ot_mins) }}
+                                </span>
                             </td>
-                        </tr>
-                    </tbody>
-
-                    <!-- Actual Data -->
-                    <tbody v-else>
-                        <tr 
-                            v-for="(log, index) in logs" 
-                            :key="log.id || index" 
-                            :class="getRowClass(log.remarks)"
-                        >
-                            <td class="day-cell">
-                                <div class="day-number">{{ index + 1 }}</div>
-                            </td>
-
-                            <td class="day-cell">
-                                <div class="day-number">{{ getDayName(index) }}</div>
-                            </td>
-
-                            <!-- Status Badges -->
-                            <td v-if="hasStatus(log.remarks)" colspan="8" class="status-cell">
-                                <div class="status-badge" :class="getStatusClass(log.remarks)">
-                                    <i :class="getStatusIcon(log.remarks)"></i>
-                                    <span>{{ getStatusText(log.remarks) }}</span>
-                                    <span v-if="hasRemark(log.remarks, 'holiday') && log.doble" class="badge-extra">
-                                        (X2: {{ log.doble }})
+                            <td><span class="badge">{{ convertToReadableTime(log.total_time_work) }}</span></td>
+                            <td class="highlight">{{ log.doble || 0 }}</td>
+                            <td><span class="badge ut">{{ convertToReadableTime(log.late_undertime) }}</span></td>
+                            <td>
+                                <div class="remarks">
+                                    <span
+                                        v-for="(remark, rIndex) in getFilteredRemarks(log.remarks)"
+                                        :key="rIndex"
+                                        class="tag"
+                                        :class="getRemarkClass(remark)"
+                                    >
+                                        {{ remark }}
                                     </span>
                                 </div>
                             </td>
-
-                            <!-- Regular Log Details -->
-                            <template v-else>
-                                <td class="time-cell">
-                                    <span :class="log.time_in ? 'time-value' : 'time-empty'">
-                                        {{ log.time_in || '--:--' }}
-                                    </span>
-                                </td>
-                                <td class="time-cell">
-                                    <span :class="log.break ? 'time-value time-small' : 'time-empty'">
-                                        {{ log.break || '--:--' }}
-                                    </span>
-                                </td>
-                                <td class="time-cell">
-                                    <span :class="log.time_out ? 'time-value' : 'time-empty'">
-                                        {{ log.time_out || '--:--' }}
-                                    </span>
-                                </td>
-                                <td class="time-cell">
-                                  <div v-if="log.overtime" class="time-value time-small">
-                                      {{ log.overtime }}
-                                  </div>
-                                  <div v-else class="time-empty">--:-- to --:--</div>  
-                                  <span 
-                                        :class="{ 
-                                            'time-value': log.ot_mins > 0,
-                                            'time-empty': log.ot_mins === 0,
-                                            'has-overtime': hasRemark(log.remarks, 'overtime') || hasRemark(log.remarks, 'pending overtime')
-                                        }"
-                                    >
-                                        {{ convertToReadableTime(log.ot_mins) }}
-                                    </span>
-                                </td>
-                                <td class="hours-cell">
-                                    <span class="hours-badge">
-                                        {{ convertToReadableTime(log.total_time_work) }}
-                                    </span>
-                                </td>
-                                <td class="double-cell">
-                                    <span class="double-value">{{ log.doble || 0 }}</span>
-                                </td>
-                                <td class="hours-cell">
-                                    <span class="hours-badge ut-badge">
-                                        {{ convertToReadableTime(log.late_undertime) }}
-                                    </span>
-                                </td>
-                                
-                                <!-- Remarks -->
-                                <td class="remarks-cell">
-                                    <div class="remarks-container">
-                                        <span
-                                            v-for="(remark, rIndex) in getFilteredRemarks(log.remarks)"
-                                            :key="rIndex"
-                                            class="remark-tag"
-                                            :class="getRemarkClass(remark)"
-                                        >
-                                            {{ remark }}
-                                        </span>
-                                    </div>
-                                </td>
-                            </template>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                        </template>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </template>
@@ -198,8 +153,7 @@ export default {
         },
         hasRemark(remarks, keyword) {
             if (!Array.isArray(remarks)) return false;
-            const kw = keyword.trim().toLowerCase();
-            return remarks.some(r => String(r).trim().toLowerCase() === kw);
+            return remarks.some(r => String(r).trim().toLowerCase() === keyword.trim().toLowerCase());
         },
         hasStatus(remarks) {
             return this.hasRemark(remarks, 'restday') || 
@@ -209,20 +163,19 @@ export default {
                    this.hasRemark(remarks, 'absent');
         },
         getRowClass(remarks) {
-            return {
-                'highlight-today': this.hasRemark(remarks, 'today'),
-                'row-restday': this.hasRemark(remarks, 'restday'),
-                'row-leave': this.hasRemark(remarks, 'leave'),
-                'row-holiday': this.hasRemark(remarks, 'holiday'),
-                'row-absent': this.hasRemark(remarks, 'absent')
-            };
+            if (this.hasRemark(remarks, 'today')) return 'today';
+            if (this.hasRemark(remarks, 'restday')) return 'restday';
+            if (this.hasRemark(remarks, 'holiday')) return 'holiday';
+            if (this.hasRemark(remarks, 'leave')) return 'leave';
+            if (this.hasRemark(remarks, 'absent')) return 'absent';
+            return '';
         },
         getStatusClass(remarks) {
-            if (this.hasRemark(remarks, 'restday')) return 'status-restday';
-            if (this.hasRemark(remarks, 'holiday')) return 'status-holiday';
-            if (this.hasRemark(remarks, 'leave')) return 'status-leave';
-            if (this.hasRemark(remarks, 'ob')) return 'status-ob';
-            if (this.hasRemark(remarks, 'absent')) return 'status-absent';
+            if (this.hasRemark(remarks, 'restday')) return 'restday';
+            if (this.hasRemark(remarks, 'holiday')) return 'holiday';
+            if (this.hasRemark(remarks, 'leave')) return 'leave';
+            if (this.hasRemark(remarks, 'ob')) return 'ob';
+            if (this.hasRemark(remarks, 'absent')) return 'absent';
             return '';
         },
         getStatusIcon(remarks) {
@@ -248,11 +201,10 @@ export default {
             );
         },
         getRemarkClass(remark) {
-            const remarkLower = String(remark).toLowerCase();
-            return {
-                'remark-danger': remarkLower === 'incomplete log',
-                'remark-warning': remarkLower === 'late' || remarkLower === 'undertime'
-            };
+            const lower = String(remark).toLowerCase();
+            if (lower === 'incomplete log') return 'danger';
+            if (lower === 'late' || lower === 'undertime') return 'warning';
+            return '';
         },
         convertToReadableTime(minutes) {
             if (!minutes || minutes === 0) return '0h 0m';
@@ -261,10 +213,8 @@ export default {
             return `${hours}h ${mins}m`;
         },
         getDayName(day) {
-          // Month is 1–12 in props, but Date() expects 0–11
-          const date = new Date(this.year, this.month - 1, day);
-          // Returns short day name like 'Mon', 'Tue', 'Wed'
-          return date.toLocaleDateString('en-US', { weekday: 'short' });
+            const date = new Date(this.selectedYear, this.selectedMonth - 1, day + 1);
+            return date.toLocaleDateString('en-US', { weekday: 'short' });
         }
     },
     watch: {
@@ -283,293 +233,204 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../sass/variables';
 .attendance-container {
-    .attendance-header {
-        background: var(--bs-body-bg);
-        border-radius: 12px 12px 0 0;
-        padding: 1rem 1.25rem;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    
+    .title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--bs-body-color);
+        
+        i {
+            color: var(--bs-primary);
+        }
+    }
+    
+    .filters {
+        display: flex;
+        gap: 0.5rem;
+        
+        select {
+            padding: 0.375rem 0.625rem;
+            font-size: 0.875rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 4px;
+            background: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            
+            &:focus {
+                outline: none;
+                border-color: var(--bs-primary);
+            }
+        }
+    }
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 600px;
+    
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: var(--bs-border-color);
+        border-radius: 3px;
+    }
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    
+    th, td {
+        padding: 0.625rem 0.5rem;
+        text-align: center;
         border-bottom: 1px solid var(--bs-border-color);
-        
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            
-            .header-title {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                
-                i {
-                    font-size: 1.5rem;
-                    color: var(--bs-primary);
-                }
-                
-                .title {
-                    font-size: 1.125rem;
-                    font-weight: 600;
-                    color: var(--bs-body-color);
-                    margin: 0;
-                }
-            }
-            
-            .date-filters {
-                display: flex;
-                gap: 0.5rem;
-                
-                .form-select {
-                    padding: 0.5rem 0.75rem;
-                    font-size: 0.875rem;
-                    border: 1px solid var(--bs-border-color);
-                    border-radius: 6px;
-                    background: var(--bs-body-bg);
-                    color: var(--bs-body-color);
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    min-width: 120px;
-                    
-                    &:focus {
-                        border-color: var(--bs-primary);
-                        outline: none;
-                        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
-                    }
-                    
-                    &:hover {
-                        border-color: var(--bs-primary);
-                    }
-                }
-            }
-        }
     }
     
-    .table-card {
+    thead th {
+        position: sticky;
+        top: 0;
+        background: var(--bs-primary);
+        color: white;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        z-index: 10;
+    }
+    
+    tbody tr {
         background: var(--bs-body-bg);
-        border-radius: 0 0 12px 12px;
-        border: 1px solid var(--bs-border-color);
-        border-top: none;
-        overflow: hidden;
-    }
-    
-    .table-wrapper {
-        max-height: 620px;
-        overflow-y: auto;
-        overflow-x: auto;
         
-        &::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        &::-webkit-scrollbar-track {
+        &:nth-child(even) {
             background: var(--bs-secondary-bg);
         }
         
-        &::-webkit-scrollbar-thumb {
-            background: var(--bs-border-color);
-            border-radius: 4px;
-            
-            &:hover {
-                background: var(--bs-secondary-color);
-            }
-        }
-    }
-    
-    .modern-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 0.875rem;
-        
-        thead {
-            th {
-                position: sticky;
-                top: 0;
-                background: var(--bs-primary);
-                color: white;
-                font-weight: 600;
-                font-size: 0.8125rem;
-                text-transform: uppercase;
-                letter-spacing: 0.3px;
-                padding: 0.75rem 0.5rem;
-                text-align: center;
-                z-index: 10;
-                border-bottom: 2px solid var(--bs-border-color);
-                
-                &.col-day { min-width: 60px; }
-                &.col-time { min-width: 90px; }
-                &.col-hours { min-width: 80px; }
-                &.col-double { min-width: 50px; }
-                &.col-remarks { min-width: 150px; }
-            }
+        &:hover {
+            background: var(--bs-tertiary-bg);
         }
         
-        tbody {
-            tr {
-                transition: background 0.15s ease;
-                background: var(--bs-body-bg);
-                
-                &:nth-child(even) { 
-                    background: var(--bs-secondary-bg);
-                }
-                
-                &:hover { 
-                    background: var(--bs-tertiary-bg);
-                }
-                
-                &.highlight-today {
-                    background: rgba(var(--bs-primary-rgb), 0.1);
-                    border-left: 3px solid var(--bs-primary);
-                }
-                
-                &.row-restday { background: rgba(var(--bs-success-rgb), 0.05); }
-                &.row-leave { background: rgba(var(--bs-info-rgb), 0.05); }
-                &.row-holiday { background: rgba(var(--bs-warning-rgb), 0.05); }
-                &.row-absent { background: rgba(var(--bs-danger-rgb), 0.05); }
-            }
-            
-            td {
-                padding: 0.625rem 0.5rem;
-                text-align: center;
-                border-bottom: 1px solid var(--bs-border-color);
-                color: var(--bs-body-color);
-            }
+        &.today {
+            background: rgba(var(--bs-primary-rgb), 0.1);
+            border-left: 3px solid var(--bs-primary);
         }
+        
+        &.restday { background: rgba(var(--bs-success-rgb), 0.05); }
+        &.holiday { background: rgba(var(--bs-warning-rgb), 0.05); }
+        &.leave { background: rgba(var(--bs-info-rgb), 0.05); }
+        &.absent { background: rgba(var(--bs-danger-rgb), 0.05); }
     }
+}
+
+.skeleton {
+    height: 16px;
+    background: linear-gradient(90deg, var(--bs-secondary-bg) 25%, var(--bs-tertiary-bg) 50%, var(--bs-secondary-bg) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.small-text {
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color);
     
-    .skeleton-loader {
-        height: 18px;
-        background: linear-gradient(90deg, 
-            var(--bs-secondary-bg) 25%, 
-            var(--bs-tertiary-bg) 50%, 
-            var(--bs-secondary-bg) 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
+    &.empty {
+        opacity: 0.6;
+    }
+}
+
+.highlight {
+    color: var(--bs-primary);
+    font-weight: 600;
+}
+
+.status-cell {
+    .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
         border-radius: 4px;
-        margin: 2px auto;
-        width: 70%;
-    }
-    
-    @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-    
-    .day-cell {
-        .day-number {
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: var(--bs-body-color);
-        }
-    }
-    
-    .status-cell {
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.375rem 0.75rem;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 0.8125rem;
-            
-            i { font-size: 0.875rem; }
-            
-            .badge-extra {
-                font-size: 0.75rem;
-                opacity: 0.9;
-            }
-            
-            &.status-restday { background: var(--bs-success); color: white; }
-            &.status-holiday { background: var(--bs-warning); color: white; }
-            &.status-leave { background: var(--bs-info); color: white; }
-            &.status-ob { background: var(--bs-purple, #6f42c1); color: white; }
-            &.status-absent { background: var(--bs-danger); color: white; }
-        }
-    }
-    
-    .time-cell {
-        .time-value {
-            font-weight: 500;
-            color: var(--bs-body-color);
-            
-            &.time-small { 
-                font-size: 0.75rem;
-                color: var(--bs-secondary-color);
-            }
-            
-            &.has-overtime {
-                color: var(--bs-primary);
-                font-weight: 600;
-            }
-        }
+        font-weight: 500;
+        font-size: 0.8125rem;
         
-        .time-empty {
-            color: var(--bs-secondary-color);
-            font-weight: 400;
-            font-size: 0.8125rem;
-        }
+        &.restday { background: var(--bs-success); color: white; }
+        &.holiday { background: var(--bs-warning); color: white; }
+        &.leave { background: var(--bs-info); color: white; }
+        &.ob { background: #6f42c1; color: white; }
+        &.absent { background: var(--bs-danger); color: white; }
+    }
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: rgba(var(--bs-info-rgb), 0.1);
+    color: var(--bs-info);
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    
+    &.ut {
+        background: rgba(var(--bs-warning-rgb), 0.1);
+        color: var(--bs-warning);
+    }
+}
+
+.remarks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: rgba(var(--bs-info-rgb), 0.1);
+    color: var(--bs-info);
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    
+    &.danger {
+        background: rgba(var(--bs-danger-rgb), 0.1);
+        color: var(--bs-danger);
     }
     
-    .hours-cell {
-        .hours-badge {
-            display: inline-block;
-            padding: 0.25rem 0.625rem;
-            background: rgba(var(--bs-info-rgb), 0.1);
-            color: var(--bs-info);
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            border: 1px solid rgba(var(--bs-info-rgb), 0.2);
-        }
-        
-        .ut-badge {
-            background: rgba(var(--bs-warning-rgb), 0.1);
-            color: var(--bs-warning);
-            border-color: rgba(var(--bs-warning-rgb), 0.2);
-        }
+    &.warning {
+        background: rgba(var(--bs-warning-rgb), 0.1);
+        color: var(--bs-warning);
     }
-    
-    .double-cell {
-        .double-value {
-            font-weight: 600;
-            color: var(--bs-primary);
-            font-size: 0.9375rem;
-        }
-    }
-    
-    .remarks-cell {
-        .remarks-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.375rem;
-            justify-content: center;
-        }
-        
-        .remark-tag {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            background: rgba(var(--bs-info-rgb), 0.1);
-            color: var(--bs-info);
-            border-radius: 4px;
-            font-size: 0.6875rem;
-            font-weight: 500;
-            text-transform: capitalize;
-            border: 1px solid rgba(var(--bs-info-rgb), 0.2);
-            
-            &.remark-danger {
-                background: rgba(var(--bs-danger-rgb), 0.1);
-                color: var(--bs-danger);
-                border-color: rgba(var(--bs-danger-rgb), 0.2);
-            }
-            
-            &.remark-warning {
-                background: rgba(var(--bs-warning-rgb), 0.1);
-                color: var(--bs-warning);
-                border-color: rgba(var(--bs-warning-rgb), 0.2);
-            }
-        }
-    }
+}
+
+
+[data-bs-theme="dark"] thead th {
+  background: var(--bs-secondary-bg);
 }
 </style>

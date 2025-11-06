@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Employee\timelogs;
 
+use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\Timelogs\CheckInOutRequest;
 use App\Models\User;
@@ -11,6 +12,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+
+use function PHPUnit\Framework\isEmpty;
 
 class CheckInOutController extends Controller
 {
@@ -66,6 +69,12 @@ class CheckInOutController extends Controller
 
             // Get current timelogs
             $current_timelog = $this->timelogsServices->getTodaysLogs($validatedData['user_id']);
+
+            if (!empty($current_timelog['timeOut']) && (FnEnum::BreakOut->value == $fn || FnEnum::BreakIn->value == $fn)) {
+                throw new \Exception(
+                    'You have already timed out for today. If you need to log a break in or break out, please request a timelog adjustment from your supervisor.'
+                );
+            }
 
             // Prevent duplicate logging for today
             if (
