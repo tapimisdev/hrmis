@@ -184,6 +184,9 @@
 </template>
 
 <script>
+import axios from 'axios';
+const token = localStorage.getItem("auth_token");
+
 export default {
   name: "CosPayrollRegistry",
   props: {
@@ -193,6 +196,7 @@ export default {
   },
   data() {
     return {
+      token: token,
       theme: document.documentElement.getAttribute("data-bs-theme") || "light",
     };
   },
@@ -230,27 +234,27 @@ export default {
   },
   methods: {
     async downloadPayroll(payroll_no) {
+      console.log(payroll_no);
+
       try {
-        const response = await fetch(`/api/payroll/salary/${payroll_no}/download`, {
-          method: 'GET',
-        });
+          const response = await axios.get(`/api/payroll/salary/${payroll_no}/download`, {
+              headers: { Authorization: `Bearer ${this.token}` },
+              responseType: 'blob', // 🔥 Important: Tell Axios we expect a blob (binary data)
+          });
 
-        if (!response.ok) {
-          throw new Error('Failed to download file.');
-        }
+          // Create a blob URL and trigger the download
+          const url = window.URL.createObjectURL(new Blob([response.data]));
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `payroll_registry_${payroll_no}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
 
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `payroll_registry_${payroll_no}.xlsx`; 
-        document.body.appendChild(a);
-        a.click();
-
-        a.remove();
-        window.URL.revokeObjectURL(url);
+          // Clean up
+          a.remove();
+          window.URL.revokeObjectURL(url);
       } catch (error) {
-        console.error('Error downloading payroll:', error);
+          console.error('Download failed:', error);
       }
     },
     formatNumber(value) {
