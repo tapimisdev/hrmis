@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\DB;
 
 class UploadTimeLogController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.timekeeping.import')->only(['index', 'store']);
+    }
+
     public function index()
     {
         return view('admin.pages.timekeeping.upload-timelog.index');

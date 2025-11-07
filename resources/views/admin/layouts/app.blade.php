@@ -74,7 +74,7 @@
 <body>
     <div id="app">
         <!-- Sidebar (admin navigation) -->
-        @include('admin.components.sidebar')
+        @include('admin.components.sidebar.sidebar')
 
         <main class="bg-body">
             <div>

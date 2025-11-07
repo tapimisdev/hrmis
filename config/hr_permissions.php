@@ -23,6 +23,7 @@ return [
         'add_overtime',
         'record_leave',
         'mark_absent',
+        'import',
     ],
 
     // Salary & Payroll

@@ -10,9 +10,11 @@ use Yajra\DataTables\Facades\DataTables;
 
 class TimelogController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct()
+    {
+        $this->middleware('permission:hr.timekeeping.view')->only(['index', 'show']);
+    }
+
     public function index(Request $request)
     {
         $employees = DB::table('users')
@@ -28,7 +30,7 @@ class TimelogController extends Controller
             ->leftJoin('divisions', 'employee_organization.division_id', '=', 'divisions.id')
             ->leftJoin('shifts', 'employee_shift_work_schedule.shift_id', '=', 'shifts.id')
             ->leftJoin('employment_types', 'employee_organization.employment_type_id', '=', 'employment_types.id')
-            ->where('roles.name', 'employee')
+            ->whereIn('roles.name', ['emp_contractual', 'regular'])
             ->select(
                 'users.id',
                 'users.email',

@@ -19,6 +19,8 @@ class EmployeeController extends Controller
     public function __construct()
     {
         $this->employeeService = app(EmployeeService::class);
+        $this->middleware('permission:hr.hris.transfer_unit')->only(['transfer', 'updateTransfer']);
+        $this->middleware('permission:hr.hris.update_salary')->only(['update_salary', 'updateSalary']);
     }
 
     public function transfer(Request $request) {

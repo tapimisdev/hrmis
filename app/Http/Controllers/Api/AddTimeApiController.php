@@ -26,6 +26,11 @@ class AddTimeApiController extends Controller
         $this->timelog_service = $timelog_service;
         $this->employee_service = $employee_service;
         $this->applicationService = $applicationService;
+
+        $this->middleware('permission:hr.timekeeping.adjust_time')->only(['add_time']);
+        $this->middleware('permission:hr.timekeeping.add_overtime')->only(['add_overtime']);
+        $this->middleware('permission:hr.timekeeping.record_leave')->only(['show']);
+        $this->middleware('permission:hr.timekeeping.mark_absent')->only(['show']);
     }
 
     public function add_time(StoreTimeLogsRequest $request)

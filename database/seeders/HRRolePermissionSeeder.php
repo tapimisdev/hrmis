@@ -2,8 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -28,6 +30,22 @@ class HRRolePermissionSeeder extends Seeder
         foreach ($roles as $roleName) {
             $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
             $role->givePermissionTo(Permission::where('name', 'like', 'hr.%')->get());
+
+            $name = str_replace('_', ' ', $roleName);
+
+            // Create First a Super Admin user
+            $hr_manager = User::firstOrCreate(
+                ['email' => $roleName.'@dost-tapi.com'],
+                [
+                    'name' => $name,
+                    'password' => Hash::make('password123'),
+                ]
+            );
+
+            // Assign role to user
+            if (! $hr_manager->hasRole('super_admin')) {
+                $hr_manager->assignRole($role);
+            }
         }
     }
 }

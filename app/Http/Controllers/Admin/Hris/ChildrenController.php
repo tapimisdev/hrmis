@@ -20,7 +20,10 @@ class ChildrenController extends Controller
     public function __construct(EmployeeService $employeeService, GenerateService $generateService)
     {
         $this->employeeService = $employeeService;
-        $this->generateService = $generateService;    
+        $this->generateService = $generateService;   
+        $this->middleware('permission:hr.hris.view')->only('index');
+        $this->middleware('permission:hr.hris.edit')->only('save');
+        $this->middleware('permission:hr.hris.delete')->only('destroy'); 
     }
 
     public function index(Request $request, ? string $employee_no = null)

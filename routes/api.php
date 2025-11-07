@@ -39,8 +39,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'logout']);
 
-// Protected routes (require Bearer token from Passport)
-// Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     # ORGANIZATION
     Route::get('employment-types', [EmploymentTypesController::class, 'index']);
     Route::get('get-employment-types', [EmploymentTypesController::class, 'getEmploymentTypes']);
@@ -91,8 +90,6 @@ Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'log
             ->name('api.payroll.absences-leaves.download');
         Route::get('payslip/{payroll_no}/download', [SalaryApiController::class, 'downloadPayslip'])
             ->name('api.payroll.payslip.download');
-
-        
     });
 
     # TIMEKEEPING
@@ -141,4 +138,4 @@ Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'log
     Route::post('add-overtime', [AddTimeApiController::class, 'add_overtime']);
     Route::get('get-overtime', [AddTimeApiController::class, 'getOvertime']);
 
-// });
+});

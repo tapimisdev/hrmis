@@ -24,6 +24,8 @@ class LeaveCreditController extends Controller
     {
         $this->employeeService = $employeeService;
         $this->generateService = $generateService;    
+        $this->middleware('permission:hr.hris.view')->only('leave_credits');
+        $this->middleware('permission:hr.hris.edit')->only('save_credits');
     }
 
     public function leave_credits(Request $request, ? string $employee_no = null)

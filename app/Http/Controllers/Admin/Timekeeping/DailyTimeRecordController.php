@@ -90,7 +90,7 @@ class DailyTimeRecordController extends Controller
             ->leftJoin('work_schedule', 'employee_shift_work_schedule.work_schedule_id', '=', 'work_schedule.id')
             ->leftJoin('units', 'employee_organization.unit_id', '=', 'units.id')
             ->leftJoin('shifts', 'employee_shift_work_schedule.shift_id', '=', 'shifts.id')
-            ->where('roles.name', 'employee')
+            ->whereIn('roles.name', ['emp_contractual', 'regular'])
             ->where('employee_information.employee_no', $employee_no)
             ->select(
                 'users.id',

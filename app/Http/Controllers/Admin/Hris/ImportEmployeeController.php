@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\Hris\UploadEmployeeRequest;
 use App\Models\User;
 use Exception;
 use Illuminate\Auth\Events\Validated;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
@@ -16,6 +17,12 @@ use function PHPUnit\Framework\isEmpty;
 
 class ImportEmployeeController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:hr.hris.view')->only('index');
+        $this->middleware('permission:hr.hris.import_employee')->only(['upload', 'store']);
+    }
     public function index()
     {
         return view('admin.pages.hris.import.index');

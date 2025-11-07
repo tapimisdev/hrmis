@@ -18,8 +18,9 @@ class IndexController extends Controller
     public function __construct()
     {
         $this->employeeService = app(EmployeeService::class);
+        $this->middleware('permission:hr.hris.view')->only('index');
+        $this->middleware('permission:hr.hris.delete')->only(['remove', 'restore']);
     }
-
 
     public function index(Request $request)
     {
@@ -47,7 +48,7 @@ class IndexController extends Controller
     public function remove(string $employee_no)
     {
         DB::beginTransaction();
-        
+    
         try {
 
             $this->employeeService->delete($employee_no);
@@ -93,18 +94,6 @@ class IndexController extends Controller
                 'message' => 'error occured: ' . $e->getMessage()
             ]);
 
-        }
-    }
-
-
-    private function setStatus(string $status) {
-        switch($status) {
-            case 'active':
-                return '<div class="alert alert-sm text-center mb-0 px-1 py-2 alert-success">active</div>';
-            case 'inactive':
-                return '<div class="alert alert-sm text-center mb-0 px-1 py-2 alert-secondary">inactive</div>';
-            case 'archived':
-                return '<div class="alert alert-sm text-center mb-0 px-1 py-2 alert-danger">Archived</div>';
         }
     }
 

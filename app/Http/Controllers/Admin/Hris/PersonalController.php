@@ -16,7 +16,10 @@ class PersonalController extends Controller
 
     public function __construct(EmployeeService $employeeService)
     {
-        $this->employeeService = $employeeService;    
+        $this->employeeService = $employeeService;
+        
+        $this->middleware('permission:hr.hris.view')->only('index');
+        $this->middleware('permission:hr.hris.edit')->only('save');
     }
 
     public function index(Request $request, string $employee_no)

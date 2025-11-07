@@ -20,6 +20,9 @@ class CivilServiceController extends Controller
     public function __construct(EmployeeService $employeeService)
     {
         $this->employeeService = $employeeService;    
+        $this->middleware('permission:hr.hris.view')->only('index');
+        $this->middleware('permission:hr.hris.edit')->only('save');
+        $this->middleware('permission:hr.hris.delete')->only('destroy');
     }
 
     public function index(Request $request, ? string $employee_no = null)

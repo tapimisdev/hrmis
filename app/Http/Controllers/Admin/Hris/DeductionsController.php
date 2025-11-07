@@ -23,6 +23,8 @@ class DeductionsController extends Controller
     {
         $this->employeeService = $employeeService;
         $this->generateService = $generateService;    
+        $this->middleware('permission:hr.hris.view')->only('index');
+        $this->middleware('permission:hr.hris.edit')->only('save');
     }
 
     public function index(Request $request, ? string $employee_no = null)
