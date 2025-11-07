@@ -220,7 +220,6 @@ class SalaryApiController extends Controller
                             ->select('ei.employee_no', 'au.level', 'ep.firstname', 'ep.lastname', 'ep.middlename', 'ei.user_id')
                             ->get();
 
-        // dd($user_approvers);
         return response()->json($user_approvers);
     }
 
