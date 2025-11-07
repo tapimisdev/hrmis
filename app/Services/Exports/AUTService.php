@@ -195,6 +195,12 @@ class AUTService
         $writer = IOFactory::createWriter($this->spreadsheet, 'Xlsx');
         $output = storage_path('app/public/absences-leaves-filled.xlsx');
         $writer->save($output);
+
+        // Clean output buffer to prevent corruption
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
         return response()->download($output);
     }
 }

@@ -11,6 +11,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use Illuminate\Support\Facades\Response;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class RegistryService
 {
@@ -29,9 +30,9 @@ class RegistryService
 
         // Determine which registry to generate
         if ($this->payroll->employment_type_id == 2) {
-            return $this->exportCOS();
+            return $this->exportCOSFile();
         } else {
-            return $this->exportRegular();
+            return $this->exportRegularFile();
         }
     }
 
@@ -51,7 +52,7 @@ class RegistryService
     /* --------------------------
         COS REGISTRY
     -------------------------- */
-    private function exportCOS()
+    private function exportCOSFile()
     {
         $templatePath = public_path('templates/cos/payroll_registry.xlsx');
         $spreadsheet = IOFactory::load($templatePath);
@@ -158,7 +159,7 @@ class RegistryService
                 // Salary columns
                 $sheet->setCellValue("C{$row}", $employee['monthly_rate'] ?? '0.00');
                 $sheet->setCellValue("D{$row}", $employee['salary_earned'] ?? '0.00');
-                $sheet->setCellValue("E{$row}", $employee['uat'] ?? '0.00');
+                $sheet->setCellValue("E{$row}", $employee['aut'] ?? '0.00');
                 $sheet->setCellValue("F{$row}", $employee['total_salary'] ?? '0.00');
 
                 $applyStyle("A{$row}:E{$row}", ['fill' => $fillStyles['white']]);
@@ -248,10 +249,15 @@ class RegistryService
             mkdir($exportPath, 0775, true);
         }
 
-        $fileName = "COS_Payroll_Registry_{$this->payroll->payroll_no}.xlsx";
+        // Clean output buffer to prevent corruption
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        $fileName = strtolower("COS_Payroll_Registry_{$this->payroll->payroll_no}.xlsx");
         $savePath = $exportPath . '/' . $fileName;
 
-        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save($savePath);
+        (new Xlsx($spreadsheet))->save($savePath);
 
         return Response::download($savePath, $fileName)->deleteFileAfterSend(true);
     }
@@ -261,7 +267,7 @@ class RegistryService
         REGULAR REGISTRY
         (similar logic, just different template & columns)
     -------------------------- */
-    private function exportRegular()
+    private function exportRegularFile()
     {
         $templatePath = public_path('templates/regular/payroll_registry.xlsx');
         $spreadsheet = IOFactory::load($templatePath);
@@ -281,7 +287,7 @@ class RegistryService
         $fileName = "Regular_Payroll_Registry_{$this->payroll->payroll_no}.xlsx";
         $savePath = $exportPath . '/' . $fileName;
 
-        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save($savePath);
+        (new Xlsx($spreadsheet))->save($savePath);
 
         return Response::download($savePath, $fileName)->deleteFileAfterSend(true);
     }

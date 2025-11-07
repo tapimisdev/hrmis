@@ -271,6 +271,11 @@ class PayslipService
             @unlink($tmp);
         }
 
+        // Clean output buffer to prevent corruption
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
         return response()->download($output);
     }
 }
