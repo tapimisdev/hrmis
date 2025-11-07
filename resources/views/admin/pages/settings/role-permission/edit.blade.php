@@ -118,7 +118,7 @@ $(document).ready(function () {
                     text: "Something went wrong!",
                 });
             }).finally (() => {
-                $btn.prop("disabled", false).html('<i class="fa-solid fa-floppy-disk me-2"></i> Savess');
+                $btn.prop("disabled", false).html('<i class="fa-solid fa-floppy-disk me-2"></i> Save');
             });
     });
 });
