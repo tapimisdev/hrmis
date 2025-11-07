@@ -1,5 +1,5 @@
 <template>
-    <div class="attendance-container">
+    <div class="attendance-container border">
         <!-- Header Section -->
         <div class="attendance-header">
             <div class="header-content">
@@ -349,12 +349,15 @@ export default {
 
 <style lang="scss" scoped>
 .attendance-container {
+    border-radius: 0.4rem 0.4rem 0 0;
+    position: static;
     .attendance-header {
-        background: var(--bs-body-bg);
-        border-radius: 0.5rem 0.5rem 0 0;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid var(--bs-border-color);
-        
+        background: var(--bs-secondary-bg);
+        padding:.80rem 1.25rem;
+        position: sticky;
+        z-index: 1001;
+        top: 50px;
+
         .header-content { 
             display: flex; 
             justify-content: space-between; 
@@ -368,7 +371,7 @@ export default {
             
             i { 
                 font-size: 1.75rem; 
-                color: var(--bs-primary); 
+                color: var(--bs-secondary); 
             }
             
             .title { 
@@ -392,12 +395,9 @@ export default {
         background: var(--bs-body-bg); 
         border-radius: 0 0 0.5rem 0.5rem; 
         box-shadow: 0 1px 3px rgba(0,0,0,0.08); 
-        overflow: hidden; 
     }
     
     .table-wrapper {
-        max-height: 520px;
-        overflow: auto;
         
         &::-webkit-scrollbar { 
             width: 8px; 
@@ -423,19 +423,20 @@ export default {
         border-collapse: separate;
         border-spacing: 0;
         font-size: 0.8125rem;
-        
+        position: static;
         thead th {
             position: sticky; 
-            top: 0; 
-            background: var(--bs-primary); 
-            color: white; 
+            top: 116px; 
+            z-index: 1001;
+            background: var(--bs-secondary-bg); 
+            color: var(--bs-body-color); 
             font-weight: 600;
             font-size: 0.75rem;
             text-transform: uppercase; 
             letter-spacing: 0.3px;
             padding: 0.625rem 0.75rem; 
             text-align: center; 
-            z-index: 10;
+            border-bottom: 2px solid var(--bs-border-color);
             
             &.col-day { min-width: 60px; }
             &.col-time { min-width: 100px; }
@@ -460,14 +461,14 @@ export default {
                 }
                 
                 &.highlight-today { 
-                    background: var(--bs-primary-bg-subtle); 
-                    border-left: 3px solid var(--bs-primary); 
+                    background: rgba(108, 117, 125, 0.1); 
+                    border-left: 3px solid var(--bs-secondary); 
                 }
                 
-                &.row-restday { background: var(--bs-success-bg-subtle); }
-                &.row-leave { background: var(--bs-info-bg-subtle); }
-                &.row-holiday { background: var(--bs-warning-bg-subtle); }
-                &.row-absent { background: var(--bs-danger-bg-subtle); }
+                &.row-restday { background: rgba(108, 117, 125, 0.08); }
+                &.row-leave { background: rgba(108, 117, 125, 0.08); }
+                &.row-holiday { background: rgba(108, 117, 125, 0.08); }
+                &.row-absent { background: rgba(108, 117, 125, 0.08); }
             }
             
             td { 
@@ -509,11 +510,11 @@ export default {
             margin-left: 0.25rem;
         }
         
-        &.status-restday { background: var(--bs-success); color: white; }
-        &.status-holiday { background: var(--bs-warning); color: white; }
-        &.status-leave { background: var(--bs-info); color: white; }
-        &.status-ob { background: var(--bs-purple, #8b5cf6); color: white; }
-        &.status-absent { background: var(--bs-danger); color: white; }
+        &.status-restday { color: var(--bs-success);  }
+        &.status-holiday { color: var(--bs-warning);  }
+        &.status-leave { color: var(--bs-info);  }
+        &.status-ob { color: var(--bs-primary);  }
+        &.status-absent { color: var(--bs-danger);  }
     }
     
     .time-cell {
@@ -560,7 +561,7 @@ export default {
             }
             
             .has-overtime { 
-                color: var(--bs-primary); 
+                color: var(--bs-body-color); 
                 font-weight: 600; 
                 text-decoration: underline; 
             }
@@ -571,22 +572,23 @@ export default {
         .hours-badge { 
             display: inline-block; 
             padding: 0.3rem 0.6rem; 
-            background: var(--bs-info-bg-subtle); 
-            color: var(--bs-info-text-emphasis); 
+            background: var(--bs-secondary-bg); 
+            color: var(--bs-body-color); 
             border-radius: 0.25rem; 
             font-weight: 600; 
-            font-size: 0.75rem; 
+            font-size: 0.75rem;
+            border: 1px solid var(--bs-border-color); 
         }
         
         .ut-badge { 
-            background: var(--bs-warning-bg-subtle); 
-            color: var(--bs-warning-text-emphasis); 
+            background: var(--bs-secondary-bg); 
+            color: var(--bs-body-color); 
         }
     }
     
     .double-cell .double-value { 
         font-weight: 700; 
-        color: var(--bs-primary); 
+        color: var(--bs-body-color); 
         font-size: 0.875rem;
     }
     
@@ -601,21 +603,24 @@ export default {
         .remark-tag {
             display: inline-block; 
             padding: 0.25rem 0.5rem; 
-            background: var(--bs-info-bg-subtle); 
-            color: var(--bs-info-text-emphasis);
+            background: var(--bs-secondary-bg); 
+            color: var(--bs-body-color);
             border-radius: 0.25rem; 
             font-size: 0.7rem; 
             font-weight: 600; 
             text-transform: capitalize;
+            border: 1px solid var(--bs-border-color);
             
             &.remark-danger { 
-                background: var(--bs-danger-bg-subtle); 
-                color: var(--bs-danger-text-emphasis); 
+                background: rgba(220, 53, 69, 0.1); 
+                color: #dc3545; 
+                border-color: rgba(220, 53, 69, 0.2);
             }
             
             &.remark-warning { 
-                background: var(--bs-warning-bg-subtle); 
-                color: var(--bs-warning-text-emphasis); 
+                background: rgba(255, 193, 7, 0.1); 
+                color: #856404; 
+                border-color: rgba(255, 193, 7, 0.2);
             }
         }
     }
@@ -640,9 +645,9 @@ export default {
             transition: all 0.15s ease;
             
             &:hover { 
-                background: var(--bs-primary); 
-                color: white; 
-                border-color: var(--bs-primary);
+                background: var(--bs-secondary-bg); 
+                color: var(--bs-body-color); 
+                border-color: var(--bs-border-color);
             }
         }
     }
@@ -667,22 +672,22 @@ export default {
             
             i { 
                 width: 18px; 
-                color: var(--bs-primary); 
+                color: var(--bs-secondary); 
             }
             
             &:hover { 
-                background: var(--bs-primary-bg-subtle); 
-                color: var(--bs-primary); 
+                background: var(--bs-secondary-bg); 
+                color: var(--bs-body-color); 
             }
             
             &.dropdown-item-danger {
-                i { color: var(--bs-danger); }
+                i { color: #dc3545; }
                 
                 &:hover { 
-                    background: var(--bs-danger-bg-subtle); 
-                    color: var(--bs-danger); 
+                    background: rgba(220, 53, 69, 0.1); 
+                    color: #dc3545; 
                     
-                    i { color: var(--bs-danger); } 
+                    i { color: #dc3545; } 
                 }
             }
         }
@@ -694,7 +699,7 @@ export default {
         
         i { 
             font-size: 3.5rem; 
-            color: var(--bs-warning); 
+            color: var(--bs-secondary); 
             margin-bottom: 1rem; 
         }
         

@@ -338,6 +338,7 @@ table {
         &.holiday { background: rgba(var(--bs-warning-rgb), 0.05); }
         &.leave { background: rgba(var(--bs-info-rgb), 0.05); }
         &.absent { background: rgba(var(--bs-danger-rgb), 0.05); }
+        &.status-ob { background: rgba(var(--bs-primary-rgb), 0.05); }
     }
 }
 

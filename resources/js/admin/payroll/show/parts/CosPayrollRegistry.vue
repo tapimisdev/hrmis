@@ -82,7 +82,7 @@
 
               <td class="number-cell">{{ formatNumber(emp.monthly_rate) }}</td>
               <td class="number-cell">{{ formatNumber(emp.salary_earned) }}</td>
-              <td class="number-cell deduction">{{ formatNumber(emp.uat)}}</td>
+              <td class="number-cell deduction">{{ formatNumber(emp.aut)}}</td>
               <td class="number-cell">{{ formatNumber(emp.overtime)}}</td>
               <td class="number-cell">{{ formatNumber(emp.holiday)}}</td>
               <td class="number-cell earning">{{ formatNumber(emp.total_salary) }}</td>
@@ -119,7 +119,7 @@
               <td colspan="2" class="text-end"><strong>Total ({{ project.name }})</strong></td>
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'monthly_rate')) }}</td>
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'salary_earned')) }}</td>
-              <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'uat')) }}</td>
+              <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'aut')) }}</td>
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'overtime')) }}</td>
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'holiday')) }}</td>
               <td class="number-cell earning">{{ formatNumber(projectTotals(project, 'total_salary')) }}</td>
@@ -151,7 +151,7 @@
               <td colspan="2" class="text-end"><strong>GRAND TOTAL</strong></td>
               <td class="number-cell">{{ formatNumber(grandTotals('monthly_rate')) }}</td>
               <td class="number-cell">{{ formatNumber(grandTotals('salary_earned')) }}</td>
-              <td class="number-cell deduction">{{ formatNumber(grandTotals('uat')) }}</td>
+              <td class="number-cell deduction">{{ formatNumber(grandTotals('aut')) }}</td>
               <td class="number-cell">{{ formatNumber(grandTotals('overtime')) }}</td>
               <td class="number-cell">{{ formatNumber(grandTotals('holiday')) }}</td>
               <td class="number-cell earning">{{ formatNumber(grandTotals('total_salary')) }}</td>

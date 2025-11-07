@@ -1,24 +1,6 @@
 <?php
 
-use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
-use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
-use App\Http\Controllers\Admin\Settings\ShiftController;
-use App\Http\Controllers\Admin\Settings\TrancheController;
-use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
-use App\Http\Controllers\Admin\Payroll\Api\SalaryApiController;
-use App\Http\Controllers\Admin\Payroll\SalaryController;
-use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
-use App\Http\Controllers\Api\AddTimeApiController;
-use App\Http\Controllers\Api\DashboardApiController;
-use App\Http\Controllers\Api\Employee;
-use App\Http\Controllers\Api\LeavesApiController;
-use App\Http\Controllers\Api\Organization;
-use App\Http\Controllers\Employee\LeaveApplicationController;
-use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
-use App\Http\Controllers\Api\CountriesApiController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Employee\timelogs\CheckInOutController;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -33,111 +15,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'logout']);
-
 Route::middleware('auth:sanctum')->group(function () {
-    # ORGANIZATION
-    Route::get('employment-types', [EmploymentTypesController::class, 'index']);
-    Route::get('get-employment-types', [EmploymentTypesController::class, 'getEmploymentTypes']);
-    Route::get('tranches', [TrancheController::class, 'tranches']);
-    Route::get('compute-salary/{trach_id}/{salary_grade}/{step}', [TrancheController::class, 'compute_salary']);
-    Route::get('divisions', [Organization::class, 'division'])
-        ->name('api.divisions');
-    Route::get('units/{division_id}', [Organization::class, 'unit'])
-        ->name('api.units');
 
-    # EMPLOYEE
-    Route::prefix('employee')->group(function() {
-        # Upload employee file with some details  ##First step in importing employees
-        Route::post('upload', [ImportEmployeeController::class, 'upload']);
-        Route::post('import', [ImportEmployeeController::class, 'store']);
-
-        Route::get('children', [Employee::class, 'children'])
-            ->name('api.employee.children');
+    Route::get('/user', function (Request $request) {
+        return $request->user();
     });
 
-    # Payroll
-    Route::prefix('payroll')->group(function () {
-        Route::post('validate-and-fetch-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
-    });
+    Route::post('/logout', [LoginController::class, 'logout']);
 
-    Route::get('/users', function () {
-        $users = User::role('hr')->get(); 
-        return response()->json($users);
-    });
-
-    # PAYROLL
-    
-    Route::prefix('payroll')->group(function() {
-
-        Route::post('salary', [SalaryApiController::class, 'getList']);
-        Route::get('salary/{payroll_id}', [SalaryApiController::class, 'getPayrollRegistry']);
-        Route::post('generate-salary-payroll', [SalaryController::class, 'store']);
-        
-        # Adjustment
-        Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);
-        Route::get('approvers', [SalaryApiController::class, 'approvers']);
-
-        Route::get('/progress/{batchId}', [SalaryController::class, 'getBatchProgress']);
-        Route::post('/cancel/{batchId}', [SalaryController::class, 'cancelBatch']);
-
-        # DOWNLOADS
-        Route::get('salary/{payroll_no}/download', [SalaryApiController::class, 'downloadPayrollRegistry'])
-            ->name('api.payroll.salary.download');
-        Route::get('absences-leaves/{payroll_no}/download', [SalaryApiController::class, 'downloadAbsencesLeaves'])
-            ->name('api.payroll.absences-leaves.download');
-        Route::get('payslip/{payroll_no}/download', [SalaryApiController::class, 'downloadPayslip'])
-            ->name('api.payroll.payslip.download');
-    });
-
-    # TIMEKEEPING
-    Route::prefix('timekeeping')->group(function() {
-        Route::post('import-timelogs', [UploadTimeLogController::class, 'store']);
-    });
-
-    # PREFIX
-    Route::prefix('dashboard')->group(function() {
-        Route::get('metrics', [DashboardApiController::class, 'metrics']);
-        Route::get('birthdays', [DashboardApiController::class, 'birthdays']);
-        Route::get('attendances', [DashboardApiController::class, 'attendances']);
-        Route::get('employment-types', [DashboardApiController::class, 'employment_types']);
-        Route::get('employee-movement', [DashboardApiController::class, 'employee_movement']);
-    });
-
-    Route::resource('leaves', LeaveApplicationController::class)
-        ->only('store', 'update');
-
-    Route::get('countries', [CountriesApiController::class, 'index'])
-        ->name('api.countries');
-
-    Route::get('education', [Employee::class, 'education'])
-        ->name('api.employee.education');
-
-    Route::get('civil-service', [Employee::class, 'civil_service'])
-        ->name('api.employee.civil-service');
-
-    Route::get('work-experience', [Employee::class, 'work_experience'])
-        ->name('api.employee.work-experience');
-
-    Route::get('voluntary-works', [Employee::class, 'voluntary_works'])
-        ->name('api.employee.voluntary-works');
-
-    Route::get('trainings', [Employee::class, 'trainings'])
-        ->name('api.employee.trainings');
-
-    Route::get('skills', [Employee::class, 'skills'])
-        ->name('api.employee.skills');
-
-    Route::get('shifts', [ShiftController::class, 'index']);
-    Route::get('work-schedules', [WeeklyScheduleController::class, 'index']);
-
-    Route::get('fetch-timelogs', [AddTimeApiController::class, 'edit']);
-    Route::post('add-time', [AddTimeApiController::class, 'add_time']);
-    Route::post('add-overtime', [AddTimeApiController::class, 'add_overtime']);
-    Route::get('get-overtime', [AddTimeApiController::class, 'getOvertime']);
+    require __DIR__ . '/apis/maintenance.php';
+    require __DIR__ . '/apis/employee.php';
+    require __DIR__ . '/apis/payroll.php';
+    require __DIR__ . '/apis/user.php';
+    require __DIR__ . '/apis/timekeeping.php';
+    require __DIR__ . '/apis/dashboard.php';
+    require __DIR__ . '/apis/hris.php';
+    require __DIR__ . '/apis/shift-work.php';
 
 });

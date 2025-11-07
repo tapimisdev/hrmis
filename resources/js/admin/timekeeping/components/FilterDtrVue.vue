@@ -14,16 +14,16 @@
               width="56"
               height="56"
             />
-            <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle"></span>
+            <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle" style="opacity: 0.7;"></span>
           </div>
           
           <div>
-            <h5 class="mb-1 fw-bold">{{ profile.name }}</h5>
+            <h5 class="mb-1 fw-bold text-body">{{ profile.name }}</h5>
             <div class="d-flex flex-wrap gap-2">
               <span
                 v-for="(info, index) in infoCards"
                 :key="index"
-                class="badge text-bg-secondary"
+                class="badge text-body-secondary text-body border"
               >
                 {{ info.value }}
               </span>
@@ -32,11 +32,11 @@
         </div>
 
         <div class="d-flex gap-2 mt-3 mt-md-0">
-          <button class="btn btn-warning btn-sm" @click="handlePrint">
+          <button class="btn btn-outline-secondary btn-sm" @click="handlePrint">
             <i class="fa-solid fa-print"></i>
             <span class="d-none d-sm-inline ms-1">Print</span>
           </button>
-          <button class="btn btn-secondary btn-sm" @click="handleDownload">
+          <button class="btn btn-outline-secondary btn-sm" @click="handleDownload">
             <i class="fa-solid fa-download"></i>
             <span class="d-none d-sm-inline ms-1">Export</span>
           </button>
@@ -44,10 +44,24 @@
       </div>
 
       <!-- Filter Section -->
-      <div class="card-body bg-body-secondary">
-        <div class="row g-2 align-items-center">
+      <div class="card-body bg-body-tertiary d-flex justify-content-between">
+        <button 
+          @click="toggleSummary" 
+          class="btn btn-transparent d-flex gap-4 align-items-center" 
+          :class="{ 'bg-body-secondary ': showSummary }">
+
+          <span class="fw-semibold text-body">
+            <i class="fa-solid fa-chart-line text-muted me-2"></i>
+            Summary Statistics
+          </span>
+          <i 
+            class="fa-solid fa-chevron-down transition-transform text-muted" 
+            :class="{ 'rotate-180': showSummary }"
+          ></i>
+        </button>
+        <div class="row g-2 align-items-center justify-content-end">
           <div class="col-auto">
-            <label class="form-label mb-0 fw-semibold text-body small text-uppercase">
+            <label class="form-label mb-0 fw-semibold text-muted small text-uppercase">
               <i class="fa-solid fa-filter me-1"></i>
               Period
             </label>
@@ -84,24 +98,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Expandable Summary Section -->
-      <div 
-        class="card-body border-bottom py-2 cursor-pointer bg-body-tertiary"
-        @click="toggleSummary"
-      >
-        <div class="d-flex justify-content-between align-items-center">
-          <span class="fw-semibold">
-            <i class="fa-solid fa-chart-line text-primary me-2"></i>
-            Summary Statistics
-          </span>
-          <i 
-            class="fa-solid fa-chevron-down transition-transform" 
-            :class="{ 'rotate-180': showSummary }"
-          ></i>
-        </div>
-      </div>
-
       <div v-if="showSummary" class="card-body">
         <div class="row g-3">
           <div
@@ -112,14 +108,14 @@
             <div class="card h-100 border">
               <div class="card-body">
                 <div class="d-flex align-items-center gap-3">
-                  <div class="bg-primary text-white rounded p-3">
+                  <div class="bg-body-secondary border text-muted rounded p-3">
                     <i :class="getSummaryIcon(card.label)" class="fs-4"></i>
                   </div>
                   <div>
                     <div class="text-muted text-uppercase small fw-semibold">
                       {{ card.label }}
                     </div>
-                    <div class="fs-3 fw-bold">{{ card.value }}</div>
+                    <div class="fs-3 fw-bold text-body">{{ card.value }}</div>
                   </div>
                 </div>
               </div>

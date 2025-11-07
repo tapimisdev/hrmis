@@ -267,7 +267,6 @@ class SalaryPayrollService {
 
     }
 
-
     public function generatePayrollRegistryReport($payload, $payroll_id)
     {
         $employees = collect($this->getEligibleEmployees($payload));
