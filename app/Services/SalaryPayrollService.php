@@ -268,7 +268,6 @@ class SalaryPayrollService {
     }
 
 
-
     public function generatePayrollRegistryReport($payload, $payroll_id)
     {
         $employees = collect($this->getEligibleEmployees($payload));
@@ -479,5 +478,194 @@ class SalaryPayrollService {
 
         return $suspensions;
     }
+
+    public function getPayrollRegistry(string $payroll_id, bool $isGrouped = true) 
+    {
+        $payroll_date = DB::table('payroll_salary')
+            ->where('id', $payroll_id)
+            ->value('payroll_date');
+
+        $pse = DB::table('payroll_salary_employee as pse')
+            ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+            ->where('payroll_salary_id', $payroll_id)
+            ->select('pse.*', 'ps.payroll_date')
+            ->get();
+
+        // Get all projects for this payroll date
+        $projects = DB::table('employee_projects as ep')
+            ->join('projects', 'ep.project_id', '=', 'projects.id')
+            ->whereDate('start_date', '<=', $payroll_date)
+            ->where(function ($query) use ($payroll_date) {
+                $query->whereDate('end_date', '>=', $payroll_date)
+                    ->orWhereNull('end_date');
+            })
+            ->select('projects.id', 'projects.name')
+            ->get()->unique('id');
+
+        $enriched = $pse->map(function ($d) use ($payroll_date) {
+
+            $deductions = DB::table('payroll_salary_employee_edeductions')
+                ->where('payroll_se_id', $d->id)
+                ->get();
+
+            $earnings = DB::table('payroll_salary_employee_earnings')
+                ->where('payroll_se_id', $d->id)
+                ->get();
+
+            $project_id = DB::table('employee_projects')
+                ->where('employee_no', $d->employee_no)
+                ->whereDate('start_date', '<=', $payroll_date)
+                ->where(function ($query) use ($payroll_date) {
+                    $query->whereDate('end_date', '>=', $payroll_date)
+                        ->orWhereNull('end_date');
+                })
+                ->orderByDesc('start_date')
+                ->value('project_id');
+
+            return (object) [
+                'employee_no' => $d->employee_no,
+                'name' => strtoupper($d->name),
+                'position' => ucfirst($d->position),
+                'monthly_rate' => $d->monthly_rate,
+                'salary_grade' => $d->salary_grade,
+                'ut' => $d->ut,
+                'absences' => $d->absences,
+                'overtime' => $d->overtime,
+                'holiday' => $d->holiday,
+                'gsis' => $d->gsis,
+                'philhealth' => $d->philhealth,
+                'pagibig' => $d->pagibig,
+                'w_tax' => $d->w_tax,
+                'total_deductions' => $d->total_deductions,
+                'total_earnings' => $d->total_earnings,
+                'basic_pay' => $d->basic_pay,
+                'gross_pay' => $d->gross_pay,
+                'net_pay' => $d->net_pay,
+                'salary_adjustment' => $d->salary_adjustment,
+                'deductions' => $deductions ?? [],
+                'earnings' => $earnings ?? [],
+                'project_id' => $project_id
+            ];
+        });
+
+        if ($isGrouped) {
+            // Group employees by project
+            $projectGroups = [];
+
+            foreach ($enriched as $employee) {
+                $emp_project = $projects->firstWhere('id', $employee->project_id);
+
+                $projectId = $emp_project->id ?? 'others';
+                $projectName = $emp_project->name ?? 'No Projects';
+
+                if (!isset($projectGroups[$projectId])) {
+                    $projectGroups[$projectId] = [
+                        'name' => $projectName,
+                        'employees' => []
+                    ];
+                }
+
+                $projectGroups[$projectId]['employees'][] = [
+                    'employee_no' => $employee->employee_no,
+                    'name' => $employee->name,
+                    'position' => $employee->position,
+                    'monthly_rate' => $employee->monthly_rate,
+                    'salary_earned' => $employee->basic_pay,
+                    'ut' => $employee->ut + $employee->absences,
+                    'overtime' => $employee->overtime,
+                    'holiday' => $employee->holiday,
+                    'total_salary' => $employee->gross_pay,
+                    'deductions' => $employee->deductions,
+                    'earnings' => $employee->earnings,
+                    'adjustment' => $employee->salary_adjustment,
+                    'net_salary' => $employee->net_pay
+                ];
+            }
+
+            return response()->json(array_values($projectGroups));
+
+        } else {
+            // Return flat list without grouping
+            $flatList = $enriched->map(function ($employee) {
+                return [
+                    'employee_no' => $employee->employee_no,
+                    'name' => $employee->name,
+                    'position' => $employee->position,
+                    'monthly_rate' => $employee->monthly_rate,
+                    'salary_earned' => $employee->basic_pay,
+                    'ut' => $employee->ut + $employee->absences,
+                    'overtime' => $employee->overtime,
+                    'holiday' => $employee->holiday,
+                    'total_salary' => $employee->gross_pay,
+                    'deductions' => $employee->deductions,
+                    'earnings' => $employee->earnings,
+                    'adjustment' => $employee->salary_adjustment,
+                    'net_salary' => $employee->net_pay,
+                    'project_id' => $employee->project_id
+                ];
+            });
+
+            return response()->json($flatList);
+        }
+    }
+
+    public function payrollDetails($payroll_no)
+    {
+        $payroll = DB::table('payroll_salary')
+                    ->where('payroll_no', $payroll_no)
+                    ->first();
+
+        return $payroll;
+    }
+
+    public function employeePayrollRates($payroll_id)
+    {
+        $employees = DB::table('payroll_salary_employee as pse')
+            ->where('pse.payroll_salary_id', $payroll_id)
+            ->leftJoinSub(
+                DB::table('employee_projects as ep')
+                    ->select('ep.*')
+                    ->whereRaw('ep.id IN (SELECT MAX(id) FROM employee_projects GROUP BY employee_no)'),
+                'latest_proj',
+                'pse.employee_no',
+                '=',
+                'latest_proj.employee_no'
+            )
+            ->leftJoin('projects as p', 'latest_proj.project_id', '=', 'p.id')
+            ->select(
+                'pse.*',
+                'latest_proj.*',
+                'p.name as project_name'
+            )
+            ->get()
+            ->map(function ($employee) {
+                $employee->aut = $employee->ut + $employee->absences;
+
+                
+
+                return $employee;
+            });
+
+        $grouped = $employees->groupBy('project_name');
+
+        $data = [];
+
+        foreach ($grouped as $unitName => $unitEmployees) {
+            $data[$unitName] = $unitEmployees->map(function ($employee) {
+                return [
+                    'name'         => $employee->name,
+                    'position'     => $employee->position,
+                    'monthly_rate' => $employee->monthly_rate,
+                    'daily_rate'   => number_format($employee->monthly_rate / 22, 2),
+                    'hourly_rate'  => number_format(($employee->monthly_rate / 22) / 8, 2),
+                    'minute_rate'  => number_format((($employee->monthly_rate / 22) / 8) / 60, 2),
+                ];
+            })->toArray(); 
+        }
+
+        return $data;
+
+    }
+
 }
     
