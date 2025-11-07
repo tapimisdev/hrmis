@@ -15,7 +15,7 @@ import TablePayrollVue from './TablePayrollVue.vue';
 export default {
   components: { SearchPayrollVue, TablePayrollVue },
   data(){
-    return {
+    return {  
       payrollList: [],
       loading: false
     }

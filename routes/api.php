@@ -72,7 +72,9 @@ Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'log
     });
 
     # PAYROLL
+    
     Route::prefix('payroll')->group(function() {
+
         Route::post('salary', [SalaryApiController::class, 'getList']);
         Route::get('salary/{payroll_id}', [SalaryApiController::class, 'getPayrollRegistry']);
         Route::post('generate-salary-payroll', [SalaryController::class, 'store']);
