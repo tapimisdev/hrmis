@@ -6,6 +6,14 @@
     height: 100%;
 }
 
+@media (max-width: 992px) {
+    .toggle-container {
+        position: absolute;
+        right: 67px;
+        top: 0;
+    }
+}
+
 .theme-toggle {
     position: relative;
     width: 24px;

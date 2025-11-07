@@ -96,7 +96,7 @@ class RolesAndPermissionController extends Controller
         // sync permissions
         $role->syncPermissions($request->permissions ?? []);
 
-        return back()->with('success', 'Permissions updated successfully!');
+        return response(['message' => 'permission updated succesfully!'], 200);
     }
 
     public function datatable($query)
