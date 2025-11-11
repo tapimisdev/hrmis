@@ -26,7 +26,17 @@ class DailyTimeRecordController extends Controller
     {
         $this->daily_time_record_service = $daily_time_record_service;
 
-        $this->middleware('permission:hr.timekeeping.view')->only(['index', 'show']);
+        $this->middleware(function ($request, $next) {
+            if (
+                auth()->user()->can('hr.timekeeping.view') ||
+                auth()->user()->can('emp.timelogs.checkin-out')
+            ) {
+                return $next($request);
+            }
+
+            abort(403, 'Unauthorized');
+        })->only(['index', 'show']);
+
     }
 
     /**
