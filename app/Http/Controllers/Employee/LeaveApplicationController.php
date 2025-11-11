@@ -20,6 +20,9 @@ class LeaveApplicationController extends Controller
     public function __construct(ApplicationController $applicationService)
     {
         $this->applicationService = $applicationService;
+
+        $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
+        $this->middleware('permission:emp.leave_application.apply')->only(['store']);
     }
 
     /**

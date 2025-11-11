@@ -22,6 +22,7 @@
             <nav class="sidebar-nav">
                 <ul class="side-container">
 
+                    @can('emp.dashboard.view')
                     <!-- Dashboard -->
                     <li class="side-items {{ request()->routeIs('dashboard.*') ? 'active' : '' }}">
                         <a href="{{ route('dashboard.index') }}" class="side-link text-body">
@@ -31,7 +32,12 @@
                             <span class="side-text">Dashboard</span>
                         </a>
                     </li>
+                    @endcan
 
+                    @canany([
+                        'emp.timelogs.view',
+                        'emp.timelogs.checkin-out'
+                    ])
                     <!-- Timelogs -->
                     <li class="side-items has-submenu {{ request()->routeIs('checkinout.*') ? 'active' : '' }}">
                         <a href="{{ route('checkinout.index') }}" class="side-link text-body">
@@ -41,7 +47,9 @@
                             <span class="side-text">Timelogs</span>
                         </a>
                     </li>
+                    @endcanany
 
+                    @can('emp.dashboard.view')
                     <!-- Payslip -->
                     <li class="side-items has-submenu">
                         <a href="" class="side-link text-body">
@@ -51,9 +59,14 @@
                             <span class="side-text">Payslip</span>
                         </a>
                     </li>
+                    @endcan
 
                     <div class="sidebar-seperator"></div>
 
+                    @canany([
+                        'emp.leave_application.view',
+                        'emp.leave_application.apply'
+                    ])
                     <!-- Leave Application -->
                     <li class="side-items has-submenu {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
                         <a href="{{ route('leaves.index') }}" class="side-link text-body">
@@ -63,7 +76,12 @@
                             <span class="side-text">Leave</span>
                         </a>
                     </li>
+                    @endcanany
 
+                    @canany([
+                        'emp.pass_slip_application.view',
+                        'emp.pass_slip_application.apply'
+                    ])
                     <!-- Pass Slip -->
                     <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
                         <a href="{{ route('obs.index') }}" class="side-link text-body">
@@ -73,7 +91,12 @@
                             <span class="side-text">Pass Slip</span>
                         </a>
                     </li>
+                    @endcanany
 
+                    @canany([
+                        'emp.overtime_application.view',
+                        'emp.overtime_application.apply'
+                    ])
                     <!-- Overtime -->
                     <li class="side-items has-submenu {{ request()->routeIs('overtime.*') ? 'active' : '' }}">
                         <a href="{{ route('overtime.index') }}" class="side-link text-body">
@@ -83,7 +106,7 @@
                             <span class="side-text">Overtime</span>
                         </a>
                     </li>
-
+                    @endcanany
 
                     <div class="sidebar-seperator"></div>
                     

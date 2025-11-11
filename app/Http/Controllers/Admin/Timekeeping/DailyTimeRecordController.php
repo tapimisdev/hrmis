@@ -25,6 +25,8 @@ class DailyTimeRecordController extends Controller
     public function __construct(DailyTimeRecordService $daily_time_record_service)
     {
         $this->daily_time_record_service = $daily_time_record_service;
+
+        $this->middleware('permission:hr.timekeeping.view')->only(['index', 'show']);
     }
 
     /**

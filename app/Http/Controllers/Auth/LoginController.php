@@ -30,8 +30,11 @@ class LoginController extends Controller
     {
         $user = auth()->user();
 
-        // Using hasRole() method
-        if ($user->hasRole('employee')) {
+        $hasEmployeeRole = $user->roles->contains(function ($role) {
+            return str_starts_with($role->name, 'emp_');
+        });
+
+        if ($hasEmployeeRole) {
             return '/employee/dashboard';
         }
 
