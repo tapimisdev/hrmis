@@ -9,6 +9,17 @@
       <div class="toolbar-left">
         <button class="toolbar-btn"><i class="fa-solid fa-print"></i> Print</button>
         <button class="toolbar-btn" @click="downloadPayroll(payroll_no)"><i class="fa-solid fa-download"></i> Download</button>
+
+        <div class="dropdown">
+          <button class="toolbar-btn left dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Actions
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end ">
+            <li><a class="dropdown-item" href="#">Action</a></li>
+            <li><a class="dropdown-item" href="#">Another action</a></li>
+            <li><a class="dropdown-item" href="#">Something else here</a></li>
+          </ul>
+        </div>
       </div>
     </div>
 
