@@ -49,8 +49,6 @@ class SuspensionController extends Controller
 
         $payload = $request->all();
 
-        // dd($payload);   
-
         $validator = Validator::make($payload, [
             'name' => 'required|string|max:255',
             'description' => 'nullable',

@@ -106,8 +106,6 @@ class EventsController extends Controller
             ->limit(10) 
             ->get();
 
-        // dd($data);
-
         return view('admin.pages.services.events.show', compact('data', 'others'));
     }
 

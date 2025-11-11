@@ -14,8 +14,6 @@ class CheckRole
     {
         $user = $request->user();
 
-        dd($user->role);
-
         // Proceed only if authenticated and visiting employee routes
         if ($user && $request->is('employee*')) {
             $approvals = $this->checkApprovals($user->id);
