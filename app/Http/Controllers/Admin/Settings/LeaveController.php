@@ -10,6 +10,13 @@ use Yajra\DataTables\Facades\DataTables;
 
 class LeaveController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.leave_type.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.leave_type.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.leave_type.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.leave_type.delete')->only('destroy');
+    }
     /**
      * Display a listing of the resource.
      */

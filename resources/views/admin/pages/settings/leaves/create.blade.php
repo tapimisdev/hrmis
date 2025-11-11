@@ -78,7 +78,7 @@
                 _token: $('input[name="_token"]').val()
             };
 
-            axios.post(`/admin/settings/leaves`, formData, {
+            axios.post(`/admin/maintenance/leaves`, formData, {
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
@@ -106,7 +106,7 @@
                 } else {
                     Swal.fire({
                         title: "Oops!",
-                        text: "Something went wrong, try again later!",
+                        text: error.response.data.message,
                         icon: "error"
                     });
                 }

@@ -11,6 +11,13 @@ use Yajra\DataTables\Facades\DataTables;
 
 class RolesAndPermissionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.role_and_permission.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.role_and_permission.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.role_and_permission.edit')->only('edit', 'update', 'updateRole', 'editRole');
+    }
+
     public function index()
     {
         if (request()->ajax()) {
@@ -96,7 +103,7 @@ class RolesAndPermissionController extends Controller
         // sync permissions
         $role->syncPermissions($request->permissions ?? []);
 
-        return back()->with('success', 'Permissions updated successfully!');
+        return response(['message' => 'permission updated succesfully!'], 200);
     }
 
     public function datatable($query)

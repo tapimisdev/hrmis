@@ -11,6 +11,12 @@ use Yajra\DataTables\Facades\DataTables;
 
 class EmploymentTypesController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.employment_type.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.employment_type.edit')->only('edit', 'update');
+    }
+
     public function getEmploymentTypes()
     {
         $query = DB::table('employment_types')

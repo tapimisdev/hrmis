@@ -10,6 +10,13 @@ use Yajra\DataTables\Facades\DataTables;
 
 class EarningsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.earnings.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.earnings.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.earnings.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.earnings.delete')->only('destroy');
+    }
     /**
      * Display a listing of the resource.
      */

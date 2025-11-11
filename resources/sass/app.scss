@@ -76,3 +76,21 @@
     font-size: 9px;
     font-weight: 600;
 }
+
+.bb-except-last > *:not(:last-child) {
+  border-bottom: 1px solid #dee2e6;
+}
+
+[data-bs-theme="dark"] .swal2-popup {
+  background-color: var(--bs-tertiary-bg) !important;
+  color: var(--bs-body-color) !important;
+}
+
+[data-bs-theme="dark"] .swal2-title,
+[data-bs-theme="dark"] .swal2-html-container {
+  color: var(--bs-body-color) !important;
+}
+
+[data-bs-theme="dark"] .swal2-icon {
+  filter: brightness(0.9);
+}

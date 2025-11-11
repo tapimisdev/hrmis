@@ -217,7 +217,7 @@ export default {
 
 <style lang="scss" scoped>
 .timekeeping-summary {
-  margin-bottom: 1.5rem;
+  margin-bottom: .8rem;
 
   .card-header {
     display: flex;

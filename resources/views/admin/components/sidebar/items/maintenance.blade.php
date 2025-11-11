@@ -28,8 +28,7 @@
     <div class="collapse collapsable {{ Str::contains(request()->path(), 'maintenance') ? 'show' : '' }}" id="maintenance">
         <ul class="nested-list">
             @canany([
-                'hr.division.view',
-                'hr.unit.view',
+                'hr.organization.view'
             ])
             <li class="nested-item">
                 <a href="{{ route('organization.index', ['tab' => 'agency']) }}"

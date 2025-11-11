@@ -49,7 +49,7 @@ redirectToTab();
 window.SuccesToast = Swal.mixin({
     toast: true,
     position: "top-end",
-    showConfirmButton: false,
+    showConfirmButton: true,
     timer: 3000,
     background: "#00af00",
     icon: "success",
@@ -64,7 +64,7 @@ window.SuccesToast = Swal.mixin({
 window.ErrorToast = Swal.mixin({
     toast: true,
     position: "top-end",
-    showConfirmButton: false,
+    showConfirmButton: true,
     timer: 3000,
     background: "#e03b3b",
     icon: "error",

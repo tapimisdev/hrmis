@@ -24,6 +24,9 @@ class CheckInOutController extends Controller
     {
         $this->timelogsServices = $timelogsServices;
         $this->employeeService = $employeeService;
+
+        $this->middleware('permission:emp.timelogs.view')->only(['index']);
+        $this->middleware('permission:emp.timelogs.checkin-out')->only(['store']);
     }
 
     public function index()

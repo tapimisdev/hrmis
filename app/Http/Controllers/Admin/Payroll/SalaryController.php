@@ -22,6 +22,9 @@ class SalaryController extends Controller
     public function __construct(SalaryPayrollService $payroll_salary_service)
     {
         $this->payroll_salary_service = $payroll_salary_service;
+        $this->middleware('permission:hr.salary_payroll.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.salary_payroll.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.salary_payroll.delete')->only('destroy');
     }
 
     public function index()

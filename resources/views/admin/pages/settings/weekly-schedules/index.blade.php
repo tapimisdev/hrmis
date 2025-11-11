@@ -112,7 +112,7 @@
                     .catch(error => {
                         Swal.fire({
                             title: "Oops!",
-                            text: "Something went wrong, try again later!",
+                            text: error.response.data.message,
                             icon: "error"
                         });
                     })

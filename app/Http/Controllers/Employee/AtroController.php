@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreAtroRequest;
 use App\Http\Controllers\Admin\Services\ApplicationController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -18,6 +17,9 @@ class AtroController extends Controller
     public function __construct(ApplicationController $applicationService)
     {
         $this->applicationService = $applicationService;
+
+        $this->middleware('permission:emp.overtime_application.view')->only(['index', 'create', 'show']);
+        $this->middleware('permission:emp.overtime_application.apply')->only(['store']);
     }
 
     /**

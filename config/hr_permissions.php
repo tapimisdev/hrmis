@@ -43,34 +43,21 @@ return [
 
     'leave_approval' => [
         'view',
-        'approve',
-        'disapprove',
-        'cancel',
+        'save',
     ],
 
     'pass_slip_approval' => [
         'view',
-        'approve',
-        'disapprove',
-        'cancel',
+        'save',
     ],
 
     'overtime_approval' => [
         'view',
-        'approve',
-        'disapprove',
-        'cancel',
+        'save',
     ],
 
     // Core Entities
-    'division' => [
-        'view',
-        'create',
-        'edit',
-        'delete',
-    ],
-
-    'unit' => [
+    'organization' => [
         'view',
         'create',
         'edit',

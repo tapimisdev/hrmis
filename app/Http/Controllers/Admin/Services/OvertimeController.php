@@ -12,6 +12,12 @@ use Carbon\Carbon;
 
 class OvertimeController extends Controller {
 
+    public function __construct()
+    {
+        $this->middleware('permission:hr.overtime_approval.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.overtime_approval.save')->only('save');
+    }
+
     public function getRawData(?int $id = null)
     {
         // Fetch main leave applications
@@ -197,7 +203,6 @@ class OvertimeController extends Controller {
             ], 500);
         }
     }
-
 
     public function datatable($query)
     {

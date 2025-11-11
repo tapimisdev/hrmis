@@ -2,7 +2,7 @@
 <template>
     <tbody>
         <tr v-for="row in rows" :key="row">
-            <td v-for="col in columns" :key="col">
+            <td v-for="col in columns" :key="col" class="p-1">
                 <div class="skeleton"></div>
             </td>
         </tr>
@@ -31,10 +31,10 @@ export default {
     width: 100%;
     border-radius: 4px;
     background: linear-gradient(
-        90deg,
-        #e0e0e0 25%,
-        #f0f0f0 50%,
-        #e0e0e0 75%
+      90deg,
+      var(--bs-secondary-bg) 25%,
+      var(--bs-body-bg) 50%,
+      var(--bs-tertiary-bg) 75%
     );
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s infinite;
