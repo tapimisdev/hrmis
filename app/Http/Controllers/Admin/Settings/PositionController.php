@@ -19,6 +19,11 @@ class PositionController extends Controller
 
     public function __construct() {
         $this->employment_types = DB::table('employment_types')->get();
+        
+        $this->middleware('permission:hr.position.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.position.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.position.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.position.delete')->only('destroy');
     }
 
     public function index(Request $request)

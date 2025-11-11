@@ -9,6 +9,13 @@ use Yajra\DataTables\Facades\DataTables;
 
 class WeeklyScheduleController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.weekly_schedule.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.weekly_schedule.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.weekly_schedule.edit')->only('edit', 'update', 'updateRole', 'editRole');
+        $this->middleware('permission:hr.weekly_schedule.delete')->only('destroy');
+    }
     /**
      * Display a listing of the resource.
      */

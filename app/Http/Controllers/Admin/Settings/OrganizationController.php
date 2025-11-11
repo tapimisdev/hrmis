@@ -10,6 +10,14 @@ use Yajra\DataTables\Facades\DataTables;
 
 class OrganizationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.organization.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.organization.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.organization.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.organization.delete')->only('destroy');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -325,7 +333,6 @@ class OrganizationController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-
         if(!in_array($request->type, ['division', 'unit'])) {
             return response()->json([
                 'status' => 'error',
@@ -361,7 +368,6 @@ class OrganizationController extends Controller
 
     public function datatable($query, $type)
     {
-
         return DataTables::of($query)
             ->addIndexColumn()
             ->editColumn('code', function ($row) {
@@ -402,5 +408,5 @@ class OrganizationController extends Controller
             })
             ->rawColumns(['actions'])
             ->make(true);
-        }
+    }
 }

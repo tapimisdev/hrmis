@@ -15,6 +15,14 @@ use Illuminate\Support\Facades\Storage;
 class EventsController extends Controller
 {
     
+    public function __construct()
+    {
+        $this->middleware('permission:hr.events_and_announcements.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.events_and_announcements.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.events_and_announcements.edit')->only(['edit', 'update']);
+        $this->middleware('permission:hr.events_and_announcements.delete')->only('destroy');
+    }
+
     public function index()
     {
         $perPage = 10;
@@ -24,7 +32,6 @@ class EventsController extends Controller
 
         return view('admin.pages.services.events.index', compact('data'));
     }
-
 
     public function show(string $slug) 
     {
@@ -110,7 +117,6 @@ class EventsController extends Controller
 
         return view('admin.pages.services.events.show', compact('data', 'others'));
     }
-
 
     public function create() {
 
@@ -266,7 +272,6 @@ class EventsController extends Controller
         }
     }
 
-
     public function edit(string $slug)
     {
         $isEdit = true;
@@ -360,8 +365,6 @@ class EventsController extends Controller
 
         return view('admin.pages.services.events.form', compact('isEdit', 'users', 'id', 'data'));
     }
-
-
 
     public function update(Request $request, $id)
     {

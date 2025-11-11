@@ -18,6 +18,11 @@ class ProjectsController extends Controller
     public function __construct()
     {
         $this->employeeService = app(EmployeeService::class);
+
+        $this->middleware('permission:hr.project.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.project.assign')->only(['create', 'store']);
+        $this->middleware('permission:hr.project.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.project.delete')->only('destroy');
     }
 
     /**

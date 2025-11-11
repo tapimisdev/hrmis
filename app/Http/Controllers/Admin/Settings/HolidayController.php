@@ -10,6 +10,13 @@ use Yajra\DataTables\Facades\DataTables;
 
 class HolidayController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.holiday.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.holiday.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.holiday.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.holiday.delete')->only('destroy');
+    }
      /**
      * Display a listing of the resource.
      */

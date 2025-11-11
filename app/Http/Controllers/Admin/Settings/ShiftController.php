@@ -10,6 +10,14 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ShiftController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.shift.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.shift.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.shift.edit')->only('edit', 'update', 'updateRole', 'editRole');
+        $this->middleware('permission:hr.shift.delete')->only('destroy');
+    }
+
     /**
      * Display a listing of the resource.
      */

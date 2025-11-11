@@ -45,7 +45,7 @@
         // init-theme-sidebar.js
 
         (function () {
-            // 🌙 Theme setup
+            //  Theme setup
             const storageKey = 'theme-preference';
             const storedTheme = localStorage.getItem(storageKey);
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -54,7 +54,7 @@
         })();
 
         (function () {
-            // 📐 Sidebar collapse setup
+            // Sidebar collapse setup
             const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
             const sidebar = document.querySelector('.sidebar');
 

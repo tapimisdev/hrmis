@@ -10,6 +10,13 @@ use Yajra\DataTables\Facades\DataTables;
 
 class DeductionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.deductions.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.deductions.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.deductions.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.deductions.delete')->only('destroy');
+    }
     /**
      * Display a listing of the resource.
      */

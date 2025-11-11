@@ -10,6 +10,14 @@ use Yajra\DataTables\Facades\DataTables;
 
 class TrancheController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.tranche.view')->only(['index', 'show']);
+        $this->middleware('permission:hr.tranche.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.tranche.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.tranche.delete')->only('destroy');
+    }
+
     public function index(Request $request)
     {
         if($request->ajax()) {

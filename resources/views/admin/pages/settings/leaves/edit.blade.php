@@ -80,14 +80,14 @@ $(function() {
 
         let leaveId = "{{ $leave->id ?? '' }}";
 
-        axios.put(`/admin/settings/leaves/${leaveId}`, formData)
+        axios.put(`/admin/maintenance/leaves/${leaveId}`, formData)
             .then(function (response) {
                 Swal.fire({
                     icon: "success",
                     title: "Updated!",
                     text: response.data.message,
                     timer: 2000,
-                    showConfirmButton: false
+                    showConfirmButton: true
                 });
             })
             .catch(function (error) {
@@ -101,9 +101,9 @@ $(function() {
                     });
                 } else {
                     Swal.fire({
-                        icon: "error",
-                        title: "Oops...",
-                        text: "Something went wrong!",
+                        title: "Oops!",
+                        text: error.response.data.message,
+                        icon: "error"
                     });
                 }
             });

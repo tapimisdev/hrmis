@@ -105,7 +105,7 @@
             };
 
             let scheduleId = "{{ $schedule->id ?? '' }}";
-            axios.put(`/admin/settings/weekly-schedules/${scheduleId}`, formData, {
+            axios.put(`/admin/maintenance/weekly-schedules/${scheduleId}`, formData, {
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
@@ -131,7 +131,7 @@
                 } else {
                     Swal.fire({
                         title: "Oops!",
-                        text: "Something went wrong, try again later!",
+                        text: error.response.data.message,
                         icon: "error"
                     });
                 }

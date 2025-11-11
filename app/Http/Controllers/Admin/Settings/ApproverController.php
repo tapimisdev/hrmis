@@ -12,6 +12,13 @@ use Carbon\Carbon;
 
 class ApproverController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.approvers.view')->only(['view', 'show']);
+        $this->middleware('permission:hr.approvers.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.approvers.edit')->only('edit', 'update');
+        $this->middleware('permission:hr.approvers.delete')->only('destroy');
+    }
     
     public function index(Request $request)
     {   

@@ -13,6 +13,12 @@ use Carbon\Carbon;
 class LeaveApplicationController extends Controller {
 
 
+    public function __construct()
+    {
+        $this->middleware('permission:hr.leave_approval.view')->only(['view', 'show']);
+        $this->middleware('permission:hr.leave_approval.save')->only('save');
+    }
+
     public function getRawData(?int $id = null)
     {
         // Fetch main leave applications
@@ -99,7 +105,8 @@ class LeaveApplicationController extends Controller {
         return $results;
     }
 
-    public function index() {
+    public function index() 
+    {
         if (request()->ajax()) {
             $query = $this->getRawData();
             return $this->datatable($query);
@@ -108,7 +115,8 @@ class LeaveApplicationController extends Controller {
         return view('admin.pages.services.leave.index');
     }
     
-    public function show(int $id) {
+    public function show(int $id) 
+    {
 
         $data = $this->getRawData($id)[0] ?? [];
 
@@ -120,7 +128,8 @@ class LeaveApplicationController extends Controller {
       
     }
 
-    public function rules() {
+    public function rules() 
+    {
         return [
             'id' => 'required|exists:leave_applications,id',
             'action' => 'required|in:approve,decline'
@@ -197,7 +206,6 @@ class LeaveApplicationController extends Controller {
             ], 500);
         }
     }
-
 
     public function datatable($query)
     {
