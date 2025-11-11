@@ -4,26 +4,6 @@ import './vue';
 import './dark-mode';
 
 import axios from 'axios';
-
-// Get the token from the meta tag
-const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-const token = localStorage.getItem('auth_token');
-
-if (csrf) {
-    
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf;
-
-    $.ajaxSetup({
-        headers: {
-            'Authorization': 'Bearer ' + token
-        }
-    });
-
-} else {
-  console.error('CSRF token not found!');
-}
-
-
 import { post, put } from './action';
 import { 
     confirmAction, alert, pushQuery, redirectToTab, loadCountries
@@ -32,6 +12,21 @@ import lightGallery from 'lightgallery';
 import lgThumbnail from 'lightgallery/plugins/thumbnail'
 import lgZoom from 'lightgallery/plugins/zoom'
 import { initCalendar, setEvents, generateEventsWithAvailability } from './calendar';
+
+const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+const token = localStorage.getItem('auth_token');
+
+if (csrf) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf;
+    $.ajaxSetup({
+        headers: {
+            'Authorization': 'Bearer ' + token
+        }
+    });
+} else {
+  console.error('CSRF token not found!');
+}
+
 
 window.post = post;
 window.put = put;
@@ -127,15 +122,14 @@ $(document).on('click', '.push-state-query', function() {
 });
 
 $('.select2').select2({
-    placeholder: " - CHOOSE - ",
     allowClear: true,
     width: '100%',
-    dropdownParent: $('body'),
     closeOnSelect: false
 });
 
+$('.datepicker').daterangepicker();
+
 if ($('.datepicker').length) {
-    $('.datepicker').daterangepicker();
 }
 
 if ($('.ckeditor').length) {
