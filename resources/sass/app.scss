@@ -94,3 +94,7 @@
 [data-bs-theme="dark"] .swal2-icon {
   filter: brightness(0.9);
 }
+
+[data-bs-theme="dark"] .nav-pills .nav-link.active {
+    background-color: var(--bs-tertiary-bg);
+}

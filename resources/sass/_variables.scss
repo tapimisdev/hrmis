@@ -24,20 +24,9 @@ $dark: #444340;
 $black: #444340;
 $white: #ffffff;
 
-// Dark theme customization
-// $body-bg-dark: #1a1d24;
-// $body-secondary-bg-dark: #252830;
-// $body-tertiary-bg-dark: #2f3440;
-
-// Lighten primary colors for dark theme
-// $primary-dark: lighten($primary, 40%); // #4d6fa8
 $primary-dark:  #0046FF;
 $secondary-dark: $secondary; // #8daffe
 $success-dark: $success; // #33c233
 $danger-dark: $danger; // #e96a6a
 $warning-dark: $warning; // Keep warning as is
 $info-dark: $info; // #36b4f2
-
-
-
-// Import Bootstrap
