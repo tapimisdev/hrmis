@@ -1,18 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Payroll;
+namespace App\Http\Controllers\Admin\Payroll\Salary;
 
 use App\Enums\EmploymentTypesEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Payroll\StoreSalaryRequest;
 use App\Services\SalaryPayrollService;
-use Illuminate\Bus\Batch;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Validation\Rule;
 use Throwable;
 
 class SalaryController extends Controller

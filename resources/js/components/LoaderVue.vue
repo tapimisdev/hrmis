@@ -4,7 +4,7 @@
         :class="hasBackground ? 'has-bg' : 'position-absolute top-0 end-0 p-3'"
         style="z-index: 800;"
     >
-        <div class="loader d-flex align-items-center gap-2 bg-light shadow p-2 rounded">
+        <div class="loader d-flex align-items-center bg-body gap-2 border p-2 rounded">
             <div class="spinner-border text-primary spinner-border-sm" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
@@ -53,8 +53,7 @@ export default {
 @import '../../sass/variables';
 .has-bg {
   position: absolute;
-  border-radius: 16px;
-  background-color: rgba($dark, 0.2);
+  background-color: rgba(var(--bs-body-color-rgb), 0.2);
   height: 100%;
   width: 100%;
   display: flex;

@@ -7,20 +7,6 @@ use App\Http\Requests\Admin\Payroll\Steps\ValidateCreatePayrollRequest;
 use App\Services\SalaryPayrollService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Font;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Color;
-use PhpOffice\PhpSpreadsheet\RichText\RichText;
-use PhpOffice\PhpSpreadsheet\Cell\DataType;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-
 use App\Services\Exports\PayslipService;
 use App\Services\Exports\AUTService;
 use App\Services\Exports\RegistryService;
@@ -97,7 +83,6 @@ class SalaryApiController extends Controller
             ->get()->unique('id');
 
         $enriched = $pse->map(function ($d) use ($payroll_date) {
-
             $deductions = DB::table('payroll_salary_employee_edeductions')
                 ->where('payroll_se_id', $d->id)
                 ->get();
@@ -117,6 +102,7 @@ class SalaryApiController extends Controller
                 ->value('project_id');
 
             return (object) [
+                'id' => $d->id,
                 'employee_no' => $d->employee_no,
                 'name' => strtoupper($d->name),
                 'position' => ucfirst($d->position),
@@ -160,6 +146,7 @@ class SalaryApiController extends Controller
                 }
 
                 $projectGroups[$projectId]['employees'][] = [
+                    'id' => $employee->id,
                     'employee_no' => $employee->employee_no,
                     'name' => $employee->name,
                     'position' => $employee->position,
@@ -227,7 +214,6 @@ class SalaryApiController extends Controller
     {
        return app(RegistryService::class)->download($payroll_no);
     }
-
 
     public function downloadAbsencesLeaves($payroll_no) {
         return app(AUTService::class)->download($payroll_no);

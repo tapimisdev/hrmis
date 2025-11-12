@@ -23,6 +23,7 @@
 
     <!-- Sheet -->
     <div class="excel-sheet">
+      <LoaderVue :visible="loading" :hasBackground="true" status="uploading" message="Uploading, please wait..." />
       <div class="sheet-header">
 
         <h1 class="sheet-title">PAYROLL FOR CONTRACT PRICE OF PROJECT PERSONNEL</h1>
@@ -114,12 +115,15 @@
                 {{ formatNumber(getDeductionAmount(emp, deduction)) }}
               </td>
 
-              <td 
-                class="number-cell"
-                contenteditable="true"
-                @input="updateValue($event, emp, 'adjustment')" 
-                v-html="emp.adjustment">
+              <td class="number-cell p-0">
+                <input 
+                  type="number" 
+                  v-model="emp.adjustment"
+                  @change="adjustRow(emp)"
+                  class="w-100 border-0 p-2 bg-transparent focus:ring-0 text-right"
+                />
               </td>
+
               <td class="number-cell net-salary">{{ formatNumber(emp.net_salary) }}</td>
             </tr>
 
@@ -194,10 +198,12 @@
 
 <script>
 import axios from 'axios';
+import LoaderVue from '../../../../components/LoaderVue.vue';
 const token = localStorage.getItem("auth_token");
 
 export default {
   name: "CosPayrollRegistry",
+  components: { LoaderVue },
   props: {
     projects: { type: Array, required: true },
     status: { type: String, required: true },
@@ -206,6 +212,7 @@ export default {
   data() {
     return {
       token: token,
+      loading: false,
       theme: document.documentElement.getAttribute("data-bs-theme") || "light",
     };
   },
@@ -300,9 +307,26 @@ export default {
         0
       );
     },
-    updateValue(event, emp, field) {
-      let newValue = event.target.innerText.trim().replace(/[^0-9.-]/g, "");
-      emp[field] = newValue;
+    async adjustRow(emp) {
+      this.loading = true;
+      try {
+        const res = await axios.post(
+          `/api/payroll/salary-item/${emp.id}`,
+          {
+            adjustment: emp.adjustment
+          },
+          {
+            headers: { Authorization: `Bearer ${this.token}` },
+            responseType: 'blob',
+          }
+        );
+        console.log(res);
+        this.$emit('fetch_data');
+      } catch (error) {
+        console.error(error);
+      } finally {
+        this.loading = false;
+      }
     },
     applyStatusTheme() {
       const { color, bg, darkColor, darkBg } = this.statusConfig;
@@ -419,6 +443,7 @@ export default {
   margin: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--bs-border-color, #d0d0d0);
+  position: relative;
 }
 
 [data-bs-theme="dark"] .excel-sheet {

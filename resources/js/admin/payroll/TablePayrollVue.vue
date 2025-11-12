@@ -1,7 +1,7 @@
 <template>
   <div class="table-responsive px-1">
-    <LoaderVue :visible="loading" status="uploading" message="Uploading, please wait..." />
-    <table class="table table-sm table-striped align-middle">
+    <table class="table table-sm table-striped align-middle position-relative ">
+      <LoaderVue :visible="loading" status="uploading" message="Uploading, please wait..." style="top: 200px;" />
       <thead>
         <tr>
           <th>Payroll Details</th>
@@ -83,7 +83,7 @@
           </td>
         </tr>
         <tr v-if="loading">
-          <td colspan="7" class="text-center text-muted py-3">
+          <td colspan="7" class="text-center text-muted">
             Loading...
           </td>
         </tr>

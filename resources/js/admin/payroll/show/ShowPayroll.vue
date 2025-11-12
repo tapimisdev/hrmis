@@ -13,6 +13,7 @@
       :projects="employees"
       :status="status"
       :payroll_no="payroll_no"
+      @fetch_data="fetchRegistry"
     />
     <div v-else-if="employment_type === 'REGULAR'">
       <div class="alert alert-primary">REGULAR TO HA</div>
@@ -49,8 +50,6 @@ export default {
     },
     async fetchRegistry() {
       try {
-        const token = localStorage.getItem('token'); // or however you store it
-
         const response = await axios.get(`/api/payroll/salary/${this.payroll_id}`, {
           headers: {
             Authorization: `Bearer ${this.token}`,

@@ -2,14 +2,17 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\Payroll\Api\SalaryApiController;
-use App\Http\Controllers\Admin\Payroll\SalaryController;
+use App\Http\Controllers\Admin\Payroll\Salary\SalaryController;
+use App\Http\Controllers\Admin\Payroll\Salary\SalaryItemController;
 
 Route::prefix('payroll')->group(function() {
     Route::post('validate-and-fetch-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
     Route::post('salary', [SalaryApiController::class, 'getList']);
     Route::get('salary/{payroll_id}', [SalaryApiController::class, 'getPayrollRegistry']);
     Route::post('generate-salary-payroll', [SalaryController::class, 'store']);
-    
+
+    Route::post('salary-item/{id}', [SalaryItemController::class, 'update']);
+
     # Adjustment
     Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);
     Route::get('approvers', [SalaryApiController::class, 'approvers']);
