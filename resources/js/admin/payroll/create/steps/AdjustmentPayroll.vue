@@ -120,13 +120,22 @@ export default {
 
     //  Recreate calendar if cutoff/date changed
     async remountCalendar() {
+      // Properly destroy the calendar before remounting
+      const calendarApi = this.$refs.calendarRef?.getApi?.();
+      if (calendarApi) {
+        calendarApi.destroy();
+      }
+      
       this.showCalendar = false;
       await this.$nextTick();
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 100));
+      
       this.setCutoffRange();
       this.calendarKey++;
+      
       await this.$nextTick();
-      setTimeout(() => (this.showCalendar = true), 50);
+      await new Promise((r) => setTimeout(r, 100));
+      this.showCalendar = true;
     },
 
     //  Fetch adjustments from backend
