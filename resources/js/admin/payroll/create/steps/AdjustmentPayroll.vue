@@ -83,7 +83,20 @@ export default {
   data: () => ({
     showCalendar: false,
     calendarKey: 0,
-    calendarOptions: null,
+    calendarOptions: {
+      plugins: [dayGridPlugin, interactionPlugin],
+      initialView: "dayGridMonth",
+      headerToolbar: {
+        left: "prev,next today",
+        center: "title",
+        right: "",
+      },
+      editable: false,
+      selectable: true,
+      dayMaxEvents: true,
+      weekends: true,
+      events: [],
+    },
     selectedDate: null,
     errors: [],
     adjustment_type: "",
@@ -113,9 +126,9 @@ export default {
   methods: {
     //  Initialize the calendar on mount
     async initCalendar() {
-      this.setCutoffRange();
+      await this.setCutoffRange();
       await this.$nextTick();
-      setTimeout(() => (this.showCalendar = true), 100);
+      this.showCalendar = true;
     },
 
     //  Recreate calendar if cutoff/date changed
@@ -128,13 +141,11 @@ export default {
       
       this.showCalendar = false;
       await this.$nextTick();
-      await new Promise((r) => setTimeout(r, 100));
       
-      this.setCutoffRange();
+      await this.setCutoffRange();
       this.calendarKey++;
       
       await this.$nextTick();
-      await new Promise((r) => setTimeout(r, 100));
       this.showCalendar = true;
     },
 
@@ -188,19 +199,9 @@ export default {
 
       const adjustments = await this.fetchAdjustments();
 
-      this.calendarOptions = {
-        plugins: [dayGridPlugin, interactionPlugin],
-        initialView: "dayGridMonth",
+      // Update the existing calendarOptions object instead of replacing it
+      Object.assign(this.calendarOptions, {
         initialDate: cutoff.start,
-        headerToolbar: {
-          left: "prev,next today",
-          center: "title",
-          right: "",
-        },
-        editable: false,
-        selectable: true,
-        dayMaxEvents: true,
-        weekends: true,
         validRange: {
           start: cutoff.start,
           end: this.addOneDay(cutoff.end),
@@ -216,7 +217,7 @@ export default {
         ],
         dateClick: (info) => this.handleDateClick(info, cutoff),
         eventClick: (info) => this.handleEventClick(info),
-      };
+      });
     },
 
     //  Add 1 day utility
