@@ -63,13 +63,13 @@ class RegistryService
             'font' => ['name' => 'Calibri', 'bold' => false, 'size' => 10],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
+                'vertical'   => Alignment::VERTICAL_CENTER,
             ],
         ];
 
         $fillStyles = [
             'deduction' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFFC7CE']],
-            'netSalary' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'DCE6F1']],
+            'netSalary' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'BDD7EE']],
             'project'   => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFDE9D9']],
             'salary'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFEBF1DE']],
             'white'     => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFFFFFF']],
@@ -79,34 +79,43 @@ class RegistryService
 
         /** ---------- DEDUCTION TYPES ---------- */
         $deductionTypes = collect($this->registry)
-            ->flatMap(fn($proj) => collect($proj['employees'])
-                ->flatMap(fn($emp) => collect($emp['deductions'] ?? [])->pluck('deduction_type')))
-            ->unique()
+            ->flatMap(fn($proj) => collect($proj['employees'] ?? [])->flatMap(
+                fn($emp) => collect($emp['deductions'] ?? [])->pluck('deduction_type')
+            ))
             ->filter()
             ->map(fn($t) => trim($t))
+            ->unique()
             ->values()
             ->toArray();
 
         $numDeductions = count($deductionTypes);
-        $baseCol = 'G';
-        $lastCol = $baseCol;
 
+        /** Determine deduction and net salary columns */
         if ($numDeductions > 0) {
+            $baseCol = 'J';
             $sheet->insertNewColumnBefore($baseCol, $numDeductions);
+
             $col = $baseCol;
             foreach ($deductionTypes as $deduction) {
                 $sheet->setCellValue("{$col}7", strtoupper($deduction));
-                $applyStyle("{$col}7", array_merge_recursive($headerStyle, ['fill' => $fillStyles['deduction']]));
-                $lastCol = $col;
+                $applyStyle("{$col}7", array_merge_recursive($headerStyle, [
+                    'font' => ['bold' => true],
+                    'fill' => $fillStyles['deduction'],
+                ]));
                 $col++;
             }
             $nextAfterDeductions = $col;
         } else {
-            $nextAfterDeductions = 'G';
+            $baseCol = 'I';
+            $nextAfterDeductions = 'J';
         }
 
+        // Net Salary Header
         $sheet->setCellValue("{$nextAfterDeductions}7", 'NET SALARY');
-        $applyStyle("{$nextAfterDeductions}7", array_merge_recursive($headerStyle, ['fill' => $fillStyles['netSalary']]));
+        $applyStyle("{$nextAfterDeductions}7", array_merge_recursive(
+            $headerStyle,
+            ['fill' => $fillStyles['netSalary'], 'font' => ['bold' => true]]
+        ));
 
         /** ---------- EMPLOYEE DATA ---------- */
         $employeeCount = 1;
@@ -115,17 +124,21 @@ class RegistryService
 
         [$month, $year, $period] = explode(' ', $this->payroll->period_covered);
         $sheet->setCellValue("A5", $period);
-        $sheet->setCellValue("B5", $month . ' ' . $year);
+        $sheet->setCellValue("B5", "{$month} {$year}");
 
         foreach ($this->registry as $project) {
             $sheet->insertNewRowBefore($row, 1);
             $projectName = strtoupper($project['name'] ?? 'UNTITLED PROJECT');
 
+            // Project Title Row
             $sheet->mergeCells("A{$row}:{$nextAfterDeductions}{$row}");
             $sheet->setCellValue("A{$row}", $projectName);
             $sheet->getStyle("A{$row}:{$nextAfterDeductions}{$row}")->applyFromArray([
                 'font' => ['bold' => true, 'italic' => true, 'size' => 12],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical'   => Alignment::VERTICAL_CENTER,
+                ],
                 'fill' => $fillStyles['project'],
             ]);
             $sheet->getRowDimension($row)->setRowHeight(26);
@@ -133,14 +146,16 @@ class RegistryService
 
             $startEmployeeRow = $row;
 
+            /** Employees */
             foreach ($project['employees'] ?? [] as $employee) {
                 $sheet->insertNewRowBefore($row, 1);
                 $sheet->getRowDimension($row)->setRowHeight(30);
 
-                // RichText for Name + Position
+                // Rich Name Field
                 $richText = new RichText();
                 $nameRun = $richText->createTextRun(strtoupper($employee['name'] ?? ''));
                 $nameRun->getFont()->setBold(true);
+
                 if (!empty($employee['position'])) {
                     $richText->createText("\n");
                     $posRun = $richText->createTextRun($employee['position']);
@@ -150,24 +165,27 @@ class RegistryService
                 $sheet->setCellValue("A{$row}", $employeeCount);
                 $sheet->setCellValueExplicit("B{$row}", $richText, DataType::TYPE_INLINE);
 
-                // Wrap text + alignment
                 $sheet->getStyle("B{$row}")->getAlignment()
                     ->setWrapText(true)
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Salary columns
-                $sheet->setCellValue("C{$row}", $employee['monthly_rate'] ?? '0.00');
-                $sheet->setCellValue("D{$row}", $employee['salary_earned'] ?? '0.00');
-                $sheet->setCellValue("E{$row}", $employee['aut'] ?? '0.00');
-                $sheet->setCellValue("F{$row}", $employee['total_salary'] ?? '0.00');
+                // Salary
+                $salaryFields = ['monthly_rate','salary_earned','aut','overtime','holiday','adjustments','total_salary'];
+                $col = 'C';
+                foreach ($salaryFields as $field) {
+                    $sheet->setCellValue("{$col}{$row}", $employee[$field] ?? '0.00');
+                    $col++;
+                }
 
-                $applyStyle("A{$row}:E{$row}", ['fill' => $fillStyles['white']]);
-                $applyStyle("F{$row}", ['fill' => $fillStyles['salary']]);
+                // Fill backgrounds
+                $applyStyle("A{$row}:H{$row}", ['fill' => $fillStyles['white']]);
+                $applyStyle("I{$row}", ['fill' => $fillStyles['salary']]);
 
                 // Deductions
-                $deductionValues = collect($employee['deductions'] ?? [])->pluck('amount', 'deduction_type')->toArray();
+                $deductionValues = collect($employee['deductions'] ?? [])->pluck('amount','deduction_type')->toArray();
                 $col = $baseCol;
+
                 foreach ($deductionTypes as $deduction) {
                     $cell = "{$col}{$row}";
                     $sheet->setCellValue($cell, $deductionValues[$deduction] ?? '-');
@@ -176,15 +194,14 @@ class RegistryService
                 }
 
                 // Net Salary
-                $netSalaryCell = "{$nextAfterDeductions}{$row}";
-                $sheet->setCellValue($netSalaryCell, $employee['net_salary'] ?? '0.00');
-                $applyStyle($netSalaryCell, ['fill' => $fillStyles['netSalary']]);
+                $sheet->setCellValue("{$nextAfterDeductions}{$row}", $employee['net_salary'] ?? '0.00');
+                $applyStyle("{$nextAfterDeductions}{$row}", ['fill' => $fillStyles['netSalary']]);
 
                 $employeeCount++;
                 $row++;
             }
 
-            // Project Total
+            /** -------- PROJECT TOTAL -------- */
             $sheet->insertNewRowBefore($row, 1);
             $totalRow = $row;
             $projectTotalRows[] = $totalRow;
@@ -194,29 +211,47 @@ class RegistryService
             $sheet->getRowDimension($totalRow)->setRowHeight(26);
 
             $sheet->getStyle("A{$totalRow}:{$nextAfterDeductions}{$totalRow}")->applyFromArray([
-                'font' => ['bold' => true, 'size' => 10],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                'font' => ['name' => 'Calibri', 'bold' => true, 'size' => 12],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER,'vertical' => Alignment::VERTICAL_CENTER],
                 'fill' => $fillStyles['white'],
             ]);
 
-            $columnsToSum = array_merge(['C', 'D', 'E', 'F'], range($baseCol, chr(ord($baseCol) + $numDeductions - 1)));
+            // Corrected summation columns
+            $columnsToSum = array_unique(
+                array_merge(
+                    ['C','D','E','H','I'],
+                    $numDeductions > 0 ? range($baseCol, chr(ord($baseCol) + $numDeductions - 1)) : [],
+                    [$nextAfterDeductions]
+                )
+            );
+
             foreach ($columnsToSum as $col) {
-                $sheet->setCellValue("{$col}{$totalRow}", "=SUM({$col}{$startEmployeeRow}:{$col}" . ($totalRow - 1) . ")");
+                $sheet->setCellValue(
+                    "{$col}{$totalRow}",
+                    "=SUM({$col}{$startEmployeeRow}:{$col}" . ($totalRow - 1) . ")"
+                );
+
+                if ($col === 'I') $applyStyle("{$col}{$totalRow}", ['fill' => $fillStyles['salary']]);
+                if ($col === $nextAfterDeductions) $applyStyle("{$col}{$totalRow}", ['fill' => $fillStyles['netSalary']]);
+
+                if ($col >= $baseCol && $col < chr(ord($baseCol) + $numDeductions)) {
+                    $applyStyle("{$col}{$totalRow}", ['fill' => $fillStyles['deduction']]);
+                }
             }
 
-            $sheet->setCellValue("{$nextAfterDeductions}{$totalRow}", "=SUM({$nextAfterDeductions}{$startEmployeeRow}:{$nextAfterDeductions}" . ($totalRow - 1) . ")");
             $row += 2;
         }
 
-        // Grand Total
-        if (!empty($projectTotalRows)) {
+        /** -------- GRAND TOTAL -------- */
+        if ($projectTotalRows) {
             $sheet->insertNewRowBefore($row, 1);
             $grandTotalRow = $row;
+
             $sheet->mergeCells("A{$grandTotalRow}:B{$grandTotalRow}");
             $sheet->setCellValue("A{$grandTotalRow}", "GRAND TOTAL:");
 
             $sheet->getStyle("A{$grandTotalRow}:{$nextAfterDeductions}{$grandTotalRow}")->applyFromArray([
-                'font' => ['bold' => true, 'size' => 10],
+                'font' => ['name' => 'Calibri', 'bold' => true, 'size' => 12],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
                 'borders' => [
                     'outline' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF000000']],
@@ -225,17 +260,20 @@ class RegistryService
                 'fill' => $fillStyles['white'],
             ]);
 
-            $columnsToSum = array_merge(['C', 'D', 'E', 'F'], range($baseCol, chr(ord($baseCol) + $numDeductions - 1)));
             foreach ($columnsToSum as $col) {
-                $sumFormula = collect($projectTotalRows)->map(fn($r) => "{$col}{$r}")->implode('+');
-                $sheet->setCellValue("{$col}{$grandTotalRow}", "={$sumFormula}");
-            }
+                $formula = collect($projectTotalRows)->map(fn($r) => "{$col}{$r}")->implode('+');
+                $sheet->setCellValue("{$col}{$grandTotalRow}", "={$formula}");
 
-            $sumFormula = collect($projectTotalRows)->map(fn($r) => "{$nextAfterDeductions}{$r}")->implode('+');
-            $sheet->setCellValue("{$nextAfterDeductions}{$grandTotalRow}", "={$sumFormula}");
+                if ($col === 'I') $applyStyle("{$col}{$grandTotalRow}", ['fill' => $fillStyles['salary']]);
+                if ($col === $nextAfterDeductions) $applyStyle("{$col}{$grandTotalRow}", ['fill' => $fillStyles['netSalary']]);
+
+                if ($col >= $baseCol && $col < chr(ord($baseCol) + $numDeductions)) {
+                    $applyStyle("{$col}{$grandTotalRow}", ['fill' => $fillStyles['deduction']]);
+                }
+            }
         }
 
-        // Column widths
+        /** Column Widths */
         foreach ($sheet->getColumnIterator() as $column) {
             $colLetter = $column->getColumnIndex();
             if (!in_array($colLetter, ['A', 'B'])) {
@@ -243,25 +281,17 @@ class RegistryService
             }
         }
 
-        // Ensure exports folder exists
+        /** Export */
         $exportPath = public_path('exports');
-        if (!is_dir($exportPath)) {
-            mkdir($exportPath, 0775, true);
-        }
-
-        // Clean output buffer to prevent corruption
-        if (ob_get_length()) {
-            ob_end_clean();
-        }
+        if (!is_dir($exportPath)) mkdir($exportPath, 0775, true);
+        if (ob_get_length()) ob_end_clean();
 
         $fileName = strtolower("COS_Payroll_Registry_{$this->payroll->payroll_no}.xlsx");
-        $savePath = $exportPath . '/' . $fileName;
+        $savePath = "{$exportPath}/{$fileName}";
 
         (new Xlsx($spreadsheet))->save($savePath);
-
         return Response::download($savePath, $fileName)->deleteFileAfterSend(true);
     }
-
 
     /* --------------------------
         REGULAR REGISTRY

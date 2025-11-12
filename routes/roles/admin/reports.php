@@ -5,5 +5,5 @@ use App\Http\Controllers\Admin\Payroll\ReportsController;
 
 
 # REPORTS
-Route::get('reports/{employment_type}', [ReportsController::class, 'index'])
+Route::get('reports', [ReportsController::class, 'index'])
     ->name('reports.index');

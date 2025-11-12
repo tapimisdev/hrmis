@@ -6,18 +6,16 @@
         <i :class="['fa-solid', statusConfig.icon]"></i>
         {{ statusConfig.label }}
       </div>
-      <div class="toolbar-left">
+      <div class="toolbar-left d-flex gap-2">
         <button class="toolbar-btn"><i class="fa-solid fa-print"></i> Print</button>
-        <button class="toolbar-btn" @click="downloadPayroll(payroll_no)"><i class="fa-solid fa-download"></i> Download</button>
-
         <div class="dropdown">
           <button class="toolbar-btn left dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Actions
+            <i class="fa-solid fa-download"></i> Downloads
           </button>
           <ul class="dropdown-menu dropdown-menu-end ">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" @click="downloadPayroll('registry', payroll_no)">Payroll Registry</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" @click="downloadPayroll('aut', payroll_no)">Absences & Leaves</a></li>
+            <li><a class="dropdown-item" href="javascript:void(0)" @click="downloadPayroll('payslip', payroll_no)">Payslip</a></li>
           </ul>
         </div>
       </div>
@@ -244,16 +242,22 @@ export default {
     },
   },
   methods: {
-    async downloadPayroll(payroll_no) {
-      console.log(payroll_no);
+    async downloadPayroll(type, payroll_no) {
+
+      const urlArr = {
+        'registry': `/api/payroll/salary/${payroll_no}/download`,
+        'aut': `/api/payroll/absences-leaves/${payroll_no}/download`,
+        'payslip': `/api/payroll/payslip/${payroll_no}/download`,
+      }
+
+      const endPoint = urlArr[type];
 
       try {
-          const response = await axios.get(`/api/payroll/salary/${payroll_no}/download`, {
+          const response = await axios.get(endPoint, {
               headers: { Authorization: `Bearer ${this.token}` },
-              responseType: 'blob', // 🔥 Important: Tell Axios we expect a blob (binary data)
+              responseType: 'blob', 
           });
 
-          // Create a blob URL and trigger the download
           const url = window.URL.createObjectURL(new Blob([response.data]));
           const a = document.createElement('a');
           a.href = url;
@@ -261,7 +265,6 @@ export default {
           document.body.appendChild(a);
           a.click();
 
-          // Clean up
           a.remove();
           window.URL.revokeObjectURL(url);
       } catch (error) {
