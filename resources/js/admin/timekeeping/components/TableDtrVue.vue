@@ -21,10 +21,6 @@
                 v-bind="modalProps"
                 @success="loadTimelogs"
             />
-            <div v-else-if="modalType === 'absent'" class="modal-confirm">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                <p>Are you sure you want to mark this employee absent?</p>
-            </div>
         </ModalVue>
 
         <!-- Table Card -->
@@ -175,9 +171,10 @@ import RecordLeaveVue from './modal/RecordLeaveVue.vue';
 import AddTimeVue from './modal/AddTimeVue.vue';
 import AddOvertimeVue from './modal/AddOvertimeVue.vue';
 import ViewOvertimeVue from './modal/ViewOvertimeVue.vue';
+import MarkAsAbsentVue from './modal/MarkAsAbsentVue.vue'
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue },
+    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue },
     props: {
         employee_id: { type: String, required: true },
         month: Number,
@@ -203,7 +200,8 @@ export default {
                 adjustment: 'AddTimeVue',
                 leave: 'RecordLeaveVue',
                 overtime: 'AddOvertimeVue',
-                view_overtime: 'ViewOvertimeVue'
+                view_overtime: 'ViewOvertimeVue',
+                absent: 'MarkAsAbsentVue'
             };
             return components[this.modalType] || null;
         },
@@ -251,7 +249,7 @@ export default {
             if (this.hasRemark(remarks, 'absent')) return 'row-absent';
             return '';
         },
-       getStatusBadge(log) {
+        getStatusBadge(log) {
             const { remarks } = log;
 
             switch (true) {
@@ -315,7 +313,7 @@ export default {
                 { type: 'leave', icon: 'fa-solid fa-plane-departure', text: 'Record Leave' }
             ];
             
-            if (!this.hasRemark(remarks, 'absent')) {
+            if (!this.hasRemark(remarks, 'absent') && !this.hasRemark(remarks, 'restday')) {
                 actions.push({ 
                     type: 'absent', 
                     icon: 'fa-solid fa-user-xmark', 
@@ -690,24 +688,6 @@ export default {
                     i { color: #dc3545; } 
                 }
             }
-        }
-    }
-    
-    .modal-confirm {
-        text-align: center; 
-        padding: 2rem;
-        
-        i { 
-            font-size: 3.5rem; 
-            color: var(--bs-secondary); 
-            margin-bottom: 1rem; 
-        }
-        
-        p { 
-            font-size: 1.0625rem; 
-            color: var(--bs-body-color); 
-            margin: 0; 
-            line-height: 1.5;
         }
     }
 }

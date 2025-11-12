@@ -130,7 +130,7 @@
           :src="userAvatar" 
           alt="Profile" 
           class="rounded-circle" 
-          style="width: 40px; height: 40px; object-fit: cover; border: 2px solid #e0e0e0;">
+          style="width: 40px; height: 40px; object-fit: cover; border: 2px solid var(--bs-light);">
         <span 
           class="position-absolute bg-primary rounded-circle d-flex align-items-center justify-content-center" 
           style="width: 18px; height: 18px; bottom: -2px; right: -2px; border: 2px solid white;">
