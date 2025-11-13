@@ -35,6 +35,7 @@
                         <th>X2</th>
                         <th>UT</th>
                         <th>Remarks</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
 
@@ -54,7 +55,7 @@
                         <td>{{ getDayName(index) }}</td>
 
                         <!-- Status Row -->
-                        <td v-if="hasStatus(log.remarks)" colspan="8" class="status-cell">
+                        <td v-if="hasStatus(log.remarks)" colspan="9" class="status-cell">
                             <span class="status" :class="getStatusClass(log.remarks)">
                                 <i :class="getStatusIcon(log.remarks)"></i>
                                 {{ getStatusText(log.remarks) }}

@@ -44,7 +44,7 @@ redirectToTab();
 window.SuccesToast = Swal.mixin({
     toast: true,
     position: "top-end",
-    showConfirmButton: true,
+    showConfirmButton: false,
     timer: 3000,
     background: "#00af00",
     icon: "success",
