@@ -59,18 +59,29 @@ class PersonalController extends Controller
                 'middlename' => $request->middlename ?? null,
                 'lastname' => $request->lastname ?? null,
                 'suffix' => $request->suffix ?? null,
+                'birth_place' => $request->birth_place ?? null,
                 'birthday' => $request->birthday ?? null,
                 'civil_status' => $request->civil_status ?? null,
                 'sex' => $request->sex ?? null,
                 'citizenship' => $request->citizenship ?? null,
                 'citizenship_type' => $request->citizenship_type ?? null,
                 'country' => $request->country ?? null,
-                'present_address' => $request->present_address ?? null,
-                'present_province' => $request->present_province ?? null,
+                'present_block' => $request->present_block ?? null,
+                'present_street' => $request->present_street ?? null,
+                'present_subdivision' => $request->present_subdivision ?? null,
+                'present_barangay' => $request->present_barangay ?? null,
                 'present_city' => $request->present_city ?? null,
-                'permanent_address' => $request->permanent_address ?? null,
+                'present_province' => $request->present_province ?? null,
+                'present_zip' => $request->present_zip ?? null,
+
+                'permanent_block' => $request->permanent_block ?? null,
+                'permanent_street' => $request->permanent_street ?? null,
+                'permanent_subdivision' => $request->permanent_subdivision ?? null,
+                'permanent_barangay' => $request->permanent_barangay ?? null,
                 'permanent_province' => $request->permanent_province ?? null,
                 'permanent_city' => $request->permanent_city ?? null,
+                'permanent_zip' => $request->permanent_zip ?? null,
+
                 'mobile_number' => $request->mobile_number ?? null,
                 'tel_no' => $request->tel_no ?? null,
                 'height' => $request->height ?? null,
@@ -81,6 +92,14 @@ class PersonalController extends Controller
                 'philhealth_no' => $request->philhealth_no ?? null,
                 'sss_no' => $request->sss_no ?? null,
                 'tin_no' => $request->tin_no ?? null,
+
+                'gsis_no' => $request->gsis_no ?? null,
+                'pagibig_no' => $request->pagibig_no ?? null,
+                'philhealth_no' => $request->philhealth_no ?? null,
+                'sss_no' => $request->sss_no ?? null,
+                'tin_no' => $request->tin_no ?? null,
+                'philsys_no' => $request->philsys_no ?? null,
+
                 'updated_at' => now()
             ];
 

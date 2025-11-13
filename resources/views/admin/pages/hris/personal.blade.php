@@ -48,13 +48,13 @@
                                                 </div>
                                             </div>  
                                         @endif
-                                        <div class="col-12 col-md-3 mb-3">
+                                        <div class="col-12 col-md-4 mb-3">
                                             <label class="mb-2" for="lastname">Surname</label>
                                             <input type="text" name="lastname" id="lastname" class="form-control text-uppercase"
                                                 value="{{ optional($data)->lastname }}">
                                             <div class="error-field"></div>
                                         </div>  
-                                        <div class="col-12 col-md-4 mb-3">
+                                        <div class="col-12 col-md-3 mb-3">
                                             <label class="mb-2" for="firstname">First Name</label>
                                             <input type="text" name="firstname" id="firstname" class="form-control text-uppercase"
                                                 value="{{ optional($data)->firstname }}">
@@ -79,7 +79,13 @@
                                                 <option value="V" {{ optional($data)->suffix == 'V' ? 'selected' : '' }}>V</option>
                                             </select>
                                             <div class="error-field"></div>
-                                        </div>  
+                                        </div>
+                                        <div class="col-12 col-md-4 mb-3">
+                                            <label class="mb-2" for="birth_place">Birth Place</label>
+                                            <input type="text" name="birth_place" id="birth_place" class="form-control text-uppercase"
+                                                value="{{ optional($data)->birth_place }}">
+                                            <div class="error-field"></div>
+                                        </div>    
                                         <div class="col-12 col-md-4 mb-3">
                                             <label class="mb-2" for="birthday">Date of Birth</label>
                                             <input type="date" name="birthday" id="birthday" class="form-control text-uppercase"
@@ -108,9 +114,6 @@
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
-                                    </div>
-
-                                    <div class="row">
                                         <div class="col-12 col-md-4 mb-3">
                                             <label class="mb-2" for="citizenship">Citizenship</label>
                                             <select name="citizenship" id="citizenship" class="form-select text-uppercase">
@@ -137,7 +140,7 @@
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
-                                    <div class="col-12 col-md-4 mb-3">
+                                        <div class="col-12 col-md-4 mb-3">
                                             <label class="mb-2" for="birth_certificate">Birth Certificate - (img/pdf)</label>
                                             <input type="file" name="birth_certificate" id="birth_certificate" class="form-control">
                                             <div class="error-field"></div>
@@ -168,7 +171,7 @@
                                                 </div>
                                             @endif
                                         </div>
-                                    </div>
+                                    </div>                                      
                                 </div>
                             </div>
                         </div>
@@ -181,13 +184,35 @@
                             <div id="flush-address" class="accordion-collapse collapse show">
                                 <div class="accordion-body">
                                     <div class="row">
-                                        <div class="col-12 col-md-12 mb-3">
-                                            <label class="mb-2" for="present_address">Residential Address</label>
-                                            <input type="text" name="present_address" id="present_address" class="form-control text-uppercase"
-                                                placeholder="House / Block / Lot / Street / Subdivision / Village / Barangay"
-                                                value="{{ optional($data)->present_address }}">
+                                        <h6 for="residential" class="mt-4 mb-4 text-uppercase fw-bold">Residential Address</h6>
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="present_block">House / Block / Lot No.</label>
+                                            <input type="text" name="present_block" id="present_block" class="form-control text-uppercase"
+                                                placeholder=""
+                                                value="{{ optional($data)->present_block }}">
                                             <div class="error-field"></div>
                                         </div>  
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="present_street">Street</label>
+                                            <input type="text" name="present_street" id="present_street" class="form-control text-uppercase"
+                                                placeholder=""
+                                                value="{{ optional($data)->present_street }}">
+                                            <div class="error-field"></div>
+                                        </div>  
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="present_subdivision">Subdivision / Village</label>
+                                            <input type="text" name="present_subdivision" id="present_subdivision" class="form-control text-uppercase"
+                                                placeholder=""
+                                                value="{{ optional($data)->present_subdivision }}">
+                                            <div class="error-field"></div>
+                                        </div> 
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="present_barangay">Barangay</label>
+                                            <input type="text" name="present_barangay" id="present_barangay" class="form-control text-uppercase"
+                                                placeholder=""
+                                                value="{{ optional($data)->present_barangay }}">
+                                            <div class="error-field"></div>
+                                        </div> 
                                         <div class="col-12 col-md-6 mb-3">
                                             <label class="mb-2" for="present_province">State / Province</label>
                                             <input type="text" name="present_province" id="present_province" class="form-control text-uppercase"
@@ -200,12 +225,50 @@
                                                 value="{{ optional($data)->present_city }}">
                                             <div class="error-field"></div>
                                         </div> 
-                                        <div class="col-12 mb-3"><hr></div> 
-                                        <div class="col-12 col-md-12 mb-3">
-                                            <label class="mb-2" for="permanent_address">Permanent Address</label>
-                                            <input type="text" name="permanent_address" id="permanent_address" class="form-control text-uppercase"
-                                                placeholder="House / Block / Lot / Street / Subdivision / Village / Barangay"
-                                                value="{{ optional($data)->permanent_address }}">
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="present_zip">ZIP Code</label>
+                                            <input type="text" name="present_zip" id="present_zip" class="form-control text-uppercase"
+                                                value="{{ optional($data)->present_zip }}">
+                                            <div class="error-field"></div>
+                                        </div> 
+                                    </div>
+                                    <div>
+                                        <hr>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="" id="sameAsResidential">
+                                            <label class="form-check-label" for="sameAsResidential">
+                                                Permanent address same as residential
+                                            </label>
+                                        </div>
+                                    </div> 
+                                    <div class="row">
+                                        <h6 for="residential" class="mt-4 mb-4 text-uppercase fw-bold">Permanent Address</h6>
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="permanent_block">House / Block / Lot No.</label>
+                                            <input type="text" name="permanent_block" id="permanent_block" class="form-control text-uppercase"
+                                                placeholder=""
+                                                value="{{ optional($data)->permanent_block }}">
+                                            <div class="error-field"></div>
+                                        </div>  
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="permanent_street">Street</label>
+                                            <input type="text" name="permanent_street" id="permanent_street" class="form-control text-uppercase"
+                                                placeholder=""
+                                                value="{{ optional($data)->permanent_street }}">
+                                            <div class="error-field"></div>
+                                        </div>  
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="permanent_subdivision">Subdivision / Village</label>
+                                            <input type="text" name="permanent_subdivision" id="permanent_subdivision" class="form-control text-uppercase"
+                                                placeholder=""
+                                                value="{{ optional($data)->permanent_subdivision }}">
+                                            <div class="error-field"></div>
+                                        </div>  
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="permanent_barangay">Barangay</label>
+                                            <input type="text" name="permanent_barangay" id="permanent_barangay" class="form-control text-uppercase"
+                                                placeholder=""
+                                                value="{{ optional($data)->permanent_barangay }}">
                                             <div class="error-field"></div>
                                         </div>  
                                         <div class="col-12 col-md-6 mb-3">
@@ -220,6 +283,12 @@
                                                 value="{{ optional($data)->permanent_city }}">
                                             <div class="error-field"></div>
                                         </div>    
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="permanent_zip">ZIP Code</label>
+                                            <input type="text" name="permanent_zip" id="permanent_zip" class="form-control text-uppercase"
+                                                value="{{ optional($data)->permanent_zip }}">
+                                            <div class="error-field"></div>
+                                        </div> 
                                     </div>
                                 </div>
                             </div>
@@ -286,6 +355,49 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-appearance" aria-expanded="false" aria-controls="flush-appearance">
+                                    Identifications (IDs)
+                                </button>
+                            </h2>
+                            <div id="flush-appearance" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="gsis_no">GSIS No.</label>
+                                            <input type="text" name="gsis_no" id="gsis_no" class="form-control text-uppercase"
+                                                value="{{ optional($data)->gsis_no }}">
+                                            <div class="error-field"></div>
+                                        </div>
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="sss_no">SSS No.</label>
+                                            <input type="text" name="sss_no" id="sss_no" class="form-control text-uppercase"
+                                                value="{{ optional($data)->sss_no }}">
+                                            <div class="error-field"></div>
+                                        </div>
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="pagibig_no">Pagibig No.</label>
+                                            <input type="text" name="pagibig_no" id="pagibig_no" class="form-control text-uppercase"
+                                                value="{{ optional($data)->pagibig_no }}">
+                                            <div class="error-field"></div>
+                                        </div>
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="philhealth_no">Philhealth No.</label>
+                                            <input type="text" name="philhealth_no" id="philhealth_no" class="form-control text-uppercase"
+                                                value="{{ optional($data)->philhealth_no }}">
+                                            <div class="error-field"></div>
+                                        </div>
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="philsys_no">National ID No.</label>
+                                            <input type="text" name="philsys_no" id="philsys_no" class="form-control text-uppercase"
+                                                value="{{ optional($data)->philsys_no }}">
+                                            <div class="error-field"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="card-footer bg-transparent border-0 d-flex justify-content-end mt-4">
@@ -344,7 +456,23 @@
             }
         });
 
+        $('#sameAsResidential').on('change', function() {
+            var isChecked = $(this).is(':checked');
+            var fields = ['block', 'street', 'subdivision', 'barangay', 'province', 'city', 'zip'];
+
+            $.each(fields, function(index, field) {
+                var presentVal = $('#present_' + field).val();
+                if (isChecked) {
+                    $('#permanent_' + field).val(presentVal);
+                } else {
+                    $('#permanent_' + field).val('');
+                }
+            });
+        });
+
+
         const url = $('#form').attr('action');
+
         post(url);
 
     });
