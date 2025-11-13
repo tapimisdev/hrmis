@@ -1,28 +1,33 @@
 @extends('auth.auth')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Verify Your Email Address') }}</div>
-
-                <div class="card-body">
-                    @if (session('resent'))
-                        <div class="alert alert-success" role="alert">
-                            {{ __('A fresh verification link has been sent to your email address.') }}
-                        </div>
-                    @endif
-
-                    {{ __('Before proceeding, please check your email for a verification link.') }}
-                    {{ __('If you did not receive the email') }},
-                    <form class="d-inline" method="POST" action="{{ route('verification.resend') }}">
-                        @csrf
-                        <button type="submit" class="btn btn-link p-0 m-0 align-baseline">{{ __('click here to request another') }}</button>.
-                    </form>
-                </div>
+<div class="wrapper">
+    <div class="form-container border shadow">
+        <div class='logo-container'>
+            <img src="{{ asset('img/orbit.png') }}" alt="">
+            <div class="seperator"></div>
+            <div class="form-header">
+                <h5>Verify Your Email</h5>
+                <p>Before proceeding, please check your email for a verification link.</p>
             </div>
         </div>
+
+        @if (session('resent'))
+            <div class="alert alert-success d-block mb-3" role="alert">
+                A fresh verification link has been sent to your email address.
+            </div>
+        @endif
+
+        <p>If you did not receive the email, you can request another one:</p>
+
+        <form method="POST" action="{{ route('verification.resend') }}">
+            @csrf
+            <div class="d-grid">
+                <button type="submit" class="auth-btn">
+                    Resend Verification Email
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection

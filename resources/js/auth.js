@@ -1,3 +1,4 @@
+import './dark-mode';
 $(function() {
     $('input.form-control').on('input blur', function () {
         if ($(this).val()) {

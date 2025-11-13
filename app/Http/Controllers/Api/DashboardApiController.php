@@ -11,7 +11,6 @@ use App\Http\Controllers\Admin\Services\ApplicationController;
 
 class DashboardApiController extends Controller
 {
-    
     public function metrics()
     {
         $employeeModel = DB::table('employee_information as ei')
@@ -112,8 +111,6 @@ class DashboardApiController extends Controller
         ]);
     }
 
-
-
     public function birthdays()
     {
         $today = now();
@@ -177,7 +174,7 @@ class DashboardApiController extends Controller
     }
 
     public function employment_types() {
-       
+       dd('asdasd');
         $employees = DB::table('employee_information as ei')
             ->leftJoinSub(
                 DB::table('employee_organization as eo')
