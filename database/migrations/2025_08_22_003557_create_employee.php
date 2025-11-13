@@ -57,7 +57,7 @@ return new class extends Migration
                 ->nullable();
             $table->string('civil_status')
                 ->nullable();
-            $table->string('sex')
+            $table->string('s2ex')
                 ->nullable();
             $table->string('citizenship')
                 ->nullable();
@@ -65,23 +65,43 @@ return new class extends Migration
                 ->nullable();
             $table->string('country')
                 ->nullable();
+            $table->string('birth_place')
+                ->nullable();
             $table->string('birth_certificate')
                 ->nullable();
             $table->string('marriage_certificate')
                 ->nullable();
 
-            $table->string('present_address')
+            $table->string('present_block')
                 ->nullable(); 
-            $table->string('present_province')
+            $table->string('present_street')
+                ->nullable(); 
+            $table->string('present_subdivision')
+                ->nullable(); 
+            $table->string('present_barangay')
                 ->nullable(); 
             $table->string('present_city')
                 ->nullable(); 
-            $table->string('permanent_address')
+            $table->string('present_province')
                 ->nullable(); 
-            $table->string('permanent_province')
+            $table->string('present_zip')
+                ->nullable(); 
+
+            $table->string('permanent_block')
+                ->nullable(); 
+            $table->string('permanent_street')
+                ->nullable(); 
+            $table->string('permanent_subdivision')
+                ->nullable(); 
+            $table->string('permanent_barangay')
                 ->nullable(); 
             $table->string('permanent_city')
+                ->nullable(); 
+            $table->string('permanent_province')
                 ->nullable();
+            $table->string('permanent_zip')
+                ->nullable();
+            
             $table->string('mobile_number')
                 ->nullable();
             $table->string('tel_no')
@@ -101,6 +121,8 @@ return new class extends Migration
             $table->string('sss_no')
                 ->nullable(); 
             $table->string('tin_no')
+                ->nullable();
+            $table->string('philsys_no')
                 ->nullable();
             $table->index(['firstname', 'lastname', 'employee_no']);
             $table->timestamps();
