@@ -17,6 +17,9 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
 
     # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
+    Route::get('get-stats', [EmployeeDashboardController::class, 'get_stats']);
+    Route::get('get-pendings', [EmployeeDashboardController::class, 'get_pending_applications']);
+    Route::get('get-announcements', [EmployeeDashboardController::class, 'get_announements']);
 
     # EMPLOYEE LEAVES, OVERTIME, AND OBS
     Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');

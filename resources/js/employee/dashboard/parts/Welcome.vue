@@ -16,28 +16,28 @@
               </div>
               <h4 class="user-name mb-0">{{ userName }}</h4>
             </div>
-            <div class="status-badge" :class="timeStatus.class">
-              <i :class="timeStatus.icon"></i>
-              <span>{{ timeStatus.text }}</span>
+            <div class="info-badge">
+              <i class="fa-solid fa-calendar-day"></i>
+              <span>{{ currentDate }}</span>
             </div>
           </div>
           
           <p class="welcome-message mb-3">
-            {{ timeStatus.message }}
+            Welcome back! Here's an overview of your activity.
           </p>
           
           <div class="action-buttons d-flex gap-2 mb-3">
-            <button 
-              v-if="!isTimedIn"
-              @click="timeIn"
-              class="btn btn-warning px-4 py-2 d-flex align-items-center gap-2"
-              :disabled="loading">
-              <i class="fa-solid fa-clock"></i>
-              <span>Record Your Attendance</span>
-            </button>
-            <button class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2">
+            <a 
+              href="/employee/check-in-out"
+              class="btn btn-warning px-4 py-2 d-flex align-items-center gap-2">
               <i class="fa-regular fa-calendar"></i>
               <span>View Schedule</span>
+            </a>
+            <button 
+              @click="viewTasks"
+              class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2">
+              <i class="fa-solid fa-list-check"></i>
+              <span>Leave Card</span>
             </button>
           </div>
           
@@ -47,8 +47,17 @@
                 <i class="fa-solid fa-clock"></i>
               </div>
               <div>
-                <div class="stat-value">{{ stats.timeInToday }}</div>
-                <div class="stat-label">Time In Today</div>
+                <div class="stat-value">{{ stats.totalHours }}</div>
+                <div class="stat-label">Total Hours</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">
+                <i class="fa-solid fa-calendar-xmark"></i>
+              </div>
+              <div>
+                <div class="stat-value">{{ stats.pendingLeaves }}</div>
+                <div class="stat-label">Pending Leaves</div>
               </div>
             </div>
             <div class="stat-item">
@@ -56,26 +65,17 @@
                 <i class="fa-solid fa-business-time"></i>
               </div>
               <div>
-                <div class="stat-value">{{ stats.hoursToday }}</div>
-                <div class="stat-label">Hours Today</div>
+                <div class="stat-value">{{ stats.overtime }}</div>
+                <div class="stat-label">Overtime</div>
               </div>
             </div>
             <div class="stat-item">
               <div class="stat-icon">
-                <i class="fa-solid fa-calendar-check"></i>
+                <i class="fa-solid fa-user-xmark"></i>
               </div>
               <div>
-                <div class="stat-value">{{ stats.daysPresent }}</div>
-                <div class="stat-label">Days Present</div>
-              </div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-icon">
-                <i class="fa-solid fa-umbrella-beach"></i>
-              </div>
-              <div>
-                <div class="stat-value">{{ stats.leavesLeft }}</div>
-                <div class="stat-label">Leaves Left</div>
+                <div class="stat-value">{{ stats.absent }}</div>
+                <div class="stat-label">Absent</div>
               </div>
             </div>
           </div>
@@ -93,14 +93,11 @@ export default {
   data() {
     return {
       userName: "Kemuel Mariano",
-      isTimedIn: false,
-      loading: false,
-      timeInAt: null,
       stats: {
-        hoursToday: "0h",
-        timeInToday: "07:12 AM",
-        daysPresent: 20,
-        leavesLeft: 10
+        totalHours: "0 HRS",
+        pendingLeaves: 0,
+        overtime: "0 MINS",
+        absent: "0 Days"
       }
     };
   },
@@ -111,80 +108,43 @@ export default {
       if (hour < 18) return 'afternoon';
       return 'evening';
     },
-    timeStatus() {
-      if (this.isTimedIn) {
-        return {
-          text: 'Timed In',
-          class: 'status-active',
-          icon: 'fa-solid fa-circle-check',
-          message: `You're clocked in since ${this.timeInAt}. Have a productive day!`
-        };
-      }
-      return {
-        text: 'Not Timed In',
-        class: 'status-inactive',
-        icon: 'fa-solid fa-circle-xmark',
-        message: "Don't forget to clock in to start tracking your time."
-      };
+    currentDate() {
+      const options = { month: 'short', day: 'numeric', year: 'numeric' };
+      return new Date().toLocaleDateString('en-US', options);
     }
   },
   mounted() {
-    this.fetchTimeStatus();
     this.fetchStats();
   },
   methods: {
-    async fetchTimeStatus() {
-      try {
-        const response = await axios.get('/api/attendance/status');
-        this.isTimedIn = response.data.is_timed_in;
-        this.timeInAt = response.data.time_in;
-        if (this.isTimedIn && response.data.hours_today) {
-          this.stats.hoursToday = response.data.hours_today;
-        }
-      } catch (error) {
-        console.error('Error fetching time status:', error);
-      }
-    },
     async fetchStats() {
       try {
-        const response = await axios.get('/api/attendance/stats');
+        const response = await axios.get('/employee/get-stats', {
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+
+        const statsData = response.data.data || [];
+
+        const totalHrs = statsData.find(s => s.label === 'Total HRS');
+        const pendingLeaves = statsData.find(s => s.label === 'Pending Leaves');
+        const overtime = statsData.find(s => s.label === 'Overtime');
+        const absent = statsData.find(s => s.label === 'Absent');
+
         this.stats = {
-          hoursToday: response.data.hours_today || '0h',
-          daysPresent: response.data.days_present || 0,
-          leavesLeft: response.data.leaves_left || 0
+          totalHours: totalHrs?.value || '0 HRS',
+          pendingLeaves: pendingLeaves?.value || 0,
+          overtime: overtime?.value || '0 MINS',
+          absent: absent?.value || '0 Days'
         };
       } catch (error) {
         console.error('Error fetching stats:', error);
       }
     },
-    async timeIn() {
-      this.loading = true;
-      try {
-        const response = await axios.post('/api/attendance/time-in');
-        this.isTimedIn = true;
-        this.timeInAt = response.data.time_in;
-        this.$emit('time-status-changed', { action: 'time-in', data: response.data });
-      } catch (error) {
-        console.error('Error timing in:', error);
-        alert(error.response?.data?.message || 'Failed to time in');
-      } finally {
-        this.loading = false;
-      }
+    viewSchedule() {
+      this.$router.push('/schedule');
     },
-    async timeOut() {
-      this.loading = true;
-      try {
-        const response = await axios.post('/api/attendance/time-out');
-        this.isTimedIn = false;
-        this.timeInAt = null;
-        this.stats.hoursToday = response.data.hours_today;
-        this.$emit('time-status-changed', { action: 'time-out', data: response.data });
-      } catch (error) {
-        console.error('Error timing out:', error);
-        alert(error.response?.data?.message || 'Failed to time out');
-      } finally {
-        this.loading = false;
-      }
+    viewTasks() {
+      this.$router.push('/tasks');
     }
   }
 }
@@ -277,7 +237,7 @@ export default {
     background-clip: text;
   }
   
-  .status-badge {
+  .info-badge {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -285,16 +245,8 @@ export default {
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 600;
-    
-    &.status-active {
-      background: rgba(40, 167, 69, 0.9);
-      color: white;
-    }
-    
-    &.status-inactive {
-      background: rgba(220, 53, 69, 0.9);
-      color: white;
-    }
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
     
     i {
       font-size: 0.9rem;
@@ -323,15 +275,6 @@ export default {
         }
       }
       
-      &.btn-danger {
-        border: none;
-        
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
-        }
-      }
-      
       &.btn-outline-light {
         border-color: rgba(255, 255, 255, 0.6);
         color: white !important;
@@ -340,14 +283,8 @@ export default {
         &:hover {
           background: rgba(255, 255, 255, 0.2);
           border-color: white;
-          color: $primary !important;
           transform: translateY(-2px);
         }
-      }
-      
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
       }
     }
   }
@@ -397,7 +334,7 @@ export default {
   }
   
   .welcome-content {
-    .status-badge {
+    .info-badge {
       font-size: 0.8rem;
       padding: 0.35rem 0.75rem;
     }

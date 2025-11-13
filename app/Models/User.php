@@ -47,9 +47,11 @@ class User extends Authenticatable
 
     protected $employee_no;
 
-    public function getEmployeeNo()
+    public function employee_no()
     {
-        $this->employee_no = DB::table('employee_information')->where('user_id', $this->id)->value('employee_no');
+        return DB::table('employee_information')
+            ->where('user_id', $this->id)
+            ->value('employee_no');
     }
 
     public function employeeInformation()

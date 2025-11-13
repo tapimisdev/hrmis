@@ -52,54 +52,12 @@ export default {
       canScrollLeft: false,
       canScrollRight: true,
       cards: [
-        {
-          id: 2,
-          name: 'Leave Request',
-          icon: 'fa-solid fa-calendar-days',
-          description: 'Apply for leave',
-          pending: 2,
-          color: '#032985',
-          route: '/leave'
-        },
-        {
-          id: 3,
-          name: 'Payslips',
-          icon: 'fa-solid fa-money-check',
-          description: 'View salary details',
-          color: '#032985',
-          route: '/payslips'
-        },
-        {
-          id: 4,
-          name: 'Pass Slip Request',
-          icon: 'fa-solid fa-file-lines',
-          description: 'Access documents',
-          pending: 1,
-          color: '#032985',
-          route: '/documents'
-        },
-        {
-          id: 5,
-          name: 'Overtime Request',
-          icon: 'fa-solid fa-chart-line',
-          description: 'Track progress',
-          pending: 2,
-          color: '#032985',
-          route: '/performance'
-        },
-        {
-          id: 6,
-          name: 'Announcements',
-          icon: 'fa-solid fa-bullhorn',
-          description: 'Latest updates',
-          pending: 3,
-          color: '#032985',
-          route: '/announcements'
-        }
+      
       ]    
     };
   },
   mounted() {
+    this.fetchCards();
     this.updateScrollButtons();
     window.addEventListener('resize', this.updateScrollButtons);
   },
@@ -107,6 +65,17 @@ export default {
     window.removeEventListener('resize', this.updateScrollButtons);
   },
   methods: {
+    async fetchCards() {
+      try {
+        const response = await axios.get('/employee/get-pendings', {
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+
+        this.cards = response.data.data;
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    },
     scroll(amount) {
       this.$refs.container.scrollBy({ left: amount, behavior: 'smooth' });
     },

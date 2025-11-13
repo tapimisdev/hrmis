@@ -38,7 +38,7 @@
             </div>
             
             <h6 class="card-title">{{ announcement.name }}</h6>
-            <p class="card-description">{{ announcement.body }}</p>
+            <p class="card-description" v-html="announcement.body"></p>
             
             <div class="card-footer">
               <div class="seeners">
@@ -70,64 +70,25 @@ export default {
   name: "Announcement",
   data() {
     return {
-      announcements: [
-        {
-          id: 1,
-          name: "Engineering Innovations 2025",
-          tags: ["engineering", "technology", "innovation"],
-          url: "https://example.com/articles/engineering-innovations-2025",
-          body: "Discover the latest breakthroughs in engineering — from sustainable architecture to AI-powered automation reshaping industries worldwide.",
-          image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400&h=300&fit=crop",
-          seeners: [
-            { id: 1, name: "Kemuel Mariano" },
-            { id: 2, name: "Anna Reyes" },
-            { id: 3, name: "John Dela Cruz" },
-            { id: 4, name: "Maria Santos" },
-          ],
-        },
-        {
-          id: 2,
-          name: "Company Team Building 2025",
-          tags: ["event", "teamwork", "culture"],
-          url: "https://example.com/events/team-building-2025",
-          body: "Join us for a day of fun and bonding at the annual company team building event! Expect games, challenges, and a lot of laughter.",
-          image: "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400&h=300&fit=crop",
-          seeners: [
-            { id: 4, name: "Michael Santos" },
-            { id: 5, name: "Sarah Lim" },
-            { id: 6, name: "Carlo Reyes" },
-          ],
-        },
-        {
-          id: 3,
-          name: "Q4 Performance Awards",
-          tags: ["awards", "recognition"],
-          url: "https://example.com/awards/q4-2024",
-          body: "Celebrating excellence! See who received recognition for outstanding contributions this quarter.",
-          image: "https://images.unsplash.com/photo-1560439514-4e9645039924?w=400&h=300&fit=crop",
-          seeners: [
-            { id: 7, name: "David Cruz" },
-            { id: 8, name: "Lisa Tan" },
-          ],
-        },
-        {
-          id: 4,
-          name: "New Office Safety Guidelines",
-          tags: ["policy", "safety"],
-          url: "https://example.com/policies/safety-2025",
-          body: "Updated safety protocols and guidelines to ensure a secure workplace environment for everyone.",
-          image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=400&h=300&fit=crop",
-          seeners: [
-            { id: 9, name: "Robert Lee" },
-            { id: 10, name: "Emma Garcia" },
-            { id: 11, name: "James Wilson" },
-            { id: 12, name: "Sophia Brown" },
-            { id: 13, name: "Oliver Davis" },
-          ],
-        },
-      ],
+      announcements: [],
     };
   },
+  mounted() {
+    this.fetchAnnouncements();
+  },
+  methods: {
+    async fetchAnnouncements() {
+      try {
+        const response = await axios.get('/employee/get-announcements', {
+          headers: { Authorization: `Bearer ${this.token}` },
+        });
+
+        this.announcements = response.data.data;
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    },
+  }
 };
 </script>
 
@@ -170,7 +131,7 @@ export default {
     
     &:hover {
       gap: 0.5rem;
-      // color: darken(var(--bs-primary), 10%);
+      color: var(--bs-primary);
     }
     
     i {
@@ -217,7 +178,7 @@ export default {
   position: relative;
   height: 180px;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--bs-primary) 0%, $secondary 100%);
+  background: linear-gradient(135deg, var(--bs-primary-rgb) 0%, $secondary 100%);
   
   img {
     width: 100%;

@@ -84,6 +84,8 @@ class DailyTimeRecordService {
                 'time_in'   => null,
                 'break_out' => null,
                 'break_in'  => null,
+                'overtime_in'  => null,
+                'overtime_out'  => null,
                 'time_out'  => null,
                 'shift_id'  => null,
                 'work_schedule_id'  => null,
@@ -272,7 +274,7 @@ class DailyTimeRecordService {
                     continue;
                 }
 
-                if ($leave_status === 'pending leave') {
+                if ($leave_status === 'pending leave' && $is_leave) {
                     $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
                     $TOTAL_PENDING_LEAVES++;
                     continue;
