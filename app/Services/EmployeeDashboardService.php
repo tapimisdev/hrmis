@@ -111,53 +111,62 @@ class EmployeeDashboardService {
 
     }
 
-    public function get_announcements()
+    public function get_announcements($count = 4)
     {
-        $announcements = DB::table('events_announcements as ea')
+        $query = DB::table('events_announcements as ea')
             ->leftJoin('events_announcements_tags as eat', 'ea.id', '=', 'eat.event_announcement_id')
             ->leftJoin('events_announcements_viewers as eav', 'ea.id', '=', 'eav.event_announcement_id')
-            ->leftJoin('users as u', 'eav.user_id', '=', 'u.id') // to get user names for seeners
+            ->leftJoin('users as u', 'eav.user_id', '=', 'u.id')
             ->select(
                 'ea.id',
                 'ea.title',
                 'ea.description',
                 'ea.banner',
+                'ea.slug',
                 'ea.posted_on',
                 'ea.created_at',
                 DB::raw('GROUP_CONCAT(DISTINCT eat.name) as tags'),
-                DB::raw('GROUP_CONCAT(DISTINCT CONCAT(u.id, ":", u.name)) as seeners') // id:name format
+                DB::raw('GROUP_CONCAT(DISTINCT CONCAT(u.id, ":", u.name)) as seeners')
             )
-            ->groupBy('ea.id', 'ea.title', 'ea.description', 'ea.banner', 'ea.posted_on', 'ea.created_at')
-            ->orderByRaw('COALESCE(ea.posted_on, ea.created_at) DESC')
-            ->limit(4)
-            ->get()
-            ->map(function ($item) {
-                // Convert comma-separated tags to array
-                $tags = $item->tags ? explode(',', $item->tags) : [];
+            ->groupBy(
+                'ea.id',
+                'ea.title',
+                'ea.description',
+                'ea.banner',
+                'ea.posted_on',
+                'ea.created_at'
+            )
+            ->orderByRaw('COALESCE(ea.posted_on, ea.created_at) DESC');
 
-                // Convert seeners string to array of objects
-                $seeners = [];
-                if ($item->seeners) {
-                    foreach (explode(',', $item->seeners) as $seener) {
-                        [$id, $name] = explode(':', $seener);
-                        $seeners[] = ['id' => (int)$id, 'name' => $name];
-                    }
+        if (!is_null($count)) {
+            $query->limit($count);
+        }
+
+        $announcements = $query->get()->map(function ($item) {
+
+            $tags = $item->tags ? explode(',', $item->tags) : [];
+
+            $seeners = [];
+            if ($item->seeners) {
+                foreach (explode(',', $item->seeners) as $seener) {
+                    [$id, $name] = explode(':', $seener);
+                    $seeners[] = ['id' => (int) $id, 'name' => $name];
                 }
+            }
 
-                return [
-                    'id' => $item->id,
-                    'name' => $item->title,
-                    'tags' => $tags,
-                    'url' => $item->url ?? '#',
-                    'body' => $item->description,
-                    'image' => $item->banner 
-                        ? asset(Storage::url('events/attachments/' . $item->banner))
-                        : asset('./img/placeholder.png'),
-                    'seeners' => $seeners,
-                ];
-            });
+            return [
+                'id' => $item->id,
+                'name' => $item->title,
+                'tags' => $tags,
+                'url' => route('announcement.show', [ 'slug' => $item->slug ]),
+                'body' => $item->description,
+                'image' => $item->banner 
+                    ? asset(Storage::url('events/attachments/' . $item->banner))
+                    : asset('./img/placeholder.png'),
+                'seeners' => $seeners,
+            ];
+        });
 
         return $announcements;
     }
-
 }

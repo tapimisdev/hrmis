@@ -22,7 +22,7 @@
         @if(isset($isEdit) && $isEdit == true)
             <x-header title="Update Events" subtitle="update this event or announcement">
                 <x-button-link 
-                    :href="route('hris.employee.index')" 
+                    :href="route('services.events.index')" 
                     icon="fa-solid fa-arrow-left me-2" 
                     text="Back" 
                     variant="danger"
@@ -31,7 +31,7 @@
         @else
             <x-header title="Add New Events" subtitle="create new event or positions" >
                 <x-button-link 
-                    :href="route('hris.employee.index')" 
+                    :href="route('services.events.create')" 
                     icon="fa-solid fa-arrow-left me-2" 
                     text="Back" 
                     variant="danger"

@@ -45,7 +45,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function get_announements()
+    public function get_announcements()
     {
         $announcements = $this->employee_dashboard_service->get_announcements();
         

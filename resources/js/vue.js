@@ -6,6 +6,8 @@ import DashboardIndex from './employee/dashboard/DashboardIndex.vue'
 import HeaderVue from './employee/components/Header.vue';
 import EmployeeTimelog from './employee/check-in-out/EmployeeTimelog.vue';
 import ProfileIndex from './employee/profile/ProfileIndex.vue';
+import Announcements from './employee/announcements/Announcements.vue';
+import Show from './employee/announcements/Show.vue';
 
 // Admin
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
@@ -25,6 +27,8 @@ const authApp = createApp({
     HeaderVue,
     EmployeeTimelog,
     ProfileIndex,
+    Announcements,
+    Show,
 
     DashboardVue,
     DtrViewVue,
@@ -36,5 +40,4 @@ const authApp = createApp({
   },
 });
 
-console.log('Vue is Working');
 authApp.mount('#app');

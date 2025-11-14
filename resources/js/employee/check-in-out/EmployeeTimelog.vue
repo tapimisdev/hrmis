@@ -237,8 +237,6 @@ export default {
     background: var(--bs-body-bg);
     border: 1px solid var(--bs-border-color);
     border-radius: 16px;
-    overflow: hidden;
-    position: static;
 }
 
 /* Header */
@@ -281,10 +279,9 @@ export default {
 
 /* Table */
 .table-wrapper {
-  max-height: 720px;
-  overflow: auto;
-    &::-webkit-scrollbar { width: 6px; height: 6px; }
-    &::-webkit-scrollbar-thumb { background: var(--bs-border-color); border-radius: 3px; }
+  // max-height: 720px;
+  &::-webkit-scrollbar { width: 6px; height: 6px; }
+  &::-webkit-scrollbar-thumb { background: var(--bs-border-color); border-radius: 3px; }
 }
 
 table {
@@ -297,10 +294,12 @@ table {
         text-align: center;
         border-bottom: 1px solid var(--bs-border-color);
     }
-
-      thead th {
+      thead {
         position: sticky;
         top: 0;
+      }
+
+      thead th {
         background-color: var(--bs-primary);
         color: var(--bs-light);
         font-weight: 600;

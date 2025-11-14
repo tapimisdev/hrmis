@@ -81,7 +81,7 @@
         });
 
         const myModal = $('#myModal');
-       $(document).on('click', '.show-button', function () {
+        $(document).on('click', '.show-button', function () {
             let id = $(this).attr('data-id');
             $('.modal-title').html('Overtime Application');
 
@@ -227,8 +227,6 @@
                     });
                 });
         });
-
-
     });
 </script>
 @endsection

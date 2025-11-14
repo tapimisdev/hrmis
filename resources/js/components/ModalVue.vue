@@ -14,7 +14,7 @@
         <div class="modal-header modern-header border-bottom">
           <div class="header-content">
             <div class="icon-wrapper">
-              <i class="text-body" :class="headerIcon"></i>
+              <i class="text-light" :class="headerIcon"></i>
             </div>
             <div class="header-text">
               <h5 class="modal-title text-body text-uppercase">{{ title }}</h5>

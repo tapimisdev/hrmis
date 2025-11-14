@@ -2,7 +2,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
-
+use App\Http\Controllers\Employee\AnnouncementsController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
@@ -19,7 +19,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
     Route::resource('dashboard', EmployeeDashboardController::class);
     Route::get('get-stats', [EmployeeDashboardController::class, 'get_stats']);
     Route::get('get-pendings', [EmployeeDashboardController::class, 'get_pending_applications']);
-    Route::get('get-announcements', [EmployeeDashboardController::class, 'get_announements']);
+    Route::get('get-announcements', [EmployeeDashboardController::class, 'get_announcements']);
 
     # EMPLOYEE LEAVES, OVERTIME, AND OBS
     Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');
@@ -31,6 +31,10 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
     Route::get('employee-timelogs/{employee_no}/get', [DailyTimeRecordController::class, 'show']);
 
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
+
+    # ANNOUNCEMENTS
+    Route::get('announcements', [AnnouncementsController::class, 'index'])->name('announcement.index');
+    Route::get('announcements/{slug}', [AnnouncementsController::class, 'show'])->name('announcement.show');
 
     # EMPLOYEE LEAVES, OVERTIME, AND OBS -- APPROVAL --
     Route::get('approval-leaves/{level?}', [LeaveApprovalController::class, 'index'])
