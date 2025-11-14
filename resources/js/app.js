@@ -37,6 +37,7 @@ window.loadCountries = loadCountries;
 window.alert = alert;
 window.initCalendar = initCalendar;
 window.setEvents = setEvents;
+window.confirmAction = confirmAction;
 window.generateEventsWithAvailability = generateEventsWithAvailability;
 
 redirectToTab();

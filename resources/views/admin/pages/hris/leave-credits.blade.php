@@ -28,118 +28,62 @@
                         <div id="flush-leave-credits" class="accordion-collapse collapse show">
                             <div class="accordion-body">
                                 @if($leaves['status'] == 'eligible')
-                                    @if(count($leaves['data']) > 0)
-                                        {{-- === FORM 1: Combine Leave 1 & 2 === --}}
-                                        @if(isset($leaves['data'][0]) && isset($leaves['data'][1]))
-                                            <form id="form" action="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" method="post">
-                                                @method('PUT')
-                                                @csrf
-                                                <input type="hidden" name="forLeaveCard" id="forLeaveCard" value="true">
-                                                <div class="table-responsive mt-3">
-                                                    <table class="table table-bordered align-middle">
-                                                        <thead class="table-light text-uppercase fw-bold">
-                                                            <tr>
-                                                                <th>Leave Name</th>
-                                                                <th class="text-center" style="width: 200px;">Remaining Credits</th>
-                                                                <th class="text-center" style="width: 200px;">Updated as of</th>
-                                                                <th class="text-center" style="width: 150px;">Actions</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach($leaves['data']->take(2) as $i => $leave)
-                                                                <tr>
-                                                                    <td class="fw-semibold text-uppercase mb-3">{{ $leave->name }}</td>
-                                                                    <td>
-                                                                        <input 
-                                                                            type="text" 
-                                                                            name="leave_id[{{ $leave->leave_id }}][value]" 
-                                                                            id="leave_id.{{ $leave->leave_id }}.value"
-                                                                            class="form-control text-center fw-semibold" 
-                                                                            value="{{ $leave->amount }}"
-                                                                        >
-                                                                        <div class="error-field"></div>
-                                                                    </td>
+                                 {{-- === FORM 2: Remaining Leaves === --}}
+                                    @if(count($leaves['data']) > 2)
+                                    <form id="form" action="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" method="post">
+                                        @method('PUT')
+                                        @csrf
+                                        <input type="hidden" name="forLeaveCard" id="forLeaveCard" value="false">
+                                        <div class="table-responsive mt-4">
+                                            <table class="table table-bordered align-middle">
+                                                <thead class="table-light text-uppercase fw-bold">
+                                                    <tr>
+                                                        <th>Leave Name</th>
+                                                        <th class="text-center" style="width: 200px;">Remaining Credits</th>
+                                                        <th class="text-center" style="width: 200px;">Updated as of</th>
+                                                        <th class="text-center" style="width: 150px;">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($leaves['data'] as $leave)
+                                                        <tr>
+                                                            <td class="fw-semibold text-uppercase mb-3">{{ $leave->name }}</td>
+                                                            <td>
+                                                                <input 
+                                                                    type="text" 
+                                                                    name="leave_id[{{ $leave->leave_id }}][value]" 
+                                                                    id="leave_id.{{ $leave->leave_id }}.value"
+                                                                    class="form-control text-center fw-semibold" 
+                                                                    value="{{ $leave->amount }}"
+                                                                >
+                                                                <div class="error-field"></div>
+                                                            </td>
 
-                                                                    @if($i === 0)
-                                                                        <td rowspan="2" class="text-center align-middle mb-3">
-                                                                            <input 
-                                                                                type="date" 
-                                                                                name="leave_id[{{ $leave->leave_id }}][as_of]" 
-                                                                                id="leave_id.{{ $leave->leave_id }}.as_of"
-                                                                                class="form-control text-center fw-semibold"
-                                                                                value="{{ \Carbon\Carbon::parse($leave->effectivity_date)->format('Y-m-d') }}"
-                                                                            >
-                                                                            <div class="error-field"></div>
-                                                                        </td>
+                                                            <td class="text-center align-middle mb-3">
+                                                                <input 
+                                                                    type="date" 
+                                                                    name="leave_id[{{ $leave->leave_id }}][as_of]" 
+                                                                    id="leave_id.{{ $leave->leave_id }}.as_of"
+                                                                    class="form-control text-center fw-semibold"
+                                                                    value="{{ \Carbon\Carbon::parse($leave->effectivity_date)->format('Y-m-d') }}"
+                                                                >
+                                                                <div class="error-field"></div>
+                                                            </td>
 
-                                                                        <td rowspan="2" class="text-center align-middle">
-                                                                            @if(!$leave->hasLeaveCredit)
-                                                                                <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                                                            @else
-                                                                                <a href="{{ route('hris.employee.leave-card', ['employee_no' => $employee_no]) }}" class="btn btn-sm btn-outline-secondary">Leave Card</a>
-                                                                            @endif
-                                                                        </td>
-                                                                    @endif
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </form>
-                                        @endif
-
-                                        {{-- === FORM 2: Remaining Leaves === --}}
-                                        @if(count($leaves['data']) > 2)
-                                            <form id="form" action="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" method="post">
-                                                @method('PUT')
-                                                @csrf
-                                                <input type="hidden" name="forLeaveCard" id="forLeaveCard" value="false">
-                                                <div class="table-responsive mt-4">
-                                                    <table class="table table-bordered align-middle">
-                                                        <thead class="table-light text-uppercase fw-bold">
-                                                            <tr>
-                                                                <th>Leave Name</th>
-                                                                <th class="text-center" style="width: 200px;">Remaining Credits</th>
-                                                                <th class="text-center" style="width: 200px;">Updated as of</th>
-                                                                <th class="text-center" style="width: 150px;">Actions</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @foreach($leaves['data']->skip(2) as $leave)
-                                                                <tr>
-                                                                    <td class="fw-semibold text-uppercase mb-3">{{ $leave->name }}</td>
-                                                                    <td>
-                                                                        <input 
-                                                                            type="text" 
-                                                                            name="leave_id[{{ $leave->leave_id }}][value]" 
-                                                                            id="leave_id.{{ $leave->leave_id }}.value"
-                                                                            class="form-control text-center fw-semibold" 
-                                                                            value="{{ $leave->amount }}"
-                                                                        >
-                                                                        <div class="error-field"></div>
-                                                                    </td>
-
-                                                                    <td class="text-center align-middle mb-3">
-                                                                        <input 
-                                                                            type="date" 
-                                                                            name="leave_id[{{ $leave->leave_id }}][as_of]" 
-                                                                            id="leave_id.{{ $leave->leave_id }}.as_of"
-                                                                            class="form-control text-center fw-semibold"
-                                                                            value="{{ \Carbon\Carbon::parse($leave->effectivity_date)->format('Y-m-d') }}"
-                                                                        >
-                                                                        <div class="error-field"></div>
-                                                                    </td>
-
-                                                                    <td class="text-center align-middle">
-                                                                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </form>
-                                        @endif
+                                                            <td class="text-center align-middle">
+                                                                @if($leave->amount < 1)
+                                                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                                                @else
+                                                                    <a href="{{ route('hris.employee.leave-card', ['employee_no' => $employee_no, 'leave_id' => $leave->leave_id]) }}" class="btn btn-sm btn-outline-secondary">Leave Card</a>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </form>
+                                
                                     @else
                                         <div class="alert alert-danger text-uppercase fw-bold mt-4">
                                             Oops! Sorry, No leave type(s) found. Please contact administrator or the HR personnel(s).

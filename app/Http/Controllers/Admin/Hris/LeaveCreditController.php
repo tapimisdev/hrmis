@@ -51,36 +51,13 @@ class LeaveCreditController extends Controller
 
         $validator = Validator::make($payload, [
             'leave_id' => 'required|array',
-            'leave_id.*.value' => 'required|numeric|min:1',
+            'leave_id.*.value' => 'required|numeric',
         ]);
-
-        $validator->after(function ($validator) use (&$payload) {
-            foreach ($payload['leave_id'] as $id => $leave) {
-                if (in_array($id, [1, 2])) {
-                    $asOf1 = $payload['leave_id'][1]['as_of'] ?? null;
-                    $asOf2 = $payload['leave_id'][2]['as_of'] ?? null;
-
-                    if (empty($asOf1) && empty($asOf2)) {
-                        $validator->errors()->add('leave_id.1.as_of', 'The "Updated as of" date is required for Leave IDs 1 and 2.');
-                    }
-
-                    $sharedAsOf = $asOf1 ?: $asOf2;
-
-                    $payload['leave_id'][1]['as_of'] = $sharedAsOf;
-                    $payload['leave_id'][2]['as_of'] = $sharedAsOf;
-                } else {
-                    if (empty($leave['as_of'])) {
-                        $validator->errors()->add("leave_id.$id.as_of", 'The "Updated as of" date is required.');
-                    }
-                }
-            }
-        });
 
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
-
 
         DB::beginTransaction();
 
@@ -99,29 +76,36 @@ class LeaveCreditController extends Controller
 
             if (!empty($payload['leave_id'])) {
 
-                if($payload['forLeaveCard']) {
+                foreach($payload['leave_id'] as $id => $leave) {
 
-                    $this->generateLeaveCard(
-                        $employee_no,
-                        $payload
-                    );
+                    $amount = $leave['value'];
+                    $as_of = Carbon::parse($leave['as_of']);
 
-                    foreach($payload['leave_id'] as $id => $leave) {
+                    $payload = [
+                        'leave_id' => $id,
+                        'employee_no' => $employee_no,
+                        'amount' => $amount,
+                        'as_of' => $as_of,
+                    ];
+
+                    if($amount > 0) {
+
+                        $this->generateLeaveCard($payload);
+
                         DB::table('employee_leave_credits')->updateOrInsert(
                             [
                                 'employee_no' => $employee_no,
                                 'leave_id' => $id,
                             ],
                             [
-                                'amount' => $leave['value'],
+                                'amount' => $amount,
                                 'effectivity_date' => Carbon::parse($leave['as_of'])->startOfDay(),
                                 'updated_at' => now(),
                             ]
                         );
                     }
-
                 }
-              
+            
 
             }
 
@@ -144,93 +128,72 @@ class LeaveCreditController extends Controller
         }
     }
 
-    public function generateLeaveCard(string $employee_no, array $payload)
+    public function generateLeaveCard($payload)
     {
-        if (!isset($payload['leave_id'][1], $payload['leave_id'][2])) {
-            return [
-                'status' => 'error',
-                'message' => 'Incomplete leave data provided.',
-                'redirect' => '',
-            ];
-        }
+        $leave_id    = $payload['leave_id'];
+        $employee_no = $payload['employee_no'];
+        $asOf        = Carbon::parse($payload['as_of'])->startOfMonth();
+        $defaultEarned = 1.25;
 
-        // Extract leave values and start date
-        $vl_earning = (float) ($payload['leave_id'][1]['value'] ?? 0);
-        $sl_earning = (float) ($payload['leave_id'][2]['value'] ?? 0);
-        $asOf = Carbon::parse($payload['leave_id'][1]['as_of'] ?? now())->startOfMonth();
-
-        // Fetch latest balances (if any)
+        // Get the latest leave card for this employee and leave type
         $latest = DB::table('employee_leave_card')
+            ->where('leave_type', $leave_id)
             ->where('employee_no', $employee_no)
-            ->latest('year')
-            ->latest('id')
+            ->orderBy('year', 'desc')
+            ->orderByRaw("FIELD(period, 'january','february','march','april','may','june','july','august','september','october','november','december') DESC")
             ->first();
 
-        $current_vl = $latest->vl_bal ?? 0;
-        $current_sl = $latest->sl_bal ?? 0;
+        if ($latest) {
+            $balance = (float) $latest->balance;
 
-        // Define the loop range — from as_of up to last month of current year
-        $end = Carbon::now()->endOfYear()->startOfMonth();
+            // Start from the next month after the latest record
+            if (strtolower($latest->period) === 'december') {
+                $startDate = Carbon::create($latest->year + 1, 1, 1)->startOfMonth();
+            } else {
+                $startDate = Carbon::parse($latest->year . ' ' . ucfirst($latest->period))->addMonth()->startOfMonth();
+            }
+            $earned = $defaultEarned; // All earned values are 1.25 for existing data
+        } else {
+            // No existing data: start from asOf
+            $balance = 0;
+            $startDate = $asOf;
+            $earned = $payload['amount']; // First earned is payload amount
+        }
 
-        $inserted = false; // track if any record was generated
+        // End date: December of the start year
+        $end = Carbon::create($startDate->year, 12, 31)->endOfMonth();
 
-        for ($date = $asOf->copy(); $date->lte($end); $date->addMonth()) {
-            $year = $date->format('Y');
+        for ($date = $startDate->copy(); $date->lte($end); $date->addMonth()) {
+            $year   = $date->format('Y');
             $period = strtolower($date->format('F'));
 
-            // Skip if record already exists
-            $exists = DB::table('employee_leave_card')
-                ->where('employee_no', $employee_no)
-                ->where('year', $year)
-                ->where('period', $period)
-                ->exists();
-
-            if ($exists) {
-                continue;
+            // For first iteration after no data, use $payload['amount'], then switch to 1.25
+            if (!$latest && $balance === 0) {
+                $balance = $earned; // first month
+            } else {
+                $balance += $earned; // subsequent months
             }
 
-            // Update balances
-            $current_vl = round($current_vl + $vl_earning, 2);
-            $current_sl = round($current_sl + $sl_earning, 2);
+            DB::table('employee_leave_card')->updateOrInsert(
+                [
+                    'leave_type' => $leave_id,
+                    'employee_no' => $employee_no,
+                    'year' => $year,
+                    'period' => $period
+                ],
+                [
+                    'earned'    => $earned,
+                    'deduction' => 0,
+                    'balance'   => $balance
+                ]
+            );
 
-            // Insert new record
-            DB::table('employee_leave_card')->insert([
-                'employee_no' => $employee_no,
-                'period' => $period,
-                'year' => $year,
-                'particulars' => '',
-                'vl_earned' => number_format($vl_earning, 2),
-                'vl_aut_w_pay' => 0,
-                'vl_bal' => number_format($current_vl, 2),
-                'vl_aut_wo_pay' => 0,
-                'sl_earned' => number_format($sl_earning, 2),
-                'sl_aut_w_pay' => 0,
-                'sl_bal' => number_format($current_sl, 2),
-                'sl_aut_wo_pay' => 0,
-                'remarks' => '',
-            ]);
-
-            $inserted = true;
+            // After first month, earned is always 1.25
+            $earned = $defaultEarned;
         }
-
-        // Return message depending on whether any record was created
-        if ($inserted) {
-            return [
-                'status' => 'success',
-                'message' => 'Leave card successfully generated from ' . $asOf->format('F') . ' to ' . $end->format('F Y'),
-                'redirect' => '',
-            ];
-        }
-
-        return [
-            'status' => 'error',
-            'message' => 'Leave card already generated for all months from ' . $asOf->format('F') . ' to ' . $end->format('F Y'),
-            'redirect' => '',
-        ];
     }
 
-
-    public function leave_card(Request $request, ? string $employee_no = null)
+    public function leave_card(Request $request, string $employee_no, string $leave_id)
     {
         $isExists= $this->employeeService->checkIfEmployeeExists($employee_no);
 
@@ -240,12 +203,90 @@ class LeaveCreditController extends Controller
 
         $isEdit = false;
         $id = null;
-        $data = $this->employeeService->getEmployee('leave-card', $employee_no) ?? [];
-
+        $data = $this->employeeService->getEmployee('leave-card', $employee_no, $leave_id) ?? [];
 
         $data = $this->formatLeaveCard($data);
 
-        return view('admin.pages.hris.leave-card', compact('isEdit', 'id', 'data', 'employee_no'));
+        return view('admin.pages.hris.leave-card', compact('isEdit', 'id', 'data', 'employee_no', 'leave_id'));
+    }
+
+    public function add_year(string $employee_no, int $leave_id) {
+
+        $payload = [
+            'employee_no' => $employee_no,
+            'leave_id' => $leave_id,
+            'as_of' => '',
+        ];        
+        $this->generateLeaveCard($payload);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Year Added.',
+            'redirect' => route('hris.employee.leave-card', ['employee_no' => $employee_no, 'leave_id' => $leave_id]),
+        ]);
+
+    }
+
+    public function remove_year(Request $request, $employee_no, $leave_id)
+    {
+
+        $year = $request->year;
+
+        DB::table('employee_leave_card')
+            ->where('employee_no', $employee_no)
+            ->where('leave_type', $leave_id)
+            ->where('year', $year)
+            ->delete();
+
+        $remaining = DB::table('employee_leave_card')
+            ->where('employee_no', $employee_no)
+            ->where('leave_type', $leave_id)
+            ->where('year', $year)
+            ->count();
+
+        if ($remaining < 1) {
+           DB::table('employee_leave_credits')
+                ->where('employee_no', $employee_no)
+                ->delete();
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Year Removed.',
+            'redirect' => route('hris.employee.leave-card', ['employee_no' => $employee_no, 'leave_id' => $leave_id]),
+        ]);
+    }
+
+    public function save_changes(Request $request, string $employee_no, int $leave_id) {
+
+        $records = $request->input('records', []);
+
+        foreach ($records as $year => $months) {
+            foreach ($months as $month => $data) {
+           
+                DB::table('employee_leave_card')->updateOrInsert(
+                    [
+                        'leave_type' => $leave_id,
+                        'employee_no' => $employee_no,
+                        'year' => $year,
+                        'period' => strtolower($month),
+                    ],
+                    [
+                        'particulars' => $data['particulars'] ?? null,
+                        'earned'      => (float) ($data['earned'] ?? 0),
+                        'deduction'   => (float) ($data['deduction'] ?? 0),
+                        'balance'     => (float) ($data['balance'] ?? 0),
+                        'remarks'     => $data['remarks'] ?? null,
+                    ]
+                );
+            }
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Changes Saved.',
+            'redirect' => '',
+        ]);
     }
 
     private function formatLeaveCard(object $data) {

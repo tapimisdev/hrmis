@@ -1,7 +1,8 @@
-import { alert, fieldError, confirmAction} from './helper';
+import { alert, fieldError, confirmAction } from './helper';
 
-function handleFormSubmit(method, url, hasRemarks = false) {
-    $('[id^="form"]').on('submit', function (e) {
+function handleFormSubmit(method, url, hasRemarks = false, formSelector) {
+
+    $(formSelector).on('submit', function (e) {
         e.preventDefault();
 
         const form = this;
@@ -11,8 +12,10 @@ function handleFormSubmit(method, url, hasRemarks = false) {
             formData.append('_method', method);
             if (hasRemarks) formData.append('remarks', remarks);
 
-            const $btn = $('#btn-submit');
-            $btn.prop('disabled', true).text('Please Wait...');
+            const $btn = $(form).find('button[type="submit"]');
+            const originalLabel = $btn.html(); // store original HTML
+
+            $btn.prop('disabled', true).html('Please Wait...'); // can be plain text or HTML
 
             axios.post(url, formData, {
                 headers: {
@@ -28,10 +31,11 @@ function handleFormSubmit(method, url, hasRemarks = false) {
                 fieldError(error);
             })
             .finally(() => {
-                $btn.prop('disabled', false).text('Save');
+                $btn.prop('disabled', false).html(originalLabel); // restore original HTML
             });
         };
 
+        // === WITH REMARKS ===
         if (hasRemarks) {
             Swal.fire({
                 title: 'Are you sure to continue?',
@@ -41,17 +45,14 @@ function handleFormSubmit(method, url, hasRemarks = false) {
                 showCancelButton: true,
                 confirmButtonText: 'Submit',
                 cancelButtonText: 'Cancel',
-                inputValidator: (value) => {
-                    if (!value) {
-                        return 'Remarks are required.';
-                    }
-                }
+                inputValidator: value => !value && 'Remarks are required.'
             }).then(result => {
-                if (result.isConfirmed) {
-                    processRequest(result.value);
-                }
+                if (result.isConfirmed) processRequest(result.value);
             });
-        } else {
+        }
+
+        // === WITHOUT REMARKS ===
+        else {
             confirmAction(
                 'Are you sure to continue?',
                 'Once performed, this action is permanent and cannot be undone',
@@ -62,28 +63,23 @@ function handleFormSubmit(method, url, hasRemarks = false) {
     });
 }
 
-export function post(url, hasRemarks = false) {
-    handleFormSubmit('POST', url, hasRemarks);
+export function post(url, hasRemarks = false, formSelector = '[id^="form"]') {
+    handleFormSubmit('POST', url, hasRemarks, formSelector);
 }
 
-export function put(url, hasRemarks = false) {
-    handleFormSubmit('PUT', url, hasRemarks);
+export function put(url, hasRemarks = false, formSelector = '[id^="form"]') {
+    handleFormSubmit('PUT', url, hasRemarks, formSelector);
 }
 
 export function remove(url) {
-    const id = $(this).data('id');
     confirmAction(
-            'Delete Record?',
-            'This action cannot be undone!',
-            'Yes, delete it!',
-            () => {
-                axios.delete(url)
-                    .then(res => {
-                        alert('success', 'Record deleted successfully');
-                    })
-                    .catch(err => {
-                        alert('error', 'Failed to delete record');
-                    });
-            }
-        );
+        'Delete Record?',
+        'This action cannot be undone!',
+        'Yes, delete it!',
+        () => {
+            axios.delete(url)
+                .then(res => alert('success', 'Record deleted successfully'))
+                .catch(err => alert('error', 'Failed to delete record'));
+        }
+    );
 }

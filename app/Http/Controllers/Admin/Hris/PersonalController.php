@@ -54,6 +54,9 @@ class PersonalController extends Controller
         DB::beginTransaction();
 
         try {
+
+            $country = $request->citizenship == 'dual_citizenship' ? $request->country : null; 
+
             $data = [
                 'firstname' => $request->firstname ?? null,
                 'middlename' => $request->middlename ?? null,
@@ -65,7 +68,7 @@ class PersonalController extends Controller
                 'sex' => $request->sex ?? null,
                 'citizenship' => $request->citizenship ?? null,
                 'citizenship_type' => $request->citizenship_type ?? null,
-                'country' => $request->country ?? null,
+                'country' => $country,
                 'present_block' => $request->present_block ?? null,
                 'present_street' => $request->present_street ?? null,
                 'present_subdivision' => $request->present_subdivision ?? null,

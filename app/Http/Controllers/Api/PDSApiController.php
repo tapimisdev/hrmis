@@ -17,6 +17,7 @@ class PDSApiController
     public function index(Request $request, string $employee_no)
     {
         $data = $this->getEmployeeFullData($employee_no);
+        
         // dd($data);
 
         if (!isset($data['personal'])) {
@@ -67,8 +68,9 @@ class PDSApiController
         $family    = $data['family'];
         $children  = $data['children'];
         $education = $data['education'];
+        $account = $data['account'];
 
-        $this->fillPersonal($sheet, $personal);
+        $this->fillPersonal($sheet, $personal, $account);
         $this->fillFamily($sheet, $family);
         $this->fillChildren($sheet, $children);
         $this->fillEducation($sheet, $education);
@@ -103,7 +105,7 @@ class PDSApiController
     /* ======================================================
      * SHEET 1 | SECTION 1: PERSONAL DETAILS
      * ====================================================== */
-    private function fillPersonal($sheet, $personal): void
+    private function fillPersonal($sheet, $personal, $account): void
     {
         $birthday = $this->formatDate($personal->birthday);
 
@@ -115,18 +117,32 @@ class PDSApiController
 
         // Civil status checkboxes
         $status = strtolower($personal->civil_status ?? '');
-        $single    = $status === 'single'    ? '☑' : '☐';
-        $married   = $status === 'married'   ? '☑' : '☐';
-        $widowed   = $status === 'widowed'   ? '☑' : '☐';
-        $separated = $status === 'separated' ? '☑' : '☐';
+        $single    = $status === 'single'    ? '✔' : '☐';
+        $married   = $status === 'married'   ? '✔' : '☐';
+        $widowed   = $status === 'widowed'   ? '✔' : '☐';
+        $separated = $status === 'separated' ? '✔' : '☐';
         $others    = !in_array($status, ['single', 'married', 'widowed', 'separated']) ? '☑' : '☐';
+
+        // Citizenship
+        $citizenship = strtolower($personal->citizenship ?? '');
+        $citizenship_type   = strtolower($personal->citizenship_type ?? '');
+
+        $filipino      = $citizenship === 'filipino' ? '✔' : '☐';
+        $dualCitizen   = $citizenship === 'dual citizenship' ? '✔' : '☐';
+
+        $byBirth         = ($citizenship === 'dual_citizenship' && $citizenship_type === 'by_birth') ? '✔' : '☐';
+        $byNaturalization = ($citizenship === 'dual_citizenship' && $citizenship_type === 'by_naturalization') ? '✔' : '☐';
 
         foreach (range(17, 21) as $i) $sheet->mergeCells("D{$i}:F{$i}");
 
-        $sheet->getStyle('D18:D20')->getFont()->setName('Arial Narrow');
         $sheet->setCellValue('D18', "$single SINGLE             $married MARRIED");
         $sheet->setCellValue('D19', "$widowed WIDOWED        $separated SEPARATED");
         $sheet->setCellValue('D20', "$others OTHER/S:");
+        
+        $sheet->setCellValue('J13', "$filipino FILIPINO             $dualCitizen DUAL CITIZENSHIP");
+        $sheet->setCellValue('J14', "$byBirth BY BIRTH             $byNaturalization BY NATURALIZATION");
+
+        $sheet->setCellValue('J16', strtoupper($personal->country ?? 'N/A'));
 
         // Personal info
         $sheet->setCellValue('D10', strtoupper($personal->lastname ?? ''));
@@ -166,7 +182,7 @@ class PDSApiController
         // Contact
         $sheet->setCellValue('I32', strtoupper($personal->tel_no ?? ''));
         $sheet->setCellValue('I33', strtoupper($personal->mobile_number ?? ''));
-        $sheet->setCellValue('I34', strtoupper($personal->email ?? ''));
+        $sheet->setCellValue('I34', strtoupper($account->email ?? ''));
     }
 
     /* ======================================================
@@ -373,10 +389,27 @@ class PDSApiController
         ];
 
         $data = [];
+
+        // ----------------------------------------
+        // Fetch normal tables using employee_no
+        // ----------------------------------------
         foreach ($tables as $key => $table) {
             $query = DB::table($table)->where('employee_no', $employeeNo);
-            $data[$key] = in_array($key, $singleRowTables) ? $query->first() : $query->get();
+            $data[$key] = in_array($key, $singleRowTables)
+                ? $query->first()
+                : $query->get();
         }
+
+        // ----------------------------------------
+        // Fetch ACCOUNT from users table:
+        // users.id = employee_information.user_id
+        // employee_information.employee_no = given employee_no
+        // ----------------------------------------
+        $data['account'] = DB::table('users')
+            ->join('employee_information', 'employee_information.user_id', '=', 'users.id')
+            ->where('employee_information.employee_no', $employeeNo)
+            ->select('users.*')
+            ->first();
 
         return $data;
     }

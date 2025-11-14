@@ -26,21 +26,15 @@ return new class extends Migration
 
         Schema::create('employee_leave_card', function(Blueprint $table) {
             $table->id();
+            $table->string('leave_type');
             $table->string('employee_no');
             $table->string('period');
             $table->string('year');
             $table->longText('particulars')
                 ->nullable();
-            $table->string('vl_earned');
-            $table->string('vl_aut_w_pay');
-            $table->string('vl_bal');
-            $table->string('vl_aut_wo_pay');
-
-            $table->string('sl_earned');
-            $table->string('sl_aut_w_pay');
-            $table->string('sl_bal');
-            $table->string('sl_aut_wo_pay');
-
+            $table->float('earned');
+            $table->float('deduction');
+            $table->float('balance');
             $table->longText('remarks')
                 ->nullable();
         });

@@ -129,14 +129,19 @@ Route::prefix('hris')->group(function() {
     # LEAVE CREDITS
     Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'leave_credits'])
         ->name('hris.employee.leave-credits');
-    Route::put('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'save_credits'])
+    Route::put('employee/leave-credits/{employee_no}/{leave_id?}', [LeaveCreditController::class, 'save_credits'])
         ->name('hris.employee.leave-credits');
 
     # LEAVE CARD
-    Route::get('employee/leave-card/{employee_no}', [LeaveCreditController::class, 'leave_card'])
+    Route::get('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'leave_card'])
         ->name('hris.employee.leave-card');
-    Route::put('employee/leave-card/{employee_no}', [LeaveCreditController::class, 'save_card'])
-        ->name('hris.employee.leave-card');
+    Route::put('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'add_year'])
+        ->name('hris.employee.leave-card.add_year');
+    Route::put('employee/leave-card/{employee_no}/{leave_id}/{year}/remove', [LeaveCreditController::class, 'remove_year'])
+        ->name('hris.employee.leave-card.remove_year');
+    Route::put('employee/leave-card/{employee_no}/{leave_id}/save', [LeaveCreditController::class, 'save_changes'])
+        ->name('hris.employee.leave-card.save');
+
 
     # EARNINGS
     Route::get('employee/earnings/{employee_no}', [HrisEarningsController::class, 'index'])

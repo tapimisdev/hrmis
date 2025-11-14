@@ -127,22 +127,22 @@ class EmployeeService {
             ->get();
     }
 
-    public function getEmployee(string $type, string $employee_no)
+    public function getEmployee(string $type, string $employee_no = null, ?int $leave_id = null)
     {
         $tables = [
-            'information' => ['table' => 'employee_information', 'method' => 'first', 'joins' => true],
-            'personal' => ['table' => 'employee_personal', 'method' => 'first'],
-            'family' => ['table' => 'employee_family', 'method' => 'first'],
-            'children' => ['table' => 'employee_children', 'method' => 'get'],
-            'education' => ['table' => 'employee_education', 'method' => 'get'],
-            'work-experience' => ['table' => 'employee_work_experience', 'method' => 'get'],
-            'civil-service' => ['table' => 'employee_civil_service', 'method' => 'get'],
-            'trainings' => ['table' => 'employee_trainings', 'method' => 'get'],
-            'voluntary-works' => ['table' => 'employee_voluntary_works', 'method' => 'get'],
-            'skills' => ['table' => 'employee_skills_hobbies', 'method' => 'get'],
-            'account' => ['table' => 'users', 'method' => 'first'],
-            'leave-credits' => ['table' => 'employee_leave_credits', 'method' => 'first'],
-            'leave-card' => ['table' => 'employee_leave_card', 'method' => 'get'],
+            'information'      => ['table' => 'employee_information', 'method' => 'first', 'joins' => true],
+            'personal'         => ['table' => 'employee_personal', 'method' => 'first'],
+            'family'           => ['table' => 'employee_family', 'method' => 'first'],
+            'children'         => ['table' => 'employee_children', 'method' => 'get'],
+            'education'        => ['table' => 'employee_education', 'method' => 'get'],
+            'work-experience'  => ['table' => 'employee_work_experience', 'method' => 'get'],
+            'civil-service'    => ['table' => 'employee_civil_service', 'method' => 'get'],
+            'trainings'        => ['table' => 'employee_trainings', 'method' => 'get'],
+            'voluntary-works'  => ['table' => 'employee_voluntary_works', 'method' => 'get'],
+            'skills'           => ['table' => 'employee_skills_hobbies', 'method' => 'get'],
+            'account'          => ['table' => 'users', 'method' => 'first'],
+            'leave-credits'    => ['table' => 'employee_leave_credits', 'method' => 'first'],
+            'leave-card'       => ['table' => 'employee_leave_card', 'method' => 'get'],
         ];
 
         if (!isset($tables[$type])) {
@@ -151,6 +151,9 @@ class EmployeeService {
 
         $config = $tables[$type];
 
+        /**
+         * ACCOUNT BASIC LOOKUP
+         */
         if ($type === 'account') {
             return DB::table('users')
                 ->select('users.*')
@@ -159,10 +162,41 @@ class EmployeeService {
                 ->first();
         }
 
+        /**
+         * SPECIAL HANDLING: LEAVE-CARD
+         * If leave_id is given → get employee_no based on leave card row
+         */
+        if ($type === 'leave-card' && $leave_id !== null) {
+
+            $employee_no = DB::table('employee_leave_card')
+                ->where('leave_type', $leave_id)
+                ->value('employee_no');
+
+            if (!$employee_no) {
+                return collect(); // Return empty collection
+            }
+
+            return DB::table('employee_leave_card')
+                ->where('employee_no', $employee_no)
+                ->where('leave_type', $leave_id)
+                ->orderBy('year')
+                ->orderByRaw("FIELD(period, 
+                    'january','february','march','april','may','june',
+                    'july','august','september','october','november','december'
+                )")
+                ->get();
+        }
+
+        /**
+         * DEFAULT QUERY BUILDER
+         */
         $query = DB::table($config['table']);
 
+        /**
+         * INFORMATION JOINS
+         */
         if (!empty($config['joins']) && $type === 'information') {
-            // Latest subqueries
+
             $latestOrg = DB::table('employee_organization as eo1')
                 ->select('eo1.*')
                 ->whereRaw('eo1.id = (select max(eo2.id) from employee_organization eo2 where eo2.employee_no = eo1.employee_no)');
@@ -175,43 +209,37 @@ class EmployeeService {
                 ->select('sw1.*')
                 ->whereRaw('sw1.id = (select max(sw2.id) from employee_shift_work_schedule sw2 where sw2.employee_no = sw1.employee_no)');
 
-            $query ->select(
+            $query->select(
                     'employee_information.employee_no',
                     'employee_information.date_hired',
                     'employee_information.biometrics_id',
                     'employee_information.salary_method',
                     'employee_information.account_status',
                     'employee_information.isDeleted',
+
                     'employee_personal.profile',
                     'employee_personal.firstname',
                     'employee_personal.lastname',
-                    
 
-                    // Organization details
                     'org.id as organization_id',
                     'org.effectivity_date',
 
-                    // Division
                     'divisions.id as division_id',
                     'divisions.code as division_code',
                     'divisions.name as division_name',
 
-                    // Unit
                     'units.id as unit_id',
                     'units.code as unit_code',
                     'units.name as unit_name',
 
-                    // Position
                     'positions.id as position_id',
                     'positions.code as position_code',
                     'positions.name as position_name',
 
-                    // Employment type
                     'employment_types.id as employment_type_id',
                     'employment_types.code as employment_type_code',
                     'employment_types.name as employment_type_name',
 
-                    // Salary
                     'salary.tranche_id',
                     'salary.salary_grade',
                     'salary.step',
@@ -223,7 +251,6 @@ class EmployeeService {
                     'salary.daily_rate',
                     'salary.effectivity_date',
 
-                    // Shift
                     'shift.shift_id',
                     'shift.work_schedule_id'
                 )
@@ -238,10 +265,14 @@ class EmployeeService {
                 ->leftJoinSub($latestShift, 'shift', 'employee_information.employee_no', '=', 'shift.employee_no');
         }
 
+        /**
+         * DEFAULT FILTER
+         */
         $query->where("{$config['table']}.employee_no", $employee_no);
 
         return $query->{$config['method']}();
     }
+
 
     public function getSalary(string $employee_no) {
         return DB::table('employee_information')
