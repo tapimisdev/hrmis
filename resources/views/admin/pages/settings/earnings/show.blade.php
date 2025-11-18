@@ -6,7 +6,7 @@
             <small class="text-muted">Earning ID: <span id="earning-id"></span></small>
         </div>
 
-        <table class="table table-bordered">
+        <table class="table table-bordered w-100">
             <tr>
                 <th>Name:</th>
                 <td id="earning-name"></td>

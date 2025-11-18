@@ -1,9 +1,5 @@
 @extends('admin.layouts.app')
 
-@section('styles')
-
-@endsection
-
 @section('content')
 @include('admin.pages.settings.earnings.show')
 <div class="container-fluid">
@@ -48,7 +44,6 @@
                 { data: "second_term", name: 'second_term' },
                 { data: "is_taxable", name: 'is_taxable'},
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
-
             ],
         });
 
@@ -60,9 +55,8 @@
 
             axios.get(`earnings/${id}`)
                 .then((response) => {
-                    const data = response.data.earnings; // adjust according to your API response
+                    const data = response.data.earnings; 
 
-                    // Fill modal fields
                     $('#earning-name').text(data.id);
                     $('#earning-first-term').text(data.first_term);
                     $('#earning-second-term').text(data.second_term);

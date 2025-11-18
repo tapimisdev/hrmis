@@ -13,9 +13,12 @@ export function alert(type, message, redirect = '') {
         $('.form-control').removeClass('is-invalid');
         $('.error-field').text('');
 
-        if ($.fn.DataTable.isDataTable('table')) {
-            $('table').DataTable().ajax.reload(null, false);
-        }
+        $('table').each(function() {
+            if ($.fn.DataTable.isDataTable(this)) {
+                $(this).DataTable().ajax.reload(null, false);
+            }
+        });
+
     }
 
     Swal.fire({

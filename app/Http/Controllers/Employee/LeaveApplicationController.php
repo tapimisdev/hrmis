@@ -48,16 +48,16 @@ class LeaveApplicationController extends Controller
         $myId = Auth::id();
         $data = $this->applicationService->getData('leave');
         $leaves = $data['leaves'];
-        $approvers = $data['approvers'];
-        $approvers = $approvers->map(function ($collection) use ($myId) {
-            return $collection->reject(function ($approver) use ($myId) {
-                return $approver['id'] === $myId;
-            })->values();
-        });
+        // $approvers = $data['approvers'];
+        // $approvers = $approvers->map(function ($collection) use ($myId) {
+        //     return $collection->reject(function ($approver) use ($myId) {
+        //         return $approver['id'] === $myId;
+        //     })->values();
+        // });
 
         $applications = $data['applications'];
         
-        return view('employee.pages.leave.create', compact('leaves', 'approvers', 'applications'));
+        return view('employee.pages.leave.create', compact('leaves', 'applications'));
     }
 
     /**
@@ -85,12 +85,12 @@ class LeaveApplicationController extends Controller
 
         try {
 
-            if(empty($validatedData['approvers'])) {
-                return response([
-                    'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
-                    'status'  => 'error'
-                ], 500); 
-            }
+            // if(empty($validatedData['approvers'])) {
+            //     return response([
+            //         'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
+            //         'status'  => 'error'
+            //     ], 500); 
+            // }
 
             $datesInput = $validatedData['selectedDates'];
 
@@ -103,8 +103,8 @@ class LeaveApplicationController extends Controller
             }
 
             $data = $this->applicationService->getData('leave');
-            $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
-            $approvers = $validatedData['approvers'];
+            // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
+            // $approvers = $validatedData['approvers'];
             $days = count($datesInput);
 
             $leaveName = DB::table('leaves')
@@ -124,7 +124,7 @@ class LeaveApplicationController extends Controller
                 'reason'        => $validatedData['reason'],
                 'status'        => 'pending',
                 'level'         => 1,
-                'levels'        => json_encode($levels),
+                // 'levels'        => json_encode($levels),
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
@@ -137,16 +137,16 @@ class LeaveApplicationController extends Controller
                 ]);
             }
 
-            foreach ($approvers as $level => $approverList) {
-                foreach ($approverList as $userId) {
-                    DB::table('leave_approvals')->insertGetId([
-                        'leave_application_id' => $applicationID,
-                        'user_id'              => $userId,
-                        'level'                => $level,
-                        'status'               => 'pending',
-                    ]);
-                }
-            }
+            // foreach ($approvers as $level => $approverList) {
+            //     foreach ($approverList as $userId) {
+            //         DB::table('leave_approvals')->insertGetId([
+            //             'leave_application_id' => $applicationID,
+            //             'user_id'              => $userId,
+            //             'level'                => $level,
+            //             'status'               => 'pending',
+            //         ]);
+            //     }
+            // }
 
 
             // Handle multiple attachments (if any)

@@ -156,7 +156,6 @@ class EarningsController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Earning has been deleted',
-                'redirect' => ''
             ]);
 
         } catch (\Exception $e) {

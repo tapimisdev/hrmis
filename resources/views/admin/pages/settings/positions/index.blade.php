@@ -1,9 +1,5 @@
 @extends('admin.layouts.app')
 
-@section('styles')
-
-@endsection
-
 @section('content')
     <div class="container-fluid">
         <x-header title="{{strtoupper($employment_type->code . ' - ' . $employment_type->name)}} Positions" subtitle="Manage positions for this employment type">

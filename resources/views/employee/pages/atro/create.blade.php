@@ -62,7 +62,7 @@
                     </div>
                 </div>
                 <hr class="mt-5 mb-3">
-                <div class="row g-3 mt-2">
+                <!-- <div class="row g-3 mt-2">
                     <div class="col-12 col-md-12">
                         <div for="approvers" class="form-label fw-semibold mb-3">Choose Your Approvers</div>
                         @forelse($approvers as $level => $users)
@@ -86,7 +86,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <div class="card-footer bg-transparent border-0 mt-4 mb-4">

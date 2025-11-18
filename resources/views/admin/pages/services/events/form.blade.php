@@ -31,7 +31,7 @@
         @else
             <x-header title="Add New Events" subtitle="create new event or positions" >
                 <x-button-link 
-                    :href="route('services.events.create')" 
+                    :href="route('services.events.index')" 
                     icon="fa-solid fa-arrow-left me-2" 
                     text="Back" 
                     variant="danger"
@@ -149,7 +149,6 @@
                         <div class="col-12 col-md-12 mb-3">
                             <label class="mb-2" for="posted_by">Posted / Authored By <span class="text-danger">*</span></label>
                             <select name="posted_by[]" id="posted_by" class="form-select select2" multiple>
-                                <option value=""> - CHOOSE - </option>
                                 @php
                                     $postedByIds = !empty($data['posted_by']) ? array_column($data['posted_by'], 'id') : [];
                                 @endphp

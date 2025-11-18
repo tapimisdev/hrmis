@@ -293,11 +293,15 @@ $(function() {
                             targets: -1, 
                             data: null,
                             render: function(data, type, row, meta) {
-                                return (
-                                    `<button class="btn btn-primary download-btn" data-id="${meta.row}">
-                                        <i class="fa-solid fa-download"></i>
-                                    </button>`
-                                );
+                                if(row.length > 0) {
+                                    let url = "{{ route('reports.employee.pds', ['employee_no' => '__employee__']) }}";
+                                    url = url.replace('__employee__', row[0]);
+                                    return (
+                                        `<a href="${url}" class="btn btn-primary download-btn" data-id="${meta.row}">
+                                            <i class="fa-solid fa-download"></i>
+                                        </a>`
+                                    );
+                                }
                             }
                         },
                         { targets: '_all', width: '200px' } 

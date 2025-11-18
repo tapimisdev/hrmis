@@ -12,7 +12,6 @@ class AnnouncementsController extends Controller
 {
     public function index(Request $request)
     {
-        // Check if the client wants JSON (e.g., AJAX request or ?json=1)
         if ($request->wantsJson() || $request->query('json')) {
 
             $announcements = $this->get_announcements(null, 10);
@@ -32,11 +31,15 @@ class AnnouncementsController extends Controller
                             ->where('slug', '=', $slug)
                             ->first();
 
+        if (!$announcement) {
+            return redirect()->route('announcement.index');
+        }
+
         $tags = DB::table('events_announcements_tags')
             ->where('event_announcement_id', $announcement->id)
             ->pluck('name');
 
-       $posted_by = DB::table('events_announcements_posted_by as eapb')
+        $posted_by = DB::table('events_announcements_posted_by as eapb')
                     ->leftJoin('users as u', 'eapb.user_id', '=', 'u.id')
                     ->where('eapb.event_announcement_id', $announcement->id)
                     ->select('u.name')

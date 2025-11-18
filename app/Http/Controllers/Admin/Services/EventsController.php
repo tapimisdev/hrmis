@@ -258,7 +258,7 @@ class EventsController extends Controller
             return response()->json([
                 'status'   => 'success',
                 'message'  => 'Event/Announcement Added',
-                'redirect' => '_self',
+                'redirect' => route('services.events.create'),
             ]);
 
         } catch (\Exception $e) {
@@ -530,6 +530,34 @@ class EventsController extends Controller
         }
     }
 
+    public function destroy(string $id, Request $request)
+    {
+
+        DB::beginTransaction();
+
+        try {
+
+            DB::table('events_announcements')
+                ->where('id', $id)
+                ->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Event/Announcement record has been deleted.',
+                'redirect' => route('services.events.index')
+            ]);
+
+        } catch(\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error Occured: ' . $e->getMessage()
+            ]);
+        }
+    }
 
 
 }

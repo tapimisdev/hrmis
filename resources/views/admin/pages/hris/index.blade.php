@@ -37,7 +37,6 @@
                         </li>
                     </ul>
                 </div>
-                
                 <x-button-link 
                     :href="route('hris.employee.information')" 
                     icon="fa-solid fa-plus" 
@@ -113,13 +112,13 @@
         const selectedDivision = "{{ $division_id ?? '' }}";
         const selectedUnit = "{{ $unit_id ?? '' }}";
 
-        const token = localStorage.getItem('auth_token'); // token from local storage
+        const token = localStorage.getItem('auth_token'); 
 
         $.ajax({
             url: '/api/divisions',
             type: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`,  // <-- add this
+                'Authorization': `Bearer ${token}`,  
                 'Accept': 'application/json'
             },
             success: function (data) {
@@ -161,7 +160,7 @@
                 url: '/api/units/' + divisionId,
                 type: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,  // <-- add this
+                    'Authorization': `Bearer ${token}`, 
                     'Accept': 'application/json'
                 },
                 success: function (data) {
@@ -176,6 +175,31 @@
                 }
             });
         }
+    
+        $(document).on('click', '.download-pds', async function() {
+            const token = localStorage.getItem('auth_token');
+            const endPoint = $(this).data('url');
+            console.log(endPoint);  
+            try {
+                const response = await axios.get(endPoint, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    responseType: 'blob', 
+                });
+
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `payroll_registry_${payroll_no}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Download failed:', error);
+            }
+        });
+
     });
 
 </script>

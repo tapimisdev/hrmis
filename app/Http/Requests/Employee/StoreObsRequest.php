@@ -46,9 +46,9 @@ class StoreObsRequest extends FormRequest
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 
-            'approvers'     => ['required', 'array', 'min:1'],
-            'approvers.*'   => ['required', 'array', 'min:1'],
-            'approvers.*.*' => ['required', 'exists:users,id'],
+            // 'approvers'     => ['required', 'array', 'min:1'],
+            // 'approvers.*'   => ['required', 'array', 'min:1'],
+            // 'approvers.*.*' => ['required', 'exists:users,id'],
         ];
     }
 

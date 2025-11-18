@@ -32,7 +32,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
 
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 
-    # ANNOUNCEMENTS
+    # ANNOUNCEMENTS 
     Route::get('announcements', [AnnouncementsController::class, 'index'])->name('announcement.index');
     Route::get('announcements/{slug}', [AnnouncementsController::class, 'show'])->name('announcement.show');
 

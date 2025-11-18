@@ -57,7 +57,7 @@ return new class extends Migration
                 ->nullable();
             $table->string('civil_status')
                 ->nullable();
-            $table->string('s2ex')
+            $table->string('sex')
                 ->nullable();
             $table->string('citizenship')
                 ->nullable();

@@ -3,7 +3,7 @@
     <h5 class="sidebar-title">Others</h5>
     <AnnouncementCard
         class="mb-3"
-        style="max-width: 360px;"
+        style="width: 100%;"
         v-for="announcement in data"
         :key="announcement.id"
         :announcement="announcement"

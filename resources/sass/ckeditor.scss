@@ -1,0 +1,111 @@
+/* =========================================
+   CKEditor 5 Lark Dark Theme
+   Applies ONLY when parent has `.dark`
+   ========================================= */
+.dark .ck.ck-editor {
+    --ck-color-base-foreground: #e5e5e5;
+    --ck-color-base-background: #1e1e1e;
+    --ck-color-base-border: #444;
+    --ck-color-focus-border: #777;
+
+    --ck-color-toolbar-background: #2b2b2b;
+    --ck-color-toolbar-border: #444;
+
+    --ck-color-tooltip-background: #000;
+    --ck-color-tooltip-text: #fff;
+
+    --ck-color-button-default-background: #2b2b2b;
+    --ck-color-button-default-hover-background: #3a3a3a;
+    --ck-color-button-on-background: #555;
+    --ck-color-button-on-hover-background: #666;
+}
+
+/* ====== Editable Area ====== */
+.dark .ck.ck-editor__main > .ck-editor__editable,
+.dark .ck.ck-editor__main > .ck-editor__editable.ck-focused {
+    background: #1e1e1e !important;
+    color: #e9e9e9 !important;
+    border-color: #444 !important;
+}
+
+.dark .ck.ck-editor__editable * {
+    color: #e9e9e9 !important;
+}
+
+/* Placeholder */
+.dark .ck.ck-editor__editable:not(.ck-focused)::before {
+    color: #7a7a7a !important;
+}
+
+/* ====== Toolbar ====== */
+.dark .ck.ck-toolbar {
+    background: #2b2b2b !important;
+    border-color: #444 !important;
+}
+
+/* Toolbar Buttons */
+.dark .ck.ck-toolbar .ck-button {
+    color: #e9e9e9 !important;
+}
+
+.dark .ck.ck-toolbar .ck-button:not(.ck-disabled):hover {
+    background: #3a3a3a !important;
+    color: #fff !important;
+}
+
+.dark .ck.ck-button.ck-on {
+    background: #555 !important;
+    color: #fff !important;
+}
+
+.dark .ck.ck-button.ck-on:hover {
+    background: #666 !important;
+}
+
+/* ====== Dropdown Panels ====== */
+.dark .ck.ck-dropdown__panel,
+.dark .ck.ck-balloon-panel,
+.dark .ck-list,
+.dark .ck-list__item {
+    background: #2b2b2b !important;
+    border-color: #444 !important;
+}
+
+.dark .ck-list__item .ck-button {
+    color: #e9e9e9 !important;
+}
+
+.dark .ck-list__item .ck-button:hover {
+    background: #3a3a3a !important;
+}
+
+/* ====== Forms (Link dialog etc.) ====== */
+.dark .ck.ck-labeled-field-view .ck-input,
+.dark .ck.ck-input {
+    background: #1e1e1e !important;
+    color: #fff !important;
+    border-color: #555 !important;
+}
+
+.dark .ck.ck-input:focus {
+    border-color: #777 !important;
+}
+
+/* ====== Tooltips ====== */
+.dark .ck-tooltip .ck-tooltip__text {
+    background: #000 !important;
+    color: #fff !important;
+}
+
+/* ====== Scrollbar ====== */
+.dark .ck.ck-editor__editable::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dark .ck.ck-editor__editable::-webkit-scrollbar-thumb {
+    background: #555 !important;
+}
+
+.dark .ck.ck-editor__editable::-webkit-scrollbar-track {
+    background: #222 !important;
+}

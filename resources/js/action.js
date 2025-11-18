@@ -31,7 +31,7 @@ function handleFormSubmit(method, url, hasRemarks = false, formSelector) {
                 fieldError(error);
             })
             .finally(() => {
-                $btn.prop('disabled', false).html(originalLabel); // restore original HTML
+                $btn.prop('disabled', false).html(originalLabel); 
             });
         };
 

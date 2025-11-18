@@ -166,6 +166,13 @@ class IndexController extends Controller
                                         <i class="fa-solid fa-pen-to-square"></i> Edit
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item download-pds" data-url="'.route('reports.employee.pds', [
+                                        'employee_no' => $row->employee_no
+                                    ]).'" href="javascript:void(0);">
+                                        <i class="fa-solid fa-download"></i> Download PDS
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <button id="btn-delete"

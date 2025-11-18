@@ -165,13 +165,10 @@ class DeductionController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Deduction has been deleted',
-                'redirect' => ''
             ]);
            
         } catch (\Exception $e) {
-
             DB::rollback();
-
             return response()->json([
                 'message' => 'An error occurred while deleting this deduction.',
                 'error' => $e->getMessage()

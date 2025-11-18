@@ -1,58 +1,64 @@
-const storageKey = 'theme-preference'
+const storageKey = 'theme-preference';
 
 const onClick = () => {
-  // flip current value
-  theme.value = theme.value === 'light'
-    ? 'dark'
-    : 'light'
+    theme.value = theme.value === 'light' ? 'dark' : 'light';
 
-  setPreference()
-}
+    // Apply theme class to both <html> and <body>
+    $('html, body').removeClass('light dark').addClass(theme.value);
+
+    setPreference();
+};
 
 const getColorPreference = () => {
-  if (localStorage.getItem(storageKey))
-    return localStorage.getItem(storageKey)
-  else
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light'
-}
+    if (localStorage.getItem(storageKey)) {
+        return localStorage.getItem(storageKey);
+    } else {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light';
+    }
+};
 
 const setPreference = () => {
-  localStorage.setItem(storageKey, theme.value)
-  reflectPreference()
-}
+    localStorage.setItem(storageKey, theme.value);
+    reflectPreference();
+};
 
 const reflectPreference = () => {
-  document.firstElementChild
-    .setAttribute('data-bs-theme', theme.value) // changed for Bootstrap
+    // Set Bootstrap theme
+    document.documentElement.setAttribute('data-bs-theme', theme.value);
 
-  document
-    .querySelector('#theme-toggle')
-    ?.setAttribute('aria-label', theme.value)
-}
+    // Update button label
+    document.querySelector('#theme-toggle')
+        ?.setAttribute('aria-label', theme.value);
+
+    // Apply classes to HTML + body on initial load
+    document.documentElement.classList.remove('light', 'dark');
+    document.body.classList.remove('light', 'dark');
+
+    document.documentElement.classList.add(theme.value);
+    document.body.classList.add(theme.value);
+};
 
 const theme = {
-  value: getColorPreference(),
-}
+    value: getColorPreference(),
+};
 
-// set early so no page flashes / CSS is made aware
-reflectPreference()
+// Early apply to prevent FOUC (Flash Of Unstyled Content)
+reflectPreference();
 
 window.onload = () => {
-  // set on load so screen readers can see latest value on the button
-  reflectPreference()
+    reflectPreference();
 
-  // now this script can find and listen for clicks on the control
-  document
-    .querySelector('#theme-toggle')
-    .addEventListener('click', onClick)
-}
+    // Button listener
+    document
+        .querySelector('#theme-toggle')
+        .addEventListener('click', onClick);
+};
 
-// sync with system changes
-window
-  .matchMedia('(prefers-color-scheme: dark)')
-  .addEventListener('change', ({matches:isDark}) => {
-    theme.value = isDark ? 'dark' : 'light'
-    setPreference()
-  })
+// Listen to system theme changes
+window.matchMedia('(prefers-color-scheme: dark)')
+    .addEventListener('change', ({ matches: isDark }) => {
+        theme.value = isDark ? 'dark' : 'light';
+        setPreference();
+    });

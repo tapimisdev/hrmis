@@ -35,9 +35,9 @@ class StoreLeaveApplication extends FormRequest
             'attachments'   => ['nullable', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 
-            'approvers'     => ['nullable', 'array', 'min:1'],
-            'approvers.*'   => ['nullable', 'array', 'min:1'],
-            'approvers.*.*' => ['nullable', 'exists:users,id'],
+            // 'approvers'     => ['nullable', 'array', 'min:1'],
+            // 'approvers.*'   => ['nullable', 'array', 'min:1'],
+            // 'approvers.*.*' => ['nullable', 'exists:users,id'],
         ];
     }
 

@@ -128,9 +128,9 @@ $('.select2').select2({
     closeOnSelect: false
 });
 
-$('.datepicker').daterangepicker();
 
 if ($('.datepicker').length) {
+    $('.datepicker').daterangepicker();
 }
 
 if ($('.ckeditor').length) {

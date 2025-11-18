@@ -285,7 +285,6 @@ $(function() {
         groupIndex++;
     });
 
-    // Remove group handler
     $('#fields-container').on('click', '.remove-group-btn', function() {
         groupIndex--;
         $(this).closest('.grouped-field').remove();

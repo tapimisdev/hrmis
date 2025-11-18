@@ -43,13 +43,20 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="d-flex justify-content-start gap-2 mt-3 pb-4">
-            <a href="{{route('services.events.index')}}" class="btn btn-danger py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-arrow-left me-2"></i>Go Back
-            </a>
-            <a href="{{route('services.events.edit', ['event' => $data['slug']])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
-                <i class="fa-solid fa-pen-to-square"></i> Update
-            </a>
+        <div class="d-flex justify-content-between gap-2 mt-3 pb-4">
+            <div class="d-flex gap-2">
+                <a href="{{route('services.events.edit', ['event' => $data['slug']])}}" class="btn btn-primary py-3 px-4 text-uppercase fw-medium">
+                    <i class="fa-solid fa-pen-to-square"></i> Update
+                </a>
+                <button id="btn-delete" data-target="{{ route('services.events.destroy', ['event' => $data['id']]) }}" class="btn-delete btn btn-danger py-3 px-4 text-uppercase fw-medium">
+                    <i class="fa-solid fa-trash"></i> Delete
+                </button>
+            </div>
+            <div>
+                <a href="{{route('services.events.index')}}" class="btn btn-danger py-3 px-4 text-uppercase fw-medium">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
+                </a>
+            </div>           
         </div>
         <div class="row">
             <div class="col-12 col-md-8">
