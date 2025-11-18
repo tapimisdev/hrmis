@@ -5,10 +5,10 @@
     <div v-else class="card">
       <!-- Header Section -->
       <div class="card-header">
-        <div class="d-flex align-items-center gap-3 flex-grow-1">
+        <div class="d-flex align-items-center gap-3 flex-grow-1 mt-2 mb-2">
           <div class="position-relative">
             <img
-              class="rounded-circle border border-2 border-white"
+              class="rounded border"
               :src="profile.picture"
               alt="Profile Picture"
               width="56"
