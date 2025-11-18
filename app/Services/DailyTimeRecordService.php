@@ -305,9 +305,10 @@ class DailyTimeRecordService {
                 default => null,
             };
 
-            if (!$timeInCarbon || !$timeOutCarbon) {
+            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday) {
                 $remarks[] = 'incomplete log';
                 $TOTAL_INCOMPLETE_LOGS++;
+
                 $computedData[] = [
                     'date'              => $logDate,
                     'user_id'          => $userId,
