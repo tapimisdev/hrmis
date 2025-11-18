@@ -382,7 +382,7 @@ class DailyTimeRecordService {
             ['label' => 'Leaves',           'value' => $TOTAL_LEAVES . ' Day' . ($TOTAL_LEAVES != 1 ? 's' : ''), 'actual_value' => $TOTAL_LEAVES ],
             ['label' => 'Holiday',          'value' => $TOTAL_HOLIDAY . ' Day' . ($TOTAL_HOLIDAY != 1 ? 's' : ''), 'actual_value' => $TOTAL_HOLIDAY ],
             ['label' => 'Suspensions',      'value' => $TOTAL_SUSPENSION, 'actual_value' => $TOTAL_SUSPENSION ],
-            ['label' => 'Excess',           'value' => $DOUBLE_EXCESS, 'actual_value' => $DOUBLE_EXCESS ],
+            ['label' => 'Excess',           'value' => number_format($DOUBLE_EXCESS, 2), 'actual_value' => number_format($DOUBLE_EXCESS, 2)],
         ];
 
         $payroll_value = [
