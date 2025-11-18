@@ -1,5 +1,5 @@
 <template>
-  <Welcome/>
+  <Welcome :name="name" />
   <Card/>
   <Announcement/>
 </template>
@@ -12,9 +12,12 @@ import Welcome from './parts/Welcome.vue';
 export default {
   name: 'Dashboard Index',
   components: { Welcome, Card, Announcement },
+  props: {
+    name: String
+  },
   data() {
     return {
-
+      
     }
   },
 }

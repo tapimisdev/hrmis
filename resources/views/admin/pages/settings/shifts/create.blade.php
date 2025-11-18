@@ -42,25 +42,33 @@
                 </div>
 
                 <div class="row my-3">
-                    <div class="col-12 col-md-4 mb-3 d-none" id="earliest_time_container">
+                    <div class="col-12 col-md-3 mb-3 d-none" id="earliest_time_container">
                         <label class="mb-2" for="earliest_time">Earliest Time <span class="text-danger">*</span></label>
                         <input type="time" id="earliest_time" name="earliest_time" class="form-control">
                         <div class="error-field"></div>
                     </div>
 
-                    <div class="col-12 col-md-4 mb-3">
+                    <div class="col-12 col-md-3 mb-3">
                         <label class="mb-2" for="start_time">Start Time <span class="text-danger">*</span></label>
                         <input type="time" id="start_time" name="start_time" class="form-control">
                         <div class="error-field"></div>
                     </div>
 
-                    <div class="col-12 col-md-4" id="end_time_container">
+                    <div class="col-12 col-md-3" id="end_time_container">
                         <label class="mb-2" for="end_time">End Time <span class="text-danger">*</span></label>
                         <input type="time" id="end_time" name="end_time" class="form-control">
                         <div class="error-field"></div>
                     </div>
 
-                    <div class="col-12 col-md-4 mb-3">
+                    <div class="col-12 col-md-3 mb-3">
+                        <label class="mb-2" for="working_hours">Working Hours</label>
+                        <input type="number" step="0.01" min="0" id="working_hours" 
+                            name="working_hours" class="form-control"
+                            value="{{ $shift->working_hours ?? '' }}">
+                        <div class="error-field"></div>
+                    </div>
+
+                    <div class="col-12 col-md-3 mb-3">
                         <label class="mb-2" for="minimum_overtime_hours">Minimum Overtime Hours</label>
                         <input type="number" step="0.01" min="0" id="minimum_overtime_hours" name="minimum_overtime_hours"
                             class="form-control">

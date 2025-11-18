@@ -65,7 +65,8 @@ class CheckInOutController extends Controller
 
         try {
             $validatedData['user_id'] = auth()->user()->id;
-            $validatedData['employee_no'] = auth()->user()->employee_no;
+            $validatedData['employee_no'] = auth()->user()->employee_no();
+
 
             $user = User::find($validatedData['user_id']);
             $user_schedule = $user->getShiftAndWorkSchedule();

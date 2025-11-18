@@ -71,6 +71,7 @@
                     $('#end-time').text(data.end_time ? moment(data.end_time, 'HH:mm:ss').format('h:mm A') : '---');
 
                     $('#minimum-overtime-hours').text(data.minimum_overtime_hours);
+                    $('#working-hours').text(data.working_hours);
 
                     // Boolean badges
                     $('#is-flexible').attr('class', 'badge ' + (data.is_flexible ? 'bg-success' : 'bg-secondary'))

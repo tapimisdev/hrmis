@@ -39,6 +39,7 @@ class StoreShiftRequest extends FormRequest
 
             // Overtime
             'minimum_overtime_hours' => 'nullable|numeric|min:0',
+            'working_hours' => 'required|numeric|min:0',
 
             // Breaks
             'break_out_time' => 'required_if:is_break_required,1|date_format:H:i',
@@ -50,4 +51,12 @@ class StoreShiftRequest extends FormRequest
             'is_flexible'       => 'required|boolean',
         ];
     }
+
+    public function messages()
+    {
+        return [
+            'end_time.required_unless' => 'This field is required',
+        ];
+    }
+
 }

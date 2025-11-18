@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\EmployeeDashboardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr\FuncCall;
 
 class DashboardController extends Controller
@@ -20,7 +21,8 @@ class DashboardController extends Controller
     
     public function index()
     {
-        return view('employee.pages.dashboard.index');
+        $name = auth()->user()->name;
+        return view('employee.pages.dashboard.index', compact('name'));
     }
 
     public function get_stats()

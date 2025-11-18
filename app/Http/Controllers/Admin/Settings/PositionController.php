@@ -292,11 +292,6 @@ class PositionController extends Controller
                 
                 return '
                     <div class="d-block d-md-flex gap-2 justify-content-start">
-                        <a href="" 
-                            class="btn btn-primary btn ms-1 my-1" 
-                            title="Show">
-                                <i class="fa-solid fa-eye"></i>
-                        </a>
                         <a href="' . $editRoute . '" 
                             class="btn btn-secondary btn ms-1 my-1" 
                             title="Edit">

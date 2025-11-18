@@ -6,7 +6,8 @@
         <header-vue title="Dashboard"></header-vue>
     </x-employee-navbar>
 
-    <dashboard-index/>
+    <dashboard-index name="{{ $name }}"></dashboard-index>
+
 </div>
 @endsection
 

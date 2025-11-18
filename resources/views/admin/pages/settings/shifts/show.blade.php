@@ -32,6 +32,10 @@
                 <td id="end-time"></td>
             </tr>
             <tr>
+                <th>Working Hours:</th>
+                <td id="working-hours"></td>
+            </tr>
+            <tr>
                 <th>Minimum Overtime Hours:</th>
                 <td id="minimum-overtime-hours"></td>
             </tr>

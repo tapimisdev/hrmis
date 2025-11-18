@@ -14,7 +14,7 @@
                 <span class="wave">👋</span>
                 <span class="greeting-text">Good {{ timeOfDay }},</span>
               </div>
-              <h4 class="user-name mb-0">{{ userName }}</h4>
+              <h4 class="user-name mb-0">{{ name }}</h4>
             </div>
             <div class="info-badge">
               <i class="fa-solid fa-calendar-day"></i>
@@ -90,9 +90,11 @@ import axios from 'axios';
 
 export default {
   name: "WelcomeHeader",
+  props: {
+    name: String
+  },
   data() {
     return {
-      userName: "Kemuel Mariano",
       stats: {
         totalHours: "0 HRS",
         pendingLeaves: 0,

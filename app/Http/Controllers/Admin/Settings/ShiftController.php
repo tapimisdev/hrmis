@@ -56,6 +56,7 @@ class ShiftController extends Controller
     {
         $validatedData = $request->validated();
 
+
         DB::beginTransaction();
         try {
 
@@ -66,8 +67,9 @@ class ShiftController extends Controller
                 'start_time' => $validatedData['start_time'],
                 'break_out_time' => $validatedData['break_out_time'] ?? null,
                 'break_in_time' => $validatedData['break_in_time'] ?? null,
-                'end_time' => $validatedData['end_time'],
+                'end_time' => $validatedData['end_time'] ?? null,
                 'minimum_overtime_hours' => $validatedData['minimum_overtime_hours'] ?? 0,
+                'working_hours' => $validatedData['working_hours'] ?? 8,
                 'is_break_required' => $request->input('is_break_required', 1),
                 'is_night_shift' => $request->input('is_night_shift', 0),
                 'is_flexible' => $request->input('is_flexible', 0),
@@ -79,6 +81,7 @@ class ShiftController extends Controller
 
             return response()->json([
                 'status'   => 'success',
+                'data'     => $shift,
                 'message'  => 'Shift ' . $validatedData['name'] . ' added successfully',
                 'redirect' => '_self'
             ]);
@@ -148,6 +151,7 @@ class ShiftController extends Controller
                 'break_in_time' => $validatedData['break_in_time'] ?? null,
                 'end_time' => $validatedData['end_time'] ?? null,
                 'minimum_overtime_hours' => $validatedData['minimum_overtime_hours'] ?? 0,
+                'working_hours' => $validatedData['working_hours'] ?? 8,
                 'is_break_required' => $request->input('is_break_required', 1),
                 'is_night_shift' => $request->input('is_night_shift', 0),
                 'is_flexible' => $request->input('is_flexible', 0),

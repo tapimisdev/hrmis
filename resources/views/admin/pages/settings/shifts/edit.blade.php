@@ -59,12 +59,19 @@
                             <div class="error-field"></div>
                     </div>
 
-                    <div class="col-12 col-md-3 {{ (isset($shift) && $shift->is_flexible) ? 'd-none' : '' }}" 
-                        id="end_time_container">
+                    <div class="col-12 col-md-3 mb-3 {{ (isset($shift) && $shift->is_flexible) ? 'd-none' : '' }}" id="end_time_container">
                         <label class="mb-2" for="end_time">End Time <span class="text-danger">*</span></label>
                         <input type="time" id="end_time" name="end_time" class="form-control"
                             value="{{ isset($shift->end_time) ? \Carbon\Carbon::parse($shift->end_time)->format('H:i') : '' }}">
-                            <div class="error-field"></div>
+                        <div class="error-field"></div>
+                    </div>
+
+                    <div class="col-12 col-md-3 mb-3">
+                        <label class="mb-2" for="working_hours">Working Hours</label>
+                        <input type="number" step="0.01" min="0" id="working_hours" 
+                            name="working_hours" class="form-control"
+                            value="{{ $shift->working_hours ?? '' }}">
+                        <div class="error-field"></div>
                     </div>
 
                     <div class="col-12 col-md-3 mb-3">

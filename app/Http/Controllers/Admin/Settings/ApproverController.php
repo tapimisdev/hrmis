@@ -466,9 +466,6 @@ class ApproverController extends Controller
             })
             ->addColumn('actions', function ($row) {
                 return '<div class="d-flex gap-2">' .
-                    '<button data-id="' . $row['approver_id'] . '" class="btn btn-primary btn ms-1 my-1 show-button" title="View">' .
-                        '<i class="fas fa-eye"></i>' .
-                    '</button>' .
                     '<a href="' . route('settings.approvers.edit', ['approver' => $row['approver_id']]) . '" 
                         class="btn btn-secondary btn ms-1 my-1" 
                         title="Edit">

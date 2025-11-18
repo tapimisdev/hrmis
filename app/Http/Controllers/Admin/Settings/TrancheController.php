@@ -277,7 +277,15 @@ class TrancheController extends Controller
                 return $name;
             })
             ->editColumn('date', function ($row) {
-                return $row->date;
+                if (empty($row->date)) {
+                    return '-';
+                }
+
+                try {
+                    return \Carbon\Carbon::parse($row->date)->format('F j, Y');
+                } catch (\Exception $e) {
+                    return $row->date;
+                }
             })
             ->addColumn('actions', function ($row) {
                 $showRoute = route('settings.tranche.show', [

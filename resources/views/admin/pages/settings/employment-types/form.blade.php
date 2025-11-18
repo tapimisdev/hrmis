@@ -2,10 +2,10 @@
 
 @section('content')
     <div class="container-fluid">
-        @if(isset($isEdit) && $isEdit == true)
+        @if(isset($isEdit) && $isEdit == true)  
             <x-header title="Update Employment Type" subtitle="update this employment type" >
                 <x-button-link 
-                    :href="route('employment-types.create')" 
+                    :href="route('employment-types.index')" 
                     icon="fa-solid fa-arrow-left me-2" 
                     text="Back" 
                     variant="danger"
@@ -14,7 +14,7 @@
         @else
             <x-header title="Add New Employment Type" subtitle="Create new employment type" >
                 <x-button-link 
-                    :href="route('employment-types.create')" 
+                    :href="route('employment-types.index')" 
                     icon="fa-solid fa-arrow-left me-2" 
                     text="Back" 
                     variant="danger"

@@ -19,7 +19,9 @@
         <x-table id="myTable">
             <thead>
                 <tr>
+                    <th>Description</th>
                     <th>Employment Type</th>
+                    <th>Date</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -57,7 +59,9 @@
             "serverSide": true,
             "ajax": '{{ route('settings.tranche.index') }}',
             "columns": [
+                { data: "description", name: 'description' },
                 { data: "name", name: 'name' },
+                { data: "date", name: 'date' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
         });

@@ -8,7 +8,7 @@
 
         <div class="header-content">
             <div class="icon-wrapper">
-                
+                <i class="fa-solid fa-eye text-light"></i>
             </div>
             <div class="header-text text-uppercase">
                 <h5 class="modal-title"></h5>
