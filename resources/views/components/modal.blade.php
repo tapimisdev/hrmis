@@ -1,17 +1,20 @@
+@props([
+    'icon' => 'fa-solid fa-eye',
+    'id' => 'myModal',
+    'title' => 'View'
+])
 <div class="modal fade" id="{{ $id ?? 'myModal' }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable {{ $size ?? '' }}">
     <div class="modal-content modern-modal">
       
       {{-- Header --}}
       <div class="modal-header modern-header">
-        <!-- <h5 class="modal-title"></h5> -->
-
-        <div class="header-content">
+        <div class="header-content border-bottom pb-2">
             <div class="icon-wrapper">
-                <i class="fa-solid fa-eye text-light"></i>
+                <i class="{{ $icon }} text-light"></i>
             </div>
             <div class="header-text text-uppercase">
-                <h5 class="modal-title"></h5>
+                <h5 class="modal-title">{{ $title }}</h5>
             </div>
         </div>
 
