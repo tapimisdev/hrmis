@@ -19,7 +19,7 @@ class SalaryTaxesController extends Controller
 
             // Get distinct years from DB as integers
             $yearsFromDb = DB::table('tax_salary')
-                ->select('year')
+                ->select('id', 'year')
                 ->distinct()
                 ->orderBy('year', 'asc')
                 ->get();
@@ -36,14 +36,23 @@ class SalaryTaxesController extends Controller
     public function store(Request $request)
     {
         $validateYear = $request->validate([
-            'year' => 'required|integer|unique:tax_salary,year'
+            'year' => [
+                'required',
+                'integer',
+                'unique:tax_salary,year',
+                'digits:4', // ensures exactly 4 digits
+                'max:' . (now()->year + 3), // cannot exceed current year + 3
+                'min:' . now()->year, // optional: cannot be less than current year
+            ],
         ]);
 
         try {
             $tax_salary_id = DB::table('tax_salary')
-                            ->insertGetId([
-                                'year' => $validateYear['year']
-                            ]);
+                                ->insertGetId([
+                                    'year' => $validateYear['year']
+                                ]);
+
+            // $url = route('', '');
 
             return response()->json([
                 'status' => 'success',
@@ -60,6 +69,44 @@ class SalaryTaxesController extends Controller
         }
     }
 
+    public function update(Request $request, $id)
+    {
+        $validateYear = $request->validate([
+            'year' => [
+                'required',
+                'integer',
+                'unique:tax_salary,year,' . $id,
+                'digits:4',
+                'max:' . (now()->year + 3),
+                'min:' . now()->year,
+            ],
+        ]);
+
+        try {
+            DB::table('tax_salary')
+                ->where('id', $id)
+                ->update(['year' => $validateYear['year']]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Year successfully updated',
+                'redirect' => '_self'
+            ]);
+
+        } catch (\Exception $e) {
+            return response([
+                'message' => $e->getMessage(),
+                'status'  => 'update failed'
+            ], 500);
+        }
+    }
+
+    public function edit($id)
+    {
+        $tax = DB::table('tax_salary')->find($id);
+        return response(['data' => $tax, 'message' => 'get data', 'status' => 'success']);
+    }
+
     public function datatable($query)
     {
         return DataTables::of($query)
@@ -67,12 +114,16 @@ class SalaryTaxesController extends Controller
             ->addColumn('actions', function ($row) {
                return '
                 <div class="d-block d-md-flex gap-2 justify-content-start">
-                    <a href="' . route('employment-types.edit', $row->year) . '" 
-                        class="btn btn-secondary btn ms-1 my-1" 
+                    <a href="' . route('employment-types.edit', $row->id) . '" 
+                        class="btn btn-primary btn my-1" 
+                        title="Edit">
+                            <i class="fa-solid fa-table-list"></i>
+                    </a>
+                    <button data-id="' . $row->id . '" 
+                        class="btn btn-secondary btn my-1 edit-btn" 
                         title="Edit">
                             <i class="fa-solid fa-pen-to-square"></i>
-                    </a>
-                   
+                    </button>
                 </div>
                 ';
             })

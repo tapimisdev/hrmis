@@ -50,12 +50,32 @@
         const taxSalaryModal = $('#taxSalaryModal');
 
         $(document).on('click', '#create-btn', function() {
+            $('#myForm')[0].reset(); 
+            $('.modal-title').text('Add Year')
             taxSalaryModal.modal('show');
+        });
+
+        let id;
+
+        $(document).on('click', '.edit-btn', function() {
+            $('#myForm')[0].reset(); 
+            $('.modal-title').text('Edit Year')
+            id = $(this).data('id'); 
+
+            axios.get(`/admin/taxes/salary/${id}/edit`)
+                .then((res) => {
+                    $('#year').val(res.data.data.year);
+                    taxSalaryModal.modal('show');
+                })
+                .catch((error) => {
+                    ErrorToast.fire({
+                        title: error.response?.data?.error || error.response?.data?.message || "An error occurred"
+                    });
+                })
         });
 
         const url = $('#myForm').attr('action');
         post(url, false, '#myForm');
-
     });
 </script>
 @endsection

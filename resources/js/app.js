@@ -60,7 +60,7 @@ window.SuccesToast = Swal.mixin({
 window.ErrorToast = Swal.mixin({
     toast: true,
     position: "top-end",
-    showConfirmButton: true,
+    showConfirmButton: false,
     timer: 3000,
     background: "#e03b3b",
     icon: "error",
