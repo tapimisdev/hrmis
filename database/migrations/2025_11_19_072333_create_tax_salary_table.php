@@ -20,7 +20,7 @@ return new class extends Migration
 
         Schema::create('tax_salary_employee', function (Blueprint $table) {
             $table->id();
-
+            $table->foreignId('tax_salary_id')->constrained('tax_salary');
             $table->string('employee_no');
             $table->unsignedTinyInteger('month');
             $table->decimal('amount', 12, 2);

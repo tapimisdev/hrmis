@@ -19,7 +19,6 @@ class SalaryTaxesController extends Controller
 
             // Get distinct years from DB as integers
             $yearsFromDb = DB::table('tax_salary')
-                ->select('id', 'year')
                 ->distinct()
                 ->orderBy('year', 'asc')
                 ->get();
@@ -52,12 +51,12 @@ class SalaryTaxesController extends Controller
                                     'year' => $validateYear['year']
                                 ]);
 
-            // $url = route('', '');
+            $url = route('tax.salary.employees.index', $tax_salary_id);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Year successfully added',
-                'redirect' => '_self'
+                'redirect' => $url
             ]);
 
         } catch (\Exception $e) {
@@ -114,7 +113,7 @@ class SalaryTaxesController extends Controller
             ->addColumn('actions', function ($row) {
                return '
                 <div class="d-block d-md-flex gap-2 justify-content-start">
-                    <a href="' . route('employment-types.edit', $row->id) . '" 
+                    <a href="' . route('tax.salary.employees.index', $row->id) . '" 
                         class="btn btn-primary btn my-1" 
                         title="Edit">
                             <i class="fa-solid fa-table-list"></i>

@@ -12,7 +12,7 @@
         id="taxes">
         <ul class="nested-list">
             <li class="nested-item">
-                <a href="{{ route('salary.index') }}"
+                <a href="{{ route('tax.salary.index') }}"
                 class="{{ request()->routeIs('tax.salary.index') ? 'active' : '' }}">
                     <i class="fa-solid fa-receipt"></i>
                     <span>Tax Salary</span>
