@@ -1,5 +1,4 @@
 <x-modal id="taxSalaryModal" icon="fa-solid fa-plus" title="Add Year" size="modal-lg">
-
     <form id="myForm" action="{{ route('tax.salary.store') }}" method="post">
         @csrf
         @method('POST')

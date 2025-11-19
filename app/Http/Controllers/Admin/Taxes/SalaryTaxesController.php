@@ -45,17 +45,17 @@ class SalaryTaxesController extends Controller
                                 'year' => $validateYear['year']
                             ]);
 
-            return response([
-                'id' => $tax_salary_id,
+            return response()->json([
                 'status' => 'success',
-                'message' => 'year successfully added!'
-            ], 200);
+                'message' => 'Year successfully added',
+                'redirect' => '_self'
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response([
                 'message' => $e->getMessage(),
-                'status' => 'store failed'
+                'status'  => 'store failed'
             ], 500);
         }
     }

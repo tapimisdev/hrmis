@@ -30,7 +30,7 @@ export function alert(type, message, redirect = '') {
         if (redirect && redirect !== '_self') {
             window.location.href = redirect;
         } else if (redirect === '_self') {
-            $('#form').trigger('reset');
+            $('form').trigger('reset');
         }
     });
 }

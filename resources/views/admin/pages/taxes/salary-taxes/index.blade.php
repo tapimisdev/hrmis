@@ -54,39 +54,7 @@
         });
 
         const url = $('#myForm').attr('action');
-        post(url);
-
-        $(document).on('click', '.delete-button', function() {
-            id = $(this).attr('data-id');
-            Swal.fire({
-                title: "Are you sure?",
-                text: "You won't be able to revert this!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, delete it!"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    axios.delete(`shift/${id}`)
-                    .then(response => {
-                        DataTable.ajax.reload();
-                        Swal.fire({
-                            title: "Deleted!",
-                            text: "Your data has been deleted.",
-                            icon: "success"
-                        });
-                    })
-                    .catch(error => {
-                       Swal.fire({
-                            title: "Oops!",
-                            text: error.response.data.message,
-                            icon: "error"
-                        });
-                    })
-                }
-            }); // swal end
-        });
+        post(url, false, '#myForm');
 
     });
 </script>
