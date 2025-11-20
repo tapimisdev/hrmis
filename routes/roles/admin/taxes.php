@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('taxes')->group(function() {
     #Salary Taxes
-    Route::resource('salary', SalaryTaxesController::class)->only('index', 'store', 'edit', 'update')
+    Route::resource('salary', SalaryTaxesController::class)
         ->names('tax.salary');
     Route::resource('salary/{salary_tax}/employees', SalaryTaxesEmployeesController::class)
         ->only('index', 'store')

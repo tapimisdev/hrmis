@@ -1,9 +1,5 @@
 @extends('admin.layouts.app')
 
-@section('styles')
-
-@endsection
-
 @section('content')
     <div class="container-fluid">
         <x-header title="Salary Payroll" subtitle="View salary payroll in this module">
@@ -18,12 +14,4 @@
 
         <payroll-index/>
     </div>
-@endsection
-
-@section('scripts')
-<script>
-    $(function() {
-
-    })
-</script>
 @endsection
