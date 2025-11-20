@@ -3,7 +3,7 @@
     'id' => 'myModal',
     'title' => 'View'
 ])
-<div class="modal fade" id="{{ $id ?? 'myModal' }}" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="{{ $id ?? 'myModal' }}" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable {{ $size ?? '' }}">
     <div class="modal-content modern-modal">
       

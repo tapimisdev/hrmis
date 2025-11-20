@@ -33,12 +33,21 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in items" :key="item.employee_no" class="row-hover">
+          <tr v-if="items.length != 0">
+            <td colspan="14" class="text-center">
+              <div class="alert alert-secondary mx-2 mt-2 py-4">
+                No employee(s) found.
+              </div>
+            </td>
+          </tr>
+          <tr v-else v-for="item in items" :key="item.employee_no" class="row-hover">
             <td class="sticky-col border-end ps-3">
               <div class="d-flex align-items-center">
-                <div class="avatar">{{ item.firstname.charAt(0) }}{{ item.lastname.charAt(0) }}</div>
+                <div class="avatar">
+                  {{ item.firstname?.charAt(0) || 'N' }}{{ item.lastname?.charAt(0) || 'A' }}
+                </div>
                 <div class="ms-2">
-                  <span class="fw-bold text-body text-nowrap me-2">{{ item.lastname }}, {{ item.firstname }}</span>
+                  <span class="fw-bold text-body text-nowrap me-2">{{ item.lastname ?? '-------' }}, {{ item.firstname ?? '-------' }}</span>
                   <br>
                   <span class="badge text-body">{{ item.employee_no }}</span>
                   <span class="badge tiny-badge me-2">{{ item.division_code }}</span>
