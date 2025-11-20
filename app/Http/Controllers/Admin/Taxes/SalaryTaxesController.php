@@ -23,10 +23,15 @@ class SalaryTaxesController extends Controller
                 ->orderBy('year', 'asc')
                 ->get();
 
-            return $this->datatable($yearsFromDb);
+            return response(['data' => $yearsFromDb, 'message' => 'get data', 'status' => 'success']);
         }
 
         return view('admin.pages.taxes.salary-taxes.index');
+    }
+
+    public function show(string $id) {
+        $tax = DB::table('tax_salary')->find($id);
+        return response(['data' => $tax, 'message' => 'get data', 'status' => 'success']);
     }
 
     /**
@@ -76,8 +81,6 @@ class SalaryTaxesController extends Controller
                 'integer',
                 'unique:tax_salary,year,' . $id,
                 'digits:4',
-                'max:' . (now()->year + 3),
-                'min:' . now()->year,
             ],
         ]);
 
@@ -106,27 +109,4 @@ class SalaryTaxesController extends Controller
         return response(['data' => $tax, 'message' => 'get data', 'status' => 'success']);
     }
 
-    public function datatable($query)
-    {
-        return DataTables::of($query)
-            ->addIndexColumn()
-            ->addColumn('actions', function ($row) {
-               return '
-                <div class="d-block d-md-flex gap-2 justify-content-start">
-                    <a href="' . route('tax.salary.employees.index', $row->id) . '" 
-                        class="btn btn-primary btn my-1" 
-                        title="Edit">
-                            <i class="fa-solid fa-table-list"></i>
-                    </a>
-                    <button data-id="' . $row->id . '" 
-                        class="btn btn-secondary btn my-1 edit-btn" 
-                        title="Edit">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                    </button>
-                </div>
-                ';
-            })
-            ->rawColumns(['actions'])
-            ->make(true);
-    }
 }
