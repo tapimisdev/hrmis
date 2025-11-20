@@ -1,21 +1,25 @@
 <template>
-  <div class="card shadow-sm rounded-3 overflow-hidden modern-card position-relative">
-    <!-- Header -->
-    <div class="card-header d-flex justify-content-between align-items-center py-2 px-3 bg-body-secondary border-bottom">
-      <div>
-        <h6 class="m-0 fw-bold text-body-color small-title">Taxes</h6>
-        <span class="text-muted tiny-text">FY 2025</span>
-      </div>
+   <!-- Header -->
+  <div class="card-header d-flex justify-content-between align-items-end pb-3">
 
-      <div class="search-pill d-flex align-items-center px-2 py-1 bg-body-bg rounded-pill">
-        <i class="fa-solid fa-magnifying-glass me-2"></i>
-        <input type="text" 
-               class="form-control border px-3 py-1 small-text"
-               placeholder="Search" 
-               style="max-width: 220px;" />
-      </div>
+    <Printables/>
+
+    <div class="fw-bold display-6">
+      {{ tax_salary.year }}
     </div>
 
+    <div class="search-pill d-flex align-items-center px-2 py-1 bg-body-bg rounded-pill">
+      <i class="fa-solid fa-magnifying-glass me-2"></i>
+      <input type="text" 
+              class="form-control border px-3 py-1 small-text"
+              v-model="search"
+              @input="filteredItems"
+              placeholder="Search" 
+              style="max-width: 220px;" />
+    </div>
+  </div>
+
+  <div class="shadow-sm border rounded-3 overflow-hidden modern-card position-relative">
     <!-- Table -->
     <div class="table-wrapper custom-scrollbar">
       <LoaderVue 
@@ -33,14 +37,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-if="items.length != 0">
+          <tr v-if="items.length == 0">
             <td colspan="14" class="text-center">
               <div class="alert alert-secondary mx-2 mt-2 py-4">
                 No employee(s) found.
               </div>
             </td>
           </tr>
-          <tr v-else v-for="item in items" :key="item.employee_no" class="row-hover">
+          <tr v-else v-for="item in filtered" :key="item.employee_no" class="row-hover">
             <td class="sticky-col border-end ps-3">
               <div class="d-flex align-items-center">
                 <div class="avatar">
@@ -55,7 +59,7 @@
               </div>
             </td>
 
-            <td class="text-end total-score">123</td>
+            <td class="text-end total-score">{{ line_total(item) }}</td>
             <td v-for="monthKey in monthKeys" :key="monthKey">
               <input type="number" 
                       v-model="item[monthKey]" 
@@ -68,6 +72,15 @@
                       class="border-less-input">
             </td>
           </tr>
+          <tr class="grand-total">
+            <td class="sticky-col text-end fw-bold bg-body-color">Grand Total</td>
+            <td class="text-end">{{ formatNumber(total_all_line_tota()) }}</td>
+            <td v-for="monthKey in monthKeys" :key="monthKey">
+              <div class="text-end">
+                {{ formatNumber(grand_total(monthKey)) }}
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -76,33 +89,44 @@
 
 <script>
 import LoaderVue from '../../components/LoaderVue.vue';
+import Printables from '../../components/Printables.vue';
 import axios from 'axios';
 
 export default {
-  components: { LoaderVue },
+  components: { LoaderVue, Printables },
   props: {
     url: {
       type: String,
       required: true
     },
+    tax_salary: {
+      type: Object,
+      required: true
+    }
   },
   data() {
     return {
       months: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
       monthKeys: ["january","february","march","april","may","june","july","august","september","october","november","december"],
       items: [],
+      filtered: [],
+      isFetched: false,
+      search: '',
       loading: false
     }
   },
-  mounted() {
+  created() {
     this.fetchTable();
+    this.isFetched = true;
   },
   methods: {
     fetchTable() {
       this.loading = true;
       axios.get(this.url)
         .then((res) => {
-          this.items = res.data
+          this.items = res.data;
+          this.filtered = res.data;
+          this.filteredItems();
         }).catch((error) => {
           console.log(error);
           ErrorToast.fire({
@@ -134,8 +158,49 @@ export default {
             this.loading =false
           });
         });
+    },
+    line_total(employee) {
+
+      let line_total = 0;
+
+      this.monthKeys.forEach(month => {
+        line_total += parseFloat(employee[month]) || 0;
+      });
+
+      return line_total;
+    },
+    total_all_line_tota() {
+
+      let total = 0;
+
+      this.filtered.forEach(item => {
+        total += parseFloat(this.line_total(item)) ?? 0;
+      });
+
+      return total;
+    },
+    grand_total(month) {
+      return this.filtered.reduce((sum, item) => {
+        return sum + (parseFloat(item[month]) || 0);
+      }, 0);
+    },
+    formatNumber(number) {
+      return Number(number).toLocaleString();
+    },
+    filteredItems() {
+      const query = this.search.toLowerCase().trim()
+
+      if (query == null) return this.items
+
+      this.filtered = this.items.filter(
+        item =>
+          item.firstname.toLowerCase().includes(query) ||
+          item.lastname.toLowerCase().includes(query) || 
+          item.division_code.toLowerCase().includes(query) || 
+          item.division_name.toLowerCase().includes(query) 
+      )
     }
-  }
+  },
 }
 </script>
 
@@ -162,7 +227,7 @@ export default {
 .compact-table {
   border-collapse: separate;
   th, td { 
-    padding: 0.3rem 0.425rem; 
+    padding: 0.4rem 0.625rem; 
     font-size: 0.7rem; 
   }
   th { 
@@ -185,6 +250,7 @@ export default {
   left: 0; 
   z-index: 20; 
   background: var(--bs-body-bg, #fff); 
+  min-width: 320px;
 }
 
 .gradient-text { 
@@ -261,6 +327,18 @@ export default {
 
   /* Firefox */
   -moz-appearance: textfield;
+}
+
+.grand-total {
+  td {
+    background-color: var(--bs-secondary-bg);
+    font-weight: bolder;
+
+    &:not(:first-child) {
+      background-color: var(--bs-secondary-bg);
+      color: var(--bs-body-color);
+    }
+  }
 }
 
 </style>

@@ -13,6 +13,7 @@
 
         <tax-table
             url="{{ $url }}"
+            :tax_salary='@json($tax_salary)'
         />
     </div>
 @endsection
