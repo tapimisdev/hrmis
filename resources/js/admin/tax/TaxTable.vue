@@ -5,7 +5,7 @@
     <Printables/>
 
     <div class="fw-bold display-6">
-      {{ tax_salary.year }}
+      {{ parent_table.year }}
     </div>
 
     <div class="search-pill d-flex align-items-center px-2 py-1 bg-body-bg rounded-pill">
@@ -99,7 +99,7 @@ export default {
       type: String,
       required: true
     },
-    tax_salary: {
+    parent_table: {
       type: Object,
       required: true
     }
