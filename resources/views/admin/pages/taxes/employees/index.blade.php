@@ -13,6 +13,7 @@
 
         <tax-table
             url="{{ $url }}"
+            selected_employee="{{ $selectedEmployee }}"
             :parent_table='@json($tax)'
         />
     </div>

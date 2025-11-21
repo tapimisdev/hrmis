@@ -104,8 +104,9 @@ class TaxesController extends Controller
         }
     }
 
-    public function update(Request $request, string $slug, int $id)
+    public function update(Request $request, string $slug, int $year)
     {
+
         $validateYear = $request->validate([
             'year' => [
                 'required',
@@ -114,35 +115,45 @@ class TaxesController extends Controller
                 'max:' . (now()->year + 3),
                 'min:' . now()->year,
             ],
+            'originalYear' => 'required',
         ]);
 
         DB::beginTransaction();
 
         try {
-            $tax = DB::table('taxes')->where('slug', $slug)->first();
+
+            // Get tax by slug (same as store)
+            $tax = DB::table('taxes')
+                        ->where('slug', $slug)
+                        ->first();
+
             if (!$tax) {
                 abort(404, 'Tax not found');
             }
 
-            $deduction = DB::table('tax_years')
-                ->where('id', $id)
-                ->where('tax_id', $tax->id)
-                ->first();
+            // Get tax_year record
+            $taxYear = DB::table('tax_years')
+                        ->where('tax_id', $tax->id)
+                        ->where('year', $validateYear['originalYear'])
+                        ->first();
 
-            if (!$deduction) {
-                abort(404, 'Deduction not found');
+            if (!$taxYear) {
+                abort(404, 'Year not found for this tax');
             }
 
+            // Update the year
             DB::table('tax_years')
-                ->where('id', $deduction->id)
+                ->where('id', $taxYear->id)
+                ->where('year', $validateYear['originalYear'])
                 ->update([
                     'year' => $validateYear['year'],
                     'updated_at' => now(),
                 ]);
 
+            // Updated redirect (same style as store)
             $url = route('tax.employees.index', [
                 'slug' => $slug,
-                'id' => $deduction->id,
+                'year' => $year
             ]);
 
             DB::commit();
@@ -161,6 +172,7 @@ class TaxesController extends Controller
             ], 500);
         }
     }
+
 
 
     public function edit($id)

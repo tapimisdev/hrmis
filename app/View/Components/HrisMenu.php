@@ -27,13 +27,19 @@ class HrisMenu extends Component
     private function menuInfo() {
 
         $tax_menu = DB::table('taxes')->get();
+        $currentYear = now()->year;
+
+        $latest_year = DB::table('tax_years')
+            ->where('year', $currentYear)
+            ->select('id', 'year')
+            ->first();
 
         $taxes = [];
 
         foreach($tax_menu as $tax) {
             $taxes[] = [
                 'name' => $tax->name,
-                'route' => route('tax.index', ['slug' => $tax->slug]),
+                'route' => route('tax.employees.index', ['slug' => $tax->slug, 'year' => $latest_year->year, 'employee_no' => $this->employee_no]),
                 'active' => $this->active == $tax->slug ? 'active' : '',
             ];
         }

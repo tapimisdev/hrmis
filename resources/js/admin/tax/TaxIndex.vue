@@ -19,7 +19,7 @@
                     <td>
                         <div class="d-flex gap-2">
                             <a
-                                :href="employeeUrl.replace('__ID__', row.id)"
+                                :href="employeeUrl.replace('__YEAR__', row.year)"
                                 class="btn btn-primary btn my-1"
                                 title="Edit"
                             >
@@ -108,6 +108,7 @@ export default {
                 id: null,
                 slug: "",
                 year: "",
+                originalYear: null,
             },
             errors: {},
         };
@@ -146,8 +147,9 @@ export default {
             this.form.id = id;
             this.modalTitle = "Edit Year";
             axios
-                .get(this.showUrl.replace("__SLUG__", this.slug).replace("__ID__", this.form.id))
+                .get(this.showUrl.replace("__SLUG__", this.slug).replace("__YEAR__", this.form.id))
                 .then((res) => {
+                    this.form.originalYear = res.data.data.year;
                     this.form.year = res.data.data.year;
                     this.$refs.taxModal.open();
                 })
@@ -162,7 +164,7 @@ export default {
         async submitForm() {
             const url = this.form.id
                 ? this.updateUrl
-                      .replace("__ID__", this.form.id)
+                      .replace("__YEAR__", this.form.year)
                       .replace("__SLUG__", this.slug)
                 : this.storeUrl.replace("__SLUG__", this.slug);
             console.log("Submitting to URL:", url);

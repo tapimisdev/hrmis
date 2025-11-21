@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Route;
 // Taxes routes
 Route::prefix('tax/{slug}')->group(function () {
     Route::get('/', [TaxesController::class, 'index'])->name('tax.index');
-    Route::get('/{id}', [TaxesController::class, 'show'])->name('tax.show');
+    Route::get('/{year}', [TaxesController::class, 'show'])->name('tax.show');
     Route::post('/', [TaxesController::class, 'store'])->name('tax.store');
-    Route::put('/{id}', [TaxesController::class, 'update'])->name('tax.update');
+    Route::put('/{year}', [TaxesController::class, 'update'])->name('tax.update');
 
     // Employees routes
-    Route::get('employees/{id}', [TaxesEmployeeController::class, 'index'])->name('tax.employees.index');
-    Route::post('employees/{id}', [TaxesEmployeeController::class, 'store'])->name('tax.employees.store');
+    Route::get('employees/{year}', [TaxesEmployeeController::class, 'index'])->name('tax.employees.index');
+    Route::post('employees/{year}', [TaxesEmployeeController::class, 'store'])->name('tax.employees.store');
 });

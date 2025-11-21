@@ -63,9 +63,15 @@
                         v-else
                         v-for="item in filtered"
                         :key="item.employee_no"
-                        class="row-hover"
+                        :data-employee_no="item.employee_no"
                     >
-                        <td class="sticky-col border-end ps-3">
+                        <td
+                            class="sticky-col border-end ps-3"
+                            :class="{
+                                'bg-primary fw-bold':
+                                    selected_employee === item.employee_no,
+                            }"
+                        >
                             <div class="d-flex align-items-center">
                                 <div class="avatar">
                                     {{ item.firstname?.charAt(0) || "N"
@@ -74,9 +80,10 @@
                                 <div class="ms-2">
                                     <span
                                         class="fw-bold text-body text-nowrap me-2"
-                                        >{{ item.lastname ?? "-------" }},
-                                        {{ item.firstname ?? "-------" }}</span
                                     >
+                                        {{ item.lastname ?? "-------" }},
+                                        {{ item.firstname ?? "-------" }}
+                                    </span>
                                     <br />
                                     <span class="badge text-body">{{
                                         item.employee_no
@@ -88,10 +95,24 @@
                             </div>
                         </td>
 
-                        <td class="text-end total-score">
+                        <td
+                            class="text-end total-score"
+                            :class="{
+                                'bg-primary fw-bold':
+                                    selected_employee === item.employee_no,
+                            }"
+                        >
                             {{ line_total(item) }}
                         </td>
-                        <td v-for="monthKey in monthKeys" :key="monthKey">
+
+                        <td
+                            v-for="monthKey in monthKeys"
+                            :key="monthKey"
+                            :class="{
+                                'bg-primary fw-bold':
+                                    selected_employee === item.employee_no,
+                            }"
+                        >
                             <input
                                 type="number"
                                 v-model="item[monthKey]"
@@ -100,7 +121,7 @@
                                         item[monthKey + '_id'],
                                         item[monthKey],
                                         monthKey,
-                                        item['employee_no']
+                                        item.employee_no
                                     )
                                 "
                                 class="border-less-input"
@@ -134,6 +155,10 @@ import axios from "axios";
 export default {
     components: { LoaderVue, Printables },
     props: {
+        selected_employee: {
+            type: String,
+            required: false,
+        },
         url: {
             type: String,
             required: true,
@@ -186,7 +211,6 @@ export default {
     },
     methods: {
         fetchTable() {
-            console.log(this.url);
             this.loading = true;
             axios
                 .get(this.url)

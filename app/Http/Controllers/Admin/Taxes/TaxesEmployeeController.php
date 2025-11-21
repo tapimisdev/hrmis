@@ -19,35 +19,38 @@ class TaxesEmployeeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(string $slug, int $id)
+    public function index(Request $request, string $slug, int $year)
     {
+
+        $selectedEmployee = $request->query('employee_no', null);
+
         $tax = DB::table('taxes')
                     ->where('slug', $slug)
                     ->first();
 
         $deduction = DB::table('tax_years')
-                    ->where('id', $id)
+                    ->where('year', $year)
                     ->where('tax_id', $tax->id)
                     ->first();
-                    
+
         if(!$tax) {
             abort(404);
         }
 
-        $url = route('tax.employees.index', ['slug' => $slug, 'id' => $id]);
+        $url = route('tax.employees.index', ['slug' => $slug, 'year' => $year]);
 
         if(request()->wantsJson()) {
             $employees = $this->tax_service->getAll($tax->id, $deduction->year);
             return response()->json($employees);
         }
 
-        return view('admin.pages.taxes.employees.index', compact('tax', 'slug', 'id', 'url'));
+        return view('admin.pages.taxes.employees.index', compact('tax', 'slug', 'year', 'url', 'selectedEmployee'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, string $slug, int $id)
+    public function store(Request $request, string $slug, int $year)
     {
         // Get the tax based on slug
         $tax = DB::table('taxes')->where('slug', $slug)->first();
@@ -57,11 +60,11 @@ class TaxesEmployeeController extends Controller
 
         // Get the deduction for this tax
         $deduction = DB::table('tax_years')
-            ->where('id', $id)
+            ->where('year', $year)
             ->where('tax_id', $tax->id)
             ->first();
         if (!$deduction) {
-            abort(404, 'Deduction not found');
+            abort(404);
         }
 
         // Validate input
