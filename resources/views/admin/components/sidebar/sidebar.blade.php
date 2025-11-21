@@ -25,8 +25,8 @@
         {{-- Reports --}}
         @include('admin.components.sidebar.items.reports')
 
-        {{-- Deductions --}}
-        @include('admin.components.sidebar.items.deductions')
+        {{-- Taxes --}}
+        @include('admin.components.sidebar.items.taxes')
 
         {{-- Modules --}}
         @include('admin.components.sidebar.items.modules')

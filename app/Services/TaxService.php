@@ -5,13 +5,17 @@ namespace App\Services;
 use App\Enums\EmploymentTypesEnum;
 use Illuminate\Support\Facades\DB;
 
-class TaxService {
-
-    public function getAll($table, $parent_table_name, $parent_table_id)
+class TaxService
+{
+    /**
+     * Get all employee tax data for a specific tax and year.
+     */
+    public function getAll(int $tax_id, int $year_id)
     {
+
         $regular_id = EmploymentTypesEnum::REGULAR->value;
 
-         $monthNames = [
+        $monthNames = [
             1 => 'january',
             2 => 'february',
             3 => 'march',
@@ -26,50 +30,56 @@ class TaxService {
             12 => 'december',
         ];
 
-        return  
-        DB::table('employee_information as ei')
-                ->leftJoin('employee_personal as ep' , 'ei.employee_no', '=', 'ep.employee_no')
-                ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
-                ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
-                ->where('eo.employment_type_id', $regular_id)
-                ->select(
-                    'ei.employee_no',
+        // Fetch the tax deduction record
+        $taxDeduction = DB::table('tax_deductions')
+            ->where('tax_id', $tax_id)
+            ->where('year', $year_id)
+            ->first();
 
-                    'ep.suffix',
-                    'ep.middlename',
-                    'ep.lastname',
-                    'ep.firstname',
-                    'ep.firstname',
 
-                    'd.code as division_code',
-                    'd.name as division_name',
-                )
-                ->orderBy('ep.lastname', 'asc')
-                ->get()
-                ->map(function ($d) use ($table, $parent_table_name, $parent_table_id, $monthNames) {
+        if (!$taxDeduction) {
+            return collect(); // Return empty collection if not found
+        }
 
-                    $whereColumn = $parent_table_name . '_id';
+        $taxDeductionId = $taxDeduction->id;
 
-                    for($month = 1; $month <= 12; $month++) {
+        // Fetch all regular employees with organization info
+        $employees = DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
+            ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
+            ->where('eo.employment_type_id', $regular_id)
+            ->select(
+                'ei.employee_no',
+                'ep.suffix',
+                'ep.middlename',
+                'ep.lastname',
+                'ep.firstname',
+                'd.code as division_code',
+                'd.name as division_name'
+            )
+            ->orderBy('ep.lastname', 'asc')
+            ->get();
 
-                        $table_data = DB::table($table)
-                            ->where('month', $month)
-                            ->where($whereColumn, $parent_table_id)
-                            ->where('employee_no', $d->employee_no)
-                            ->first();
+        // Fetch all employee_taxes for this tax deduction in one query
+        $employeeTaxes = DB::table('employee_taxes')
+            ->where('tax_deduction_id', $taxDeductionId)
+            ->get()
+            ->groupBy('employee_no');
 
-                        
-                        $d->$whereColumn = $parent_table_id;
-                        $monthName = $monthNames[$month];
+        // Map employee data with monthly tax amounts
+        return $employees->map(function ($employee) use ($employeeTaxes, $taxDeductionId, $monthNames) {
+            $taxRecords = $employeeTaxes[$employee->employee_no] ?? [];
 
-                        $month_id = $monthName . '_id';
-                        $d->$month_id = $table_data->id ?? null;
+            // Initialize month values to 0
+            foreach ($monthNames as $month => $monthName) {
+                $record = collect($taxRecords)->firstWhere('month', $month);
+                $employee->{$monthName} = $record->amount ?? 0;
+            }
 
-                        $d->$monthName = $table_data->amount ?? 0;
-                    }
-                    
-                    return $d;
-                });
+            $employee->tax_deduction_id = $taxDeductionId;
+
+            return $employee;
+        });
     }
-
 }

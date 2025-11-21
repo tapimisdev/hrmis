@@ -25,3 +25,13 @@ if (!function_exists('getSetting')) {
         }
     }
 }
+
+if(!function_exists('getTaxesModules')) {
+    function getTaxesModules()
+    {
+        // return Cache::remember('taxes_modules_cache', 60 * 60, function () {
+            return DB::table('taxes as m')
+                ->get();
+        // });
+    }
+}

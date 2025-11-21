@@ -5,6 +5,7 @@ namespace App\View\Components;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
+use Illuminate\Support\Facades\DB;
 
 class HrisMenu extends Component
 {
@@ -24,6 +25,19 @@ class HrisMenu extends Component
     }
 
     private function menuInfo() {
+
+        $tax_menu = DB::table('taxes')->get();
+
+        $taxes = [];
+
+        foreach($tax_menu as $tax) {
+            $taxes[] = [
+                'name' => $tax->name,
+                'route' => route('tax.index', ['slug' => $tax->slug]),
+                'active' => $this->active == $tax->slug ? 'active' : '',
+            ];
+        }
+
         return [
             [
                 'name' => 'I. Employee Information',
@@ -94,6 +108,11 @@ class HrisMenu extends Component
                 'name' => 'XII. Deductions',
                 'route' => route('hris.employee.deductions', ['employee_no' => $this->employee_no]),
                 'active' => $this->active == 'deductions' ? 'active' : '',
+            ],
+            [
+                'name' => 'XIII. Taxes',
+                'active' => $this->active == 'tax' ? 'active' : '',
+                'submenus' => $taxes,
             ],
         ];
 

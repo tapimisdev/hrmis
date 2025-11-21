@@ -4,7 +4,7 @@
     <div class="container-fluid">
         <x-header title="Salary Taxes" subtitle="Manage shift schedule in this module">
             <x-button-link 
-                :href="route('tax.salary.index')" 
+                :href="route('tax.index', ['slug' => $slug])" 
                 icon="fa-solid fa-arrow-left me-2" 
                 text="Back" 
                 variant="danger"
@@ -13,7 +13,7 @@
 
         <tax-table
             url="{{ $url }}"
-            :parent_table='@json($tax_salary)'
+            :parent_table='@json($tax)'
         />
     </div>
 @endsection

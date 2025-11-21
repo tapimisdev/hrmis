@@ -93,6 +93,7 @@ export default {
     components: { ModalVue },
     name: "TaxIndex",
     props: {
+        slug: { type: String, required: true },
         employeeUrl: { type: String, required: true },
         fetchUrl: { type: String, required: true },
         showUrl: { type: String, required: true },
@@ -105,6 +106,7 @@ export default {
             modalTitle: "Add Year",
             form: {
                 id: null,
+                slug: "",
                 year: "",
             },
             errors: {},
@@ -118,8 +120,9 @@ export default {
     },
     methods: {
         loadTable() {
+            const url = this.fetchUrl.replace("__SLUG__", this.slug);
             axios
-                .get(this.fetchUrl)
+                .get(url)
                 .then((res) => {
                     this.tableData = res.data.data || [];
                 })
@@ -128,7 +131,7 @@ export default {
 
         openModal() {
             this.modalTitle = this.form.id ? "Edit Year" : "Add Year";
-            this.form.id = null;
+            this.form.slug = this.slug;
             this.form.year = "";
             this.clearErrors();
             this.$refs.taxModal.open();
@@ -142,9 +145,8 @@ export default {
             this.clearErrors();
             this.form.id = id;
             this.modalTitle = "Edit Year";
-
             axios
-                .get(this.showUrl.replace("__ID__", id))
+                .get(this.showUrl.replace("__SLUG__", this.slug).replace("__ID__", this.form.id))
                 .then((res) => {
                     this.form.year = res.data.data.year;
                     this.$refs.taxModal.open();
@@ -159,8 +161,11 @@ export default {
 
         async submitForm() {
             const url = this.form.id
-                ? this.updateUrl.replace("__ID__", this.form.id)
-                : this.storeUrl;
+                ? this.updateUrl
+                      .replace("__ID__", this.form.id)
+                      .replace("__SLUG__", this.slug)
+                : this.storeUrl.replace("__SLUG__", this.slug);
+            console.log("Submitting to URL:", url);
             const method = this.form.id ? "PUT" : "POST";
 
             this.clearErrors();

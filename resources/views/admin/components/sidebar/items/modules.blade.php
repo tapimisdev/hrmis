@@ -16,7 +16,7 @@
         <ul class="nested-list">
             @if (count(getSidebarModules()) === 0)
                 <li class="nested-item">
-                    <div class="alert alert-danger p-0 p-2" role="alert">
+                    <div class="alert alert-danger p-0 p-2 text-center" role="alert">
                         No modules available
                     </div>
                 </li>
