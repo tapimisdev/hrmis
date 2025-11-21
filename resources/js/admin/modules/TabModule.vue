@@ -5,7 +5,7 @@
             <ul v-if="tabs.length != 0" class="nav nav-tabs">
                 <li class="nav-item" v-for="(tab, index) in tabs" :key="tab.id">
                     <a
-                        class="nav-link"
+                        class="nav-link text-uppercase"
                         :class="tab_name === tab.tab_slug ? 'active' : ''"
                         @click="switchTab(tab.tab_slug)"
                         aria-current="page"
@@ -45,10 +45,8 @@
             type="default"
         >
             <FormTab
-                @formSubmitted="
-                    getTabs();
-                    closeModal();
-                "
+                @formSubmitted="formSubmitted"
+                :highest_order="props.highest_order"
                 :submit_url="store_url"
             />
         </ModalVue>
@@ -75,6 +73,7 @@ const props = defineProps({
         required: true,
     },
     slug: String,
+    highest_order: Number,
 });
 
 let tabs = ref([]);
@@ -120,6 +119,12 @@ function openModal() {
 
 function closeModal() {
     taxModal.value.close();
+}
+
+function formSubmitted(selectedTabName) {
+    closeModal();
+    getTabs();
+    switchTab(selectedTabName);
 }
 </script>
 

@@ -4,45 +4,53 @@ namespace App\Http\Controllers\Admin\Modules;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Modules\ModuleRequest;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ModulesController extends Controller
 {
     public function index($slug) // module slug is unique
     {
         $module = DB::table('modules')
-                    ->where('slug', $slug)
-                    ->where('isActive', true)
-                    ->first();
-        
-        if(!$module) {
+            ->where('slug', $slug)
+            ->where('isActive', true)
+            ->first();
+
+        if (!$module) {
             abort(404);
         }
 
-        $tabs = DB::table('module_tabs')
-                ->where('module_id', $module->id)
-                ->where('isActive', true)
-                ->get();
+        $tab_query = DB::table('module_tabs')
+            ->where('module_id', $module->id)
+            ->where('isActive', true);
+
+        $highest_order = $tab_query->max('order') ?? 0;
+
+        $tabs = $tab_query->get();
 
         $tab_name = request('tab');
 
         $store_url = route('modules.store', ['slug' => $slug]);
 
-        if($tab_name && !$tabs->contains('tab_slug', $tab_name)) {
+        if ($tab_name && !$tabs->contains('tab_slug', $tab_name)) {
             abort(404);
         }
 
-        if(request()->wantsJson()) {
+        if ($tab_query->count() != 0 && $tab_name == null) {
+            abort(404);
+        }
+
+        if (request()->wantsJson()) {
             return response()->json([
                 'tabs' => $tabs,
             ]);
         }
 
-        return view('admin.pages.modules.index', compact('module', 'tabs', 'tab_name', 'store_url', 'slug'));
+        return view('admin.pages.modules.index', compact('module', 'tabs', 'tab_name', 'store_url', 'slug', 'highest_order'));
     }
 
-    public function store(ModuleRequest $request, $slug) {
+    public function store(ModuleRequest $request, $slug)
+    {
 
         $validatedData = $request->validated();
 
@@ -52,13 +60,13 @@ class ModulesController extends Controller
 
             $module = $request->module;
 
-            $lowercaseSlug = strtolower($validatedData['tab_slug']);
-            
+            $slug = Str::slug($validatedData['tab_name']);
+
             DB::table('module_tabs')->insert([
                 'module_id' => $module->id,
                 'tab_name' => $validatedData['tab_name'],
                 'tab_icon' => 'fa-regular fa-file', // default icon
-                'tab_slug' => $lowercaseSlug,
+                'tab_slug' => $slug,
                 'order' => $validatedData['order'],
                 'isActive' => true,
                 'created_at' => now(),
@@ -66,11 +74,10 @@ class ModulesController extends Controller
             ]);
 
             DB::commit();
-            return response()->json(['message' => 'Store method called', 'status' => 'success']);
+            return response()->json(['message' => 'Tab added succesfully', 'status' => 'success']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage(), 'status' => 'store failed'], 500);
         }
     }
-    
 }

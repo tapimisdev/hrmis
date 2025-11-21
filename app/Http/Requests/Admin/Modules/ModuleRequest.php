@@ -37,10 +37,9 @@ class ModuleRequest extends FormRequest
         $moduleId = $this->input('module_id');
 
         return [
-            'tab_name' => ['required', 'string'],
-            'tab_slug' => [
+            'tab_name' => [
                 'required',
-                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                'string', 
                 Rule::unique('module_tabs')->where(fn($query) => $query->where('module_id', $moduleId)),
             ],
             'order' => [

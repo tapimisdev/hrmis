@@ -18,6 +18,7 @@
             :tabs='@json($tabs)'
             store_url="{{ $store_url }}"
             slug="{{ $slug }}"
+            highest_order="{{ $highest_order }}"
         />
     </div>
 @endsection

@@ -39,18 +39,21 @@ export default {
             type: String,
             required: true,
         },
+        highest_order: {
+            type: Number,
+            required: true,
+        },
     },
     data() {
         return {
             form: {
                 tab_name: "",
-                tab_slug: "",
-                order: "",
+                order: parseInt(this.highest_order) + 1,
             },
+            order: parseInt(this.highest_order) + 1,
             errors: {},
             fields: [
                 { label: "Name", model: "tab_name" },
-                { label: "Slug", model: "tab_slug" },
                 { label: "Order", model: "order" },
             ],
         };
@@ -64,12 +67,14 @@ export default {
                     SuccesToast.fire({
                         title: res.data.message || "successfully added!",
                     });
+                    this.order += 1;
+                    const tab_name = this.form.tab_name;
                     this.form = {
                         tab_name: "",
                         tab_slug: "",
-                        order: "",
+                        order: this.order,
                     };
-                    this.$emit("formSubmitted");
+                    this.$emit("formSubmitted", tab_name);
                 })
                 .catch((error) => {
                     if (error.response && error.response.status === 422) {
