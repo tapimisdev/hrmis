@@ -28,6 +28,9 @@
         {{-- Deductions --}}
         @include('admin.components.sidebar.items.deductions')
 
+        {{-- Modules --}}
+        @include('admin.components.sidebar.items.modules')
+
         {{-- Maintenance --}}
         @include('admin.components.sidebar.items.maintenance')
 

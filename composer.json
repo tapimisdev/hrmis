@@ -35,7 +35,8 @@
         },
         "files": [
             "app/Helpers/formatter.php",
-            "app/Helpers/code_generator.php"
+            "app/Helpers/code_generator.php",
+            "app/Helpers/modules_helper.php"
         ]
     },
     "autoload-dev": {

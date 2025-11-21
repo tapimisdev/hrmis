@@ -19,6 +19,7 @@ import PayrollStepper from './admin/payroll/create/PayrollStepper.vue';
 import ShowPayroll from './admin/payroll/show/ShowPayroll.vue';
 import TaxIndex from './admin/tax/TaxIndex.vue';
 import TaxTable from './admin/tax/TaxTable.vue';
+import TabModule from './admin/modules/TabModule.vue';
 
 // payroll
 import PayrollIndex from './admin/payroll/IndexVue.vue';
@@ -42,7 +43,8 @@ const authApp = createApp({
     PayrollStepper,
     ShowPayroll,
     TaxIndex,
-    TaxTable
+    TaxTable, 
+    TabModule
   },
 });
 
