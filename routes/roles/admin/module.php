@@ -7,4 +7,5 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('modules')->group(function() {
     # slug
     Route::get('/{slug}', [ModulesController::class, 'index'])->name('modules.index');
+    Route::post('/{slug}', [ModulesController::class, 'store'])->name('modules.store');
 });
