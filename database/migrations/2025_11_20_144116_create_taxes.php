@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('tax_deductions', function (Blueprint $table) {
+        Schema::create('tax_years', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tax_id')->constrained('taxes')->onDelete('cascade');
             $table->year('year');
@@ -31,7 +31,7 @@ return new class extends Migration
 
         Schema::create('employee_taxes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tax_deduction_id')->constrained('tax_deductions')->onDelete('cascade');
+            $table->foreignId('tax_deduction_id')->constrained('tax_years')->onDelete('cascade');
             $table->string('employee_no');
             $table->decimal('amount', 12, 2);
             $table->string('month');
@@ -47,7 +47,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('employee_taxes');
-        Schema::dropIfExists('tax_deductions');
+        Schema::dropIfExists('tax_years');
         Schema::dropIfExists('taxes');
     }
 

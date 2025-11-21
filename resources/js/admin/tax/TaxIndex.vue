@@ -38,7 +38,7 @@
         </table>
 
         <!-- Modal -->
-        <ModalVue ref="taxModal" :title="modalTitle" type="default">
+        <ModalVue ref="taxModal" :title="modalTitle" type="default" size="modal-md">
             <template #default>
                 <form @submit.prevent="submitForm">
                     <div class="modal-body">

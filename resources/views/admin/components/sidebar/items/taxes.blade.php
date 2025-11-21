@@ -1,14 +1,14 @@
-<li class="sidebar-item {{ Str::contains(request()->path(), 'admin/deductions') ? 'active' : '' }}">
-    <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'payroll') ? '' : 'collapsed' }}"
+<li class="sidebar-item {{ Str::contains(request()->path(), 'admin/tax') ? 'active' : '' }}">
+    <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'taxes') ? '' : 'collapsed' }}"
     data-bs-toggle="collapse" 
     data-bs-target="#taxes"
     role="button" 
-    aria-expanded="{{ Str::contains(request()->path(), 'payroll') ? 'true' : 'false' }}" 
+    aria-expanded="{{ Str::contains(request()->path(), 'taxes') ? 'true' : 'false' }}" 
     aria-controls="taxes">
         <i class="fa-solid fa-file-invoice-dollar"></i>
         <span>Taxes</span>
     </a>
-    <div class="collapse collapsable {{ Str::contains(request()->path(), 'payroll') ? 'show' : '' }}" 
+    <div class="collapse collapsable {{ Str::contains(request()->path(), 'taxes') ? 'show' : '' }}" 
         id="taxes">
          <ul class="nested-list">
             @if (count(getTaxesModules()) === 0)
@@ -21,7 +21,11 @@
                 @foreach (getTaxesModules() as $module)
                     <li class="nested-item">
                         <a href="{{ route('tax.index', ['slug' => $module->slug]) }}"
-                        class="">
+                        class="{{ 
+                            request()->routeIs('tax.index') &&
+                            request('slug') === $module->slug ? 'active' : '' 
+                        }}"
+                        >
                             <i class="{{ $module->icon }}"></i>
                             <span class="text-capitalize">{{ $module->name }}</span>
                         </a>

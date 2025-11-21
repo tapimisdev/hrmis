@@ -125,6 +125,9 @@ function formSubmitted(selectedTabName) {
     closeModal();
     getTabs();
     switchTab(selectedTabName);
+    if (tabs.value.length === 0) {
+      window.location.reload();
+    }
 }
 </script>
 

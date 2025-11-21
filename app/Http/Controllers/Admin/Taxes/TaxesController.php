@@ -15,12 +15,13 @@ class TaxesController extends Controller
      */
     public function index(Request $request, string $slug)
     {
-        if ($request->ajax()) {
-            $tax = DB::table('taxes')
+        $tax = DB::table('taxes')
                 ->where('slug', $slug)
                 ->first();
 
-            $yearsFromDb = DB::table('tax_deductions')
+        if ($request->ajax()) {
+
+            $yearsFromDb = DB::table('tax_years')
                 ->where('tax_id', $tax->id)
                 ->distinct()
                 ->orderBy('year', 'asc')
@@ -29,7 +30,7 @@ class TaxesController extends Controller
             return response(['data' => $yearsFromDb, 'message' => 'get data', 'status' => 'success']);
         }
 
-        return view('admin.pages.taxes.index', compact('slug'));
+        return view('admin.pages.taxes.index', compact('slug', 'tax'));
     }
 
     public function show(string $slug, string $year_id) {
@@ -42,7 +43,7 @@ class TaxesController extends Controller
             abort(404);
         }
 
-        $tax = DB::table('tax_deductions')
+        $tax = DB::table('tax_years')
             ->where('tax_id', $tax->id)
             ->where('id', $year_id)
             ->first();
@@ -74,7 +75,7 @@ class TaxesController extends Controller
                         ->where('slug', $validateYear['slug'])
                         ->first();
 
-            $year = DB::table('tax_deductions')->insertGetId([
+            $year = DB::table('tax_years')->insertGetId([
                         'tax_id' => $tax->id,
                         'year' => $validateYear['year'],
                         'updated_at' => Carbon::now(),
@@ -123,7 +124,7 @@ class TaxesController extends Controller
                 abort(404, 'Tax not found');
             }
 
-            $deduction = DB::table('tax_deductions')
+            $deduction = DB::table('tax_years')
                 ->where('id', $id)
                 ->where('tax_id', $tax->id)
                 ->first();
@@ -132,7 +133,7 @@ class TaxesController extends Controller
                 abort(404, 'Deduction not found');
             }
 
-            DB::table('tax_deductions')
+            DB::table('tax_years')
                 ->where('id', $deduction->id)
                 ->update([
                     'year' => $validateYear['year'],

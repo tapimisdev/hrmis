@@ -31,7 +31,7 @@ class TaxService
         ];
 
         // Fetch the tax deduction record
-        $taxDeduction = DB::table('tax_deductions')
+        $taxDeduction = DB::table('tax_years')
             ->where('tax_id', $tax_id)
             ->where('year', $year_id)
             ->first();

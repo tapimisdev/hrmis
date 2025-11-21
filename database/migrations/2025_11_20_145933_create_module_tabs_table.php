@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('module_id')->constrained('modules');
             $table->string('tab_icon');
             $table->string('tab_name');
-            $table->string('tab_slug')->unique();
-            $table->integer('order')->unique();
+            $table->string('tab_slug');
+            $table->integer('order');
             $table->boolean('isActive');
             $table->timestamps();
         });

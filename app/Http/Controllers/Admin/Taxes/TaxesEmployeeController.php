@@ -25,7 +25,7 @@ class TaxesEmployeeController extends Controller
                     ->where('slug', $slug)
                     ->first();
 
-        $deduction = DB::table('tax_deductions')
+        $deduction = DB::table('tax_years')
                     ->where('id', $id)
                     ->where('tax_id', $tax->id)
                     ->first();
@@ -56,7 +56,7 @@ class TaxesEmployeeController extends Controller
         }
 
         // Get the deduction for this tax
-        $deduction = DB::table('tax_deductions')
+        $deduction = DB::table('tax_years')
             ->where('id', $id)
             ->where('tax_id', $tax->id)
             ->first();
