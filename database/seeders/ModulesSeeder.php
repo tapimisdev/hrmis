@@ -40,28 +40,28 @@ class ModulesSeeder extends Seeder
                 'module_name' => 'GSIS',
                 'tab_name'    => 'contribution',
                 'icon'        => 'fa-solid fa-building-columns',
-                'slug'        => 'contribution',
+                'slug'        => 'gsis',
                 'order'       => 1,
             ],
             [
                 'module_name' => 'PAG-IBIG',
                 'tab_name'    => 'contribution',
                 'icon'        => 'fa-solid fa-people-roof',
-                'slug'        => 'contribution',
+                'slug'        => 'pag-ibig',
                 'order'       => 2,
             ],
             [
                 'module_name' => 'PHIL-HEALTH',
                 'tab_name'    => 'contribution',
                 'icon'        => 'fa-solid fa-heart-pulse',
-                'slug'        => 'contribution',
+                'slug'        => 'philhealth',
                 'order'       => 3,
             ],
             [
                 'module_name' => 'Landbank',
                 'tab_name'    => 'Base',
                 'icon'        => 'fa-solid fa-landmark',
-                'slug'        => 'base',
+                'slug'        => 'landbank',
                 'order'       => 4,
             ],
         ];
@@ -97,14 +97,14 @@ class ModulesSeeder extends Seeder
                 ->where('module_name', $m['module_name'])
                 ->first();
 
-            $slug = Str::slug($m['module_name']);
+            $tab_slug = Str::slug($m['module_name']);
 
             // Insert first tab
             DB::table('module_tabs')->insert([
                 'module_id'  => $module->id,
                 'tab_name'   => $m['tab_name'],
                 'tab_icon'   => 'fa-regular fa-file',
-                'tab_slug'   => $slug,
+                'tab_slug'   => $tab_slug,
                 'order'      => $m['order'],
                 'isActive'   => true,
                 'created_at' => now(),
