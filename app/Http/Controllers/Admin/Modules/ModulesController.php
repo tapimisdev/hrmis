@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Modules;
 
+use App\Enums\EmploymentTypesEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Modules\ModuleRequest;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,7 @@ class ModulesController extends Controller
         }
 
         if ($tab_query->count() != 0 && $tab_name == null) {
-            abort(404);
+            $tab_name = $tabs->first()->tab_slug;
         }
 
         if (request()->wantsJson()) {
@@ -51,7 +52,6 @@ class ModulesController extends Controller
 
     public function store(ModuleRequest $request, $slug)
     {
-
         $validatedData = $request->validated();
 
         DB::beginTransaction();

@@ -50,12 +50,22 @@
                 :submit_url="store_url"
             />
         </ModalVue>
+
+        <EmployeeTable
+          :slug="slug"
+          :tab="tab_name"
+        />
+
     </div>
 </template>
 
 <script setup>
 import axios from "axios";
 import { defineProps, ref, onMounted, defineAsyncComponent } from "vue";
+
+const EmployeeTable = defineAsyncComponent(() => 
+  import("./employees/EmployeeTable.vue")
+);
 
 const Skeleton = defineAsyncComponent(() =>
     import("../../components/FormSkeletonVue.vue")
@@ -73,7 +83,8 @@ const props = defineProps({
         required: true,
     },
     slug: String,
-    highest_order: Number,
+    highest_order: String,
+    tab_from_server: String
 });
 
 let tabs = ref([]);
@@ -83,7 +94,14 @@ const loading = ref(Boolean(true));
 
 onMounted(() => {
     const params = new URLSearchParams(window.location.search);
-    tab_name.value = params.get("tab");
+
+    if(!params.get("tab")) {
+      tab_name.value = props.tab_from_server
+      window.history.pushState({}, "", `?tab=${props.tab_from_server}`);
+    } else {
+      tab_name.value = params.get("tab");
+    }    
+
     const btn = document.getElementById("create-btn");
     if (btn) btn.addEventListener("click", openModal);
 
