@@ -86,10 +86,10 @@
                                         <label class="form-label">Date Hired</label>
                                         <input type="date"
                                             class="form-control form-control-sm"
-                                            v-model="employee.date_hired"
-                                            :class="{ 'is-invalid': errors[`employees.${index}.date_hired`] }">
-                                        <span class="text-danger" v-if="errors[`employees.${index}.date_hired`]">
-                                            <span v-for="(err, i) in errors[`employees.${index}.date_hired`]" :key="i">{{ err }}</span>
+                                            v-model="employee.date_hired_organization"
+                                            :class="{ 'is-invalid': errors[`employees.${index}.date_hired_organization`] }">
+                                        <span class="text-danger" v-if="errors[`employees.${index}.date_hired_organization`]">
+                                            <span v-for="(err, i) in errors[`employees.${index}.date_hired_organization`]" :key="i">{{ err }}</span>
                                         </span>
                                     </div>
 

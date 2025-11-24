@@ -212,7 +212,8 @@ class InformationController extends Controller
                 ['employee_no' => $request->employee_no],
                 [
                     'biometrics_id'   => $request->biometrics_id ?? null,
-                    'date_hired'      => $request->date_hired ?? null,
+                    'date_hired_company'  => $request->date_hired_company ?? null,
+                    'date_hired_organization'      => $request->date_hired_organization ?? null,
                     'date_resigned'   => $request->date_resigned ?? null,
                     'account_status'  => $request->status ?? null,
                     'salary_method'   => $request->salary_method ?? null,
@@ -336,8 +337,8 @@ class InformationController extends Controller
             ],
 
             'status' => 'required|in:active,inactive',
-            'date_hired' => 'required|date',
-
+            'date_hired_company' => 'required|date',
+            'date_hired_organization' => 'required|date',
             'division_id' => 'required|exists:divisions,id',
             'unit_id' => 'required|exists:units,id',
             'employment_type_id' => 'required|exists:employment_types,id',
@@ -361,8 +362,10 @@ class InformationController extends Controller
             'biometrics_id.unique' => 'The biometrics ID is already taken.',
             'status.required' => 'The account status is required.',
             'status.in' => 'The status must be either active or inactive.',
-            'date_hired.required' => 'The date hired is required',
-            'date_hired.date' => 'The date hired must be valid date',
+            'date_hired_company.required' => 'The date hired is required',
+            'date_hired_company.date' => 'The date hired must be valid date',
+            'date_hired_organization.required' => 'The date hired is required',
+            'date_hired_organization.date' => 'The date hired must be valid date',
             'division_id.required' => 'The division is required.',
             'division_id.exists' => 'The selected division does not exist.',
             'unit_id.required' => 'The unit is required.',

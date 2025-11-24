@@ -68,8 +68,8 @@
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-3 mb-3">
-                                    <label for="date_hired" class="mb-2">Date Hired</label>
-                                    <input type="date" name="date_hired" id="date_hired" class="form-control">
+                                    <label for="date_hired_organization" class="mb-2">Date Hired</label>
+                                    <input type="date" name="date_hired_organization" id="date_hired_organization" class="form-control">
                                 </div>
                                 <div class="col-12 col-md-3 mb-3">
                                     <label for="tranche_id" class="mb-2">Tranche</label>

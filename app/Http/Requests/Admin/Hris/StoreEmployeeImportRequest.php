@@ -41,7 +41,7 @@ class StoreEmployeeImportRequest extends FormRequest
             'employees.*.suffix'            => ['nullable', 'string'],
             'employees.*.email'             => ['required', 'email', 'unique:users,email'],
             'employees.*.bio_id'            => ['nullable', 'string', 'unique:employee_information,biometrics_id'],
-            'employees.*.date_hired'        => ['required', 'date'],
+            'employees.*.date_hired_organization'        => ['required', 'date'],
             'employees.*.isActive'          => ['required', 'string'],
             'employees.*.position'          => ['required', 'string'],
             'employees.*.tranche'           => ['required'],

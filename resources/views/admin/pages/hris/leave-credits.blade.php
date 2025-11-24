@@ -72,9 +72,12 @@
 
                                                             <td class="text-center align-middle">
                                                                 @if($leave->amount < 1)
-                                                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                                                    <button type="submit" class="btn btn-sm btn-primary text-uppercase px-4 py-2 fw-bold">Save</button>
                                                                 @else
-                                                                    <a href="{{ route('hris.employee.leave-card', ['employee_no' => $employee_no, 'leave_id' => $leave->leave_id]) }}" class="btn btn-sm btn-outline-secondary">Leave Card</a>
+                                                                    <div class="d-flex gap-3 p-1 mx-5">
+                                                                        <a href="{{ route('hris.employee.leave-card', ['employee_no' => $employee_no, 'leave_id' => $leave->leave_id]) }}" class="btn btn-sm btn-outline-secondary fw-bold">Leave Card</a>
+                                                                        <button type="button" id="btn-delete" class="btn btn-sm btn-danger fw-bold" data-target="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no, 'leave_id' => $leave->leave_id]) }}">Reset</button>
+                                                                    </div>
                                                                 @endif
                                                             </td>
                                                         </tr>

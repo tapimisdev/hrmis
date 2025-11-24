@@ -20,6 +20,7 @@ import ShowPayroll from './admin/payroll/show/ShowPayroll.vue';
 import TaxIndex from './admin/tax/TaxIndex.vue';
 import TaxTable from './admin/tax/TaxTable.vue';
 import TabModule from './admin/modules/TabModule.vue';
+import TaxSettings from './admin/settings/TaxIndex.vue';
 
 // payroll
 import PayrollIndex from './admin/payroll/IndexVue.vue';
@@ -44,7 +45,8 @@ const authApp = createApp({
     ShowPayroll,
     TaxIndex,
     TaxTable, 
-    TabModule
+    TabModule,
+    TaxSettings
   },
 });
 

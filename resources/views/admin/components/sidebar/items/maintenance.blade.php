@@ -159,6 +159,13 @@
             </li>
             @endcan
 
+            <li class="nested-item">
+                <a href="{{ route('settings.taxes.index') }}"
+                    class="{{ request()->routeIs('settings.taxes.index') ? 'active' : '' }}">
+                    <i class="fa-solid fa-percent"></i>
+                    <span>Taxes</span>
+                </a>
+            </li>
         </ul>
     </div>
 </li>

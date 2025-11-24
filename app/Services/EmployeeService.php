@@ -62,7 +62,8 @@ class EmployeeService {
         return DB::table('employee_information')
             ->select(
                 'employee_information.employee_no',
-                'employee_information.date_hired',
+                'employee_information.date_hired_organization',
+                'employee_information.date_hired_company',
                 'employee_information.account_status',
                 'employee_information.isDeleted',
                 'employee_personal.profile',
@@ -211,7 +212,8 @@ class EmployeeService {
 
             $query->select(
                     'employee_information.employee_no',
-                    'employee_information.date_hired',
+                    'employee_information.date_hired_organization',
+                    'employee_information.date_hired_company',
                     'employee_information.biometrics_id',
                     'employee_information.salary_method',
                     'employee_information.account_status',

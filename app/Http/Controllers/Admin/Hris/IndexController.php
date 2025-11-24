@@ -127,7 +127,7 @@ class IndexController extends Controller
                     : $row->firstname . ' ' . $row->lastname;
             })
             ->editColumn('date_hired', function ($row) {
-                return $row->date_hired ? Carbon::parse($row->date_hired)->format('F d, Y')
+                return $row->date_hired_organization ? Carbon::parse($row->date_hired_organization)->format('F d, Y')
                     : '';
             })
             ->addColumn('actions', function ($row) {

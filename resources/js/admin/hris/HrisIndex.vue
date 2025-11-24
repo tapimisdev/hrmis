@@ -59,7 +59,7 @@
         </table>
     </div>
 </template>
-hris.employee.index
+
 <script>
 import axios from "axios";
 

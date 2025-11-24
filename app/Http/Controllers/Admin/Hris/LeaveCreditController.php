@@ -128,6 +128,42 @@ class LeaveCreditController extends Controller
         }
     }
 
+    public function delete_credits(string $employee_no, string $leave_id)
+    {
+        
+        DB::beginTransaction();
+        
+        try {
+
+            DB::table('employee_leave_credits')
+                ->where('leave_id', $leave_id)
+                ->where('employee_no', $employee_no)
+                ->delete();
+
+            DB::table('employee_leave_card')
+                ->where('leave_type', $leave_id)
+                ->where('employee_no', $employee_no)
+                ->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Leave credits saved successfully.',
+                'redirect' => route('hris.employee.leave-credits', ['employee_no' => $employee_no]),
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Error Occurred: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function generateLeaveCard($payload)
     {
         $leave_id    = $payload['leave_id'];

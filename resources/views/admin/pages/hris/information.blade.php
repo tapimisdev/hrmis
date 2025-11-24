@@ -43,8 +43,18 @@
                                             <div class="error-field"></div>
                                         </div>
                                         <div class="col-12 col-md-3 mb-3">
-                                            <label class="mb-2" for="date_hired">Date Hired <span class="text-danger">*</span></label>
-                                            <input type="date" id="date_hired" name="date_hired" class="form-control" value="{{ optional($data)->date_hired ?? '' }}">
+                                            <label class="mb-2" for="date_hired_organization">Date Hired (Organization) <span class="text-danger">*</span></label>
+                                            <input type="date" id="date_hired_organization" name="date_hired_organization" class="form-control" value="{{ optional($data)->date_hired_organization ?? '' }}">
+                                            <div class="error-field"></div>
+                                        </div>
+                                        <div class="col-12 col-md-3 mb-3">
+                                            <label class="mb-2" for="date_hired_company">Date Hired (Company) <span class="text-danger">*</span></label>
+                                            <input type="date" id="date_hired_company" name="date_hired_company" class="form-control" value="{{ optional($data)->date_hired_company ?? '' }}">
+                                            <div class="error-field"></div>
+                                        </div>
+                                        <div class="col-12 col-md-3 mb-3">
+                                            <label class="mb-2" for="date_resigned">Date Resigned</label>
+                                            <input type="date" id="date_resigned" name="date_resigned" class="form-control" value="{{ optional($data)->date_resigned ?? '' }}">
                                             <div class="error-field"></div>
                                         </div>
                                         <div class="col-md-3 mb-3">

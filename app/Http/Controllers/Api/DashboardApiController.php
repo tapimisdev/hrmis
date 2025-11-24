@@ -72,8 +72,8 @@ class DashboardApiController extends Controller
             : ($attritionRate > 0 ? 100 : 0);
 
         $newHires = (clone $employeeModel)
-            ->whereMonth('ei.date_hired', $currentMonth)
-            ->whereYear('ei.date_hired', $currentYear)
+            ->whereMonth('ei.date_hired_organization', $currentMonth)
+            ->whereYear('ei.date_hired_organization', $currentYear)
             ->count() ?? 0;
 
         $upcomingBirthdays = (clone $employeeModel)
@@ -84,8 +84,8 @@ class DashboardApiController extends Controller
             ->count() ?? 0;
 
         $averageTenure = (clone $employeeModel)
-            ->whereNotNull('ei.date_hired')
-            ->selectRaw('AVG(TIMESTAMPDIFF(YEAR, ei.date_hired, CURDATE())) as avg_years')
+            ->whereNotNull('ei.date_hired_organization')
+            ->selectRaw('AVG(TIMESTAMPDIFF(YEAR, ei.date_hired_organization, CURDATE())) as avg_years')
             ->value('avg_years') ?? 0;
 
         $averageTenure = round($averageTenure, 2);
@@ -217,7 +217,7 @@ class DashboardApiController extends Controller
 
         $data = $months->map(function ($m) use ($employeeModel) {
             $newHires = (clone $employeeModel)
-                ->whereBetween('date_hired', [$m['start'], $m['end']])
+                ->whereBetween('date_hired_organization', [$m['start'], $m['end']])
                 ->count();
 
             $resigned = (clone $employeeModel)

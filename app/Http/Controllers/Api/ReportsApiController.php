@@ -45,14 +45,14 @@ class ReportsApiController
                 't.description as tranche_name',
                 'es.salary_grade',
                 'ei.account_status',
-                DB::raw("DATE_FORMAT(ei.date_hired, '%M %d, %Y') AS date_hired"),
+                DB::raw("DATE_FORMAT(ei.date_organization, '%M %d, %Y') AS date_organization"),
                 'ei.date_resigned'
             )
             ->when(!empty($payload['account_status']), fn($q) => 
                 $q->where('ei.account_status', $payload['account_status'])
             )
-            ->when(!empty($payload['date_hired']), fn($q) => 
-                $q->where('ei.date_hired', $payload['date_hired'])
+            ->when(!empty($payload['date_organization']), fn($q) => 
+                $q->where('ei.date_organization', $payload['date_organization'])
             )
             ->when(!empty($payload['employment_type']), fn($q) => 
                 $q->where('eo.employment_type_id', $payload['employment_type'])
@@ -93,7 +93,7 @@ class ReportsApiController
         // --- Applied filters ---
         $appliedFilters = array_filter([
             'account_status' => $payload['account_status'] ?? null,
-            'date_hired' => $payload['date_hired'] ?? null,
+            'date_organization' => $payload['date_organization'] ?? null,
             'employment_type' => $payload['employment_type'] ?? null,
             'position' => $payload['position'] ?? null,
             'tranche_id' => $payload['tranche_id'] ?? null,

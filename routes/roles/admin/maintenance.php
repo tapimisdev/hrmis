@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\Settings\ShiftController;
 use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
 use App\Http\Controllers\Admin\Settings\TrancheController;
 use App\Http\Controllers\Admin\Settings\ApproverController;
+use App\Http\Controllers\Admin\Settings\TaxesController;
 
 
  Route::prefix('maintenance')->group(function() {
@@ -76,5 +77,8 @@ use App\Http\Controllers\Admin\Settings\ApproverController;
     Route::put('approvers/{approver}', [ApproverController::class, 'update'])->name('settings.approvers.update');
     Route::delete('approvers/{approver}', [ApproverController::class, 'destroy'])->name('settings.approvers.destroy');
 
+    # TAX MAPPING
+    Route::get('taxes', [TaxesController::class, 'index'])->name('settings.taxes.index');
+    Route::post('taxes', [TaxesController::class, 'save'])->name('settings.taxes.save');
 
 });

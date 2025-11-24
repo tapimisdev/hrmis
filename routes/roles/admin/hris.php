@@ -131,6 +131,8 @@ Route::prefix('hris')->group(function() {
         ->name('hris.employee.leave-credits');
     Route::put('employee/leave-credits/{employee_no}/{leave_id?}', [LeaveCreditController::class, 'save_credits'])
         ->name('hris.employee.leave-credits');
+    Route::delete('employee/leave-credits/{employee_no}/{leave_id?}', [LeaveCreditController::class, 'delete_credits'])
+        ->name('hris.employee.leave-credits');
 
     # LEAVE CARD
     Route::get('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'leave_card'])

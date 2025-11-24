@@ -27,6 +27,8 @@ class HrisMenu extends Component
     private function menuInfo() {
 
         $tax_menu = DB::table('taxes')->get();
+        $other_modules = DB::table('modules')->get();
+
         $currentYear = now()->year;
 
         $latest_year = DB::table('tax_years')
@@ -35,12 +37,21 @@ class HrisMenu extends Component
             ->first();
 
         $taxes = [];
+        $modules = [];
 
         foreach($tax_menu as $tax) {
             $taxes[] = [
                 'name' => $tax->name,
                 'route' => route('tax.employees.index', ['slug' => $tax->slug, 'year' => $latest_year->year, 'employee_no' => $this->employee_no]),
                 'active' => $this->active == $tax->slug ? 'active' : '',
+            ];
+        }
+
+        foreach($other_modules as $module) {
+            $modules[] = [
+                'name' => $module->module_name,
+                'route' => route('modules.index', ['slug' => $module->slug, 'year' => $latest_year->year, 'employee_no' => $this->employee_no]),
+                'active' => $this->active == $module->slug ? 'active' : '',
             ];
         }
 
@@ -119,6 +130,11 @@ class HrisMenu extends Component
                 'name' => 'XIII. Taxes',
                 'active' => $this->active == 'tax' ? 'active' : '',
                 'submenus' => $taxes,
+            ],
+            [
+                'name' => 'XIV. Other Modules',
+                'active' => $this->active == 'tax' ? 'active' : '',
+                'submenus' => $modules,
             ],
         ];
 
