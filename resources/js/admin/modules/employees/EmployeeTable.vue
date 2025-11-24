@@ -1,12 +1,21 @@
 <template>
     <!-- Header -->
     <div
-        class="card-header d-flex justify-content-between align-items-end pb-3"
+        class="card-header d-flex justify-content-between align-items-end pb-3 pt-4"
     >
         <Printables />
 
-        <div class="fw-bold display-6">
-            {{ parent_table.year }}
+        <div
+            class="fw-bold display-6 w-100 d-flex justify-content-between flex-wrap"
+            style="max-width: 220px"
+        >
+            <button class="btn btn-sm" @click="adjustYear(-1)">
+                <i class="fa-solid fa-angles-left"></i>
+            </button>
+            {{ year }}
+            <button class="btn btn-sm" @click="adjustYear(1)">
+                <i class="fa-solid fa-angles-right"></i>
+            </button>
         </div>
 
         <div
@@ -35,7 +44,7 @@
                 status="loading"
                 message="loading, please wait..."
             />
-            <table v-if="!loading" class="table table-hover mb-0 compact-table">
+            <table class="table table-hover mb-0 compact-table">
                 <thead>
                     <tr>
                         <th class="sticky-col ps-1">Employee</th>
@@ -63,15 +72,9 @@
                         v-else
                         v-for="item in filtered"
                         :key="item.employee_no"
-                        :data-employee_no="item.employee_no"
+                        class="row-hover"
                     >
-                        <td
-                            class="sticky-col border-end ps-3"
-                            :class="{
-                                'bg-primary fw-bold':
-                                    selected_employee === item.employee_no,
-                            }"
-                        >
+                        <td class="sticky-col border-end ps-3">
                             <div class="d-flex align-items-center">
                                 <div class="avatar">
                                     {{ item.firstname?.charAt(0) || "N"
@@ -80,10 +83,9 @@
                                 <div class="ms-2">
                                     <span
                                         class="fw-bold text-body text-nowrap me-2"
+                                        >{{ item.lastname ?? "-------" }},
+                                        {{ item.firstname ?? "-------" }}</span
                                     >
-                                        {{ item.lastname ?? "-------" }},
-                                        {{ item.firstname ?? "-------" }}
-                                    </span>
                                     <br />
                                     <span class="badge text-body">{{
                                         item.employee_no
@@ -95,33 +97,19 @@
                             </div>
                         </td>
 
-                        <td
-                            class="text-end total-score"
-                            :class="{
-                                'bg-primary fw-bold':
-                                    selected_employee === item.employee_no,
-                            }"
-                        >
+                        <td class="text-end total-score">
                             {{ line_total(item) }}
                         </td>
-
-                        <td
-                            v-for="monthKey in monthKeys"
-                            :key="monthKey"
-                            :class="{
-                                'bg-primary fw-bold':
-                                    selected_employee === item.employee_no,
-                            }"
-                        >
+                        <td v-for="monthKey in monthKeys" :key="monthKey">
                             <input
                                 type="number"
                                 v-model="item[monthKey]"
                                 @change="
                                     create_update(
-                                        item[monthKey + '_id'],
+                                        item['module_tab_id'],
                                         item[monthKey],
                                         monthKey,
-                                        item.employee_no
+                                        item['employee_no']
                                     )
                                 "
                                 class="border-less-input"
@@ -148,23 +136,20 @@
 </template>
 
 <script>
-import LoaderVue from "../../components/LoaderVue.vue";
-import Printables from "../../components/Printables.vue";
+import LoaderVue from "../../../components/LoaderVue.vue";
+import Printables from "../../../components/Printables.vue";
+
 import axios from "axios";
 
 export default {
     components: { LoaderVue, Printables },
     props: {
-        selected_employee: {
-            type: String,
-            required: false,
-        },
-        url: {
+        slug: {
             type: String,
             required: true,
         },
-        parent_table: {
-            type: Object,
+        tab: {
+            type: String,
             required: true,
         },
     },
@@ -199,6 +184,7 @@ export default {
                 "december",
             ],
             items: [],
+            year: new Date().getFullYear(),
             filtered: [],
             isFetched: false,
             search: "",
@@ -209,11 +195,16 @@ export default {
         this.fetchTable();
         this.isFetched = true;
     },
+    watch: {
+        tab(newVal, OldVal) {
+            this.fetchTable();
+        },
+    },
     methods: {
         fetchTable() {
             this.loading = true;
             axios
-                .get(this.url)
+                .get(`employees/${this.slug}/${this.tab}/${this.year}`)
                 .then((res) => {
                     this.items = res.data;
                     this.filtered = res.data;
@@ -234,10 +225,12 @@ export default {
         },
         create_update(id, amount, month, employee_no) {
             this.loading = true;
+            console.log(this.year);
             axios
-                .post(this.url, {
-                    id: id,
+                .post(`/admin/modules/store-employees`, {
+                    module_tab_id: id,
                     amount: amount,
+                    year: this.year,
                     month: month,
                     employee_no: employee_no,
                 })
@@ -297,6 +290,10 @@ export default {
                     item.division_code.toLowerCase().includes(query) ||
                     item.division_name.toLowerCase().includes(query)
             );
+        },
+        adjustYear(action) {
+            this.year += action;
+            this.fetchTable();
         },
     },
 };

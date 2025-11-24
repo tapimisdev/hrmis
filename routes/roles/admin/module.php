@@ -1,11 +1,18 @@
 <?php
 
 use App\Http\Controllers\Admin\Modules\ModulesController;
+use App\Http\Controllers\Admin\Modules\ModuleTabEmployeeController;
 use Illuminate\Support\Facades\Route;
 
 # Modules
 Route::prefix('modules')->group(function() {
+
+    Route::post('/store-employees', [ModuleTabEmployeeController::class, 'store'])
+            ->name('module.employee.store');
+
     # slug
     Route::get('/{slug}', [ModulesController::class, 'index'])->name('modules.index');
     Route::post('/{slug}', [ModulesController::class, 'store'])->name('modules.store');
+    
+    Route::get('/employees/{slug}/{tab}/{year}', [ModuleTabEmployeeController::class, 'index'])->name('modules.employees.employee');
 });

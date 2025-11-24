@@ -97,14 +97,14 @@ class ModulesSeeder extends Seeder
                 ->where('module_name', $m['module_name'])
                 ->first();
 
-            $slug = Str::slug($m['module_name']);
+            $tab_slug = Str::slug($m['module_name']);
 
             // Insert first tab
             DB::table('module_tabs')->insert([
                 'module_id'  => $module->id,
                 'tab_name'   => $m['tab_name'],
                 'tab_icon'   => 'fa-regular fa-file',
-                'tab_slug'   => $slug,
+                'tab_slug'   => $tab_slug,
                 'order'      => $m['order'],
                 'isActive'   => true,
                 'created_at' => now(),
