@@ -35,7 +35,7 @@
                 status="loading"
                 message="loading, please wait..."
             />
-            <table class="table table-hover mb-0 compact-table">
+            <table v-if="!loading" class="table table-hover mb-0 compact-table">
                 <thead>
                     <tr>
                         <th class="sticky-col ps-1">Employee</th>

@@ -33,6 +33,11 @@
                     </div>
                 </div>
             </div>
+
+            <EmployeeTable
+              :slug="slug"
+              :tab="tab_name"
+            />
         </div>
 
         <!-- Modal -->
@@ -50,12 +55,6 @@
                 :submit_url="store_url"
             />
         </ModalVue>
-
-        <EmployeeTable
-          :slug="slug"
-          :tab="tab_name"
-        />
-
     </div>
 </template>
 
