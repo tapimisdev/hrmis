@@ -15,24 +15,36 @@ class ModulesSeeder extends Seeder
     public function run(): void
     {
         $taxes = [
-            [
-                'taxes' => 'Hazard Pay Tax',
-                'icon'  => 'fa-solid fa-triangle-exclamation',
-                'slug'  => 'hazard-pay-tax',
-                'name'  => 'Hazard Pay Tax'
-            ],
-            [
-                'taxes' => 'Longevity Tax',
-                'icon'  => 'fa-solid fa-hourglass-half',
-                'slug'  => 'longevity-tax',
-                'name'  => 'Longevity Tax'
-            ],
-            [
-                'taxes' => 'Salary Tax',
-                'icon'  => 'fa-solid fa-money-bill',
-                'slug'  => 'salary-tax',
-                'name'  => 'Salary Tax'
-            ],
+            // [
+            //     'taxes' => 'Hazard Pay',
+            //     'icon'  => 'fa-solid fa-helmet-safety',
+            //     'slug'  => 'hazard-pay',
+            //     'name'  => 'Hazard Pay'
+            // ],
+            // [
+            //     'taxes' => 'Hazard Pay Tax',
+            //     'icon'  => 'fa-solid fa-triangle-exclamation',
+            //     'slug'  => 'hazard-pay-tax',
+            //     'name'  => 'Hazard Pay Tax'
+            // ],
+            // [
+            //     'taxes' => 'Longevity Pay',
+            //     'icon'  => 'fa-solid fa-timeline',
+            //     'slug'  => 'longevity-pay',
+            //     'name'  => 'Longevity Pay'
+            // ],
+            // [
+            //     'taxes' => 'Longevity Tax',
+            //     'icon'  => 'fa-solid fa-hourglass-half',
+            //     'slug'  => 'longevity-tax',
+            //     'name'  => 'Longevity Tax'
+            // ],
+            // [
+            //     'taxes' => 'Salary Tax',
+            //     'icon'  => 'fa-solid fa-money-bill',
+            //     'slug'  => 'salary-tax',
+            //     'name'  => 'Salary Tax'
+            // ],
         ];
 
         $modules = [

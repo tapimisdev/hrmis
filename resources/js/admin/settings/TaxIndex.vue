@@ -9,21 +9,47 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">{{ item.name }}</h5>
+
+                        <!-- TABLE ID SELECT -->
+                        <select
+                            v-model="selectedTable[index]"
+                            class="form-select mt-3"
+                        >
+                            <option value="">- SELECT TABLE -</option>
+                            <option
+                                v-for="opt in taxes"
+                                :key="opt.id"
+                                :value="opt.id"
+                            >
+                                {{ opt.name }}
+                            </option>
+                        </select>
+                        <div
+                            v-if="errors[item.key + '.table_id']"
+                            class="text-danger mt-1"
+                        >
+                            {{ errors[item.key + ".table_id"][0] }}
+                        </div>
+
+                        <!-- TAX ID SELECT -->
                         <select
                             v-model="selectedTaxes[index]"
                             class="form-select mt-3"
                         >
-                            <option value="" disabled>- CHOOSE -</option>
+                            <option value="">- SELECT TAX -</option>
                             <option
-                                v-for="tax in taxes"
-                                :key="tax.id"
-                                :value="tax.id"
+                                v-for="opt in taxes"
+                                :key="opt.id"
+                                :value="opt.id"
                             >
-                                {{ tax.name }}
+                                {{ opt.name }}
                             </option>
                         </select>
-                        <div v-if="errors[item.key]" class="text-danger mt-1">
-                            {{ errors[item.key][0] }}
+                        <div
+                            v-if="errors[item.key + '.tax_id']"
+                            class="text-danger mt-1"
+                        >
+                            {{ errors[item.key + ".tax_id"][0] }}
                         </div>
                     </div>
                 </div>
@@ -47,34 +73,26 @@ import axios from "axios";
 
 export default {
     name: "tax-settings",
+
     props: {
-        url: {
-            type: String,
-            required: true,
-        },
-        taxes: {
-            type: Array,
-            required: true,
-        },
-        menu: {
-            type: Object,
-            required: true,
-        },
-        savedSettings: {
-            type: Object,
-            default: () => ({}),
-        },
+        url: { type: String, required: true },
+        taxes: { type: Array, required: true }, // both selects use this
+        menu: { type: Object, required: true },
+        savedSettings: { type: Object, default: () => ({}) },
     },
+
     data() {
-        const selected = Object.keys(this.menu).map((key) => {
-            return this.savedSettings[key] || "";
-        });
+        const keys = Object.keys(this.menu);
 
         return {
-            selectedTaxes: selected,
+            selectedTable: keys.map(
+                (k) => this.savedSettings[k]?.table_id || ""
+            ),
+            selectedTaxes: keys.map((k) => this.savedSettings[k]?.tax_id || ""),
             errors: {},
         };
     },
+
     computed: {
         menuArray() {
             return Object.entries(this.menu).map(([key, name]) => ({
@@ -83,35 +101,27 @@ export default {
             }));
         },
     },
+
     methods: {
         save() {
             this.errors = {};
+
             const payload = this.menuArray.map((item, index) => ({
                 data_id: item.key,
+                table_id: this.selectedTable[index],
                 tax_id: this.selectedTaxes[index],
             }));
 
             axios
                 .post(this.url, payload)
-                .then((response) => {
-                    if (response.data.savedSettings) {
-                        // update selectedTaxes if server returns updated saved settings
-                        Object.keys(this.menu).forEach((key, idx) => {
-                            this.selectedTaxes[idx] =
-                                response.data.savedSettings[key] || "";
-                        });
-                    }
-                    alert("success", response.data.message);
+                .then((res) => {
+                    alert("success", res.data.message);
                 })
                 .catch((error) => {
                     if (error.response && error.response.status === 422) {
                         this.errors = error.response.data.errors;
                     } else {
-                        alert(
-                            "error",
-                            error.message ||
-                                "An error occurred while submitting the form."
-                        );
+                        alert("error", "Something went wrong.");
                     }
                 });
         },

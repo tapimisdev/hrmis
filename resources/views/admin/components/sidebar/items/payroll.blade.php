@@ -15,13 +15,27 @@
         id="payroll">
         <ul class="nested-list">
             @can('hr.salary_payroll.view')
-            <li class="nested-item">
-                <a href="{{ route('salary.index') }}"
-                class="{{ request()->routeIs('salary.index') ? 'active' : '' }}">
-                    <i class="fa-solid fa-calculator"></i>
-                    <span>Salary</span>
-                </a>
-            </li>
+                <li class="nested-item">
+                    <a href="{{ route('salary.index') }}"
+                    class="{{ request()->routeIs('salary.index') ? 'active' : '' }}">
+                        <i class="fa-solid fa-money-bill-1-wave"></i>
+                        <span>Salary</span>
+                    </a>
+                </li>
+                <li class="nested-item">
+                    <a href="{{ route('salary.index') }}"
+                    class="{{ request()->routeIs('salary.index') ? 'active' : '' }}">
+                        <i class="fa-solid fa-helmet-safety"></i>
+                        <span>Hazard Pay</span>
+                    </a>
+                </li>
+                <li class="nested-item">
+                    <a href="{{ route('salary.index') }}"
+                    class="{{ request()->routeIs('salary.index') ? 'active' : '' }}">
+                        <i class="fa-solid fa-shirt"></i>
+                        <span>SLA Payroll</span>
+                    </a>
+                </li>
             @endcan
         </ul>
     </div>

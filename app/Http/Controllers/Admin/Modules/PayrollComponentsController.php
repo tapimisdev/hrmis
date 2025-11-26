@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Taxes;
+namespace App\Http\Controllers\Admin\Modules;
 
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
@@ -8,21 +8,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
 
-class TaxesController extends Controller
+class PayrollComponentsController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request, string $slug)
     {
-        $tax = DB::table('taxes')
+        $component = DB::table('payroll_components')
                 ->where('slug', $slug)
                 ->first();
 
         if ($request->ajax()) {
 
             $yearsFromDb = DB::table('tax_years')
-                ->where('tax_id', $tax->id)
+                ->where('payroll_component_id', $component->id)
                 ->distinct()
                 ->orderBy('year', 'asc')
                 ->get();
@@ -30,24 +30,24 @@ class TaxesController extends Controller
             return response(['data' => $yearsFromDb, 'message' => 'get data', 'status' => 'success']);
         }
 
-        return view('admin.pages.taxes.index', compact('slug', 'tax'));
+        return view('admin.pages.payroll-components.index', compact('slug', 'component'));
     }
 
     public function show(string $slug, string $year_id) {
 
-        $tax = DB::table('taxes')
+        $component = DB::table('payroll_components')
             ->where('slug', $slug)
             ->first();
 
-        if(!$tax) {
+        if(!$component) {
             abort(404);
         }
 
-        $tax = DB::table('tax_years')
-            ->where('tax_id', $tax->id)
+        $component = DB::table('tax_years')
+            ->where('payroll_component_id', $component->id)
             ->where('id', $year_id)
             ->first();
-        return response(['data' => $tax, 'message' => 'get data', 'status' => 'success']);
+        return response(['data' => $component, 'message' => 'get data', 'status' => 'success']);
     }
 
     /**
@@ -57,7 +57,7 @@ class TaxesController extends Controller
     {
 
         $validateYear = $request->validate([
-            'slug' => 'required|string|exists:taxes,slug',
+            'slug' => 'required|string|exists:payroll_components,slug',
             'year' => [
                 'required',
                 'integer',
@@ -71,12 +71,12 @@ class TaxesController extends Controller
 
         try {
             
-            $tax = DB::table('taxes')
+            $pc = DB::table('payroll_components')
                         ->where('slug', $validateYear['slug'])
                         ->first();
 
             $year = DB::table('tax_years')->insertGetId([
-                        'tax_id' => $tax->id,
+                        'payroll_component_id' => $pc->id,
                         'year' => $validateYear['year'],
                         'updated_at' => Carbon::now(),
                         'created_at' => Carbon::now(),
@@ -84,7 +84,7 @@ class TaxesController extends Controller
 
             $url = route('tax.employees.index', [
                 'slug' => $validateYear['slug'],
-                'id' => $tax->id
+                'year' => $validateYear['year']
             ]);
 
             DB::commit();
@@ -123,27 +123,27 @@ class TaxesController extends Controller
         try {
 
             // Get tax by slug (same as store)
-            $tax = DB::table('taxes')
+            $component = DB::table('payroll_components')
                         ->where('slug', $slug)
                         ->first();
 
-            if (!$tax) {
+            if (!$component) {
                 abort(404, 'Tax not found');
             }
 
             // Get tax_year record
-            $taxYear = DB::table('tax_years')
-                        ->where('tax_id', $tax->id)
+            $componentYear = DB::table('tax_years')
+                        ->where('payroll_component_id', $component->id)
                         ->where('year', $validateYear['originalYear'])
                         ->first();
 
-            if (!$taxYear) {
+            if (!$componentYear) {
                 abort(404, 'Year not found for this tax');
             }
 
             // Update the year
             DB::table('tax_years')
-                ->where('id', $taxYear->id)
+                ->where('id', $componentYear->id)
                 ->where('year', $validateYear['originalYear'])
                 ->update([
                     'year' => $validateYear['year'],
@@ -177,8 +177,8 @@ class TaxesController extends Controller
 
     public function edit($id)
     {
-        $tax = DB::table('tax_salary')->find($id);
-        return response(['data' => $tax, 'message' => 'get data', 'status' => 'success']);
+        $component = DB::table('tax_salary')->find($id);
+        return response(['data' => $component, 'message' => 'get data', 'status' => 'success']);
     }
 
 }

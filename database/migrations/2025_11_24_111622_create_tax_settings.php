@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tax_settings', function (Blueprint $table) {
+        Schema::create('payroll_components_settings', function (Blueprint $table) {
             $table->id();
             $table->enum('type', [
                 'salary_pay',
                 'hazard_pay',
                 'longetivity_pay',
             ]);
-            $table->foreignId('tax_id')
-                ->constrained('taxes')
+            $table->foreignId('payroll_components_id')
+                ->constrained('payroll_components')
                 ->onDelete('cascade');
             $table->timestamps();
         });
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tax_settings');
+        Schema::dropIfExists('payroll_components_settings');
     }
 }; 

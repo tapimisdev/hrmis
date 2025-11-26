@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Admin\Taxes;
+namespace App\Http\Controllers\Admin\Modules;
 
 use App\Http\Controllers\Controller;
-use App\Services\TaxService;
+use App\Services\PayrollComponentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class TaxesEmployeeController extends Controller
+class PayrollComponentsEmployeeController extends Controller
 {
-    protected $tax_service;
+    protected $componentService;
 
-    public function __construct(TaxService $tax_service)
+    public function __construct(PayrollComponentService $componentService)
     {
-        $this->tax_service = $tax_service;
+        $this->componentService = $componentService;
     }
 
     /**
@@ -24,27 +24,27 @@ class TaxesEmployeeController extends Controller
 
         $selectedEmployee = $request->query('employee_no', null);
 
-        $tax = DB::table('taxes')
+        $component = DB::table('payroll_components')
                     ->where('slug', $slug)
                     ->first();
 
         $deduction = DB::table('tax_years')
                     ->where('year', $year)
-                    ->where('tax_id', $tax->id)
+                    ->where('payroll_component_id', $component->id)
                     ->first();
 
-        if(!$tax) {
+        if(!$component) {
             abort(404);
         }
 
         $url = route('tax.employees.index', ['slug' => $slug, 'year' => $year]);
 
         if(request()->wantsJson()) {
-            $employees = $this->tax_service->getAll($tax->id, $deduction->year);
+            $employees = $this->componentService->getAll($component->id, $deduction->year);
             return response()->json($employees);
         }
 
-        return view('admin.pages.taxes.employees.index', compact('tax', 'slug', 'year', 'url', 'selectedEmployee'));
+        return view('admin.pages.payroll-components.employees.index', compact('component', 'slug', 'year', 'url', 'selectedEmployee'));
     }
 
     /**
@@ -53,15 +53,15 @@ class TaxesEmployeeController extends Controller
     public function store(Request $request, string $slug, int $year)
     {
         // Get the tax based on slug
-        $tax = DB::table('taxes')->where('slug', $slug)->first();
-        if (!$tax) {
+        $component = DB::table('payroll_components')->where('slug', $slug)->first();
+        if (!$component) {
             abort(404, 'Tax not found');
         }
 
         // Get the deduction for this tax
         $deduction = DB::table('tax_years')
             ->where('year', $year)
-            ->where('tax_id', $tax->id)
+            ->where('payroll_component_id', $component->id)
             ->first();
         if (!$deduction) {
             abort(404);

@@ -12,9 +12,9 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     require __DIR__ . '/timekeeping.php';
     require __DIR__ . '/service.php';
     require __DIR__ . '/payroll.php';
+    require __DIR__ . '/payroll-components.php';
     require __DIR__ . '/reports.php';
     require __DIR__ . '/maintenance.php';
-    require __DIR__ . '/taxes.php';
     require __DIR__ . '/module.php';
 
 });

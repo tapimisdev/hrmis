@@ -5,62 +5,16 @@
 @endsection
 
 @section('content')
- <div class="container-fluid">
+    <div class="container-fluid">
+        <x-header title="Create Salary Payroll" subtitle="Create and manage salary payroll details in this module">
+            <x-button-link 
+                :href="{{route('settings.payroll-components.save')}}" 
+                icon="fa-solid fa-arrow-left me-2" 
+                text="Back" 
+                variant="danger"
+            />
+        </x-header>
 
-    <x-header title="Deduction" subtitle="Add Deduction in this module">
-        <x-button-link 
-            :href="route('deductions.index')" 
-            icon="fa-solid fa-arrow-left me-2" 
-            text="Back" 
-            variant="danger"
-        />
-    </x-header>
-    <form id="form" action="{{route('deductions.store')}}" method="post">
-        @csrf
-        <div class="card shadow p-3">
-            <div class="card-header bg-transparent">
-                <h4 class="m-0 mb-1 pt-3 text-uppercase fw-medium">
-                    Create Deduction
-                </h4>
-            </div>
-            <div class="card-body">
-                <div class="row my-3">
-                    <div class="col-12 col-md-9 mb-3">
-                        <label class="mb-2" for="name">Name <span class="text-danger">*</span></label>
-                        <input type="text" id="name" name="name" placeholder="Enter the name of deduction in here" class="form-control">
-                        <div class="name_error error-field"></div>
-                    </div>
-                </div>
-                <div class="row my-3">
-                    <div class="col-12 col-md-4 mb-3">
-                        <label class="mb-2" for="first_term">First Term <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" id="first_term" placeholder="0.00" name="first_term" class="form-control" value="0">
-                        <div class="first_term_error error-field"></div>
-                    </div>
-                    <div class="col-12 col-md-4 mb-3">
-                        <label class="mb-2" for="second_term">Second Term <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" id="second_term" placeholder="0.00" name="second_term" class="form-control" value="0">
-                        <div class="second_term_error error-field"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
-                <button type="submit" id="submit-button"
-                        class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
-                    Save
-                </button>
-            </div>
-        </div>
-    </form>
-
- </div>
-@endsection
-
-@section('scripts')
-<script>
-    $(function() {
-        const url = $('#form').attr('action');
-        post(url);
-    });
-</script>
+        <payroll-stepper/>
+    </div>
 @endsection

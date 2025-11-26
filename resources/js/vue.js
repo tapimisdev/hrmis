@@ -24,6 +24,8 @@ import TaxSettings from './admin/settings/TaxIndex.vue';
 
 // payroll
 import PayrollIndex from './admin/payroll/IndexVue.vue';
+import PayrollComponentIndex from './admin/payroll-component/Index.vue';
+import PayrollComponentForm from './admin/payroll-component/Form.vue';
 
 const authApp = createApp({
   components: {
@@ -46,7 +48,9 @@ const authApp = createApp({
     TaxIndex,
     TaxTable, 
     TabModule,
-    TaxSettings
+    TaxSettings,
+    PayrollComponentIndex,
+    PayrollComponentForm
   },
 });
 

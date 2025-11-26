@@ -109,7 +109,7 @@
             </li>
             @endcan
 
-            @can('hr.earnings.view')
+            <!-- @can('hr.earnings.view')
             <li class="nested-item">
                 <a href="{{ route('earnings.index') }}"
                     class="{{ request()->routeIs('earnings.index') ? 'active' : '' }}">
@@ -127,7 +127,7 @@
                     <span>Deductions</span>
                 </a>
             </li>
-            @endcan
+            @endcan -->
 
             @can('hr.leave_type.view')
             <li class="nested-item">
@@ -160,10 +160,10 @@
             @endcan
 
             <li class="nested-item">
-                <a href="{{ route('settings.taxes.index') }}"
-                    class="{{ request()->routeIs('settings.taxes.index') ? 'active' : '' }}">
-                    <i class="fa-solid fa-percent"></i>
-                    <span>Taxes</span>
+                <a href="{{ route('settings.payroll-components.index') }}"
+                    class="{{ request()->routeIs('settings.payroll-components.index') ? 'active' : '' }}">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Payroll Components</span>
                 </a>
             </li>
         </ul>

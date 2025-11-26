@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('taxes', function (Blueprint $table) {
+        Schema::create('payroll_components', function (Blueprint $table) {
             $table->id();
             $table->string('icon')
                 ->required();
+            $table->enum('type', [
+                'earnings',
+                'taxes'
+            ]);
             $table->string('slug')
                 ->unique();
             $table->string('name')
@@ -24,14 +28,18 @@ return new class extends Migration
 
         Schema::create('tax_years', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tax_id')->constrained('taxes')->onDelete('cascade');
+            $table->foreignId('payroll_component_id')
+                ->constrained('payroll_components')
+                ->onDelete('cascade');
             $table->year('year');
             $table->timestamps();
         });
 
         Schema::create('employee_taxes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tax_deduction_id')->constrained('tax_years')->onDelete('cascade');
+            $table->foreignId('tax_deduction_id')
+                ->constrained('tax_years')
+                ->onDelete('cascade');
             $table->string('employee_no');
             $table->decimal('amount', 12, 2);
             $table->string('month');
@@ -48,7 +56,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('employee_taxes');
         Schema::dropIfExists('tax_years');
-        Schema::dropIfExists('taxes');
+        Schema::dropIfExists('payroll_components');
     }
 
 };

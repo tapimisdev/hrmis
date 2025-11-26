@@ -26,11 +26,12 @@ if (!function_exists('getSetting')) {
     }
 }
 
-if(!function_exists('getTaxesModules')) {
-    function getTaxesModules()
+if(!function_exists('getPayrollComponents')) {
+    function getPayrollComponents(string $type)
     {
         // return Cache::remember('taxes_modules_cache', 60 * 60, function () {
-            return DB::table('taxes as m')
+            return DB::table('payroll_components')
+                ->where('type', $type)
                 ->get();
         // });
     }

@@ -164,7 +164,7 @@ class ImportEmployeeController extends Controller
                     'employee_no'       => $emp['employee_no'],
                     'biometrics_id'     => $emp['bio_id'],
                     'account_status'    => $emp['isActive'],
-                    'date_hired_company' => $emp['date_hired_company'],
+                    'date_hired_company' => $emp['date_hired_company'] ?? null,
                     'date_hired_organization' => $emp['date_hired_organization'],
                     'salary_method'     => $emp['salary_method'],
                     'payroll_account_no'=> $emp['payroll_account_no'],

@@ -14,7 +14,7 @@
         <tax-table
             url="{{ $url }}"
             selected_employee="{{ $selectedEmployee }}"
-            :parent_table='@json($tax)'
+            :parent_table='@json($component)'
         />
     </div>
 @endsection

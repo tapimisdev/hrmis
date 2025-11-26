@@ -5,12 +5,12 @@ namespace App\Services;
 use App\Enums\EmploymentTypesEnum;
 use Illuminate\Support\Facades\DB;
 
-class TaxService
+class PayrollComponentService
 {
     /**
      * Get all employee tax data for a specific tax and year.
      */
-    public function getAll(int $tax_id, int $year_id)
+    public function getAll(int $component_id, int $year_id)
     {
 
         $regular_id = EmploymentTypesEnum::REGULAR->value;
@@ -32,7 +32,7 @@ class TaxService
 
         // Fetch the tax deduction record
         $taxDeduction = DB::table('tax_years')
-            ->where('tax_id', $tax_id)
+            ->where('payroll_component_id', $component_id)
             ->where('year', $year_id)
             ->first();
 
