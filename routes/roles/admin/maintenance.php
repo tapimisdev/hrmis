@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\Settings\WeeklyScheduleController;
 use App\Http\Controllers\Admin\Settings\TrancheController;
 use App\Http\Controllers\Admin\Settings\ApproverController;
 use App\Http\Controllers\Admin\Settings\PayrollComponentsController;
+use App\Http\Controllers\Admin\Settings\PayrollSettingsController;
 
 
  Route::prefix('maintenance')->group(function() {
@@ -77,10 +78,15 @@ use App\Http\Controllers\Admin\Settings\PayrollComponentsController;
     Route::put('approvers/{approver}', [ApproverController::class, 'update'])->name('settings.approvers.update');
     Route::delete('approvers/{approver}', [ApproverController::class, 'destroy'])->name('settings.approvers.destroy');
 
-    # TAX MAPPING
+    # PAYROLL COMPONENTS
     Route::get('payroll-components', [PayrollComponentsController::class, 'index'])->name('settings.payroll-components.index');
     Route::get('payroll-components/create', [PayrollComponentsController::class, 'create'])->name('settings.payroll-components.create');
     Route::post('payroll-components/store', [PayrollComponentsController::class, 'store'])->name('settings.payroll-components.store');
     Route::put('payroll-components/update/{id}', [PayrollComponentsController::class, 'update'])->name('settings.payroll-components.update');
     Route::delete('payroll-components/delete/{id}', [PayrollComponentsController::class, 'destroy'])->name('settings.payroll-components.delete');
+
+    # PAYROLL SETTINGS
+    Route::get('payroll-settings', [PayrollSettingsController::class, 'index'])->name('settings.payroll-settings.index');
+    Route::post('payroll-settings', [PayrollSettingsController::class, 'save'])->name('settings.payroll-settings.save');
+
 });

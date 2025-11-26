@@ -1,7 +1,7 @@
 @canany([
     'hr.salary_payroll.view'
 ])
-<li class="sidebar-item {{ Str::contains(request()->path(), 'payroll') ? 'active' : '' }}">
+<li class="sidebar-item {{ request()->segment(2) === 'payroll' ? 'active' : '' }}">
     <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'payroll') ? '' : 'collapsed' }}"
     data-bs-toggle="collapse" 
     data-bs-target="#payroll"
@@ -20,20 +20,6 @@
                     class="{{ request()->routeIs('salary.index') ? 'active' : '' }}">
                         <i class="fa-solid fa-money-bill-1-wave"></i>
                         <span>Salary</span>
-                    </a>
-                </li>
-                <li class="nested-item">
-                    <a href="{{ route('salary.index') }}"
-                    class="{{ request()->routeIs('salary.index') ? 'active' : '' }}">
-                        <i class="fa-solid fa-helmet-safety"></i>
-                        <span>Hazard Pay</span>
-                    </a>
-                </li>
-                <li class="nested-item">
-                    <a href="{{ route('salary.index') }}"
-                    class="{{ request()->routeIs('salary.index') ? 'active' : '' }}">
-                        <i class="fa-solid fa-shirt"></i>
-                        <span>SLA Payroll</span>
                     </a>
                 </li>
             @endcan

@@ -14,37 +14,37 @@ class ModulesSeeder extends Seeder
      */
     public function run(): void
     {
-        $taxes = [
-            // [
-            //     'taxes' => 'Hazard Pay',
-            //     'icon'  => 'fa-solid fa-helmet-safety',
-            //     'slug'  => 'hazard-pay',
-            //     'name'  => 'Hazard Pay'
-            // ],
-            // [
-            //     'taxes' => 'Hazard Pay Tax',
-            //     'icon'  => 'fa-solid fa-triangle-exclamation',
-            //     'slug'  => 'hazard-pay-tax',
-            //     'name'  => 'Hazard Pay Tax'
-            // ],
-            // [
-            //     'taxes' => 'Longevity Pay',
-            //     'icon'  => 'fa-solid fa-timeline',
-            //     'slug'  => 'longevity-pay',
-            //     'name'  => 'Longevity Pay'
-            // ],
-            // [
-            //     'taxes' => 'Longevity Tax',
-            //     'icon'  => 'fa-solid fa-hourglass-half',
-            //     'slug'  => 'longevity-tax',
-            //     'name'  => 'Longevity Tax'
-            // ],
-            // [
-            //     'taxes' => 'Salary Tax',
-            //     'icon'  => 'fa-solid fa-money-bill',
-            //     'slug'  => 'salary-tax',
-            //     'name'  => 'Salary Tax'
-            // ],
+        $components = [
+            [
+                'icon'  => 'fa-solid fa-helmet-safety',
+                'slug'  => 'hazard-pay',
+                'name'  => 'Hazard Pay',
+                'type'  => 'earnings'
+            ],
+            [
+                'icon'  => 'fa-solid fa-triangle-exclamation',
+                'slug'  => 'hazard-pay-tax',
+                'name'  => 'Hazard Pay Tax',
+                'type'  => 'taxes'
+            ],
+            [
+                'icon'  => 'fa-solid fa-timeline',
+                'slug'  => 'longevity-pay',
+                'name'  => 'Longevity Pay',
+                'type'  => 'earnings'
+            ],
+            [
+                'icon'  => 'fa-solid fa-hourglass-half',
+                'slug'  => 'longevity-tax',
+                'name'  => 'Longevity Tax',
+                'type'  => 'taxes'
+            ],
+            [
+                'icon'  => 'fa-solid fa-money-bill',
+                'slug'  => 'salary-tax',
+                'name'  => 'Salary Tax',
+                'type'  => 'taxes'
+            ],
         ];
 
         $modules = [
@@ -79,12 +79,13 @@ class ModulesSeeder extends Seeder
         ];
 
 
-        foreach ($taxes as $tax) {
-            DB::table('taxes')->updateOrInsert(
-                ['name' => $tax['name']], 
+        foreach ($components as $component) {
+            DB::table('payroll_components')->updateOrInsert(
+                ['name' => $component['name']], 
                 [                         
-                    'icon'             => $tax['icon'],
-                    'slug'             => $tax['slug'],
+                    'icon'             => $component['icon'],
+                    'slug'             => $component['slug'],
+                    'type'             => $component['type'],
                     'updated_at'       => now(),
                     'created_at'       => now(),
                 ]

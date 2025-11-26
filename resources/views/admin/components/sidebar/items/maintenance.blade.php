@@ -166,6 +166,14 @@
                     <span>Payroll Components</span>
                 </a>
             </li>
+
+            <li class="nested-item">
+                <a href="{{ route('settings.payroll-settings.index') }}"
+                    class="{{ request()->routeIs('settings.payroll-settings.index') ? 'active' : '' }}">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Payroll Settings</span>
+                </a>
+            </li>
         </ul>
     </div>
 </li>

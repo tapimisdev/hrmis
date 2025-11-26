@@ -18,7 +18,12 @@ return new class extends Migration
                 'hazard_pay',
                 'longetivity_pay',
             ]);
-            $table->foreignId('payroll_components_id')
+            $table->foreignId('table_id')
+                ->nullable()
+                ->constrained('payroll_components')
+                ->onDelete('cascade');
+            $table->foreignId('tax_id')
+                ->nullable()
                 ->constrained('payroll_components')
                 ->onDelete('cascade');
             $table->timestamps();
