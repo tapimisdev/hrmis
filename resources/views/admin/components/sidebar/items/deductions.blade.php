@@ -1,5 +1,5 @@
 @canany([
-    'hr.salary_payroll.view'
+    'hr.payroll_deductions.view'
 ])
 <li class="sidebar-item {{ Str::contains(request()->path(), 'admin/modules') ? 'active' : '' }}">
     <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'modules') ? '' : 'collapsed' }}"
@@ -9,7 +9,7 @@
     aria-expanded="{{ Str::contains(request()->path(), 'modules') ? 'true' : 'false' }}" 
     aria-controls="modules">
         <i class="fa-solid fa-money-check-dollar"></i>
-        <span>Modules</span>
+        <span>Deductions</span>
     </a>
     <div class="collapse collapsable {{ Str::contains(request()->path(), 'modules') ? 'show' : '' }}" 
         id="modules">

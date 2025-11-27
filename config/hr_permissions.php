@@ -146,12 +146,39 @@ return [
         'delete',
     ],
 
-    // Admin Management
     'admin' => [
         'view',
         'create',
         'edit',
         'delete',
+    ],
+
+    'payroll_earnings' => [
+        'view',
+        'create',
+        'update'
+    ],
+    'payroll_earnings_items' => [
+        'view',
+        'update'
+    ],
+    'payroll_taxes' => [
+        'view',
+        'create',
+        'update'
+    ],
+    'payroll_taxes_items' => [
+        'view',
+        'update'
+    ],
+    'payroll_deductions' => [
+        'view',
+        'create',
+        'update'
+    ],
+    'payroll_deductions_items' => [
+        'view',
+        'update'
     ],
 
 ];

@@ -19,17 +19,17 @@
         {{-- Payroll --}}
         @include('admin.components.sidebar.items.payroll')
 
-        {{-- Payroll Components --}}
+        {{-- Earnings / Taxes --}}
         @include('admin.components.sidebar.items.payroll-components')
+
+        {{-- Deductions --}}
+        @include('admin.components.sidebar.items.deductions')
 
         {{-- Services --}}
         @include('admin.components.sidebar.items.service')
 
         {{-- Reports --}}
         @include('admin.components.sidebar.items.reports')
-
-        {{-- Modules --}}
-        @include('admin.components.sidebar.items.modules')
 
         {{-- Maintenance --}}
         @include('admin.components.sidebar.items.maintenance')

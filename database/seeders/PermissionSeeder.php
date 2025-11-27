@@ -14,14 +14,23 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        $modules = [
-           
+        $permissions = [
+            'payroll_components' => [
+                'view',
+                'create',
+                'update',
+                'delete'
+            ],
+            'payroll_settings' => [
+                    'view',
+                    'update'
+            ],
         ];
 
         // Generate permissions automatically
-        foreach ($modules as $module => $actions) {
+        foreach ($permissions as $group => $actions) {
             foreach ($actions as $action) {
-                Permission::firstOrCreate(['name' => $action . ' ' . $module]);
+                Permission  ::firstOrCreate(['name' => "admin.$group.$action", 'guard_name' => 'web']);
             }
         }
     }
