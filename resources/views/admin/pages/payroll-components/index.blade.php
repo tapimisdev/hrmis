@@ -12,13 +12,13 @@
             </x-button>
         </x-header>
 
-        <tax-index
+        <payroll-employee-component-index
             slug="{{ $slug }}"
-            employee-url="{{ route('tax.employees.index', ['slug' => $slug, 'year' => '__YEAR__']) }}"
-            fetch-url="{{ route('tax.index', ['slug' => '__SLUG__']) }}"
-            show-url="{{ route('tax.show', ['slug' => '__SLUG__', 'year' => '__YEAR__']) }}"
-            update-url="{{ route('tax.update', ['slug' => '__SLUG__', 'year' => '__YEAR__']) }}"
-            store-url="{{ route('tax.store', ['slug' => '__SLUG__']) }}"
+            employee-url="{{ route('payroll-employee-components.index', ['slug' => $slug, 'year' => '__YEAR__']) }}"
+            fetch-url="{{ route('payroll-components.index', ['slug' => '__SLUG__']) }}"
+            show-url="{{ route('payroll-components.show', ['slug' => '__SLUG__', 'year' => '__YEAR__']) }}"
+            update-url="{{ route('payroll-components.update', ['slug' => '__SLUG__', 'year' => '__YEAR__']) }}"
+            store-url="{{ route('payroll-components.store', ['slug' => '__SLUG__']) }}"
         />
 
 

@@ -78,7 +78,6 @@ class ModulesSeeder extends Seeder
             ],
         ];
 
-
         foreach ($components as $component) {
             DB::table('payroll_components')->updateOrInsert(
                 ['name' => $component['name']], 

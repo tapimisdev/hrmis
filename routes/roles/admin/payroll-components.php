@@ -5,11 +5,11 @@ use App\Http\Controllers\Admin\Modules\PayrollComponentsEmployeeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('payroll-components/{slug}')->group(function () {
-    Route::get('/', [PayrollComponentsController::class, 'index'])->name('tax.index');
-    Route::get('/{year}', [PayrollComponentsController::class, 'show'])->name('tax.show');
-    Route::post('/', [PayrollComponentsController::class, 'store'])->name('tax.store');
-    Route::put('/{year}', [PayrollComponentsController::class, 'update'])->name('tax.update');
+    Route::get('/', [PayrollComponentsController::class, 'index'])->name('payroll-components.index');
+    Route::get('/{year}', [PayrollComponentsController::class, 'show'])->name('payroll-components.show');
+    Route::post('/', [PayrollComponentsController::class, 'store'])->name('payroll-components.store');
+    Route::put('/{year}', [PayrollComponentsController::class, 'update'])->name('payroll-components.update');
 
-    Route::get('employees/{year}', [PayrollComponentsEmployeeController::class, 'index'])->name('tax.employees.index');
-    Route::post('employees/{year}', [PayrollComponentsEmployeeController::class, 'store'])->name('tax.employees.store');
+    Route::get('employees/{year}', [PayrollComponentsEmployeeController::class, 'index'])->name('payroll-employee-components.index');
+    Route::post('employees/{year}', [PayrollComponentsEmployeeController::class, 'store'])->name('payroll-employee-components.index');
 });

@@ -31,7 +31,7 @@ class PayrollComponentService
         ];
 
         // Fetch the tax deduction record
-        $taxDeduction = DB::table('tax_years')
+        $taxDeduction = DB::table('payroll_components_years')
             ->where('payroll_component_id', $component_id)
             ->where('year', $year_id)
             ->first();
@@ -61,8 +61,8 @@ class PayrollComponentService
             ->orderBy('ep.lastname', 'asc')
             ->get();
 
-        // Fetch all employee_taxes for this tax deduction in one query
-        $employeeTaxes = DB::table('employee_taxes')
+        // Fetch all employee_payroll_components for this tax deduction in one query
+        $employeeTaxes = DB::table('employee_payroll_components')
             ->where('tax_deduction_id', $taxDeductionId)
             ->get()
             ->groupBy('employee_no');

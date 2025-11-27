@@ -26,7 +26,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('tax_years', function (Blueprint $table) {
+        Schema::create('payroll_components_years', function (Blueprint $table) {
             $table->id();
             $table->foreignId('payroll_component_id')
                 ->constrained('payroll_components')
@@ -35,10 +35,10 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('employee_taxes', function (Blueprint $table) {
+        Schema::create('employee_payroll_components', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tax_deduction_id')
-                ->constrained('tax_years')
+                ->constrained('payroll_components_years')
                 ->onDelete('cascade');
             $table->string('employee_no');
             $table->decimal('amount', 12, 2);
@@ -54,8 +54,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_taxes');
-        Schema::dropIfExists('tax_years');
+        Schema::dropIfExists('employee_payroll_components');
+        Schema::dropIfExists('payroll_components_years');
         Schema::dropIfExists('payroll_components');
     }
 

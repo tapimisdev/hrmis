@@ -31,7 +31,7 @@ class HrisMenu extends Component
 
         $currentYear = now()->year;
 
-        $latest_year = DB::table('tax_years')
+        $latest_year = DB::table('payroll_components_years')
             ->where('year', $currentYear)
             ->select('id', 'year')
             ->first();
@@ -42,7 +42,7 @@ class HrisMenu extends Component
         foreach($tax_menu as $tax) {
             $taxes[] = [
                 'name' => $tax->name,
-                'route' => route('tax.employees.index', ['slug' => $tax->slug, 'year' => $latest_year->year, 'employee_no' => $this->employee_no]),
+                'route' => route('payroll-employee-components.index', ['slug' => $tax->slug, 'year' => $latest_year->year, 'employee_no' => $this->employee_no]),
                 'active' => $this->active == $tax->slug ? 'active' : '',
             ];
         }

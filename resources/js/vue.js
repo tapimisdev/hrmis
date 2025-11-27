@@ -17,15 +17,15 @@ import ImportEmployeeVue from './admin/hris/ImportEmployeeVue.vue';
 import UploadTimelogVue from './admin/timekeeping/UploadTimelogVue.vue';
 import PayrollStepper from './admin/payroll/create/PayrollStepper.vue';
 import ShowPayroll from './admin/payroll/show/ShowPayroll.vue';
-import TaxIndex from './admin/tax/TaxIndex.vue';
-import TaxTable from './admin/tax/TaxTable.vue';
 import TabModule from './admin/modules/TabModule.vue';
 import TaxSettings from './admin/settings/TaxIndex.vue';
 
 // payroll
 import PayrollIndex from './admin/payroll/IndexVue.vue';
-import PayrollComponentIndex from './admin/payroll-component/Index.vue';
-import PayrollComponentForm from './admin/payroll-component/Form.vue';
+import PayrollComponentIndex from './admin/payroll-component-settings/Index.vue';
+import PayrollComponentForm from './admin/payroll-component-settings/Form.vue';
+import PayrollEmployeeComponentIndex from './admin/payroll-component/Index.vue';
+import PayrollEmployeeComponentForm from './admin/payroll-component/Form.vue';
 import PayrollSettings from './admin/payroll-settings/Index.vue';
 
 const authApp = createApp({
@@ -46,8 +46,8 @@ const authApp = createApp({
     PayrollIndex,
     PayrollStepper,
     ShowPayroll,
-    TaxIndex,
-    TaxTable, 
+    PayrollEmployeeComponentIndex,
+    PayrollEmployeeComponentForm, 
     TabModule,
     TaxSettings,
     PayrollComponentIndex,

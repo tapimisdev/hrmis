@@ -32,8 +32,8 @@ class PayrollComponentsController extends Controller
     {
         $validated = $request->validate([
             'icon' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:payroll_components,slug',
+            'name' => 'required|string|max:255|unique:payroll_components',
+            'slug' => 'required|string|max:255|unique:payroll_components',
             'type' => 'required|in:earnings,taxes',
         ]);
 

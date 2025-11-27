@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
+use Illuminate\Validation\Rule;
 
 class PayrollComponentsController extends Controller
 {
@@ -21,7 +22,7 @@ class PayrollComponentsController extends Controller
 
         if ($request->ajax()) {
 
-            $yearsFromDb = DB::table('tax_years')
+            $yearsFromDb = DB::table('payroll_components_years')
                 ->where('payroll_component_id', $component->id)
                 ->distinct()
                 ->orderBy('year', 'asc')
@@ -43,7 +44,7 @@ class PayrollComponentsController extends Controller
             abort(404);
         }
 
-        $component = DB::table('tax_years')
+        $component = DB::table('payroll_components_years')
             ->where('payroll_component_id', $component->id)
             ->where('id', $year_id)
             ->first();
@@ -53,8 +54,19 @@ class PayrollComponentsController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, string $slug)
     {
+
+        $component_id = DB::table('payroll_components')
+            ->where('slug', $slug)
+            ->value('id') ?? null;
+            
+        if(is_null($component_id)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error: component not found',
+            ]); 
+        }
 
         $validateYear = $request->validate([
             'slug' => 'required|string|exists:payroll_components,slug',
@@ -62,8 +74,11 @@ class PayrollComponentsController extends Controller
                 'required',
                 'integer',
                 'digits:4', 
-                'max:' . (now()->year + 3),
                 'min:' . now()->year,
+                Rule::unique('payroll_components_years', 'year')
+                    ->where(function ($query) use ($component_id) {
+                        return $query->where('payroll_component_id', $component_id);
+                    }),
             ],
         ]);
 
@@ -75,14 +90,14 @@ class PayrollComponentsController extends Controller
                         ->where('slug', $validateYear['slug'])
                         ->first();
 
-            $year = DB::table('tax_years')->insertGetId([
+            $year = DB::table('payroll_components_years')->insertGetId([
                         'payroll_component_id' => $pc->id,
                         'year' => $validateYear['year'],
                         'updated_at' => Carbon::now(),
                         'created_at' => Carbon::now(),
                     ]);
 
-            $url = route('tax.employees.index', [
+            $url = route('payroll-employee-components.index', [
                 'slug' => $validateYear['slug'],
                 'year' => $validateYear['year']
             ]);
@@ -107,14 +122,27 @@ class PayrollComponentsController extends Controller
     public function update(Request $request, string $slug, int $year)
     {
 
+        $component_id = DB::table('payroll_components')
+            ->where('slug', $slug)
+            ->value('id') ?? null;
+            
+        if(is_null($component_id)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error: component not found',
+            ]); 
+        }
+
         $validateYear = $request->validate([
             'year' => [
                 'required',
                 'integer',
                 'digits:4',
-                'max:' . (now()->year + 3),
                 'min:' . now()->year,
-            ],
+                 Rule::unique('payroll_components_years', 'year')
+                    ->ignore($component_id) 
+                    ->where(fn ($q) => $q->where('payroll_component_id', $component_id)),
+                ],
             'originalYear' => 'required',
         ]);
 
@@ -132,7 +160,7 @@ class PayrollComponentsController extends Controller
             }
 
             // Get tax_year record
-            $componentYear = DB::table('tax_years')
+            $componentYear = DB::table('payroll_components_years')
                         ->where('payroll_component_id', $component->id)
                         ->where('year', $validateYear['originalYear'])
                         ->first();
@@ -142,7 +170,7 @@ class PayrollComponentsController extends Controller
             }
 
             // Update the year
-            DB::table('tax_years')
+            DB::table('payroll_components_years')
                 ->where('id', $componentYear->id)
                 ->where('year', $validateYear['originalYear'])
                 ->update([
@@ -151,7 +179,7 @@ class PayrollComponentsController extends Controller
                 ]);
 
             // Updated redirect (same style as store)
-            $url = route('tax.employees.index', [
+            $url = route('payroll-employee-components.index', [
                 'slug' => $slug,
                 'year' => $year
             ]);
@@ -172,8 +200,6 @@ class PayrollComponentsController extends Controller
             ], 500);
         }
     }
-
-
 
     public function edit($id)
     {

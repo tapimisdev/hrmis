@@ -28,7 +28,7 @@ class PayrollComponentsEmployeeController extends Controller
                     ->where('slug', $slug)
                     ->first();
 
-        $deduction = DB::table('tax_years')
+        $deduction = DB::table('payroll_components_years')
                     ->where('year', $year)
                     ->where('payroll_component_id', $component->id)
                     ->first();
@@ -37,7 +37,7 @@ class PayrollComponentsEmployeeController extends Controller
             abort(404);
         }
 
-        $url = route('tax.employees.index', ['slug' => $slug, 'year' => $year]);
+        $url = route('payroll-employee-components.index', ['slug' => $slug, 'year' => $year]);
 
         if(request()->wantsJson()) {
             $employees = $this->componentService->getAll($component->id, $deduction->year);
@@ -59,7 +59,7 @@ class PayrollComponentsEmployeeController extends Controller
         }
 
         // Get the deduction for this tax
-        $deduction = DB::table('tax_years')
+        $deduction = DB::table('payroll_components_years')
             ->where('year', $year)
             ->where('payroll_component_id', $component->id)
             ->first();
@@ -69,7 +69,7 @@ class PayrollComponentsEmployeeController extends Controller
 
         // Validate input
         $validatedData = $request->validate([
-            'id' => 'nullable|exists:employee_taxes,id',
+            'id' => 'nullable|exists:employee_payroll_components,id',
             'month' => 'required|string',
             'amount' => 'required|numeric|min:0',
             'employee_no' => 'required|exists:employee_information,employee_no',
@@ -93,7 +93,7 @@ class PayrollComponentsEmployeeController extends Controller
         DB::beginTransaction();
 
         try {
-            DB::table('employee_taxes')
+            DB::table('employee_payroll_components')
                 ->updateOrInsert(
                     [
                         'tax_deduction_id' => $deduction->id,

@@ -1,35 +1,39 @@
 <template>
     <div>
-        <table class="table table-striped w-100">
+        <!-- Table -->
+        <table id="myTable" class="table table-striped w-100">
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Name</th>
-                    <th>Type</th>
+                    <th>Year</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-if="tableData.length === 0">
-                    <td colspan="4" class="text-center">No data available</td>
+                    <td colspan="3" class="text-center">No data available</td>
                 </tr>
-                <tr v-for="(row, index) in tableData" :key="row.id">
+
+                <tr v-else v-for="(row, index) in tableData" :key="row.id">
                     <td>{{ index + 1 }}</td>
-                    <td>{{ row.name }}</td>
-                    <td>{{ row.type }}</td>
+                    <td>{{ row.year }}</td>
                     <td>
                         <div class="d-flex gap-2">
+                            <a
+                                :href="
+                                    employeeUrl.replace('__YEAR__', row.year)
+                                "
+                                class="btn btn-primary btn my-1"
+                                title="Edit"
+                            >
+                                <i class="fa-solid fa-table-list"></i>
+                            </a>
+
                             <button
-                                class="btn btn-primary"
-                                @click="openEditModal(row)"
+                                class="btn btn-secondary my-1"
+                                @click="editRecord(row.id)"
                             >
                                 <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button
-                                class="btn btn-danger"
-                                @click="confirmDelete(row.id)"
-                            >
-                                <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
                     </td>
@@ -37,44 +41,54 @@
             </tbody>
         </table>
 
-        <ModalVue ref="editModal" type="default" title="Edit Payroll Component">
+        <!-- Modal -->
+        <ModalVue
+            ref="taxModal"
+            :title="modalTitle"
+            type="default"
+            size="modal-md"
+        >
             <template #default>
-                <div class="modal-body">
-                    <form @submit.prevent="updateRecord">
+                <form @submit.prevent="submitForm">
+                    <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">Name</label>
+                            <label for="year" class="form-label">
+                                Year <span class="text-danger">*</span>
+                            </label>
                             <input
                                 type="text"
+                                id="year"
                                 class="form-control"
-                                v-model="selectedRecord.name"
-                                required
+                                v-model="form.year"
+                                :class="{ 'is-invalid': errors.year }"
                             />
+                            <div
+                                class="error-field text-danger mt-1"
+                                ref="yearError"
+                            ></div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Type</label>
-                            <select
-                                class="form-select"
-                                v-model="selectedRecord.type"
-                                required
-                            >
-                                <option value="earnings">Earnings</option>
-                                <option value="taxes">Taxes</option>
-                            </select>
-                        </div>
-                        <div class="modal-footer">
-                            <button
-                                type="button"
-                                class="btn btn-secondary"
-                                @click="closeEditModal"
-                            >
-                                Cancel
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                Save Changes
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-danger"
+                            @click="closeModal"
+                        >
+                            <i class="fa-solid fa-xmark me-1"></i> Close
+                        </button>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i
+                                class="fa-solid me-1"
+                                :class="
+                                    form.id ? 'fa-pen-to-square' : 'fa-plus'
+                                "
+                            ></i>
+                            {{ form.id ? "Update" : "Add" }}
+                        </button>
+                    </div>
+                </form>
             </template>
         </ModalVue>
     </div>
@@ -83,95 +97,136 @@
 <script>
 import axios from "axios";
 import ModalVue from "../../components/ModalVue.vue";
+import { alert } from "../../helper";
 
 export default {
-    name: "PayrollComponentIndex",
     components: { ModalVue },
+    name: "PayrollEmployeeComponentIndex",
+
     props: {
-        fetchUrl: { type: String, required: true },
-        updateUrl: { type: String, required: true },
-        deleteUrl: { type: String, required: true },
+        slug: String,
+        employeeUrl: String,
+        fetchUrl: String,
+        showUrl: String,
+        updateUrl: String,
+        storeUrl: String,
     },
+
     data() {
         return {
             tableData: [],
-            selectedRecord: {},
+            modalTitle: "Add Year",
+
+            form: {
+                id: null,
+                slug: "",
+                year: "",
+                originalYear: null,
+            },
+
+            errors: {},
         };
     },
+
     mounted() {
         this.loadTable();
+
+        const btn = document.getElementById("create-btn");
+        if (btn) btn.addEventListener("click", this.openModal);
     },
+
     methods: {
+        /** Load table data **/
         loadTable() {
             axios
-                .get(this.fetchUrl)
+                .get(this.fetchUrl.replace("__SLUG__", this.slug))
+                .then((res) => (this.tableData = res.data.data || []))
+                .catch((err) => console.error(err));
+        },
+
+        /** Open modal -> always reset to ADD mode **/
+        openModal() {
+            this.resetForm();
+            this.modalTitle = "Add Year";
+            this.$refs.taxModal.open();
+        },
+
+        /** Close modal **/
+        closeModal() {
+            this.$refs.taxModal.close();
+        },
+
+        /** Reset form completely **/
+        resetForm() {
+            this.form = {
+                id: null,
+                slug: this.slug,
+                year: "",
+                originalYear: null,
+            };
+            this.clearErrors();
+        },
+
+        /** Open modal for editing **/
+        editRecord(id) {
+            this.resetForm();
+            this.form.id = id;
+            this.modalTitle = "Edit Year";
+
+            axios
+                .get(
+                    this.showUrl
+                        .replace("__SLUG__", this.slug)
+                        .replace("__YEAR__", id)
+                )
                 .then((res) => {
-                    this.tableData = res.data.data || res.data || [];
+                    this.form.year = res.data.data.year;
+                    this.form.originalYear = res.data.data.year;
+                    this.$refs.taxModal.open();
                 })
                 .catch((err) => console.error(err));
         },
 
-        openEditModal(row) {
-            this.selectedRecord = { ...row };
-            if (this.$refs.editModal && this.$refs.editModal.open) {
-                this.$refs.editModal.open();
-            }
+        /** Clear errors **/
+        clearErrors() {
+            this.errors = {};
+            if (this.$refs.yearError) this.$refs.yearError.innerText = "";
         },
 
-        closeEditModal() {
-            this.selectedRecord = null;
-            if (this.$refs.editModal && this.$refs.editModal.$el) {
-                $(this.$refs.editModal.$el).modal("hide");
-            }
-        },
+        /** Save form **/
+        async submitForm() {
+            this.clearErrors();
 
-        updateRecord() {
-            const url = this.updateUrl.replace(
-                "__ID__",
-                this.selectedRecord.id
-            );
-            axios
-                .put(url, this.selectedRecord)
-                .then(() => {
-                    this.loadTable();
-                    this.closeEditModal();
-                    Swal.fire(
-                        "Updated!",
-                        "Record has been updated.",
-                        "success"
-                    );
-                })
-                .catch((err) => console.error(err));
-        },
+            const method = this.form.id ? "PUT" : "POST";
+            const url = this.form.id
+                ? this.updateUrl
+                      .replace("__YEAR__", this.form.originalYear)
+                      .replace("__SLUG__", this.slug)
+                : this.storeUrl.replace("__SLUG__", this.slug);
 
-        confirmDelete(id) {
-            Swal.fire({
-                title: "Are you sure?",
-                text: "This action cannot be undone!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonText: "Yes, delete it!",
-                cancelButtonText: "Cancel",
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    this.deleteRecord(id);
+            try {
+                await axios({ method, url, data: this.form });
+
+                this.loadTable();
+                this.closeModal();
+
+                alert(
+                    "success",
+                    this.form.id
+                        ? "Year updated successfully."
+                        : "Year added successfully."
+                );
+            } catch (err) {
+                if (err.response?.status === 422) {
+                    this.errors = err.response.data.errors || {};
+
+                    if (this.errors.year && this.$refs.yearError) {
+                        this.$refs.yearError.innerText = this.errors.year[0];
+                    }
+                } else {
+                    alert("error", err.message || "Something went wrong.");
                 }
-            });
-        },
-
-        deleteRecord(id) {
-            const url = this.deleteUrl.replace("__ID__", id);
-            axios
-                .delete(url)
-                .then(() => {
-                    this.loadTable();
-                    Swal.fire(
-                        "Deleted!",
-                        "Record has been deleted.",
-                        "success"
-                    );
-                })
-                .catch((err) => console.error(err));
+            }
         },
     },
 };
