@@ -29,14 +29,14 @@ class ModulesSeeder extends Seeder
             ],
             [
                 'icon'  => 'fa-solid fa-timeline',
-                'slug'  => 'longevity-pay',
-                'name'  => 'Longevity Pay',
+                'slug'  => 'longetivity-pay',
+                'name'  => 'Longetivity Pay',
                 'type'  => 'earnings'
             ],
             [
                 'icon'  => 'fa-solid fa-hourglass-half',
-                'slug'  => 'longevity-tax',
-                'name'  => 'Longevity Tax',
+                'slug'  => 'longetivity-tax',
+                'name'  => 'Longetivity Tax',
                 'type'  => 'taxes'
             ],
             [

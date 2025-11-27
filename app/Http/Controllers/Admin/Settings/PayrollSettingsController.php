@@ -53,11 +53,11 @@ class PayrollSettingsController extends Controller
                 ],
             ],
             'longetivity_pay' => [
-                'label'  => 'Longevity Pay',
+                'label'  => 'Longetivity Pay',
                 'fields' => [
                     'table_id' => [
                         'selected' => $getLatestId('longetivity_pay')->max('table_id') ?? null,
-                        'label'    => 'Longevity Table',
+                        'label'    => 'Longetivity Table',
                         'choices'  => $earnings,
                     ],
                     'tax_id' => [

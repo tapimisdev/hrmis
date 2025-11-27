@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container-fluid">
-        <x-header title="Salary Taxes" subtitle="Manage shift schedule in this module">
+        <x-header title="{{ $component->name }}" subtitle="Manage employee data in this module">
             <x-button-link 
                 :href="route('tax.index', ['slug' => $slug])" 
                 icon="fa-solid fa-arrow-left me-2" 

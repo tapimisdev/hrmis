@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container-fluid">
-        <x-header title="{{ $component->name }}" subtitle="Manage shift schedule in this module">
+        <x-header title="{{ $component->name }}" subtitle="Manage employee data in this module">
             <x-button 
                 id="create-btn"
                 variant="primary"
