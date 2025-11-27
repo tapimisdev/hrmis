@@ -1,13 +1,10 @@
 @extends('admin.layouts.app')
 
-
 @section('content')
     <div class="container-fluid">
         <x-header title="Employee List" subtitle="Manage employee's informations in this module" >
             <div class="d-flex flex-wrap gap-2 justify-content-end">
-                <!-- Dropdown Button -->
                 <div class="dropdown">
-                    <!-- class="btn-modern ghost"  -->
                     <button class="btn btn-secondary dropdown-toggle"
                             type="button" 
                             id="employeeActionsDropdown" 
@@ -24,7 +21,7 @@
                         </li>
                         <li>
                             <a class="dropdown-item fw-bold text-uppercase d-flex align-items-center" href="{{ route('hris.employee.salary') }}">
-                                <i class="fa-solid fa-peso-sign me-2"></i> Update Salary
+                                <i class="fa-solid fa-\peso-sign me-2"></i> Update Salary
                             </a>
                         </li>
                         <li>
@@ -45,7 +42,3 @@
         <hris-index url="{{route('hris.employee.index')}}"/>
     </div>
 @endsection
-
-
-
-

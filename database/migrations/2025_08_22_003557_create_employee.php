@@ -21,7 +21,8 @@ return new class extends Migration
                 'inactive',
                 'archived'
             ]);
-            $table->string('date_hired');
+            $table->string('date_hired')
+                ->nullable();
             $table->string('date_resigned')
                 ->nullable();
             $table->string('salary_method');

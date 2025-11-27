@@ -31,8 +31,8 @@ class PayrollSettingsController extends Controller
                 'label'  => 'Salary Pay',
                 'fields' => [
                     'tax_id' => [
-                        'selected' => $getLatestId('salary_pay')->max('tax_id'),
-                        'label'    => 'With Holding Tax',
+                        'selected' => $getLatestId('salary_pay')->max('tax_id') ?? null,
+                        'label'    => 'Tax Table',
                         'choices'  => $taxes,
                     ],
                 ],
@@ -41,22 +41,35 @@ class PayrollSettingsController extends Controller
                 'label'  => 'Hazard Pay',
                 'fields' => [
                     'table_id' => [
-                        'selected' => $getLatestId('hazard_pay')->max('table_id'),
-                        'label'    => 'Hazard Pay',
+                        'selected' => $getLatestId('hazard_pay')->max('table_id') ?? null,
+                        'label'    => 'Hazard Table',
                         'choices'  => $earnings,
                     ],
                     'tax_id' => [
-                        'selected' => $getLatestId('hazard_pay')->max('tax_id'),
-                        'label'    => 'With Holding Tax',
+                        'selected' => $getLatestId('hazard_pay')->max('tax_id') ?? null,
+                        'label'    => 'Tax Table',
+                        'choices'  => $taxes,
+                    ],
+                ],
+            ],
+            'longetivity_pay' => [
+                'label'  => 'Longevity Pay',
+                'fields' => [
+                    'table_id' => [
+                        'selected' => $getLatestId('longetivity_pay')->max('table_id') ?? null,
+                        'label'    => 'Longevity Table',
+                        'choices'  => $earnings,
+                    ],
+                    'tax_id' => [
+                        'selected' => $getLatestId('longetivity_pay')->max('tax_id') ?? null,
+                        'label'    => 'Tax Table',
                         'choices'  => $taxes,
                     ],
                 ],
             ],
         ];
 
-        // dd($menu);
-
-        return view('admin.pages.settings.payroll-settings.index', compact('menu'));
+        return view('admin.pages.payroll-settings.index', compact('menu'));
     }
 
     public function save(Request $request)
@@ -67,6 +80,7 @@ class PayrollSettingsController extends Controller
 
         try {
 
+
             foreach ($data as $type => $fields) {
                 $insertData = [];
 
@@ -76,7 +90,7 @@ class PayrollSettingsController extends Controller
                         $insertData[$column] = $componentId;
                     }
                 }
-
+                                
                 if (!empty($insertData)) {
                     $insertData['type'] = $type;
                     $insertData['created_at'] = now();
@@ -91,16 +105,15 @@ class PayrollSettingsController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Payroll settings saved successfully.',
-                'redirect' => '',
             ]);
-            
+
         } catch (\Exception $e) {
+
             DB::rollBack();
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to save payroll settings.',
-                'error' => $e->getMessage(),
+                'message' => 'Error: ' . $e->getMessage(),
             ], 500);
         }
 

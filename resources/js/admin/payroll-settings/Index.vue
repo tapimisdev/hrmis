@@ -7,7 +7,7 @@
                         <h5 class="card-title text-uppercase">
                             {{ item.label }}
                         </h5>
-
+                        <hr>
                         <div
                             v-for="(field, fieldKey) in item.fields"
                             :key="fieldKey"
