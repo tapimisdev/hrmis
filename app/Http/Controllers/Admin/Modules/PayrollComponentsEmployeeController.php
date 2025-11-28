@@ -21,7 +21,7 @@ class PayrollComponentsEmployeeController extends Controller
      */
     public function index(Request $request, string $slug, int $year)
     {
-
+        
         $selectedEmployee = $request->query('employee_no', null);
 
         $component = DB::table('payroll_components')
@@ -40,7 +40,9 @@ class PayrollComponentsEmployeeController extends Controller
         $url = route('payroll-employee-components.index', ['slug' => $slug, 'year' => $year]);
 
         if(request()->wantsJson()) {
-            $employees = $this->componentService->getAll($component->id, $deduction->year);
+
+            $deduction_id = is_null($deduction) ? now()->year : $deduction->year;
+            $employees = $this->componentService->getAll($component->id, $deduction_id);
             return response()->json($employees);
         }
 

@@ -146,15 +146,15 @@ Route::prefix('hris')->group(function() {
 
 
     # EARNINGS
-    Route::get('employee/earnings/{employee_no}', [HrisEarningsController::class, 'index'])
-        ->name('hris.employee.earnings');
-    Route::post('employee/earnings/{employee_no}', [HrisEarningsController::class, 'save'])
-        ->name('hris.employee.earnings');
+    // Route::get('employee/earnings/{employee_no}', [HrisEarningsController::class, 'index'])
+    //     ->name('hris.employee.earnings');
+    // Route::post('employee/earnings/{employee_no}', [HrisEarningsController::class, 'save'])
+    //     ->name('hris.employee.earnings');
 
-    # DEDUCTIONS
-    Route::get('employee/deductions/{employee_no}', [HrisDeductionsController::class, 'index'])
-        ->name('hris.employee.deductions');
-    Route::post('employee/deductions/{employee_no}', [HrisDeductionsController::class, 'save'])
-        ->name('hris.employee.deductions');
+    // # DEDUCTIONS
+    // Route::get('employee/deductions/{employee_no}', [HrisDeductionsController::class, 'index'])
+    //     ->name('hris.employee.deductions');
+    // Route::post('employee/deductions/{employee_no}', [HrisDeductionsController::class, 'save'])
+    //     ->name('hris.employee.deductions');
 
 });

@@ -176,7 +176,9 @@ class InformationController extends Controller
     }
 
     public function getSalary($tranch_id, $step_id, $salary_grade) {
+        
         $stepColumn = 'step_' . $step_id;
+
         $data = DB::table('tranche_items')
             ->where('tranche_id', $tranch_id)
             ->where('salary_grade', $salary_grade)
@@ -195,7 +197,7 @@ class InformationController extends Controller
     public function save(Request $request, ? string $employee_no = null)
     {
      
-        $request->validate($this->rules($employee_no), $this->messages());          
+        $request->validate($this->rules($employee_no));          
 
         DB::beginTransaction();
 
@@ -335,57 +337,26 @@ class InformationController extends Controller
                 Rule::unique('employee_information', 'biometrics_id')
                     ->ignore($employee_no, 'employee_no')
             ],
-
-            'status' => 'required|in:active,inactive',
             'date_hired_company' => 'required|date',
             'date_hired_organization' => 'required|date',
+            'status' => 'required|in:active,inactive',
             'division_id' => 'required|exists:divisions,id',
             'unit_id' => 'required|exists:units,id',
             'employment_type_id' => 'required|exists:employment_types,id',
-
             'position_id' => 'required_if:type,,2|nullable|exists:positions,id|required_without:type',
-
-            'salary_method' => 'required|in:cash,bank transfer,paycheck,e-wallet',
-            'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both',
-
+            'shift_id' => 'required|exists:shifts,id',
+            'schedule_id' => 'required|exists:work_schedule,id',
+            'tranche_id' => 'required|exists:tranche,id',
+            'step_id' => 'required|between:1,8',
+            'salary_grade' => 'required|numeric',
             'salary_frequency' => 'required|in:once,twice',
+            'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both',
+            'salary_method' => 'required|in:cash,bank transfer,paycheck,e-wallet',
             'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
             'payroll_account_number' => 'nullable|string|max:100',
         ];
     }
-
-    public function messages() {
-        return [
-            'employee_no.required' => 'The employee no is required.',
-            'employee_no.unique' => 'The employee no is already taken.',
-            'biometrics_id.required' => 'The biometrics ID is required.',
-            'biometrics_id.unique' => 'The biometrics ID is already taken.',
-            'status.required' => 'The account status is required.',
-            'status.in' => 'The status must be either active or inactive.',
-            'date_hired_company.required' => 'The date hired is required',
-            'date_hired_company.date' => 'The date hired must be valid date',
-            'date_hired_organization.required' => 'The date hired is required',
-            'date_hired_organization.date' => 'The date hired must be valid date',
-            'division_id.required' => 'The division is required.',
-            'division_id.exists' => 'The selected division does not exist.',
-            'unit_id.required' => 'The unit is required.',
-            'unit_id.exists' => 'The selected unit does not exist.',
-            'position_id.required_if' => 'The position field is required when employee type is not job order.',
-            'position_id.exists' => 'The selected position is invalid.',
-            'position_id.required_without' => 'The position is required unless an employee type is provided.',
-            'salary_type.required' => 'The salary type is required',
-            'salary_type.in' => 'The salary type must be monthly or daily',
-            'salary.required' => 'The salary rate is required',
-            'salary.numeric' => 'The salary rate must be numbers',
-            'salary.gt' => 'The salary rate must be greater than 1000',
-            'salary_method.required' => 'The salary method is required.',
-            'salary_method.in' => 'The salary method must be one of the following: cash, bank transfer, paycheck, or e-wallet.',
-            'employment_type_id.required' => 'The employment type is required',
-            'employment_type_id.exists' => 'The selected employment type does not exist.',
-            'employment_type_id.in' => 'The selected employment type does not exist.',
-        ];
-    } 
-
+    
     public function destroy(string $employee_no, Request $request)
     {
 

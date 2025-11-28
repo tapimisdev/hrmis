@@ -13,13 +13,13 @@
                 </x-button>
             @endif
         </x-header>
-
         <tab-module
             :tabs='@json($tabs)'
             store_url="{{ $store_url }}"
             slug="{{ $slug }}"
             highest_order="{{ $highest_order }}"
             tab_from_server = "{{ $tab_name }}"
+            selected_employee="{{ $selectedEmployee }}"
         />
     </div>
 @endsection

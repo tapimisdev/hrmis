@@ -28,11 +28,11 @@
         {{-- Services --}}
         @include('admin.components.sidebar.items.service')
 
-        {{-- Reports --}}
-        @include('admin.components.sidebar.items.reports')
-
         {{-- Maintenance --}}
         @include('admin.components.sidebar.items.maintenance')
+
+        {{-- Reports --}}
+        @include('admin.components.sidebar.items.reports')
 
         {{-- Logout (Mobile Only) --}}
         <li class="sidebar-item d-lg-none">

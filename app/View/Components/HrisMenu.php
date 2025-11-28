@@ -26,7 +26,12 @@ class HrisMenu extends Component
 
     private function menuInfo() {
 
-        $tax_menu = DB::table('taxes')->get();
+        $employment_type = DB::table('employee_organization')
+                                ->where('employee_no', $this->employee_no)
+                                ->latest()
+                                ->value('employment_type_id');
+
+        $menus = DB::table('payroll_components')->get();
         $other_modules = DB::table('modules')->get();
 
         $currentYear = now()->year;
@@ -36,21 +41,30 @@ class HrisMenu extends Component
             ->select('id', 'year')
             ->first();
 
-        $taxes = [];
+        $payroll_components = [];
         $modules = [];
 
-        foreach($tax_menu as $tax) {
-            $taxes[] = [
-                'name' => $tax->name,
-                'route' => route('payroll-employee-components.index', ['slug' => $tax->slug, 'year' => $latest_year->year, 'employee_no' => $this->employee_no]),
-                'active' => $this->active == $tax->slug ? 'active' : '',
+        foreach($menus as $menu) {
+
+            $route = $employment_type == 1 ? 
+                    route('payroll-employee-components.index', ['slug' => $menu->slug, 'year' => $latest_year->year, 'employee_no' => $this->employee_no])
+                    : route('payroll-components.index', ['slug' => $menu->slug]);
+
+            $payroll_components[] = [
+                'name' => $menu->name,
+                'route' => $route,
+                'active' => $this->active == $menu->slug ? 'active' : '',
             ];
         }
 
         foreach($other_modules as $module) {
+            $route = $employment_type == 1 ? 
+                    '/admin/modules/'. $module->slug . '?tab=' . $module->slug . '&employee_no=' . $this->employee_no
+                    : route('modules.index', ['slug' => $module->slug]);
+
             $modules[] = [
                 'name' => $module->module_name,
-                'route' => route('modules.index', ['slug' => $module->slug, 'year' => $latest_year->year, 'employee_no' => $this->employee_no]),
+                'route' => $route,
                 'active' => $this->active == $module->slug ? 'active' : '',
             ];
         }
@@ -118,22 +132,12 @@ class HrisMenu extends Component
             ],
             [
                 'name' => 'XI. Earnings',
-                'route' => route('hris.employee.earnings', ['employee_no' => $this->employee_no]),
-                'active' => $this->active == 'earnings' ? 'active' : '',
+                'active' => '',
+                'submenus' => $payroll_components,
             ],
             [
                 'name' => 'XII. Deductions',
-                'route' => route('hris.employee.deductions', ['employee_no' => $this->employee_no]),
-                'active' => $this->active == 'deductions' ? 'active' : '',
-            ],
-            [
-                'name' => 'XIII. Taxes',
-                'active' => $this->active == 'tax' ? 'active' : '',
-                'submenus' => $taxes,
-            ],
-            [
-                'name' => 'XIV. Other Modules',
-                'active' => $this->active == 'tax' ? 'active' : '',
+                'active' => '',
                 'submenus' => $modules,
             ],
         ];

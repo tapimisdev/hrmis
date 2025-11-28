@@ -7,11 +7,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Modules\ModuleRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 
 class ModulesController extends Controller
 {
-    public function index($slug) // module slug is unique
+    public function index(Request $request, $slug) // module slug is unique
     {
+
+        $selectedEmployee = $request->query('employee_no', null);
+
         $module = DB::table('modules')
             ->where('slug', $slug)
             ->where('isActive', true)
@@ -46,8 +50,9 @@ class ModulesController extends Controller
                 'tabs' => $tabs,
             ]);
         }
+        
 
-        return view('admin.pages.modules.index', compact('module', 'tabs', 'tab_name', 'store_url', 'slug', 'highest_order'));
+        return view('admin.pages.modules.index', compact('module', 'tabs', 'tab_name', 'store_url', 'slug', 'highest_order', 'selectedEmployee'));
     }
 
     public function store(ModuleRequest $request, $slug)

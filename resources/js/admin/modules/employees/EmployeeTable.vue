@@ -74,7 +74,12 @@
                         :key="item.employee_no"
                         class="row-hover"
                     >
-                        <td class="sticky-col border-end ps-3">
+                        <td class="sticky-col border-end ps-3"
+                            :class="{
+                                'bg-primary fw-bold':
+                                    selected_employee === item.employee_no,
+                            }"
+                            >
                             <div class="d-flex align-items-center">
                                 <div class="avatar">
                                     {{ item.firstname?.charAt(0) || "N"
@@ -97,10 +102,20 @@
                             </div>
                         </td>
 
-                        <td class="text-end total-score">
+                        <td class="text-end total-score"
+                          :class="{
+                                'bg-primary fw-bold':
+                                    selected_employee === item.employee_no,
+                            }"
+                          >
                             {{ line_total(item) }}
                         </td>
-                        <td v-for="monthKey in monthKeys" :key="monthKey">
+                        <td v-for="monthKey in monthKeys" :key="monthKey"
+                          :class="{
+                                'bg-primary fw-bold':
+                                    selected_employee === item.employee_no,
+                            }"
+                        >
                             <input
                                 type="number"
                                 v-model="item[monthKey]"
@@ -144,6 +159,10 @@ import axios from "axios";
 export default {
     components: { LoaderVue, Printables },
     props: {
+        selected_employee: {
+            type: String,
+            required: true,
+        },
         slug: {
             type: String,
             required: true,

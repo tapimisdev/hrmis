@@ -11,5 +11,5 @@ Route::prefix('payroll-components/{slug}')->group(function () {
     Route::put('/{year}', [PayrollComponentsController::class, 'update'])->name('payroll-components.update');
 
     Route::get('employees/{year}', [PayrollComponentsEmployeeController::class, 'index'])->name('payroll-employee-components.index');
-    Route::post('employees/{year}', [PayrollComponentsEmployeeController::class, 'store'])->name('payroll-employee-components.index');
+    Route::post('employees/{year}', [PayrollComponentsEmployeeController::class, 'store'])->name('payroll-employee-components.store');
 });

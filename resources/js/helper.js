@@ -10,7 +10,7 @@ export function alert(type, message, redirect = '') {
     if (!config[type]) return;
 
     if (type == 'success') {
-        $('.form-control').removeClass('is-invalid');
+        $('.form-control, .form-select').removeClass('is-invalid');
         $('.error-field').text('');
 
         $('table').each(function() {
@@ -18,7 +18,6 @@ export function alert(type, message, redirect = '') {
                 $(this).DataTable().ajax.reload(null, false);
             }
         });
-
     }
 
     Swal.fire({
@@ -37,7 +36,7 @@ export function alert(type, message, redirect = '') {
 
 export function fieldError(error) {
     if (error.response && error.response.status === 422) {
-        $('.form-control').removeClass('is-invalid');
+        $('.form-control, .form-select').removeClass('is-invalid');
         $('.error-field').text('');
 
         let firstErrorField = null; 

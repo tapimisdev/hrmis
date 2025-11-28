@@ -16,47 +16,78 @@ class PDSApiController
      */
     public function index(Request $request, string $employee_no)
     {
-        $data = $this->getEmployeeFullData($employee_no);
-        
-        // dd($data);
+        try {
 
-        if (!isset($data['personal'])) {
-            return response()->json(['message' => 'Employee not found'], 404);
+            // Fetch employee data
+            $data = $this->getEmployeeFullData($employee_no);
+
+            if (!isset($data['personal'])) {
+                return response()->json(['message' => 'Employee not found'], 404);
+            }
+
+            // Template path
+            $templatePath = public_path('templates/cos/pds.xlsx');
+            if (!file_exists($templatePath)) {
+                return response()->json(['message' => 'Template file not found'], 404);
+            }
+
+            // Load the Excel template
+            try {
+                $spreadsheet = IOFactory::createReader('Xlsx')
+                    ->setIncludeCharts(true)
+                    ->setReadDataOnly(false)
+                    ->load($templatePath);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'message' => 'Failed to load template sheet.',
+                    'error'   => $e->getMessage()
+                ], 500);
+            }
+
+            // Fill sheets (wrap each if needed)
+            $this->sheet1($spreadsheet->getSheet(0), $data);
+            $this->sheet2($spreadsheet->getSheet(1), $data);
+            $this->sheet3($spreadsheet->getSheet(2), $data);
+
+            // Clear any existing output buffer (prevents corrupt Excel output)
+            if (ob_get_length()) {
+                ob_end_clean();
+            }
+
+            // Stream the file
+            $response = new StreamedResponse(function () use ($spreadsheet) {
+                $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+                try {
+                    $writer->save('php://output');
+                } catch (\Exception $e) {
+                    echo "Error writing XLSX file: " . $e->getMessage();
+                }
+            });
+
+            $fileName = 'pds_' . strtolower($employee_no) . '.xlsx';
+
+            $response->headers->set(
+                'Content-Type',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            );
+
+            $response->headers->set(
+                'Content-Disposition',
+                'attachment; filename="' . $fileName . '"'
+            );
+
+            $response->headers->set('Cache-Control', 'max-age=0');
+
+            return $response; // IMPORTANT
+
+        } catch (\Throwable $e) {
+            // Global catch to handle unexpected errors
+            return response()->json([
+                'message' => 'Unexpected server error occurred.',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
-
-        $templatePath = public_path('templates/cos/pds.xlsx');
-        if (!file_exists($templatePath)) {
-            return response()->json(['message' => 'Template file not found'], 404);
-        }
-
-        $spreadsheet = IOFactory::createReader('Xlsx')
-            ->setIncludeCharts(true)
-            ->setReadDataOnly(false)
-            ->load($templatePath);
-
-        foreach ($spreadsheet->getDefinedNames() as $name => $definedName) {
-            $spreadsheet->removeNamedRange($name);
-        }
-
-        $this->sheet1($spreadsheet->getSheet(0), $data);
-        $this->sheet2($spreadsheet->getSheet(1), $data);
-        $this->sheet3($spreadsheet->getSheet(2), $data);
-
-
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-
-        $fileName = sprintf('pds_%s_%s.xlsx', strtolower($employee_no), time());
-
-        return new StreamedResponse(function () use ($spreadsheet) {
-            (new Xlsx($spreadsheet))->save('php://output');
-        }, 200, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-            'Cache-Control'       => 'max-age=0',
-            'Pragma'              => 'public',
-        ]);
     }
 
     /**
@@ -94,7 +125,7 @@ class PDSApiController
     private function sheet3($sheet, array $data): void
     {
         $voluntary_works = $data['voluntary_works'];
-        $trainings = $data['trainings'];
+        $trainings = $data['trainings']; 
         $skills_hobbies = $data['skills_hobbies'];
 
         $this->fillVoluntaryWork($sheet, $voluntary_works);

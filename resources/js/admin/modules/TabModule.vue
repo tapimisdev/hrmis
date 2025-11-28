@@ -35,6 +35,7 @@
             </div>
 
             <EmployeeTable
+              :selected_employee="selected_employee"
               :slug="slug"
               :tab="tab_name"
             />
@@ -77,6 +78,10 @@ const ModalVue = defineAsyncComponent(() =>
 const FormTab = defineAsyncComponent(() => import("./FormTab.vue"));
 
 const props = defineProps({
+    selected_employee: {
+        type: String,
+        required: true,
+    },  
     store_url: {
         type: String,
         required: true,

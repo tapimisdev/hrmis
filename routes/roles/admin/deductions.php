@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\Modules\ModulesController;
 use App\Http\Controllers\Admin\Modules\ModuleTabEmployeeController;
 use Illuminate\Support\Facades\Route;
 
-# Modules
+# Earnings
 Route::prefix('modules')->group(function() {
 
     Route::post('/store-employees', [ModuleTabEmployeeController::class, 'store'])
