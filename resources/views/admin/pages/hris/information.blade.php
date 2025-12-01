@@ -58,17 +58,17 @@
                                                     <div class="card-body">
                                                         <div class="col-12 col-md-12 mb-3">
                                                             <label class="mb-2" for="email">Email <span class="text-danger">*</span></label>
-                                                            <input type="text" id="email" name="email" class="form-control">
+                                                            <input type="text" id="email" name="email" class="form-control" style="text-transform: lowercase !important">
                                                             <div class="error-field"></div>
                                                         </div>
                                                          <div class="col-12 col-md-12 mb-3">
                                                             <label class="mb-2" for="password">Password <span class="text-danger">*</span></label>
-                                                            <input type="text" id="password" name="password" class="form-control" style="text-transform: lowercase !important">
+                                                            <input type="password" id="password" name="password" class="form-control" style="text-transform: lowercase !important">
                                                             <div class="error-field"></div>
                                                         </div>
                                                          <div class="col-12 col-md-12 mb-3">
                                                             <label class="mb-2" for="confirm_password">Confirm Password <span class="text-danger">*</span></label>
-                                                            <input type="text" id="confirm_password" name="confirm_password" class="form-control" style="text-transform: lowercase !important">
+                                                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" style="text-transform: lowercase !important">
                                                             <div class="error-field"></div>
                                                         </div>
                                                     </div>

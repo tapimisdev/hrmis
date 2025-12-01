@@ -13,21 +13,35 @@
                 >
                     {{ Str::limit($menu['name'], 60, '...') }}
                 </a>
-
                 <ul class="dropdown-menu">
-                    @foreach ($menu['submenus'] as $submenu)
-                        <li>
-                            <a 
-                                class="dropdown-item {{ $submenu['active'] ?? '' }}" 
-                                href="{{ $submenu['route'] }}"
-                                title="{{ $submenu['name'] }}"
-                            >
-                                {{ $submenu['name'] }}
-                            </a>
-                        </li>
+                    @foreach ($menu['submenus'] as $group => $items)
+                        @if(is_array($items) && isset($items[0]))
+                            <li>
+                                <h6 class="dropdown-header text-uppercase">{{ $group }}</h6>
+                            </li>
+                            @foreach ($items as $submenu)
+                                <li>
+                                    <a class="dropdown-item {{ $submenu['active'] ?? '' }}" 
+                                    href="{{ $submenu['route'] }}" 
+                                    title="{{ $submenu['name'] }}">
+                                        {{ $submenu['name'] }}
+                                    </a>
+                                </li>
+                            @endforeach
+                            @if($loop->odd)
+                                <li><hr class="dropdown-divider"></li>
+                            @endif
+                        @else
+                            <li>
+                                <a class="dropdown-item {{ $items['active'] ?? '' }}" 
+                                href="{{ $items['route'] }}" 
+                                title="{{ $items['name'] }}">
+                                    {{ $items['name'] }}
+                                </a>
+                            </li>
+                        @endif
                     @endforeach
                 </ul>
-
             </li>
 
         @else
