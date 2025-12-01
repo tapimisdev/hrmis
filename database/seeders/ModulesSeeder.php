@@ -16,15 +16,15 @@ class ModulesSeeder extends Seeder
     {
         $components = [
             [
-                'icon'  => 'fa-solid fa-helmet-safety',
+                'icon'  => 'fa-solid fa-parachute-box',
                 'slug'  => 'personnel-economic-relief-allowance',
-                'name'  => 'Personnel Economic Relief Allowance',
+                'name'  => 'PERA',
                 'type'  => 'earnings'
             ],
             [
                 'icon'  => 'fa-solid fa-car',
                 'slug'  => 'representation-and-transportation-allowance',
-                'name'  => 'Representation and Transportation Allowance',
+                'name'  => 'RATA',
                 'type'  => 'earnings'
             ],
             [

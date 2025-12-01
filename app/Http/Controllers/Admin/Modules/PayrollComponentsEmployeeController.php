@@ -19,7 +19,7 @@ class PayrollComponentsEmployeeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, string $slug, int $year)
+    public function index(Request $request, string $slug, string $year)
     {
         
         $selectedEmployee = $request->query('employee_no', null);
@@ -52,7 +52,7 @@ class PayrollComponentsEmployeeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, string $slug, int $year)
+    public function store(Request $request, string $slug, string $year)
     {
         // Get the tax based on slug
         $component = DB::table('payroll_components')->where('slug', $slug)->first();

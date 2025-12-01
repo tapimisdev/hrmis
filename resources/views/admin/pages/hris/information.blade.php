@@ -21,7 +21,64 @@
                     @method('POST')
                     @csrf
                     <div class="accordion" id="employeeAccordion">
-                        
+                        @if(!$isExists)
+                            {{-- EMPLOYEE INFORMATION --}}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingInfo">
+                                    <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInfo" aria-expanded="true">
+                                        Account Setup
+                                    </button>
+                                </h2>
+                                <div id="collapseInfo" class="accordion-collapse collapse show">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-12 col-md-6">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <div class="col-12 col-md-12 mb-3">
+                                                            <label class="mb-2" for="firstname">First Name <span class="text-danger">*</span></label>
+                                                            <input type="text" id="firstname" name="firstname" class="form-control">
+                                                            <div class="error-field"></div>
+                                                        </div>
+                                                        <div class="col-12 col-md-12 mb-3">
+                                                            <label class="mb-2" for="middlename">Middle Name</label>
+                                                            <input type="text" id="middlename" name="middlename" class="form-control">
+                                                            <div class="error-field"></div>
+                                                        </div>
+                                                        <div class="col-12 col-md-12 mb-3">
+                                                            <label class="mb-2" for="lastname">Last Name <span class="text-danger">*</span></label>
+                                                            <input type="text" id="lastname" name="lastname" class="form-control">
+                                                            <div class="error-field"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <div class="col-12 col-md-12 mb-3">
+                                                            <label class="mb-2" for="email">Email <span class="text-danger">*</span></label>
+                                                            <input type="text" id="email" name="email" class="form-control">
+                                                            <div class="error-field"></div>
+                                                        </div>
+                                                         <div class="col-12 col-md-12 mb-3">
+                                                            <label class="mb-2" for="password">Password <span class="text-danger">*</span></label>
+                                                            <input type="text" id="password" name="password" class="form-control" style="text-transform: lowercase !important">
+                                                            <div class="error-field"></div>
+                                                        </div>
+                                                         <div class="col-12 col-md-12 mb-3">
+                                                            <label class="mb-2" for="confirm_password">Confirm Password <span class="text-danger">*</span></label>
+                                                            <input type="text" id="confirm_password" name="confirm_password" class="form-control" style="text-transform: lowercase !important">
+                                                            <div class="error-field"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                         {{-- EMPLOYEE INFORMATION --}}
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="headingInfo">

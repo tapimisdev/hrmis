@@ -8,6 +8,7 @@ use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 class InformationController extends Controller
@@ -194,35 +195,71 @@ class InformationController extends Controller
         ];
     }
 
-    public function save(Request $request, ? string $employee_no = null)
+    public function save(Request $request, ?string $employee_no = null)
     {
-     
-        $request->validate($this->rules($employee_no));          
+        $isExists = $employee_no &&
+            DB::table('employee_information')
+                ->where('employee_no', $employee_no)
+                ->exists();
+
+        $request->validate($this->rules($employee_no, $isExists));
 
         DB::beginTransaction();
 
         try {
-
-            $exists = DB::table('employee_information')
-                ->where('employee_no', $request->employee_no)
-                ->exists();
-            
             $now = Carbon::now()->toDateString();
 
+            if (!$isExists) {
+                $existingUser = DB::table('users')
+                    ->where('email', $request->email)
+                    ->first();
+
+                if ($existingUser) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Email already exists for another user.'
+                    ], 422);
+                }
+
+                $user_id = DB::table('users')->insertGetId([
+                    'name'       => $request->firstname . ' ' . $request->lastname,
+                    'email'      => $request->email,
+                    'password'   => Hash::make($request->password),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $user_id = DB::table('employee_information')
+                    ->where('employee_no', $employee_no)
+                    ->value('user_id');
+            }
 
             DB::table('employee_information')->updateOrInsert(
                 ['employee_no' => $request->employee_no],
                 [
-                    'biometrics_id'   => $request->biometrics_id ?? null,
-                    'date_hired_company'  => $request->date_hired_company ?? null,
-                    'date_hired_organization'      => $request->date_hired_organization ?? null,
-                    'date_resigned'   => $request->date_resigned ?? null,
-                    'account_status'  => $request->status ?? null,
-                    'salary_method'   => $request->salary_method ?? null,
-                    'payroll_account_no' => $request->payroll_account_number ?? null,
-                    'updated_at'      => now(),
+                    'biometrics_id'          => $request->biometrics_id ?? null,
+                    'date_hired_company'     => $request->date_hired_company ?? null,
+                    'date_hired_organization'=> $request->date_hired_organization ?? null,
+                    'date_resigned'          => $request->date_resigned ?? null,
+                    'account_status'         => $request->status ?? null,
+                    'salary_method'          => $request->salary_method ?? null,
+                    'payroll_account_no'     => $request->payroll_account_number ?? null,
+                    'user_id'                => $user_id,
+                    'created_at'             => now(),
+                    'updated_at'             => now(),
                 ]
             );
+
+            if (!$isExists) {
+                DB::table('employee_personal')->insert([
+                    'employee_no' => $request->employee_no,
+                    'firstname'   => $request->firstname,
+                    'middlename'  => $request->middlename,
+                    'lastname'    => $request->lastname,
+                    'created_at'  => now(),
+                    'updated_at'  => now(),
+                ]);
+            }
 
             $latestOrg = DB::table('employee_organization')
                 ->where('employee_no', $request->employee_no)
@@ -255,11 +292,10 @@ class InformationController extends Controller
 
             $salary = $this->getSalary($request->tranche_id, $request->step_id, $request->salary_grade);
 
-            if (!$latestSalary || $latestSalary->amount != $request->salary) {
-
-                $frequency = $request->salary_frequency;
-                $daily_rate = number_format($request->salary / 22, 2);
-                $salary_cutoff = $frequency == 'twice' ? 'both' : $request->salary_cutoff;
+            if (!$latestSalary || $latestSalary->amount != $salary->amount) {
+                $salary_cutoff = $request->salary_frequency === 'twice'
+                    ? 'both'
+                    : $request->salary_cutoff;
 
                 DB::table('employee_salary')->insert([
                     'employee_no'      => $request->employee_no,
@@ -267,8 +303,8 @@ class InformationController extends Controller
                     'salary_grade'     => $request->salary_grade,
                     'step'             => $request->step_id,
                     'salary_frequency' => $request->salary_frequency,
-                    'salary_cutoff'   => $salary_cutoff,
-                    'deduction_applied'     => $request->deduction_applied,
+                    'salary_cutoff'    => $salary_cutoff,
+                    'deduction_applied'=> $request->deduction_applied,
                     'salary_basis'     => $request->salary_basis ?? null,
                     'amount'           => $salary->amount,
                     'daily_rate'       => $salary->daily_rate,
@@ -298,34 +334,33 @@ class InformationController extends Controller
                 ]);
             }
 
-            $redirect = !$exists ? route('hris.employee.personal', ['employee_no' => $request->employee_no])
-                : '';
-
-
             DB::commit();
 
             broadcast(new \App\Events\RefreshData());
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Employee  #' . $request->employee_no . ' created successfully.',
-                'redirect' => $redirect
+                'status'   => 'success',
+                'message'  => 'Employee #' . $request->employee_no . ' saved successfully.',
+                'redirect' => !$isExists
+                    ? route('hris.employee.personal', ['employee_no' => $request->employee_no])
+                    : null
             ]);
-            
-        } catch(\Exception $e) {
-             DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Error Occured: ' . $e->getMessage()
-            ]);
-        }
-        
 
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Error Occurred: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function rules(?string $employee_no = null)
+
+    public function rules(?string $employee_no = null, bool $isExists)
     {
-        return [
+        $rules = [
             'employee_no' => [
                 'required',
                 Rule::unique('employee_information', 'employee_no')
@@ -337,6 +372,7 @@ class InformationController extends Controller
                 Rule::unique('employee_information', 'biometrics_id')
                     ->ignore($employee_no, 'employee_no')
             ],
+
             'date_hired_company' => 'required|date',
             'date_hired_organization' => 'required|date',
             'status' => 'required|in:active,inactive',
@@ -355,7 +391,19 @@ class InformationController extends Controller
             'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
             'payroll_account_number' => 'nullable|string|max:100',
         ];
+
+        if (!$isExists) {
+            $rules['firstname'] = 'required|string|max:255';
+            $rules['lastname']  = 'required|string|max:255';
+            $rules['middlename']  = 'nullable|string|max:255';
+            $rules['email']  = 'required|string|max:255';
+            $rules['password'] = 'required|min:8|same:confirm_password';
+            $rules['confirm_password'] = 'required|min:8';
+        }
+
+        return $rules;
     }
+
     
     public function destroy(string $employee_no, Request $request)
     {
