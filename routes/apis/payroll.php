@@ -11,6 +11,8 @@ Route::prefix('payroll')->group(function() {
     Route::get('salary/{payroll_id}', [SalaryApiController::class, 'getPayrollRegistry']);
     Route::post('generate-salary-payroll', [SalaryController::class, 'store']);
 
+    Route::delete('delete-payroll/{id}', [SalaryController::class, 'destroy']);
+
     Route::post('salary-item/{id}', [SalaryItemController::class, 'update']);
 
     # Adjustment

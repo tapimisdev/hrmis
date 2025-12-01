@@ -66,7 +66,8 @@
             >
               <i class="fa fa-cogs"></i>
             </a>
-            <a
+            <button
+              @click="remove(payroll.id)"
               class="btn btn-sm btn-danger"
               title="Cancel"
               data-bs-toggle="tooltip"
@@ -74,7 +75,7 @@
               data-bs-title="Cancel Payroll"
             >
               <i class="fa fa-ban"></i>
-            </a>
+            </button>
           </td>
         </tr>
         <tr v-if="!loading && payrolls.length === 0">
@@ -107,6 +108,7 @@ export default {
   data() {
     return {
       error: null,
+      token: localStorage.getItem("auth_token"),
     };
   },
   methods: {
@@ -118,6 +120,40 @@ export default {
         minimumFractionDigits: 2,
       }).format(value);
     },
+    remove(id) {
+      Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                axios.delete(`/api/payroll/delete-payroll/${id}`, {
+                    headers: {
+                        Authorization: `Bearer ${this.token}`
+                    }
+                })
+                .then(() => {
+                    this.$emit('deleted');
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: "Your data has been deleted.",
+                        icon: "success"
+                    });
+                })
+                .catch(error => {
+                    Swal.fire({
+                        title: "Oops!",
+                        text: error.response.data.message,
+                        icon: "error"
+                    });
+                })
+            }
+        }); // swal end
+    }
   },
 };
 </script>

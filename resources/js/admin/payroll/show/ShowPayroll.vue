@@ -16,7 +16,11 @@
       @fetch_data="fetchRegistry"
     />
     <div v-else-if="employment_type === 'REGULAR'">
-      <div class="alert alert-primary">REGULAR TO HA</div>
+      <RegularPayrollRegistry
+        :employees="employees"
+        :status="status"
+        :payroll_no="payroll_no"
+      />
     </div>
   </div>
 </template>
@@ -25,10 +29,11 @@
 import axios from "axios";
 import ShowProgressBar from "./parts/ShowProgressBar.vue";
 import CosPayrollRegistry from "./parts/CosPayrollRegistry.vue";
+import RegularPayrollRegistry from "./parts/RegularPayrollRegistry.vue";
 
 export default {
   name: 'Show Payroll',
-  components: { ShowProgressBar, CosPayrollRegistry },
+  components: { ShowProgressBar, CosPayrollRegistry, RegularPayrollRegistry },
   props: {
     batch_id: Number|String,
     payroll_id: Number|String,

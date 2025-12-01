@@ -150,7 +150,7 @@ class ApproverController extends Controller
         $divisions = DB::table('divisions')->get();
         $users = User::with('roles')
             ->whereDoesntHave('roles', function ($q) {
-                $q->whereNotIn('name', ['emp_contractual', 'emp_contractual']);
+                $q->whereNotIn('name', ['emp_contractual', 'emp_regular']);
             })
             ->get();
 

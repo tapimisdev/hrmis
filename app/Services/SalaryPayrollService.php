@@ -147,7 +147,7 @@ class SalaryPayrollService {
 
         if(!$this->hasInformation($employee->employee_no)) {
             $remarks[] = [
-                'text' => 'Employee record is incomplete. Please verify personal, organizational, and position details.',
+                'text' => 'Employee record is incomplete. Please verify account, personal, organizational, and position details.',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
             ];
         }
@@ -226,6 +226,9 @@ class SalaryPayrollService {
             ->select('employee_information.id as employee_information_id', 'employee_personal.id as employee_personal_id', 'positions.id as positions_id', 'users.id as users_id')
             ->first();
 
+        Log::info('------------------ INFOR -------------------------');
+        Log::info('INFO DATA:', (array) $info);
+
         // Make sure all critical relationships exist
         return $info && $info->employee_information_id && $info->employee_personal_id && $info->positions_id && $info->users_id;
     }
@@ -279,21 +282,21 @@ class SalaryPayrollService {
 
         $batch = Bus::batch([])
         ->then(function (Batch $batch) {
-            $admin = \App\Models\User::role('admin')->first();
-            if ($admin) {
-                $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'success'));
-            } else {
-                Log::warning('Admin not found while notifying payroll batch success.');
-            }
+            // $admin = \App\Models\User::role('admin')->first();
+            // if ($admin) {
+            //     $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'success'));
+            // } else {
+            //     Log::warning('Admin not found while notifying payroll batch success.');
+            // }
         })
         ->catch(function (Batch $batch, \Throwable $e) {
-            $admin = \App\Models\User::role('admin')->first();
-            if ($admin) {
-                $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'failed', $e));
-            } else {
-                Log::error('Admin not found while notifying payroll batch failure.');
-            }
-            Log::error("Payroll batch failed: {$e->getMessage()}");
+            // $admin = \App\Models\User::role('admin')->first();
+            // if ($admin) {
+            //     $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'failed', $e));
+            // } else {
+            //     Log::error('Admin not found while notifying payroll batch failure.');
+            // }
+            // Log::error("Payroll batch failed: {$e->getMessage()}");
         })
         ->name("Payroll Registry Report #{$payroll_id}")
         ->dispatch();
@@ -335,7 +338,7 @@ class SalaryPayrollService {
         ]);
 
         // Insert approvers for this payroll
-        $ems = collect($payload['approved_by'])
+        collect($payload['approved_by'])
             ->flatMap(function ($approvers, $level) use ($payroll_id) {
                 return collect($approvers)->map(function ($user_id) use ($payroll_id, $level) {
                     return [

@@ -6,6 +6,7 @@ use App\Enums\EmploymentTypesEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Payroll\StoreSalaryRequest;
 use App\Services\SalaryPayrollService;
+use Exception;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -166,9 +167,6 @@ class SalaryController extends Controller
         // Cancel the batch
         $batch->cancel();
 
-        // Optional: manually mark in your database (if you track progress)
-        // Example: BatchProgress::where('batch_id', $id)->update(['status' => 'cancelled']);
-
         return response()->json([
             'status' => 'cancelled',
             'batch_id' => $batch->id,
@@ -179,6 +177,54 @@ class SalaryController extends Controller
 
     public function destroy($id)
     {
+        $payroll = DB::table('payroll_salary')->where('id', $id)->first();
 
+        if (!$payroll) {
+            return response()->json(['message' => 'No Payroll found'], 404);
+        }
+
+        $employment_type = $payroll->employment_type_id;
+
+        DB::beginTransaction();
+        try {
+            DB::table('payroll_salary_approvers')
+                ->where('payroll_salary_id', $payroll->id)
+                ->delete();
+
+            $table_employee = 'payroll_salary_employee';
+            $table_deduction = 'payroll_salary_employee_edeductions';
+
+            if ($employment_type == EmploymentTypesEnum::COS->value) {
+                $table_employee = 'payroll_salary_permanent_employees';
+                $table_deduction = 'payroll_salary_permanents_employee_deductions';
+            }
+
+            DB::table($table_deduction)
+                ->where('payroll_se_id', $payroll->id)
+                ->delete();
+
+            DB::table($table_employee)
+                ->where('payroll_salary_id', $payroll->id)
+                ->delete();
+
+            // Delete the main payroll record
+            DB::table('payroll_salary')
+                ->where('id', $payroll->id)
+                ->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Payroll deleted successfully',
+                'status' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => $e->getMessage(),
+                'status' => 'destroy failed'
+            ], 500);
+        }
     }
+
 }

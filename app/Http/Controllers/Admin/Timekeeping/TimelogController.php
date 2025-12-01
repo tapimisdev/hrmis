@@ -30,7 +30,7 @@ class TimelogController extends Controller
             ->leftJoin('divisions', 'employee_organization.division_id', '=', 'divisions.id')
             ->leftJoin('shifts', 'employee_shift_work_schedule.shift_id', '=', 'shifts.id')
             ->leftJoin('employment_types', 'employee_organization.employment_type_id', '=', 'employment_types.id')
-            ->whereIn('roles.name', ['emp_contractual', 'regular'])
+            ->whereIn('roles.name', ['emp_contractual', 'emp_regular'])
             ->select(
                 'users.id',
                 'users.email',

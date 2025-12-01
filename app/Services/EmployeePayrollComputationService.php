@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\EmploymentTypesEnum;
+use App\Enums\PayrollStatusEnum;
+use App\Enums\TableSettingsEnum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -18,14 +20,14 @@ class EmployeePayrollComputationService {
     protected $position;
     protected $salary_grade;
 
-    protected $deduction_applied_on; // deduct on first or second cutoff
-    protected $salary_basis; // monthly or daily
-    protected $salary_amount; // basic salary amount
-    protected $daily_rate; // basic salary amount
+    protected $deduction_applied_on; // Determines whether the deduction would apply on the first or second cutoff
+    protected $salary_basis;         // Defines whether the salary is based on a monthly rate or a daily rate
+    protected $salary_amount;        // The employee's basic salary amount (monthly or daily, depending on salary_basis)
+    protected $daily_rate;           // The computed daily rate based on the employee's salary
     protected $min_rate;
 
-    protected $salary_frequency; // once or twice per month
-    protected $salary_cutoff; // first or second cutoff when salary frequency is once per month
+    protected $salary_frequency; // Indicates how often the employee receives salary (e.g., once or twice per month)
+    protected $salary_cutoff;    // Specifies which cutoff applies (e.g., first or second), used only if salary is given once per month
 
     protected $employment_type; // regular or cos
 
@@ -53,7 +55,6 @@ class EmployeePayrollComputationService {
         $this->getShiftAndWorkScheduleIds();
         $this->getEmployeeSalaryDetails();
         $this->getEmployeeInformation();
-
         $payload = [
             'user_id' => $this->user_id,
             'startDate' => $this->start_date,
@@ -68,35 +69,36 @@ class EmployeePayrollComputationService {
 
         $total_summary_of_dtr = $dtr['payroll_value'];
 
-        $absences         = $total_summary_of_dtr['absent'];
-        $late_undertime   = $total_summary_of_dtr['late_undertime'];
-        $holiday_excess   = $total_summary_of_dtr['excess'];
-        $overtime         = $total_summary_of_dtr['overtime'];
+        $absences         = $total_summary_of_dtr['absent']; // day
+        $late_undertime   = $total_summary_of_dtr['late_undertime']; // minutes
+        $holiday_excess   = $total_summary_of_dtr['excess']; // percent ex. 1.5
+        $overtime         = $total_summary_of_dtr['overtime']; // minutes
         $this->actual_presence  = $total_summary_of_dtr['actual_presence'];
-
-        $deductions = $this->getDeductions();
-        $sum_of_deduction = $deductions->sum('amount');
         
+        // Initialize
+        $holiday_excess_amount = 0;
+
+        // Compute components with full precision first
+        if ($holiday_excess > 0) {
+            $holiday_excess_amount = $this->daily_rate * $holiday_excess;
+        }
+
+        $basic_salary = $this->salary_amount;
+
+        // --- Compute detailed amounts ---
+        $overtime_amount        = round($this->min_rate * $overtime, 4);
+        $holiday_excess_amount  = round($this->daily_rate * $holiday_excess, 4);
+        $absences_amount        = round($this->daily_rate * $absences, 4);
+        $late_undertime_amount  = round($this->min_rate * $late_undertime, 4);
+
+        // $deductions = $this->getDeductions();
+        // $sum_of_deduction = $deductions->sum('amount');
+
+        //  -------------------------------------- COS PAYROLL ---------------------------------------------------
         if ($this->employment_type == EmploymentTypesEnum::COS->value) {
-            // Initialize
-            $holiday_excess_amount = 0;
-
-            // Compute components with full precision first
-            if ($holiday_excess > 0) {
-                $holiday_excess_amount = $this->daily_rate * $holiday_excess;
-            }
-
-            $basic_salary = $this->salary_amount;
-
-            // --- Compute detailed amounts ---
-            $overtime_amount        = round($this->min_rate * $overtime, 4);
-            $holiday_excess_amount  = round($this->daily_rate * $holiday_excess, 4);
-            $absences_amount        = round($this->daily_rate * $absences, 4);
-            $late_undertime_amount  = round($this->min_rate * $late_undertime, 4);
-
             // --- Compute totals (still full precision) ---
             $total_earnings   = $overtime_amount + $holiday_excess_amount;
-            $total_deductions = $sum_of_deduction;
+            $total_deductions = $sum_of_deduction ?? 0;
 
             // --- Round for currency display / storage ---
             $basic_salary     = round($basic_salary, 2);
@@ -155,35 +157,93 @@ class EmployeePayrollComputationService {
             ]);
 
             Log::info("Insert ID returned: " . var_export($pseId, true));
+        }
+
+        //  -------------------------------------- PERMANENT PAYROLL ---------------------------------------------------
+        if($this->employment_type ==  (int) EmploymentTypesEnum::REGULAR->value) {
+            Log::info("Processing REGULAR employee: {$this->employee_no} for Payroll ID: {$this->payroll_id}");
+
+            $deductions = $this->getDeductions($employee_no);
+
+            $sum_of_deduction = round($deductions->sum('amount'), 2);
+
+            $sum_of_deduction += $absences_amount + $late_undertime_amount;
+
+            $net = $this->salary_amount - $sum_of_deduction;
+
+            Log::info("
+            =================== SALARY INFO ===================
+            Payroll Salary ID   : " . $this->safe($this->payroll_id) . "
+            Employee No         : " . $this->safe($this->employee_no) . "
+            Name                : " . $this->safe($this->name) . "
+            Position            : " . $this->safe($this->position) . "
+            Salary Grade        : " . $this->safe($this->salary_grade) . "
+            Monthly Rate x2     : " . (isset($this->salary_amount) ? round($this->salary_amount * 2, 2) : '') . "
+            ---------------------------------------------------
+            UT                  : " . $this->safe($late_undertime_amount) . "
+            Absences            : " . $this->safe($absences_amount) . "
+            Overtime            : " . $this->safe($overtime_amount) . "
+            Holiday             : " . $this->safe($holiday_excess_amount) . "
+            ---------------------------------------------------
+            Total Deductions    : " . $this->safe($sum_of_deduction) . "
+            Net Pay             : " . $this->safe($net) . "
+            Salary Adjustment   : 0
+            Remarks             : null
+            Updated At          : " . now() . "
+            Created At          : " . now() . "
+            ==================================================
+            ");
+
+            $pseId = DB::table('payroll_salary_permanent_employees')
+                ->insertGetId(
+                    [
+                        'payroll_salary_id'     => $this->payroll_id, 
+                        'employee_no'           => $this->employee_no,
+                        'name'                  => $this->name,
+                        'position'              => $this->position,
+                        'monthly_rate'          => round($this->salary_amount * 2, 2),
+                        'salary_grade'          => $this->salary_grade,
+
+                        'ut'                    => $late_undertime_amount,
+                        'absences'              => $absences_amount,
+                        'overtime'              => $overtime_amount,
+                        'holiday'               => $holiday_excess_amount,
+
+                        'total_deductions'      => $sum_of_deduction,
+                        'net_pay'               => $net,
+                        'salary_adjustment'     => 0,
+                        
+                        'remarks'               => null,
+                        'updated_at'            => now(),
+                        'created_at'            => now(),
+                    ]
+                );
 
             foreach ($deductions as $deduction) {
+
+                $deduction_name = $deduction->module_name . ' ' . $deduction->tab_name;
+
                 Log::info("
                     ================ DEDUCTION INFO ================
-                    Name            : {$deduction->deduction_type}
-                    Type            : {$deduction->type}
-                    Cut Off         : {$deduction->cutoff}
+                    Name            : {$deduction_name}
                     Amount          : {$deduction->amount}
                     ---------------------------------------------
                     Total Deductions: {$sum_of_deduction}
                     =============================================
                 ");
 
-                DB::table('payroll_salary_employee_edeductions')->insert([
-                    'payroll_se_id'  => $pseId,
-                    'deduction_type' => $deduction->deduction_type,
+                DB::table('payroll_salary_permanents_employee_deductions')->insert([
+                    'pspe_id'  => $pseId,
+                    'deduction_type' => $deduction_name,
                     'amount'         => $deduction->amount,
                     'created_at'     => now(),
                     'updated_at'     => now(),
                 ]);
             }
-        }
 
-        if($this->employment_type == EmploymentTypesEnum::REGULAR->value) {
-            Log::info("Processing REGULAR employee: {$this->employee_no} for Payroll ID: {$this->payroll_id}");
-
-            $earnings = $this->getEarnings();
-            $sum_of_earnings = $earnings->sum('amount');
-        }
+            $gross = $net + $sum_of_deduction;
+            $total_deductions = $sum_of_deduction;
+        } 
 
         return [
             'gross_amount' => $gross,
@@ -253,21 +313,54 @@ class EmployeePayrollComputationService {
             ->where('employee_no', $this->employee_no)
             ->whereDate('effectivity_date', '<=', $this->payroll_date) // 2025-10-23 <= 2025-09-23
             ->orderByDesc('effectivity_date')
-            ->first();
+            ->first();        
 
         if (!$employee_salary) {
             throw new \Exception("Employee salary not found for employee number: {$this->employee_no}");
         }
+
+        Log::info('---------------------- here yon -----------------------');
+        Log::info((array) $employee_salary);
+        Log::info($this->working_hours);
+
         
         if ($employee_salary) {
-            $this->deduction_applied_on = $employee_salary->deduction_applied;
+           $this->deduction_applied_on = $employee_salary->deduction_applied;
             $this->salary_basis = $employee_salary->salary_basis;
-            $this->salary_amount = $employee_salary->amount;
-            $this->daily_rate = $employee_salary->daily_rate;
-            $this->min_rate = ($employee_salary->daily_rate / $this->working_hours) / 60; 
+
+            // Safely convert amount "51,304.00" → 51304.00
+            $this->salary_amount = filter_var(
+                $employee_salary->amount,
+                FILTER_SANITIZE_NUMBER_FLOAT,
+                FILTER_FLAG_ALLOW_FRACTION
+            );
+
+            // Safely convert daily rate even if "1,234.56"
+            $this->daily_rate = filter_var(
+                $employee_salary->daily_rate,
+                FILTER_SANITIZE_NUMBER_FLOAT,
+                FILTER_FLAG_ALLOW_FRACTION
+            );
+
+            // Compute min rate
+            $this->min_rate = ($this->daily_rate / $this->working_hours) / 60;
+
             $this->salary_frequency = $employee_salary->salary_frequency;
             $this->salary_cutoff = $employee_salary->salary_cutoff;
             $this->salary_grade = $employee_salary->salary_grade;
+
+            
+            Log::info('=== EMPLOYEE SALARY LOADED ===', [
+                'deduction_applied_on' => $this->deduction_applied_on,
+                'salary_basis' => $this->salary_basis,
+                'salary_amount' => $this->salary_amount,
+                'daily_rate' => $this->daily_rate,
+                'min_rate' => $this->min_rate,
+                'salary_frequency' => $this->salary_frequency,
+                'salary_cutoff' => $this->salary_cutoff,
+                'salary_grade' => $this->salary_grade,
+                'raw_employee_salary' => (array) $employee_salary // avoid stdClass logging error
+            ]);
         }
     }
 
@@ -293,114 +386,87 @@ class EmployeePayrollComputationService {
         $this->working_hours = $schedule->working_hours;
     }
 
-    private function getDeductions()
+    // permanent only
+    private function getDeductions($employee_no)
     {
-        $date = $this->payroll_date;
+        $explodedStartDate = explode('-', $this->payroll_date);
+        $year = (int) $explodedStartDate[0];
+        $month = (int) $explodedStartDate[1];
 
-        $deductions = DB::table('employee_deductions as ed')
-            ->leftJoin('deductions as d', 'ed.deduction_id', '=', 'd.id')
-            ->where('ed.employee_no', $this->employee_no)
-            ->where('ed.isActive', true)
-            ->whereDate('ed.start_date', '<=', $date)
-            ->where(function ($query) use ($date) {
-                $query->whereDate('ed.end_date', '>=', $date)
-                    ->orWhereNull('ed.end_date');
-            })
+        // Skip deduction if cutoff doesn't match
+        if ($this->cutoff != $this->deduction_applied_on && $this->deduction_applied_on !== 'both') {
+            return collect([]);
+        }
+
+        // Base deductions from module tabs
+        $deductions = DB::table('module_tab_employees as mte')
+            ->leftJoin('module_tabs as mt', 'mte.module_tab_id', '=', 'mt.id')
+            ->leftJoin('modules as m', 'mt.module_id', '=', 'm.id')
             ->select(
-                'd.name',
-                'ed.first_term',
-                'ed.second_term',
-                'ed.type',
-                'ed.start_date',
-                'ed.end_date'
+                'm.module_name',
+                'mt.tab_name',
+                'mte.amount'
             )
-            ->get();
+            ->where('mte.employee_no', $employee_no)
+            ->where('mte.year', $year)
+            ->where('mte.month', $month)
+            ->get()
+            ->map(function ($item) {
 
-        $enriched = $deductions->map(function ($d) {
-            $amount_to_deduct = 0;
+                // Remove module name prefix
+                $item->tab_name = str_replace($item->module_name . ' ', '', $item->tab_name);
 
-            if (isset($this->cutoff)) {
-                $amount_to_deduct = match ($this->cutoff) {
-                    'first_cutoff'  => $d->first_term ?? 0,
-                    'second_cutoff' => ($d->type === 'monthly') ? ($d->second_term ?? 0) : ($d->first_term ?? 0),
-                    default => 0,
-                };
+                return $item;
+            });
 
-                if ($d->type === 'daily') {
-                    $amount_to_deduct *= $this->actual_presence;
-                } elseif ($d->type === 'divided_by_22') {
-                    $amount_to_deduct = ($amount_to_deduct / 22) * $this->actual_presence;
-                }
-            }
+        /**
+         * Add Withholding Tax
+         */
+        $component_table_id = DB::table('payroll_components_settings')
+            ->where('type', TableSettingsEnum::SALARY_ID->value)
+            ->value('tax_id');
 
-            return (object) [
-                'deduction_type' => $d->name,
-                'type'           => $d->type,
-                'cutoff'         => $this->cutoff,
-                'amount'         => $amount_to_deduct,
-            ];
+        $components_year_id = DB::table('payroll_components_years')
+            ->where('payroll_component_id', $component_table_id)
+            ->where('year', $year)
+            ->value('id');
+
+        $tax_table = DB::table('employee_payroll_components')
+            ->where('tax_deduction_id', $components_year_id)
+            ->where('employee_no', $employee_no)
+            ->where('month', $month)
+            ->first();
+
+        // Add tax as a new deduction
+        if ($tax_table) {
+            $deductions->push((object) [
+                'module_name' => 'Witholding',
+                'tab_name' => 'tax',
+                'amount' => $tax_table->amount
+            ]);
+        }
+
+        /**
+         * Apply cutoff logic
+         */
+        // If once per month (first or second)
+        if ($this->deduction_applied_on !== 'both') {
+
+            // Deduct only once → no division
+            return $deductions;
+        }
+
+        // If BOTH: divide all deductions into 2 parts
+        $deductions = $deductions->map(function ($deduction) {
+            $deduction->amount = $deduction->amount / 2;
+            return $deduction;
         });
 
-        return $enriched;
+        return $deductions;
     }
 
-
-    private function getEarnings()
-    {
-        $date = $this->payroll_date;
-
-        $deductions = DB::table('employee_earnings as ee')
-            ->leftJoin('earnings as e', 'ee.earning_id', '=', 'e.id')
-            ->where('ee.employee_no', $this->employee_no)
-            ->where('ee.isActive', true)
-            ->whereDate('ee.start_date', '<=', $date)
-            ->where(function ($query) use ($date) {
-                $query->whereDate('ee.end_date', '>=', $date)
-                    ->orWhereNull('ee.end_date');
-            })
-            ->select(
-                'e.name',
-                'ee.first_term',
-                'ee.second_term',
-                'ee.type',
-                'ee.isTaxable',
-                'ee.start_date',
-                'ee.end_date',
-            )
-            ->get();
-
-        $enriched = $deductions->map(function ($d) {
-            $amount_to_add = 0;
-
-            if (isset($this->cutoff)) {
-                $amount_to_add = match ($this->cutoff) {
-                    'first_cutoff'  => $d->first_term ?? 0,
-                    'second_cutoff' => ($d->type === 'monthly') ? ($d->second_term ?? 0) : ($d->first_term ?? 0),
-                    default => 0,
-                };
-
-                if ($d->type === 'daily') {
-                    $amount_to_add *= $this->actual_presence;
-                } elseif ($d->type === 'divided_by_22') {
-                    $amount_to_add = ($amount_to_add / 22) * $this->actual_presence;
-                }
-            }
-
-            return (object) [
-                'is_taxable'     => $d->isTaxable,
-                'deduction_type' => $d->name,
-                'type'           => $d->type,
-                'cutoff'         => $this->cutoff,
-                'amount'         => $amount_to_add,
-            ];
-        });
-
-        return $enriched;
+    // Helper function to safely display values
+    private function safe($value) {
+        return isset($value) ? $value : '';
     }
-
-    private function computeWithHoldingTax()
-    {
-
-    }
-
 }
