@@ -22,7 +22,7 @@ class LeaveApplicationController extends Controller
         $this->applicationService = $applicationService;
 
         $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.leave_application.apply')->only(['store']);
+        // $this->middleware('permission:emp.leave_application.apply')->only(['store']);
     }
 
     /**
@@ -66,6 +66,8 @@ class LeaveApplicationController extends Controller
     public function store(StoreLeaveApplication $request) 
     {
         $validatedData = $request->validated();
+
+        dd($validatedData);
 
         if(!empty($validatedData['user_id'])) {
             $user = User::with('employeeInformation')->findOrFail($validatedData['user_id']);

@@ -40,21 +40,4 @@ class StoreLeaveApplication extends FormRequest
             // 'approvers.*.*' => ['nullable', 'exists:users,id'],
         ];
     }
-
-    public function messages(): array
-    {
-        return [
-            'leave_id.required' => 'leave type is required.',
-            'reason.required' => 'Reason for leave is required.',
-            'start_date.required' => 'Start date is required.',
-            'start_date.after_or_equal' => 'Start date must be today or later.',
-            'end_date.after_or_equal' => 'End date must be after or same as start date.',
-            'end_date.required' => 'End date is required.',
-            'leave_applications.unique' => 'This leave request already exists.',
-
-            'attachment.file' => 'The attachment must be a file.',
-            'attachment.mimes' => 'The attachment must be a PDF, JPG, PNG, DOC, or DOCX file.',
-            'attachment.max' => 'The attachment size must not exceed 2MB.',
-        ];
-    }
 }

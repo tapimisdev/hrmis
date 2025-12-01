@@ -7,7 +7,7 @@ use App\Http\Controllers\Employee\LeaveApplicationController;
 use App\Http\Controllers\Api\CountriesApiController;
 
 Route::resource('leaves', LeaveApplicationController::class)
-    ->only('store', 'update');
+    ->only('index', 'store', 'update');
 
 Route::get('countries', [CountriesApiController::class, 'index'])
     ->name('api.countries');

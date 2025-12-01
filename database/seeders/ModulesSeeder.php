@@ -17,6 +17,18 @@ class ModulesSeeder extends Seeder
         $components = [
             [
                 'icon'  => 'fa-solid fa-helmet-safety',
+                'slug'  => 'personnel-economic-relief-allowance',
+                'name'  => 'Personnel Economic Relief Allowance',
+                'type'  => 'earnings'
+            ],
+            [
+                'icon'  => 'fa-solid fa-car',
+                'slug'  => 'representation-and-transportation-allowance',
+                'name'  => 'Representation and Transportation Allowance',
+                'type'  => 'earnings'
+            ],
+            [
+                'icon'  => 'fa-solid fa-helmet-safety',
                 'slug'  => 'hazard-pay',
                 'name'  => 'Hazard Pay',
                 'type'  => 'earnings'

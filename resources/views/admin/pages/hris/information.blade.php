@@ -390,22 +390,6 @@
             updateCutoffAmounts();
         }).trigger('change');
 
-        $('#salary_cutoff').on('change', function () {
-            const frequency = $('#salary_frequency').val();
-            const cutoff = $(this).val();
-
-
-            if (frequency === 'once' && cutoff) {
-                $('.first-cutoff input, .second-cutoff input').val('0.00');
-                $('#salary').val(salary);
-                $('#daily_rate').val(daily_rate);
-            } else {
-                $('#salary_frequency').trigger('change');
-            }
-
-            updateCutoffAmounts();
-        }).trigger('change');
-
         function updateCutoffAmounts() {
             const salaryVal = parseFloat($('#salary').val()) || 0;
             const frequency = $('#salary_frequency').val();

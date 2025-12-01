@@ -51,6 +51,8 @@ class PersonalController extends Controller
     {
         $request->validate($this->rules());          
 
+        $hasFiles = false;
+
         DB::beginTransaction();
 
         try {
@@ -112,6 +114,7 @@ class PersonalController extends Controller
                 $profile = 'profile_' . time() . '.' . $file->getClientOriginalExtension();
                 $file->storeAs('public/uploads/employees/' . $employee_no . '/profile', $profile);
                 $data['profile'] = $profile;
+                $hasFiles = true;
             }
 
             // Handle birth certificate upload
@@ -120,6 +123,7 @@ class PersonalController extends Controller
                 $birth_certificate = 'birth_certificate_' . time() . '.' . $file->getClientOriginalExtension();
                 $file->storeAs('public/uploads/employees/' . $employee_no . '/birth_certificate', $birth_certificate);
                 $data['birth_certificate'] = $birth_certificate;
+                $hasFiles = true;
             }
 
             // Handle marriage certificate upload
@@ -128,6 +132,7 @@ class PersonalController extends Controller
                 $marriage_certificate = 'marriage_certificate_' . time() . '.' . $file->getClientOriginalExtension();
                 $file->storeAs('public/uploads/employees/' . $employee_no . '/marriage_certificate', $marriage_certificate);
                 $data['marriage_certificate'] = $marriage_certificate;
+                $hasFiles = true;
             }
 
             // Insert/Update only with the fields that should change
@@ -138,10 +143,14 @@ class PersonalController extends Controller
 
             DB::commit();
 
+            if($hasFiles) {
+                $redirect = route('hris.employee.personal', ['employee_no' => $employee_no]);
+            }
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Personal information of #' . $employee_no . ' was saved successfully.',
-                'redirect' => ''
+                'redirect' => $redirect ?? ''
             ]);
 
         } catch (\Exception $e) {

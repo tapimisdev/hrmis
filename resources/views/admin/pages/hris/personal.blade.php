@@ -141,35 +141,44 @@
                                             <div class="error-field"></div>
                                         </div>
                                         <div class="col-12 col-md-4 mb-3">
-                                            <label class="mb-2" for="birth_certificate">Birth Certificate - (img/pdf)</label>
-                                            <input type="file" name="birth_certificate" id="birth_certificate" class="form-control">
-                                            <div class="error-field"></div>
-
-                                            @if(!empty($data->birth_certificate))
-                                                <div class="mt-2 d-flex justify-content-center text-uppercase">
-                                                    <a href="{{ Storage::url('uploads/employees/' . $data->employee_no . '/birth_certificate/' . $data->birth_certificate) }}"
-                                                        download="{{ $data->birth_certificate }}"
-                                                        class="btn btn-sm btn-primary fw-bold px-5">
-                                                            Download Birth Certificate
-                                                        </a>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div>
+                                                    <label class="mb-2" for="birth_certificate">Birth Certificate - (img/pdf)</label>
+                                                    <input type="file" name="birth_certificate" id="birth_certificate" class="form-control">
+                                                    <div class="error-field"></div>
                                                 </div>
-                                            @endif
+                                                <div>
+                                                    @if(!empty($data->birth_certificate))
+                                                        <div class="mt-2 d-flex justify-content-center text-uppercase">
+                                                            <a href="{{ Storage::url('uploads/employees/' . $data->employee_no . '/birth_certificate/' . $data->birth_certificate) }}"
+                                                                download="{{ $data->birth_certificate }}"
+                                                                class="btn btn-sm btn-primary fw-bold px-3 py-2"
+                                                                style="margin-top: 12px;">
+                                                                    <i class="fa-solid fa-download"></i>
+                                                            </a>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </div>
-
                                         <div class="col-12 col-md-4 mb-3">
-                                            <label class="mb-2" for="marriage_certificate">Marriage Certificate - (img/pdf)</label>
-                                            <input type="file" name="marriage_certificate" id="marriage_certificate" class="form-control">
-                                            <div class="error-field"></div>
-
-                                            @if(!empty($data->marriage_certificate))
-                                                <div class="mt-2 d-flex justify-content-center text-uppercase">
-                                                    <a href="{{ Storage::url('uploads/employees/' . $data->employee_no . '/marriage_certificate/' . $data->marriage_certificate) }}" 
-                                                    download="{{ $data->marriage_certificate }}"
-                                                    class="btn btn-sm btn-primary fw-bold px-5">
-                                                        Download Marriage Certificate
-                                                    </a>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div>
+                                                    <label class="mb-2" for="marriage_certificate">Marriage Certificate - (img/pdf)</label>
+                                                    <input type="file" name="marriage_certificate" id="marriage_certificate" class="form-control">
+                                                    <div class="error-field"></div>
                                                 </div>
-                                            @endif
+                                                <div>
+                                                    @if(!empty($data->marriage_certificate))
+                                                        <a href="{{ Storage::url('uploads/employees/' . $data->employee_no . '/marriage_certificate/' . $data->marriage_certificate) }}" 
+                                                        download="{{ $data->marriage_certificate }}"
+                                                        class="btn btn-sm btn-primary fw-bold px-3 py-2"
+                                                        style="margin-top: 20px;">
+                                                            <i class="fa-solid fa-download"></i>
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>                                      
                                 </div>
