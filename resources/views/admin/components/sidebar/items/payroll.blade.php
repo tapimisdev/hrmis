@@ -23,6 +23,14 @@
                     </a>
                 </li>
             @endcan
+
+            <li class="nested-item">
+                <a href="{{ route('hazard-pay.index') }}"
+                class="{{ request()->routeIs('hazard-pay.index') ? 'active' : '' }}">
+                    <i class="fa-solid fa-money-bill-1-wave"></i>
+                    <span>Hazard Pay</span>
+                </a>
+            </li>
         </ul>
     </div>
 </li>

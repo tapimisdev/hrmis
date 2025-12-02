@@ -3,23 +3,22 @@
 namespace App\Http\Controllers\Admin\Payroll\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\SalaryPay\CreateRequest;
+use App\Http\Requests\Admin\HazardPay\CreateRequest;
+use App\Services\HazardPay\PayrollService;
+use App\Services\HazardPay\GetEmployeeService;
 use App\Services\Exports\PayslipService;
 use App\Services\Exports\AUTService;
 use App\Services\Exports\RegistryService;
-use App\Services\SalaryPay\GetEmployeeService;
-use App\Services\SalaryPay\PayrollService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
-class SalaryApiController extends Controller
+class HazardApiController extends Controller
 {
 
-    protected $salary_payroll_service;
+    protected $hazard_pay_service;
 
-    public function __construct(PayrollService $salary_payroll_service)
+    public function __construct(PayrollService $hazard_pay_service)
     {
-        $this->salary_payroll_service = $salary_payroll_service;
+        $this->hazard_pay_service = $hazard_pay_service;
     }
 
     public function getList(Request $request)
@@ -31,7 +30,7 @@ class SalaryApiController extends Controller
             'status' => 'nullable|string|in:draft,pending,approved,for_releasing,completed,cancelled',
         ]);
 
-        $list = $this->salary_payroll_service->getPayrolls($validated);
+        $list = $this->hazard_pay_service->getPayrolls($validated);
 
         return response(['data' => $list, 'status' => 'success'], 200);
     }
@@ -40,7 +39,7 @@ class SalaryApiController extends Controller
     {
         $validatedData = $request->validated();
 
-        $employees = $this->salary_payroll_service->getEligibleEmployees($validatedData);
+        $employees = $this->hazard_pay_service->getEligibleEmployees($validatedData);
 
         return response(['data' => $employees, 'success'], 200);
     }
@@ -52,21 +51,12 @@ class SalaryApiController extends Controller
             'end_date' => 'required|date',
         ]);
 
-        $holidays = $this->salary_payroll_service->getHolidays($validated);
-        $suspensions = $this->salary_payroll_service->getSuspensions($validated);
+        $holidays = $this->hazard_pay_service->getHolidays($validated);
+        $suspensions = $this->hazard_pay_service->getSuspensions($validated);
 
         $events = $holidays->merge($suspensions);
 
         return response()->json($events);
-    }
-
-    public function getPayrollRegistry(string $payroll_id, bool $isGrouped = true) 
-    {
-        $employee_salary = new GetEmployeeService($payroll_id, $isGrouped);
-        $employee_salary->getAndMapEmployeeSalary();
-        $employees = $employee_salary->employees;
-        
-        return response()->json($employees);
     }
 
     public function approvers()
@@ -123,14 +113,11 @@ class SalaryApiController extends Controller
         return $employees;
     }
 
-
-
-
-
-
-
-
-
-
+    public function getHazardPay(string $payroll_id, bool $isGrouped = true) {
+        $employee_salary = new GetEmployeeService($payroll_id, $isGrouped);
+        $employee_salary->getAndMapEmployeeSalary();
+        $employees = $employee_salary->employees;
+        return response()->json($employees);
+    }
 
 }

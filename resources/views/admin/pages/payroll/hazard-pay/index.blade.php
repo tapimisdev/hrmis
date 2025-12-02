@@ -2,16 +2,16 @@
 
 @section('content')
     <div class="container-fluid">
-        <x-header title="Salary Payroll" subtitle="View salary payroll in this module">
+        <x-header title="Hazard Payroll" subtitle="View hazard payroll in this module">
 
             <x-button-link 
-                :href="route('salary.create')" 
+                :href="route('hazard-pay.create')" 
                 icon="fa-solid fa-plus" 
-                text="Create Payroll" 
+                text="Create " 
                 variant="primary"
             />
         </x-header>
 
-        <salary-pay-index/>
+        <hazard-pay-index/>
     </div>
 @endsection

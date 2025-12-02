@@ -2,7 +2,7 @@
 
 namespace App\Services\Exports;
 
-use App\Services\SalaryPayrollService;
+use App\Services\SalaryPay\PayrollService;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -43,7 +43,7 @@ class AUTService
 
     private function loadPayrollData($payroll_no)
     {
-        $service        = app(SalaryPayrollService::class);
+        $service        = app(PayrollService::class);
         $this->payroll  = $service->payrollDetails($payroll_no);
         $this->rates    = $service->employeePayrollRates($this->payroll->id);
     }

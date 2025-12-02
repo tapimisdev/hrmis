@@ -15,12 +15,12 @@
             />
         </x-header>
 
-        <show-payroll
+        <hazard-pay-view
             :batch_id="{{ json_encode($batch_id ?? null) }}"
             :payroll_no="{{ json_encode($payroll->payroll_no) }}"
             :payroll_id="{{ json_encode($payroll->id) }}"
             :status="{{ json_encode($payroll->status) }}"
             :employment_type="{{ json_encode($employmentTypeName) }}"
-        ></show-payroll>
+        ></hazard-pay-view>
     </div>
 @endsection

@@ -5,6 +5,9 @@ use App\Http\Controllers\Admin\Payroll\Api\SalaryApiController;
 use App\Http\Controllers\Admin\Payroll\Salary\SalaryController;
 use App\Http\Controllers\Admin\Payroll\Salary\SalaryItemController;
 
+use App\Http\Controllers\Admin\Payroll\Api\HazardApiController;
+use App\Http\Controllers\Admin\Payroll\HazardPay\HazardPayController;
+
 Route::prefix('payroll')->group(function() {
     Route::post('validate-and-fetch-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
     Route::post('salary', [SalaryApiController::class, 'getList']);
@@ -29,4 +32,14 @@ Route::prefix('payroll')->group(function() {
         ->name('api.payroll.absences-leaves.download');
     Route::get('payslip/{payroll_no}/download', [SalaryApiController::class, 'downloadPayslip'])
         ->name('api.payroll.payslip.download');
+
+
+    # Hazard Payroll
+
+    Route::prefix('hazard-pay')->group(function() {
+        Route::post('validate-and-fetch-employees', [HazardApiController::class, 'validateAndGetEmployee']);
+        Route::get('{payroll_id}', [HazardApiController::class, 'getHazardPay']);
+        Route::post('generate', [HazardPayController::class, 'store']);
+    });
+
 });

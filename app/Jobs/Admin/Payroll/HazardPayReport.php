@@ -2,7 +2,7 @@
 
 namespace App\Jobs\Admin\Payroll;
 
-use App\Services\SalaryPay\ComputationService;
+use App\Services\HazardPay\ComputationService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class PayrollRegistryReport implements ShouldQueue
+class HazardPayReport implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -31,7 +31,7 @@ class PayrollRegistryReport implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(ComputationService $employee_service): void
+    public function handle(ComputationService $service): void
     {
         if ($this->batch()?->cancelled()) {
             Log::warning("Batch cancelled for Payroll ID: {$this->payroll_id}");
@@ -47,16 +47,13 @@ class PayrollRegistryReport implements ShouldQueue
 
         $employeeNo = $employee['employee_no'] ?? 'unknown';
 
-        $processedData = $employee_service->processEmployeeSalary($employeeNo, $this->payroll_id);
+        $processedData = $service->process($employeeNo, $this->payroll_id);
 
-        DB::table('payroll_salary')
-        ->where('id', $this->payroll_id)
-        ->update([
-            'no_employee'      => DB::raw('no_employee + 1'),
-            'gross_amount'     => DB::raw("gross_amount + {$processedData['gross_amount']}"),
-            'deduction_amount' => DB::raw("deduction_amount + {$processedData['deduction_amount']}"),
-            'netpay_amount'    => DB::raw("netpay_amount + {$processedData['net_pay_amount']}")
-        ]);
+        DB::table('payroll_hazard_pay')
+            ->where('id', $this->payroll_id)
+            ->update([
+                'no_employee'      => DB::raw('no_employee + 1'),
+            ]);
 
         Log::info("Completed payroll registry generation for Payroll ID: {$this->payroll_id}");
     }
@@ -67,9 +64,9 @@ class PayrollRegistryReport implements ShouldQueue
         Log::error("Job failed: " . $exception->getMessage());
 
         DB::table('payroll_salary')
-        ->where('id', $this->payroll_id)
-        ->update([
-            'status'      => 'failed',
-        ]);
+            ->where('id', $this->payroll_id)
+            ->update([
+                'status'      => 'failed',
+            ]);
     }
 }

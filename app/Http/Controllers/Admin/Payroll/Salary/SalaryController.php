@@ -4,19 +4,19 @@ namespace App\Http\Controllers\Admin\Payroll\Salary;
 
 use App\Enums\EmploymentTypesEnum;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\Payroll\StoreSalaryRequest;
-use App\Services\SalaryPayrollService;
-use Exception;
+use App\Http\Requests\Admin\SalaryPay\StoreRequest;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\SalaryPay\PayrollService;
 use Throwable;
+use Exception;
 
 class SalaryController extends Controller
 {
     protected $payroll_salary_service;
 
-    public function __construct(SalaryPayrollService $payroll_salary_service)
+    public function __construct(PayrollService $payroll_salary_service)
     {
         $this->payroll_salary_service = $payroll_salary_service;
         $this->middleware('permission:hr.salary_payroll.view')->only(['index', 'show']);
@@ -87,7 +87,7 @@ class SalaryController extends Controller
         ));
     }
 
-    public function store(StoreSalaryRequest $request)
+    public function store(StoreRequest $request)
     {
         $validatedData = $request->validated();
 

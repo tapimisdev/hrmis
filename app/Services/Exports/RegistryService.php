@@ -2,7 +2,7 @@
 
 namespace App\Services\Exports;
 
-use App\Services\SalaryPayrollService;
+use App\Services\SalaryPay\PayrollService;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -41,7 +41,7 @@ class RegistryService
     -------------------------- */
     private function loadPayrollData($payroll_no)
     {
-        $payrollService = app(SalaryPayrollService::class);
+        $payrollService = app(PayrollService::class);
         $this->payroll  = $payrollService->payrollDetails($payroll_no);
         $this->registry = json_decode(
             $payrollService->getPayrollRegistry($this->payroll->id, true)->getContent(),
