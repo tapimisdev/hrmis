@@ -45,17 +45,29 @@ class HrisMenu extends Component
         $payroll_components = [];
         $modules = [];
 
-        foreach($menus as $menu) {
-
-            $route = $employment_type == 1 ? 
-                    route('payroll-employee-components.index', ['slug' => $menu->slug, 'year' => $latest_year, 'employee_no' => $this->employee_no])
-                    : route('payroll-components.index', ['slug' => $menu->slug]);
+        foreach ($menus as $menu) {
+            $route = $employment_type == 1 
+                ? route('payroll-employee-components.index', [
+                    'slug' => $menu->slug, 
+                    'year' => $latest_year, 
+                    'employee_no' => $this->employee_no
+                ])
+                : route('payroll-components.index', ['slug' => $menu->slug]);
 
             $payroll_components[] = [
                 'name' => $menu->name,
                 'route' => $route,
+                'type' => $menu->type,
+                'group' => $menu->group ?? [$menu->type ?? 'others'],
                 'active' => $this->active == $menu->slug ? 'active' : '',
             ];
+        }
+
+        $grouped_components = [];
+        foreach ($payroll_components as $component) {
+            foreach ($component['group'] as $group) {
+                $grouped_components[$group][] = $component;
+            }
         }
 
         foreach($other_modules as $module) {
@@ -132,9 +144,9 @@ class HrisMenu extends Component
                 'active' => $this->active == 'leave-credits' ? 'active' : '',
             ],
             [
-                'name' => 'XI. Earnings',
+                'name' => 'XI. Earnings & Taxes',
                 'active' => '',
-                'submenus' => $payroll_components,
+                'submenus' => $grouped_components,
             ],
             [
                 'name' => 'XII. Deductions',

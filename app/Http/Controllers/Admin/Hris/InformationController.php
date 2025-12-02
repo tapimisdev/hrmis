@@ -396,7 +396,7 @@ class InformationController extends Controller
             $rules['firstname'] = 'required|string|max:255';
             $rules['lastname']  = 'required|string|max:255';
             $rules['middlename']  = 'nullable|string|max:255';
-            $rules['email']  = 'required|string|max:255';
+            $rules['email']  = 'required|unique:users|string|max:255';
             $rules['password'] = 'required|min:8|same:confirm_password';
             $rules['confirm_password'] = 'required|min:8';
         }
