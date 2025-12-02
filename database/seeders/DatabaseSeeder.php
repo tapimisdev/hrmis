@@ -29,5 +29,9 @@ class DatabaseSeeder extends Seeder
             ModulesSeeder::class,
             PermissionSeeder::class,
         ]);
+
+        $this->call([
+            EventsAnnouncementsSeeder::class,
+        ]);
     }
 }

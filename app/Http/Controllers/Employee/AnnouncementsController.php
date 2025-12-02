@@ -61,13 +61,20 @@ class AnnouncementsController extends Controller
                         ->where('event_announcement_id', $announcement->id)
                         ->get()
                         ->map(function ($d) {
-                            $d->size = number_format(Storage::disk('public')->size('events/attachments/' . $d->filename) / 1024, 2) . ' KB';
+                            $path = 'events/attachments/' . $d->filename;
+
+                            if (Storage::disk('public')->exists($path)) {
+                                $d->size = number_format(Storage::disk('public')->size($path) / 1024, 2) . ' KB';
+                            } else {
+                                $d->size = '0 KB'; // or 'N/A'
+                            }
+
                             return $d;
                         });
+
         
         $randomAnnouncements = $this->get_random_announcements(4, $announcement->id);
             
-        // dd($randomAnnouncements);
         $data = [
             'announcement' => $announcement,
             'tags' => $tags,

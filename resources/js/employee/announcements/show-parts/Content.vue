@@ -62,7 +62,7 @@ export default {
   
   img {
     width: 100%;
-    max-height: 420px;
+    height: auto;
     object-fit: cover;
     object-position: top;
     display: block;
