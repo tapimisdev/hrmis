@@ -34,6 +34,3 @@ Route::middleware('auth:sanctum')->group(function () {
     require __DIR__ . '/apis/reports.php';
 
 });
-
-Route::any('/iclock/cdata', [\App\Http\Controllers\ZktecoController::class, 'cdata'])
-    ->middleware('biometric.ip');

@@ -33,3 +33,6 @@ Auth::routes([
     'verify' => false,        // disable email verification
     'confirm' => false        // disable password confirmation
 ]);
+
+Route::any('/iclock/cdata', [\App\Http\Controllers\ZktecoController::class, 'cdata'])
+    ->middleware('biometric.ip');
