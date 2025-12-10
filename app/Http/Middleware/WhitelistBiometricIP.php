@@ -11,7 +11,8 @@ class WhitelistBiometricIP
     // allowed IPs
     protected $whitelisted = [
         '192.168.1.217', // UFace 402
-        '192.168.110.12'
+        '192.168.110.12',
+        '122.54.18.226'
     ];
 
     /**
