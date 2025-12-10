@@ -36,9 +36,10 @@ class ZktecoController extends Controller
                 ->select('user_id',  'employee_no')
                 ->where('biometrics_id', $biodId)
                 ->first();
-
+            
         $user = User::find($hris->user_id);
         $user_schedule = $user->getShiftAndWorkSchedule();
+
 
         // Insert time log
         DB::table('timelogs')->insert([
