@@ -14,10 +14,10 @@ class ZktecoController extends Controller
         $rawInput = file_get_contents('php://input');
         $parts = explode("\t", trim($rawInput));
 
-        $type       = $parts[0] ?? null;
+        $biodId       = $parts[0] ?? null;
         $timestamp  = $parts[1] ?? null;
-        $biodId     = $parts[2] ?? null;
-        $fn     = $parts[3] ?? null;
+        $fn     = $parts[2] ?? null;
+        $type     = $parts[3] ?? null;
 
         Log::info('ADMS Data Received', [
             'raw_input'   => $rawInput,
@@ -39,7 +39,6 @@ class ZktecoController extends Controller
             
         $user = User::find($hris->user_id);
         $user_schedule = $user->getShiftAndWorkSchedule();
-
 
         // Insert time log
         DB::table('timelogs')->insert([
