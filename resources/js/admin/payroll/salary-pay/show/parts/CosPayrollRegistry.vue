@@ -160,7 +160,7 @@
 
           <!-- Grand Total Row -->
           <tfoot>
-            <tr class="grand-total">
+            <tr class="grand-total text-center">
               <td colspan="2" class="text-end"><strong>GRAND TOTAL</strong></td>
               <td class="number-cell">{{ formatNumber(grandTotals('monthly_rate')) }}</td>
               <td class="number-cell">{{ formatNumber(grandTotals('salary_earned')) }}</td>

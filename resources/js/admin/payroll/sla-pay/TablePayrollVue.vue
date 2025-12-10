@@ -56,7 +56,7 @@
                     </td>
                     <td>
                         <a
-                            :href="`/admin/payroll/hazard-pay/${payroll.payroll_no}?batch_id=${payroll.batch_id}`"
+                            :href="`/admin/payroll/sla-pay/${payroll.payroll_no}?batch_id=${payroll.batch_id}`"
                             class="btn btn-sm btn-primary me-1"
                             title="Manage"
                             data-bs-toggle="tooltip"

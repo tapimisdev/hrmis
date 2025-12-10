@@ -121,7 +121,7 @@ import ApprovalPayroll from "./steps/ApprovalPayroll.vue";
 import LoaderVue from "../../../../components/LoaderVue.vue";
 
 export default {
-    name: "PayrollStepper",
+    name: "SlaPayStepper",
     components: {
         CreatePayroll,
         AdjustmentPayroll,
@@ -139,15 +139,14 @@ export default {
             employees: [],
             form: {
                 label: "",
-                cutoff: "",
+                month: "",
                 employees: [],
-                employment_type_id: "",
-                date: new Date().toISOString().split("T")[0],
+                employment_type_id: 1,
                 approved_by: {},
             },
             steps: [
                 {
-                    label: "Create Payroll",
+                    label: "Create SLA Payroll",
                     desc: "Set basic details",
                     component: markRaw(CreatePayroll),
                 },
@@ -155,11 +154,6 @@ export default {
                     label: "Employee Review",
                     desc: "View eligibility",
                     component: markRaw(ReviewPayroll),
-                },
-                {
-                    label: "Adjustments",
-                    desc: "Suspensions & holidays",
-                    component: markRaw(AdjustmentPayroll),
                 },
                 {
                     label: "Approval",
@@ -188,7 +182,7 @@ export default {
             this.errors = {};
             try {
                 const res = await axios.post(
-                    "/api/payroll/validate-and-fetch-employees",
+                    "/api/payroll/sla-pay/validate-and-fetch-employees",
                     this.form,
                     {
                         headers: {
@@ -231,7 +225,7 @@ export default {
             this.errors = {};
             try {
                 const res = await axios.post(
-                    "/api/payroll/generate-salary-payroll",
+                    "/api/payroll/sla-pay/generate",
                     this.form,
                     {
                         headers: {
@@ -240,10 +234,12 @@ export default {
                         },
                     }
                 );
+                console.log(res);
                 this.form.employees = res.data.data;
+                console.log(res.data.batch_id);
                 const batch_id = res.data.batch_id;
                 const payroll_no = res.data.payroll_no;
-                window.location.href = `/admin/payroll/salary/${payroll_no}?batch_id=${batch_id}`;
+                window.location.href = `/admin/payroll/sla-pay/${payroll_no}?batch_id=${batch_id}`;
                 return true;
             } catch (error) {
                 if (error.response?.status === 422) {

@@ -1,0 +1,17 @@
+@extends('admin.layouts.app')
+
+@section('content')
+    <div class="container-fluid">
+        <x-header title="Subsistence and Allowance Payroll" subtitle="View susistence and allowance payroll in this module">
+
+            <x-button-link 
+                :href="route('sla-pay.create')" 
+                icon="fa-solid fa-plus" 
+                text="Create " 
+                variant="primary"
+            />
+        </x-header>
+
+        <sla-pay-index/>
+    </div>
+@endsection

@@ -3,22 +3,23 @@
 namespace App\Http\Controllers\Admin\Payroll\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\HazardPay\CreateRequest;
-use App\Services\HazardPay\PayrollService;
-use App\Services\HazardPay\GetEmployeeService;
+use App\Http\Requests\Admin\SLAPay\CreateRequest;
+use App\Services\SLAPay\PayrollService;
+use App\Services\SLAPay\GetEmployeeService;
 use App\Services\Exports\PayslipService;
 use App\Services\Exports\AUTService;
 use App\Services\Exports\RegistryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-class HazardApiController extends Controller
+
+class SLAApiController extends Controller
 {
 
-    protected $hazard_pay_service;
+    protected $sla_pay_service;
 
-    public function __construct(PayrollService $hazard_pay_service)
+    public function __construct(PayrollService $sla_pay_service)
     {
-        $this->hazard_pay_service = $hazard_pay_service;
+        $this->sla_pay_service = $sla_pay_service;
     }
 
     public function getList(Request $request)
@@ -28,7 +29,7 @@ class HazardApiController extends Controller
             'status' => 'nullable|string|in:draft,pending,approved,for_releasing,completed,cancelled',
         ]);
 
-        $list = $this->hazard_pay_service->getPayrolls($validated);
+        $list = $this->sla_pay_service->getPayrolls($validated);
 
         return response(['data' => $list, 'status' => 'success'], 200);
     }
@@ -37,7 +38,7 @@ class HazardApiController extends Controller
     {
         $validatedData = $request->validated();
 
-        $employees = $this->hazard_pay_service->getEligibleEmployees($validatedData);
+        $employees = $this->sla_pay_service->getEligibleEmployees($validatedData);
 
         return response(['data' => $employees, 'success'], 200);
     }
@@ -49,8 +50,8 @@ class HazardApiController extends Controller
             'end_date' => 'required|date',
         ]);
 
-        $holidays = $this->hazard_pay_service->getHolidays($validated);
-        $suspensions = $this->hazard_pay_service->getSuspensions($validated);
+        $holidays = $this->sla_pay_service->getHolidays($validated);
+        $suspensions = $this->sla_pay_service->getSuspensions($validated);
 
         $events = $holidays->merge($suspensions);
 
@@ -89,8 +90,8 @@ class HazardApiController extends Controller
 
     private function getEmployeePayslip($payroll_id)
     {
-        $employees = DB::table('payroll_salary_employee as pse')
-            ->where('pse.payroll_salary_id', $payroll_id)
+        $employees = DB::table('payroll_sla_pay_employee as pse')
+            ->where('pse.payroll_sla_pay_id', $payroll_id)
             ->leftJoinSub(
                 DB::table('employee_projects as ep')
                     ->select('ep.*')
@@ -111,7 +112,7 @@ class HazardApiController extends Controller
         return $employees;
     }
 
-    public function getHazardPay(string $payroll_id, bool $isGrouped = true) {
+    public function getSLAPay(string $payroll_id, bool $isGrouped = true) {
         $employee_salary = new GetEmployeeService($payroll_id, $isGrouped);
         $employee_salary->getAndMapEmployeeSalary();
         $employees = $employee_salary->employees;

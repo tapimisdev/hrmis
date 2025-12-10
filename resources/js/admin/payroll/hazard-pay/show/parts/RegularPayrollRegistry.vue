@@ -34,9 +34,9 @@
 
             <div class="sheet-header">
                 <h1 class="sheet-title mb-1">
-                    TECHNOLOGY APPLICATION ND PROMOTION INSTITUTE
+                    TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE
                 </h1>
-                <h1 class="sheet-title">
+                <h1 class="sheet-title mb-3">
                   PAYROLL OF HAZARD PAY FOR THE MONTH OF {{ month }}
                 </h1>
             </div>
@@ -67,7 +67,7 @@
                                 c/o TAPIEA
                             </th>
                             <th style="width: 50px">Adjustments</th>
-                            <th>Net Pay</th>
+                            <th>Net Amount</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
@@ -107,7 +107,7 @@
                     </tbody>
 
                     <tfoot>
-                        <tr class="grand-total">
+                        <tr class="grand-total text-center">
                             <td colspan="2" class="text-end">
                                 <strong>GRAND TOTAL</strong>
                             </td>

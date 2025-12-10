@@ -131,7 +131,6 @@ export default {
                 })
                 .catch((error) => console.error(error));
         },
-
         search() {
             this.errors = {};
             this.loading = true;
@@ -184,6 +183,8 @@ export default {
                 this.form[key] = isNaN(value) ? value : Number(value);
             }
         }
+
+        this.search();
     },
 };
 </script>

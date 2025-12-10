@@ -28,16 +28,20 @@ import PayrollEmployeeComponentForm from './admin/payroll-component/Form.vue';
 import PayrollSettings from './admin/payroll-settings/Index.vue';
 
 // Salary Pay Payroll
-
 import SalaryPayIndex from './admin/payroll/salary-pay/Index.vue';
 import PayrollStepper from './admin/payroll/salary-pay/create/PayrollStepper.vue';
 import ShowPayroll from './admin/payroll/salary-pay/show/ShowPayroll.vue';
 
 // Hazard Pay Payroll
-
 import HazardPayIndex from './admin/payroll/hazard-pay/Index.vue';
 import HazardPayStepper from './admin/payroll/hazard-pay/create/PayrollStepper.vue';
 import HazardPayView from './admin/payroll/hazard-pay/show/ShowPayroll.vue';
+
+// SLA Pay Payroll
+import SlaPayIndex from './admin/payroll/sla-pay/Index.vue';
+import SlaPayStepper from './admin/payroll/sla-pay/create/PayrollStepper.vue';
+import SlaPayView from './admin/payroll/sla-pay/show/ShowPayroll.vue';
+
 
 const authApp = createApp({
   components: {
@@ -69,7 +73,11 @@ const authApp = createApp({
 
     HazardPayIndex,
     HazardPayStepper,
-    HazardPayView
+    HazardPayView,
+
+    SlaPayIndex,
+    SlaPayStepper,
+    SlaPayView
   },
 });
 

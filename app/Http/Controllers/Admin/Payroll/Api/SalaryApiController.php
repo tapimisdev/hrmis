@@ -79,11 +79,19 @@ class SalaryApiController extends Controller
                             ->leftJoin('employee_information as ei', 'au.user_id', '=', 'ei.user_id')
                             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
                             ->where('au.application_approver_id', $approver_id)
-                            ->select('ei.employee_no', 'au.level', 'ep.firstname', 'ep.lastname', 'ep.middlename', 'ei.user_id')
+                            ->select(
+                                'ei.employee_no',
+                                'au.level',
+                                DB::raw('UPPER(ep.firstname) as firstname'),
+                                DB::raw('UPPER(ep.lastname) as lastname'),
+                                'ep.middlename',
+                                'ei.user_id'
+                            )
                             ->get();
 
         return response()->json($user_approvers);
     }
+
 
     public function downloadPayrollRegistry($payroll_no)
     {

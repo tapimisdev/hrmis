@@ -8,6 +8,9 @@ use App\Http\Controllers\Admin\Payroll\Salary\SalaryItemController;
 use App\Http\Controllers\Admin\Payroll\Api\HazardApiController;
 use App\Http\Controllers\Admin\Payroll\HazardPay\HazardPayController;
 
+use App\Http\Controllers\Admin\Payroll\Api\SLAApiController;
+use App\Http\Controllers\Admin\Payroll\SLAPay\SLAPayController;
+
 Route::prefix('payroll')->group(function() {
     Route::post('validate-and-fetch-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
     Route::post('salary', [SalaryApiController::class, 'getList']);
@@ -25,7 +28,7 @@ Route::prefix('payroll')->group(function() {
     Route::get('/progress/{batchId}', [SalaryController::class, 'getBatchProgress']);
     Route::post('/cancel/{batchId}', [SalaryController::class, 'cancelBatch']);
 
-    # DOWNLOADS
+    # Downloads
     Route::get('salary/{payroll_no}/download', [SalaryApiController::class, 'downloadPayrollRegistry'])
         ->name('api.payroll.salary.download');
     Route::get('absences-leaves/{payroll_no}/download', [SalaryApiController::class, 'downloadAbsencesLeaves'])
@@ -33,13 +36,20 @@ Route::prefix('payroll')->group(function() {
     Route::get('payslip/{payroll_no}/download', [SalaryApiController::class, 'downloadPayslip'])
         ->name('api.payroll.payslip.download');
 
-
     # Hazard Payroll
-
     Route::prefix('hazard-pay')->group(function() {
         Route::post('validate-and-fetch-employees', [HazardApiController::class, 'validateAndGetEmployee']);
+        Route::post('processed', [HazardApiController::class, 'getList']);
         Route::get('{payroll_id}', [HazardApiController::class, 'getHazardPay']);
         Route::post('generate', [HazardPayController::class, 'store']);
+    });
+
+    # SLA Payroll
+    Route::prefix('sla-pay')->group(function() {
+        Route::post('validate-and-fetch-employees', [SLAApiController::class, 'validateAndGetEmployee']);
+        Route::post('processed', [SLAApiController::class, 'getList']);
+        Route::get('{payroll_id}', [SLAApiController::class, 'getSLAPay']);
+        Route::post('generate', [SLAPayController::class, 'store']);
     });
 
 });

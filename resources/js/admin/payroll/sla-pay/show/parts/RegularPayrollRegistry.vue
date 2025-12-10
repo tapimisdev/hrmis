@@ -4,7 +4,6 @@
         :class="status"
         :data-bs-theme="theme"
     >
-        <!-- Toolbar -->
         <div class="excel-toolbar">
             <div class="status-badge">
                 <i :class="['fa-solid', statusConfig.icon]"></i>
@@ -14,46 +13,17 @@
                 <button class="toolbar-btn">
                     <i class="fa-solid fa-print"></i> Print
                 </button>
-                <div class="dropdown">
-                    <button
-                        class="toolbar-btn left dropdown-toggle"
-                        type="button"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                    >
-                        <i class="fa-solid fa-download"></i> Downloads
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="javascript:void(0)"
-                                @click="downloadPayroll('registry', payroll_no)"
-                                >Payroll Registry</a
-                            >
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="javascript:void(0)"
-                                @click="downloadPayroll('aut', payroll_no)"
-                                >Absences & Leaves</a
-                            >
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="javascript:void(0)"
-                                @click="downloadPayroll('payslip', payroll_no)"
-                                >Payslip</a
-                            >
-                        </li>
-                    </ul>
-                </div>
+                <button
+                    @click="download('payslip', payroll_no)"
+                    class="toolbar-btn left"
+                    type="button"
+                    aria-expanded="false"
+                >
+                    <i class="fa-solid fa-download"></i> Download
+                </button>
             </div>
         </div>
 
-        <!-- Sheet -->
         <div class="excel-sheet">
             <LoaderVue
                 :visible="loading"
@@ -61,16 +31,14 @@
                 status="uploading"
                 message="Uploading, please wait..."
             />
+
             <div class="sheet-header">
-                <h1 class="sheet-title">
-                    <div class="toolbar-description mb-1">
-                        ( PERMANENT )
-                    </div>
-                    TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE																					
+                <h1 class="sheet-title mb-2">
+                    TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE
                 </h1>
-                <p class="sheet-subtitle">
-                    GENERAL PAYROLL FOR SALARY																					
-                </p>
+                <h1 class="sheet-title mb-3">
+                  PAYROLL OF SUBSISTENCE AND LAUNDRY ALLOWANCE PAY FOR THE MONTH OF {{ month }}
+                </h1>
             </div>
 
             <div class="sheet-info">
@@ -80,92 +48,115 @@
                     rendered:
                 </div>
                 <div class="info-period">
-                    Period: <strong>1–15 September 2025</strong>
+                    Month: <strong>{{ month }}</strong>
                 </div>
             </div>
+
             <div class="excel-table-wrapper table-responsive">
                 <table class="excel-table">
                     <thead>
                         <tr class="header-labels">
                             <th>Emp#</th>
                             <th>Name / Position</th>
-                            <th>Monthly <br />Rate</th>
-                            <th>Salary <br />Grade</th>
-                            <th class="deduction">AUT</th>
-                            <th>Overtime</th>
-                            <th>Holiday <br />Excess</th>
-
-                            <!-- Dynamic Deductions -->
-                            <th
-                                v-for="(deduction, dIndex) in dynamicDeductions"
-                                :key="'deduction-' + dIndex"
-                                class="deduction"
-                            >
-                                {{ deduction }}
+                            <th>
+                              Subsistence <br/>
+                              Allowance<br/>
+                              (22 days)
                             </th>
-
-                            <th class="earning">Total Deductions</th>
-                            <th>Adjustment</th>
-                            <th class="net-salary">Net <br />Salary</th>
+                            <th>
+                              Laundry <br/>
+                              Allowance<br/>
+                              (₱500)
+                            </th>
+                            <th>Total SLA</th>
+                            <th>
+                                Deduction <br />
+                                Late/UT's <br />
+                                <small>
+                                  per DOST AO <br />
+                                  No. 003
+                                </small>
+                            </th>
+                            <th>
+                              Uniform <br/>
+                              Deduction<br/>
+                            </th>
+                            <th>
+                              Less: Health <br/>
+                              Card c/o <br />
+                              TAPIEA
+                            </th>
+                            <th style="width: 150px">Adjustments</th>
+                            <th>Net Amount</th>
+                            <th>Remarks</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        <tr class="data-row" v-for="(emp, index) in employees" :key="index">
-                            <!-- <td colspan="100">asdasd</td> -->
+                        <tr
+                            class="data-row"
+                            v-for="(emp, index) in employees"
+                            :key="index"
+                        >
                             <td class="text-center">{{ emp.employee_no }}</td>
                             <td class="name-cell">
                                 <div class="employee-name">{{ emp.name }}</div>
-                                <div class="employee-position">{{ emp.position }}</div>
+                                <div class="employee-position">
+                                    {{ emp.position }}
+                                </div>
                             </td>
-                            <td class="text-center">{{ emp.monthly_rate }}</td>
-                            <td class="text-center">{{ emp.salary_grade }}</td>
-                            <td class="text-center">{{ emp.aut }}</td>
-                            <td class="text-center">{{ emp.overtime }}</td>
-                            <td class="text-center">{{ emp.holiday }}</td>
-                            
-                            <!-- Dynamic Deductions -->
-                            <td
-                                v-for="(deduction, dIndex) in dynamicDeductions"
-                                :key="'deduction-' + dIndex"
-                                class="number-cell deduction"
-                            >
-                                {{ formatNumber(getDeductionAmount(emp, deduction)) }}
+                            <td class="text-center">{{ emp.subsistence_allowance }}</td>
+                            <td class="text-center">{{ emp.laundry_allowance }}</td>
+                            <td class="text-center">{{ emp.total_sla }}</td>
+                            <td class="text-center">
+                                {{ emp.ut_deductions }}
                             </td>
-
-                            <td class="text-center">{{ emp.total_deductions }}</td>
-                            <td class="number-cell p-0">
-                                <input 
-                                type="number" 
-                                v-model="emp.adjustment"
-                                @change="adjustRow(emp)"
-                                class="w-100 border-0 p-2 bg-transparent focus:ring-0 text-right"
+                            <td class="text-center">{{ emp.uniform_deduction }}</td>
+                            <td class="text-center">{{ emp.healthcard }}</td>
+                            <td class="text-center">
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    v-model.number="emp.adjustment"
                                 />
                             </td>
                             <td class="text-center">{{ emp.net_pay }}</td>
+                            <td class="text-center">
+                                <textarea class="form-control my-3"></textarea>
+                            </td>
                         </tr>
                     </tbody>
-                    <!-- Grand Total Row -->
+
                     <tfoot>
                         <tr class="grand-total text-center">
-                        <td colspan="2" class="text-end"><strong>GRAND TOTAL</strong></td>
-                        <td class="number-cell">{{ formatNumber(grandTotals('monthly_rate')) }}</td>
-                        <td class="number-cell">N/A</td>
-                        <td class="number-cell deduction">{{ formatNumber(grandTotals('aut')) }}</td>
-                        <td class="number-cell">{{ formatNumber(grandTotals('overtime')) }}</td>
-                        <td class="number-cell">{{ formatNumber(grandTotals('holiday')) }}</td>
-
-                        <td
-                            v-for="(deduction, dIndex) in dynamicDeductions"
-                            :key="'deduction-grand-' + dIndex"
-                            class="number-cell deduction"
-                        > 
-                            {{ formatNumber(grandTotals('deductions', deduction)) }}
-                        </td>
-
-                        <td class="number-cell">{{ formatNumber(grandTotals('total_deductions')) }}</td>
-                        <td class="number-cell earning">{{ formatNumber(grandTotals('salary_adjustment')) }}</td>
-                        <td class="number-cell net-salary"><strong>{{ formatNumber(grandTotals('net_pay')) }}</strong></td>
+                            <td colspan="2" class="text-end">
+                                <strong>GRAND TOTAL</strong>
+                            </td>
+                            <td class="number-cell">
+                                {{ formatNumber(grandTotals("monthly_rate")) }}
+                            </td>
+                            <td class="number-cell">-</td>
+                            <td class="number-cell">
+                                {{ formatNumber(grandTotals("hazard_pay")) }}
+                            </td>
+                            <td class="number-cell">
+                                {{
+                                  formatNumber(grandTotals("witholding_tax"))
+                                }}
+                            </td>
+                            <td class="number-cell">
+                                {{ formatNumber(grandTotals("healthcard")) }}
+                            </td>
+                            <td></td>
+                            <td class="number-cell">
+                                {{ formatNumber(grandTotals("adjustment")) }}
+                            </td>
+                            <td class="number-cell net-salary">
+                                <strong>{{
+                                    formatNumber(grandTotals("net_pay"))
+                                }}</strong>
+                            </td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -174,19 +165,20 @@
     </div>
 </template>
 
-
 <script>
 import axios from "axios";
 import LoaderVue from "../../../../../components/LoaderVue.vue";
+
 const token = localStorage.getItem("auth_token");
 
 export default {
-    name: "CosPayrollRegistry",
+    name: "RegularPayrollRegistry",
     components: { LoaderVue },
     props: {
         employees: { type: Array, required: true },
         status: { type: String, required: true },
         payroll_no: { type: String, required: true },
+        month: { type: String, required: true },
     },
     data() {
         return {
@@ -198,13 +190,6 @@ export default {
         };
     },
     computed: {
-        dynamicDeductions() {
-            const names = new Set();
-            this.employees.forEach((p) =>
-                p.deductions?.forEach((d) => names.add(d.deduction_type))
-            );
-            return Array.from(names);
-        },
         statusConfig() {
             const configs = {
                 draft: {
@@ -268,21 +253,12 @@ export default {
         },
     },
     methods: {
-        async downloadPayroll(type, payroll_no) {
-            const urlArr = {
-                registry: `/api/payroll/salary/${payroll_no}/download`,
-                aut: `/api/payroll/absences-leaves/${payroll_no}/download`,
-                payslip: `/api/payroll/payslip/${payroll_no}/download`,
-            };
-
-            const endPoint = urlArr[type];
-
+        async download(payroll_no) {
             try {
-                const response = await axios.get(endPoint, {
+                const response = await axios.get(urlArr[type], {
                     headers: { Authorization: `Bearer ${this.token}` },
                     responseType: "blob",
                 });
-
                 const url = window.URL.createObjectURL(
                     new Blob([response.data])
                 );
@@ -291,7 +267,6 @@ export default {
                 a.download = `payroll_registry_${payroll_no}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
-
                 a.remove();
                 window.URL.revokeObjectURL(url);
             } catch (error) {
@@ -304,45 +279,11 @@ export default {
                 ? num.toLocaleString(undefined, { minimumFractionDigits: 2 })
                 : "-";
         },
-        getDeductionAmount(emp, type) {
-            const deduction = emp.deductions?.find(
-                (d) => d.deduction_type === type
+        grandTotals(field) {
+            return this.employees.reduce(
+                (total, emp) => total + (Number(emp[field]) || 0),
+                0
             );
-            return deduction ? Number(deduction.amount) : 0;
-        },
-        grandTotals(field, subfield = null) {
-            return this.employees.reduce((total, emp) => {
-                // Case 1: Dynamic deduction columns
-                if (field === "deductions" && subfield) {
-                    const found = emp.deductions?.find(d => d.deduction_type === subfield);
-                    return total + (found ? Number(found.amount) : 0);
-                }
-
-                // Case 2: Normal numeric fields (monthly_rate, aut, overtime, holiday, etc.)
-                const val = Number(emp[field]) || 0;
-                return total + val;
-            }, 0);
-        },
-        async adjustRow(emp) {
-            this.loading = true;
-            try {
-                const res = await axios.post(
-                    `/api/payroll/salary-item/${emp.id}`,
-                    {
-                        adjustment: emp.adjustment,
-                    },
-                    {
-                        headers: { Authorization: `Bearer ${this.token}` },
-                        responseType: "blob",
-                    }
-                );
-                console.log(res);
-                this.$emit("fetch_data");
-            } catch (error) {
-                console.error(error);
-            } finally {
-                this.loading = false;
-            }
         },
         applyStatusTheme() {
             const { color, bg, darkColor, darkBg } = this.statusConfig;
@@ -386,13 +327,10 @@ export default {
 .payroll-registry-container {
     --status-color: #ccc;
     --status-bg: #f9f9f9;
-
     --bs-success-rgb: 25, 135, 84;
     --bs-danger-rgb: 220, 53, 69;
     --bs-primary-rgb: 13, 110, 253;
-    --bs-warning-rgb: 255, 193, 7;
     --bs-dark-rgb: 33, 37, 41;
-
     background: var(--status-bg);
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
@@ -400,14 +338,10 @@ export default {
     padding-bottom: 24px;
     color: var(--bs-body-color);
 }
-
-/* Dark mode adjustments */
 [data-bs-theme="dark"] .payroll-registry-container {
     --status-bg: #1a1d20;
     background: var(--bs-secondary-bg, #212529);
 }
-
-/* Toolbar */
 .excel-toolbar {
     background: var(--status-color);
     display: flex;
@@ -417,12 +351,10 @@ export default {
     color: white;
     transition: background 0.3s ease;
 }
-
 .toolbar-left {
     display: flex;
     gap: 4px;
 }
-
 .toolbar-btn {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.4);
@@ -433,15 +365,12 @@ export default {
     cursor: pointer;
     transition: all 0.2s;
 }
-
 .toolbar-btn:hover {
     background: rgba(255, 255, 255, 0.2);
 }
-
 .toolbar-btn i {
     margin-right: 6px;
 }
-
 .status-badge {
     display: flex;
     align-items: center;
@@ -453,8 +382,6 @@ export default {
     font-size: 13px;
     font-weight: 600;
 }
-
-/* Excel Sheet */
 .excel-sheet {
     background: var(--bs-body-bg, white);
     margin: 16px;
@@ -462,17 +389,14 @@ export default {
     border: 1px solid var(--bs-border-color, #d0d0d0);
     position: relative;
 }
-
 [data-bs-theme="dark"] .excel-sheet {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
-
 .sheet-header {
     padding: 24px 24px 8px 24px;
     text-align: center;
     border-bottom: 2px solid var(--bs-border-color, #e0e0e0);
 }
-
 .sheet-title {
     font-size: 16px;
     font-weight: 700;
@@ -481,12 +405,10 @@ export default {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-
 .sheet-subtitle {
     font-size: 12px;
     color: var(--bs-secondary-color, #666);
 }
-
 .sheet-info {
     display: flex;
     justify-content: space-between;
@@ -495,107 +417,35 @@ export default {
     background: var(--bs-secondary-bg, #f9f9f9);
     border-bottom: 1px solid var(--bs-border-color, #e0e0e0);
 }
-
 [data-bs-theme="dark"] .sheet-info {
     background: rgba(255, 255, 255, 0.05);
 }
-
 .excel-table {
     width: 100%;
     border-collapse: collapse;
 }
-
 .excel-table th,
 .excel-table td {
     border: 1px solid var(--bs-border-color, #d0d0d0);
     padding: 2px 8px;
     font-size: 11px;
 }
-
 .header-labels th {
     text-align: center;
     font-weight: 700;
     color: var(--status-color);
     background: var(--bs-table-bg, white);
 }
-
 [data-bs-theme="dark"] .header-labels th {
     background: var(--bs-body-bg);
 }
-
-.earning {
-    background-color: rgba(var(--bs-success-rgb), 0.1);
-    max-width: 76px;
-    word-wrap: break-word;
-    white-space: normal;
-}
-
-[data-bs-theme="dark"] .earning {
-    background-color: rgba(var(--bs-success-rgb), 0.2);
-}
-
-.deduction {
-    background-color: rgba(var(--bs-danger-rgb), 0.1);
-    max-width: 76px;
-    word-wrap: break-word;
-    white-space: normal;
-}
-
-[data-bs-theme="dark"] .deduction {
-    background-color: rgba(var(--bs-danger-rgb), 0.2);
-}
-
-.net-salary {
-    background-color: rgba(var(--bs-primary-rgb), 0.1);
-    font-weight: bold;
-}
-
-[data-bs-theme="dark"] .net-salary {
-    background-color: rgba(var(--bs-primary-rgb), 0.2);
-}
-
-.project-header .row-number {
-    text-align: center;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px;
-}
-
-.project-header .project-cell {
-    padding: 8px 12px;
-    font-weight: bold;
-    font-size: 12px;
-    text-transform: uppercase;
-    text-align: center;
-    color: var(--bs-body-color);
-}
-
 .data-row .name-cell .employee-name {
     font-weight: bold;
 }
-
 .data-row .name-cell .employee-position {
     font-style: italic;
     font-size: 8px;
 }
-
-.total {
-    border-top: 2px solid rgba(var(--bs-dark-rgb), 0.4);
-    font-weight: bold;
-}
-
-.project-total {
-    background-color: rgba(var(--bs-warning-rgb), 0.2);
-}
-
-[data-bs-theme="dark"] .project-total {
-    background-color: rgba(var(--bs-warning-rgb), 0.15);
-}
-
-.project-total td {
-    font-weight: bold;
-}
-
 .grand-total {
     border-top: 2px solid rgba(var(--bs-dark-rgb), 1);
     font-weight: bolder;
@@ -603,7 +453,6 @@ export default {
     background-color: var(--status-color);
     color: var(--status-bg);
 }
-
 [data-bs-theme="dark"] .grand-total {
     background-color: var(--status-color);
     color: white;

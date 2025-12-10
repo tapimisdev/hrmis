@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Services\HazardPay;
+namespace App\Services\SLAPay;
 
 use App\Enums\EmploymentTypesEnum;
 use App\Models\User;
 use App\Notifications\PayrollBatchCompleted;
-use App\Jobs\Admin\Payroll\HazardPayReport;
+use App\Jobs\Admin\Payroll\SLAPayReport;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
@@ -23,7 +23,7 @@ class PayrollService {
 
     public function getPayrolls($payload)
     {
-        $query = DB::table('payroll_hazard_pay as ps')
+        $query = DB::table('payroll_sla_pay as ps')
             ->leftJoin('employment_types as et', 'ps.employment_type_id', '=', 'et.id')
             ->select('ps.*', 'et.name as employment_name', 'et.code as employment_code');
 
@@ -230,7 +230,7 @@ class PayrollService {
         $payroll_no = generateNo('REF-', 4);
 
         // Insert payroll and get its ID
-        $payroll_id = DB::table('payroll_hazard_pay')->insertGetId([
+        $payroll_id = DB::table('payroll_sla_pay')->insertGetId([
             'label' => $payload['label'],
             'payroll_no' => $payroll_no,
             'month' => $payload['month'],
@@ -247,7 +247,7 @@ class PayrollService {
             ->flatMap(function ($approvers, $level) use ($payroll_id) {
                 return collect($approvers)->map(function ($user_id) use ($payroll_id, $level) {
                     return [
-                        'payroll_hazard_pay_id' => $payroll_id,
+                        'payroll_sla_pay_id' => $payroll_id,
                         'user_id' => $user_id,
                         'level' => (int) $level,
                         'created_at' => now(),
@@ -256,7 +256,7 @@ class PayrollService {
                 });
             })
             ->pipe(function ($records) {
-                DB::table('payroll_hazard_pay_approvers')->insert($records->toArray());
+                DB::table('payroll_sla_pay_approvers')->insert($records->toArray());
             });
 
         // Return inserted payroll ID or record
@@ -293,15 +293,15 @@ class PayrollService {
                 // }
                 // Log::error("Payroll batch failed: {$e->getMessage()}");
             })
-            ->name("Hazard Payroll Report #{$payroll_id}")
+            ->name("Subsistence and Allowance Payroll Report #{$payroll_id}")
             ->dispatch();
 
-        DB::table('payroll_hazard_pay')
+        DB::table('payroll_sla_pay')
             ->where('id', $payroll_id)
             ->update(['batch_id' => $batch->id]);
 
         foreach ($eligibleEmployees as $employee) {
-            $batch->add(new HazardPayReport($employee, $payroll_id));
+            $batch->add(new SLAPayReport($employee, $payroll_id));
         }
         
         return $batch->id;

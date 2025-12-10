@@ -87,13 +87,14 @@ export default {
             this.$emit("payroll-list", [], this.loading);
 
             axios
-                .post("/api/payroll/hazard-pay/processed", this.form, {
+                .post("/api/payroll/sla-pay/processed", this.form, {
                     headers: {
                         Accept: "application/json",
                         Authorization: `Bearer ${this.token}`,
                     },
                 })
                 .then((response) => {
+                    console.log(response);
                     this.$emit("payroll-list", response.data.data, false);
                     this.loading = false;
                 })
