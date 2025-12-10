@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class WhitelistBiometricIP
@@ -22,6 +23,14 @@ class WhitelistBiometricIP
     {
         $ip = $request->ip();
         if (!in_array($ip, $this->whitelisted)) {
+            // Log the unauthorized access attempt
+            Log::warning('Unauthorized IP attempt', [
+                'ip' => $ip,
+                'url' => $request->fullUrl(),
+                'user_agent' => $request->userAgent(),
+                'timestamp' => now(),
+            ]);
+
             return response()->json([
                 'message' => 'Unauthorized IP',
                 'ip' => $ip
