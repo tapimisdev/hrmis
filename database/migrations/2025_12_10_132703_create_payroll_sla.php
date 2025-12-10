@@ -58,6 +58,28 @@ return new class extends Migration
                 ->nullable();
         });
 
+        Schema::create('payroll_sla_pay_ut', function(Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('position');
+            $table->foreignId('payroll_sla_pay_id')
+                ->constrained('payroll_sla_pay')
+                ->onDelete('cascade');
+            $table->string('total_mins');
+            $table->string('total_deductions');
+            $table->timestamps();
+        });
+
+        Schema::create('payroll_sla_pay_ut_items', function(Blueprint $table) {
+            $table->id();
+            $table->foreignId('payroll_sla_pay_ut_id')
+                ->constrained('payroll_sla_pay_ut')
+                ->onDelete('cascade');
+            $table->string('date');
+            $table->string('amount');
+            $table->timestamps();
+        });
+
         Schema::create('payroll_sla_pay_approvers', function(Blueprint $table) {
             $table->id();
             $table->foreignId('payroll_sla_pay_id')
@@ -74,6 +96,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('payroll_sla_pay_ut_items');
+        Schema::dropIfExists('payroll_sla_pay_ut');
         Schema::dropIfExists('payroll_sla_pay_approvers');
         Schema::dropIfExists('payroll_sla_pay_employee');
         Schema::dropIfExists('payroll_sla_pay');
