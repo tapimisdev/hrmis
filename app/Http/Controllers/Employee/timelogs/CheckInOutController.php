@@ -105,7 +105,7 @@ class CheckInOutController extends Controller
             $timelog = DB::table('timelogs')->insert([
                 'user_id'           => $validatedData['user_id'],
                 'employee_no'       => $validatedData['employee_no'],
-                'date_time'         => $now, // Use $now instead of request input
+                'date_time'         => $now,
                 'fn'                => $fn,
                 'shift_id'          => $user_schedule['shift_id'],
                 'work_schedule_id'  => $user_schedule['work_schedule_id'],
