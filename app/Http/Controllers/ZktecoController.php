@@ -18,20 +18,18 @@ class ZktecoController extends Controller
         $timestamp = $parts[1] ?? null;
         $fn        = $parts[2] ?? null;
         $type      = $parts[3] ?? null;
-        
+
+        Log::info('ADMS Request Received', [
+            'query_params' => $request->query(),
+            'post_params'  => $request->post(),
+            'all_params'   => $request->all(),
+            'raw_input'    => $rawInput,
+            'headers'      => $request->headers->all()
+        ]);
+            
         DB::beginTransaction();
 
         try {
-            Log::info('ADMS Data Received', [
-                'raw_input' => $rawInput,
-                'all'       => $request->all(),
-                'query'     => array_merge($request->query(), [
-                    'Type'      => $type,
-                    'Fn'        => $fn,
-                    'bio_id'    => $biodId,
-                    'Timestamp' => $timestamp,
-                ]),
-            ]);
 
             $sn = $request->query('SN');
 
@@ -40,7 +38,12 @@ class ZktecoController extends Controller
                     ->where('biometrics_id', $biodId)
                     ->first();
 
+            if(!$hris) {
+                throw new \Exception('No Employee assigned to this biometric id: ' . $biodId);
+            }
+
             $user = User::find($hris->user_id);
+
             $user_schedule = $user->getShiftAndWorkSchedule();
 
             // Insert time log
@@ -58,7 +61,6 @@ class ZktecoController extends Controller
 
             DB::commit();
 
-            return response("OK", 200);
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -75,8 +77,8 @@ class ZktecoController extends Controller
                 'created_at'    => now('Asia/Manila'),
                 'updated_at'    => now('Asia/Manila'),
             ]);
-
-            return response('fail', 500);
         }
+
+        return response("OK", 200);
     }
 }
