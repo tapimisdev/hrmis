@@ -182,7 +182,7 @@ export default {
             this.errors = {};
             try {
                 const res = await axios.post(
-                    "/api/payroll/sla-pay/validate-and-fetch-employees",
+                    "/api/payroll/sla-pay/check-employees",
                     this.form,
                     {
                         headers: {

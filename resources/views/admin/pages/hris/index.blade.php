@@ -21,7 +21,7 @@
                         </li>
                         <li>
                             <a class="dropdown-item fw-bold text-uppercase d-flex align-items-center" href="{{ route('hris.employee.salary') }}">
-                                <i class="fa-solid fa-\peso-sign me-2"></i> Update Salary
+                                <i class="fa-solid fa-peso-sign me-2"></i> Update Salary
                             </a>
                         </li>
                         <li>

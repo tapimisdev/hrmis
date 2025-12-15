@@ -60,7 +60,7 @@ class SalaryApiController extends Controller
         return response()->json($events);
     }
 
-    public function getPayrollRegistry(string $payroll_id, bool $isGrouped = true) 
+    public function getPayrollData(string $payroll_id, bool $isGrouped = true) 
     {
         $employee_salary = new GetEmployeeService($payroll_id, $isGrouped);
         $employee_salary->getAndMapEmployeeSalary();
@@ -68,30 +68,6 @@ class SalaryApiController extends Controller
         
         return response()->json($employees);
     }
-
-    public function approvers()
-    {
-        $approver_id = DB::table('application_approver')
-                        ->where('type', 'payroll')
-                        ->value('id');
-
-        $user_approvers = DB::table('application_approver_users as au')
-                            ->leftJoin('employee_information as ei', 'au.user_id', '=', 'ei.user_id')
-                            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-                            ->where('au.application_approver_id', $approver_id)
-                            ->select(
-                                'ei.employee_no',
-                                'au.level',
-                                DB::raw('UPPER(ep.firstname) as firstname'),
-                                DB::raw('UPPER(ep.lastname) as lastname'),
-                                'ep.middlename',
-                                'ei.user_id'
-                            )
-                            ->get();
-
-        return response()->json($user_approvers);
-    }
-
 
     public function downloadPayrollRegistry($payroll_no)
     {

@@ -11,45 +11,64 @@ use App\Http\Controllers\Admin\Payroll\HazardPay\HazardPayController;
 use App\Http\Controllers\Admin\Payroll\Api\SLAApiController;
 use App\Http\Controllers\Admin\Payroll\SLAPay\SLAPayController;
 
+use App\Http\Controllers\Admin\Payroll\Api\PeraRataApiController;
+use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataController;
+
+use App\Http\Controllers\Admin\Payroll\ReportsController;
+
 Route::prefix('payroll')->group(function() {
-    Route::post('validate-and-fetch-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
-    Route::post('salary', [SalaryApiController::class, 'getList']);
-    Route::get('salary/{payroll_id}', [SalaryApiController::class, 'getPayrollRegistry']);
-    Route::post('generate-salary-payroll', [SalaryController::class, 'store']);
 
-    Route::delete('delete-payroll/{id}', [SalaryController::class, 'destroy']);
+    Route::get('approvers', [ReportsController::class, 'getApprovers']);
+    Route::get('/progress/{batchId}', [ReportsController::class, 'getBatchProgress']);
+    Route::post('/cancel/{batchId}', [ReportsController::class, 'cancelBatch']);
 
-    Route::post('salary-item/{id}', [SalaryItemController::class, 'update']);
+    # Salary Payroll
 
-    # Adjustment
-    Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);
-    Route::get('approvers', [SalaryApiController::class, 'approvers']);
+    Route::prefix('salary-pay')->group(function() {
+        Route::post('items/{id}', [SalaryItemController::class, 'update']);
+        Route::post('check-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
+        Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);
+        Route::post('processed', [SalaryApiController::class, 'getList']);
+        Route::get('{payroll_id}', [SalaryApiController::class, 'getPayrollData']);
+        Route::post('generate', [SalaryController::class, 'store']);
+        Route::delete('{id}/delete', [SalaryController::class, 'destroy']);
 
-    Route::get('/progress/{batchId}', [SalaryController::class, 'getBatchProgress']);
-    Route::post('/cancel/{batchId}', [SalaryController::class, 'cancelBatch']);
+        # DOWNLOAD
 
-    # Downloads
-    Route::get('salary/{payroll_no}/download', [SalaryApiController::class, 'downloadPayrollRegistry'])
-        ->name('api.payroll.salary.download');
-    Route::get('absences-leaves/{payroll_no}/download', [SalaryApiController::class, 'downloadAbsencesLeaves'])
-        ->name('api.payroll.absences-leaves.download');
-    Route::get('payslip/{payroll_no}/download', [SalaryApiController::class, 'downloadPayslip'])
-        ->name('api.payroll.payslip.download');
+        Route::get('{payroll_no}/download', [SalaryApiController::class, 'downloadPayrollRegistry'])
+            ->name('api.payroll.salary.download');
+        Route::get('absences-leaves/{payroll_no}/download', [SalaryApiController::class, 'downloadAbsencesLeaves'])
+            ->name('api.payroll.absences-leaves.download');
+        Route::get('payslip/{payroll_no}/download', [SalaryApiController::class, 'downloadPayslip'])
+            ->name('api.payroll.payslip.download');
+
+    });
 
     # Hazard Payroll
     Route::prefix('hazard-pay')->group(function() {
-        Route::post('validate-and-fetch-employees', [HazardApiController::class, 'validateAndGetEmployee']);
+        Route::post('check-employees', [HazardApiController::class, 'validateAndGetEmployee']);
         Route::post('processed', [HazardApiController::class, 'getList']);
-        Route::get('{payroll_id}', [HazardApiController::class, 'getHazardPay']);
+        Route::get('{payroll_id}', [HazardApiController::class, 'getPayrollData']);
         Route::post('generate', [HazardPayController::class, 'store']);
+        Route::delete('{id}/delete', [HazardPayController::class, 'destroy']);
     });
 
     # SLA Payroll
     Route::prefix('sla-pay')->group(function() {
-        Route::post('validate-and-fetch-employees', [SLAApiController::class, 'validateAndGetEmployee']);
+        Route::post('check-employees', [SLAApiController::class, 'validateAndGetEmployee']);
         Route::post('processed', [SLAApiController::class, 'getList']);
-        Route::get('{payroll_id}', [SLAApiController::class, 'getSLAPay']);
+        Route::get('{payroll_id}', [SLAApiController::class, 'getPayrollData']);
         Route::post('generate', [SLAPayController::class, 'store']);
+        Route::delete('{id}/delete', [SLAPayController::class, 'destroy']);
+    });
+
+    # PERA RATA Payroll
+    Route::prefix('pera-rata')->group(function() {
+        Route::post('check-employees', [PeraRataApiController::class, 'validateAndGetEmployee']);
+        Route::post('processed', [PeraRataApiController::class, 'getList']);
+        Route::get('{payroll_id}', [PeraRataApiController::class, 'getPayrollData']);
+        Route::post('generate', [PeraRataController::class, 'store']);
+        Route::delete('{id}/delete', [PeraRataController::class, 'destroy']);
     });
 
 });

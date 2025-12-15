@@ -13,11 +13,7 @@ return new class extends Migration
     {
         Schema::create('payroll_components_settings', function (Blueprint $table) {
             $table->id();
-            $table->enum('type', [
-                'salary_pay',
-                'hazard_pay',
-                'longetivity_pay',
-            ]);
+            $table->string('type');
             $table->foreignId('table_id')
                 ->nullable()
                 ->constrained('payroll_components')

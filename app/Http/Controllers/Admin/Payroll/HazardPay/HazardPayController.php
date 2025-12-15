@@ -20,11 +20,11 @@ use Throwable;
 class HazardPayController extends Controller
 {
     
-    protected $payroll_hazard_service;
+    protected $payroll_service;
 
-    public function __construct(PayrollService $payroll_hazard_service)
+    public function __construct(PayrollService $payroll_service)
     {
-        $this->payroll_hazard_service = $payroll_hazard_service;
+        $this->payroll_service = $payroll_service;
     }
 
     public function index()
@@ -96,14 +96,14 @@ class HazardPayController extends Controller
         try {
             // Wrap only the critical DB operation in a transaction
             $payroll = DB::transaction(function () use ($validatedData) {
-                return $this->payroll_hazard_service->createPayroll($validatedData);
+                return $this->payroll_service->createPayroll($validatedData);
             });
 
             $payroll_id = $payroll['payroll_id'];
             $payroll_no = $payroll['payroll_no'];
 
             // Dispatch the payroll registry generation asynchronously
-            $batch_id = $this->payroll_hazard_service->createReport($validatedData, $payroll_id);
+            $batch_id = $this->payroll_service->createReport($validatedData, $payroll_id);
 
             return response()->json([
                 'batch_id' => $batch_id, 
@@ -117,6 +117,48 @@ class HazardPayController extends Controller
             return response()->json([
                 'message' => 'An error occurred while processing the request.',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $payroll = DB::table('payroll_hazard_pay')->find($id);
+
+        if (!$payroll) {
+            return response()->json(['message' => 'No Payroll found'], 404);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            DB::table('payroll_hazard_pay_approvers')
+                ->where('payroll_hazard_pay_id', $id)
+                ->delete();
+
+            DB::table('payroll_hazard_pay_employee')
+                ->where('payroll_hazard_pay_id', $id)
+                ->delete();
+
+            DB::table('payroll_hazard_pay')
+                ->where('id', $id)
+                ->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Hazard payroll deleted successfully',
+                'status'  => 'success'
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'status'  => 'destroy failed'
             ], 500);
         }
     }

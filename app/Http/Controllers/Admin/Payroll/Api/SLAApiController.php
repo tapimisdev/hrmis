@@ -112,7 +112,7 @@ class SLAApiController extends Controller
         return $employees;
     }
 
-    public function getSLAPay(string $payroll_id, bool $isGrouped = true) {
+    public function getPayrollData(string $payroll_id, bool $isGrouped = true) {
         $employee_salary = new GetEmployeeService($payroll_id, $isGrouped);
         $employee_salary->getAndMapEmployeeSalary();
         $employees = $employee_salary->employees;

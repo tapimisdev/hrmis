@@ -70,12 +70,12 @@ class ComputationService {
         $subsistence_allowance = 150 * $actual_presence;
         $laundry_allowance = (500 / 22) * $actual_presence;
         $total_sla = $subsistence_allowance + $laundry_allowance;
-
         $ut_deductions = $this->computeUTDeduction($total_ut);
 
         $uniform_deduction = 350;
         $less_healthcard = 0;
-        $netPay = $total_sla - $ut_deductions - $uniform_deduction - $less_healthcard;
+        $total = $total_sla - $ut_deductions - $uniform_deduction;
+        $netPay = $total - $less_healthcard;
 
         DB::table('payroll_sla_pay_employee')
             ->insert([
@@ -88,6 +88,7 @@ class ComputationService {
                 'total_sla' => $total_sla,
                 'ut_deductions' => $ut_deductions,
                 'uniform_deduction' => $uniform_deduction,
+                'total' => $total,
                 'healthcard' => $less_healthcard,
                 'adjustments' => 0,
                 'net_pay' => $netPay,

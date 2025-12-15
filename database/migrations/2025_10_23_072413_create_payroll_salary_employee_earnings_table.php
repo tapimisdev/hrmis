@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('payroll_salary_employee_earnings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('payroll_se_id')->constrained('payroll_salary_employee');
+            $table->foreignId('payroll_se_id')
+                ->constrained('payroll_salary_employee')
+                ->onDelete('cascade');
             $table->string('earning_type');
             $table->decimal('amount', 12, 2);
             $table->timestamps();

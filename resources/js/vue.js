@@ -42,6 +42,10 @@ import SlaPayIndex from './admin/payroll/sla-pay/Index.vue';
 import SlaPayStepper from './admin/payroll/sla-pay/create/PayrollStepper.vue';
 import SlaPayView from './admin/payroll/sla-pay/show/ShowPayroll.vue';
 
+// PERA RATA Payroll
+import PeraRataIndex from './admin/payroll/pera-rata/Index.vue';
+import PeraRataStepper from './admin/payroll/pera-rata/create/PayrollStepper.vue';
+import PeraRataView from './admin/payroll/pera-rata/show/ShowPayroll.vue';
 
 const authApp = createApp({
   components: {
@@ -77,7 +81,11 @@ const authApp = createApp({
 
     SlaPayIndex,
     SlaPayStepper,
-    SlaPayView
+    SlaPayView,
+    
+    PeraRataIndex,
+    PeraRataStepper,
+    PeraRataView
   },
 });
 

@@ -156,7 +156,7 @@ class IndexController extends Controller
                                     <a class="dropdown-item" href="' . route('hris.employee.salary', [
                                         'employee_no' => $row->employee_no
                                     ]) . '">
-                                        <i class="fa-solid fa-money-bills"></i> Update Salary
+                                        <i class="fa-solid fa-money-bill"></i> Update Salary
                                     </a>
                                 </li>
                                 <li>

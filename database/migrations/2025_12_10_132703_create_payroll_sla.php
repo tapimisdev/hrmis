@@ -51,6 +51,7 @@ return new class extends Migration
             $table->decimal('total_sla', 12, 2);
             $table->decimal('ut_deductions', 12, 2);
             $table->decimal('uniform_deduction', 12, 2);
+            $table->decimal('total', 12, 2);
             $table->decimal('healthcard', 12, 2);
             $table->decimal('adjustments', 12, 2);
             $table->decimal('net_pay', 12, 2);

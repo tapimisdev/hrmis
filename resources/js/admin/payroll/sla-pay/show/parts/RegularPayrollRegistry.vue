@@ -133,28 +133,26 @@
                                 <strong>GRAND TOTAL</strong>
                             </td>
                             <td class="number-cell">
-                                {{ formatNumber(grandTotals("monthly_rate")) }}
-                            </td>
-                            <td class="number-cell">-</td>
-                            <td class="number-cell">
-                                {{ formatNumber(grandTotals("hazard_pay")) }}
+                                {{ formatNumber(grandTotals("subsistence_allowance")) }}
                             </td>
                             <td class="number-cell">
-                                {{
-                                  formatNumber(grandTotals("witholding_tax"))
-                                }}
+                                {{ formatNumber(grandTotals("laundry_allowance")) }}
+                            </td>
+                            <td class="number-cell">
+                                {{ formatNumber(grandTotals("total_sla")) }}
+                            </td>
+                            <td class="number-cell">
+                                {{ formatNumber(grandTotals("ut_deductions")) }}
+                            </td>
+                            <td class="number-cell">
+                                {{ formatNumber(grandTotals("uniform_deduction")) }}
                             </td>
                             <td class="number-cell">
                                 {{ formatNumber(grandTotals("healthcard")) }}
                             </td>
-                            <td></td>
-                            <td class="number-cell">
-                                {{ formatNumber(grandTotals("adjustment")) }}
-                            </td>
-                            <td class="number-cell net-salary">
-                                <strong>{{
-                                    formatNumber(grandTotals("net_pay"))
-                                }}</strong>
+                            <td> {{ formatNumber(grandTotals("adjustments")) }} </td>
+                            <td>
+                                {{ formatNumber(grandTotals("net_pay")) }}
                             </td>
                             <td></td>
                         </tr>

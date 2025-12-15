@@ -141,18 +141,24 @@ export default {
             }).then((result) => {
                 if (result.isConfirmed) {
                     axios
-                        .delete(`/api/payroll/delete-payroll/${id}`, {
+                        .delete(`/api/payroll/sla-pay/${id}/delete`, {
                             headers: {
                                 Authorization: `Bearer ${this.token}`,
                             },
                         })
-                        .then(() => {
-                            this.$emit("deleted");
-                            Swal.fire({
-                                title: "Deleted!",
-                                text: "Your data has been deleted.",
-                                icon: "success",
-                            });
+                        .then((result) => {
+                            if (result.isConfirmed) {
+                                this.$emit("deleted");
+                                Swal.fire({
+                                    title: "Deleted!",
+                                    text: "Payroll has been successfully deleted!.",
+                                    icon: "success",
+                                }).then((ok) => {
+                                    if (ok.isConfirmed) {
+                                        window.location.reload();
+                                    }
+                                });
+                            }
                         })
                         .catch((error) => {
                             Swal.fire({

@@ -5,7 +5,7 @@
         <x-header title="Salary Payroll" subtitle="View salary payroll in this module">
 
             <x-button-link 
-                :href="route('salary.create')" 
+                :href="route('salary-pay.create')" 
                 icon="fa-solid fa-plus" 
                 text="Create Payroll" 
                 variant="primary"

@@ -43,6 +43,7 @@ class GetEmployeeService
                 'total_sla'     => $e->total_sla,
                 'ut_deductions' => $e->ut_deductions,
                 'uniform_deduction'     => $e->uniform_deduction,
+                'total'    => $e->total,
                 'healthcard' => $e->healthcard,
                 'adjustments'    => $e->adjustments,
                 'net_pay'        => $e->net_pay,

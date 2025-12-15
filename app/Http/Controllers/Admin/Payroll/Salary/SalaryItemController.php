@@ -13,9 +13,11 @@ class SalaryItemController extends Controller
         $validatedData = $request->validate([
             'adjustment' => 'required|Numeric'
         ]);
-
+        dd($id);
         DB::beginTransaction();
+
         try {
+
             $salary_item = DB::table('payroll_salary_employee')->where('id', $id)->first();
 
             if (!$salary_item) {
