@@ -16,8 +16,8 @@
         <ul class="nested-list">
             @can('hr.salary_payroll.view')
                 <li class="nested-item">
-                    <a href="{{ route('salary.index') }}"
-                    class="{{ request()->routeIs('salary.index') ? 'active' : '' }}">
+                    <a href="{{ route('salary-pay.index') }}"
+                    class="{{ request()->is('admin/payroll/salary*') ? 'active' : '' }}">
                         <i class="fa-solid fa-money-bill-1-wave"></i>
                         <span>Salary</span>
                     </a>
@@ -26,9 +26,25 @@
 
             <li class="nested-item">
                 <a href="{{ route('hazard-pay.index') }}"
-                class="{{ request()->routeIs('hazard-pay.index') ? 'active' : '' }}">
+                class="{{ request()->is('admin/payroll/hazard-pay*') ? 'active' : '' }}">
                     <i class="fa-solid fa-money-bill-1-wave"></i>
                     <span>Hazard Pay</span>
+                </a>
+            </li>
+
+            <li class="nested-item">
+                <a href="{{ route('sla-pay.index') }}"
+                class="{{ request()->is('admin/payroll/sla-pay*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-money-bill-1-wave"></i>
+                    <span>SLA Pay</span>
+                </a>
+            </li>
+
+             <li class="nested-item">
+                <a href="{{ route('pera-rata.index') }}"
+                class="{{ request()->is('admin/payroll/pera-rata*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-money-bill-1-wave"></i>
+                    <span>Pera & Rata</span>
                 </a>
             </li>
         </ul>

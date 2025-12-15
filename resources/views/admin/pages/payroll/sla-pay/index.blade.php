@@ -2,16 +2,16 @@
 
 @section('content')
     <div class="container-fluid">
-        <x-header title="Salary Payroll" subtitle="View salary payroll in this module">
+        <x-header title="Subsistence and Allowance Payroll" subtitle="View susistence and allowance payroll in this module">
 
             <x-button-link 
-                :href="route('salary.create')" 
+                :href="route('sla-pay.create')" 
                 icon="fa-solid fa-plus" 
-                text="Create Payroll" 
+                text="Create " 
                 variant="primary"
             />
         </x-header>
 
-        <salary-pay-index/>
+        <sla-pay-index/>
     </div>
 @endsection

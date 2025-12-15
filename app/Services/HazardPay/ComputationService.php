@@ -55,6 +55,7 @@ class ComputationService {
         $actual_presence  = $total_summary_of_dtr['actual_presence'];
 
         $entitlementPercentage = 0; 
+        $less_healthcard = 0;
 
         $withHoldingTax = $this->getWithHoldingTax();
 
@@ -70,7 +71,9 @@ class ComputationService {
 
         $hazardPay = ($this->salary_amount * $entitlementPercentage) / 22 * $actual_presence;
 
-        $netPay = $hazardPay - $withHoldingTax;
+        $total = $hazardPay - $withHoldingTax;
+
+        $netPay = $total - $less_healthcard;
 
         DB::table('payroll_hazard_pay_employee')
             ->insert([
@@ -82,7 +85,8 @@ class ComputationService {
                 'entitlement' => $entitlementPercentage,
                 'hazard_pay' => $hazardPay,
                 'witholding_tax' => $withHoldingTax,
-                'healthcard' => 0,
+                'total' => $total,
+                'healthcard' => $less_healthcard,
                 'adjustments' => 0,
                 'net_pay' => $netPay,
                 'remarks' => null,

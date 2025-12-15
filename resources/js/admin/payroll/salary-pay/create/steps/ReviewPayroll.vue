@@ -38,8 +38,8 @@
                   class="list-group-item d-flex justify-content-between align-items-center"
                 >
                 <div>
-                  <strong>{{ employee.suffix }} {{ employee.firstname }} {{ employee.middlename }} {{ employee.lastname }}</strong>
-                  <div class="text-muted small">
+                  <strong class="text-uppercase">{{ employee.suffix }} {{ employee.firstname }} {{ employee.middlename }} {{ employee.lastname }}</strong>
+                  <div class="text-muted text-uppercase">
                     {{ employee.position }} — {{ employee.division }}
                   </div>
                   <div v-for="remark in employee.remarks">
@@ -91,8 +91,8 @@
                 :key="employee.id"
                 class="list-group-item"
               >
-                <div class="fw-semibold">{{ employee.suffix }} {{ employee.firstname }} {{ employee.middlename }} {{ employee.lastname }}</div>
-                <div class="text-muted small">
+                <div class="fw-semibold text-uppercase">{{ employee.suffix }} {{ employee.firstname }} {{ employee.middlename }} {{ employee.lastname }}</div>
+                <div class="text-muted text-uppercase">
                   {{ employee.position }} — {{ employee.division }}
                 </div>
                 <div class=" mt-1">

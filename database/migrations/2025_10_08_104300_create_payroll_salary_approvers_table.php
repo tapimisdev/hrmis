@@ -13,8 +13,12 @@ return new class extends Migration
     {
         Schema::create('payroll_salary_approvers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('payroll_salary_id')->constrained('payroll_salary')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained();    
+            $table->foreignId('payroll_salary_id')
+                ->constrained('payroll_salary')
+                ->onDelete('cascade');
+            $table->foreignId('user_id')
+                ->constrained()
+                ->onDelete('cascade');    
             $table->timestamps();
         });
     }

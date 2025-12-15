@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('payroll_salary_permanents_employee_deductions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pspe_id')->constrained('payroll_salary_permanent_employees');
+            $table->foreignId('pspe_id')
+                ->constrained('payroll_salary_permanent_employees')
+                ->onDelete('cascade');
             $table->string('deduction_type');
             $table->decimal('amount', 12, 2);
             $table->timestamps();

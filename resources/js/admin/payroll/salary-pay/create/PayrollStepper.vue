@@ -188,7 +188,7 @@ export default {
             this.errors = {};
             try {
                 const res = await axios.post(
-                    "/api/payroll/validate-and-fetch-employees",
+                    "/api/payroll/salary-pay/check-employees",
                     this.form,
                     {
                         headers: {
@@ -231,7 +231,7 @@ export default {
             this.errors = {};
             try {
                 const res = await axios.post(
-                    "/api/payroll/generate-salary-payroll",
+                    "/api/payroll/salary-pay/generate",
                     this.form,
                     {
                         headers: {
@@ -241,7 +241,6 @@ export default {
                     }
                 );
                 this.form.employees = res.data.data;
-                console.log(res.data.batch_id);
                 const batch_id = res.data.batch_id;
                 const payroll_no = res.data.payroll_no;
                 window.location.href = `/admin/payroll/salary-pay/${payroll_no}?batch_id=${batch_id}`;

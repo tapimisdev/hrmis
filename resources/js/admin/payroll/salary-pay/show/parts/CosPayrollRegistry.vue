@@ -160,7 +160,7 @@
 
           <!-- Grand Total Row -->
           <tfoot>
-            <tr class="grand-total">
+            <tr class="grand-total text-center">
               <td colspan="2" class="text-end"><strong>GRAND TOTAL</strong></td>
               <td class="number-cell">{{ formatNumber(grandTotals('monthly_rate')) }}</td>
               <td class="number-cell">{{ formatNumber(grandTotals('salary_earned')) }}</td>
@@ -311,7 +311,7 @@ export default {
       this.loading = true;
       try {
         const res = await axios.post(
-          `/api/payroll/salary-item/${emp.id}`,
+          `/api/payroll/salary-pay/items/${emp.id}`,
           {
             adjustment: emp.adjustment
           },

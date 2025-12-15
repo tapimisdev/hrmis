@@ -5,11 +5,14 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Faker\Factory as Faker;
 
 class EventsAnnouncementsSeeder extends Seeder
 {
     public function run(): void
     {
+        // $faker = Faker::create();
+
         // Seed 10 announcements
         // for ($i = 1; $i <= 10; $i++) {
 
@@ -41,13 +44,13 @@ class EventsAnnouncementsSeeder extends Seeder
         //         ]);
         //     }
 
-        //     // Insert posted_by (random user IDs, adjust based on your users table)
-        //     DB::table('events_announcements_posted_by')->insert([
-        //         'user_id'               => 3,
-        //         'event_announcement_id' => $eventId,
-        //         'created_at'            => now(),
-        //         'updated_at'            => now(),
-        //     ]);
+        // Insert posted_by (random user IDs, adjust based on your users table)
+        // DB::table('events_announcements_posted_by')->insert([
+        //     'user_id'               => 3,
+        //     'event_announcement_id' => $eventId,
+        //     'created_at'            => now(),
+        //     'updated_at'            => now(),
+        // ]);
 
         //     // Insert attachments (0–2 attachments)
         //     foreach (range(1, rand(0, 2)) as $a) {

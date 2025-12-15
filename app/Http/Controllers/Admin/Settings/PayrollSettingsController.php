@@ -67,6 +67,26 @@ class PayrollSettingsController extends Controller
                     ],
                 ],
             ],
+            'pera_allowance' => [
+                'label'  => 'PERA Allowance',
+                'fields' => [
+                    'table_id' => [
+                        'selected' => $getLatestId('pera_allowance')->max('table_id') ?? null,
+                        'label'    => 'PERA Table',
+                        'choices'  => $earnings,
+                    ],
+                ],
+            ],
+            'rata_allowance' => [
+                'label'  => 'RATA Allowance',
+                'fields' => [
+                    'table_id' => [
+                        'selected' => $getLatestId('rata_allowance')->max('table_id') ?? null,
+                        'label'    => 'RATA Table',
+                        'choices'  => $earnings,
+                    ],
+                ],
+            ],
         ];
 
         return view('admin.pages.payroll-settings.index', compact('menu'));
@@ -80,8 +100,8 @@ class PayrollSettingsController extends Controller
 
         try {
 
-
             foreach ($data as $type => $fields) {
+
                 $insertData = [];
 
                 foreach ($fields as $fieldKey => $componentId) {
@@ -90,7 +110,7 @@ class PayrollSettingsController extends Controller
                         $insertData[$column] = $componentId;
                     }
                 }
-                                
+                
                 if (!empty($insertData)) {
                     $insertData['type'] = $type;
                     $insertData['created_at'] = now();

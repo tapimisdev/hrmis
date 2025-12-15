@@ -55,7 +55,7 @@ export default {
     },
     async fetchRegistry() {
       try {
-        const response = await axios.get(`/api/payroll/salary/${this.payroll_id}`, {
+        const response = await axios.get(`/api/payroll/salary-pay/${this.payroll_id}`, {
           headers: {
             Authorization: `Bearer ${this.token}`,
             Accept: 'application/json',

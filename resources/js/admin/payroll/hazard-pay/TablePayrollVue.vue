@@ -12,11 +12,9 @@
             <thead>
                 <tr>
                     <th>Payroll Details</th>
-                    <th>Period</th>
+                    <th>Month & Year</th>
                     <th>Emp Count</th>
-                    <th>Financial Summary</th>
                     <th>Status</th>
-                    <th>Processed Info</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -34,37 +32,8 @@
                             Ref: {{ payroll.payroll_no }}
                         </div>
                     </td>
-                    <td>
-                        <div>
-                            <span
-                                :class="{
-                                    'badge bg-success':
-                                        payroll.cutoff === 'first_cutoff',
-                                    'badge bg-danger':
-                                        payroll.cutoff === 'second_cutoff',
-                                }"
-                            >
-                                {{ payroll.cutoff.replace("_", " ") }}
-                            </span>
-                        </div>
-                        <div class="small mt-1">
-                            {{ payroll.period_covered }}
-                        </div>
-                    </td>
+                    <td>{{ formatMonthYear(payroll.month) }}</td>
                     <td>{{ payroll.no_employee }} Employees</td>
-                    <td>
-                        <div>
-                            <strong>Net:</strong>
-                            {{ formatCurrency(payroll.netpay_amount) }}
-                        </div>
-                        <div class="small text-muted">
-                            Gross: {{ formatCurrency(payroll.gross_amount) }}
-                        </div>
-                        <div class="small text-muted">
-                            Deduct:
-                            {{ formatCurrency(payroll.deduction_amount) }}
-                        </div>
-                    </td>
                     <td>
                         <span
                             :class="{
@@ -86,24 +55,8 @@
                         </span>
                     </td>
                     <td>
-                        <div class="small fw-medium">
-                            {{ payroll.processed_by }}
-                        </div>
-                        <div class="text-muted small opacity-75">
-                            {{
-                                new Date(
-                                    payroll.payroll_date
-                                ).toLocaleDateString("en-PH", {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                })
-                            }}
-                        </div>
-                    </td>
-                    <td>
                         <a
-                            :href="`/admin/payroll/salary-pay/${payroll.payroll_no}?batch_id=${payroll.batch_id}`"
+                            :href="`/admin/payroll/hazard-pay/${payroll.payroll_no}?batch_id=${payroll.batch_id}`"
                             class="btn btn-sm btn-primary me-1"
                             title="Manage"
                             data-bs-toggle="tooltip"
@@ -158,6 +111,16 @@ export default {
         };
     },
     methods: {
+        formatMonthYear(value) {
+            if (!value) return "-";
+            const [year, month] = value.split("-");
+            const date = new Date(year, month - 1);
+            return date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+            });
+        },
+
         formatCurrency(value) {
             if (value == null) return "-";
             return new Intl.NumberFormat("en-PH", {

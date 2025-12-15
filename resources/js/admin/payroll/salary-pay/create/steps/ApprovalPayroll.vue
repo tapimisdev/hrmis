@@ -11,7 +11,7 @@
       </label>
 
       <select
-        class="form-select approver-select"
+        class="form-select approver-select text-uppercase"
         :ref="el => setSelectRef(el, level)"
         multiple
         required

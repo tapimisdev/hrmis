@@ -21,6 +21,28 @@ class PayrollService {
 
     public $monthYear;
 
+    public function getPayrolls($payload)
+    {
+        $query = DB::table('payroll_hazard_pay as ps')
+            ->leftJoin('employment_types as et', 'ps.employment_type_id', '=', 'et.id')
+            ->select('ps.*', 'et.name as employment_name', 'et.code as employment_code');
+
+        if (!empty($payload['year'])) {
+            $query->where('ps.month', 'LIKE', $payload['year'] . '%');
+        }
+
+        if (!empty($payload['month'])) {
+            $query->where('ps.month', 'LIKE', $payload['month'] . '%');
+        }
+
+        if (!empty($payload['status'])) {
+            $query->where('ps.status', $payload['status']);
+        }
+
+        return $query->get();
+    }
+
+
     public function getEligibleEmployees($payload)
     {
 

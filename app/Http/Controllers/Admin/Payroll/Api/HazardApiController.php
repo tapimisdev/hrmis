@@ -24,9 +24,7 @@ class HazardApiController extends Controller
     public function getList(Request $request)
     {
         $validated = $request->validate([
-            'year' => 'required|integer|min:2000|max:' . date('Y'),
-            'month' => 'required|integer|min:1|max:12',
-            'cutoff' => 'nullable|string|max:50',
+            'month' => 'required',
             'status' => 'nullable|string|in:draft,pending,approved,for_releasing,completed,cancelled',
         ]);
 
@@ -113,7 +111,7 @@ class HazardApiController extends Controller
         return $employees;
     }
 
-    public function getHazardPay(string $payroll_id, bool $isGrouped = true) {
+    public function getPayrollData(string $payroll_id, bool $isGrouped = true) {
         $employee_salary = new GetEmployeeService($payroll_id, $isGrouped);
         $employee_salary->getAndMapEmployeeSalary();
         $employees = $employee_salary->employees;

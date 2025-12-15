@@ -51,6 +51,7 @@ return new class extends Migration
             $table->decimal('hazard_pay', 12, 2);
             $table->decimal('witholding_tax', 12, 2);
             $table->decimal('healthcard', 12, 2);
+            $table->decimal('total', 12, 2);
             $table->decimal('adjustments', 12, 2);
             $table->decimal('net_pay', 12, 2);
             $table->longText('remarks')
