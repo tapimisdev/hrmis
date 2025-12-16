@@ -311,7 +311,7 @@ export default {
       this.loading = true;
       try {
         const res = await axios.post(
-            `/api/payroll/salary-pay/items/${emp.payroll_salary_id}/${emp.id}`,
+            `/api/payroll/salary-pay/items/${this.payroll_no}/${emp.id}`,
           {
             adjustment: emp.adjustment
           },

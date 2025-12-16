@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class SalaryItemController extends Controller
 {
-    public function update($payroll_id, $payroll_emp_id, Request $request)
+    public function update($payroll_no, $payroll_emp_id, Request $request)
     {
         $validatedData = $request->validate([
             'adjustment' => 'required|numeric'
@@ -19,7 +19,7 @@ class SalaryItemController extends Controller
 
         try {
 
-            $payroll = DB::table('payroll_salary')->where('id', $payroll_id)->first();
+            $payroll = DB::table('payroll_salary')->where('payroll_no', $payroll_no)->first();
 
             if (!$payroll) {
                 abort(404, 'Payroll not found.');
@@ -37,7 +37,8 @@ class SalaryItemController extends Controller
                     abort(404, 'Salary record not found.');
                 }
 
-                $new_net_pay = $salary_item->net_pay + $adjustment;
+                $old_gross = $salary_item->net_pay - $salary_item->salary_adjustment;
+                $new_net_pay = $old_gross + $adjustment;
 
             }
             // COS EMPLOYEE
@@ -46,6 +47,7 @@ class SalaryItemController extends Controller
                 $table = 'payroll_salary_employee';
 
                 $salary_item = DB::table($table)->where('id', $payroll_emp_id)->first();
+
                 if (!$salary_item) {
                     abort(404, 'Salary record not found.');
                 }

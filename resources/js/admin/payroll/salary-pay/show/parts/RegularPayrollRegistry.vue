@@ -137,7 +137,7 @@
                             <td class="number-cell p-0">
                                 <input 
                                 type="number" 
-                                v-model="emp.adjustment"
+                                v-model="emp.salary_adjustment"
                                 @change="adjustRow(emp)"
                                 class="w-100 border-0 p-2 bg-transparent focus:ring-0 text-right"
                                 />
@@ -164,7 +164,7 @@
                         </td>
 
                         <td class="number-cell">{{ formatNumber(grandTotals('total_deductions')) }}</td>
-                        <td class="number-cell earning">{{ formatNumber(grandTotals('adjustment')) }}</td>
+                        <td class="number-cell earning">{{ formatNumber(grandTotals('salary_adjustment')) }}</td>
                         <td class="number-cell net-salary"><strong>{{ formatNumber(grandTotals('net_pay')) }}</strong></td>
                         </tr>
                     </tfoot>
@@ -326,10 +326,10 @@ export default {
         async adjustRow(emp) {
             this.loading = true;
             try {
-                const res = await axios.post(
-                    `/api/payroll/salary-pay/items/${emp.payroll_salary_id}/${emp.id}`,
+                await axios.post(
+                    `/api/payroll/salary-pay/items/${this.payroll_no}/${emp.id}`,
                     {
-                        adjustment: emp.adjustment,
+                        adjustment: emp.salary_adjustment,
                     },
                     {
                         headers: { Authorization: `Bearer ${this.token}` },

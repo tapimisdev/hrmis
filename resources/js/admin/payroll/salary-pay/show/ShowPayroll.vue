@@ -20,6 +20,7 @@
         :employees="employees"
         :status="status"
         :payroll_no="payroll_no"
+        @fetch_data="fetchRegistry"
       />
     </div>
   </div>
