@@ -147,8 +147,8 @@ export default {
                             },
                         })
                         .then((result) => {
-                            if (result.isConfirmed) {
-                                this.$emit("deleted");
+                            const res = result.data;
+                            if (res.status == 'success') {
                                 Swal.fire({
                                     title: "Deleted!",
                                     text: "Payroll has been successfully deleted!.",
@@ -157,6 +157,12 @@ export default {
                                     if (ok.isConfirmed) {
                                         window.location.reload();
                                     }
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: "Oops!",
+                                    text: 'Error: An error occurred while deleting the payroll.',
+                                    icon: "error",
                                 });
                             }
                         })

@@ -8,7 +8,7 @@
     <div class="container-fluid">
         <x-header title="{{ ucwords($payroll->label) }}" subtitle="Payroll reference no: {{ $payroll->payroll_no }}">
             <x-button-link 
-                :href="route('sla-pay.index')" 
+                :href="route('pera-rata.index')" 
                 icon="fa-solid fa-arrow-left me-2" 
                 text="Back" 
                 variant="danger"

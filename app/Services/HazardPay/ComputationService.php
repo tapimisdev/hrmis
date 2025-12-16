@@ -8,6 +8,7 @@ use App\Enums\PayrollStatusEnum;
 use App\Enums\TableSettingsEnum;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ComputationService {
 
@@ -53,6 +54,7 @@ class ComputationService {
         $dtr = $this->daily_time_record_service->getDTR($payload);
         $total_summary_of_dtr = $dtr['payroll_value'];
         $actual_presence  = $total_summary_of_dtr['actual_presence'];
+        // $actual_presence  = 16;
 
         $entitlementPercentage = 0; 
         $less_healthcard = 0;
@@ -70,7 +72,6 @@ class ComputationService {
         }
 
         $hazardPay = ($this->salary_amount * $entitlementPercentage) / 22 * $actual_presence;
-
         $total = $hazardPay - $withHoldingTax;
 
         $netPay = $total - $less_healthcard;
@@ -91,6 +92,64 @@ class ComputationService {
                 'net_pay' => $netPay,
                 'remarks' => null,
             ]);
+
+        [$year, $month] = explode('-', $this->payroll_date);
+
+        $payroll = DB::table('payroll_components')
+            ->where('slug', 'hazard-pay')
+            ->leftJoin('payroll_components_years', 'payroll_components.id', '=', 'payroll_components_years.payroll_component_id')
+            ->where('payroll_components_years.year', $year)
+            ->first();
+
+        if(!is_null($payroll)) {
+            DB::table('employee_payroll_components')
+                ->updateOrInsert(
+                    [
+                        'employee_no' => $this->employee_no,
+                        'tax_deduction_id' => $payroll->id,
+                        'month' => (int) $month,
+                    ],
+                    [
+                        'amount' => $hazardPay,
+                        'updated_at' => now(),
+                    ]
+                );
+        } else {
+           // Get the payroll component ID for hazard pay
+            $componentId = DB::table('payroll_components')
+                ->where('slug', 'hazard-pay')
+                ->value('id');
+
+            // Ensure the year entry exists and get its ID
+           DB::table('payroll_components_years')->updateOrInsert(
+                [
+                    'payroll_component_id' => $componentId,
+                    'year' => $year,
+                ],
+                [
+                    'updated_at' => now(),
+                ]
+            );
+
+            // Retrieve the ID of the year entry
+            $year_id = DB::table('payroll_components_years')
+                ->where('payroll_component_id', $componentId)
+                ->where('year', (int) $year)
+                ->value('id');
+            
+            // Insert or update the employee payroll component
+            DB::table('employee_payroll_components')->updateOrInsert(
+                [
+                    'employee_no' => $this->employee_no,
+                    'tax_deduction_id' => $year_id,
+                    'month' => $month,
+                ],
+                [
+                    'amount' => $hazardPay,
+                    'updated_at' => now(),
+                ]
+            );
+        }
 
         return [
             'hazard_pay' => $hazardPay,

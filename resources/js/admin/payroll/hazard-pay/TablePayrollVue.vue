@@ -141,18 +141,30 @@ export default {
             }).then((result) => {
                 if (result.isConfirmed) {
                     axios
-                        .delete(`/api/payroll/delete-payroll/${id}`, {
+                        .delete(`/api/payroll/hazard-pay/${id}/delete`, {
                             headers: {
                                 Authorization: `Bearer ${this.token}`,
                             },
                         })
-                        .then(() => {
-                            this.$emit("deleted");
-                            Swal.fire({
-                                title: "Deleted!",
-                                text: "Your data has been deleted.",
-                                icon: "success",
-                            });
+                        .then((result) => {
+                            const res = result.data;
+                            if (res.status == 'success') {
+                                Swal.fire({
+                                    title: "Deleted!",
+                                    text: "Payroll has been successfully deleted!.",
+                                    icon: "success",
+                                }).then((ok) => {
+                                    if (ok.isConfirmed) {
+                                        window.location.reload();
+                                    }
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: "Oops!",
+                                    text: 'Error: An error occurred while deleting the payroll.',
+                                    icon: "error",
+                                });
+                            }
                         })
                         .catch((error) => {
                             Swal.fire({

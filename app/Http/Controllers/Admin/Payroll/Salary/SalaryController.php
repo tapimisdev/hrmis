@@ -182,7 +182,7 @@ class SalaryController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Payroll deleted successfully',
+                'message' => 'Salary payroll deleted successfully',
                 'status'  => 'success'
             ]);
 
