@@ -40,7 +40,7 @@ export default {
             required: true,
         },
         highest_order: {
-            type: Number,
+            type: String,
             required: true,
         },
     },

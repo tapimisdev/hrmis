@@ -298,16 +298,15 @@ export default {
             return Number(number).toLocaleString();
         },
         filteredItems() {
-            const query = this.search.toLowerCase().trim();
+            const query = (this.search ?? '').toLowerCase().trim();
 
-            if (query == null) return this.items;
+            if (!query) return this.items;
 
-            this.filtered = this.items.filter(
-                (item) =>
-                    item.firstname.toLowerCase().includes(query) ||
-                    item.lastname.toLowerCase().includes(query) ||
-                    item.division_code.toLowerCase().includes(query) ||
-                    item.division_name.toLowerCase().includes(query)
+            return this.items.filter(item =>
+                (item.firstname ?? '').toLowerCase().includes(query) ||
+                (item.lastname ?? '').toLowerCase().includes(query) ||
+                (item.division_code ?? '').toLowerCase().includes(query) ||
+                (item.division_name ?? '').toLowerCase().includes(query)
             );
         },
         adjustYear(action) {

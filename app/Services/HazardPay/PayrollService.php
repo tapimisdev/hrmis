@@ -166,7 +166,7 @@ class PayrollService {
             ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
             ->select('esw.shift_id', 'esw.work_schedule_id', 's.working_hours')
             ->where('esw.employee_no', $emp_no)
-            ->whereBetween('esw.effectivity_date', [$startDate, $endDate])
+            ->where('esw.effectivity_date', '<=', $startDate)
             ->first();
 
         return $schedule ? true : false;
@@ -199,7 +199,7 @@ class PayrollService {
 
         $employee_salary = DB::table('employee_salary')
             ->where('employee_no', $emp_no)
-            ->whereBetween('effectivity_date', [$startDate, $endDate])
+            ->where('effectivity_date', '<=', $startDate)
             ->orderByDesc('effectivity_date')
             ->first();
 
