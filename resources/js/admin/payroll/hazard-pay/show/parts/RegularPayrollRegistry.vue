@@ -120,7 +120,7 @@
                             </td>
                             <td class="number-cell">
                                 {{
-                                    formatNumber(grandTotals("witholding_tax"))
+                                  formatNumber(grandTotals("witholding_tax"))
                                 }}
                             </td>
                             <td class="number-cell">

@@ -164,7 +164,7 @@
                         </td>
 
                         <td class="number-cell">{{ formatNumber(grandTotals('total_deductions')) }}</td>
-                        <td class="number-cell earning">{{ formatNumber(grandTotals('salary_adjustment')) }}</td>
+                        <td class="number-cell earning">{{ formatNumber(grandTotals('adjustment')) }}</td>
                         <td class="number-cell net-salary"><strong>{{ formatNumber(grandTotals('net_pay')) }}</strong></td>
                         </tr>
                     </tfoot>
@@ -327,7 +327,7 @@ export default {
             this.loading = true;
             try {
                 const res = await axios.post(
-                    `/api/payroll/salary-pay/items/${emp.id}`,
+                    `/api/payroll/salary-pay/items/${emp.payroll_salary_id}/${emp.id}`,
                     {
                         adjustment: emp.adjustment,
                     },

@@ -25,7 +25,7 @@ Route::prefix('payroll')->group(function() {
     # Salary Payroll
 
     Route::prefix('salary-pay')->group(function() {
-        Route::post('items/{id}', [SalaryItemController::class, 'update']);
+        Route::post('items/{payroll_id}/{payroll_emp_id}', [SalaryItemController::class, 'update']);
         Route::post('check-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
         Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);
         Route::post('processed', [SalaryApiController::class, 'getList']);
