@@ -336,7 +336,6 @@ export default {
                         responseType: "blob",
                     }
                 );
-                console.log(res);
                 this.$emit("fetch_data");
             } catch (error) {
                 console.error(error);
