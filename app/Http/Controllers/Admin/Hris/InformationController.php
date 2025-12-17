@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin\Hris;
 
+use App\Enums\EmploymentTypesEnum;
 use App\Events\RefreshData;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -204,6 +206,7 @@ class InformationController extends Controller
 
         $request->validate($this->rules($employee_no, $isExists));
 
+
         DB::beginTransaction();
 
         try {
@@ -332,6 +335,16 @@ class InformationController extends Controller
                     'created_at'       => now(),
                     'updated_at'       => now(),
                 ]);
+            }
+
+            $user = User::findOrFail($user_id);
+
+            if($request->employment_type_id === EmploymentTypesEnum::COS->value) {
+                $user->assignRole('emp_contractual');
+            } else if ($request->employment_type_id === EmploymentTypesEnum::REGULAR->value) {
+                $user->assignRole('emp_regular');
+            } else {
+                throw new \Exception('Invalid employment type. Cannot assign role.');
             }
 
             DB::commit();
