@@ -1,5 +1,12 @@
 <template>
-  <Bar class="cardiness" :data="chartData" :options="chartOptions" />
+  <!-- LOADING STATE -->
+  <div v-if="loading" class="text-center d-flex align-items-center justify-content-center gap-2 py-4">
+    <div class="spinner-border text-body text-opacity-25" role="status" style="height: 12px; width: 12px;">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="mt-2 fw-semibold text-body text-opacity-25">Loading ...</div>
+  </div>
+  <Bar v-else class="cardiness" :data="chartData" :options="chartOptions" />
 </template>
 
 <script lang="ts">
@@ -20,6 +27,28 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 export default {
   name: 'BarChart',
   components: { Bar },
+  props: {
+    ontime: { 
+      type: Array,
+      default: () => []
+    },
+    lates: {
+      type: Array,
+      default: () => []
+    },
+    total_employees: {
+      type: String,
+      default: () => []
+    },
+    labels: {
+      type: Array,
+      default: () => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+    },
+    loading: {
+      type: Boolean,
+      default: true,
+    },
+  },
   data() {
     return {
       theme: document.documentElement.getAttribute('data-bs-theme') || 'light'
@@ -28,22 +57,23 @@ export default {
   computed: {
     chartData() {
       const isDark = this.theme === 'dark'
+
       const onTimeColor = isDark ? '#6ea8fe' : '#032985'
-      const lateColor = isDark ? '#f67280' : '#000000'
+      const lateColor = isDark ? '#f9d423' : '#facc15';
 
       return {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        labels: this.labels, // use labels prop
         datasets: [
           {
             label: 'On-Time',
             backgroundColor: onTimeColor,
-            data: [95, 92, 98, 94, 96]
+            data: this.ontime // use prop
           },
           {
             label: 'Late',
             backgroundColor: lateColor,
-            data: [25, 32, 12, 11, 24]
-          }
+            data: this.lates // use prop
+          },
         ]
       }
     },
@@ -59,9 +89,7 @@ export default {
         plugins: {
           legend: {
             position: 'top',
-            labels: {
-              color: textColor
-            }
+            labels: { color: textColor }
           },
           title: {
             display: true,
@@ -77,17 +105,12 @@ export default {
           }
         },
         scales: {
-          x: {
-            ticks: { color: textColor },
-            grid: { color: gridColor }
-          },
-          y: {
-            ticks: {
-              color: textColor,
-              precision: 0
-            },
+          x: { ticks: { color: textColor }, grid: { color: gridColor } },
+          y: { 
+            ticks: { color: textColor, precision: 0 },
             grid: { color: gridColor },
-            beginAtZero: true
+            beginAtZero: true,
+            max: this.total_employees
           }
         }
       }
@@ -97,9 +120,7 @@ export default {
     // Watch for Bootstrap theme changes
     const observer = new MutationObserver(() => {
       const newTheme = document.documentElement.getAttribute('data-bs-theme') || 'light'
-      if (newTheme !== this.theme) {
-        this.theme = newTheme
-      }
+      if (newTheme !== this.theme) this.theme = newTheme
     })
 
     observer.observe(document.documentElement, {

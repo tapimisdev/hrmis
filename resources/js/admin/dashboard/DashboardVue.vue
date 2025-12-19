@@ -38,7 +38,7 @@ export default {
       activeTab: "hris",
       tabs: [
         { name: "hris", label: "HRIS", component: "HrisVue" },
-        { name: "timelog", label: "Timelogs", component: "TimelogVue" },
+        // { name: "timelog", label: "Timelogs", component: "TimelogVue" },
       ]
     };
   }

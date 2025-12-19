@@ -1,5 +1,10 @@
 <template>
-  <div class="chart-card shadow-sm border border-body-secondary">
+  <div class="chart-card position-relative shadow-sm border border-body-secondary">
+    <div v-if="loading" class="position-absolute h-100 w-100 d-flex justify-content-center align-items-center bg-body-secondary z-3" style="left: 0;">
+      <div class="spinner-border text-body  text-opacity-25" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
     <div class="icon-wrapper">
       <i :class="icon"></i>
     </div>
@@ -22,7 +27,11 @@ export default {
     value: { type: [Number, String], required: true },
     subValue: { type: String, default: null },
     trend: { type: String, default: null },
-    icon: { type: String, required: true }
+    icon: { type: String, required: true },
+    loading: {
+      type: Boolean,
+      default: true
+    }
   }
 };
 </script>

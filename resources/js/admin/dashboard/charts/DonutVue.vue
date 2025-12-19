@@ -1,5 +1,12 @@
 <template>
-  <Doughnut class="cardiness" :data="chartData" :options="chartOptions" />
+  <!-- LOADING STATE -->
+  <div v-if="loading" class="text-center d-flex align-items-center justify-content-center gap-2 py-4">
+    <div class="spinner-border text-body text-opacity-25" role="status" style="height: 12px; width: 12px;">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="mt-2 fw-semibold text-body text-opacity-25">Loading ...</div>
+  </div>
+  <Doughnut v-else class="cardiness" :data="chartData" :options="chartOptions" />
 </template>
 
 <script lang="ts">
@@ -34,23 +41,18 @@ export default {
     colors: {
       type: Array as () => string[],
       default: () => [
-        '#AFC4FF',
-        '#8DAAFF',
-        '#6B8FFF',
-        '#4975FF',
-        '#275AFF',
-        '#032985',
-        '#021F69',
-        '#02164D',
-        '#010C31',
-        '#000416',
-        '#000109'
+        '#002265', // base color
+        '#6895fd' // darkest
       ]
     },
     cutout: {
       type: String,
       default: '60%' // Donut hole size
-    }
+    },
+    loading: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {

@@ -1,21 +1,47 @@
 <template>
-  <div class="cardiness">
-    <h5 class="border-bottom pb-3 text-uppercase fw-bolder">Today's Birthday</h5>
-    <table class="table table-sm table-sm align-middle text-center">
+  <div>
+    <h5 class="border-bottom pb-3 text-uppercase fw-bolder">
+      Today's Birthday
+    </h5>
+
+    <!-- LOADING STATE -->
+    <div v-if="loading" class="text-center d-flex align-items-center justify-content-center gap-2 py-4">
+      <div class="spinner-border text-body text-opacity-25" role="status" style="height: 12px; width: 12px;">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <div class="mt-2 fw-semibold text-body text-opacity-25">Loading ...</div>
+    </div>
+
+    <!-- TABLE -->
+    <table v-else class="w-100 h-100 align-middle">
       <thead>
         <tr>
-          <th scope="col">Profile</th>
+          <th class="text-center" scope="col">Profile</th>
           <th scope="col">Name</th>
           <th scope="col">Birthday</th>
         </tr>
       </thead>
-      <tbody>
+
+      <tbody v-if="people.length">
         <tr v-for="(person, index) in people" :key="index">
-          <td>
-            <img :src="person.image" alt="Profile Picture" class="profile-picture" />
+          <td class="text-center">
+            <img
+              :src="person.image"
+              alt="Profile Picture"
+              class="profile-picture"
+            />
           </td>
           <td>{{ person.name }}</td>
           <td>{{ formatBirthday(person.birthday) }}</td>
+        </tr>
+      </tbody>
+
+      <!-- EMPTY STATE -->
+      <tbody v-else>
+        <tr>
+          <td colspan="3" class="text-center text-muted py-4">
+            No birthdays today 🎂
+          </td>
         </tr>
       </tbody>
     </table>
@@ -34,6 +60,10 @@ export default {
           (p) => "name" in p && "birthday" in p && "image" in p
         );
       },
+    },
+    loading: {
+      type: Boolean,
+      default: true,
     },
   },
   methods: {

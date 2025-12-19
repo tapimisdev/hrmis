@@ -1,5 +1,12 @@
 <template>
-  <Line class="cardiness" :data="chartData" :options="chartOptions" />
+  <!-- LOADING STATE -->
+  <div v-if="loading" class="text-center d-flex align-items-center justify-content-center gap-2 py-4">
+    <div class="spinner-border text-body text-opacity-25" role="status" style="height: 12px; width: 12px;">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="mt-2 fw-semibold text-body text-opacity-25">Loading ...</div>
+  </div>
+  <Line v-else class="cardiness" :data="chartData" :options="chartOptions" />
 </template>
 
 <script lang="ts">
@@ -33,7 +40,11 @@ export default {
     resignations: {
       type: Array,
       default: () => [2, 3, 1, 4, 3, 5, 2]
-    }
+    },
+    loading: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {

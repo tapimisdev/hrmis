@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -90,24 +91,73 @@ class DashboardApiController extends Controller
 
         $averageTenure = round($averageTenure, 2);
 
+        // fetch birthdays 
+        $birthdayList = $this->birthdays();
+        $attendancesList = $this->attendances();
+        $employment_pie = $this->employment_types();
+        $employee_movement = $this->employee_movement();
+
         return response()->json([
-            'total_employees' => [
-                'count' => $totalEmployees,
-                'new' => $newHires,
-                'resigned' => $resignedThisMonth,
+            'cards' => [
+                [
+                    'name' => 'Total Employees',
+                    'value' => $totalEmployees,
+                    'subValue' => '↑ ' . $newHires . ' hired • ↓ ' . $resignedThisMonth . ' resigned',
+                    'icon' => 'fa-solid fa-users text-blue-500',
+                ],
+
+                [
+                    'name' => 'Active Employees',
+                    'value' => $activeEmployees,
+                    'subValue' => $activeWorkforcePercent . '% workforce',
+                    'icon' => 'fa-solid fa-user-check text-green-500',
+                ],
+
+                [
+                    'name' => 'On Leave Today',
+                    'value' => is_array($leaveApplications)
+                        ? ($leaveApplications['total'] ?? count($leaveApplications))
+                        : $leaveApplications,
+                    'subValue' => is_array($leaveApplications)
+                        ? (($leaveApplications['vacation'] ?? 0) . ' Vacation • ' . ($leaveApplications['sick'] ?? 0) . ' Sick')
+                        : 'Today',
+                    'icon' => 'fa-solid fa-plane-departure text-orange-500',
+                ],
+
+                [
+                    'name' => 'Upcoming Birthdays',
+                    'value' => is_countable($upcomingBirthdays)
+                        ? count($upcomingBirthdays)
+                        : $upcomingBirthdays,
+                    'subValue' => 'This Week 🎂',
+                    'icon' => 'fa-solid fa-cake-candles text-pink-500',
+                ],
+
+                [
+                    'name' => 'Attrition Rate',
+                    'value' => $attritionRate . '%',
+                    'subValue' => $attritionRateChange . ' vs last month',
+                    'icon' => 'fa-solid fa-chart-line text-red-500',
+                ],
+
+                [
+                    'name' => 'New Hires',
+                    'value' => $newHires,
+                    'subValue' => 'This Month',
+                    'icon' => 'fa-solid fa-user-plus text-green-600',
+                ],
+
+                [
+                    'name' => 'Average Tenure',
+                    'value' => $averageTenure . ' yrs',
+                    'subValue' => 'Company-wide',
+                    'icon' => 'fa-solid fa-hourglass-half text-indigo-500',
+                ],
             ],
-            'active_employees' => [
-                'count' => $activeEmployees,
-                'percentage_of_workforce' => $activeWorkforcePercent,
-            ],
-            'on_leave' => $leaveApplications,
-            'upcoming_birthdays' => $upcomingBirthdays,
-            'attrition_rate' => [
-                'current' => $attritionRate,
-                'change_from_last_month' => $attritionRateChange,
-            ],
-            'average_tenure' => $averageTenure,
-            'training_completion' => 0,
+            'birthdays' => $birthdayList,
+            'attendances' => $attendancesList,
+            'employment_types' => $employment_pie,
+            'employee_movement' => $employee_movement,
         ]);
     }
 
@@ -115,26 +165,63 @@ class DashboardApiController extends Controller
     {
         $today = now();
 
-        $birthdays = DB::table('employee_personal')
-            ->select('employee_no', 'firstname', 'lastname', 'birthday')
+        return DB::table('employee_personal')
+            ->select('employee_no', 'firstname', 'lastname', 'birthday', 'profile')
             ->whereMonth('birthday', $today->month)
-            ->whereDay('birthday', $today->day)
-            ->get();
+            ->orderByRaw('DAY(birthday)')
+            ->get()
+            ->map(function ($row) {
 
-        return response()->json($birthdays);
+                // profile image
+                if (!empty($row->profile)) {
+                    $image = Storage::url(
+                        'uploads/employees/' . $row->employee_no . '/profile/' . $row->profile
+                    );
+                } else {
+                    $image = 'https://ui-avatars.com/api/?name='
+                        . urlencode(($row->firstname ?? '?') . ' ' . ($row->lastname ?? '?'))
+                        . '&background=random&color=fff&font-size=0.4&font-weight=bold';
+                }
+
+                return [
+                    'name'     => trim(($row->firstname ?? '') . ' ' . ($row->lastname ?? '')),
+                    'birthday' => $row->birthday, // YYYY-MM-DD
+                    'image'    => $image,
+                ];
+            })
+            ->values();
     }
 
-    public function attendances()
+    private function attendances()
     {
-
         $now = Carbon::now();
 
-        $dates = collect(range(0, 4))->map(fn($i) => $now->copy()->subDays($i)->toDateString());
+        /**
+         * Get last 5 WEEKDAYS (excluding Sat & Sun)
+         */
+        $dates = collect();
+        $i = 0;
 
+        while ($dates->count() < 5) {
+            $date = $now->copy()->subDays($i);
+
+            if ($date->isWeekday()) {
+                $dates->push($date->toDateString());
+            }
+
+            $i++;
+        }
+
+        // Oldest → Newest
+        $dates = $dates->reverse()->values();
+
+        /**
+         * Fetch Time-In logs only
+         */
         $timelogs = DB::table('timelogs as t')
             ->leftJoin('shifts as s', 't.shift_id', '=', 's.id')
             ->whereIn(DB::raw('DATE(t.date_time)'), $dates)
-            ->where('t.fn', 0) 
+            ->where('t.fn', FnEnum::TimeIn->value)
             ->select(
                 DB::raw('DATE(t.date_time) as date'),
                 't.employee_no',
@@ -143,8 +230,17 @@ class DashboardApiController extends Controller
             )
             ->get();
 
-        $attendanceStats = [];
+        $allEmployeesCount = DB::table('employee_information')
+                ->where('account_status', 'active')
+                ->count();
 
+        $labels = [];
+        $onTimeData = [];
+        $lateData = [];
+
+        /**
+         * Process per day
+         */
         foreach ($dates as $date) {
             $recordsForDay = $timelogs->where('date', $date);
 
@@ -152,29 +248,49 @@ class DashboardApiController extends Controller
             $lateCount = 0;
 
             foreach ($recordsForDay as $record) {
-                $timeIn = Carbon::parse($record->date_time)->format('H:i:s');
-                $startTime = $record->start_time;
 
-                if ($timeIn <= $startTime) {
+                if (!$record->start_time) {
+                    continue;
+                }
+
+                $timeIn = Carbon::parse($record->date_time);
+                $expectedTime = Carbon::parse($date . ' ' . $record->start_time);
+
+                if ($timeIn->lessThanOrEqualTo($expectedTime)) {
                     $onTimeCount++;
                 } else {
                     $lateCount++;
                 }
             }
 
-            $date = strtolower(Carbon::parse($date)->format('D'));
-
-            $attendanceStats[$date] = [
-                'on_time' => $onTimeCount,
-                'late' => $lateCount,
-            ];
+            $labels[] = Carbon::parse($date)->format('D');
+            $onTimeData[] = $onTimeCount;
+            $lateData[] = $lateCount;
         }
 
-        return response()->json($attendanceStats);
+        return [
+            'labels' => $labels,
+            'total_employees' => $allEmployeesCount,
+            'datasets' => [
+                [
+                    'label' => 'On-Time',
+                    'backgroundColor' => '#4CAF50',
+                    'data' => $onTimeData,
+                ],
+                [
+                    'label' => 'Late',
+                    'backgroundColor' => '#F44336',
+                    'data' => $lateData,
+                ]
+            ]
+        ];
     }
 
-    public function employment_types() {
-       dd('asdasd');
+    private function employment_types() {
+
+        $labels = [];
+        $datasets = [];
+
         $employees = DB::table('employee_information as ei')
             ->leftJoinSub(
                 DB::table('employee_organization as eo')
@@ -194,17 +310,25 @@ class DashboardApiController extends Controller
             ->groupBy('etype.name')
             ->get();
 
-        return response()->json($employees);
+        foreach ( $employees as $emp ) {
+            $labels[] = $emp->name;
+            $datasets[] = $emp->total;
+        }
+   
+        return [
+            'labels' => $labels,
+            'datasets' => $datasets
+        ];
 
     }
 
-    public function employee_movement()
+    private function employee_movement()
     {
         $now = Carbon::now();
 
-        // Get the last 7 months including current
-        $months = collect(range(6, 0))->map(function ($i) use ($now) {
-            $date = $now->copy()->subMonths($i);
+        // Get months from January until current month
+        $months = collect(range(1, $now->month))->map(function ($m) use ($now) {
+            $date = Carbon::create($now->year, $m, 1);
             return [
                 'month' => $date->format('M'),
                 'year' => $date->year,
@@ -225,14 +349,27 @@ class DashboardApiController extends Controller
                 ->count();
 
             return [
-                'month' => $m['month'] . ' ' . $m['year'],
+                'month' => $m['month'],
                 'new_hires' => $newHires,
                 'resigned' => $resigned,
             ];
         });
 
-        return response()->json($data);
-    }
+        $labels = [];
+        $hires = [];
+        $resignations = [];
 
+        foreach ($data as $d) {
+            $labels[] = $d['month'];
+            $hires[] = $d['new_hires'];
+            $resignations[] = $d['resigned'];
+        }
+
+        return [
+            'labels' => $labels,
+            'hires' => $hires,
+            'resignations' => $resignations,
+        ];
+    }
 
 }
