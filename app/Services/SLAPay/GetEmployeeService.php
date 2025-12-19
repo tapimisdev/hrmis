@@ -35,6 +35,7 @@ class GetEmployeeService
 
         $data = $employees->map(function ($e) {
             return [
+                'id'             => $e->id,
                 'employee_no'    => $e->employee_no,
                 'name'           => strtoupper($e->name),
                 'position'       => $e->position,

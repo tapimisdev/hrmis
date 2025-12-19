@@ -96,12 +96,16 @@
                                 <input
                                     type="number"
                                     class="form-control"
-                                    v-model.number="emp.adjustment"
+                                    v-model="emp.adjustments"
+                                    @change="adjustRow(emp)"
                                 />
                             </td>
                             <td class="text-center">{{ emp.net_pay }}</td>
                             <td class="text-center">
-                                <textarea class="form-control my-3"></textarea>
+                                <textarea class="form-control my-3"
+                                v-model="emp.remarks"
+                                @change="adjustRow(emp)"
+                                ></textarea>
                             </td>
                         </tr>
                     </tbody>
@@ -127,7 +131,7 @@
                                 {{ formatNumber(grandTotals("healthcard")) }}
                             </td>
                             <td class="number-cell">
-                                {{ formatNumber(grandTotals("adjustment")) }}
+                                {{ formatNumber(grandTotals("adjustments")) }}
                             </td>
                             <td class="number-cell net-salary">
                                 <strong>{{
@@ -262,6 +266,28 @@ export default {
                 (total, emp) => total + (Number(emp[field]) || 0),
                 0
             );
+        },
+        async adjustRow(emp) {
+          console.log(emp); 
+            this.loading = true;
+            try {
+                await axios.post(
+                    `/api/payroll/hazard-pay/items/${this.payroll_no}/${emp.id}`,
+                    {
+                        adjustment: emp.adjustments,
+                        remarks: emp.remarks,
+                    },
+                    {
+                        headers: { Authorization: `Bearer ${this.token}` },
+                        responseType: "blob",
+                    }
+                );
+                this.$emit("fetch_data");
+            } catch (error) {
+                console.error(error);
+            } finally {
+                this.loading = false;
+            }
         },
         applyStatusTheme() {
             const { color, bg, darkColor, darkBg } = this.statusConfig;

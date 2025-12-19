@@ -24,6 +24,7 @@ class HazardApiController extends Controller
     public function getList(Request $request)
     {
         $validated = $request->validate([
+            'employment_type' => 'nullable|integer',
             'month' => 'required',
             'status' => 'nullable|string|in:draft,pending,approved,for_releasing,completed,cancelled',
         ]);

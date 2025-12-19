@@ -3,6 +3,7 @@
 namespace App\Services\Exports;
 
 use App\Services\SalaryPay\PayrollService;
+use App\Enums\EmploymentTypesEnum;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -43,10 +44,17 @@ class RegistryService
     {
         $payrollService = app(PayrollService::class);
         $this->payroll  = $payrollService->payrollDetails($payroll_no);
-        $this->registry = json_decode(
-            $payrollService->getPayrollRegistry($this->payroll->id, true)->getContent(),
-            true
-        );
+        if($this->payroll->id == EmploymentTypesEnum::COS->value) {
+            $this->registry = json_decode(
+                $payrollService->getPayrollRegistry($this->payroll, $this->payroll->id, true)->getContent(),
+                true
+            );
+        } else {
+            $this->registry = json_decode(
+                $payrollService->getPayrollRegistry($this->payroll, $this->payroll->id, false)->getContent(),
+                true
+            );
+        }
     }
 
     /* --------------------------
@@ -299,6 +307,7 @@ class RegistryService
     -------------------------- */
     private function exportRegularFile()
     {
+        // dd($this->registry);
         $templatePath = public_path('templates/regular/payroll_registry.xlsx');
         $spreadsheet = IOFactory::load($templatePath);
         $sheet = $spreadsheet->getActiveSheet();

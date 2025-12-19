@@ -92,7 +92,8 @@ class GetEmployeeService {
                     'salary_adjustment' => $d->salary_adjustment,
                     'deductions' => $deductions ?? [],
                     'earnings' => $earnings ?? [],
-                    'project_id' => $project_id
+                    'project_id' => $project_id,
+                    'remarks' => $d->remarks ?? null,
                 ];
             });
 
@@ -129,7 +130,8 @@ class GetEmployeeService {
                         'deductions' => $employee->deductions,
                         'earnings' => $employee->earnings,
                         'adjustment' => $employee->salary_adjustment,
-                        'net_salary' => $employee->net_pay
+                        'net_salary' => $employee->net_pay,
+                        'remarks' => $employee->remarks ?? '',
                     ];
                 }
 
@@ -154,7 +156,8 @@ class GetEmployeeService {
                         'earnings' => $employee->earnings,
                         'adjustment' => $employee->salary_adjustment,
                         'net_salary' => $employee->net_pay,
-                        'project_id' => $employee->project_id
+                        'project_id' => $employee->project_id,
+                        'remarks' => $employee->remarks ?? '',
                     ];
                 });
 
@@ -162,7 +165,7 @@ class GetEmployeeService {
         }
 
         // PERMANENT
-        if($employment_type_id ==EmploymentTypesEnum::REGULAR->value) {
+        if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
 
             $pse = DB::table('payroll_salary_permanent_employees as pse')
                 ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')

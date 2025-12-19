@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use \Carbon\Carbon;
 
 use Throwable;
 use function PHPSTORM_META\map;
@@ -38,7 +39,10 @@ class PayrollService {
         $query = DB::table('payroll_salary as ps')
                 ->leftJoin('employment_types as et', 'ps.employment_type_id', '=', 'et.id')
                 ->select('ps.*', 'et.name as employment_name', 'et.code as employment_code');
-
+        
+        if (!empty($payload['employment_type'])) {
+            $query->where('ps.employment_type_id', $payload['employment_type']);
+        }
         if (!empty($payload['year'])) {
             $query->whereYear('ps.payroll_date', $payload['year']);
         }
@@ -482,18 +486,37 @@ class PayrollService {
         return $suspensions;
     }
 
-    public function getPayrollRegistry(string $payroll_id, bool $isGrouped = true) 
+    public function getPayrollRegistry(object $payroll, string $payroll_id, bool $isGrouped = true) 
     {
-        $payroll_date = DB::table('payroll_salary')
+
+        $employment_type_id = $payroll->employment_type_id;
+
+         // COS
+
+        if($employment_type_id == EmploymentTypesEnum::COS->value) {
+            $payroll_date = DB::table('payroll_salary')
             ->where('id', $payroll_id)
             ->value('payroll_date');
 
-        $pse = DB::table('payroll_salary_employee as pse')
-            ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
-            ->where('payroll_salary_id', $payroll_id)
-            ->select('pse.*', 'ps.payroll_date')
-            ->get();
+            $pse = DB::table('payroll_salary_employee as pse')
+                ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+                ->where('payroll_salary_id', $payroll_id)
+                ->select('pse.*', 'ps.payroll_date')
+                ->get();
+        } 
 
+        if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
+            $payroll_date = DB::table('payroll_salary')
+            ->where('id', $payroll_id)
+            ->value('payroll_date');
+
+            $pse = DB::table('payroll_salary_permanent_employees as pse')
+                ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+                ->where('payroll_salary_id', $payroll_id)
+                ->select('pse.*', 'ps.payroll_date')
+                ->get();
+        } 
+        
         // Get all projects for this payroll date
         $projects = DB::table('employee_projects as ep')
             ->join('projects', 'ep.project_id', '=', 'projects.id')
@@ -505,16 +528,18 @@ class PayrollService {
             ->select('projects.id', 'projects.name')
             ->get()->unique('id');
 
-        $enriched = $pse->map(function ($d) use ($payroll_date) {
+        $enriched = $pse->map(function ($d) use ($employment_type_id, $payroll_date) {
 
-            $deductions = DB::table('payroll_salary_employee_edeductions')
-                ->where('payroll_se_id', $d->id)
-                ->get();
+            if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
+                $deductions = DB::table('payroll_salary_permanents_employee_deductions')
+                    ->where('pspe_id', $d->id)
+                    ->get();
 
-            $earnings = DB::table('payroll_salary_employee_earnings')
-                ->where('payroll_se_id', $d->id)
-                ->get();
-
+                $earnings = DB::table('payroll_salary_employee_earnings')
+                    ->where('payroll_se_id', $d->id)
+                    ->get();
+            }
+            
             $project_id = DB::table('employee_projects')
                 ->where('employee_no', $d->employee_no)
                 ->whereDate('start_date', '<=', $payroll_date)
@@ -524,32 +549,46 @@ class PayrollService {
                 })
                 ->orderByDesc('start_date')
                 ->value('project_id');
+                
+            if($employment_type_id == EmploymentTypesEnum::COS->value) {
+                return [
+                    'employee_no' => $d->employee_no,
+                    'name' => $d->name,
+                    'position' => $d->position,
+                    'monthly_rate' => $d->monthly_rate,
+                    'basic_pay' => $d->basic_pay,
+                    'ut' => $d->ut,
+                    'absences' =>  $d->absences,
+                    'overtime' => $d->overtime,
+                    'holiday' => $d->holiday,
+                    'gross_pay' => $d->gross_pay,
+                    'net_pay' => $d->net_pay,
+                    'salary_adjustment' => $d->salary_adjustment,
+                    'deductions' => $deductions ?? [],
+                    'earnings' => $earnings ?? [],
+                    'project_id' => $project_id,
+                    'remarks' => $d->remarks ?? null,
+                ];
+            }
 
-            return (object) [
-                'employee_no' => $d->employee_no,
-                'name' => strtoupper($d->name),
-                'position' => ucfirst($d->position),
-                'monthly_rate' => $d->monthly_rate,
-                'salary_grade' => $d->salary_grade,
-                'ut' => $d->ut,
-                'absences' =>  $d->absences,
-                'aut' => $d->ut + $d->absences,
-                'overtime' => $d->overtime,
-                'holiday' => $d->holiday,
-                'gsis' => $d->gsis,
-                'philhealth' => $d->philhealth,
-                'pagibig' => $d->pagibig,
-                'w_tax' => $d->w_tax,
-                'total_deductions' => $d->total_deductions,
-                'total_earnings' => $d->total_earnings,
-                'basic_pay' => $d->basic_pay,
-                'gross_pay' => $d->gross_pay,
-                'net_pay' => $d->net_pay,
-                'salary_adjustment' => $d->salary_adjustment,
-                'deductions' => $deductions ?? [],
-                'earnings' => $earnings ?? [],
-                'project_id' => $project_id
-            ];
+            if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
+                return [
+                    'employee_no' => $d->employee_no,
+                    'name' => $d->name,
+                    'position' => $d->position,
+                    'monthly_rate' => $d->monthly_rate,
+                    'ut' => $d->ut,
+                    'absences' =>  $d->absences,
+                    'overtime' => $d->overtime,
+                    'holiday' => $d->holiday,
+                    'total_deductions' => $d->total_deductions,
+                    'net_pay' => $d->net_pay,
+                    'salary_adjustment' => $d->salary_adjustment,
+                    'remarks' => $d->remarks ?? null,
+                    'deductions' => $deductions ?? [],
+                    'earnings' => $earnings ?? [],
+                ];
+            }
         });
 
         if ($isGrouped) {
@@ -593,23 +632,22 @@ class PayrollService {
         } else {
             // Return flat list without grouping
             $flatList = $enriched->map(function ($employee) {
+
                 return [
-                    'employee_no' => $employee->employee_no,
-                    'name' => $employee->name,
-                    'position' => $employee->position,
-                    'monthly_rate' => $employee->monthly_rate,
-                    'salary_earned' => $employee->basic_pay,
-                    'ut' => $employee->ut,
-                    'absences' =>  $employee->absences,
-                    'aut' => $employee->ut + $employee->absences,
-                    'overtime' => $employee->overtime,
-                    'holiday' => $employee->holiday,
-                    'total_salary' => $employee->gross_pay,
-                    'deductions' => $employee->deductions,
-                    'earnings' => $employee->earnings,
-                    'adjustment' => $employee->salary_adjustment,
-                    'net_salary' => $employee->net_pay,
-                    'project_id' => $employee->project_id
+                    'employee_no' => $employee['employee_no'],
+                    'name' => $employee['name'],
+                    'position' => $employee['position'],
+                    'monthly_rate' => $employee['monthly_rate'],
+                    'ut' => $employee['ut'],
+                    'absences' =>  $employee['absences'],
+                    'aut' => $employee['ut'] + $employee['absences'],
+                    'overtime' => $employee['overtime'],
+                    'holiday' => $employee['holiday'],
+                    'total_salary' => $employee['net_pay'],
+                    'deductions' => $employee['deductions'],
+                    'earnings' => $employee['earnings'],
+                    'adjustment' => $employee['salary_adjustment'],
+                    'net_salary' => $employee['net_pay'],
                 ];
             });
 
@@ -622,58 +660,132 @@ class PayrollService {
         $payroll = DB::table('payroll_salary')
                     ->where('payroll_no', $payroll_no)
                     ->first();
+        $employees = DB::table('payroll_salary_employee as pse')
+                    ->leftJoin('employee_information as ei', 'pse.employee_no', '=', 'ei.employee_no')
+                    ->leftJoin('users', 'users.id', '=', 'ei.user_id')
+                    ->where('payroll_salary_id', $payroll->id)
+                    ->select('pse.employee_no', 'pse.monthly_rate', 'pse.position', 'users.name', 'users.id as employee_id')
+                    ->get();
+        $payroll->employees = $employees;
 
         return $payroll;
     }
 
-    public function employeePayrollRates($payroll_id)
+    public function employeePayrollRates($payroll)
     {
-        $employees = DB::table('payroll_salary_employee as pse')
-            ->where('pse.payroll_salary_id', $payroll_id)
-            ->leftJoinSub(
-                DB::table('employee_projects as ep')
-                    ->select('ep.*')
-                    ->whereRaw('ep.id IN (SELECT MAX(id) FROM employee_projects GROUP BY employee_no)'),
-                'latest_proj',
-                'pse.employee_no',
-                '=',
-                'latest_proj.employee_no'
-            )
-            ->leftJoin('projects as p', 'latest_proj.project_id', '=', 'p.id')
-            ->select(
-                'pse.*',
-                'latest_proj.*',
-                'p.name as project_name'
-            )
-            ->get()
-            ->map(function ($employee) {
-                $employee->aut = $employee->ut + $employee->absences;
+        // Payroll constants
+        $WORK_DAYS  = 22;
+        $HOURS_DAY = 8;
+        $MINS_HOUR = 60;
 
-                
+        // Get payroll period
+        $payrollPeriod = DB::table('payroll_salary')
+            ->where('id', $payroll->id)
+            ->value('period_covered');
 
-                return $employee;
-            });
+        [$month, $year, $period] = explode(' ', $payrollPeriod);
 
-        $grouped = $employees->groupBy('project_name');
+        $start_date = sprintf(
+            '%s-%s-%s',
+            $year,
+            date('m', strtotime($month)),
+            $period === '1-15' ? '01' : '16'
+        );
 
-        $data = [];
+        $end_date = sprintf(
+            '%s-%s-%s',
+            $year,
+            date('m', strtotime($month)),
+            $period === '1-15'
+                ? '15'
+                : date('t', strtotime("$month $year"))
+        );
 
-        foreach ($grouped as $unitName => $unitEmployees) {
-            $data[$unitName] = $unitEmployees->map(function ($employee) {
+        // Compute payroll data
+        $employees = $payroll->employees->map(function ($employee) use (
+            $start_date,
+            $end_date,
+            $WORK_DAYS,
+            $HOURS_DAY,
+            $MINS_HOUR
+        ) {
+
+            // 🔹 Get DTR summary
+            $dtr = $this->daily_time_record_service->getDTR([
+                'user_id'    => $employee->employee_id,
+                'startDate'  => $start_date,
+                'endDate'    => $end_date,
+            ]);
+
+            $summary = $dtr['payroll_value'] ?? [];
+
+            // 🔹 RATES
+            $daily_rate  = round($employee->monthly_rate / $WORK_DAYS, 2);
+            $hourly_rate = round($daily_rate / $HOURS_DAY, 2);
+            $minute_rate = round($hourly_rate / $MINS_HOUR, 2);
+
+            // 🔹 ABSENCES (DAYS ONLY)
+            $absent_days   = $summary['absent'] ?? 0;
+            $absent_amount = round($absent_days * $daily_rate, 2);
+
+            // 🔹 UNDERTIME (MINUTES → HOURS + MINUTES)
+            $total_ut_minutes = $summary['late_undertime'] ?? 0;
+
+            $ut_hours   = intdiv($total_ut_minutes, $MINS_HOUR);
+            $ut_minutes = $total_ut_minutes % $MINS_HOUR;
+
+            $ut_hours_amount   = round($ut_hours * $hourly_rate, 2);
+            $ut_minutes_amount = round($ut_minutes * $minute_rate, 2);
+
+            // 🔹 TOTAL AUT AMOUNT
+            $total_aut_amount = round(
+                $absent_amount + $ut_hours_amount + $ut_minutes_amount,
+                2
+            );
+
+            return [
+                'project_name' => 'sample',
+
+                'employee_no'  => $employee->employee_no,
+                'name'         => $employee->name,
+                'position'     => $employee->position,
+
+                'monthly_rate' => number_format($employee->monthly_rate, 2),
+                'daily_rate'   => number_format($daily_rate, 2),
+                'hourly_rate'  => number_format($hourly_rate, 2),
+                'minute_rate'  => number_format($minute_rate, 2),
+
+                // ABSENCES
+                'absent_days'   => $absent_days,
+                'absent_amount' => number_format($absent_amount, 2),
+
+                // UNDERTIME
+                'ut_hours'          => $ut_hours,
+                'ut_minutes'        => $ut_minutes,
+                'ut_hours_amount'   => number_format($ut_hours_amount, 2),
+                'ut_minutes_amount' => number_format($ut_minutes_amount, 2),
+
+                // TOTAL
+                'total_aut_amount' => number_format($total_aut_amount, 2),
+            ];
+        });
+
+        // 🔹 Group by project
+        $data = $employees
+            ->groupBy('project_name')
+            ->map(function ($emps, $project) {
                 return [
-                    'name'         => $employee->name,
-                    'position'     => $employee->position,
-                    'monthly_rate' => $employee->monthly_rate,
-                    'daily_rate'   => number_format($employee->monthly_rate / 22, 2),
-                    'hourly_rate'  => number_format(($employee->monthly_rate / 22) / 8, 2),
-                    'minute_rate'  => number_format((($employee->monthly_rate / 22) / 8) / 60, 2),
+                    'name' => $project,
+                    'employees' => $emps->values()
                 ];
-            })->toArray(); 
-        }
+            })
+            ->values();
 
         return $data;
-
     }
+
+
+
 
 }
     

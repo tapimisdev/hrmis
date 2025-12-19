@@ -15,6 +15,7 @@
                 :status="status"
                 :payroll_no="payroll_no"
                 :month="month"
+                @fetch_data="fetchRegistry"
             />
         </div>
     </div>

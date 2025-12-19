@@ -223,7 +223,7 @@ class ComputationService {
 
             foreach ($deductions as $deduction) {
 
-                $deduction_name = $deduction->module_name . ' ' . $deduction->tab_name;
+                $deduction_name = $deduction->tab_name;
 
                 Log::info("
                     ================ DEDUCTION INFO ================

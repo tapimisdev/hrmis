@@ -28,10 +28,8 @@ class DatabaseSeeder extends Seeder
             CountriesSeeder::class,
             ModulesSeeder::class,
             PermissionSeeder::class,
-        ]);
-
-        $this->call([
             EventsAnnouncementsSeeder::class,
+            PermanentDeductionsSeeder::class
         ]);
     }
 }

@@ -7,12 +7,15 @@ use App\Http\Controllers\Admin\Payroll\Salary\SalaryItemController;
 
 use App\Http\Controllers\Admin\Payroll\Api\HazardApiController;
 use App\Http\Controllers\Admin\Payroll\HazardPay\HazardPayController;
+use App\Http\Controllers\Admin\Payroll\HazardPay\HazardItemController;
 
 use App\Http\Controllers\Admin\Payroll\Api\SLAApiController;
 use App\Http\Controllers\Admin\Payroll\SLAPay\SLAPayController;
+use App\Http\Controllers\Admin\Payroll\SLAPay\SLAItemController;
 
 use App\Http\Controllers\Admin\Payroll\Api\PeraRataApiController;
 use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataController;
+use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataItemController;
 
 use App\Http\Controllers\Admin\Payroll\ReportsController;
 
@@ -46,6 +49,7 @@ Route::prefix('payroll')->group(function() {
 
     # Hazard Payroll
     Route::prefix('hazard-pay')->group(function() {
+        Route::post('items/{payroll_id}/{payroll_emp_id}', [HazardItemController::class, 'update']);
         Route::post('check-employees', [HazardApiController::class, 'validateAndGetEmployee']);
         Route::post('processed', [HazardApiController::class, 'getList']);
         Route::get('{payroll_id}', [HazardApiController::class, 'getPayrollData']);
@@ -55,6 +59,7 @@ Route::prefix('payroll')->group(function() {
 
     # SLA Payroll
     Route::prefix('sla-pay')->group(function() {
+        Route::post('items/{payroll_id}/{payroll_emp_id}', [SLAItemController::class, 'update']);
         Route::post('check-employees', [SLAApiController::class, 'validateAndGetEmployee']);
         Route::post('processed', [SLAApiController::class, 'getList']);
         Route::get('{payroll_id}', [SLAApiController::class, 'getPayrollData']);
@@ -64,6 +69,7 @@ Route::prefix('payroll')->group(function() {
 
     # PERA RATA Payroll
     Route::prefix('pera-rata')->group(function() {
+        Route::post('items/{payroll_id}/{payroll_emp_id}', [PeraRataItemController::class, 'update']);
         Route::post('check-employees', [PeraRataApiController::class, 'validateAndGetEmployee']);
         Route::post('processed', [PeraRataApiController::class, 'getList']);
         Route::get('{payroll_id}', [PeraRataApiController::class, 'getPayrollData']);

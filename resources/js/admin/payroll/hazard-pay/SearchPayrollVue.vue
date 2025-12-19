@@ -1,14 +1,35 @@
 <template>
     <div class="position-relative">
         <div class="row mb-3">
-            <!-- MONTH INPUT -->
+
+            <!-- EMPLOYMENT TYPE -->
             <div class="col-12 col-md-3 mb-3">
-                <div class="d-flex gap-2">
-                    <label class="form-label fw-bold">Month</label>
-                    <span v-if="errors.month" class="text-danger small">
+                <label class="form-label fw-bold">
+                    Employment Type
+                    <span v-if="errors.employment_type" class="text-danger small ms-1">
+                        ({{ errors.employment_type[0] }})
+                    </span>
+                </label>
+
+                <select
+                    v-model.number="form.employment_type"
+                    class="form-select"
+                    :class="{ 'is-invalid': errors.employment_type }"
+                >
+                    <option disabled value="">-- CHOOSE EMPLOYMENT TYPE -- </option>
+                    <option :value="1">Regular</option>
+                    <option :value="2">Contractual</option>
+                </select>
+            </div>
+
+            <!-- MONTH -->
+            <div class="col-12 col-md-3 mb-3">
+                <label class="form-label fw-bold">
+                    Month
+                    <span v-if="errors.month" class="text-danger small ms-1">
                         ({{ errors.month[0] }})
                     </span>
-                </div>
+                </label>
 
                 <input
                     type="month"
@@ -18,21 +39,21 @@
                 />
             </div>
 
-            <!-- STATUS SELECT -->
+            <!-- STATUS -->
             <div class="col-12 col-md-3 mb-3">
-                <div class="d-flex gap-2">
-                    <label class="form-label fw-bold">Status</label>
-                    <span v-if="errors.status" class="text-danger small">
+                <label class="form-label fw-bold">
+                    Status
+                    <span v-if="errors.status" class="text-danger small ms-1">
                         ({{ errors.status[0] }})
                     </span>
-                </div>
+                </label>
 
                 <select
                     class="form-select"
                     v-model="form.status"
                     :class="{ 'is-invalid': errors.status }"
                 >
-                    <option value="">-- CHOOSE STATUS --</option>
+                    <option disabled value="">-- CHOOSE STATUS --</option>
                     <option value="draft">Draft</option>
                     <option value="pending">Pending Approval</option>
                     <option value="approved">Approved</option>
@@ -42,8 +63,8 @@
                 </select>
             </div>
 
-            <!-- BUTTON -->
-            <div class="col-12 col-md-4 mb-3 d-flex align-items-end">
+            <!-- SEARCH BUTTON -->
+            <div class="col-12 col-md-3 mb-3 d-flex align-items-end">
                 <button
                     type="button"
                     id="submit-button"
@@ -51,9 +72,10 @@
                     @click="search"
                     :disabled="loading"
                 >
-                    <span><i class="fas fa-search px-1"></i> Search</span>
+                    <i class="fas fa-search me-1"></i> Search
                 </button>
             </div>
+
         </div>
     </div>
 </template>
@@ -73,6 +95,7 @@ export default {
             errors: {},
 
             form: {
+                employment_type: "1",
                 month: currentMonth,
                 status: "",
             },

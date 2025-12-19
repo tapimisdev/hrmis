@@ -117,12 +117,16 @@
                                 <input
                                     type="number"
                                     class="form-control"
-                                    v-model.number="emp.adjustments"
+                                    v-model="emp.adjustments"
+                                    @change="adjustRow(emp)"
                                 />
                             </td>
                             <td class="text-center">{{ emp.net_pay }}</td>
                             <td class="text-center">
-                                <textarea class="form-control my-3"></textarea>
+                                <textarea class="form-control my-3"
+                                v-model="emp.remarks"
+                                @change="adjustRow(emp)"
+                                ></textarea>
                             </td>
                         </tr>
                     </tbody>
@@ -300,6 +304,28 @@ export default {
             } else {
                 root.style.setProperty("--status-color", color);
                 root.style.setProperty("--status-bg", bg);
+            }
+        },
+        async adjustRow(emp) {
+          console.log(emp); 
+            this.loading = true;
+            try {
+                await axios.post(
+                    `/api/payroll/pera-rata/items/${this.payroll_no}/${emp.id}`,
+                    {
+                        adjustment: emp.adjustments,
+                        remarks: emp.remarks,
+                    },
+                    {
+                        headers: { Authorization: `Bearer ${this.token}` },
+                        responseType: "blob",
+                    }
+                );
+                this.$emit("fetch_data");
+            } catch (error) {
+                console.error(error);
+            } finally {
+                this.loading = false;
             }
         },
         watchGlobalTheme() {

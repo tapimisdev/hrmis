@@ -27,6 +27,10 @@ class PayrollService {
             ->leftJoin('employment_types as et', 'ps.employment_type_id', '=', 'et.id')
             ->select('ps.*', 'et.name as employment_name', 'et.code as employment_code');
 
+        if (!empty($payload['employment_type'])) {
+            $query->where('ps.employment_type_id', $payload['employment_type']);
+        }
+
         if (!empty($payload['year'])) {
             $query->where('ps.month', 'LIKE', $payload['year'] . '%');
         }

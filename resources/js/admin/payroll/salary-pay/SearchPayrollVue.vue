@@ -28,7 +28,7 @@
                 </select>
             </div>
 
-            <div class="col-12 col-md-4 mb-3 d-flex align-items-end">
+            <div class="col-12 col-md-3 mb-3 d-flex align-items-end">
                 <button
                     type="button"
                     id="submit-button"
@@ -74,12 +74,22 @@ export default {
             loading: false,
             errors: {},
             form: {
+                employment_type: 1,
                 year: new Date().getFullYear(),
                 month: new Date().getMonth() + 1,
                 cutoff: "",
                 status: "",
             },
             selects: [
+                {
+                    label: "Employment Type",
+                    model: "employment_type",
+                    placeholder: "-- CHOOSE EMPLOYMENT TYPE --",
+                    options: [
+                        { text: 'regular', value: 1 },
+                        { text: 'contractual', value: 2 },
+                    ],
+                },
                 {
                     label: "Year",
                     model: "year",

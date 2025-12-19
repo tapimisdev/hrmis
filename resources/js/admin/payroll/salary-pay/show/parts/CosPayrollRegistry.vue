@@ -67,8 +67,9 @@
                 {{ deduction }}
               </th>
 
-              <th>Adjustment</th>
+              <th style="width: 150px">Adjustment</th>
               <th class="net-salary">Net <br> Salary</th>
+              <th>Remarks</th>
             </tr>
           </thead>
 
@@ -115,16 +116,22 @@
                 {{ formatNumber(getDeductionAmount(emp, deduction)) }}
               </td>
 
-              <td class="number-cell p-0">
+              <td class="text-center">
                 <input 
                   type="number" 
                   v-model="emp.adjustment"
                   @change="adjustRow(emp)"
-                  class="w-100 border-0 p-2 bg-transparent focus:ring-0 text-right"
+                  class="form-control"
                 />
               </td>
 
               <td class="number-cell net-salary">{{ formatNumber(emp.net_salary) }}</td>
+              <td class="text-center">
+                    <textarea class="form-control my-3"
+                    v-model="emp.remarks"
+                    @change="adjustRow(emp)"
+                    ></textarea>
+                </td>
             </tr>
 
             <!-- Project Total Row -->
@@ -155,6 +162,7 @@
 
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'adjustment')) }}</td>
               <td class="number-cell net-salary"><strong>{{ formatNumber(projectTotals(project, 'net_salary')) }}</strong></td>
+              <td></td>
             </tr>
           </tbody>
 
@@ -187,6 +195,7 @@
 
               <td class="number-cell">{{ formatNumber(grandTotals('adjustment')) }}</td>
               <td class="number-cell net-salary"><strong>{{ formatNumber(grandTotals('net_salary')) }}</strong></td>
+              <td></td>
             </tr>
           </tfoot>
 
@@ -252,9 +261,9 @@ export default {
     async downloadPayroll(type, payroll_no) {
 
       const urlArr = {
-        'registry': `/api/payroll/salary/${payroll_no}/download`,
-        'aut': `/api/payroll/absences-leaves/${payroll_no}/download`,
-        'payslip': `/api/payroll/payslip/${payroll_no}/download`,
+        'registry': `/api/payroll/salary-pay/${payroll_no}/download`,
+        'aut': `/api/payroll/salary-pay/absences-leaves/${payroll_no}/download`,
+        'payslip': `/api/payroll/salary-pay/payslip/${payroll_no}/download`,
       }
 
       const endPoint = urlArr[type];
@@ -308,25 +317,25 @@ export default {
       );
     },
     async adjustRow(emp) {
-      this.loading = true;
-      try {
-        const res = await axios.post(
-            `/api/payroll/salary-pay/items/${this.payroll_no}/${emp.id}`,
-          {
-            adjustment: emp.adjustment
-          },
-          {
-            headers: { Authorization: `Bearer ${this.token}` },
-            responseType: 'blob',
-          }
-        );
-        console.log(res);
-        this.$emit('fetch_data');
-      } catch (error) {
-        console.error(error);
-      } finally {
-        this.loading = false;
-      }
+        this.loading = true;
+        try {
+            await axios.post(
+                `/api/payroll/salary-pay/items/${this.payroll_no}/${emp.id}`,
+                {
+                    adjustment: emp.adjustment,
+                    remarks: emp.remarks,
+                },
+                {
+                    headers: { Authorization: `Bearer ${this.token}` },
+                    responseType: "blob",
+                }
+            );
+            this.$emit("fetch_data");
+        } catch (error) {
+            console.error(error);
+        } finally {
+            this.loading = false;
+        }
     },
     applyStatusTheme() {
       const { color, bg, darkColor, darkBg } = this.statusConfig;

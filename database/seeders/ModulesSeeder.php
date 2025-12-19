@@ -62,28 +62,28 @@ class ModulesSeeder extends Seeder
         $modules = [
             [
                 'module_name' => 'GSIS',
-                'tab_name'    => 'contribution',
+                'tab_name'    => 'GSIS',
                 'icon'        => 'fa-solid fa-building-columns',
                 'slug'        => 'gsis',
                 'order'       => 1,
             ],
             [
                 'module_name' => 'PAG-IBIG',
-                'tab_name'    => 'contribution',
+                'tab_name'    => 'PAG-IBIG',
                 'icon'        => 'fa-solid fa-people-roof',
                 'slug'        => 'pag-ibig',
                 'order'       => 2,
             ],
             [
                 'module_name' => 'PHIL-HEALTH',
-                'tab_name'    => 'contribution',
+                'tab_name'    => 'PhilHealth',
                 'icon'        => 'fa-solid fa-heart-pulse',
                 'slug'        => 'philhealth',
                 'order'       => 3,
             ],
             [
                 'module_name' => 'Landbank',
-                'tab_name'    => 'Base',
+                'tab_name'    => 'Landbank',
                 'icon'        => 'fa-solid fa-landmark',
                 'slug'        => 'landbank',
                 'order'       => 4,

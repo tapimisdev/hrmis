@@ -36,14 +36,6 @@
                             <a
                                 class="dropdown-item"
                                 href="javascript:void(0)"
-                                @click="downloadPayroll('aut', payroll_no)"
-                                >Absences & Leaves</a
-                            >
-                        </li>
-                        <li>
-                            <a
-                                class="dropdown-item"
-                                href="javascript:void(0)"
                                 @click="downloadPayroll('payslip', payroll_no)"
                                 >Payslip</a
                             >
@@ -100,49 +92,77 @@
                                 v-for="(deduction, dIndex) in dynamicDeductions"
                                 :key="'deduction-' + dIndex"
                                 class="deduction"
+                                style="min-width: 120px; width: 100%; max-width: 300px; text-align: center;"
                             >
                                 {{ deduction }}
                             </th>
-
-                            <th class="earning">Total Deductions</th>
-                            <th>Adjustment</th>
-                            <th class="net-salary">Net <br />Salary</th>
+                            <th class="earning"
+                              style="min-width: 120px; width: 100%; max-width: 300px; text-align: center;"
+                            >Total Deductions</th>
+                            <th style="width: 150px">Adjustment</th>
+                            <th class="net-salary"
+                              style="min-width: 120px; width: 100%; max-width: 300px; text-align: center;"  
+                            >Net <br />Salary</th>
+                            <th
+                              style="min-width: 200px; width: 100%; max-width: 300px; text-align: center;"
+                            >Remarks</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         <tr class="data-row" v-for="(emp, index) in employees" :key="index">
                             <!-- <td colspan="100">asdasd</td> -->
-                            <td class="text-center">{{ emp.employee_no }}</td>
-                            <td class="name-cell">
+                            <td class="text-center"
+                                style="min-width: 100px; width: 100%; max-width: 300px; text-align: center;"
+                            >{{ emp.employee_no }}</td>
+                            <td class="name-cell"
+                                style="min-width: 200px; width: 100%; max-width: 300px; text-align: center;"
+                            >
                                 <div class="employee-name">{{ emp.name }}</div>
                                 <div class="employee-position">{{ emp.position }}</div>
                             </td>
-                            <td class="text-center">{{ emp.monthly_rate }}</td>
-                            <td class="text-center">{{ emp.salary_grade }}</td>
-                            <td class="text-center">{{ emp.aut }}</td>
-                            <td class="text-center">{{ emp.overtime }}</td>
-                            <td class="text-center">{{ emp.holiday }}</td>
+                            <td class="text-center"
+                              style="min-width: 120px; width: 100%; max-width: 300px; text-align: center;"  
+                            >{{ emp.monthly_rate }}</td>
+                            <td class="text-center"
+                              style="min-width: 120px; width: 100%; max-width: 300px; text-align: center;"  
+                            >{{ emp.salary_grade }}</td>
+                            <td class="text-center"
+                              style="min-width: 120px; width: 100%; max-width: 300px; text-align: center;"  
+                            >{{ emp.aut }}</td>
+                            <td class="text-center"
+                              style="min-width: 120px; width: 100%; max-width: 300px; text-align: center;"  
+                            >{{ emp.overtime }}</td>
+                            <td class="text-center"
+                              style="min-width: 120px; width: 100%; max-width: 300px; text-align: center;"  
+                            >{{ emp.holiday }}</td>
                             
                             <!-- Dynamic Deductions -->
                             <td
                                 v-for="(deduction, dIndex) in dynamicDeductions"
                                 :key="'deduction-' + dIndex"
-                                class="number-cell deduction"
+                                class="number-cell deduction text-center"
                             >
                                 {{ formatNumber(getDeductionAmount(emp, deduction)) }}
                             </td>
 
                             <td class="text-center">{{ emp.total_deductions }}</td>
-                            <td class="number-cell p-0">
+                            <td class="number-cell">
                                 <input 
                                 type="number" 
                                 v-model="emp.salary_adjustment"
                                 @change="adjustRow(emp)"
-                                class="w-100 border-0 p-2 bg-transparent focus:ring-0 text-right"
+                                class="form-control"
+                                style="min-width: 150px; width: 100%; max-width: 300px; text-align: center;"
                                 />
                             </td>
                             <td class="text-center">{{ emp.net_pay }}</td>
+                            <td class="text-center">
+                                <textarea class="form-control my-3"
+                                v-model="emp.remarks"
+                                @change="adjustRow(emp)"
+                                ></textarea>
+                            </td>
                         </tr>
                     </tbody>
                     <!-- Grand Total Row -->
@@ -150,7 +170,7 @@
                         <tr class="grand-total text-center">
                         <td colspan="2" class="text-end"><strong>GRAND TOTAL</strong></td>
                         <td class="number-cell">{{ formatNumber(grandTotals('monthly_rate')) }}</td>
-                        <td class="number-cell">N/A</td>
+                        <td class="number-cell"> - </td>
                         <td class="number-cell deduction">{{ formatNumber(grandTotals('aut')) }}</td>
                         <td class="number-cell">{{ formatNumber(grandTotals('overtime')) }}</td>
                         <td class="number-cell">{{ formatNumber(grandTotals('holiday')) }}</td>
@@ -166,7 +186,8 @@
                         <td class="number-cell">{{ formatNumber(grandTotals('total_deductions')) }}</td>
                         <td class="number-cell earning">{{ formatNumber(grandTotals('salary_adjustment')) }}</td>
                         <td class="number-cell net-salary"><strong>{{ formatNumber(grandTotals('net_pay')) }}</strong></td>
-                        </tr>
+                        <td></td>  
+                      </tr>
                     </tfoot>
                 </table>
             </div>
@@ -270,9 +291,9 @@ export default {
     methods: {
         async downloadPayroll(type, payroll_no) {
             const urlArr = {
-                registry: `/api/payroll/salary/${payroll_no}/download`,
-                aut: `/api/payroll/absences-leaves/${payroll_no}/download`,
-                payslip: `/api/payroll/payslip/${payroll_no}/download`,
+                registry: `/api/payroll/salary-pay/${payroll_no}/download`,
+                aut: `/api/payroll/salary-pay/absences-leaves/${payroll_no}/download`,
+                payslip: `/api/payroll/salary-pay/payslip/${payroll_no}/download`,
             };
 
             const endPoint = urlArr[type];
@@ -330,6 +351,7 @@ export default {
                     `/api/payroll/salary-pay/items/${this.payroll_no}/${emp.id}`,
                     {
                         adjustment: emp.salary_adjustment,
+                        remarks: emp.remarks,
                     },
                     {
                         headers: { Authorization: `Bearer ${this.token}` },

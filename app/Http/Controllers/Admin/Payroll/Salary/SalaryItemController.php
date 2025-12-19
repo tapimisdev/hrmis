@@ -12,7 +12,8 @@ class SalaryItemController extends Controller
     public function update($payroll_no, $payroll_emp_id, Request $request)
     {
         $validatedData = $request->validate([
-            'adjustment' => 'required|numeric'
+            'adjustment' => 'required|numeric',
+            'remarks' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -58,11 +59,14 @@ class SalaryItemController extends Controller
                 abort(400, 'Unsupported employment type.');
             }
 
+            $remarks = $validatedData['remarks'] ?? $salary_item->remarks;
+
             // Update
             DB::table($table)
                 ->where('id', $payroll_emp_id)
                 ->update([
                     'salary_adjustment' => $adjustment,
+                    'remarks' => $remarks,
                     'net_pay' => $new_net_pay,
                     'updated_at' => now(),
                 ]);

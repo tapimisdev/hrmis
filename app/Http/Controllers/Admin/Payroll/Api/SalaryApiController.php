@@ -25,6 +25,7 @@ class SalaryApiController extends Controller
     public function getList(Request $request)
     {
         $validated = $request->validate([
+            'employment_type' => 'nullable|integer',
             'year' => 'required|integer|min:2000|max:' . date('Y'),
             'month' => 'required|integer|min:1|max:12',
             'cutoff' => 'nullable|string|max:50',
