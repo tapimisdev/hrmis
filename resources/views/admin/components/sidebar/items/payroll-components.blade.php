@@ -18,21 +18,30 @@
     @can($config['permission'])
         @php
             $modules = getPayrollComponents($type);
-            $isActive = Str::contains($currentPath, $type);
+
+            // Check if current route belongs to this section
+            $isActiveSection = Str::contains($currentPath, $type);
+
+            // Check if any child module is active
+            $isActiveChild = collect($modules)->contains(function($module) {
+                return request()->routeIs('payroll-components.index') && request('slug') === $module->slug;
+            });
+
+            $isExpanded = $isActiveSection || $isActiveChild;
         @endphp
 
-        <li class="sidebar-item {{ $isActive ? 'active' : '' }}">
-            <a class="sidebar-link dropdown-toggle {{ $isActive ? '' : 'collapsed' }}"
+        <li class="sidebar-item {{ $isExpanded ? 'active' : '' }}">
+            <a class="sidebar-link dropdown-toggle {{ $isExpanded ? '' : 'collapsed' }}"
                data-bs-toggle="collapse"
                data-bs-target="#{{ $type }}"
                role="button"
-               aria-expanded="{{ $isActive ? 'true' : 'false' }}"
+               aria-expanded="{{ $isExpanded ? 'true' : 'false' }}"
                aria-controls="{{ $type }}">
                 <i class="{{ $config['icon'] }}"></i>
                 <span>{{ $config['label'] }}</span>
             </a>
 
-            <div class="collapse collapsable {{ $isActive ? 'show' : '' }}" id="{{ $type }}">
+            <div class="collapse collapsable {{ $isExpanded ? 'show' : '' }}" id="{{ $type }}">
                 <ul class="nested-list">
                     @if (count($modules) === 0)
                         <li class="nested-item">

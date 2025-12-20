@@ -153,7 +153,7 @@ export default {
     async fetchAdjustments() {
       try {
         const response = await axios.post(
-          "/api/payroll/adjustments",
+          "/api/payroll/salary-pay/adjustments",
           {
             start_date: this.start_date,
             end_date: this.end_date,

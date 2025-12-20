@@ -2,7 +2,7 @@
     'hr.salary_payroll.view'
 ])
 <li class="sidebar-item {{ request()->segment(2) === 'payroll' ? 'active' : '' }}">
-    <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'payroll') ? '' : 'collapsed' }}"
+    <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'admin/payroll/') ? '' : 'collapsed' }}"
     data-bs-toggle="collapse" 
     data-bs-target="#payroll"
     role="button" 
@@ -11,7 +11,7 @@
         <i class="fa-solid fa-money-check-dollar"></i>
         <span>Payroll</span>
     </a>
-    <div class="collapse collapsable {{ Str::contains(request()->path(), 'payroll') ? 'show' : '' }}" 
+    <div class="collapse collapsable {{ Str::contains(request()->path(), 'admin/payroll/') ? 'show' : '' }}" 
         id="payroll">
         <ul class="nested-list">
             @can('hr.salary_payroll.view')
