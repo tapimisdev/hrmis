@@ -81,6 +81,8 @@
         </div>
         @include('employee.components.sidebar')
         <main>
+            <!-- to show birthdays -->
+            <birthday-component></birthday-component>
             <div>
                  @yield('content')
             </div>
@@ -107,6 +109,7 @@
     <!-- FullCalendar JS (for dynamic calendar events) -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/party-js@latest/bundle/party.min.js"></script>
 
     @yield('scripts')
 

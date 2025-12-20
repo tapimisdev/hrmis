@@ -45,8 +45,9 @@
     <div id="app">
         <!-- Sidebar (admin navigation) -->
         @include('admin.components.sidebar.sidebar')
-
         <main class="bg-body">
+            <!-- to show birthdays -->
+            <birthday-component></birthday-component>
             <div>
                 <!-- Top navbar -->
                 @include('admin.components.navbar')
@@ -56,6 +57,7 @@
             </div>
             @include('admin.components.footer')
         </main>
+
     </div>
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
@@ -68,6 +70,8 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/fancybox/fancybox.umd.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/party-js@latest/bundle/party.min.js"></script>
+
     <script>
         @if(session('auth_token'))
             localStorage.setItem('auth_token', "{{ session('auth_token') }}");

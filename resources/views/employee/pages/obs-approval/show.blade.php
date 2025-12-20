@@ -1,7 +1,7 @@
 @extends('employee.layout.app')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid min-vh-100">
 
     <x-header title="Pass Slip Application" subtitle="View pass slip application details">
         <x-button-link 

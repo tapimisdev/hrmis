@@ -47,6 +47,8 @@ import PeraRataIndex from './admin/payroll/pera-rata/Index.vue';
 import PeraRataStepper from './admin/payroll/pera-rata/create/PayrollStepper.vue';
 import PeraRataView from './admin/payroll/pera-rata/show/ShowPayroll.vue';
 
+import BirthdayComponent from './birthday/BirthdayComponent.vue';
+
 const authApp = createApp({
   components: {
     CheckInOutVue,
@@ -56,6 +58,8 @@ const authApp = createApp({
     ProfileIndex,
     Announcements,
     Show,
+
+    BirthdayComponent,
 
     DashboardVue,
     DtrViewVue,

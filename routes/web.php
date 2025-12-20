@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\DashboardApiController;
+use App\Http\Controllers\BirthdayController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,8 @@ Auth::routes([
     'verify' => false,        // disable email verification
     'confirm' => false        // disable password confirmation
 ]);
+
+Route::get('today-birthday', [BirthdayController::class, 'index']);
 
 Route::any('/iclock/cdata', [\App\Http\Controllers\ZktecoController::class, 'cdata'])
     ->middleware('biometric.ip');
