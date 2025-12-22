@@ -38,7 +38,7 @@ export default {
       return this.images[this.currentIndex] || null;
     },
   },
-  mounted() {
+  created() {
     // Check Laravel session to see if popup was already shown
     axios.get('/today-birthday', {
       headers: { Authorization: `Bearer ${token}` }
