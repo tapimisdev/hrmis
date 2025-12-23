@@ -65,6 +65,7 @@ class PayslipService
         $payrollService =  app(PayrollService::class);
         $this->payroll = $payrollService->payrollDetails($payroll_no);
         $this->registry = json_decode($payrollService->getPayrollRegistry($this->payroll, $this->payroll->id, false)->getContent(), true);
+
     }
 
     /* ----------------------------------------------------------

@@ -57,6 +57,24 @@ class ModulesSeeder extends Seeder
                 'name'  => 'Salary Tax',
                 'type'  => 'taxes'
             ],
+            [
+                'icon'  => 'fa-solid fa-money-bill',
+                'slug'  => 'ewt-2%',
+                'name'  => 'EWT (2%)',
+                'type'  => 'taxes'
+            ],
+            [
+                'icon'  => 'fa-solid fa-money-bill',
+                'slug'  => 'percentage-tax-3%',
+                'name'  => 'Percentage tax (3%)',
+                'type'  => 'taxes'
+            ],
+            [
+                'icon'  => 'fa-solid fa-money-bill',
+                'slug'  => 'tax-ewt-5%',
+                'name'  => 'Tax (ewt: 5%)',
+                'type'  => 'taxes'
+            ],
         ];
 
         $modules = [
