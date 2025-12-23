@@ -51,8 +51,8 @@
 
                 @can('emp.dashboard.view')
                 <!-- Payslip -->
-                <li class="side-items has-submenu">
-                    <a href="" class="side-link text-body">
+                <li class="side-items has-submenu {{ request()->routeIs('payslip.*') ? 'active' : '' }}">
+                    <a href="{{ route('payslip.index') }}" class="side-link text-body">
                         <span class="side-icon">
                             <i class="fa-solid fa-money-check-dollar"></i>
                         </span>

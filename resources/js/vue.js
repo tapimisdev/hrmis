@@ -8,6 +8,7 @@ import HeaderVue from './employee/components/Header.vue';
 import EmployeeTimelog from './employee/check-in-out/EmployeeTimelog.vue';
 import ProfileIndex from './employee/profile/ProfileIndex.vue';
 import Announcements from './employee/announcements/Announcements.vue';
+import PayslipIndex from './employee/payslip/PayslipIndex.vue';
 import Show from './employee/announcements/Show.vue';
 
 // Admin
@@ -58,6 +59,7 @@ const authApp = createApp({
     ProfileIndex,
     Announcements,
     Show,
+    PayslipIndex,
 
     BirthdayComponent,
 
