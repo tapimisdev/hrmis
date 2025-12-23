@@ -87,6 +87,36 @@ class PayrollSettingsController extends Controller
                     ],
                 ],
             ],
+            'ewt_2%' => [
+                'label'  => 'EWT 2%',
+                'fields' => [
+                    'tax_id' => [
+                        'selected' => $getLatestId('ewt_2%')->max('tax_id') ?? null,
+                        'label'    => 'Tax Table',
+                        'choices'  => $taxes,
+                    ],
+                ],
+            ],
+            'percentage_tax_3%' => [
+                'label'  => 'Percentage Tax 3%',
+                'fields' => [
+                    'tax_id' => [
+                        'selected' => $getLatestId('percentage_tax_3%')->max('tax_id') ?? null,
+                        'label'    => 'Tax Table',
+                        'choices'  => $taxes,
+                    ],
+                ],
+            ],
+            'tax_ewt_5%' => [
+                'label'  => 'Tax (EWT: 5%)',
+                'fields' => [
+                    'tax_id' => [
+                        'selected' => $getLatestId('tax_ewt_5%')->max('tax_id') ?? null,
+                        'label'    => 'Tax Table',
+                        'choices'  => $taxes,
+                    ],
+                ],
+            ],
         ];
 
         return view('admin.pages.payroll-settings.index', compact('menu'));

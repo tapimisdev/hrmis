@@ -87,6 +87,8 @@ class ComputationService {
 
         $basic_salary = $this->salary_amount;
 
+        [$year, $month, $day] = explode('-', $this->payroll_date);
+
         // --- Compute detailed amounts ---
         $overtime_amount        = round($this->min_rate * $overtime, 4);
         $holiday_excess_amount  = round($this->daily_rate * $holiday_excess, 4);
@@ -98,19 +100,68 @@ class ComputationService {
 
         //  -------------------------------------- COS PAYROLL ---------------------------------------------------
         if ($this->employment_type == EmploymentTypesEnum::COS->value) {
-            // --- Compute totals (still full precision) ---
-            $total_earnings   = $overtime_amount + $holiday_excess_amount;
-            $total_deductions = $sum_of_deduction ?? 0;
 
-            // --- Round for currency display / storage ---
-            $basic_salary     = round($basic_salary, 2);
-            $total_earnings   = round($total_earnings, 2);
+            // --- Fetch COS tax components ---
+            $cos_taxes = DB::table('payroll_components_settings')
+                ->leftJoin('payroll_components', 'payroll_components.id', '=', 'payroll_components_settings.tax_id')
+                ->leftJoin('payroll_components_years', 'payroll_components_years.payroll_component_id', '=', 'payroll_components.id')
+                ->leftJoin('employee_payroll_components', 'employee_payroll_components.tax_deduction_id', '=', 'payroll_components_years.id')
+                ->select('payroll_components_settings.type', 'employee_payroll_components.amount', 'employee_payroll_components.employee_no')
+                ->where('year', $year)
+                ->where('month', $month)
+                ->where('employee_no', $this->employee_no)
+                ->get();
+
+            // --- Compute taxes using formulas ---
+            $total_earnings = $overtime_amount + $holiday_excess_amount;
+            $total_deductions = $sum_of_deduction ?? 0;
+            $basic_salary = round($basic_salary, 2);
+            $total_earnings = round($total_earnings, 2);
             $total_deductions = round($total_deductions, 2);
 
-            // --- Final computations ---
             $gross = round($basic_salary - $absences_amount - $late_undertime_amount + $total_earnings, 2);
-            $net   = round($gross - $total_deductions, 2);
 
+            // -------------------------------------------------
+            // COS TAX COMPUTATION (BASED ON COLLECTION)
+            // -------------------------------------------------
+
+            $ewt_2prct             = 0;
+            $percentage_tax_3prct  = 0;
+            $tax_ewt_5prct         = 0;
+
+            if ($cos_taxes instanceof \Illuminate\Support\Collection && $cos_taxes->isNotEmpty()) {
+
+                foreach ($cos_taxes as $tax) {
+
+                    switch ($tax->type) {
+
+                        // --- EWT 2% (on excess over 10,417) ---
+                        case 'ewt_2%':
+                            $rate = (float) $tax->amount; // 0.02
+                            $ewt_2prct = max(0, ($gross - 10417) * $rate);
+                            $ewt_2prct = round($ewt_2prct, 2);
+                            break;
+
+                        // --- Percentage Tax 3% ---
+                        case 'percentage_tax_3%':
+                            $rate = (float) $tax->amount; // 0.03
+                            $percentage_tax_3prct = round($gross * $rate, 2);
+                            break;
+
+                        // --- Tax EWT 5% ---
+                        case 'tax_ewt_5%':
+                            $rate = (float) $tax->amount; // 0.05
+                            $tax_ewt_5prct = round($gross * $rate, 2);
+                            break;
+                    }
+                }
+            }
+
+            // --- Final Net Pay after deductions ---
+            $total_deductions += $ewt_2prct + $percentage_tax_3prct + $tax_ewt_5prct;
+            $net = round($gross - $total_deductions, 2);
+
+            // --- Logging ---
             Log::info("
                 ================ SALARY INFO ================
                 Name            : {$this->name}
@@ -125,14 +176,18 @@ class ComputationService {
                 Overtime mins   : {$overtime}
                 Overtime Amount : {$overtime_amount}
                 ---------------------------------------------
-                Basic Salary    : {$basic_salary}
-                Total Earnings  : {$total_earnings}
-                Total Deductions: {$total_deductions}
-                Gross Pay       : {$gross}
-                Net Pay         : {$net}
+                Basic Salary        : {$basic_salary}
+                Total Earnings      : {$total_earnings}
+                Total Deductions    : {$total_deductions}
+                Gross Pay           : {$gross}
+                EWT 2%              : {$ewt_2prct}
+                Percentage Tax 3%   : {$percentage_tax_3prct}
+                Tax EWT 5%          : {$tax_ewt_5prct}
+                Net Pay             : {$net}
                 =============================================
             ");
 
+            // --- Insert to payroll_salary_employee ---
             $pseId = DB::table('payroll_salary_employee')->insertGetId([
                 'payroll_salary_id'     => $this->payroll_id,
                 'employee_no'           => $this->employee_no,
@@ -146,7 +201,10 @@ class ComputationService {
                 'gsis'                  => 0,
                 'philhealth'            => 0,
                 'pagibig'               => 0,
-                'w_tax'                 => 0,
+                'ewt_2'                => $ewt_2prct,
+                'percentage_tax_3'     => $percentage_tax_3prct,
+                'tax_ewt_5'            => $tax_ewt_5prct,
+                'w_tax'                 => $ewt_2prct + $percentage_tax_3prct + $tax_ewt_5prct,
                 'total_deductions'      => $total_deductions,
                 'total_earnings'        => $total_earnings,
                 'monthly_rate'          => round($this->salary_amount * 2, 2),
@@ -160,6 +218,7 @@ class ComputationService {
 
             Log::info("Insert ID returned: " . var_export($pseId, true));
         }
+
 
         //  -------------------------------------- PERMANENT PAYROLL ---------------------------------------------------
         if($this->employment_type ==  (int) EmploymentTypesEnum::REGULAR->value) {

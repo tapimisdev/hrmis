@@ -42,6 +42,7 @@ class SalaryItemController extends Controller
                 $new_net_pay = $old_gross + $adjustment;
 
             }
+            
             // COS EMPLOYEE
             elseif ($payroll->employment_type_id == EmploymentTypesEnum::COS->value) {
 
@@ -53,7 +54,7 @@ class SalaryItemController extends Controller
                     abort(404, 'Salary record not found.');
                 }
 
-                $new_net_pay = $salary_item->gross_pay + $adjustment;
+                $new_net_pay = $salary_item->gross_pay - $salary_item->total_deductions + $adjustment;
 
             } else {
                 abort(400, 'Unsupported employment type.');

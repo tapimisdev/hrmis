@@ -486,174 +486,397 @@ class PayrollService {
         return $suspensions;
     }
 
-    public function getPayrollRegistry(object $payroll, string $payroll_id, bool $isGrouped = true) 
-    {
+    // public function getPayrollRegistry(object $payroll, string $payroll_id, bool $isGrouped = true) 
+    // {
 
+    //     $employment_type_id = $payroll->employment_type_id;
+
+    //      // COS
+
+    //     if($employment_type_id == EmploymentTypesEnum::COS->value) {
+    //         $payroll_date = DB::table('payroll_salary')
+    //         ->where('id', $payroll_id)
+    //         ->value('payroll_date');
+
+    //         $pse = DB::table('payroll_salary_employee as pse')
+    //             ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+    //             ->where('payroll_salary_id', $payroll_id)
+    //             ->select('pse.*', 'ps.payroll_date')
+    //             ->get();
+    //     } 
+
+    //     if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
+    //         $payroll_date = DB::table('payroll_salary')
+    //         ->where('id', $payroll_id)
+    //         ->value('payroll_date');
+
+    //         $pse = DB::table('payroll_salary_permanent_employees as pse')
+    //             ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+    //             ->where('payroll_salary_id', $payroll_id)
+    //             ->select('pse.*', 'ps.payroll_date')
+    //             ->get();
+    //     } 
+        
+    //     // Get all projects for this payroll date
+    //     $projects = DB::table('employee_projects as ep')
+    //         ->join('projects', 'ep.project_id', '=', 'projects.id')
+    //         ->whereDate('start_date', '<=', $payroll_date)
+    //         ->where(function ($query) use ($payroll_date) {
+    //             $query->whereDate('end_date', '>=', $payroll_date)
+    //                 ->orWhereNull('end_date');
+    //         })
+    //         ->select('projects.id', 'projects.name')
+    //         ->get()->unique('id');
+
+    //     $enriched = $pse->map(function ($d) use ($employment_type_id, $payroll_date) {
+
+    //         if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
+    //             $deductions = DB::table('payroll_salary_permanents_employee_deductions')
+    //                 ->where('pspe_id', $d->id)
+    //                 ->get();
+
+    //             $earnings = DB::table('payroll_salary_employee_earnings')
+    //                 ->where('payroll_se_id', $d->id)
+    //                 ->get();
+    //         }
+            
+    //         $project_id = DB::table('employee_projects')
+    //             ->where('employee_no', $d->employee_no)
+    //             ->whereDate('start_date', '<=', $payroll_date)
+    //             ->where(function ($query) use ($payroll_date) {
+    //                 $query->whereDate('end_date', '>=', $payroll_date)
+    //                     ->orWhereNull('end_date');
+    //             })
+    //             ->orderByDesc('start_date')
+    //             ->value('project_id');
+                
+    //         if($employment_type_id == EmploymentTypesEnum::COS->value) {
+    //             return [
+    //                 'employee_no' => $d->employee_no,
+    //                 'name' => $d->name,
+    //                 'position' => $d->position,
+    //                 'monthly_rate' => $d->monthly_rate,
+    //                 'basic_pay' => $d->basic_pay,
+    //                 'ut' => $d->ut,
+    //                 'absences' =>  $d->absences,
+    //                 'overtime' => $d->overtime,
+    //                 'holiday' => $d->holiday,
+    //                 'gross_pay' => $d->gross_pay,
+    //                 'net_pay' => $d->net_pay,
+    //                 'salary_adjustment' => $d->salary_adjustment,
+    //                 'deductions' => $deductions ?? [],
+    //                 'earnings' => $earnings ?? [],
+    //                 'project_id' => $project_id,
+    //                 'remarks' => $d->remarks ?? null,
+    //             ];
+    //         }
+
+    //         if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
+    //             return [
+    //                 'employee_no' => $d->employee_no,
+    //                 'name' => $d->name,
+    //                 'position' => $d->position,
+    //                 'monthly_rate' => $d->monthly_rate,
+    //                 'ut' => $d->ut,
+    //                 'absences' =>  $d->absences,
+    //                 'overtime' => $d->overtime,
+    //                 'holiday' => $d->holiday,
+    //                 'total_deductions' => $d->total_deductions,
+    //                 'net_pay' => $d->net_pay,
+    //                 'salary_adjustment' => $d->salary_adjustment,
+    //                 'remarks' => $d->remarks ?? null,
+    //                 'deductions' => $deductions ?? [],
+    //                 'earnings' => $earnings ?? [],
+    //             ];
+    //         }
+    //     });
+
+    //     if ($isGrouped) {
+    //         // Group employees by project
+    //         $projectGroups = [];
+
+    //         foreach ($enriched as $employee) {
+    //             $emp_project = $projects->firstWhere('id', $employee->project_id);
+
+    //             $projectId = $emp_project->id ?? 'others';
+    //             $projectName = $emp_project->name ?? 'No Projects';
+
+    //             if (!isset($projectGroups[$projectId])) {
+    //                 $projectGroups[$projectId] = [
+    //                     'name' => $projectName,
+    //                     'employees' => []
+    //                 ];
+    //             }
+
+    //             $projectGroups[$projectId]['employees'][] = [
+    //                 'employee_no' => $employee->employee_no,
+    //                 'name' => $employee->name,
+    //                 'position' => $employee->position,
+    //                 'monthly_rate' => $employee->monthly_rate,
+    //                 'salary_earned' => $employee->basic_pay,
+    //                 'ut' => $employee->ut,
+    //                 'absences' =>  $employee->absences,
+    //                 'aut' => $employee->ut + $employee->absences,
+    //                 'overtime' => $employee->overtime,
+    //                 'holiday' => $employee->holiday,
+    //                 'total_salary' => $employee->gross_pay,
+    //                 'deductions' => $employee->deductions,
+    //                 'earnings' => $employee->earnings,
+    //                 'adjustment' => $employee->salary_adjustment,
+    //                 'net_salary' => $employee->net_pay
+    //             ];
+    //         }
+
+    //         return response()->json(array_values($projectGroups));
+
+    //     } else {
+    //         // Return flat list without grouping
+    //         $flatList = $enriched->map(function ($employee) {
+
+    //             return [
+    //                 'employee_no' => $employee['employee_no'],
+    //                 'name' => $employee['name'],
+    //                 'position' => $employee['position'],
+    //                 'monthly_rate' => $employee['monthly_rate'],
+    //                 'ut' => $employee['ut'],
+    //                 'absences' =>  $employee['absences'],
+    //                 'aut' => $employee['ut'] + $employee['absences'],
+    //                 'overtime' => $employee['overtime'],
+    //                 'holiday' => $employee['holiday'],
+    //                 'total_salary' => $employee['net_pay'],
+    //                 'deductions' => $employee['deductions'],
+    //                 'earnings' => $employee['earnings'],
+    //                 'adjustment' => $employee['salary_adjustment'],
+    //                 'net_salary' => $employee['net_pay'],
+    //             ];
+    //         });
+
+    //         return response()->json($flatList);
+    //     }
+    // }
+
+    public function getPayrollRegistry(object $payroll, string $payroll_id, bool $isGrouped = true)
+    {
         $employment_type_id = $payroll->employment_type_id;
 
-         // COS
-
-        if($employment_type_id == EmploymentTypesEnum::COS->value) {
-            $payroll_date = DB::table('payroll_salary')
+        // Get payroll date
+        $payroll_date = DB::table('payroll_salary')
             ->where('id', $payroll_id)
             ->value('payroll_date');
+
+        /* ===========================
+        |  Get payroll employees
+        ===========================*/
+        if ($employment_type_id == EmploymentTypesEnum::COS->value) {
 
             $pse = DB::table('payroll_salary_employee as pse')
                 ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
                 ->where('payroll_salary_id', $payroll_id)
-                ->select('pse.*', 'ps.payroll_date')
+                ->select('pse.*', 'ps.payroll_date', 'ps.cutoff', 'ps.period_covered')
                 ->get();
-        } 
 
-        if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
-            $payroll_date = DB::table('payroll_salary')
-            ->where('id', $payroll_id)
-            ->value('payroll_date');
+        } else { // REGULAR
 
             $pse = DB::table('payroll_salary_permanent_employees as pse')
                 ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
                 ->where('payroll_salary_id', $payroll_id)
                 ->select('pse.*', 'ps.payroll_date')
                 ->get();
-        } 
-        
-        // Get all projects for this payroll date
-        $projects = DB::table('employee_projects as ep')
-            ->join('projects', 'ep.project_id', '=', 'projects.id')
-            ->whereDate('start_date', '<=', $payroll_date)
-            ->where(function ($query) use ($payroll_date) {
-                $query->whereDate('end_date', '>=', $payroll_date)
-                    ->orWhereNull('end_date');
-            })
-            ->select('projects.id', 'projects.name')
-            ->get()->unique('id');
+        }
 
+        /* ===========================
+        |  Enrich employees
+        ===========================*/
         $enriched = $pse->map(function ($d) use ($employment_type_id, $payroll_date) {
 
-            if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
+            $deductions = [];
+            $earnings   = [];
+
+            if ($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
                 $deductions = DB::table('payroll_salary_permanents_employee_deductions')
                     ->where('pspe_id', $d->id)
                     ->get();
-
                 $earnings = DB::table('payroll_salary_employee_earnings')
                     ->where('payroll_se_id', $d->id)
                     ->get();
             }
-            
-            $project_id = DB::table('employee_projects')
+
+            // COS → project
+            $project = DB::table('employee_projects as ep')
+                ->join('projects as p', 'ep.project_id', '=', 'p.id')
                 ->where('employee_no', $d->employee_no)
-                ->whereDate('start_date', '<=', $payroll_date)
-                ->where(function ($query) use ($payroll_date) {
-                    $query->whereDate('end_date', '>=', $payroll_date)
-                        ->orWhereNull('end_date');
+                ->whereDate('ep.start_date', '<=', $payroll_date)
+                ->where(function ($q) use ($payroll_date) {
+                    $q->whereDate('ep.end_date', '>=', $payroll_date)
+                    ->orWhereNull('ep.end_date');
                 })
-                ->orderByDesc('start_date')
-                ->value('project_id');
-                
-            if($employment_type_id == EmploymentTypesEnum::COS->value) {
-                return [
-                    'employee_no' => $d->employee_no,
-                    'name' => $d->name,
-                    'position' => $d->position,
-                    'monthly_rate' => $d->monthly_rate,
-                    'basic_pay' => $d->basic_pay,
-                    'ut' => $d->ut,
-                    'absences' =>  $d->absences,
-                    'overtime' => $d->overtime,
-                    'holiday' => $d->holiday,
-                    'gross_pay' => $d->gross_pay,
-                    'net_pay' => $d->net_pay,
-                    'salary_adjustment' => $d->salary_adjustment,
-                    'deductions' => $deductions ?? [],
-                    'earnings' => $earnings ?? [],
-                    'project_id' => $project_id,
-                    'remarks' => $d->remarks ?? null,
-                ];
+                ->orderByDesc('ep.start_date')
+                ->select('p.id', 'p.name')
+                ->first();
+
+            // ----------------------------
+            // Determine cutoffs from period_covered
+            // ----------------------------
+            $cut_offs = [];
+
+            if (!empty($d->period_covered)) {
+                preg_match('/^([A-Za-z]+)\s+(\d{4})\s+(\d+-\d+)$/', $d->period_covered, $matches);
+
+                if ($matches) {
+                    [, $month, $year, $currentPeriod] = $matches;
+
+                    $ordinal = function (int $number) {
+                        if (($number % 100) >= 11 && ($number % 100) <= 13) return $number . 'th';
+                        return match ($number % 10) {
+                            1 => $number . 'st',
+                            2 => $number . 'nd',
+                            3 => $number . 'rd',
+                            default => $number . 'th',
+                        };
+                    };
+
+                    $firstPeriod = null;
+                    $firstAlias  = null;
+                    $firstAmount = 0.0;
+
+                    // Check if current cutoff is the second cutoff
+                    if (($d->cutoff ?? '') === 'second_cutoff') {
+                        $firstCutoff = DB::table('payroll_salary')
+                            ->where('cutoff', 'first_cutoff')
+                            ->where('period_covered', 'like', "{$month} {$year}%")
+                            ->first();
+
+                        if ($firstCutoff) {
+                            preg_match('/(\d+-\d+)$/', $firstCutoff->period_covered, $fcMatch);
+                            $firstPeriod = $fcMatch[1] ?? null;
+
+                            if ($firstPeriod) {
+                                [, $firstEnd] = explode('-', $firstPeriod);
+                                $firstAlias = $ordinal((int) $firstEnd);
+                            }
+
+                            $firstEmployee = DB::table('payroll_salary_employee')
+                                ->where('payroll_salary_id', $firstCutoff->id)
+                                ->where('employee_no', $d->employee_no)
+                                ->first();
+
+                            if ($firstEmployee) {
+                                $firstAmount = (float) ($firstEmployee->net_pay ?? 0);
+                            }
+                        }
+
+                        // Place the second cutoff first in array
+                        $cut_offs[] = [
+                            'period' => $currentPeriod,
+                            'alias'  => $ordinal((int) explode('-', $currentPeriod)[1]),
+                            'amount' => (float) ($d->net_pay ?? 0),
+                        ];
+
+                        if ($firstPeriod) {
+                            $cut_offs[] = [
+                                'period' => $firstPeriod,
+                                'alias'  => $firstAlias,
+                                'amount' => $firstAmount,
+                            ];
+                        }
+
+                        $net_pay = $firstAmount + $d->net_pay;
+                    } else {
+                        // Normal case: first cutoff
+                        [, $currentEnd] = explode('-', $currentPeriod);
+                        $currentAlias = $ordinal((int) $currentEnd);
+
+                        $cut_offs[] = [
+                            'period' => $currentPeriod,
+                            'alias'  => $currentAlias,
+                            'amount' => (float) ($d->net_pay ?? 0),
+                        ];
+
+                        $net_pay = (float) ($d->net_pay ?? 0);
+                    }
+                }
             }
 
-            if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
-                return [
-                    'employee_no' => $d->employee_no,
-                    'name' => $d->name,
-                    'position' => $d->position,
-                    'monthly_rate' => $d->monthly_rate,
-                    'ut' => $d->ut,
-                    'absences' =>  $d->absences,
-                    'overtime' => $d->overtime,
-                    'holiday' => $d->holiday,
-                    'total_deductions' => $d->total_deductions,
-                    'net_pay' => $d->net_pay,
-                    'salary_adjustment' => $d->salary_adjustment,
-                    'remarks' => $d->remarks ?? null,
-                    'deductions' => $deductions ?? [],
-                    'earnings' => $earnings ?? [],
-                ];
-            }
+
+            return [
+                'employee_no' => $d->employee_no,
+                'name'        => $d->name,
+                'position'    => $d->position,
+                'monthly_rate'=> $d->monthly_rate,
+                'basic_pay'   => $d->basic_pay ?? null,
+                'ut'          => $d->ut,
+                'absences'    => $d->absences,
+                'overtime'    => $d->overtime,
+                'holiday'     => $d->holiday,
+                'gross_pay'   => $d->gross_pay ?? null,
+                'total_deductions' => $d->total_deductions ?? null,
+                'net_pay'     => $net_pay,
+                'salary_adjustment' => $d->salary_adjustment,
+                'remarks'     => $d->remarks ?? null,
+                'deductions'  => $deductions,
+                'earnings'    => $earnings,
+                'ewt_2'       => $d->ewt_2 ?? null,
+                'percentage_tax_3' => $d->percentage_tax_3 ?? null,
+                'tax_ewt_5'   => $d->tax_ewt_5 ?? null,
+                'w_tax'       => $d->w_tax ?? null,
+                'cut_offs'    => $cut_offs,
+
+                'project_id'   => $project->id   ?? null,
+                'project_name' => $project->name ?? 'No Project',
+                'division_id'  => $d->division_id ?? null,
+                'division_name'=> $d->division_name ?? 'No Division',
+            ];
         });
 
-        if ($isGrouped) {
-            // Group employees by project
-            $projectGroups = [];
+        /* ===========================
+        |  GROUPING
+        ===========================*/
+        if (!$isGrouped) {
+            return response()->json($enriched);
+        }
 
-            foreach ($enriched as $employee) {
-                $emp_project = $projects->firstWhere('id', $employee->project_id);
+        $grouped = [];
 
-                $projectId = $emp_project->id ?? 'others';
-                $projectName = $emp_project->name ?? 'No Projects';
+        foreach ($enriched as $emp) {
 
-                if (!isset($projectGroups[$projectId])) {
-                    $projectGroups[$projectId] = [
-                        'name' => $projectName,
-                        'employees' => []
-                    ];
-                }
+            $groupId   = ($employment_type_id === EmploymentTypesEnum::COS->value)
+                ? ($emp['project_id'] ?? 'others')
+                : ($emp['division_id'] ?? 'others');
 
-                $projectGroups[$projectId]['employees'][] = [
-                    'employee_no' => $employee->employee_no,
-                    'name' => $employee->name,
-                    'position' => $employee->position,
-                    'monthly_rate' => $employee->monthly_rate,
-                    'salary_earned' => $employee->basic_pay,
-                    'ut' => $employee->ut,
-                    'absences' =>  $employee->absences,
-                    'aut' => $employee->ut + $employee->absences,
-                    'overtime' => $employee->overtime,
-                    'holiday' => $employee->holiday,
-                    'total_salary' => $employee->gross_pay,
-                    'deductions' => $employee->deductions,
-                    'earnings' => $employee->earnings,
-                    'adjustment' => $employee->salary_adjustment,
-                    'net_salary' => $employee->net_pay
+            $groupName = ($employment_type_id === EmploymentTypesEnum::COS->value)
+                ? $emp['project_name']
+                : $emp['division_name'];
+
+            if (!isset($grouped[$groupId])) {
+                $grouped[$groupId] = [
+                    'name' => $groupName,
+                    'employees' => []
                 ];
             }
 
-            return response()->json(array_values($projectGroups));
-
-        } else {
-            // Return flat list without grouping
-            $flatList = $enriched->map(function ($employee) {
-
-                return [
-                    'employee_no' => $employee['employee_no'],
-                    'name' => $employee['name'],
-                    'position' => $employee['position'],
-                    'monthly_rate' => $employee['monthly_rate'],
-                    'ut' => $employee['ut'],
-                    'absences' =>  $employee['absences'],
-                    'aut' => $employee['ut'] + $employee['absences'],
-                    'overtime' => $employee['overtime'],
-                    'holiday' => $employee['holiday'],
-                    'total_salary' => $employee['net_pay'],
-                    'deductions' => $employee['deductions'],
-                    'earnings' => $employee['earnings'],
-                    'adjustment' => $employee['salary_adjustment'],
-                    'net_salary' => $employee['net_pay'],
-                ];
-            });
-
-            return response()->json($flatList);
+            $grouped[$groupId]['employees'][] = [
+                'employee_no'  => $emp['employee_no'],
+                'name'         => $emp['name'],
+                'position'     => $emp['position'],
+                'monthly_rate' => $emp['monthly_rate'],
+                'salary_earned'=> $emp['basic_pay'],
+                'ut'           => $emp['ut'],
+                'absences'     => $emp['absences'],
+                'aut'          => $emp['ut'] + $emp['absences'],
+                'overtime'     => $emp['overtime'],
+                'holiday'      => $emp['holiday'],
+                'total_salary' => $emp['gross_pay'],
+                'deductions'   => $emp['deductions'],
+                'earnings'     => $emp['earnings'],
+                'adjustment'   => $emp['salary_adjustment'],
+                'net_salary'   => $emp['net_pay'],
+                'cut_offs'     => $emp['cut_offs'],
+            ];
         }
+
+        return response()->json(array_values($grouped));
     }
+
 
     public function payrollDetails($payroll_no)
     {

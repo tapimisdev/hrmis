@@ -40,14 +40,18 @@
         <table class="excel-table">
           <thead>
             <tr class="header-labels">
-              <th>Emp#</th>
-              <th>Name / Position</th>
-              <th>Monthly <br> Rate</th>
-              <th>Salary <br> Earned</th>
-              <th class="deduction">AUT</th>
-              <th>Overtime</th>
-              <th>Holiday <br> Excess</th>
-              <th class="earning">Total Salary</th>
+              <th class="p-4">Emp#</th>
+              <th class="p-4">Name / Position</th>
+              <th class="p-4">Monthly <br> Rate</th>
+              <th class="p-4">Salary <br> Earned</th>
+              <th class="p-4">Absences / Lates / Undertime</th>
+              <th class="p-4">Overtime</th>
+              <th class="p-4">Holiday <br> Excess</th>
+              <th class="p-4" style="width: 100px;">Total Salary</th>
+              <th class="p-4" style="width: 100px">EWT <br/> (2%)</th>
+              <th class="p-4" style="width: 100px">Percentage Tax <br/> (3%)</th>
+              <th class="p-4" style="width: 100px">Tax <br/> (EWT: 5%)</th>
+              <th class="p-4" style="width: 100px">Overall Tax</th>
 
               <!-- Dynamic Earnings -->
               <th
@@ -85,24 +89,27 @@
               :key="eIndex"
               class="data-row"
             >
-              <td class="text-center">{{ emp.employee_no }}</td>
-              <td class="name-cell">
+              <td class="text-center text-center">{{ emp.employee_no }}</td>
+              <td class="text-center name-cell">
                 <div class="employee-name">{{ emp.name }}</div>
                 <div class="employee-position">{{ emp.position }}</div>
               </td>
 
-              <td class="number-cell">{{ formatNumber(emp.monthly_rate) }}</td>
-              <td class="number-cell">{{ formatNumber(emp.salary_earned) }}</td>
-              <td class="number-cell deduction">{{ formatNumber(emp.aut)}}</td>
-              <td class="number-cell">{{ formatNumber(emp.overtime)}}</td>
-              <td class="number-cell">{{ formatNumber(emp.holiday)}}</td>
-              <td class="number-cell earning">{{ formatNumber(emp.total_salary) }}</td>
-
+              <td class="text-center number-cell">{{ formatNumber(emp.monthly_rate) }}</td>
+              <td class="text-center number-cell">{{ formatNumber(emp.salary_earned) }}</td>
+              <td class="text-center number-cell deduction">{{ formatNumber(emp.aut)}}</td>
+              <td class="text-center number-cell">{{ formatNumber(emp.overtime)}}</td>
+              <td class="text-center number-cell">{{ formatNumber(emp.holiday)}}</td>
+              <td class="text-center number-cell earning">{{ formatNumber(emp.total_salary) }}</td>
+              <td class="text-center number-cell deduction">{{ formatNumber(emp.ewt_2) }}</td>
+              <td class="text-center number-cell deduction">{{ formatNumber(emp.percentage_tax_3) }}</td>
+              <td class="text-center number-cell deduction">{{ formatNumber(emp.tax_ewt_5) }}</td>
+                <td class="text-center number-cell deduction">{{ formatNumber(emp.w_tax) }}</td>
               <!-- Dynamic Earnings -->
               <td
                 v-for="(earning, eIndex) in dynamicEarnings"
                 :key="'earning-' + eIndex"
-                class="number-cell earning"
+                class="text-center number-cell earning"
               >
                 {{ formatNumber(getEarningAmount(emp, earning)) }}
               </td>
@@ -111,23 +118,24 @@
               <td
                 v-for="(deduction, dIndex) in dynamicDeductions"
                 :key="'deduction-' + dIndex"
-                class="number-cell deduction"
+                class="text-center number-cell deduction"
               >
                 {{ formatNumber(getDeductionAmount(emp, deduction)) }}
               </td>
 
-              <td class="text-center">
+              <td class="text-center text-center">
                 <input 
                   type="number" 
                   v-model="emp.adjustment"
                   @change="adjustRow(emp)"
-                  class="form-control"
+                  class="text-center form-control"
+                  style="width: 100px"
                 />
               </td>
 
-              <td class="number-cell net-salary">{{ formatNumber(emp.net_salary) }}</td>
+              <td class="text-center number-cell net-salary">{{ formatNumber(emp.net_salary) }}</td>
               <td class="text-center">
-                    <textarea class="form-control my-3"
+                    <textarea style="width: 250px" class="text-center form-control my-3"
                     v-model="emp.remarks"
                     @change="adjustRow(emp)"
                     ></textarea>
@@ -135,7 +143,7 @@
             </tr>
 
             <!-- Project Total Row -->
-            <tr class="project-total">
+            <tr class="project-total text-center">
               <td colspan="2" class="text-end"><strong>Total ({{ project.name }})</strong></td>
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'monthly_rate')) }}</td>
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'salary_earned')) }}</td>
@@ -143,7 +151,10 @@
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'overtime')) }}</td>
               <td class="number-cell">{{ formatNumber(projectTotals(project, 'holiday')) }}</td>
               <td class="number-cell earning">{{ formatNumber(projectTotals(project, 'total_salary')) }}</td>
-
+              <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'ewt_2')) }}</td>
+              <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'percentage_tax_3')) }}</td>
+              <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'tax_ewt_5')) }}</td>
+              <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'w_tax')) }}</td>
               <td
                 v-for="(earning, eIndex) in dynamicEarnings"
                 :key="'earning-total-' + eIndex"
@@ -176,7 +187,10 @@
               <td class="number-cell">{{ formatNumber(grandTotals('overtime')) }}</td>
               <td class="number-cell">{{ formatNumber(grandTotals('holiday')) }}</td>
               <td class="number-cell earning">{{ formatNumber(grandTotals('total_salary')) }}</td>
-
+              <td class="number-cell deduction">{{ formatNumber(grandTotals('ewt_2')) }}</td>
+              <td class="number-cell deduction">{{ formatNumber(grandTotals('percentage_tax_3')) }}</td>
+              <td class="number-cell deduction">{{ formatNumber(grandTotals('tax_ewt_5')) }}</td>
+              <td class="number-cell deduction">{{ formatNumber(grandTotals('w_tax')) }}</td>
               <td
                 v-for="(earning, eIndex) in dynamicEarnings"
                 :key="'earning-grand-' + eIndex"

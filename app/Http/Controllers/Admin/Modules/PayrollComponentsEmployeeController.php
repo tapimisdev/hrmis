@@ -42,7 +42,17 @@ class PayrollComponentsEmployeeController extends Controller
         if(request()->wantsJson()) {
 
             $deduction_id = is_null($deduction) ? now()->year : $deduction->year;
-            $employees = $this->componentService->getAll($component->id, $deduction_id);
+
+            $pcs = DB::table('payroll_components_settings')
+                ->where('tax_id', $component->id)
+                ->value('type');
+
+            if(in_array($pcs, ['ewt_2%', 'percentage_tax_3%', 'tax_ewt_5%'])) {
+                $employees = $this->componentService->getAll($component->id, $deduction_id, 'cos');
+                return response()->json($employees);
+            }
+            
+            $employees = $this->componentService->getAll($component->id, $deduction_id, 'regular');
             return response()->json($employees);
         }
 

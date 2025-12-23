@@ -10,10 +10,11 @@ class PayrollComponentService
     /**
      * Get all employee tax data for a specific tax and year.
      */
-    public function getAll(int $component_id, int $year_id)
+    public function getAll(int $component_id, int $year_id, string $employment_type = null)
     {
-
-        $regular_id = EmploymentTypesEnum::REGULAR->value;
+        $allowed_id = is_null($employment_type) || $employment_type === 'regular' 
+            ? EmploymentTypesEnum::REGULAR->value 
+            : EmploymentTypesEnum::COS->value;
 
         $monthNames = [
             1 => 'january',
@@ -48,7 +49,7 @@ class PayrollComponentService
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
             ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
             ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
-            ->where('eo.employment_type_id', $regular_id)
+            ->where('eo.employment_type_id', $allowed_id)
             ->select(
                 'ei.employee_no',
                 'ep.suffix',

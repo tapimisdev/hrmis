@@ -10,6 +10,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Font;
 use Illuminate\Support\Str;
 
 class PayslipService
@@ -50,7 +51,6 @@ class PayslipService
                 $this->sheet->setBreak('A' . $this->currentRow, Worksheet::BREAK_ROW);
             }
 
-            $this->currentRow += $this->templateHeight;
         }
 
         $this->sheet->removeRow(1, $this->templateHeight);
@@ -64,7 +64,7 @@ class PayslipService
     {
         $payrollService =  app(PayrollService::class);
         $this->payroll = $payrollService->payrollDetails($payroll_no);
-        $this->registry = json_decode($payrollService->getPayrollRegistry($this->payroll->id, false)->getContent(), true);
+        $this->registry = json_decode($payrollService->getPayrollRegistry($this->payroll, $this->payroll->id, false)->getContent(), true);
     }
 
     /* ----------------------------------------------------------
@@ -198,40 +198,195 @@ class PayslipService
     ---------------------------------------------------------- */
     private function populateEmployeeData($employee)
     {
+        
+        /** ---------- APPEND COMPUTED DEDUCTIONS ---------- */
+        $employee['deductions'] = array_merge(
+            $employee['deductions'],
+            [
+                [
+                    'deduction_type' => 'Absences/Lates/Undertime',
+                    'amount' => (float) ($employee['ut'] ?? 0) + (float) ($employee['absences'] ?? 0),
+                ],
+                ['deduction_type' => 'EWT 2%', 'amount' => (float) ($employee['ewt_2'] ?? 0)],
+                ['deduction_type' => 'Percentage Tax 3%', 'amount' => (float) ($employee['percentage_tax_3'] ?? 0)],
+                ['deduction_type' => 'Tax EWT 5%', 'amount' => (float) ($employee['tax_ewt_5'] ?? 0)],
+            ]
+        );
+
         $row = $this->currentRow + 5;
 
         $this->sheet->setCellValue("C{$row}", $employee['name'] ?? '');
         $this->sheet->setCellValue("C" . ($row + 1), ucfirst($employee['position'] ?? ''));
 
-        // Salary
+        /** ---------- SALARY ---------- */
         $salaryRow = $row + 4;
-        $this->sheet->setCellValue("A{$salaryRow}", 'Monthly Salary');
+
+        $this->sheet->mergeCells("A{$salaryRow}:C{$salaryRow}");
+        $this->sheet->setCellValue("A{$salaryRow}", strtoupper('Monthly Salary'));
+        $this->sheet->getStyle("A{$salaryRow}:C{$salaryRow}")
+            ->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
         $this->money("D{$salaryRow}", $employee['monthly_rate'] ?? 0);
 
-        // Deductions
+        /** ---------- DEDUCTIONS ---------- */
         $deductionStart = $salaryRow;
+        $deductions = $employee['deductions'] ?? [];
+        $deductionCount = count($deductions);
         $total = 0;
 
-        if (!empty($employee['deductions'])) {
-            foreach ($employee['deductions'] as $i => $d) {
-                $r = $deductionStart + $i;
-                $total += $d['amount'] ?? 0;
+        // Insert extra rows (template already has 1)
+        if ($deductionCount > 1) {
+            $this->sheet->insertNewRowBefore(
+                $deductionStart + 1,
+                $deductionCount - 1
+            );
+        }
 
-                $this->sheet->setCellValue("F{$r}", $d['deduction_type'] ?? '');
-                $this->money("I{$r}", $d['amount'] ?? 0);
+        // Copy full row style
+        foreach (range(1, $deductionCount - 1) as $i) {
+            foreach (range('A', 'M') as $col) {
+                $this->sheet->duplicateStyle(
+                    $this->sheet->getStyle("{$col}{$deductionStart}"),
+                    "{$col}" . ($deductionStart + $i)
+                );
             }
         }
 
-        $totalRow = $deductionStart + count($employee['deductions'] ?? []) + 2;
+        // Fill deduction values
+        foreach ($deductions as $i => $d) {
+            $r = $deductionStart + $i;
+            $amount = (float) ($d['amount'] ?? 0);
+            $total += $amount;
+            $this->sheet->setCellValue("F{$r}", $d['deduction_type']);
+            $this->sheet->setCellValue("F{$r}", strtoupper($d['deduction_type']));
+            $this->sheet->getStyle("F{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            $this->money("I{$r}", $amount);
+            $this->sheet->mergeCells("I{$r}:J{$r}");
+        }
 
+        /** ---------- TOTALS / FOOTER ---------- */
+        $templateTotalRow = $deductionStart + 1;
+        $totalRow = $deductionStart + $deductionCount;
+
+        // Insert footer row
+        $this->sheet->insertNewRowBefore($totalRow, 1);
+
+        // Copy footer style
+        foreach (range('A', 'M') as $col) {
+            $this->sheet->duplicateStyle(
+                $this->sheet->getStyle("{$col}{$templateTotalRow}"),
+                "{$col}{$totalRow}"
+            );
+        }
+
+        // Footer values
         $this->money("D{$totalRow}", $employee['monthly_rate'] ?? 0);
+        $this->sheet->getStyle("D{$totalRow}")->getFont()->setBold(true);
+
+        $this->sheet->getStyle("D{$totalRow}")
+            ->getBorders()->getTop()->setBorderStyle(Border::BORDER_THIN);
+        $this->sheet->getStyle("D{$totalRow}")
+            ->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THIN);
 
         $this->sheet->mergeCells("I{$totalRow}:J{$totalRow}");
         $this->money("I{$totalRow}", $total, true);
 
-        $this->money("L{$totalRow}", $employee['net_salary'] ?? 0, true);
-        $this->sheet->setCellValue("M{$totalRow}", strtoupper($this->formatOrdinal()));
+        $this->sheet->getStyle("I{$totalRow}:J{$totalRow}")
+            ->getBorders()->getTop()->setBorderStyle(Border::BORDER_THIN);
+        $this->sheet->getStyle("I{$totalRow}:J{$totalRow}")
+            ->getBorders()->getBottom()->setBorderStyle(Border::BORDER_THIN);
+
+        if (!empty($employee['cut_offs'])) {
+            foreach ($employee['cut_offs'] as $index => $cutoffs) {
+                if ($index > 0) {
+                    // Insert a new row before the current totalRow + index
+                    $this->sheet->insertNewRowBefore($totalRow + $index);
+                    $totalRow++;
+
+                    // Set cut-off amount and alias (cast amount to string to allow text alignment)
+                    $this->sheet->setCellValueExplicit("L{$totalRow}", (string)number_format($cutoffs['amount'], 2), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                    $this->sheet->setCellValue("M{$totalRow}", $cutoffs['alias']);
+
+                    // Apply font size 9
+                    $this->sheet->getStyle("L{$totalRow}:M{$totalRow}")->getFont()->setSize(9);
+
+                    // Column L: bold + center
+                    $this->sheet->getStyle("L{$totalRow}")->getFont()->setBold(true);
+                    $this->sheet->getStyle("L{$totalRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+                    // Column M: center
+                    $this->sheet->getStyle("M{$totalRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+                    // Remove bottom border for columns D, I, and J
+                    $columnsToClear = ['D', 'I', 'J'];
+                    foreach ($columnsToClear as $col) {
+                        $this->sheet->getStyle("{$col}{$totalRow}")->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_NONE);
+                    }
+
+                } else {
+                    // First row, no insertion needed
+                    $this->sheet->setCellValueExplicit("L{$totalRow}", (string) number_format($cutoffs['amount'], 2), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                    $this->sheet->setCellValue("M{$totalRow}", $cutoffs['alias']); 
+
+                    // Apply font size 9
+                    $this->sheet->getStyle("L{$totalRow}:M{$totalRow}")->getFont()->setSize(9);
+
+                    // Column L: bold + center
+                    $this->sheet->getStyle("L{$totalRow}")->getFont()->setBold(true);
+                    $this->sheet->getStyle("L{$totalRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+                    // Column M: center
+                    $this->sheet->getStyle("M{$totalRow}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                }
+            }
+        }
+
+        /** ---------- NET PAY SECTION ---------- */
+
+        // Insert 5 blank rows after footer
+        $this->sheet->insertNewRowBefore($totalRow + 1, 5);
+        $netPayRow = $totalRow + 5;
+        
+        // Remove borders from blank rows
+        for ($i = 1; $i <= 5; $i++) {
+            $blankRow = $totalRow + $i;
+            // Remove all borders first
+            foreach (range('A', 'M') as $col) {
+            $this->sheet->getStyle("{$col}{$blankRow}")
+                ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_NONE);
+            }
+            // Add left border to column A
+            $this->sheet->getStyle("A{$blankRow}")
+            ->getBorders()->getLeft()->setBorderStyle(Border::BORDER_THIN);
+            // Add right border to column M
+            $this->sheet->getStyle("M{$blankRow}")
+            ->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
+        }
+
+        $this->sheet->mergeCells("I{$netPayRow}:J{$netPayRow}");
+        $this->sheet->setCellValue("I{$netPayRow}", 'NET PAY');
+
+        $this->sheet->getStyle("I{$netPayRow}")
+            ->getFont()->setBold(true)->getColor()->setARGB('FF000000');
+
+        $this->sheet->getStyle("I{$netPayRow}")
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        $this->sheet->setCellValue("K{$netPayRow}", ':');
+
+        $this->money("L{$netPayRow}", $employee['net_pay'] ?? 0, true);
+        $this->sheet->getStyle("L{$netPayRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+        // Underline NET PAY value (CORRECT API)
+        $netStyle = $this->sheet->getStyle("L{$netPayRow}");
+        $netStyle->getFont()->setUnderline(Font::UNDERLINE_SINGLE);
+        $netStyle->getFont()->getColor()->setARGB('FF000000');
+
+        /** ---------- EMPTY ROW AFTER ---------- */
+        $this->sheet->insertNewRowBefore($netPayRow + 1, 1);
     }
+
 
     private function money($cell, $amount, $bold = false)
     {
