@@ -1,21 +1,23 @@
 <template>
     <div>
-        <div class="row">
-            <div v-for="(item, key) in menu" :key="key" class="col-md-4 mb-5">
-                <div class="card">
-                    <div class="card-body">
+       <div class="gallery">
+            <div v-for="(item, key) in menu" :key="key">
+                <div class="card gallery-card">
+                    <div class="card-header pt-3">
                         <h5 class="card-title text-uppercase">
                             {{ item.label }}
                         </h5>
-                        <hr>
+                    </div>
+                    <div class="card-body">
                         <div
                             v-for="(field, fieldKey) in item.fields"
                             :key="fieldKey"
-                            class="mb-3 mt-4"
+                            class="mb-2"
                         >
-                            <label class="form-label text-uppercase">{{
-                                field.label
-                            }}</label>
+                            <label class="form-label text-uppercase">
+                                {{ field.label }}
+                            </label>
+
                             <select
                                 v-model="form[key][fieldKey]"
                                 class="form-control"
@@ -33,8 +35,9 @@
                                     {{ choice.name }}
                                 </option>
                             </select>
+
                             <div
-                                class="error-field text-danger mt-1"
+                                class="text-danger mt-1"
                                 v-if="errors[key] && errors[key][fieldKey]"
                             >
                                 {{ errors[key][fieldKey][0] }}
@@ -105,3 +108,20 @@ export default {
     },
 };
 </script>
+
+<style scoped lang="scss">
+
+.gallery {
+    column-count: 3; 
+    column-gap: 12px;
+}
+
+.gallery > div {
+    break-inside: avoid;
+    margin-bottom: 12px;
+}
+
+.gallery-card {
+    width: 100%;
+}
+</style>
