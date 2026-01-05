@@ -369,7 +369,7 @@ class RegistryService
 
             // Totals
             $sheet->setCellValue("P{$row}", $totalDeductions);
-            $sheet->setCellValue("Q{$row}", $employee['net_salary']);
+            $sheet->setCellValue("Q{$row}", $employee['net_salary'] ?? 0);
 
             $row++;
         }

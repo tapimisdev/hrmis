@@ -64,7 +64,6 @@ class ComputationService {
         $this->employee_no = $employee_no;
         $this->payroll_id = $payroll_id;
 
-
         $this->getPayrollDetails();
         $this->getEmployeeSalaryDetails();
         $this->getEmployeeInformation();

@@ -32,7 +32,7 @@ class StoreLeaveApplication extends FormRequest
             'selectedDates.*.date'  => ['required', 'date'],
             'selectedDates.*.shift' => ['required', 'in:morning,afternoon,wholeday'],
 
-            'attachments'   => ['nullable', 'array'],
+            'attachments'   => ['required', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 
             // 'approvers'     => ['nullable', 'array', 'min:1'],

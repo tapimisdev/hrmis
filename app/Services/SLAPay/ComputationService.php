@@ -131,8 +131,8 @@ class ComputationService {
             )
             ->where('esw.employee_no', $this->employee_no)
             ->where(function ($query) use ($year, $month) {
-                $query->whereYear('esw.effectivity_date', '<=', $year)
-                    ->whereMonth('esw.effectivity_date', '<=', $month);
+                $cutoffDate = Carbon::create($year, $month, 1)->endOfMonth();
+                $query->whereDate('esw.effectivity_date', '<=', $cutoffDate);
             })
             ->orderByDesc('esw.effectivity_date')
             ->first();

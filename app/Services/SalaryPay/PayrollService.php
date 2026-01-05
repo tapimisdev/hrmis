@@ -810,7 +810,7 @@ class PayrollService {
                 'holiday'     => $d->holiday,
                 'gross_pay'   => $d->gross_pay ?? null,
                 'total_deductions' => $d->total_deductions ?? null,
-                'net_pay'     => $net_pay,
+                'net_pay'     => $net_pay ?? 0,
                 'salary_adjustment' => $d->salary_adjustment,
                 'remarks'     => $d->remarks ?? null,
                 'deductions'  => $deductions,

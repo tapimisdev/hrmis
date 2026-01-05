@@ -65,7 +65,6 @@ class PayslipService
         $payrollService =  app(PayrollService::class);
         $this->payroll = $payrollService->payrollDetails($payroll_no);
         $this->registry = json_decode($payrollService->getPayrollRegistry($this->payroll, $this->payroll->id, false)->getContent(), true);
-
     }
 
     /* ----------------------------------------------------------
@@ -259,7 +258,6 @@ class PayslipService
             $r = $deductionStart + $i;
             $amount = (float) ($d['amount'] ?? 0);
             $total += $amount;
-            $this->sheet->setCellValue("F{$r}", $d['deduction_type']);
             $this->sheet->setCellValue("F{$r}", strtoupper($d['deduction_type']));
             $this->sheet->getStyle("F{$r}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $this->money("I{$r}", $amount);
@@ -305,7 +303,7 @@ class PayslipService
                     $this->sheet->insertNewRowBefore($totalRow + $index);
                     $totalRow++;
 
-                    // Set cut-off amount and alias (cast amount to string to allow text alignment)
+                    // Set cut-off amount and alias
                     $this->sheet->setCellValueExplicit("L{$totalRow}", (string)number_format($cutoffs['amount'], 2), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                     $this->sheet->setCellValue("M{$totalRow}", $cutoffs['alias']);
 
@@ -344,7 +342,6 @@ class PayslipService
         }
 
         /** ---------- NET PAY SECTION ---------- */
-
         // Insert 5 blank rows after footer
         $this->sheet->insertNewRowBefore($totalRow + 1, 5);
         $netPayRow = $totalRow + 5;
@@ -352,17 +349,14 @@ class PayslipService
         // Remove borders from blank rows
         for ($i = 1; $i <= 5; $i++) {
             $blankRow = $totalRow + $i;
-            // Remove all borders first
             foreach (range('A', 'M') as $col) {
-            $this->sheet->getStyle("{$col}{$blankRow}")
-                ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_NONE);
+                $this->sheet->getStyle("{$col}{$blankRow}")
+                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_NONE);
             }
-            // Add left border to column A
             $this->sheet->getStyle("A{$blankRow}")
-            ->getBorders()->getLeft()->setBorderStyle(Border::BORDER_THIN);
-            // Add right border to column M
+                ->getBorders()->getLeft()->setBorderStyle(Border::BORDER_THIN);
             $this->sheet->getStyle("M{$blankRow}")
-            ->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
+                ->getBorders()->getRight()->setBorderStyle(Border::BORDER_THIN);
         }
 
         $this->sheet->mergeCells("I{$netPayRow}:J{$netPayRow}");
@@ -379,15 +373,36 @@ class PayslipService
         $this->money("L{$netPayRow}", $employee['net_pay'] ?? 0, true);
         $this->sheet->getStyle("L{$netPayRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-        // Underline NET PAY value (CORRECT API)
+        // Underline NET PAY value
         $netStyle = $this->sheet->getStyle("L{$netPayRow}");
-        $netStyle->getFont()->setUnderline(Font::UNDERLINE_SINGLE);
+        $netStyle->getFont()->setUnderline(Font::UNDERLINE_SINGLE); 
         $netStyle->getFont()->getColor()->setARGB('FF000000');
 
-        /** ---------- EMPTY ROW AFTER ---------- */
-        $this->sheet->insertNewRowBefore($netPayRow + 1, 1);
-    }
+        /** ---------- REMARKS SECTION ---------- */
+        if (!empty($employee['remarks'])) {
+            // Insert a new row after NET PAY row
+            $remarksRow = $netPayRow + 1;
+            $this->sheet->insertNewRowBefore($remarksRow, 1);
 
+            // Merge columns N and O
+            $this->sheet->mergeCells("N{$remarksRow}:O{$remarksRow}");
+            $this->sheet->setCellValue("N{$remarksRow}", $employee['remarks']);
+
+            // Apply styles
+            $this->sheet->getStyle("N{$remarksRow}:O{$remarksRow}")
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                ->setVertical(Alignment::VERTICAL_TOP);
+            $this->sheet->getStyle("N{$remarksRow}:O{$remarksRow}")
+                ->getFont()->setBold(false)->setSize(10);
+
+            // Thin border around remarks
+            $this->sheet->getStyle("N{$remarksRow}:O{$remarksRow}")
+                ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        }
+
+        /** ---------- EMPTY ROW AFTER ---------- */
+        $this->sheet->insertNewRowBefore($netPayRow + 2, 1);
+    }
 
     private function money($cell, $amount, $bold = false)
     {

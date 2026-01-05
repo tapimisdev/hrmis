@@ -70,18 +70,19 @@ class ObsController extends Controller
 
         try {
 
-            if(empty($validatedData['approvers'])) {
-                return response([
-                    'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
-                    'status'  => 'error'
-                ], 500); 
-            }
+            // if(empty($validatedData['approvers'])) {
+            //     return response([
+            //         'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
+            //         'status'  => 'error'
+            //     ], 500); 
+            // }
 
             $application_no = generateApplicationNo('obs_applications', 'PSL');
             
-            $approvers = $validatedData['approvers'];
+            // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
+            // $approvers = $validatedData['approvers'];
+
             $data = $this->applicationService->getData('leave');
-            $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
 
             // Insert obs record
             $obsId = DB::table('obs_applications')->insertGetId([
@@ -100,7 +101,7 @@ class ObsController extends Controller
                 'remarks'            => $validatedData['remarks'] ?? null,
                 'status'             => 'pending',
                 'level'              => 1,
-                'levels'             => json_encode($levels),
+                // 'levels'             => json_encode($levels),
                 'created_by'         => Auth::user()->id,
                 'updated_by'         => Auth::user()->id,
                 'created_at'         => now(),
@@ -122,16 +123,16 @@ class ObsController extends Controller
                 }
             }
 
-            foreach ($approvers as $level => $approverList) {
-                foreach ($approverList as $userId) {
-                    DB::table('obs_approvals')->insertGetId([
-                        'obs_applications_id' => $obsId,
-                        'user_id'              => $userId,
-                        'level'                => $level,
-                        'status'               => 'pending',
-                    ]);
-                }
-            }
+            // foreach ($approvers as $level => $approverList) {
+            //     foreach ($approverList as $userId) {
+            //         DB::table('obs_approvals')->insertGetId([
+            //             'obs_applications_id' => $obsId,
+            //             'user_id'              => $userId,
+            //             'level'                => $level,
+            //             'status'               => 'pending',
+            //         ]);
+            //     }
+            // }
 
             DB::commit();
 

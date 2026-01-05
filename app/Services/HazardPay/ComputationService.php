@@ -183,14 +183,16 @@ class ComputationService {
         $schedule = DB::table('employee_shift_work_schedule as esw')
             ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
             ->select(
+                'esw.id',
                 'esw.shift_id',
                 'esw.work_schedule_id',
-                's.working_hours'
+                'esw.effectivity_date',
+                's.working_hours',
             )
             ->where('esw.employee_no', $this->employee_no)
             ->where(function ($query) use ($year, $month) {
-                $query->whereYear('esw.effectivity_date', '<=', $year)
-                    ->whereMonth('esw.effectivity_date', '<=', $month);
+                $cutoffDate = Carbon::create($year, $month, 1)->endOfMonth();
+                $query->whereDate('esw.effectivity_date', '<=', $cutoffDate);
             })
             ->orderByDesc('esw.effectivity_date')
             ->first();

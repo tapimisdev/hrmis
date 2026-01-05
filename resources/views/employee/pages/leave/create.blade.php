@@ -47,7 +47,7 @@
                 </div>
                 <div class="row g-3 mt-2 mb-3">
                     <div class="col-12">
-                        <label for="attachments" class="form-label fw-semibold">Attachments (optional)</label>
+                        <label for="attachments" class="form-label fw-semibold">Attachments</label>
                         <input type="file" name="attachments[]" id="attachments" class="form-control" multiple>
                         <div class="error-field"></div>
                     </div>

@@ -68,10 +68,6 @@
                 <td><span id="remarks"></span></td>
             </tr>
         </table>
-
-        <div class="mt-4 mb-3">
-            <small class="text-uppercase fw-bold text-muted">Your Chosen Approvers For Each Level</small>
-        </div>
         <div class="w-100">
             <div id="approvers-by-level" class="mb-2"></div>
         </div>

@@ -48,7 +48,7 @@
         <main class="bg-body">
             <!-- to show birthdays -->
             <birthday-component></birthday-component>
-            <div class="h-100">
+            <div>
                 <!-- Top navbar -->
                 @include('admin.components.navbar')
 

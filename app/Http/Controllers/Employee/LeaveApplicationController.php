@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\User;
-
 use Carbon\Carbon;
 
 class LeaveApplicationController extends Controller
@@ -66,9 +65,7 @@ class LeaveApplicationController extends Controller
     public function store(StoreLeaveApplication $request) 
     {
         $validatedData = $request->validated();
-
-        dd($validatedData);
-
+        
         if(!empty($validatedData['user_id'])) {
             $user = User::with('employeeInformation')->findOrFail($validatedData['user_id']);
             $employee_no = $user->employeeInformation->employee_no;

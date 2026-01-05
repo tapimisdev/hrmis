@@ -29,21 +29,16 @@ class StoreObsRequest extends FormRequest
                 'string',
                 'max:255',
             ],
-
             'purpose' => ['required', 'string', 'max:500'],
-
             'date_from' => ['required', 'date', 'after_or_equal:today'],
             'date_to' => ['required', 'date', 'after_or_equal:date_from'],
-
             'time_out' => ['nullable', 'date_format:H:i'],
             'time_in' => ['nullable', 'date_format:H:i', 'after:time_out'],
-
-            'mode_of_transport' => ['nullable', 'string', 'max:100'],
+            'mode_of_transport' => ['required', 'string', 'max:100'],
             'estimated_expense' => ['nullable', 'numeric', 'min:0'],
             'charge_to' => ['nullable', 'string', 'max:150'],
             'remarks' => ['nullable', 'string', 'max:500'],
-
-            'attachments' => ['nullable', 'array'],
+            'attachments' => ['required', 'array'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
 
             // 'approvers'     => ['required', 'array', 'min:1'],
