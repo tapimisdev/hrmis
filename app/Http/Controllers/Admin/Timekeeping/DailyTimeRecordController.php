@@ -7,6 +7,7 @@ use App\Services\DailyTimeRecordService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class DailyTimeRecordController extends Controller
 {
@@ -102,12 +103,13 @@ class DailyTimeRecordController extends Controller
             ->leftJoin('work_schedule', 'employee_shift_work_schedule.work_schedule_id', '=', 'work_schedule.id')
             ->leftJoin('units', 'employee_organization.unit_id', '=', 'units.id')
             ->leftJoin('shifts', 'employee_shift_work_schedule.shift_id', '=', 'shifts.id')
-            ->whereIn('roles.name', ['emp_contractual', 'regular'])
+            ->whereIn('roles.name', ['emp_contractual', 'emp_regular'])
             ->where('employee_information.employee_no', $employee_no)
             ->select(
                 'users.id',
                 'users.email',
                 'employee_information.employee_no',
+                'employee_personal.profile',
                 DB::raw("CONCAT(employee_personal.firstname, ' ', employee_personal.lastname) as full_name"),
                 'positions.name as position_name',
                 'work_schedule.name as work_schedule_name',
@@ -120,8 +122,18 @@ class DailyTimeRecordController extends Controller
             abort(404, 'No employee found.');
         }
 
+        $image = $employee->profile ?? null;
+
+        if ($image) {
+            $image = Storage::url('uploads/employees/' . $employee->employee_no . '/profile/' . $employee->profile);
+        } else {
+            $image = 'https://ui-avatars.com/api/?name='
+                . $employee->full_name
+                . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
+        }
+
         $profile = [
-            'picture' => $employee->picture 
+            'picture' => $image 
                 ?? "https://ui-avatars.com/api/?name=" . urlencode($employee->full_name) . "&background=random&color=fff&font-size=0.5",
             'name'    => $employee->full_name,
         ];

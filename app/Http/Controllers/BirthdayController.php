@@ -20,7 +20,8 @@ class BirthdayController extends Controller
 
         $employees = DB::table('employee_personal')
             ->select('employee_no', 'profile', 'firstname', 'lastname', 'middlename')
-            ->whereDate('birthday', $today)
+            ->whereMonth('birthday', $today->month)
+            ->whereDay('birthday', $today->day)
             ->get()
             ->map(function ($row) {
                 $profile = $row->profile ?? null;

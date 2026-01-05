@@ -47,8 +47,8 @@
         @include('admin.components.sidebar.sidebar')
         <main class="bg-body">
             <!-- to show birthdays -->
-            <birthday-component></birthday-component>
             <div>
+                <birthday-component></birthday-component>
                 <!-- Top navbar -->
                 @include('admin.components.navbar')
 
