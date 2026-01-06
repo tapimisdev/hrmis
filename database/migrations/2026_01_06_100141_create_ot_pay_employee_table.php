@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('employee_no')->unique();
             $table->date('effectivity_date');
-            $table->decimal('ot_rate_per_hour', 8, 2);
             $table->timestamps();
         });
     }
