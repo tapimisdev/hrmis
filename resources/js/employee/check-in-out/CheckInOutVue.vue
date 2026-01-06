@@ -127,7 +127,7 @@
 <script setup>
 import axios from 'axios';
 import { reactive, ref, onMounted, computed } from 'vue';
-
+const emit = defineEmits(['submit-log'])
 const log = reactive({
   timeIn: '',
   breakOut: '',
@@ -180,7 +180,7 @@ function setTime(type) {
           SuccesToast.fire({
             title: response.data.message || "Time logged successfully"
           });
-          window.dispatchEvent(new Event('reload-datatable'));
+          emit("submit-log");
           getTodayLogs(false);
         })
         .catch(error => {
