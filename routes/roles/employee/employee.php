@@ -58,14 +58,14 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
     Route::post('approval-leaves/{level}/{id}/save', [LeaveApprovalController::class, 'save'])
         ->name('approval-leave.save');
 
-    Route::get('approval-pass-slip/{level?}', [ObsApprovalController::class, 'index'])
-        ->name('approval-obs.index');
-    Route::get('approval-pass-slip/{level?}/view', [ObsApprovalController::class, 'view'])
-        ->name('approval-obs.view');
-    Route::get('approval-pass-slip/{level}/{id}', [ObsApprovalController::class, 'show'])
-        ->name('approval-obs.show');
-    Route::post('approval-pass-slip/{level}/{id}/save', [ObsApprovalController::class, 'save'])
-        ->name('approval-obs.save');
+    // Route::get('approval-pass-slip/{level?}', [ObsApprovalController::class, 'index'])
+    //     ->name('approval-obs.index');
+    // Route::get('approval-pass-slip/{level?}/view', [ObsApprovalController::class, 'view'])
+    //     ->name('approval-obs.view');
+    // Route::get('approval-pass-slip/{level}/{id}', [ObsApprovalController::class, 'show'])
+    //     ->name('approval-obs.show');
+    // Route::post('approval-pass-slip/{level}/{id}/save', [ObsApprovalController::class, 'save'])
+    //     ->name('approval-obs.save');
 
     Route::get('approval-overtime/{level?}', [AtroApprovalController::class, 'index'])
         ->name('approval-overtime.index');

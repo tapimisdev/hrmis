@@ -202,9 +202,9 @@
 </template>
 
 <script setup>
-import axios from "axios";
-import { reactive, ref, onMounted, computed } from "vue";
-
+import axios from 'axios';
+import { reactive, ref, onMounted, computed } from 'vue';
+const emit = defineEmits(['submit-log'])
 const log = reactive({
     timeIn: "",
     breakOut: "",

@@ -47,6 +47,7 @@
 </template>
 
 <script>
+const token = localStorage.getItem("auth_token");
 import axios from "axios";
 
 export default {
@@ -95,6 +96,10 @@ export default {
                 const date = this.buildDate(this.year, this.month, this.index);
 
                 const response = await axios.get(`/api/get-overtime`, {
+                    headers: {
+                        Accept: "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
                     params: {
                         user_id: this.employee_id,
                         date: date

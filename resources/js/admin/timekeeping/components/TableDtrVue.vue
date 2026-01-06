@@ -95,7 +95,7 @@
                                         <button
                                             class="overtime-link"
                                             :disabled="!hasOvertimeRemark(log.remarks)"
-                                            @click="openModal('view_overtime', index)"
+                                            @click="openModal('view_overtime', index + 1)"
                                         >
                                             <span :class="{ 'has-overtime': hasOvertimeRemark(log.remarks) }">
                                                 {{ convertToReadableTime(log.ot_mins) }}
@@ -105,7 +105,7 @@
                                 </td>
                                 <td class="hours-cell">
                                     <span class="hours-badge">
-                                        {{ convertToReadableTime(log.total_time_work) }}
+                                        {{ convertToReadableTime(log.paid_hours) }}
                                     </span>
                                 </td>
                                 <td class="double-cell">
@@ -146,7 +146,7 @@
                                         <li v-for="action in getActions(log.remarks)" :key="action.type">
                                             <button 
                                                 :class="['dropdown-item', action.danger ? 'dropdown-item-danger' : '']"
-                                                @click="openModal(action.type, index)"
+                                                @click="openModal(action.type, index + 1)"
                                             >
                                                 <i :class="action.icon"></i>
                                                 <span>{{ action.text }}</span>

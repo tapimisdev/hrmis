@@ -2,10 +2,9 @@
 import { createApp } from 'vue';
 
 // employee
-import CheckInOutVue from './employee/check-in-out/CheckInOutVue.vue';
+import IndexVue from './employee/check-in-out/IndexVue.vue';
 import DashboardIndex from './employee/dashboard/DashboardIndex.vue'
 import HeaderVue from './employee/components/Header.vue';
-import EmployeeTimelog from './employee/check-in-out/EmployeeTimelog.vue';
 import ProfileIndex from './employee/profile/ProfileIndex.vue';
 import Announcements from './employee/announcements/Announcements.vue';
 import PayslipIndex from './employee/payslip/PayslipIndex.vue';
@@ -52,10 +51,9 @@ import BirthdayComponent from './birthday/BirthdayComponent.vue';
 
 const authApp = createApp({
   components: {
-    CheckInOutVue,
     DashboardIndex,
+    IndexVue,
     HeaderVue,
-    EmployeeTimelog,
     ProfileIndex,
     Announcements,
     Show,

@@ -10,10 +10,8 @@
     <x-header-employee title="Timelogs" subtitle="View your timelogs in this module">
 
     </x-header-employee>
-
-    <check-in-out-vue></check-in-out-vue>
-
-    <employee-timelog :employee-number='@json($employee_no)' /> 
+    
+    <index-vue :employee-number='@json($employee_no)' />
     
 </div>
 @endsection

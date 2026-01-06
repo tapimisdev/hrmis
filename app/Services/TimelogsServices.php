@@ -521,6 +521,12 @@ class TimelogsServices {
             ->whereIn('status', ['approved', 'pending'])
             ->first();
 
+        $ot_pay_employee = DB::table('ot_pay_employees as ope')
+            ->leftJoin('employee_information as ei', 'ope.employee_no', '=', 'ei.employee_no')
+            ->where('ei.user_id', $userId)
+            ->where('effectivity_date', '<=', $date)
+            ->exists();
+        
         // Defaults
         $is_overtime = false;
         $status = 'pending overtime';
@@ -532,9 +538,22 @@ class TimelogsServices {
             // Only compute hours if approved
             if ($overtime->status === 'approved') {
                 $status = 'overtime';
+
+                $timelogHours  = (double) $timelogHours;
                 $approvedHours = (double) $overtime->total_hours;
-                $TOTAL_OVERTIME = min($timelogHours, $approvedHours);
+
+                // Breaks: 1 hour break for every 2 hours
+                $timelogBreaks  = floor($timelogHours / 2);
+                $approvedBreaks = floor($approvedHours / 2);
+
+                // Payable hours after breaks
+                $payableTimelog  = max(0, $timelogHours - $timelogBreaks);
+                $payableApproved = max(0, $approvedHours - $approvedBreaks);
+
+                // Final overtime cannot exceed either side
+                $TOTAL_OVERTIME = min($payableTimelog, $payableApproved);
             }
+
         }
 
         // Convert hours to minutes
@@ -544,6 +563,7 @@ class TimelogsServices {
             'is_overtime'   => $is_overtime,
             'overtime_hrs'  => $TOTAL_OVERTIME,
             'overtime_mins'  => $overtimeMinutes,
+            'is_ot_pay_employee' => $ot_pay_employee,
             'status'        => $status,
         ];
     }

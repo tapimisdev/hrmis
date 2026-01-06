@@ -139,6 +139,8 @@ class DailyTimeRecordService {
         $TOTAL_OVERTIME = $TOTAL_ACTUAL_PRESENCE = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
         $DOUBLE_EXCESS = 0;
 
+        $IS_OT_PAY_EMPLOYEE = false;
+
         foreach ($dates as $date) {
             $remarks = [];
             $is_future = false;
@@ -337,6 +339,7 @@ class DailyTimeRecordService {
                     $ot_mins = $ot_data['overtime_mins'];
                     $TOTAL_OVERTIME += $ot_data['overtime_mins'];
                     $remarks[] = $ot_data['status'];
+                    $IS_OT_PAY_EMPLOYEE = $ot_data['is_ot_pay_employee'];
                 }
             }
 
@@ -349,8 +352,14 @@ class DailyTimeRecordService {
 
             /** ---------------- COMPUTE TOTALS ---------------- **/
             $total_time_work = $tar_under['actual_work_mins'];
-            $TOTAL_HOURS += $total_time_work;
-            $paid_hours = $total_time_work + $ot_mins;
+
+            if($IS_OT_PAY_EMPLOYEE) {
+                $paid_hours = $total_time_work + $ot_mins;
+            } else {
+                $paid_hours = $total_time_work;
+            }
+
+            $TOTAL_HOURS += $paid_hours;
 
             /** ---------------- FINAL DATA ROW ---------------- **/
             $computedData[] = [
@@ -373,7 +382,12 @@ class DailyTimeRecordService {
 
         /** ---------------- SUMMARY ---------------- **/
         $summary = [
-            ['label' => 'Total HRS',        'value' => intval($TOTAL_HOURS / 60) . ' HRS', 'actual_value' => intval($TOTAL_HOURS / 60) ],
+            [
+                'label' => 'Total HRS',
+                'value' => intval($TOTAL_HOURS / 60) . ' HRS ' . ($TOTAL_HOURS % 60) . ' MINS',
+                'actual_value' => intval($TOTAL_HOURS / 60),
+                'actual_minutes' => $TOTAL_HOURS % 60,
+            ],
             ['label' => 'Incomplete Logs',  'value' => $TOTAL_INCOMPLETE_LOGS, 'actual_value' => $TOTAL_INCOMPLETE_LOGS ],
             ['label' => 'Pending Leaves',   'value' => $TOTAL_PENDING_LEAVES, 'actual_value' => $TOTAL_PENDING_LEAVES ],
             ['label' => 'Overtime',         'value' => $TOTAL_OVERTIME . ' MINS', 'actual_value' => $TOTAL_OVERTIME ],
