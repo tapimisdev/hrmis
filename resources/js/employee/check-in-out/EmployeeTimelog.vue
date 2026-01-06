@@ -1,12 +1,12 @@
 <template>
     <div class="attendance-container">
         <!-- Header -->
-        <div class="header">
-            <h5 class="title">
+        <div class="header d-block d-lg-flex gap-3">
+            <h5 class="title text-uppercase">
                 <i class="fa-solid fa-calendar-days"></i>
                 Employee Attendance
             </h5>
-            <div class="filters">
+            <div class="filters d-flex gap-2">
                 <select v-model="selectedMonth" @change="loadTimelogs">
                     <option v-for="(month, index) in months" :key="index" :value="index + 1">
                         {{ month }}
@@ -21,7 +21,7 @@
         </div>
 
         <!-- Table -->
-        <div class="table-wrapper">
+        <div class="table-wrapper table-responsive">
             <table>
                 <thead>
                     <tr>
@@ -237,6 +237,21 @@ export default {
     background: var(--bs-body-bg);
     border: 1px solid var(--bs-border-color);
     border-radius: 16px;
+
+    @media (max-width: 767.98px) {
+        .header {
+          .title{
+              margin-bottom: 15px;
+          }
+          select {
+            width: 100%;
+          }
+        }
+
+        td {
+          padding: 5px;
+        }
+    }
 }
 
 /* Header */

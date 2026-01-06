@@ -238,7 +238,7 @@ export function initCalendar(selector = '.full-calendar', options = {}) {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay',
+            right: 'dayGridMonth',
         },
         events: [],
         eventOrder: 'order',

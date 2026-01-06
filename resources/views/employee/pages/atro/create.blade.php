@@ -32,23 +32,16 @@
 
                 <div class="row g-3 mt-2">
                     {{-- Start Time --}}
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label for="start_time" class="form-label fw-semibold">Start Time <span class="text-danger">*</span></label>
                         <input type="time" name="start_time" id="start_time" class="form-control">
                         <div class="error-field"></div>
                     </div>
 
                     {{-- End Time --}}
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label for="end_time" class="form-label fw-semibold">End Time <span class="text-danger">*</span></label>
                         <input type="time" name="end_time" id="end_time" class="form-control">
-                        <div class="error-field"></div>
-                    </div>
-
-                     {{-- Total Hours --}}
-                    <div class="col-md-4 mb-3">
-                        <label for="total_hours" class="form-label fw-semibold">Total Hours</label>
-                        <input type="number" step="0.01" min="0" name="total_hours" id="total_hours" class="form-control" placeholder="Optional (auto-calculated)">
                         <div class="error-field"></div>
                     </div>
                 </div>
@@ -62,31 +55,6 @@
                     </div>
                 </div>
                 <hr class="mt-5 mb-3">
-                <!-- <div class="row g-3 mt-2">
-                    <div class="col-12 col-md-12">
-                        <div for="approvers" class="form-label fw-semibold mb-3">Choose Your Approvers</div>
-                        @forelse($approvers as $level => $users)
-                            <div class="mb-3">
-                                <label for="approvers.{{ $level }}" class="mb-2">{{ ordinal($level) . ' Approver' }}</label>
-                                <select name="approvers[{{$level}}][]" id="approvers.{{ $level }}" class="form-select select2 mb-3" multiple>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user['id'] }}">{{ $user['name'] }}</option>
-                                    @endforeach
-                                </select>
-                                <div id="approvers">
-                                    <div class="error-field"></div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="text-uppercase fw-bold text-muted fst-italic">No approvers found. Please contact administrators.</div>
-                        @endforelse
-                        <div class="mb-3">
-                            <div id="approvers">
-                                <div class="error-field"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div> -->
             </div>
 
             <div class="card-footer bg-transparent border-0 mt-4 mb-4">

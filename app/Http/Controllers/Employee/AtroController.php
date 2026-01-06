@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\Services\ApplicationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 class AtroController extends Controller
 {
@@ -44,15 +45,15 @@ class AtroController extends Controller
     {
         $myId = Auth::id();
         $data = $this->applicationService->getData('overtime');
-        $approvers = $data['approvers'];
-        $approvers = $approvers->map(function ($collection) use ($myId) {
-            return $collection->reject(function ($approver) use ($myId) {
-                return $approver['id'] === $myId;
-            })->values();
-        });
+        // $approvers = $data['approvers'];
+        // $approvers = $approvers->map(function ($collection) use ($myId) {
+        //     return $collection->reject(function ($approver) use ($myId) {
+        //         return $approver['id'] === $myId;
+        //     })->values();
+        // });
         $applications = $data['applications'];
 
-        return view('employee.pages.atro.create', compact('approvers', 'applications'));
+        return view('employee.pages.atro.create', compact('applications'));
     }
 
     /**
@@ -68,18 +69,27 @@ class AtroController extends Controller
 
         try {
 
-            if(empty($validatedData['approvers'])) {
-                return response([
-                    'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
-                    'status'  => 'error'
-                ], 500); 
-            }
+            // if(empty($validatedData['approvers'])) {
+            //     return response([
+            //         'message' => 'Unable to submit application, no approvers assigned. Please contact administrator',
+            //         'status'  => 'error'
+            //     ], 500); 
+            // }
 
             $employee_no = DB::table('employee_information')->where('user_id', $userId)->value('employee_no');
             $application_no = generateApplicationNo('overtime_applications', 'PSL');
-            $approvers = $validatedData['approvers'];
+            // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
+            // $approvers = $validatedData['approvers'];
             $data = $this->applicationService->getData('overtime');
-            $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
+
+            $start_time = Carbon::parse($validatedData['start_time']);
+            $end_time = Carbon::parse($validatedData['end_time']);
+
+            if ($end_time->lessThan($start_time)) {
+                $end_time->addDay();
+            }
+
+            $totalHours = $start_time->floatDiffInHours($end_time);
             
             $atroId = DB::table('overtime_applications')
                     ->insertGetId([
@@ -89,23 +99,25 @@ class AtroController extends Controller
                         'date' => $validatedData['date'],
                         'start_time' => $validatedData['start_time'],
                         'end_time' => $validatedData['end_time'],
-                        'total_hours' => $validatedData['total_hours'],
+                        'total_hours' => $totalHours,
                         'reason' => $validatedData['reason'],
                         'status' => 'pending',
                         'level' => 1,
-                        'levels' => json_encode($levels)
+                        // 'levels' => json_encode($levels)
+                        'created_at' => now(),
+                        'updated_at' => now()
                     ]);
 
-            foreach ($approvers as $level => $approverList) {
-                foreach ($approverList as $userId) {
-                    DB::table('overtime_approvals')->insertGetId([
-                        'overtime_applications_id' => $atroId,
-                        'user_id'              => $userId,
-                        'level'                => $level,
-                        'status'               => 'pending',
-                    ]);
-                }
-            }
+            // foreach ($approvers as $level => $approverList) {
+            //     foreach ($approverList as $userId) {
+            //         DB::table('overtime_approvals')->insertGetId([
+            //             'overtime_applications_id' => $atroId,
+            //             'user_id'              => $userId,
+            //             'level'                => $level,
+            //             'status'               => 'pending',
+            //         ]);
+            //     }
+            // }
 
             DB::commit();
             

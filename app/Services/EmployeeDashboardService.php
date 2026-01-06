@@ -76,7 +76,7 @@ class EmployeeDashboardService {
                 'description' => 'Apply for leave and view leave history',
                 'pending' => $leave_request,
                 'color' => '#032985',
-                'route' => '/leave'
+                'route' => '/employee/leaves'
             ],
             [
                 'id' => 2,
@@ -85,7 +85,7 @@ class EmployeeDashboardService {
                 'description' => 'Submit and monitor pass slip requests',
                 'pending' => $passlip_request,
                 'color' => '#032985',
-                'route' => '/pass-slip'
+                'route' => '/employee/pass-slip'
             ],
             [
                 'id' => 3,
@@ -94,7 +94,7 @@ class EmployeeDashboardService {
                 'description' => 'Submit and track overtime applications',
                 'pending' => $overtime_request,
                 'color' => '#032985',
-                'route' => '/overtime'
+                'route' => '/employee/overtime'
             ],
             [
                 'id' => 4,
@@ -103,7 +103,7 @@ class EmployeeDashboardService {
                 'description' => 'View unread company announcements',
                 'pending' => $unviewedCount,
                 'color' => '#032985',
-                'route' => '/announcements'
+                'route' => '/employee/announcements'
             ],
         ];
 

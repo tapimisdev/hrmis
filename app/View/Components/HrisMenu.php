@@ -144,12 +144,17 @@ class HrisMenu extends Component
                 'active' => $this->active == 'leave-credits' ? 'active' : '',
             ],
             [
-                'name' => 'XI. Earnings & Taxes',
+                'name' => 'XI. Offset Credits',
+                'route' => route('hris.employee.offset-credits', ['employee_no' => $this->employee_no]),
+                'active' => $this->active == 'offset-credits' ? 'active' : '',
+            ],
+            [
+                'name' => 'XII. Earnings & Taxes',
                 'active' => '',
                 'submenus' => $grouped_components,
             ],
             [
-                'name' => 'XII. Deductions',
+                'name' => 'XIII. Deductions',
                 'active' => '',
                 'submenus' => $modules,
             ],
