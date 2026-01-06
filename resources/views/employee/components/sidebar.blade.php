@@ -79,21 +79,6 @@
                 @endcanany
 
                 @canany([
-                    'emp.pass_slip_application.view',
-                    'emp.pass_slip_application.apply'
-                ])
-                <!-- Pass Slip -->
-                <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
-                    <a href="{{ route('obs.index') }}" class="side-link text-body">
-                        <span class="side-icon">
-                            <i class="fa-solid fa-file-lines"></i>
-                        </span>
-                        <span class="side-text">Pass Slip</span>
-                    </a>
-                </li>
-                @endcanany
-
-                @canany([
                     'emp.overtime_application.view',
                     'emp.overtime_application.apply'
                 ])

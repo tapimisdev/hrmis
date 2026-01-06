@@ -28,10 +28,13 @@ class AddOvertimeApiController extends Controller
 
     public function show(Request $request)
     {
-        $data = DB::table('overtimes')
+
+        $employee_no = $request->input('user_id');
+        $data = DB::table('overtime_applications')
                 ->where('date', $request->input('date'))
-                ->where('user_id', $request->input('user_id'))
+                ->where('employee_no', $employee_no)
                 ->first();
+        
 
         return response(['overtime' => $data, 'message' => 'show success'], 200);
     }
