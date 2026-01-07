@@ -1,4 +1,4 @@
-<div class="position-relative mb-5">
+<div class="position-relative mb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-4">
         <div class="flex-grow-1">
             <div class="d-flex align-items-center gap-2 mb-1">

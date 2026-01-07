@@ -44,11 +44,14 @@ class LoginController extends Controller
 
     protected function authenticated(Request $request, $user)
     {
-        // Create a Sanctum token
         $token = $user->createToken('app-token')->plainTextToken;
 
-        // Pass it to the session temporarily
-        session(['auth_token' => $token]);
+        session([
+            'auth_token' => $token,
+            'name' => $user->name,
+            'email' => $user->email
+        ]);
+
     }
 
 
@@ -70,6 +73,8 @@ class LoginController extends Controller
 
         // Forget the session variable
         $request->session()->forget('auth_token');
+        $request->session()->forget('name');
+        $request->session()->forget('email');
 
         // Optionally flush the whole session
         $request->session()->invalidate();

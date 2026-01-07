@@ -75,7 +75,11 @@
     <script>
         @if(session('auth_token'))
             localStorage.setItem('auth_token', "{{ session('auth_token') }}");
+            localStorage.setItem('name', "{{ session('name') }}");
+            localStorage.setItem('email', "{{ session('email') }}");
             {{ session()->forget('auth_token') }}
+            {{ session()->forget('name') }}
+            {{ session()->forget('email') }}
         @endif
     </script>
     @yield('scripts')

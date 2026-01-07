@@ -175,6 +175,8 @@
 
 <script>
 const token = localStorage.getItem('auth_token');
+const name = localStorage.getItem('name');
+const email = localStorage.getItem('email');
 import axios from 'axios';
 import FormSkeletonVue from '../../components/FormSkeletonVue.vue';
 
@@ -191,8 +193,8 @@ export default {
     return {
       token: token,
       user: {
-        name: 'User Name',
-        email: 'user@example.com'
+        name: name,
+        email: email,
       },
       notifications: [],
       unreadCount: 0,
@@ -210,7 +212,7 @@ export default {
   },
   
   mounted() {
-    this.fetchUser();
+    // this.fetchUser();
     this.fetchNotificationCount();
     // Poll for new notifications every 30 seconds
     this.notificationInterval = setInterval(() => {
