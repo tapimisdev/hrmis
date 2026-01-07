@@ -73,7 +73,7 @@
                             {{-- Leave --}}
                             <li class="side-items nested-item py-1 px-4 mb-2 {{  Str::contains(request()->path(), 'credits/leave') ? 'active' : '' }}">
                                 <a href="{{ route('leave-credits.index') }}"
-                                class="d-flex justify-content-center align-items-center  text-light text-decoration-none">
+                                class="d-flex justify-content-center align-items-center gap-2 text-light text-decoration-none">
                                     <i class="fa-solid fa-plane-departure"></i>
                                     <span>Leave</span>
                                 </a>
@@ -82,7 +82,7 @@
                             {{-- Offset --}}
                             <li class="side-items nested-item py-1 px-4 mb-2 {{  Str::contains(request()->path(), 'credits/offset') ? 'active' : '' }}">
                                 <a href="{{ route('offset-credits.index') }}"
-                                class="d-flex justify-content-center align-items-center  text-light text-decoration-none">
+                                class="d-flex justify-content-center align-items-center gap-2 text-light text-decoration-none">
                                     <i class="fa-solid fa-clock-rotate-left"></i>
                                     <span>Offset</span>
                                 </a>

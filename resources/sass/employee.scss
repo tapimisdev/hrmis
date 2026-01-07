@@ -198,6 +198,15 @@ $sidebar-width: 220px;
 
         &.collapsed {
 
+            .side-items {
+                padding: 0 !important;
+
+                .nested-item a {
+                    gap: 0 !important;
+                }
+
+            }
+
             max-width: 60px;
             
             @media (max-width: 767px) {
