@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
+use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Employee\AnnouncementsController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
@@ -69,4 +70,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
         ->name('approval-overtime.save');
 
     Route::get('profile', [ProfileController::class, 'index'])->name('employee.profile');
+
+    Route::put('change-password', [ChangePasswordController::class, 'change']);
+
 });
