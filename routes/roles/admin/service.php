@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Services\EventsController;
 use App\Http\Controllers\Admin\Services\SuspensionController;
 use App\Http\Controllers\Admin\Services\LeaveApplicationController as AdminLeaveApplicationController;
+use App\Http\Controllers\Admin\Services\OffsetApplicationController as AdminOffsetApplicationController;
 use App\Http\Controllers\Admin\Services\PassSlipController as AdminPassSlipController;
 use App\Http\Controllers\Admin\Services\OvertimeController as AdminOvertimeController;
 
@@ -21,6 +22,11 @@ Route::prefix('service')->group(function() {
     route::get('leave/application', [AdminLeaveApplicationController::class, 'index'])->name('services.leaves.index');
     route::get('leave/application/{application}', [AdminLeaveApplicationController::class, 'show'])->name('services.leaves.show');
     route::post('leave/application/{application}/save', [AdminLeaveApplicationController::class, 'save'])->name('services.leaves.save');
+
+    # OFFSET APPLICATIONS
+    route::get('offset/application', [AdminOffsetApplicationController::class, 'index'])->name('services.offset.index');
+    route::get('offset/application/{application}', [AdminOffsetApplicationController::class, 'show'])->name('services.offset.show');
+    route::post('offset/application/{application}/save', [AdminOffsetApplicationController::class, 'save'])->name('services.offset.save');
 
     # PASS SLIP APPLICATIONS
     route::get('pass-slip/application', [AdminPassSlipController::class, 'index'])->name('services.pass_slip.index');

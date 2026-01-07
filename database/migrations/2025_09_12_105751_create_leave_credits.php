@@ -24,20 +24,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('employee_leave_card', function(Blueprint $table) {
-            $table->id();
-            $table->string('leave_type');
-            $table->string('employee_no');
-            $table->string('period');
-            $table->string('year');
-            $table->longText('particulars')
-                ->nullable();
-            $table->float('earned');
-            $table->float('deduction');
-            $table->float('balance');
-            $table->longText('remarks')
-                ->nullable();
-        });
     }
 
     /**
@@ -46,6 +32,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('employee_leave_credits');
-        Schema::dropIfExists('employee_leave_card');
     }
 };

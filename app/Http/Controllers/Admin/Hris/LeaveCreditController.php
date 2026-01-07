@@ -45,7 +45,7 @@ class LeaveCreditController extends Controller
             foreach($leaveTypes as $types) {
 
                 $credits = $this->employeeService->getLeaveCredits($employee_no, $types->leave_id, false);
-                $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $types->leave_id, true);
+                $latestCredits = $this->employeeService->getLeaveCredits($employee_no, $types->leave_id, false);
                 $currBal = $credits->filter(function($q) use ($monthYear) {
                     return ($q->as_of ?? '') === $monthYear;
                 })->values()->pluck('balance')->first() ?? 0;

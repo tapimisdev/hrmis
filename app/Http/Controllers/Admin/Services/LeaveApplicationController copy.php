@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Services;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Employee\StoreLeaveApplication;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -148,7 +149,7 @@ class LeaveApplicationController extends Controller {
         $currentMonth = Carbon::now()->format('Y-m');
         $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
         $remaining_balance = (float) $latestCredits['current']?->balance ?? 0;
-        $toBeDeducted = (float) $this->compyte($data->dates);
+        $toBeDeducted = (float) $this->computeLeaveEquivalent($data->dates);
         $new_balance = $remaining_balance - $toBeDeducted;
 
         $hasBalance = false;
@@ -169,7 +170,7 @@ class LeaveApplicationController extends Controller {
       
     }
 
-    public function compyte($dates): float
+    public function computeLeaveEquivalent($dates): float
     {
         return $dates->sum(function ($item) {
             return match (strtolower($item['shift'] ?? '')) {
@@ -217,7 +218,7 @@ class LeaveApplicationController extends Controller {
             //         'approver_id' => Auth::id() ?? null
             //     ]);
 
-            $this->updateCredits($id);
+            $this->updateLeaveCredits($id);
 
             return response()->json([
                 'status' => 'success',
@@ -262,7 +263,7 @@ class LeaveApplicationController extends Controller {
         }
     }
 
-    public function updateCredits(string $id)
+    public function updateLeaveCredits(string $id)
     {
         DB::beginTransaction();
 
@@ -286,7 +287,7 @@ class LeaveApplicationController extends Controller {
                 ->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
 
             $remaining_balance = (float) ($latestCredits['current']->balance ?? 0);
-            $toBeDeducted     = (float) $this->compyte($data->dates);
+            $toBeDeducted     = (float) $this->computeLeaveEquivalent($data->dates);
             $new_balance      = $remaining_balance - $toBeDeducted;
 
             // --- Step 2: Group dates by month ---
@@ -305,7 +306,7 @@ class LeaveApplicationController extends Controller {
             $formattedRemark = collect($datesByMonth)
                 ->map(function ($days, $month) {
                     $totalDays = count($days);
-                    return sprintf("%s %s (%s %s)", $month, implode(', ', $days), $totalDays, $totalDays === 1 ? 'day' : 'days');
+                    return sprintf("%s %s - (%s %s)", $month, implode(', ', $days), $totalDays, $totalDays === 1 ? 'day' : 'days');
                 })
                 ->implode(" | ");
 

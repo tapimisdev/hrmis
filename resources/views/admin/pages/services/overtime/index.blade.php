@@ -16,7 +16,7 @@
                     <th>#</th>
                     <th>Employee No</th>
                     <th>Name</th>
-                    <th>Dates</th>
+                    <th>Date & Time</th>
                     <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>
@@ -29,20 +29,18 @@
 
 @section('scripts')
 <script>
-    $(function() {
-
+   $(function() {
         let = DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
-            "ajax": '{{ route('services.leaves.index') }}',
+            "ajax": '{{ route('services.overtime.index') }}',
             "columns": [
                 { data: "DT_RowIndex", name: 'index' },
-                { data: "employee_no", name: 'employee_no' },
+                 { data: "employee_no", name: 'employee_no' },
                 { data: "name", name: 'name' },
-                { data: "dates", name: 'dates' },
+                { data: "date_time", name: 'date_time' },
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
-
             ],
         });
     });

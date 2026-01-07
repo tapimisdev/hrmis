@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
-use App\Http\Requests\Employee\StoreLeaveApplication;
+use App\Http\Requests\Employee\StoreOffsetApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +12,7 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Models\User;
 use Carbon\Carbon;
 
-class LeaveApplicationController extends Controller
+class OffsetApplicationController extends Controller
 {
     protected $applicationService;
 
@@ -20,8 +20,8 @@ class LeaveApplicationController extends Controller
     {
         $this->applicationService = $applicationService;
 
-        $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
-        // $this->middleware('permission:emp.leave_application.apply')->only(['store']);
+        // $this->middleware('permission:emp.offset_application.view')->only(['index', 'create', 'show']);
+        // $this->middleware('permission:emp.offset_application.apply')->only(['store']);
     }
 
     /**
@@ -31,12 +31,12 @@ class LeaveApplicationController extends Controller
     {
         if (request()->ajax()) {
 
-            $data = $this->applicationService->getRawData('leave');
-            
+            $data = $this->applicationService->getRawData('offset');
+
             return $this->datatable($data);
         }
 
-        return view('employee.pages.leave.index');
+        return view('employee.pages.offset.index');
     }
 
     /**
@@ -45,8 +45,8 @@ class LeaveApplicationController extends Controller
     public function create()
     {
         $myId = Auth::id();
-        $data = $this->applicationService->getData('leave');
-        $leaves = $data['leaves'];
+        $data = $this->applicationService->getData('offset');
+
         // $approvers = $data['approvers'];
         // $approvers = $approvers->map(function ($collection) use ($myId) {
         //     return $collection->reject(function ($approver) use ($myId) {
@@ -56,13 +56,13 @@ class LeaveApplicationController extends Controller
 
         $applications = $data['applications'];
         
-        return view('employee.pages.leave.create', compact('leaves', 'applications'));
+        return view('employee.pages.offset.create', compact('applications'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreLeaveApplication $request) 
+    public function store(StoreOffsetApplication $request) 
     {
         $validatedData = $request->validated();
         
@@ -101,24 +101,20 @@ class LeaveApplicationController extends Controller
                 $dates = [];
             }
 
-            $data = $this->applicationService->getData('leave');
+            $data = $this->applicationService->getData('offset');
             // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
             // $approvers = $validatedData['approvers'];
             $days = count($datesInput);
 
-            $leaveName = DB::table('leaves')
-                ->where('id', $validatedData['leave_id'])
-                ->pluck('name')
-                ->first();
+            $leaveName = 'Offset Leave';
 
-            $application_no = generateApplicationNo('leave_applications', 'LV');
+            $application_no = generateApplicationNo('offset_applications', 'OF');
 
-            $applicationID = DB::table('leave_applications')->insertGetId([
+            $applicationID = DB::table('offset_applications')->insertGetId([
                 'application_no' => $application_no,
                 'user_id'       => $user_id,
                 'name'          => $leaveName,
                 'employee_no'   => $employee_no,
-                'leave_id'      => $validatedData['leave_id'],
                 'days'          => $days,
                 'reason'        => $validatedData['reason'],
                 'status'        => 'pending',
@@ -129,8 +125,8 @@ class LeaveApplicationController extends Controller
             ]);
         
             foreach($dates as $item) {
-                DB::table('leave_dates')->insertGetId([
-                    'leave_application_id' => $applicationID,
+                DB::table('offset_dates')->insertGetId([
+                    'offset_application_id' => $applicationID,
                     'date' => $item['date'],
                     'shift'=> $item['shift'],
                 ]);
@@ -138,8 +134,8 @@ class LeaveApplicationController extends Controller
 
             // foreach ($approvers as $level => $approverList) {
             //     foreach ($approverList as $userId) {
-            //         DB::table('leave_approvals')->insertGetId([
-            //             'leave_application_id' => $applicationID,
+            //         DB::table('offset_approvals')->insertGetId([
+            //             'offset_application_id' => $applicationID,
             //             'user_id'              => $userId,
             //             'level'                => $level,
             //             'status'               => 'pending',
@@ -151,10 +147,10 @@ class LeaveApplicationController extends Controller
             // Handle multiple attachments (if any)
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
-                    $path = $file->store('leave_attachments', 'public'); // saves in storage/app/public/leave_attachments
+                    $path = $file->store('offset_attachments', 'public'); // saves in storage/app/public/offset_attachments
 
-                    DB::table('leave_attachments')->insert([
-                        'leave_application_id' => $applicationID,
+                    DB::table('offset_attachments')->insert([
+                        'offset_application_id' => $applicationID,
                         'file_path'            => $path,
                         'file_name'            => $file->getClientOriginalName(),
                         'file_type'            => $file->getMimeType(),
@@ -166,8 +162,8 @@ class LeaveApplicationController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Leave application has been submitted',
-                'redirect' => route('leaves.create')
+                'message' => 'Offset application has been submitted',
+                'redirect' => route('offset.create')
             ]);
 
         } catch (\Exception $e) {
@@ -185,10 +181,10 @@ class LeaveApplicationController extends Controller
      */
     public function show(int $id)
     {        
-        $data = $this->applicationService->getRawData('leave', $id)[0] ?? [];
+        $data = $this->applicationService->getRawData('offset', $id)[0] ?? [];
 
         if(!$data) {
-            return redirect()->route('leaves.index');
+            return redirect()->route('offset.index');
         }
         
         return response(['data' => $data, 'status' => 'success'], 200);
@@ -202,7 +198,7 @@ class LeaveApplicationController extends Controller
     {
         DB::beginTransaction();
         try {
-            $affected = DB::table('leave_applications')
+            $affected = DB::table('offset_applications')
                 ->where('id', $id)
                 ->update(['status' => 'cancelled']);
 

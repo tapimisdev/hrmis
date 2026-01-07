@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 use Carbon\Carbon;
 
-class LeaveApplicationController extends Controller {
+class OffsetApplicationController extends Controller {
 
     public $employeeService;
     public $generateService;
@@ -18,16 +18,15 @@ class LeaveApplicationController extends Controller {
     public function __construct(EmployeeService $employeeService)
     {
         $this->employeeService = $employeeService;
-        $this->middleware('permission:hr.leave_approval.view')->only(['view', 'show']);
-        $this->middleware('permission:hr.leave_approval.save')->only('save');
+        $this->middleware('permission:hr.offset_approval.view')->only(['view', 'show']);
+        $this->middleware('permission:hr.offset_approval.save')->only('save');
     }
 
     public function getRawData(?int $id = null)
     {
-        $applications = DB::table('leave_applications as la')
+        $applications = DB::table('offset_applications as la')
             ->leftJoin('employee_personal as p', 'la.employee_no', '=', 'p.employee_no')
-            ->leftJoin('leaves as l', 'la.leave_id', '=', 'l.id')
-            ->leftJoin('leave_dates as ld', 'ld.leave_application_id', '=', 'la.id')
+            ->leftJoin('offset_dates as ld', 'ld.offset_application_id', '=', 'la.id')
             ->select(
                 'p.firstname',
                 'p.lastname',
@@ -35,13 +34,11 @@ class LeaveApplicationController extends Controller {
                 'la.name',
                 'la.user_id',
                 'la.employee_no',
-                'la.leave_id',
                 'la.days',
                 'la.reason',
                 'la.status',
                 'la.created_at',
                 'la.updated_at',
-                'l.name as leave_name',
                 DB::raw("
                     GROUP_CONCAT(
                         DISTINCT CONCAT(ld.date, '|', ld.shift)
@@ -55,13 +52,11 @@ class LeaveApplicationController extends Controller {
                 'la.name',
                 'la.user_id',
                 'la.employee_no',
-                'la.leave_id',
                 'la.days',
                 'la.reason',
                 'la.status',
                 'la.created_at',
                 'la.updated_at',
-                'l.name',
                 'p.firstname',
                 'p.lastname'
             )
@@ -69,26 +64,26 @@ class LeaveApplicationController extends Controller {
             ->get();
 
         // Attachments
-        $attachments = DB::table('leave_attachments')
-            ->select('leave_application_id', 'file_name', 'file_path', 'file_type')
-            ->whereIn('leave_application_id', $applications->pluck('id'))
+        $attachments = DB::table('offset_attachments')
+            ->select('offset_application_id', 'file_name', 'file_path', 'file_type')
+            ->whereIn('offset_application_id', $applications->pluck('id'))
             ->get()
-            ->groupBy('leave_application_id');
+            ->groupBy('offset_application_id');
 
         // Approvals
-        $approvalsRaw = DB::table('leave_approvals')
-            ->join('employee_information', 'leave_approvals.user_id', '=', 'employee_information.user_id')
+        $approvalsRaw = DB::table('offset_approvals')
+            ->join('employee_information', 'offset_approvals.user_id', '=', 'employee_information.user_id')
             ->join('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
             ->select(
-                'leave_approvals.status',
-                'leave_approvals.leave_application_id',
-                'leave_approvals.user_id',
-                'leave_approvals.level',
+                'offset_approvals.status',
+                'offset_approvals.offset_application_id',
+                'offset_approvals.user_id',
+                'offset_approvals.level',
                 'employee_information.employee_no',
                 'employee_personal.firstname',
                 'employee_personal.lastname'
             )
-            ->whereIn('leave_approvals.leave_application_id', $applications->pluck('id'))
+            ->whereIn('offset_approvals.offset_application_id', $applications->pluck('id'))
             ->get();
 
         $groupedApprovals = $approvalsRaw
@@ -131,7 +126,7 @@ class LeaveApplicationController extends Controller {
             return $this->datatable($query);
         }
 
-        return view('admin.pages.services.leave.index');
+        return view('admin.pages.services.offset.index');
     }
     
     public function show(int $id) 
@@ -143,12 +138,11 @@ class LeaveApplicationController extends Controller {
             return redirect()->back();
         }
 
-        $employee_no = $data->employee_no;
-        $leave_id = $data->leave_id;
+        $employee_no = $data->employee_no;    
         $currentMonth = Carbon::now()->format('Y-m');
-        $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
+        $latestCredits = $this->employeeService->getOffsetCreditsByMonthYear($employee_no, $currentMonth);
         $remaining_balance = (float) $latestCredits['current']?->balance ?? 0;
-        $toBeDeducted = (float) $this->compyte($data->dates);
+        $toBeDeducted = (float) $this->computeEquivalent($data->dates);
         $new_balance = $remaining_balance - $toBeDeducted;
 
         $hasBalance = false;
@@ -165,11 +159,11 @@ class LeaveApplicationController extends Controller {
             'new_balance' => number_format($new_balance, 2)
         ];
 
-        return view('admin.pages.services.leave.show', compact('employee_no', 'id', 'data', 'hasBalance', 'computation'));
+        return view('admin.pages.services.offset.show', compact('employee_no', 'id', 'data', 'hasBalance', 'computation'));
       
     }
 
-    public function compyte($dates): float
+    public function computeEquivalent($dates): float
     {
         return $dates->sum(function ($item) {
             return match (strtolower($item['shift'] ?? '')) {
@@ -183,7 +177,7 @@ class LeaveApplicationController extends Controller {
     public function rules() 
     {
         return [
-            'id' => 'required|exists:leave_applications,id',
+            'id' => 'required|exists:offset_applications,id',
             'action' => 'required|in:approve,decline'
         ];
     }
@@ -210,7 +204,7 @@ class LeaveApplicationController extends Controller {
     {
         try {
 
-            // DB::table('leave_applications')
+            // DB::table('offset_applications')
             //     ->where('id', $id)
             //     ->update([
             //         'status' => 'approved',
@@ -221,8 +215,8 @@ class LeaveApplicationController extends Controller {
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Leave application has been approved!',
-                'redirect' => route('services.leaves.show', ['application' => $id])
+                'message' => 'Offset application has been approved!',
+                'redirect' => route('services.offset.show', ['application' => $id])
             ]);
 
         } catch (\Exception $e) {
@@ -236,23 +230,23 @@ class LeaveApplicationController extends Controller {
     public function decline(int $id, array $payload)
     {
         try {
-            DB::table('leave_applications')
+            DB::table('offset_applications')
                 ->where('id', $id)
                 ->update([
                     'status' => 'rejected',
                     'remarks' => $payload['remarks'] ?? null
                 ]);
 
-            DB::table('leave_approvals')
-                ->where('leave_application_id', $id)
+            DB::table('offset_approvals')
+                ->where('offset_application_id', $id)
                 ->update([
                     'status' => 'rejected'
                 ]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Leave application has been rejected!',
-                'redirect' => route('services.leaves.show', ['application' => $id])
+                'message' => 'Offset application has been rejected!',
+                'redirect' => route('services.offset.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -267,26 +261,25 @@ class LeaveApplicationController extends Controller {
         DB::beginTransaction();
 
         try {
-            // --- Step 0: Fetch leave application data ---
+            // --- Step 0: Fetch offset application data ---
             $data = $this->getRawData($id)->first();
 
             if (!$data) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Unable to find leave application ID: ' . $id,
+                    'message' => 'Unable to find offset application ID: ' . $id,
                 ], 404);
             }
 
             $employee_no  = $data->employee_no;
-            $leave_id     = $data->leave_id;
             $currentMonth = Carbon::now()->format('Y-m');
 
-            // --- Step 1: Fetch latest leave credits for the current month ---
+            // --- Step 1: Fetch latest offset credits for the current month ---
             $latestCredits = $this->employeeService
-                ->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
+                ->getOffsetCreditsByMonthYear($employee_no, $currentMonth);
 
             $remaining_balance = (float) ($latestCredits['current']->balance ?? 0);
-            $toBeDeducted     = (float) $this->compyte($data->dates);
+            $toBeDeducted     = (float) $this->computeEquivalent($data->dates);
             $new_balance      = $remaining_balance - $toBeDeducted;
 
             // --- Step 2: Group dates by month ---
@@ -305,14 +298,13 @@ class LeaveApplicationController extends Controller {
             $formattedRemark = collect($datesByMonth)
                 ->map(function ($days, $month) {
                     $totalDays = count($days);
-                    return sprintf("%s %s (%s %s)", $month, implode(', ', $days), $totalDays, $totalDays === 1 ? 'day' : 'days');
+                    return sprintf("%s %s - (%s %s)", $month, implode(', ', $days), $totalDays, $totalDays === 1 ? 'day' : 'days');
                 })
                 ->implode(" | ");
 
-            // --- Step 4: Update or insert leave_credits for current month ---
-            $existing = DB::table('leave_credits')
+            // --- Step 4: Update or insert offset_credits for current month ---
+            $existing = DB::table('offset_credits')
                 ->where('employee_no', $employee_no)
-                ->where('leave_id', $leave_id)
                 ->where('as_of', $currentMonth)
                 ->first();
 
@@ -321,7 +313,7 @@ class LeaveApplicationController extends Controller {
                 if ($remarks) $remarks .= "\n"; // append new line
                 $remarks .= $formattedRemark;
 
-                DB::table('leave_credits')
+                DB::table('offset_credits')
                     ->where('id', $existing->id)
                     ->update([
                         'deducted'   => (float) $existing->deducted + $toBeDeducted,
@@ -330,9 +322,8 @@ class LeaveApplicationController extends Controller {
                         'updated_at' => now(),
                     ]);
             } else {
-                DB::table('leave_credits')->insert([
+                DB::table('offset_credits')->insert([
                     'employee_no' => $employee_no,
-                    'leave_id'    => $leave_id,
                     'as_of'       => $currentMonth,
                     'previous'    => $remaining_balance,
                     'earned'      => 0,
@@ -346,10 +337,9 @@ class LeaveApplicationController extends Controller {
 
             $runningBalance = $new_balance;
 
-            // --- Step 5: Recalculate future leave_credits for this leave type ---
-            $futureCredits = DB::table('leave_credits')
+            // --- Step 5: Recalculate future offset_credits for this offset type ---
+            $futureCredits = DB::table('offset_credits')
                 ->where('employee_no', $employee_no)
-                ->where('leave_id', $leave_id)
                 ->where('as_of', '>', $currentMonth)
                 ->orderBy('as_of')
                 ->get();
@@ -357,7 +347,7 @@ class LeaveApplicationController extends Controller {
             foreach ($futureCredits as $credit) {
                 $newBalance = $runningBalance + (float) $credit->earned - (float) $credit->deducted;
 
-                DB::table('leave_credits')
+                DB::table('offset_credits')
                     ->where('id', $credit->id)
                     ->update([
                         'previous'   => $runningBalance,
@@ -372,7 +362,7 @@ class LeaveApplicationController extends Controller {
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Leave credits updated and future balances adjusted.',
+                'message' => 'Offset credits updated and future balances adjusted.',
             ]);
 
         } catch (\Throwable $e) {
@@ -380,7 +370,7 @@ class LeaveApplicationController extends Controller {
 
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Error updating leave credits.',
+                'message' => 'Error updating offset credits.',
                 'error'   => $e->getMessage(),
             ], 500);
         }
@@ -419,7 +409,7 @@ class LeaveApplicationController extends Controller {
             ->addColumn('actions', function ($row) {
                 return '
                     <div class="d-block d-md-flex gap-2 justify-content-start">
-                        <a href="'.route('services.leaves.show', ['application' => $row->id]).'" 
+                        <a href="'.route('services.offset.show', ['application' => $row->id]).'" 
                             class="btn btn-primary btn show-button ms-1 my-1" 
                             title="Show">
                             <i class="fa-solid fa-eye"></i>

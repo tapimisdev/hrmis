@@ -60,7 +60,18 @@
                                                     {{ $credit->balance }}
                                                 </td>
                                                 <td>
-                                                    <textarea class="form-control restricted" value="{{ $credit->remarks }}" disabled></textarea>
+                                                    @php
+                                                        // Split remarks by newline to count actual lines
+                                                        $lines = $credit->remarks ? explode("\n", $credit->remarks) : [];
+                                                        $rows = count($lines);               // number of existing lines
+                                                        $rows = max(2, min($rows, 8));       // minimum 2 rows, maximum 8 rows
+                                                    @endphp
+
+                                                    <textarea 
+                                                        class="form-control restricted" 
+                                                        rows="{{ $rows }}" 
+                                                        readonly
+                                                    >{{ $credit->remarks }}</textarea>
                                                 </td>
                                             </tr>
                                         @empty
@@ -129,7 +140,7 @@
                             </div>
                             <div class="col-12 mb-3">
                                 <label class="form-label">Remarks</label>
-                                <textarea class="form-control" name="remarks" id="remarks"></textarea>
+                                <textarea class="form-control" rows="8" name="remarks" id="remarks"></textarea>
                                 <div class="error-field"></div>
                             </div>
                              <div class="col-12 mb-3">
@@ -196,6 +207,7 @@
                     $('#earned').val(res.current?.earned || 0);
                     $('#deduction').val(res.current?.deducted || 0);
                     $('#balance').val(res.current?.balance || 0);
+                    $('#remarks').val(res.current?.remarks || '');
 
                     updateBalance();
 

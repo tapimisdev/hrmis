@@ -34,10 +34,16 @@
               <span>View Schedule</span>
             </a>
             <button 
-              @click="viewTasks"
+              @click="viewLeaveCredits"
               class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2">
-              <i class="fa-solid fa-list-check"></i>
-              <span>Leave Card</span>
+              <i class="fa-solid fa-plane-departure"></i>
+              <span>Leave Credits</span>
+            </button>
+            <button 
+              @click="viewOffsetCredits"
+              class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2">
+              <i class="fa-solid fa-ghost"></i>
+              <span>Offset Credits</span>
             </button>
           </div>
           
@@ -145,8 +151,11 @@ export default {
     viewSchedule() {
       this.$router.push('/schedule');
     },
-    viewTasks() {
-      this.$router.push('/tasks');
+    viewLeaveCredits() {
+      window.location.href = '/employee/credits/leave'
+    },
+    viewOffsetCredits() {
+      window.location.href = '/employee/credits/offset'
     }
   }
 }

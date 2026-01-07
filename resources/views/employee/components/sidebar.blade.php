@@ -73,7 +73,7 @@
                             {{-- Leave --}}
                             <li class="side-items nested-item py-1 px-4 mb-2 {{  Str::contains(request()->path(), 'credits/leave') ? 'active' : '' }}">
                                 <a href="{{ route('leave-credits.index') }}"
-                                class="d-flex justify-content-center align-items-center gap-2 text-light text-decoration-none">
+                                class="d-flex justify-content-start align-items-center gap-2 text-light text-decoration-none">
                                     <i class="fa-solid fa-plane-departure"></i>
                                     <span>Leave</span>
                                 </a>
@@ -82,7 +82,7 @@
                             {{-- Offset --}}
                             <li class="side-items nested-item py-1 px-4 mb-2 {{  Str::contains(request()->path(), 'credits/offset') ? 'active' : '' }}">
                                 <a href="{{ route('offset-credits.index') }}"
-                                class="d-flex justify-content-center align-items-center gap-2 text-light text-decoration-none">
+                                class="d-flex justify-content-start align-items-center gap-2 text-light text-decoration-none">
                                     <i class="fa-solid fa-clock-rotate-left"></i>
                                     <span>Offset</span>
                                 </a>
@@ -117,9 +117,23 @@
                 <li class="side-items has-submenu {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
                     <a href="{{ route('leaves.index') }}" class="side-link text-body">
                         <span class="side-icon">
-                            <i class="fa-solid fa-calendar-days"></i>
+                            <i class="fa-solid fa-plane-departure"></i>
                         </span>
                         <span class="side-text">Leave</span>
+                    </a>
+                </li>
+                @endcanany
+
+                @canany([
+                    'emp.offset_application.view',
+                    'emp.offset_application.apply'
+                ])
+                <li class="side-items has-submenu {{ request()->routeIs('offset.*') ? 'active' : '' }}">
+                    <a href="{{ route('offset.index') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-ghost"></i>
+                        </span>
+                        <span class="side-text">Offset</span>
                     </a>
                 </li>
                 @endcanany
@@ -135,6 +149,21 @@
                             <i class="fa-solid fa-hourglass-half"></i>
                         </span>
                         <span class="side-text">Overtime</span>
+                    </a>
+                </li>
+                @endcanany
+
+                @canany([
+                    'emp.overtime_application.view',
+                    'emp.overtime_application.apply'
+                ])
+                <!-- Pass Slip -->
+                <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
+                    <a href="{{ route('obs.index') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-torii-gate"></i>
+                        </span>
+                        <span class="side-text">Pass Slip</span>
                     </a>
                 </li>
                 @endcanany
