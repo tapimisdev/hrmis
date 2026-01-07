@@ -275,7 +275,6 @@ class EmployeeService {
         return $query->{$config['method']}();
     }
 
-
     public function getSalary(string $employee_no) {
         return DB::table('employee_information')
             ->where('employee_no', $employee_no)
@@ -389,5 +388,41 @@ class EmployeeService {
             ->where('id', $leave_id)
             ->first();
     }
+
+    public function getOffsetCredits(string $employee_no, bool $isLatest = false) {
+        
+        $data = DB::table('offset_credits')
+            ->where('employee_no', $employee_no)
+            ->orderByDesc('as_of');  
+
+        if($isLatest) {
+            return $data->first();
+        }
+
+        return $data->get();
+
+    }
+
+    public function getOffsetCreditsByMonthYear(string $employee_no, string $monthYear)
+    {
+        // Current month record
+        $current = DB::table('offset_credits')
+            ->where('employee_no', $employee_no)
+            ->where('as_of', $monthYear)
+            ->first();
+
+        // Previous balance (latest before selected month)
+        $previousBalance = DB::table('offset_credits')
+            ->where('employee_no', $employee_no)
+            ->where('as_of', '<', $monthYear)
+            ->orderBy('as_of', 'desc')
+            ->value('balance'); // gets only the balance column
+
+        return [
+            'current' => $current,
+            'previous_balance' => $previousBalance ?? 0
+        ];
+    }
+
 
 }

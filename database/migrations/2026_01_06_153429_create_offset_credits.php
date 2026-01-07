@@ -14,10 +14,11 @@ return new class extends Migration
         Schema::create('offset_credits', function (Blueprint $table) {
             $table->id();
             $table->string('employee_no');
+            $table->decimal('previous', 10, 2)->default(0);
             $table->decimal('earned', 10, 2)->default(0);
             $table->decimal('deducted', 10, 2)->default(0);
             $table->decimal('balance', 10, 2)->default(0);
-            $table->date('as_of');
+            $table->string('as_of');
             $table->longText('remarks')
                 ->nullable();
             $table->timestamps();

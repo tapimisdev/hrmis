@@ -148,6 +148,8 @@ Route::prefix('hris')->group(function() {
     # OFFSET CREDITS
     Route::get('employee/offset/{employee_no}', [OffsetCreditsController::class, 'index'])
         ->name('hris.employee.offset-credits');
+    Route::get('employee/offset/{employee_no}/fetch', [OffsetCreditsController::class, 'fetch'])
+        ->name('hris.employee.offset-credits.fetch');
     Route::put('employee/offset/{employee_no}', [OffsetCreditsController::class, 'save'])
         ->name('hris.employee.offset-credits.save');
 
