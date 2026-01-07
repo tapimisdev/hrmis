@@ -11,6 +11,7 @@ use App\Http\Controllers\Employee\AtroApprovalController;
 use App\Http\Controllers\Employee\LeaveApprovalController;
 use App\Http\Controllers\Employee\ObsApprovalController;
 use App\Http\Controllers\Employee\ObsController;
+use App\Http\Controllers\Employee\CreditsController;
 use App\Http\Controllers\Employee\PayslipController;
 use App\Http\Controllers\Employee\ProfileController;
 use App\Http\Controllers\Employee\timelogs\CheckInOutController;
@@ -33,6 +34,13 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
     Route::get('employee-timelogs/{employee_no}/get', [DailyTimeRecordController::class, 'show']);
 
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
+
+    Route::prefix('credits')->group(function() {
+        Route::get('leave', [CreditsController::class, 'leave'])
+            ->name('leave-credits.index');
+        Route::get('offset', [CreditsController::class, 'offset'])
+            ->name('offset-credits.index');
+    });
 
     Route::resource('payslip', PayslipController::class)->only('index')->names('payslip');
     Route::get('payslip/data', [PayslipController::class, 'fetch_payslip'])->name('payslip.fetch');

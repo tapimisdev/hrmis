@@ -107,3 +107,20 @@
     });
 </script>
 @endsection
+
+<style>
+    @media (max-width: 768px) {
+        #calendar {
+            padding: 5px;
+            font-size: 0.85rem; /* shrink fonts on small screens */
+        }
+
+        .fc-toolbar.fc-header-toolbar {
+            flex-direction: column; /* stack buttons */
+        }
+
+        .fc-toolbar-chunk {
+            margin-bottom: 5px;
+        }
+    }
+</style>

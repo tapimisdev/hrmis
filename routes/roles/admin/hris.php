@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\Hris\VoluntaryWorksController;
 use App\Http\Controllers\Admin\Hris\WorkExperienceController;
 use App\Http\Controllers\Admin\Hris\AccountController;
 use App\Http\Controllers\Admin\Hris\LeaveCreditController;
+use App\Http\Controllers\Admin\Hris\OffsetCreditsController;
 use App\Http\Controllers\Admin\Hris\EarningsController as HrisEarningsController;
 use App\Http\Controllers\Admin\Hris\DeductionsController as HrisDeductionsController;
 use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
@@ -134,7 +135,7 @@ Route::prefix('hris')->group(function() {
     Route::delete('employee/leave-credits/{employee_no}/{leave_id?}', [LeaveCreditController::class, 'delete_credits'])
         ->name('hris.employee.leave-credits');
 
-    # LEAVE CARD
+    # LEAVE CREDITS
     Route::get('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'leave_card'])
         ->name('hris.employee.leave-card');
     Route::put('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'add_year'])
@@ -143,6 +144,12 @@ Route::prefix('hris')->group(function() {
         ->name('hris.employee.leave-card.remove_year');
     Route::put('employee/leave-card/{employee_no}/{leave_id}/save', [LeaveCreditController::class, 'save_changes'])
         ->name('hris.employee.leave-card.save');
+
+    # OFFSET CREDITS
+    Route::get('employee/offset/{employee_no}', [OffsetCreditsController::class, 'index'])
+        ->name('hris.employee.offset-credits');
+    Route::put('employee/offset/{employee_no}', [OffsetCreditsController::class, 'save'])
+        ->name('hris.employee.offset-credits.save');
 
 
     # EARNINGS

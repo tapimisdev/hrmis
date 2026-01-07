@@ -48,7 +48,7 @@
               </div>
               <div>
                 <div class="stat-value">{{ stats.totalHours }}</div>
-                <div class="stat-label">Total Hours</div>
+                <div class="stat-label text-uppercase text-muted" style="font-size: 12px; margin-top: 4px;">Total Hours</div>
               </div>
             </div>
             <div class="stat-item">
@@ -57,7 +57,7 @@
               </div>
               <div>
                 <div class="stat-value">{{ stats.pendingLeaves }}</div>
-                <div class="stat-label">Pending Leaves</div>
+                <div class="stat-label text-uppercase text-muted" style="font-size: 12px; margin-top: 4px;">Pending Leaves</div>
               </div>
             </div>
             <div class="stat-item">
@@ -66,7 +66,7 @@
               </div>
               <div>
                 <div class="stat-value">{{ stats.overtime }}</div>
-                <div class="stat-label">Overtime</div>
+                <div class="stat-label text-uppercase text-muted" style="font-size: 12px; margin-top: 4px;">Overtime | Offsets</div>
               </div>
             </div>
             <div class="stat-item">
@@ -75,7 +75,7 @@
               </div>
               <div>
                 <div class="stat-value">{{ stats.absent }}</div>
-                <div class="stat-label">Absent</div>
+                <div class="stat-label text-uppercase text-muted" style="font-size: 12px; margin-top: 4px;">Absences</div>
               </div>
             </div>
           </div>
@@ -320,7 +320,7 @@ export default {
         line-height: 1;
       }
       
-      .stat-label {
+      .stat-label text-uppercase text-muted {
         font-size: 0.75rem;
         opacity: 0.8;
         line-height: 1.2;

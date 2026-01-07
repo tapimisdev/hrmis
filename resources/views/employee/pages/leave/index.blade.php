@@ -8,26 +8,28 @@
             <header-vue title="DOST TAPI"></header-vue>
         </x-employee-navbar>
 
-        <x-header-employee title="Leave Applications" subtitle="Manage Leave Applications in this module" >
+        <x-header-employee title="Leave Applications" subtitle="Manage leave applications in this module" >
             <a href="{{ route('leaves.create') }}" class="btn btn-warning py-3 px-4">
                 <i class="fa-solid fa-paper-plane me-2"></i> Apply
             </a>
         </x-header-employee>
 
-        <x-table-employee id="myTable">
-            <thead>
-                <tr>
-                    <th>File No.</th>
-                    <th>Name</th>
-                    <th>Leave Type</th>
-                    <th>Dates</th>
-                    <th>Status</th>
-                    <th style="width: 120px">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </x-table-employee>
+        <div class="card rounded-4 p-3">
+            <table class="table table-sm table-striped" id="myTable">
+                <thead class="text-uppercase">
+                    <tr>
+                        <th>File No.</th>
+                        <th>Name</th>
+                        <th>Leave Type</th>
+                        <th>Dates</th>
+                        <th>Status</th>
+                        <th style="width: 120px">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
     </div>
 @endsection
 
@@ -45,7 +47,9 @@
                 { data: "date", name: 'date' },
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
-            ],
+            ],  
+            "scrollY": "500px",       
+            "scrollCollapse": true, 
         });
 
         $(document).on('click', '.cancel-button', function() {

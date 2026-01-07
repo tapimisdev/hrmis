@@ -72,7 +72,6 @@
             <div id="approvers-by-level" class="mb-2"></div>
         </div>
     </div>
-
     <x-slot name="footer">
         <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-danger px-4 py-2" data-bs-dismiss="modal">

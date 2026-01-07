@@ -1,5 +1,5 @@
-@import 'variables.scss';
-@import './hamburger.scss';
+@import "variables.scss";
+@import "./hamburger.scss";
 
 $sidebar-width: 220px;
 
@@ -11,46 +11,47 @@ $sidebar-width: 220px;
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(5, 1fr);
     gap: 8px;
-    
+
     // Mobile first - sidebar hidden by default on mobile
     @media (max-width: 767px) {
         grid-template-columns: 1fr;
         gap: 0;
     }
-    
+
     // Tablet
     @media (min-width: 768px) and (max-width: 1023px) {
         grid-template-columns: 80px repeat(9, 1fr);
         gap: 6px;
     }
-    
+
     // Laptop
     @media (min-width: 1024px) and (max-width: 1439px) {
         grid-template-columns: repeat(10, 1fr);
     }
-    
+
     // Large screens
     @media (min-width: 1440px) {
         grid-template-columns: repeat(12, 1fr);
     }
-    
+
     &.sidebar-collapsed {
         grid-template-columns: 66px repeat(9, 1fr);
-        
+
         @media (max-width: 767px) {
             grid-template-columns: 1fr;
         }
-        
+
         @media (min-width: 768px) and (max-width: 1023px) {
             grid-template-columns: 66px repeat(9, 1fr);
         }
-        
+
         @media (min-width: 1440px) {
             grid-template-columns: 66px repeat(11, 1fr);
         }
     }
-    
-    aside, main {
+
+    aside,
+    main {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -59,20 +60,20 @@ $sidebar-width: 220px;
         height: 320px;
         width: 100%;
         background-size: cover;
-        filter:contrast(1.5);
+        filter: contrast(1.5);
         background-position: center;
         z-index: -5;
-        
+
         @media (max-width: 767px) {
             height: 200px;
         }
-        
+
         @media (min-width: 768px) and (max-width: 1023px) {
             height: 240px;
         }
-        
+
         &::after {
-            content: '';
+            content: "";
             position: absolute;
             top: 0;
             left: 0;
@@ -106,18 +107,16 @@ $sidebar-width: 220px;
             background-color: rgba(0, 0, 0, 0.8);
             z-index: 1000;
 
-            
             &.mobile-open {
                 transform: translateX(0);
             }
-            
         }
-        
+
         @media (min-width: 768px) and (max-width: 1023px) {
             grid-column: span 1 / span 1;
             padding: 20px 0px 0px 8px;
         }
-        
+
         @media (min-width: 1440px) {
             grid-column: span 2 / span 2;
             padding: 28px 0px 0px 20px;
@@ -139,20 +138,20 @@ $sidebar-width: 220px;
             }
         }
     }
-    
+
     &.sidebar-collapsed aside {
         grid-column: span 1 / span 1;
         padding: 28px 0px 0px 12px;
-        
+
         @media (max-width: 767px) {
             padding: 16px 0px 0px 8px;
         }
-        
+
         @media (min-width: 768px) and (max-width: 1023px) {
             padding: 20px 0px 0px 8px;
         }
     }
-    
+
     .sidebar {
         width: 90;
         border-radius: 18px 18px 0px 0px;
@@ -169,21 +168,21 @@ $sidebar-width: 220px;
             max-width: 280px;
             border-radius: 0 18px 0 0;
         }
-        
+
         @media (min-width: 768px) and (max-width: 1023px) {
             max-width: 70px;
-            
+
             .sidebar-brand .brand-body h5,
             .side-text {
                 opacity: 0;
                 width: 0;
                 overflow: hidden;
             }
-            
+
             .side-items .side-link {
                 justify-content: center;
                 gap: 0 !important;
-                
+
                 i {
                     margin-left: 0px !important;
                     width: 100%;
@@ -196,38 +195,39 @@ $sidebar-width: 220px;
                 min-width: 14vw;
             }
         }
-        
+
         &.collapsed {
             max-width: 60px;
-            
+
             @media (max-width: 767px) {
                 max-width: 60px;
             }
-            
+
             .sidebar-brand .brand-body h5,
             .side-text {
                 opacity: 0;
                 width: 0;
                 overflow: hidden;
-                transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
-                           width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             }
-            
+
             .sidebar-brand .brand-body {
                 justify-content: center;
                 transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
-            
+
             .side-items {
                 .side-link {
                     justify-content: center;
                     gap: 0;
-                    transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                               justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     i {
                         margin-left: 10px;
                         width: 100%;
-                        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        transition: margin-left 0.3s
+                            cubic-bezier(0.4, 0, 0.2, 1);
                     }
                 }
             }
@@ -249,62 +249,64 @@ $sidebar-width: 220px;
                 background: #555;
             }
         }
-        
-        .sidebar-header .sidebar-brand, .sidebar-nav {
+
+        .sidebar-header .sidebar-brand,
+        .sidebar-nav {
             padding: 12px 6px 8px 9px;
-            
+
             @media (max-width: 767px) {
                 padding: 10px 6px 6px 9px;
             }
         }
-        
+
         .sidebar-header {
             display: flex;
             justify-content: space-evenly;
             align-items: center;
             width: 100%;
             border-bottom: 1px solid var(--bs-tertiary-bg);
-            
+
             .sidebar-brand {
                 display: flex;
                 justify-content: space-between;
                 gap: 10px;
                 width: 100%;
-                
+
                 .brand-body {
                     display: flex;
                     align-items: center;
                     gap: 12px;
                     padding: 0px 9px;
-                    transition: justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    
+                    transition: justify-content 0.3s
+                        cubic-bezier(0.4, 0, 0.2, 1);
+
                     @media (max-width: 767px) {
                         gap: 8px;
                         padding: 0px 6px;
                     }
-                    
+
                     img {
                         height: 24px;
                         flex-shrink: 0;
-                        
+
                         @media (max-width: 767px) {
                             height: 20px;
                         }
                     }
-                    
+
                     h5 {
                         padding: 0;
                         margin: 0;
                         font-weight: 800;
                         font-size: 1.2rem;
                         white-space: nowrap;
-                        transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
-                                   width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                        
+                        transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                            width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
                         @media (max-width: 767px) {
                             font-size: 1rem;
                         }
-                        
+
                         @media (min-width: 768px) and (max-width: 1023px) {
                             opacity: 0;
                             width: 0;
@@ -312,7 +314,7 @@ $sidebar-width: 220px;
                     }
                 }
             }
-            
+
             #switchMenuBtn {
                 background-color: transparent;
                 border: none;
@@ -321,15 +323,15 @@ $sidebar-width: 220px;
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 flex-shrink: 0;
                 cursor: pointer;
-                
+
                 @media (max-width: 767px) {
                     padding: 4px 8px;
                 }
-                
+
                 &:hover {
                     background-color: darken($white, 4%);
                 }
-                
+
                 i {
                     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -338,12 +340,12 @@ $sidebar-width: 220px;
                     }
                 }
             }
-            
+
             #switchMenuBtn.rotate {
                 transform: rotate(180deg);
             }
         }
-        
+
         .sidebar-nav {
             .side-container {
                 list-style: none;
@@ -356,7 +358,7 @@ $sidebar-width: 220px;
                     transition: all 0.2s ease-in-out;
                     width: 100%;
                     margin-bottom: 2px;
-                    
+
                     @media (max-width: 767px) {
                         padding: 2px 6px 0px 6px;
                         margin-bottom: 2px;
@@ -369,7 +371,7 @@ $sidebar-width: 220px;
                             color: $light !important;
                         }
                     }
-                    
+
                     &:hover {
                         border-color: lighten($dark, 50);
                         background-color: var(--bs-tertiary-bg, 100);
@@ -386,45 +388,45 @@ $sidebar-width: 220px;
                         gap: 10px;
                         text-decoration: none;
                         color: inherit;
-                        transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                                   justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        font-size: .865rem;
-                        
+                        transition: gap 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                            justify-content 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        font-size: 0.865rem;
+
                         @media (max-width: 767px) {
-                            font-size: .85rem;
+                            font-size: 0.85rem;
                             gap: 8px;
                         }
-                        
+
                         @media (min-width: 768px) and (max-width: 1023px) {
                             justify-content: center;
                             gap: 0;
                         }
-                        
+
                         .side-icon {
                             flex-shrink: 0;
                             transition: transform 0.3s ease;
                         }
-                        
+
                         i {
                             font-size: 16px;
                             width: 20px;
                             text-align: center;
-                            
+
                             @media (max-width: 767px) {
                                 font-size: 14px;
                                 width: 18px;
                             }
-                            
+
                             @media (min-width: 768px) and (max-width: 1023px) {
                                 margin-left: 10px;
                                 width: 100%;
                             }
                         }
-                        
+
                         .side-text {
                             white-space: nowrap;
                             transition: opacity 0.3s ease, width 0.3s ease;
-                            
+
                             @media (min-width: 768px) and (max-width: 1023px) {
                                 opacity: 0;
                                 width: 0;
@@ -436,7 +438,7 @@ $sidebar-width: 220px;
             }
         }
     }
-    
+
     main {
         grid-column: span 8 / span 8;
         grid-row: span 5 / span 5;
@@ -446,33 +448,33 @@ $sidebar-width: 220px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        
+
         @media (max-width: 767px) {
             grid-column: 1 / -1;
             grid-column-start: 1;
             padding: 0 8px;
         }
-        
+
         @media (min-width: 768px) and (max-width: 1023px) {
             grid-column: span 9 / span 9;
             grid-column-start: 2;
             padding: 0 12px;
         }
-        
+
         @media (min-width: 1024px) and (max-width: 1439px) {
             grid-column: span 8 / span 8;
             grid-column-start: 3;
         }
-        
+
         @media (min-width: 1440px) {
             grid-column: span 10 / span 10;
             grid-column-start: 3;
         }
 
-         // Custom Scrollbar
+        // Custom Scrollbar
         &::-webkit-scrollbar {
             width: 6px;
-            
+
             @media (max-width: 767px) {
                 width: 4px;
             }
@@ -493,21 +495,21 @@ $sidebar-width: 220px;
             }
         }
     }
-    
+
     &.sidebar-collapsed main {
         grid-column: span 9 / span 9;
         grid-column-start: 2;
-        
+
         @media (max-width: 767px) {
             grid-column: 1 / -1;
             grid-column-start: 1;
         }
-        
+
         @media (min-width: 768px) and (max-width: 1023px) {
             grid-column: span 9 / span 9;
             grid-column-start: 2;
         }
-        
+
         @media (min-width: 1440px) {
             grid-column: span 11 / span 11;
             grid-column-start: 2;
@@ -529,16 +531,16 @@ $sidebar-width: 220px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     cursor: pointer;
     transition: all 0.3s ease;
-    
+
     @media (max-width: 767px) {
         display: block;
     }
-    
+
     &:hover {
         background-color: darken($white, 5%);
         transform: scale(1.05);
     }
-    
+
     i {
         font-size: 20px;
         color: $primary;
@@ -557,7 +559,7 @@ $sidebar-width: 220px;
     z-index: 999;
     opacity: 0;
     transition: opacity 0.3s ease;
-    
+
     @media (max-width: 767px) {
         &.active {
             display: block;
@@ -567,10 +569,13 @@ $sidebar-width: 220px;
 }
 
 @media (max-width: 767px) {
-  #app:has(aside.mobile-open) {
-    overflow: hidden;
-    height: 100vh;
-  }
+    #app {
+        display: block !important;
+    }
+    #app:has(aside.mobile-open) {
+        overflow: hidden;
+        height: 100vh;
+    }
 }
 
 .sidebar-seperator {
@@ -579,36 +584,40 @@ $sidebar-width: 220px;
 }
 
 footer {
-    display:flex;
+    display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: 300;
-    padding: 20px 24px !important;
-    div:first-child {
-
-    }
-
+    font-size: 12px;;
     div:last-child {
         ul {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 14px;
-            padding: 0;
             margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 0;
             list-style: none;
 
             li a {
                 color: lighten($dark, 30%);
-                font-size: 0.9rem;
+                font-size: 0.8rem;
                 text-decoration: none;
+            }
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        div:last-child {
+            ul {
+                margin-top: 10px;
             }
         }
     }
 }
 
 .text-stroke {
-    -webkit-text-stroke: .2px $primary;
+    -webkit-text-stroke: 0.2px $primary;
 }
 
 .page-name {
@@ -620,9 +629,9 @@ footer {
             color: var(--bs-body-color);
         }
         .top {
-            filter:contrast(2);
+            filter: contrast(2);
             &::after {
-                content: '';
+                content: "";
                 position: absolute;
                 top: 0;
                 left: 0;

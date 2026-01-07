@@ -20,8 +20,10 @@
 
         <!-- Sidebar Navigation -->
         <nav class="sidebar-nav">
+            <div class="mb-2 ms-1">
+                <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Menu</small>
+            </div>
             <ul class="side-container">
-
                 @can('emp.dashboard.view')
                 <!-- Dashboard -->
                 <li class="side-items {{ request()->routeIs('dashboard.*') ? 'active' : '' }}">
@@ -49,6 +51,47 @@
                 </li>
                 @endcanany
 
+                <li class="side-items">
+                    <a class="side-link text-body dropdown-toggle 
+                        {{ Str::contains(request()->path(), 'credits/leave') || Str::contains(request()->path(), 'credits/offset') ? '' : 'collapsed' }}"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#credits"
+                        role="button"
+                        aria-expanded="{{ Str::contains(request()->path(), 'credits/leave') || Str::contains(request()->path(), 'credits/offset') ? 'true' : 'false' }}"
+                        aria-controls="credits">
+
+                        <i class="fa-regular fa-calendar"></i>
+                        <span>Credits</span>
+                    </a>
+
+                    <div class="collapse collapsable 
+                        {{ Str::contains(request()->path(), 'credits/leave') || Str::contains(request()->path(), 'credits/offset') ? 'show' : '' }}"
+                        id="credits">
+
+                        <ul class="nested-list list-unstyled py-2">
+
+                            {{-- Leave --}}
+                            <li class="side-items nested-item py-1 px-4 mb-2 {{  Str::contains(request()->path(), 'credits/leave') ? 'active' : '' }}">
+                                <a href="{{ route('leave-credits.index') }}"
+                                class="d-flex align-items-center gap-2 text-light text-decoration-none">
+                                    <i class="fa-solid fa-plane-departure"></i>
+                                    <span>Leave</span>
+                                </a>
+                            </li>
+
+                            {{-- Offset --}}
+                            <li class="side-items nested-item py-1 px-4 mb-2 {{  Str::contains(request()->path(), 'credits/offset') ? 'active' : '' }}">
+                                <a href="{{ route('offset-credits.index') }}"
+                                class="d-flex align-items-center gap-2 text-light text-decoration-none">
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                    <span>Offset</span>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </li>
+
                 @can('emp.dashboard.view')
                 <!-- Payslip -->
                 <li class="side-items has-submenu {{ request()->routeIs('payslip.*') ? 'active' : '' }}">
@@ -60,9 +103,12 @@
                     </a>
                 </li>
                 @endcan
-
+                
                 <div class="sidebar-seperator"></div>
-
+                
+                <div class="mb-2 ms-1">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Applications</small>
+                </div>
                 @canany([
                     'emp.leave_application.view',
                     'emp.leave_application.apply'

@@ -1,7 +1,7 @@
 @extends('auth.auth')
 
 @section('content')
-<div class="wrapper">
+<div class="wrapper p-3">
     <div class="form-container border shadow">
         <div class='logo-container'>
             <img src="{{ asset('img/orbit.png') }}" alt="">
