@@ -1,5 +1,9 @@
 <template>
     <div class="attendance-container">
+
+        <CorrectionLog ref="correctionModal" />
+        <CorrectionList ref="correctionListModal" />
+
         <!-- Header -->
         <div class="header d-block d-lg-flex gap-3">
             <h5 class="title text-uppercase">
@@ -7,6 +11,7 @@
                 Employee Attendance
             </h5>
             <div class="filters d-flex gap-2">
+                <button class="btn btn-sm btn-link" @click="openCorretionList">View Corrections for this month</button>
                 <select v-model="selectedMonth" @change="loadTimelogs">
                     <option v-for="(month, index) in months" :key="index" :value="index + 1">
                         {{ month }}
@@ -93,7 +98,7 @@
                                 </div>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-transparent" title="Request Correction"><i class="fa-solid fa-code-pull-request"></i></button>
+                                <button class="btn btn-sm btn-transparent" title="Request Correction" @click="openModal(index + 1)" ><i class="fa-solid fa-code-pull-request"></i></button>
                             </td>
                         </template>
                     </tr>
@@ -105,10 +110,13 @@
 
 <script>
 import axios from 'axios';
+import CorrectionLog from './Corrections/CorrectionLog.vue';
+import CorrectionList from './Corrections/CorrectionList.vue';
 
 const token = localStorage.getItem('auth_token');
 
 export default {
+    components: { CorrectionLog, CorrectionList },
     props: {
         employeeNumber: { type: String, required: true },
         month: { type: Number, default: null },
@@ -219,6 +227,22 @@ export default {
         getDayName(day) {
             const date = new Date(this.selectedYear, this.selectedMonth - 1, day + 1);
             return date.toLocaleDateString('en-US', { weekday: 'short' });
+        },
+        openModal(day) {
+            // Use passed props (month, year, index) to set date
+            const month = this.selectedMonth ?? new Date().getMonth() + 1;
+            const year = this.selectedYear ?? new Date().getFullYear();
+            const selectedDay = day ?? new Date().getDate();
+
+            const date = new Date(year, month - 1, selectedDay);
+            const formatted = date.getFullYear() + '-' +
+                              String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                              String(date.getDate()).padStart(2, '0');
+
+            this.$refs.correctionModal.open(formatted);
+        },
+        openCorretionList() {
+            this.$refs.correctionListModal.open(this.selectedMonth, this.selectedYear);
         }
     },
     watch: {

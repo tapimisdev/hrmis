@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Http\Requests\Employee\Timelogs;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class CorrectionRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'date' => ['required', 'date'],
+
+            // Times must be in proper format
+            'time_in' => ['required', 'date_format:H:i:s'],
+            'break_out' => ['nullable', 'date_format:H:i:s', 'after:time_in'],
+            'break_in' => ['nullable', 'date_format:H:i:s', 'after:break_out'],
+            'time_out' => ['required', 'date_format:H:i:s', 'after:time_in'],
+
+            'overtime_in' => ['nullable', 'date_format:H:i:s', 'after:break_out'],
+            'overtime_out' => [
+                'required_with:overtime_in',   // only required if overtime_in is present
+                'nullable',
+                'date_format:H:i:s',
+                'after:overtime_in'
+            ],
+            'attachment' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'], // max 10MB
+            'remarks' => ['required', 'string', 'max:1000'], // max 1000 chars
+        ];
+    }
+}
