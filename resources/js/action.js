@@ -32,7 +32,7 @@ function handleFormSubmit(method, url, hasRemarks = false, formSelector) {
             if (hasRemarks) formData.append('remarks', remarks);
 
             // Handle submit button state
-            const $btn = $(form).find('button[type="submit"]');
+            const $btn = $(form).find('button[type="submit"]').last();
             const originalLabel = $btn.html();
             $btn.prop('disabled', true).html('Please Wait...');
 

@@ -197,8 +197,9 @@ $sidebar-width: 220px;
         }
 
         &.collapsed {
-            max-width: 60px;
 
+            max-width: 60px;
+            
             @media (max-width: 767px) {
                 max-width: 60px;
             }
@@ -210,6 +211,21 @@ $sidebar-width: 220px;
                 overflow: hidden;
                 transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
                     width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .side-link.dropdown-toggle::after {
+                display: none !important;
+            }
+            
+            .nested-item {
+                padding: 10px 5px 10px 5px !important;
+                span {
+                    opacity: 0;
+                    width: 0;
+                    overflow: hidden;
+                    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                        width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                }
             }
 
             .sidebar-brand .brand-body {

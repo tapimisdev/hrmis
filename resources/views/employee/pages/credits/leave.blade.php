@@ -8,11 +8,92 @@
         </x-employee-navbar>
 
         <x-header-employee title="Leave Credits" subtitle="View leave credits in this module" >
-           
+         
         </x-header-employee>
 
         <div class="card rounded-4 p-3">
-            
+            @if(!empty($data))
+                <div class="col-12 {{ $isExists ? 'col-md-12' : '' }}">
+                    <div class="accordion" id="leaveCreditsAccordion">
+                        @php
+                            $activeLeaveId = session('active_leave_id');
+                        @endphp
+                        @forelse($data as $leaveData)
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading-{{ $leaveData['leave']->leave_id }}">
+                                    <button class="accordion-button text-uppercase fw-bold @if($loop->first) @else collapsed @endif"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#collapse-{{ $leaveData['leave']->leave_id }}"
+                                            aria-expanded="{{ $loop->first ? 'true' : 'false' }}"
+                                            aria-controls="collapse-{{ $leaveData['leave']->leave_id }}">
+                                        {{ $leaveData['leave']->name ?? 'Leave' }}
+                                    </button>
+                                </h2>
+
+                                <div id="collapse-{{ $leaveData['leave']->leave_id }}"
+                                    class="accordion-collapse collapse @if($loop->first) show @endif"
+                                    aria-labelledby="heading-{{ $leaveData['leave']->leave_id }}"
+                                    data-bs-parent="#leaveCreditsAccordion">
+                                    <div class="accordion-body">
+                                        <table class="table table-bordered table-striped">
+                                            <thead>
+                                                <tr class="text-uppercase">
+                                                    <th>As Of</th>
+                                                    <th>Previous</th>
+                                                    <th>Earned</th>
+                                                    <th>Deduction</th>
+                                                    <th>Balance</th>
+                                                    <th>Remarks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($leaveData['credits'] as $credit)
+                                                    <tr>
+                                                        <td>{{ \Carbon\Carbon::parse($credit->as_of)->format('F, Y') }}</td>
+                                                        <td>{{ $credit->previous }}</td>
+                                                        <td>{{ $credit->earned }}</td>
+                                                        <td>{{ $credit->deducted }}</td>
+                                                        <td>{{ $credit->balance }}</td>
+                                                        <td>
+                                                            <textarea class="form-control restricted" disabled>{{ $credit->remarks }}</textarea>
+                                                        </td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="6" class="text-center text-muted">
+                                                            No credits found
+                                                        </td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+
+                                        <div class="mt-4 mb-3">
+                                            <strong>
+                                                CURRRENT MONTH'S BALANCE:  
+                                                <span class="bg-primary rounded-2 py-2 px-3 ms-2" style="font-size: 124x;">
+                                                    {{ $leaveData['currentMonthBalance'] ?? 0 }}
+                                                </span>
+                                            </strong> 
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="alert alert-danger text-center text-uppercase fw-bold mt-5">
+                                Oops! Sorry, Leave credits are only allowed for regular employee(s)
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
+            @else
+
+                <div class="alert alert-danger mt-3 text-center text-uppercase fw-bold">Oops! Sorry, Leave credits are allowed only for regular employee(s)</div>
+
+            @endif
+
         </div>
     </div>
 @endsection

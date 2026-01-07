@@ -3,20 +3,18 @@
 namespace App\Http\Controllers\Admin\Hris;
 
 use App\Http\Controllers\Controller;
-use App\Services\EmployeeService;
-use App\Services\GenerateService;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use App\Services\EmployeeService;
+use App\Services\GenerateService;
+use Carbon\Carbon;
 
 class LeaveCreditController extends Controller
 {
-    
+
     public $employeeService;
     public $generateService;
 
@@ -28,324 +26,206 @@ class LeaveCreditController extends Controller
         $this->middleware('permission:hr.hris.edit')->only('save_credits');
     }
 
-    public function leave_credits(Request $request, ? string $employee_no = null)
-    {
+    public function index(Request $request, ? string $employee_no = null) {
+
 
         $isExists= $this->employeeService->checkIfEmployeeExists($employee_no);
+        $leaves = $this->employeeService->getLeaveTypes($employee_no);
+        $data = [];
 
         if(!is_null($employee_no) && !$isExists) {
             return redirect()->route('hris.employee.information');
         }
 
-        $isEdit = false;
-        $id = null;
-        $leaves = $this->employeeService->getLeaveTypes($employee_no);
+        if($leaves['status'] == 'eligible') {
 
-        return view('admin.pages.hris.leave-credits', compact('isEdit', 'id', 'employee_no', 'isExists', 'leaves'));
-    }
-
-    public function save_credits(string $employee_no, Request $request)
-    {
-        
-        $payload = $request->all();
-
-        $validator = Validator::make($payload, [
-            'leave_id' => 'required|array',
-            'leave_id.*.value' => 'required|numeric',
-        ]);
-
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-
-        DB::beginTransaction();
-
-        try {
-
-            $employee = DB::table('employee_information')
-                ->where('employee_no', $employee_no)
-                ->first();
-
-            if (!$employee || !$employee->user_id) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Account not found',
-                ], 404);
-            }
-
-            if (!empty($payload['leave_id'])) {
-
-                foreach($payload['leave_id'] as $id => $leave) {
-
-                    $amount = $leave['value'];
-                    $as_of = Carbon::parse($leave['as_of']);
-
-                    $payload = [
-                        'leave_id' => $id,
-                        'employee_no' => $employee_no,
-                        'amount' => $amount,
-                        'as_of' => $as_of,
-                    ];
-
-                    if($amount > 0) {
-
-                        $this->generateLeaveCard($payload);
-
-                        DB::table('employee_leave_credits')->updateOrInsert(
-                            [
-                                'employee_no' => $employee_no,
-                                'leave_id' => $id,
-                            ],
-                            [
-                                'amount' => $amount,
-                                'effectivity_date' => Carbon::parse($leave['as_of'])->startOfDay(),
-                                'updated_at' => now(),
-                            ]
-                        );
-                    }
-                }
+            $leaveTypes = $leaves['data'];
+            $monthYear = now()->format('Y-m'); 
             
+            foreach($leaveTypes as $types) {
 
-            }
+                $credits = $this->employeeService->getLeaveCredits($employee_no, $types->leave_id, false);
+                $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $types->leave_id, true);
+                $currBal = $credits->filter(function($q) use ($monthYear) {
+                    return ($q->as_of ?? '') === $monthYear;
+                })->values()->pluck('balance')->first() ?? 0;
 
-            DB::commit();
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Leave credits saved successfully.',
-                'redirect' => route('hris.employee.leave-credits', ['employee_no' => $employee_no]),
-            ]);
+                $data[] = [
+                    'leave' => $types,
+                    'credits' => $credits,
+                    'latestCredits' => $latestCredits,
+                    'currentMonthBalance' => $currBal 
+                ];    
+            } 
 
-        } catch (\Exception $e) {
+            return view('admin.pages.hris.leave-credits', compact('employee_no', 'isExists', 'data'));
 
-            DB::rollBack();
-
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Error Occurred: ' . $e->getMessage(),
-            ], 500);
         }
+
+        return view('admin.pages.hris.leave-credits', compact('employee_no', 'isExists', 'data'));
+
     }
 
-    public function delete_credits(string $employee_no, string $leave_id)
+    public function fetch($employee_no, Request $request) {
+        $leave_id = $request->leave_id;
+        $monthYear = $request->as_of;
+        $credits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $leave_id, $monthYear);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $credits ?? []
+        ]);
+    }
+
+    public function save(string $employee_no, Request $request)
     {
-        
+        $payload = $request->all();
+        $as_of = $payload['as_of'] ?? null;
+        $leave_id = $payload['leave_id'] ?? null;
+
+        if (!$leave_id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Leave type is required.',
+            ], 400);
+        }
+
         DB::beginTransaction();
-        
+
         try {
+            // If action is delete
+            if (($payload['action'] ?? '') === 'delete' && $as_of) {
+                $this->deleteLeaveCreditAndRecalculate($employee_no, $leave_id, $as_of);
 
-            DB::table('employee_leave_credits')
-                ->where('leave_id', $leave_id)
-                ->where('employee_no', $employee_no)
-                ->delete();
+                DB::commit();
 
-            DB::table('employee_leave_card')
-                ->where('leave_type', $leave_id)
-                ->where('employee_no', $employee_no)
-                ->delete();
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Leave credits deleted successfully.',
+                    'redirect' => route('hris.employee.leave-credits', ['employee_no' => $employee_no]),
+                ]);
+            }
 
-            DB::commit();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Leave credits saved successfully.',
-                'redirect' => route('hris.employee.leave-credits', ['employee_no' => $employee_no]),
+            // Validate input
+            $validator = Validator::make($payload, [
+                'as_of' => [
+                    'required',
+                    'date_format:Y-m',
+                    function ($attribute, $value, $fail) {
+                        if (Carbon::createFromFormat('Y-m', $value)->startOfMonth()->lt(now()->startOfMonth())) {
+                            $fail('The :attribute must be the current month or a future month.');
+                        }
+                    }
+                ],
+                'earned'    => 'nullable|numeric',
+                'deduction' => 'nullable|numeric',
+                'remarks'   => 'nullable|string',
+                'leave_id'  => 'required|integer|exists:leaves,id',
             ]);
 
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Error Occurred: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function generateLeaveCard($payload)
-    {
-        $leave_id    = $payload['leave_id'];
-        $employee_no = $payload['employee_no'];
-        $asOf        = Carbon::parse($payload['as_of'])->startOfMonth();
-        $defaultEarned = 1.25;
-
-        // Get the latest leave card for this employee and leave type
-        $latest = DB::table('employee_leave_card')
-            ->where('leave_type', $leave_id)
-            ->where('employee_no', $employee_no)
-            ->orderBy('year', 'desc')
-            ->orderByRaw("FIELD(period, 'january','february','march','april','may','june','july','august','september','october','november','december') DESC")
-            ->first();
-
-        if ($latest) {
-            $balance = (float) $latest->balance;
-
-            // Start from the next month after the latest record
-            if (strtolower($latest->period) === 'december') {
-                $startDate = Carbon::create($latest->year + 1, 1, 1)->startOfMonth();
-            } else {
-                $startDate = Carbon::parse($latest->year . ' ' . ucfirst($latest->period))->addMonth()->startOfMonth();
-            }
-            $earned = $defaultEarned; // All earned values are 1.25 for existing data
-        } else {
-            // No existing data: start from asOf
-            $balance = 0;
-            $startDate = $asOf;
-            $earned = $payload['amount']; // First earned is payload amount
-        }
-
-        // End date: December of the start year
-        $end = Carbon::create($startDate->year, 12, 31)->endOfMonth();
-
-        for ($date = $startDate->copy(); $date->lte($end); $date->addMonth()) {
-            $year   = $date->format('Y');
-            $period = strtolower($date->format('F'));
-
-            // For first iteration after no data, use $payload['amount'], then switch to 1.25
-            if (!$latest && $balance === 0) {
-                $balance = $earned; // first month
-            } else {
-                $balance += $earned; // subsequent months
+            if ($validator->fails()) {
+                throw new ValidationException($validator);
             }
 
-            DB::table('employee_leave_card')->updateOrInsert(
+            // Get current month credits for this leave type
+            $credits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $leave_id, $as_of);
+            $previous_balance = (float) ($credits['previous_balance'] ?? 0);
+            $earned = (float) ($request->earned ?? 0);
+            $deduction = (float) ($request->deduction ?? 0);
+            $balance = $previous_balance + $earned - $deduction;
+
+            // Save or update current month credit for this leave type
+            DB::table('leave_credits')->updateOrInsert(
                 [
-                    'leave_type' => $leave_id,
                     'employee_no' => $employee_no,
-                    'year' => $year,
-                    'period' => $period
+                    'leave_id'    => $leave_id,
+                    'as_of'       => $as_of,
                 ],
                 [
-                    'earned'    => $earned,
-                    'deduction' => 0,
-                    'balance'   => $balance
+                    'previous'   => $previous_balance,
+                    'earned'     => $earned,
+                    'deducted'   => $deduction,
+                    'balance'    => $balance,
+                    'remarks'    => $request->remarks,
+                    'updated_at' => now(),
+                    'created_at' => now(),
                 ]
             );
 
-            // After first month, earned is always 1.25
-            $earned = $defaultEarned;
+            // Recalculate future credits for this leave type only
+            $this->recalculateFutureCredits($employee_no, $leave_id, $as_of, $balance);
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Leave credits saved successfully.',
+                'redirect' => route('hris.employee.leave-credits', ['employee_no' => $employee_no]),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Error Occurred: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
-    public function leave_card(Request $request, string $employee_no, string $leave_id)
+    /**
+     * Delete a credit and recalculate future balances for a specific leave type
+     */
+    protected function deleteLeaveCreditAndRecalculate(string $employee_no, int $leave_id, string $as_of)
     {
-        $isExists= $this->employeeService->checkIfEmployeeExists($employee_no);
-
-        if(!is_null($employee_no) && !$isExists) {
-            return redirect()->route('hris.employee.information');
-        }
-
-        $isEdit = false;
-        $id = null;
-        $data = $this->employeeService->getEmployee('leave-card', $employee_no, $leave_id) ?? [];
-
-        $data = $this->formatLeaveCard($data);
-
-        return view('admin.pages.hris.leave-card', compact('isEdit', 'id', 'data', 'employee_no', 'leave_id'));
-    }
-
-    public function add_year(string $employee_no, int $leave_id) {
-
-        $payload = [
-            'employee_no' => $employee_no,
-            'leave_id' => $leave_id,
-            'as_of' => '',
-        ];        
-        $this->generateLeaveCard($payload);
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Year Added.',
-            'redirect' => route('hris.employee.leave-card', ['employee_no' => $employee_no, 'leave_id' => $leave_id]),
-        ]);
-
-    }
-
-    public function remove_year(Request $request, $employee_no, $leave_id)
-    {
-
-        $year = $request->year;
-
-        DB::table('employee_leave_card')
+        DB::table('leave_credits')
             ->where('employee_no', $employee_no)
-            ->where('leave_type', $leave_id)
-            ->where('year', $year)
+            ->where('leave_id', $leave_id)
+            ->where('as_of', $as_of)
             ->delete();
 
-        $remaining = DB::table('employee_leave_card')
+        $runningBalance = DB::table('leave_credits')
             ->where('employee_no', $employee_no)
-            ->where('leave_type', $leave_id)
-            ->where('year', $year)
-            ->count();
+            ->where('leave_id', $leave_id)
+            ->where('as_of', '<', $as_of)
+            ->orderByDesc('as_of')
+            ->value('balance') ?? 0;
 
-        if ($remaining < 1) {
-           DB::table('employee_leave_credits')
-                ->where('employee_no', $employee_no)
-                ->delete();
+        $this->recalculateFutureCredits($employee_no, $leave_id, $as_of, $runningBalance);
+    }
+
+    /**
+     * Recalculate balances for all future credits of a specific leave type
+     */
+    protected function recalculateFutureCredits(string $employee_no, int $leave_id, string $as_of, float $startingBalance)
+    {
+        $futureCredits = DB::table('leave_credits')
+            ->where('employee_no', $employee_no)
+            ->where('leave_id', $leave_id)
+            ->where('as_of', '>', $as_of)
+            ->orderBy('as_of')
+            ->get();
+
+        $runningBalance = $startingBalance;
+
+        foreach ($futureCredits as $credit) {
+            $newBalance = $runningBalance + $credit->earned - $credit->deducted;
+
+            DB::table('leave_credits')
+                ->where('id', $credit->id)
+                ->update([
+                    'previous'   => $runningBalance,
+                    'balance'    => $newBalance,
+                    'updated_at' => now(),
+                ]);
+
+            $runningBalance = $newBalance;
         }
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Year Removed.',
-            'redirect' => route('hris.employee.leave-card', ['employee_no' => $employee_no, 'leave_id' => $leave_id]),
-        ]);
+        session()->flash('active_leave_id', $leave_id);
     }
 
-    public function save_changes(Request $request, string $employee_no, int $leave_id) {
 
-        $records = $request->input('records', []);
 
-        foreach ($records as $year => $months) {
-            foreach ($months as $month => $data) {
-           
-                DB::table('employee_leave_card')->updateOrInsert(
-                    [
-                        'leave_type' => $leave_id,
-                        'employee_no' => $employee_no,
-                        'year' => $year,
-                        'period' => strtolower($month),
-                    ],
-                    [
-                        'particulars' => $data['particulars'] ?? null,
-                        'earned'      => (float) ($data['earned'] ?? 0),
-                        'deduction'   => (float) ($data['deduction'] ?? 0),
-                        'balance'     => (float) ($data['balance'] ?? 0),
-                        'remarks'     => $data['remarks'] ?? null,
-                    ]
-                );
-            }
-        }
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Changes Saved.',
-            'redirect' => '',
-        ]);
-    }
-
-    private function formatLeaveCard(object $data) {
-
-        $monthsOrder = [
-            'january', 'february', 'march', 'april', 'may', 'june',
-            'july', 'august', 'september', 'october', 'november', 'december'
-        ];
-        
-
-        $grouped = $data
-            ->groupBy('year')
-            ->map(function ($items) use ($monthsOrder) {
-                return $items
-                    ->sortBy(function ($item) use ($monthsOrder) {
-                        return array_search(strtolower($item->period), $monthsOrder);
-                    })
-                    ->groupBy('period');
-            });
-
-        return $grouped;
-
-    }
-    
 
 }

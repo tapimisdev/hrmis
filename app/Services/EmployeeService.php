@@ -424,5 +424,44 @@ class EmployeeService {
         ];
     }
 
+    ###################################################################################
+    # leave
+
+    public function getLeaveCredits(string $employee_no, int $leave_id, bool $isLatest = false) {
+        
+        $data = DB::table('leave_credits')
+            ->where('leave_id', $leave_id)
+            ->where('employee_no', $employee_no)
+            ->orderByDesc('as_of');  
+
+        if($isLatest) {
+            return $data->first();
+        }
+
+        return $data->get();
+
+    }
+
+    public function getLeaveCreditsByMonthYear(string $employee_no, int $leave_id, string $monthYear)
+    {
+        $current = DB::table('leave_credits')
+            ->where('leave_id', $leave_id)
+            ->where('employee_no', $employee_no)
+            ->where('as_of', $monthYear)
+            ->first();
+
+        $previousBalance = DB::table('leave_credits')
+            ->where('leave_id', $leave_id)
+            ->where('employee_no', $employee_no)
+            ->where('as_of', '<', $monthYear)
+            ->orderBy('as_of', 'desc')
+            ->value('balance'); 
+
+        return [
+            'current' => $current,
+            'previous_balance' => $previousBalance ?? 0
+        ];
+    }
+
 
 }

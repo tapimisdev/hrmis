@@ -133,7 +133,7 @@
                                 <div class="error-field"></div>
                             </div>
                              <div class="col-12 mb-3">
-                                <input type="text" name="action" id="action" value="">
+                                <input type="hidden" name="action" id="action" value="">
                                 <div class="error-field"></div>
                             </div>
                         </div>
@@ -150,7 +150,6 @@
             </form>
         </div>
     </div>
-
 
 @endsection
 

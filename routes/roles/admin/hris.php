@@ -128,29 +128,36 @@ Route::prefix('hris')->group(function() {
         ->name('hris.employee.account');
 
     # LEAVE CREDITS
-    Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'leave_credits'])
-        ->name('hris.employee.leave-credits');
-    Route::put('employee/leave-credits/{employee_no}/{leave_id?}', [LeaveCreditController::class, 'save_credits'])
-        ->name('hris.employee.leave-credits');
-    Route::delete('employee/leave-credits/{employee_no}/{leave_id?}', [LeaveCreditController::class, 'delete_credits'])
-        ->name('hris.employee.leave-credits');
+    // Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'leave_credits'])
+    //     ->name('hris.employee.leave-credits');
+    // Route::put('employee/leave-credits/{employee_no}/{leave_id?}', [LeaveCreditController::class, 'save'])
+    //     ->name('hris.employee.leave-credits');
+    // Route::delete('employee/leave-credits/{employee_no}/{leave_id?}', [LeaveCreditController::class, 'delete_credits'])
+    //     ->name('hris.employee.leave-credits');
 
     # LEAVE CREDITS
-    Route::get('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'leave_card'])
-        ->name('hris.employee.leave-card');
-    Route::put('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'add_year'])
-        ->name('hris.employee.leave-card.add_year');
-    Route::put('employee/leave-card/{employee_no}/{leave_id}/{year}/remove', [LeaveCreditController::class, 'remove_year'])
-        ->name('hris.employee.leave-card.remove_year');
-    Route::put('employee/leave-card/{employee_no}/{leave_id}/save', [LeaveCreditController::class, 'save_changes'])
-        ->name('hris.employee.leave-card.save');
+    // Route::get('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'leave_card'])
+    //     ->name('hris.employee.leave-card');
+    // Route::put('employee/leave-card/{employee_no}/{leave_id}', [LeaveCreditController::class, 'add_year'])
+    //     ->name('hris.employee.leave-card.add_year');
+    // Route::put('employee/leave-card/{employee_no}/{leave_id}/{year}/remove', [LeaveCreditController::class, 'remove_year'])
+    //     ->name('hris.employee.leave-card.remove_year');
+    // Route::put('employee/leave-card/{employee_no}/{leave_id}/save', [LeaveCreditController::class, 'save_changes'])
+    //     ->name('hris.employee.leave-card.save');
+
+    Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'index'])
+        ->name('hris.employee.leave-credits');
+    Route::get('employee/leave-credits/{employee_no}/fetch', [LeaveCreditController::class, 'fetch'])
+        ->name('hris.employee.leave-credits.fetch');
+    Route::put('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'save'])
+        ->name('hris.employee.leave-credits.save');
 
     # OFFSET CREDITS
-    Route::get('employee/offset/{employee_no}', [OffsetCreditsController::class, 'index'])
+    Route::get('employee/offset-credits/{employee_no}', [OffsetCreditsController::class, 'index'])
         ->name('hris.employee.offset-credits');
-    Route::get('employee/offset/{employee_no}/fetch', [OffsetCreditsController::class, 'fetch'])
+    Route::get('employee/offset-credits/{employee_no}/fetch', [OffsetCreditsController::class, 'fetch'])
         ->name('hris.employee.offset-credits.fetch');
-    Route::put('employee/offset/{employee_no}', [OffsetCreditsController::class, 'save'])
+    Route::put('employee/offset-credits/{employee_no}', [OffsetCreditsController::class, 'save'])
         ->name('hris.employee.offset-credits.save');
 
 
