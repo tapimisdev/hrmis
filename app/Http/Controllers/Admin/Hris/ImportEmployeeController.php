@@ -176,7 +176,7 @@ class ImportEmployeeController extends Controller
     {
         $validatedData = $request->validated();
 
-        $default_password = 'iamdostemployee';
+        $default_password = 'onedost';
 
         DB::beginTransaction();
         try {
