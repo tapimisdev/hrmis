@@ -98,32 +98,32 @@ class ImportEmployeeController extends Controller
                 $date_hired_organization = $this->excelDateOnly($assoc['date_hired']);
 
                 if ($validatedData['auto_generate_empno'] === 'yes') {
-                    // Start with the first generated employee number
+
+                    // Initial employee number
                     $employeeNo = $this->generateEmployeeNo($date_hired_company);
 
-                    // Increment until it's unique (DB + batch)
                     while (
                         in_array($employeeNo, $generatedEmployeeNos) ||
                         DB::table('employee_information')->where('employee_no', $employeeNo)->exists()
                     ) {
-                        // Safely extract year, semester, and sequence
-                        if (preg_match('/(\d+)-(\d+)-(\d+)/', $employeeNo, $matches)) {
-                            $year = $matches[1];
+
+                        // Match YYYYSS-XX
+                        if (preg_match('/(\d{4})(\d{1})-(\d+)/', $employeeNo, $matches)) {
+                            $year     = $matches[1];
                             $semester = $matches[2];
-                            $sequence = isset($matches[3]) ? (int)$matches[3] + 1 : 1;
+                            $sequence = (int) $matches[3] + 1;
                         } else {
-                            // fallback if format is unexpected
-                            $year = date('Y');
+                            // fallback
+                            $year     = date('Y');
                             $semester = 1;
                             $sequence = 1;
                         }
 
-                        // 2-digit sequence
-                        $employeeNo = "{$year}-{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
+                        // Rebuild as YYYYSS-XX
+                        $employeeNo = "{$year}{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
                     }
 
-
-                    // Save to batch to prevent duplicates in this upload
+                    // Prevent duplicates within the same upload
                     $generatedEmployeeNos[] = $employeeNo;
                     $assoc['employee_no'] = $employeeNo;
                 }
@@ -345,7 +345,7 @@ class ImportEmployeeController extends Controller
                 }
 
                 // Use 2-digit padding
-                $employeeNo = "{$year}-{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
+                $employeeNo = "{$year}{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
 
             } while (
                 DB::table('employee_information')->where('employee_no', $employeeNo)->exists()

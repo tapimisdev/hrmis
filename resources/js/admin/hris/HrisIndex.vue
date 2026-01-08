@@ -97,6 +97,7 @@ export default {
 
             divisions: [],
             units: [],
+            employment_types: [],
 
             table: null,
             token: localStorage.getItem("auth_token"),
