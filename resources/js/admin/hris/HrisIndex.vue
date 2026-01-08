@@ -2,7 +2,27 @@
     <div>
         <!-- Filters -->
         <div class="row mb-3">
-            <div class="col-12 col-md-4 mb-3">
+            <!-- Employment Type -->
+            <div class="col-12 col-md-3 mb-3">
+                <label class="mb-3 text-body">Filter By Employment Type</label>
+                <select
+                    v-model="employment_type"
+                    class="form-select text-uppercase"
+                    @change="onFilterChange"
+                >
+                    <option value="">- CHOOSE -</option>
+                    <option
+                        v-for="e in employment_types"
+                        :key="e.id"
+                        :value="e.id"
+                    >
+                        {{ e.name.toUpperCase() }}
+                    </option>
+                </select>
+            </div>
+
+            <!-- Division -->
+            <div class="col-12 col-md-3 mb-3">
                 <label class="mb-3 text-body">Filter By Divisions</label>
                 <select
                     v-model="division"
@@ -16,7 +36,8 @@
                 </select>
             </div>
 
-            <div class="col-12 col-md-4 mb-3">
+            <!-- Unit -->
+            <div class="col-12 col-md-3 mb-3">
                 <label class="mb-3 text-body">Filter By Units</label>
                 <select
                     v-model="unit"
@@ -30,6 +51,7 @@
                 </select>
             </div>
 
+            <!-- Account Status -->
             <div class="col-12 col-md-3 mb-3">
                 <label class="mb-3 text-body">Filter By Account Status</label>
                 <select
@@ -65,20 +87,24 @@ import axios from "axios";
 
 export default {
     name: "HRISIndex",
+
     props: {
         url: {
             type: String,
             required: true,
         },
     },
+
     data() {
         return {
             division: "",
             unit: "",
+            employment_type: "",
             account_status: "active",
 
             divisions: [],
             units: [],
+            employment_types: [],
 
             table: null,
             token: localStorage.getItem("auth_token"),
@@ -88,10 +114,11 @@ export default {
     mounted() {
         this.initTable();
         this.loadDivisions();
+        this.loadEmploymentTypes();
     },
 
     methods: {
-        /** ===============================
+        /* ===============================
          * DataTable Initialization
          * =============================== */
         initTable() {
@@ -104,6 +131,7 @@ export default {
                         d.account_status = this.account_status;
                         d.division = this.division;
                         d.unit = this.unit;
+                        d.employment_type = this.employment_type;
                     },
                 },
                 columns: [
@@ -134,27 +162,36 @@ export default {
             this.reloadTable();
         },
 
-        /** ===============================
+        /* ===============================
          * API Calls
          * =============================== */
         async loadDivisions() {
-            const { data } = await axios.get("/api/divisions", {
+            const response = await axios.get("/api/divisions", {
                 headers: { Authorization: `Bearer ${this.token}` },
             });
-            this.divisions = data;
+
+            this.divisions = response.data.data;
         },
 
         async loadUnits(divisionId) {
             if (!divisionId) return;
 
-            const { data } = await axios.get(`/api/units/${divisionId}`, {
+            const response = await axios.get(`/api/units/${divisionId}`, {
                 headers: { Authorization: `Bearer ${this.token}` },
             });
 
-            this.units = data;
+            this.units = response.data.data;
         },
 
-        /** ===============================
+        async loadEmploymentTypes() {
+            const response = await axios.get("/api/employment-types", {
+                headers: { Authorization: `Bearer ${this.token}` },
+            });
+
+            this.employment_types = response.data.data;
+        },
+
+        /* ===============================
          * Download Handler
          * =============================== */
         async downloadPDS(e) {
@@ -168,11 +205,10 @@ export default {
             const blobUrl = window.URL.createObjectURL(
                 new Blob([response.data])
             );
-            const a = document.createElement("a");
 
+            const a = document.createElement("a");
             a.href = blobUrl;
             a.download = "pds.xlsx";
-
             document.body.appendChild(a);
             a.click();
             a.remove();

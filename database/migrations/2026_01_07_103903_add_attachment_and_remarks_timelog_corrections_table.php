@@ -31,12 +31,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('timelog_corrections', function (Blueprint $table) {
-            $table->dropColumn(['date', 'attachment', 'status', 'remarks']);
+            // Restore old column first
+            $table->boolean('is_approved')->default(false);
         });
 
-        // Restore old column
         Schema::table('timelog_corrections', function (Blueprint $table) {
-            $table->boolean('is_approved')->default(false)->after('status');
+            // Now drop the new columns safely
+            $table->dropColumn(['date', 'attachment', 'status', 'remarks']);
         });
     }
 };
