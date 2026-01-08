@@ -13,6 +13,9 @@
         {{-- HRIS --}}
         @include('admin.components.sidebar.items.hris')
 
+        {{-- Users --}}
+        @include('admin.components.sidebar.items.users')
+
         {{-- Timekeeping --}}
         @include('admin.components.sidebar.items.timekeeping')
 

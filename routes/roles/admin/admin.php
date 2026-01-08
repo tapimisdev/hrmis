@@ -16,5 +16,6 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     require __DIR__ . '/reports.php';
     require __DIR__ . '/maintenance.php';
     require __DIR__ . '/deductions.php';
+    require __DIR__ . '/users.php';
 
 });
