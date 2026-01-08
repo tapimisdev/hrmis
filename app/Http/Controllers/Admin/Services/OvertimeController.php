@@ -20,89 +20,82 @@ class OvertimeController extends Controller {
 
     public function getRawData(?int $id = null)
     {
-        // Fetch main leave applications
-        $applications = DB::table('overtime_applications as ota')
-            ->leftJoin('employee_personal as p', 'ota.employee_no', '=', 'p.employee_no')
-            ->leftJoin('leaves as l', 'ota.overtime_id', '=', 'l.id')
-            ->leftJoin('overtime_dates as ld', 'ld.overtime_approvals_id', '=', 'ota.id')
+        /*
+        |--------------------------------------------------------------------------
+        | Main Overtime Applications
+        |--------------------------------------------------------------------------
+        */
+        $applications = DB::table('overtime_applications as oa')
+            ->leftJoin('employee_personal as p', 'oa.employee_no', '=', 'p.employee_no')
             ->select(
+                'oa.id',
+                'oa.application_no',
+                'oa.user_id',
+                'oa.employee_no',
+                'oa.date',
+                'oa.start_time',
+                'oa.end_time',
+                'oa.total_hours',
+                'oa.reason',
+                'oa.status',
+                'oa.remarks',
+                'oa.approved_at',
+                'oa.created_at',
+                'oa.updated_at',
                 'p.firstname',
-                'p.otastname',
-                'ota.id',
-                'ota.name',
-                'ota.user_id',
-                'ota.employee_no',
-                'ota.overtime_id',
-                'ota.days',
-                'ota.reason',
-                'ota.status',
-                'ota.created_at',
-                'ota.updated_at',
-                'l.name as overtime_name',
-                DB::raw('GROUP_CONCAT(DISTINCT ld.date ORDER BY ld.date ASC) as dates')
+                'p.lastname'
             )
-            ->when($id, fn($query) => $query->where('ota.id', $id))
-            ->groupBy(
-                'ota.id',
-                'ota.name',
-                'ota.user_id',
-                'ota.employee_no',
-                'ota.overtime_id',
-                'ota.days',
-                'ota.reason',
-                'ota.status',
-                'ota.created_at',
-                'ota.updated_at',
-                'l.name',
-                'p.employee_no',
-                'p.firstname',
-                'p.otastname',
-            )
-            ->orderByDesc('ota.created_at')
+            ->when($id, fn ($q) => $q->where('oa.id', $id))
+            ->orderByDesc('oa.created_at')
             ->get();
 
-        // Fetch attachments
-        $attachments = DB::table('overtime_attachments')
-            ->select('overtime_approvals_id', 'file_name', 'file_path', 'file_type')
-            ->whereIn('overtime_approvals_id', $applications->pluck('id'))
-            ->get()
-            ->groupBy('overtime_approvals_id');
+        if ($applications->isEmpty()) {
+            return collect();
+        }
 
+        $applicationIds = $applications->pluck('id');
 
-        // Group approvals by application and level
-        $approvalsRaw = DB::table('overtime_approvals')
-            ->join('employee_information', 'overtime_approvals.user_id', '=', 'employee_information.user_id')
-            ->join('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
-            ->select([
-                'overtime_approvals.status',
-                'overtime_approvals.overtime_approvals_id',
-                'overtime_approvals.user_id',
-                'overtime_approvals.level',
-                'employee_information.employee_no',
-                'employee_personal.firstname',
-                'employee_personal.otastname',
-            ])
-            ->whereIn('overtime_approvals.overtime_approvals_id', $applications->pluck('id'))
+        /*
+        |--------------------------------------------------------------------------
+        | Approvals
+        |--------------------------------------------------------------------------
+        */
+        $approvalsRaw = DB::table('overtime_approvals as oa')
+            ->join('employee_information as ei', 'oa.user_id', '=', 'ei.user_id')
+            ->join('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->select(
+                'oa.overtime_applications_id',
+                'oa.user_id',
+                'oa.level',
+                'oa.status',
+                'ep.firstname',
+                'ep.lastname'
+            )
+            ->whereIn('oa.overtime_applications_id', $applicationIds)
             ->get();
 
-        $groupedArray = $approvalsRaw
+        /*
+        |--------------------------------------------------------------------------
+        | Group approvals by level (UI)
+        |--------------------------------------------------------------------------
+        */
+        $groupedApprovals = $approvalsRaw
             ->groupBy('level')
-            ->map(function ($items) {
-                return $items->unique('user_id')->values();
-            })
+            ->map(fn ($items) => $items->unique('user_id')->values())
             ->sortKeys()
             ->toArray();
 
-        // Combine all data into results
-        $results = $applications->map(function ($item) use ($attachments, $groupedArray) {
-            $item->dates = $item->dates ? explode(',', $item->dates) : [];
-            $item->attachments = $attachments->get($item->id)?->values() ?? [];
-            $item->approvals = $groupedArray;
+        /*
+        |--------------------------------------------------------------------------
+        | Merge Data
+        |--------------------------------------------------------------------------
+        */
+        return $applications->map(function ($item) use ($groupedApprovals) {
+            $item->approvals = $groupedApprovals;
             return $item;
         });
-
-        return $results;
     }
+
 
     public function index() {
 
@@ -165,7 +158,7 @@ class OvertimeController extends Controller {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Leave application has been approved!',
-                'redirect' => route('services.overtimes.show', ['application' => $id])
+                'redirect' => route('services.overtime.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -194,7 +187,7 @@ class OvertimeController extends Controller {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Leave application has been rejected!',
-                'redirect' => route('services.overtimes.show', ['application' => $id])
+                'redirect' => route('services.overtime.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -208,43 +201,59 @@ class OvertimeController extends Controller {
     {
         return DataTables::of($query)
             ->addIndexColumn()
-            ->editColumn('employee_no', function($row) {
+
+            ->editColumn('employee_no', function ($row) {
                 return $row->employee_no;
             })
-            ->editColumn('name', function($row) {
-                return $row->firstname . ' ' . $row->otastname;
+
+            ->editColumn('name', function ($row) {
+                return trim($row->firstname . ' ' . $row->lastname);
             })
-            ->editColumn('type', function($row) {
-                return $row->name;  
-            })
-            ->editColumn('dates', function ($row) {
-                return formatDateRanges($row->dates);
-            })
+            ->editColumn('date_time', function ($row) {
+                    if (!$row->date) {
+                        return '';
+                    }
+
+                    $date = \Carbon\Carbon::parse($row->date)->format('M d, Y');
+
+                    $time = '';
+                    if ($row->start_time && $row->end_time) {
+                        $time = \Carbon\Carbon::parse($row->start_time)->format('h:i A')
+                            . ' ~ '
+                            . \Carbon\Carbon::parse($row->end_time)->format('h:i A');
+                    }
+
+                    return trim($date . ' ( ' . $time . ') ');
+                })
             ->editColumn('status', function ($row) {
                 $status = strtolower($row->status);
 
-                $badgeCotass = match ($status) {
+                $badgeClass = match ($status) {
                     'pending'   => 'warning',
                     'approved'  => 'success',
                     'rejected'  => 'dark',
                     'cancelled' => 'danger',
-                    default     => 'info',
+                    default     => 'secondary',
                 };
 
-                return '<span cotass="badge rounded-pill bg-' . $badgeCotass . '">' . ucfirst($status) . '</span>';
+                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' 
+                    . ucfirst($status) . 
+                '</span>';
             })
+
             ->addColumn('actions', function ($row) {
                 return '
-                    <div cotass="d-block d-md-flex gap-2 justify-content-start">
-                        <a href="'.route('services.overtimes.show', ['application' => $row->id]).'" 
-                            cotass="btn btn-primary btn show-button ms-1 my-1" 
-                            title="Show">
-                            <i cotass="fa-solid fa-eye"></i>
+                    <div class="d-flex gap-2">
+                        <a href="' . route('services.pass_slip.show', ['application' => $row->id]) . '"
+                        class="btn btn-primary btn-sm"
+                        title="View">
+                            <i class="fa-solid fa-eye"></i>
                         </a>
                     </div>
                 ';
             })
-            ->rawColumns(['actions', 'status'])
+
+            ->rawColumns(['status', 'actions'])
             ->make(true);
     }
 

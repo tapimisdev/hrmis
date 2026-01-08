@@ -13,6 +13,11 @@ return [
         'apply',
     ],
 
+    'offset_application' => [
+        'view',
+        'apply'
+    ],
+
     'pass_slip_application' => [
         'view',
         'apply',

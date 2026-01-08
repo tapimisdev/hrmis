@@ -16,7 +16,11 @@ class ApplicationController extends Controller
     {
         $user_id = Auth::id();
 
-        // Map configuration for each application type
+        /*
+        |--------------------------------------------------------------------------
+        | Configuration per application type
+        |--------------------------------------------------------------------------
+        */
         $config = [
             'leave' => [
                 'table' => 'leave_applications',
@@ -30,13 +34,13 @@ class ApplicationController extends Controller
                 'select_extra' => [
                     'join' => [
                         ['leaves as l', 'la.leave_id', '=', 'l.id'],
-                        ['leave_dates as ld', 'ld.leave_application_id', '=', 'la.id']
+                        ['leave_dates as ld', 'ld.leave_application_id', '=', 'la.id'],
                     ],
                     'columns' => [
                         'la.*',
                         'l.name as leave_name',
                         DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates'),
-                        DB::raw("MAX(CONCAT(ep.firstname, ' ', ep.lastname)) as employee_name")
+                        DB::raw("MAX(CONCAT(ep.firstname, ' ', ep.lastname)) as employee_name"),
                     ],
                     'groupBy' => [
                         'la.id',
@@ -49,9 +53,9 @@ class ApplicationController extends Controller
                         'la.reason',
                         'la.status',
                         'la.created_at',
-                        'la.updated_at'
-                    ]
-                ]
+                        'la.updated_at',
+                    ],
+                ],
             ],
             'obs' => [
                 'table' => 'obs_applications',
@@ -65,9 +69,9 @@ class ApplicationController extends Controller
                 'select_extra' => [
                     'columns' => [
                         'ob.*',
-                        DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name")
-                    ]
-                ]
+                        DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name"),
+                    ],
+                ],
             ],
             'overtime' => [
                 'table' => 'overtime_applications',
@@ -81,10 +85,40 @@ class ApplicationController extends Controller
                 'select_extra' => [
                     'columns' => [
                         'ot.*',
-                        DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name")
-                    ]
-                ]
+                        DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name"),
+                    ],
+                ],
             ],
+            'offset' => [
+                'table' => 'offset_applications',
+                'alias' => 'of',
+                'id_col' => 'id',
+                'user_col' => 'user_id',
+                'attachment_table' => 'offset_attachments',
+                'attachment_fk' => 'offset_application_id',
+                'approval_table' => 'offset_approvals',
+                'approval_fk' => 'offset_application_id',
+                'select_extra' => [
+                    'join' => [
+                        ['offset_dates as od', 'od.offset_application_id', '=', 'of.id'],
+                    ],
+                    'columns' => [
+                        'of.*',
+                        DB::raw('GROUP_CONCAT(DISTINCT od.date) as dates'),
+                        DB::raw("MAX(CONCAT(ep.firstname, ' ', ep.lastname)) as employee_name"),
+                    ],
+                    'groupBy' => [
+                        'of.id',
+                        'of.user_id',
+                        'of.employee_no',
+                        'of.reason',
+                        'of.status',
+                        'of.created_at',
+                        'of.updated_at',
+                    ],
+                ],
+            ],
+
         ];
 
         if (!isset($config[$type])) {
@@ -93,27 +127,39 @@ class ApplicationController extends Controller
 
         $cfg = $config[$type];
 
-        // --- Fetch main applications ---
+        /*
+        |--------------------------------------------------------------------------
+        | Ensure select_extra exists (FIX FOR OFFSET)
+        |--------------------------------------------------------------------------
+        */
+        $cfg['select_extra'] = array_merge([
+            'join'    => [],
+            'columns' => [
+                "{$cfg['alias']}.*",
+                DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name"),
+            ],
+            'groupBy' => [],
+        ], $cfg['select_extra'] ?? []);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fetch main applications
+        |--------------------------------------------------------------------------
+        */
         $applications = DB::table("{$cfg['table']} as {$cfg['alias']}")
             ->leftJoin('employee_information as ei', 'ei.employee_no', '=', "{$cfg['alias']}.employee_no")
             ->leftJoin('employee_personal as ep', 'ep.employee_no', '=', 'ei.employee_no');
 
-        // Apply additional joins if defined
-        if (!empty($cfg['select_extra']['join'])) {
-            foreach ($cfg['select_extra']['join'] as $join) {
-                $applications->leftJoin(...$join);
-            }
+        foreach ($cfg['select_extra']['join'] as $join) {
+            $applications->leftJoin(...$join);
         }
 
-        // Apply select
-        $applications->select(...($cfg['select_extra']['columns'] ?? ["{$cfg['alias']}.*"]));
-
-        // Apply user and id filters
-        $applications->where("{$cfg['alias']}.{$cfg['user_col']}", $user_id)
-            ->when($id, fn($query, $id) => $query->where("{$cfg['alias']}.{$cfg['id_col']}", $id))
+        $applications
+            ->select(...$cfg['select_extra']['columns'])
+            ->where("{$cfg['alias']}.{$cfg['user_col']}", $user_id)
+            ->when($id, fn ($q) => $q->where("{$cfg['alias']}.{$cfg['id_col']}", $id))
             ->orderBy("{$cfg['alias']}.created_at", 'desc');
 
-        // Group by for leave
         if (!empty($cfg['select_extra']['groupBy'])) {
             $applications->groupBy($cfg['select_extra']['groupBy']);
         }
@@ -125,7 +171,11 @@ class ApplicationController extends Controller
             return collect();
         }
 
-        // --- Fetch attachments (if applicable) ---
+        /*
+        |--------------------------------------------------------------------------
+        | Attachments
+        |--------------------------------------------------------------------------
+        */
         $attachments = collect();
         if ($cfg['attachment_table']) {
             $attachments = DB::table($cfg['attachment_table'])
@@ -135,7 +185,11 @@ class ApplicationController extends Controller
                 ->groupBy($cfg['attachment_fk']);
         }
 
-        // --- Fetch approvals ---
+        /*
+        |--------------------------------------------------------------------------
+        | Approvals
+        |--------------------------------------------------------------------------
+        */
         $approvalsRaw = DB::table("{$cfg['approval_table']} as a")
             ->join('employee_information as ei', 'a.user_id', '=', 'ei.user_id')
             ->join('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
@@ -151,7 +205,6 @@ class ApplicationController extends Controller
             ->whereIn("a.{$cfg['approval_fk']}", $applicationIds)
             ->get();
 
-        // Level approvals (status summary per level per application)
         $levelApprovals = DB::table($cfg['approval_table'])
             ->select($cfg['approval_fk'], 'level', 'status')
             ->whereIn($cfg['approval_fk'], $applicationIds)
@@ -169,41 +222,45 @@ class ApplicationController extends Controller
                 });
             });
 
-        // Group approvals by level across all applications (for display)
-        $groupedArray = $approvalsRaw
+        $groupedApprovals = $approvalsRaw
             ->groupBy('level')
-            ->map(fn($items) => $items->unique('user_id')->values())
+            ->map(fn ($items) => $items->unique('user_id')->values())
             ->sortKeys()
             ->toArray();
 
-        // --- Merge all data ---
-        $results = $applications->map(function ($item) use ($cfg, $attachments, $groupedArray, $levelApprovals) {
+        /*
+        |--------------------------------------------------------------------------
+        | Merge Data
+        |--------------------------------------------------------------------------
+        */
+        return $applications->map(function ($item) use ($cfg, $attachments, $groupedApprovals, $levelApprovals) {
             if (isset($item->dates) && is_string($item->dates)) {
                 $item->dates = explode(',', $item->dates);
             }
+
             if ($cfg['attachment_table']) {
                 $item->attachments = $attachments->get($item->id)?->values() ?? [];
             }
-            $item->approvals = $groupedArray;
+
+            $item->approvals = $groupedApprovals;
             $item->level_approvals = $levelApprovals->get($item->id)?->toArray() ?? [];
+
             return $item;
         });
-
-        return $results;
     }
+
 
     public function getData(string $type)
     {
         $user = Auth::user()->load('employeeInformation');
-        $employee_no = $user->employeeInformation->employee_no ?? null;
+        $employeeNo = $user->employeeInformation->employee_no ?? null;
 
         // Get user's organization
         $organization = DB::table('employee_organization')
-            ->where('employee_no', $employee_no)
+            ->where('employee_no', $employeeNo)
             ->latest()
             ->first();
 
-        // If organization not found, return empty data safely
         if (!$organization) {
             return [
                 'leaves' => collect(),
@@ -212,7 +269,11 @@ class ApplicationController extends Controller
             ];
         }
 
-        // --- Fetch approvers based on type ---
+        /*
+        |--------------------------------------------------------------------------
+        | Approvers
+        |--------------------------------------------------------------------------
+        */
         $approvers = DB::table('application_approver as aa')
             ->leftJoin('application_approver_users as aau', 'aa.id', '=', 'aau.application_approver_id')
             ->leftJoin('users as u', 'aau.user_id', '=', 'u.id')
@@ -228,24 +289,53 @@ class ApplicationController extends Controller
             ->groupBy('level')
             ->mapWithKeys(function ($items, $level) {
                 return [
-                    $level => $items->unique('user_id')->map(fn($item) => [
-                        'id' => $item->user_id,
-                        'name' => $item->user_name,
-                    ])->values(),
+                    $level => $items
+                        ->unique('user_id')
+                        ->map(fn ($item) => [
+                            'id' => $item->user_id,
+                            'name' => $item->user_name,
+                        ])
+                        ->values(),
                 ];
             })
             ->sortKeys();
 
-        // --- Fetch leaves, holidays, suspensions ---
-        $leavesQuery = DB::table('leave_applications as la')
-            ->join('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
-            ->where('la.user_id', $user->id)
-            ->select(
-                DB::raw("'leave' as title"),
-                'la.status',
-                'ld.date'
-            );
+        /*
+        |--------------------------------------------------------------------------
+        | Applications (Leave / Offset)
+        |--------------------------------------------------------------------------
+        */
+        if ($type === 'leave') {
+            $applicationsQuery = DB::table('leave_applications as a')
+                ->join('leave_dates as d', 'a.id', '=', 'd.leave_application_id')
+                ->where('a.user_id', $user->id)
+                ->select(
+                    DB::raw("'leave' as title"),
+                    'a.status',
+                    'd.date'
+                );
 
+            $leaves = DB::table('leaves')
+                ->where('is_active', true)
+                ->get();
+        } else {
+            $applicationsQuery = DB::table('offset_applications as a')
+                ->join('offset_dates as d', 'a.id', '=', 'd.offset_application_id')
+                ->where('a.user_id', $user->id)
+                ->select(
+                    DB::raw("'offset' as title"),
+                    'a.status',
+                    'd.date'
+                );
+
+            $leaves = collect();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Holidays & Suspensions (Shared)
+        |--------------------------------------------------------------------------
+        */
         $holidaysQuery = DB::table('holidays')
             ->select(
                 'name as title',
@@ -262,21 +352,11 @@ class ApplicationController extends Controller
                 'sd.date'
             );
 
-        // Combine all using unionAll for consistent output
-        $applications = $leavesQuery
+        $applications = $applicationsQuery
             ->unionAll($holidaysQuery)
             ->unionAll($suspensionsQuery)
             ->orderBy('date')
             ->get();
-
-        // --- Optional: include leaves collection for "leave" type only ---
-        $leaves = collect();
-        
-        if ($type === 'leave') {
-            $leaves = DB::table('leaves')
-                ->where('is_active', true)
-                ->get();
-        }
 
         return [
             'leaves' => $leaves,
@@ -284,6 +364,7 @@ class ApplicationController extends Controller
             'applications' => $applications,
         ];
     }
+
 
 
 }

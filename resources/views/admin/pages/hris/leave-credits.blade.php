@@ -78,7 +78,18 @@
                                                 <td>{{ $credit->deducted }}</td>
                                                 <td>{{ $credit->balance }}</td>
                                                 <td>
-                                                    <textarea class="form-control restricted" disabled>{{ $credit->remarks }}</textarea>
+                                                    @php
+                                                        // Split remarks by newline to count actual lines
+                                                        $lines = $credit->remarks ? explode("\n", $credit->remarks) : [];
+                                                        $rows = count($lines);               // number of existing lines
+                                                        $rows = max(2, min($rows, 8));       // minimum 2 rows, maximum 8 rows
+                                                    @endphp
+
+                                                    <textarea 
+                                                        class="form-control restricted" 
+                                                        rows="{{ $rows }}" 
+                                                        readonly
+                                                    >{{ $credit->remarks }}</textarea>
                                                 </td>
                                             </tr>
                                         @empty
@@ -92,12 +103,17 @@
                                 </table>
 
                                 <div class="mt-4 mb-3">
-                                    <strong>
-                                        CURRRENT MONTH'S BALANCE:  
-                                        <span class="bg-primary rounded-2 py-2 px-3 ms-2" style="font-size: 124x;">
-                                            {{ $leaveData['currentMonthBalance'] ?? 0 }}
-                                        </span>
-                                    </strong> 
+                                    <span class="badge bg-primary text-uppercase">{{ \Carbon\Carbon::now()->format('F') }}</span>
+                                    <div>
+                                        <strong class="text-uppercase">
+                                            <span class="text-decoration-underline">
+                                                Current Balance:  
+                                            </span>
+                                            <span class="bg-{{ ($leaveData['currentMonthBalance'] ?? 0) <= 0 ? 'danger' : 'primary' }} rounded-2 py-2 px-3 ms-2" style="font-size: 1.25rem;">
+                                                {{ $leaveData['currentMonthBalance'] ?? 0 }}
+                                            </span>
+                                        </strong>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -155,7 +171,7 @@
                         </div>
                         <div class="col-12 mb-3">
                             <label class="form-label">Remarks</label>
-                            <textarea class="form-control" name="remarks" id="remarks"></textarea>
+                            <textarea class="form-control" name="remarks" id="remarks" rows="8"></textarea>
                             <div class="error-field"></div>
                         </div>
                     </div>
@@ -236,6 +252,7 @@ $(function() {
                 $('#earned').val(res.current?.earned || 0);
                 $('#deduction').val(res.current?.deducted || 0);
                 $('#balance').val(res.current?.balance || 0);
+                $('#remarks').val(res.current?.remarks || '');
 
                 updateBalance();
             },

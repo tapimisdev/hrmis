@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
-class StoreLeaveApplication extends FormRequest
+class StoreOffsetApplication extends FormRequest
 {
     public function authorize(): bool
     {
@@ -26,7 +26,6 @@ class StoreLeaveApplication extends FormRequest
     {
         return [
             'user_id'       => ['nullable', 'exists:users,id'],
-            'leave_id'      => ['required', 'exists:leaves,id'],
             'reason'        => ['required', 'string', 'max:500'],
             'selectedDates' => ['required', 'array', 'min:1'],
             'selectedDates.*.date'  => ['required', 'date'],

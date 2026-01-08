@@ -7,6 +7,7 @@ use App\Http\Controllers\Employee\AnnouncementsController;
 use App\Http\Controllers\Employee\AtroController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
+use App\Http\Controllers\Employee\OffsetApplicationController;
 use App\Http\Controllers\Employee\AtroApprovalController;
 use App\Http\Controllers\Employee\LeaveApprovalController;
 use App\Http\Controllers\Employee\ObsApprovalController;
@@ -26,6 +27,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
 
     # EMPLOYEE LEAVES, OVERTIME, AND OBS
     Route::resource('leaves', LeaveApplicationController::class)->except('edit', 'update');
+    Route::resource('offset', OffsetApplicationController::class)->except('edit', 'update');
     Route::resource('overtime', AtroController::class)->except('edit', 'update');
     Route::resource('pass-slip', ObsController::class)->except('edit', 'update')->names('obs');
 

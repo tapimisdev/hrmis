@@ -20,89 +20,104 @@ class PassSlipController extends Controller {
 
     public function getRawData(?int $id = null)
     {
-        // Fetch main leave applications
-        $applications = DB::table('pass_slip_applications as psa')
-            ->leftJoin('employee_personal as p', 'psa.employee_no', '=', 'p.employee_no')
-            ->leftJoin('leaves as l', 'psa.leave_id', '=', 'l.id')
-            ->leftJoin('leave_dates as ld', 'ld.leave_application_id', '=', 'psa.id')
+        /*
+        |--------------------------------------------------------------------------
+        | Main OBS Applications
+        |--------------------------------------------------------------------------
+        */
+        $applications = DB::table('obs_applications as oa')
+            ->leftJoin('employee_personal as p', 'oa.employee_no', '=', 'p.employee_no')
             ->select(
+                'oa.id',
+                'oa.application_no',
+                'oa.user_id',
+                'oa.employee_no',
+                'oa.date_from',
+                'oa.date_to',
+                'oa.time_out',
+                'oa.time_in',
+                'oa.destination',
+                'oa.purpose',
+                'oa.mode_of_transport',
+                'oa.estimated_expense',
+                'oa.charge_to',
+                'oa.status',
+                'oa.remarks',
+                'oa.approval_remarks',
+                'oa.approved_at',
+                'oa.created_at',
+                'oa.updated_at',
                 'p.firstname',
-                'p.psastname',
-                'psa.id',
-                'psa.name',
-                'psa.user_id',
-                'psa.employee_no',
-                'psa.leave_id',
-                'psa.days',
-                'psa.reason',
-                'psa.status',
-                'psa.created_at',
-                'psa.updated_at',
-                'l.name as leave_name',
-                DB::raw('GROUP_CONCAT(DISTINCT ld.date ORDER BY ld.date ASC) as dates')
+                'p.lastname'
             )
-            ->when($id, fn($query) => $query->where('psa.id', $id))
-            ->groupBy(
-                'psa.id',
-                'psa.name',
-                'psa.user_id',
-                'psa.employee_no',
-                'psa.leave_id',
-                'psa.days',
-                'psa.reason',
-                'psa.status',
-                'psa.created_at',
-                'psa.updated_at',
-                'l.name',
-                'p.employee_no',
-                'p.firstname',
-                'p.psastname',
-            )
-            ->orderByDesc('psa.created_at')
+            ->when($id, fn ($q) => $q->where('oa.id', $id))
+            ->orderByDesc('oa.created_at')
             ->get();
 
-        // Fetch attachments
-        $attachments = DB::table('leave_attachments')
-            ->select('leave_application_id', 'file_name', 'file_path', 'file_type')
-            ->whereIn('leave_application_id', $applications->pluck('id'))
+        if ($applications->isEmpty()) {
+            return collect();
+        }
+
+        $applicationIds = $applications->pluck('id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Attachments
+        |--------------------------------------------------------------------------
+        */
+        $attachments = DB::table('obs_attachments')
+            ->select(
+                'obs_applications_id',
+                'file_name',
+                'file_path',
+                'file_type'
+            )
+            ->whereIn('obs_applications_id', $applicationIds)
             ->get()
-            ->groupBy('leave_application_id');
+            ->groupBy('obs_applications_id');
 
-
-        // Group approvals by application and level
-        $approvalsRaw = DB::table('pass_slip_approvals')
-            ->join('employee_information', 'pass_slip_approvals.user_id', '=', 'employee_information.user_id')
-            ->join('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
-            ->select([
-                'pass_slip_approvals.status',
-                'pass_slip_approvals.leave_application_id',
-                'pass_slip_approvals.user_id',
-                'pass_slip_approvals.level',
-                'employee_information.employee_no',
-                'employee_personal.firstname',
-                'employee_personal.psastname',
-            ])
-            ->whereIn('pass_slip_approvals.leave_application_id', $applications->pluck('id'))
+        /*
+        |--------------------------------------------------------------------------
+        | Approvals
+        |--------------------------------------------------------------------------
+        */
+        $approvalsRaw = DB::table('obs_approvals as oa')
+            ->join('employee_information as ei', 'oa.user_id', '=', 'ei.user_id')
+            ->join('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->select(
+                'oa.obs_applications_id',
+                'oa.user_id',
+                'oa.level',
+                'oa.status',
+                'ep.firstname',
+                'ep.lastname'
+            )
+            ->whereIn('oa.obs_applications_id', $applicationIds)
             ->get();
 
-        $groupedArray = $approvalsRaw
+        /*
+        |--------------------------------------------------------------------------
+        | Group approvals by level (UI display)
+        |--------------------------------------------------------------------------
+        */
+        $groupedApprovals = $approvalsRaw
             ->groupBy('level')
-            ->map(function ($items) {
-                return $items->unique('user_id')->values();
-            })
+            ->map(fn ($items) => $items->unique('user_id')->values())
             ->sortKeys()
             ->toArray();
 
-        // Combine all data into results
-        $results = $applications->map(function ($item) use ($attachments, $groupedArray) {
-            $item->dates = $item->dates ? explode(',', $item->dates) : [];
+        /*
+        |--------------------------------------------------------------------------
+        | Merge All Data
+        |--------------------------------------------------------------------------
+        */
+        return $applications->map(function ($item) use ($attachments, $groupedApprovals) {
             $item->attachments = $attachments->get($item->id)?->values() ?? [];
-            $item->approvals = $groupedArray;
+            $item->approvals = $groupedApprovals;
             return $item;
         });
-
-        return $results;
     }
+
 
     public function index() {
 
@@ -122,13 +137,13 @@ class PassSlipController extends Controller {
             return redirect()->back();
         }
 
-        return view('admin.pages.services.pass-slip.show', compact('id', 'data'));
+        return view('admin.pages.services.pass_slip.show', compact('id', 'data'));
       
     }
 
     public function rules() {
         return [
-            'id' => 'required|exists:pass_slip_applications,id',
+            'id' => 'required|exists:obs_applications,id',
             'action' => 'required|in:approve,decline'
         ];
     }
@@ -155,7 +170,7 @@ class PassSlipController extends Controller {
     {
         try {
 
-            DB::table('pass_slip_applications')
+            DB::table('obs_applications')
                 ->where('id', $id)
                 ->update([
                     'status' => 'approved',
@@ -165,7 +180,7 @@ class PassSlipController extends Controller {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Leave application has been approved!',
-                'redirect' => route('services.pass-slips.show', ['application' => $id])
+                'redirect' => route('services.pass_slip.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -178,14 +193,14 @@ class PassSlipController extends Controller {
     public function decline(int $id, array $payload)
     {
         try {
-            DB::table('pass_slip_applications')
+            DB::table('obs_applications')
                 ->where('id', $id)
                 ->update([
                     'status' => 'rejected',
                     'remarks' => $payload['remarks'] ?? null // Prevents undefined index error
                 ]);
 
-            DB::table('pass_slip_approvals')
+            DB::table('obs_approvals')
                 ->where('leave_application_id', $id)
                 ->update([
                     'status' => 'rejected'
@@ -194,7 +209,7 @@ class PassSlipController extends Controller {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Leave application has been rejected!',
-                'redirect' => route('services.pass-slips.show', ['application' => $id])
+                'redirect' => route('services.pass_slip.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -208,44 +223,54 @@ class PassSlipController extends Controller {
     {
         return DataTables::of($query)
             ->addIndexColumn()
-            ->editColumn('employee_no', function($row) {
+
+            ->editColumn('employee_no', function ($row) {
                 return $row->employee_no;
             })
-            ->editColumn('name', function($row) {
-                return $row->firstname . ' ' . $row->psastname;
+
+            ->addColumn('name', function ($row) {
+                return trim($row->firstname . ' ' . $row->lastname);
             })
-            ->editColumn('type', function($row) {
-                return $row->name;  
+
+            ->addColumn('date', function ($row) {
+                if (!$row->date_from || !$row->date_to) {
+                    return '';
+                }
+
+                return formatDateRanges($row->date_from) . ' - ' . formatDateRanges($row->date_to);
             })
-            ->editColumn('dates', function ($row) {
-                return formatDateRanges($row->dates);
-            })
+
             ->editColumn('status', function ($row) {
                 $status = strtolower($row->status);
 
-                $badgeCpsass = match ($status) {
+                $badgeClass = match ($status) {
                     'pending'   => 'warning',
                     'approved'  => 'success',
                     'rejected'  => 'dark',
                     'cancelled' => 'danger',
-                    default     => 'info',
+                    default     => 'secondary',
                 };
 
-                return '<span cpsass="badge rounded-pill bg-' . $badgeCpsass . '">' . ucfirst($status) . '</span>';
+                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' 
+                    . ucfirst($status) . 
+                '</span>';
             })
+
             ->addColumn('actions', function ($row) {
                 return '
-                    <div cpsass="d-block d-md-flex gap-2 justify-content-start">
-                        <a href="'.route('services.pass-slips.show', ['application' => $row->id]).'" 
-                            cpsass="btn btn-primary btn show-button ms-1 my-1" 
-                            title="Show">
-                            <i cpsass="fa-solid fa-eye"></i>
+                    <div class="d-flex gap-2">
+                        <a href="' . route('services.pass_slip.show', ['application' => $row->id]) . '"
+                        class="btn btn-primary btn-sm"
+                        title="View">
+                            <i class="fa-solid fa-eye"></i>
                         </a>
                     </div>
                 ';
             })
-            ->rawColumns(['actions', 'status'])
+
+            ->rawColumns(['status', 'actions'])
             ->make(true);
     }
+
 
 }

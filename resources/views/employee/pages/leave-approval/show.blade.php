@@ -50,7 +50,7 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>Total Days:</th>
+                        <th>Total Day(s):</th>
                         <td>{{$data->days}} Day(s)</td>
                     </tr>
                     <tr>

@@ -46,6 +46,11 @@ return [
         'save',
     ],
 
+    'offset_approval' => [
+        'view',
+        'save',
+    ],
+
     'pass_slip_approval' => [
         'view',
         'save',

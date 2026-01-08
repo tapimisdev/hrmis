@@ -1,8 +1,7 @@
 <!-- Modal Component -->
-<x-modal id="myModal" title="Leave Application" size="modal-lg">
+<x-modal id="myModal" title="Offset Application" size="modal-lg">
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
-            <h3 class="fw-bold">Leave Application</h3>
             <p class="text-muted text-uppercase fw-bold">File No: <span id="doc-id"></span></p>
         </div>
         <div id="approval-breadcrumbs">
@@ -12,10 +11,6 @@
             <tr>
                 <th width="30%">Employee No:</th>
                 <td id="employee-no"></td>
-            </tr>
-            <tr>
-                <th>Leave Type:</th>
-                <td id="leave-type"></td>
             </tr>
             <tr>
                 <th>Dates:</th>

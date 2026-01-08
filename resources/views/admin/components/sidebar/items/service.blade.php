@@ -21,7 +21,7 @@
             @can('hr.events_and_announcements.view')
             <li class="nested-item">
                 <a href="{{ route('services.events.index') }}"
-                    class="{{ request()->routeIs('services.events.index') ? 'active' : '' }}">
+                    class="{{ request()->is('admin/service/events*') ? 'active' : '' }}">
                     <i class="fa-solid fa-calendar-days"></i>
                     <span>Events & <br> Announcements</span>
                 </a>
@@ -31,18 +31,28 @@
             @can('hr.leave_approval.view')
             <li class="nested-item">
                 <a href="{{ route('services.leaves.index') }}"
-                    class="{{ request()->routeIs('services.leaves.index') ? 'active' : '' }}">
-                    <i class="fa-solid fa-umbrella-beach"></i>
+                    class="{{ request()->is('admin/service/leave*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-plane-departure"></i>
                     <span>Leave Application</span>
                 </a>
             </li>
             @endcan
 
+            @can('hr.offset_approval.view')
+                <li class="nested-item">
+                    <a href="{{ route('services.offset.index') }}"
+                        class="{{ request()->is('admin/service/offset*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-ghost"></i>
+                        <span>Offset Application</span>
+                    </a>
+                </li>
+            @endcan
+
             @can('hr.pass_slip_approval.view')
             <li class="nested-item">
                 <a href="{{ route('services.pass_slip.index') }}"
-                    class="{{ request()->routeIs('services.pass_slip.index') ? 'active' : '' }}">
-                    <i class="fa-solid fa-id-card"></i>
+                    class="{{ request()->is('admin/service/pass-slip*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-torii-gate"></i>
                     <span>Pass Slip Application</span>
                 </a>
             </li> 
@@ -51,7 +61,7 @@
             @can('hr.overtime_approval.view')
             <li class="nested-item">
                 <a href="{{ route('services.overtime.index') }}"
-                    class="{{ request()->routeIs('services.overtime.index') ? 'active' : '' }}">
+                    class="{{ request()->is('admin/service/overtime*') ? 'active' : '' }}">
                     <i class="fa-solid fa-clock"></i>
                     <span>Overtime Application</span>
                 </a>

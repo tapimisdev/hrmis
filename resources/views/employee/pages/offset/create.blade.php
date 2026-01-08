@@ -7,7 +7,7 @@
         <header-vue title="DOST TAPI"></header-vue>
     </x-employee-navbar>
 
-    <x-header-employee title="Leave Applications / Apply" subtitle="Create leave application in this module">
+    <x-header-employee title="Offset Applications / Apply" subtitle="Create offset application in this module">
         <a href="javascript:history.back()" class="btn btn-danger py-3 px-4">
             <i class="fa-solid fa-arrow-left me-2"></i> Back
         </a>
@@ -17,20 +17,10 @@
         <div class="card-header fw-bold d-flex align-items-center text-uppercase py-3">
             <i class="fa-solid fa-file-pen me-2"></i> Application Form
         </div>
-        <form method="POST" action="{{ route('leaves.store') }}" id="form" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('offset.store') }}" id="form" enctype="multipart/form-data">
             @csrf
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-12 col-md-12 mb-3">
-                        <label for="leave_id" class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
-                        <select name="leave_id" id="leave_id" class="form-select">
-                            <option value=""> - CHOOSE TYPE - </option>
-                            @foreach ($leaves as $leave)
-                                <option value="{{ $leave->id }}">{{ $leave->name }}</option>
-                            @endforeach
-                        </select>
-                        <div class="error-field"></div>
-                    </div>
                     <div class="col-12 col-md-12 mb-3">
                         <label for="calendar" class="form-label fw-semibold">Choose Dates <span class="text-danger">*</span></label>
                         <div id="calendar" class="full-calendar"></div>

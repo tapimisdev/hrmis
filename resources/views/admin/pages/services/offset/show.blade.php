@@ -3,9 +3,9 @@
 @section('content')
 <div class="container-fluid">
 
-    <x-header title="Leave Application" subtitle="View leave application details">
+    <x-header title="Offset Application" subtitle="View offset application details">
         <x-button-link 
-            href="{{route('services.leaves.index')}}"
+            href="{{route('services.offset.index')}}"
             icon="fa-solid fa-arrow-left me-2" 
             text="Back" 
             variant="danger"
@@ -14,7 +14,7 @@
     <div class="alert alert-primary mb-4 text-uppercase fw-bold text-center">
         This application can be approved directly without requiring approval from level-based approvers because you have admin or superadmin privileges.
     </div>
-    <form id="form" action="{{ route('services.leaves.save', ['application' => $data->id]) }}" method="POST">
+    <form id="form" action="{{ route('services.offset.save', ['application' => $data->id]) }}" method="POST">
         @csrf
         @method('POST')
         <input type="hidden" name="action" id="action" value="">
@@ -27,10 +27,6 @@
                     <tr>
                         <th width="30%">Employee No:</th>
                         <td id="employee-no">{{$data->employee_no}}</td>
-                    </tr>
-                    <tr>
-                        <th>Leave Type:</th>
-                        <td id="leave-type">{{$data->leave_name}}</td>
                     </tr>
                     <tr>
                         <th>Dates:</th>
@@ -94,17 +90,17 @@
                 </table>
                 <div class="card shadow">
                     <div class="card-body p-5">
-                        <h2 class="text-uppercase mb-4 fw-bold border-bottom border-3 w-100 pb-3">{{$data->leave_name}}</h2>
+                        <h2 class="text-uppercase mb-4 fw-bold border-bottom border-3 w-100 pb-3">Offset Leave</h2>
                         
                         @if(!$hasBalance)
                             <div class="mt-3 mb-5">
-                                <div class="alert alert-danger text-uppercase fw-bold text-center ">Oops! This employee has insuficcient leave credits. Please be advise that this application can be still approved.</div>
+                                <div class="alert alert-danger text-uppercase fw-bold text-center ">Oops! This employee has insuficcient offset credits. Please be advise that this application can be still approved.</div>
                                 <div class="w-100 text-center mt-2">
-                                    <a href="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" 
+                                    <a href="{{ route('hris.employee.offset-credits', ['employee_no' => $employee_no]) }}" 
                                         class="w-100 text-uppercase fw-bold" 
                                         target="_blank" 
                                         rel="noopener noreferrer">
-                                        View Leave Credits
+                                        View Offset Credits
                                     </a>
                                 </div>
                                 <div class="mt-5">
@@ -140,6 +136,7 @@
                                     </table>
                                 </div>
                             </div>
+                            
                         @endif
 
                         <div class="mt-5 mb-5">
@@ -174,11 +171,11 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
                             <div class="d-flex align-items-center gap-4">
                                 <h5 class="fw-bold text-uppercase text-center mb-0">
-                                    <div>Leave Credit Balance</div>
+                                    <div>Offset Credit Balance</div>
                                     <div>January (2026)</div>
                                 </h5>
                                 <h2 class="fw-bold px-4 py-3 bg-primary rounded-3 mb-0">
@@ -207,11 +204,11 @@
                             </div>
                         </div>
                         <div class="w-100 text-center mt-4">
-                            <a href="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" 
+                            <a href="{{ route('hris.employee.offset-credits', ['employee_no' => $employee_no]) }}" 
                                 class="w-100 text-uppercase fw-bold" 
                                 target="_blank" 
                                 rel="noopener noreferrer">
-                                View Leave Credits
+                                View Offset Credits
                             </a>
                         </div>
                     </div>
