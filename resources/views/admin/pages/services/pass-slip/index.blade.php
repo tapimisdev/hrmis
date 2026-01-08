@@ -16,7 +16,7 @@
                     <th>#</th>
                     <th>Employee No</th>
                     <th>Name</th>
-                    <th>Date</th>
+                    <th>Date(s)</th>
                     <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>

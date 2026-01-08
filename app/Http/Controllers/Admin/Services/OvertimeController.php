@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin\Services;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Employee\StoreLeaveApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -157,7 +156,7 @@ class OvertimeController extends Controller {
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Leave application has been approved!',
+                'message' => 'Overtime application has been approved!',
                 'redirect' => route('services.overtime.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
@@ -186,7 +185,7 @@ class OvertimeController extends Controller {
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Leave application has been rejected!',
+                'message' => 'Overtime application has been rejected!',
                 'redirect' => route('services.overtime.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
@@ -244,7 +243,7 @@ class OvertimeController extends Controller {
             ->addColumn('actions', function ($row) {
                 return '
                     <div class="d-flex gap-2">
-                        <a href="' . route('services.pass_slip.show', ['application' => $row->id]) . '"
+                        <a href="' . route('services.overtime.show', ['application' => $row->id]) . '"
                         class="btn btn-primary btn-sm"
                         title="View">
                             <i class="fa-solid fa-eye"></i>

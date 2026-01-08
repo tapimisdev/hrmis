@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin\Services;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Employee\StoreLeaveApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -133,11 +132,13 @@ class PassSlipController extends Controller {
 
         $data = $this->getRawData($id)[0] ?? [];
 
+        // dd($data);
+
         if(!$data) {
             return redirect()->back();
         }
 
-        return view('admin.pages.services.pass_slip.show', compact('id', 'data'));
+        return view('admin.pages.services.pass-slip.show', compact('id', 'data'));
       
     }
 
@@ -179,7 +180,7 @@ class PassSlipController extends Controller {
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Leave application has been approved!',
+                'message' => 'Pass slip application has been approved!',
                 'redirect' => route('services.pass_slip.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
@@ -201,14 +202,14 @@ class PassSlipController extends Controller {
                 ]);
 
             DB::table('obs_approvals')
-                ->where('leave_application_id', $id)
+                ->where('obs_applications_id', $id)
                 ->update([
                     'status' => 'rejected'
                 ]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Leave application has been rejected!',
+                'message' => 'PAss slip application has been rejected!',
                 'redirect' => route('services.pass_slip.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {

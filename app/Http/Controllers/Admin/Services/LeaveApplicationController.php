@@ -210,12 +210,12 @@ class LeaveApplicationController extends Controller {
     {
         try {
 
-            // DB::table('leave_applications')
-            //     ->where('id', $id)
-            //     ->update([
-            //         'status' => 'approved',
-            //         'approver_id' => Auth::id() ?? null
-            //     ]);
+            DB::table('leave_applications')
+                ->where('id', $id)
+                ->update([
+                    'status' => 'approved',
+                    'approver_id' => Auth::id() ?? null
+                ]);
 
             $this->updateCredits($id);
 
