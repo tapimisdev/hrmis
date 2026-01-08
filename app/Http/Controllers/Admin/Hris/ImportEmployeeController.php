@@ -328,9 +328,10 @@ class ImportEmployeeController extends Controller
                     ->first();
 
                 $sequence = $lastEmployee
-                    ? ((int) substr($lastEmployee->employee_no, -3)) + 1
+                    ? ((int) explode('-', $lastEmployee->employee_no)[2]) + 1
                     : 1;
 
+                // Change str_pad to 2 digits instead of 3
                 $employeeNo = "{$year}-{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
 
             } while (
@@ -340,4 +341,5 @@ class ImportEmployeeController extends Controller
             return $employeeNo;
         });
     }
+
 }
