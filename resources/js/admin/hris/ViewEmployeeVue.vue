@@ -10,7 +10,7 @@
                     <i class="fa-solid fa-users me-2"></i> Uploaded List
                 </h5>
             </div>
-
+            
             <div class="card-body">
                 <!-- Employee Accordion -->
                 <div class="accordion mb-4" id="employeeAccordion">
@@ -61,7 +61,7 @@
                                 <div class="section-title">Basic Information</div>
                                 <div class="row mb-3">
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Employee No</label>
+                                        <label class="form-label">Employee No <span class="text-danger"> *</span></label>
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             v-model="employee.employee_no"
@@ -83,7 +83,18 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Date Hired</label>
+                                        <label class="form-label">Date Hired <span class="text-danger"> *</span> <span class="text-info">( last promotion )</span></label>
+                                        <input type="date"
+                                            class="form-control form-control-sm"
+                                            v-model="employee.date_hired_company"
+                                            :class="{ 'is-invalid': errors[`employees.${index}.date_hired_company`] }">
+                                        <span class="text-danger" v-if="errors[`employees.${index}.date_hired_company`]">
+                                            <span v-for="(err, i) in errors[`employees.${index}.date_hired_company`]" :key="i">{{ err }}</span>
+                                        </span>
+                                    </div>
+
+                                    <div class="col-12 col-md-3 mb-3">
+                                        <label class="form-label">Date Hired <span class="text-danger"> *</span> <span class="text-info">( original appointment )</span></label>
                                         <input type="date"
                                             class="form-control form-control-sm"
                                             v-model="employee.date_hired_organization"
@@ -94,23 +105,29 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Status</label>
-                                        <select class="form-control form-control-sm"
-                                                v-model="employee.isActive"
-                                                :class="{ 'is-invalid': errors[`employees.${index}.isActive`] }">
-                                            <option v-for="status in selectOptions.status"
-                                                    :key="status.value"
-                                                    :value="status.value">
-                                                {{ status.label }}
+                                        <label class="form-label">Suffix</label>
+
+                                        <select class="form-control form-control-sm text-uppercase"
+                                                v-model="employee.suffix"
+                                                :class="{ 'is-invalid': errors[`employees.${index}.suffix`] }">
+
+                                            <option :value="null">- CHOOSE -</option>
+                                            <option v-for="suffix in selectOptions.suffixes"
+                                                    :key="suffix.value"
+                                                    :value="suffix.value">
+                                                {{ suffix.label }}
                                             </option>
                                         </select>
-                                        <span class="text-danger" v-if="errors[`employees.${index}.isActive`]">
-                                            <span v-for="(err, i) in errors[`employees.${index}.isActive`]" :key="i">{{ err }}</span>
+
+                                        <span class="text-danger" v-if="errors[`employees.${index}.suffix`]">
+                                            <span v-for="(err, i) in errors[`employees.${index}.suffix`]" :key="i">
+                                                {{ err }}
+                                            </span>
                                         </span>
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Firstname</label>
+                                        <label class="form-label">Firstname <span class="text-danger"> *</span></label>
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             v-model="employee.firstname"
@@ -132,7 +149,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Lastname</label>
+                                        <label class="form-label">Lastname <span class="text-danger"> *</span></label>
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             v-model="employee.lastname"
@@ -143,7 +160,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-4 mb-3">
-                                        <label class="form-label">Email</label>
+                                        <label class="form-label">Email <span class="text-danger"> *</span></label>
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             v-model="employee.email"
@@ -153,13 +170,29 @@
                                         </span>
                                     </div>
 
+                                    <div class="col-12 col-md-3 mb-3">
+                                        <label class="form-label">Status <span class="text-danger"> *</span></label>
+                                        <select class="form-control form-control-sm"
+                                                v-model="employee.isActive"
+                                                :class="{ 'is-invalid': errors[`employees.${index}.isActive`] }">
+                                            <option v-for="status in selectOptions.status"
+                                                    :key="status.value"
+                                                    :value="status.value">
+                                                {{ status.label }}
+                                            </option>
+                                        </select>
+                                        <span class="text-danger" v-if="errors[`employees.${index}.isActive`]">
+                                            <span v-for="(err, i) in errors[`employees.${index}.isActive`]" :key="i">{{ err }}</span>
+                                        </span>
+                                    </div>
+
                                 </div>
 
                                 <!-- Section: Position & Tranche -->
-                                <div class="section-title">Position & Tranche</div>
+                                <div class="section-title">Position & Tranche </div>
                                 <div class="row mb-3">
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Position</label>
+                                        <label class="form-label">Position <span class="text-danger"> *</span></label>
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             v-model="employee.position"
@@ -170,7 +203,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Tranche</label>
+                                        <label class="form-label">Tranche <span class="text-danger"> *</span></label>
                                         <select class="form-control form-control-sm"
                                                 v-model="employee.tranche"
                                                 @change="computeSalary(employee.tranche , employee.salary_grade, employee.step, index)"
@@ -193,7 +226,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Salary Grade</label>
+                                        <label class="form-label">Salary Grade <span class="text-danger"> *</span></label>
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             v-model="employee.salary_grade"
@@ -205,7 +238,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Step</label>
+                                        <label class="form-label">Step <span class="text-danger"> ( required if permanent )</span></label>
                                         <select class="form-control form-control-sm"
                                                 v-model="employee.step"
                                                 :disabled="details.employment_type_id == 2"
@@ -227,7 +260,7 @@
                                 <div class="section-title">Payroll Details</div>
                                 <div class="row mb-3 border-bottom pb-3">
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Salary Frequency</label>
+                                        <label class="form-label">Salary Frequency <span class="text-danger"> *</span></label>
                                         <select class="form-control form-control-sm"
                                                 v-model="employee.salary_frequency"
                                                 @change="handleSalaryCutoffChange(employee.salary_frequency, index)"
@@ -245,7 +278,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-4 mb-3">
-                                        <label class="form-label">Salary Cutoff</label>
+                                        <label class="form-label">Salary Cutoff <span class="text-danger"> *</span></label>
                                         <div class="d-flex gap-md-4 pt-2 flex-wrap"
                                             :class="{ 'is-invalid': errors[`employees.${index}.salary_cutoff`] }">
                                             <div class="form-check">
@@ -277,7 +310,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-5 mb-3">
-                                        <label class="form-label">Total Salary</label>
+                                        <label class="form-label">Total Salary <span class="text-danger"> *</span></label>
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             disabled
@@ -289,7 +322,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Daily Rate</label>
+                                        <label class="form-label">Daily Rate <span class="text-danger"> *</span></label>
                                         <input type="text"
                                             class="form-control form-control-sm"
                                             v-model="employee.daily_rate"
@@ -298,7 +331,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Salary Method</label>
+                                        <label class="form-label">Salary Method <span class="text-danger"> *</span></label>
                                         <select class="form-control form-control-sm"
                                                 v-model="employee.salary_method"
                                                 :class="{ 'is-invalid': errors[`employees.${index}.salary_method`] }">
@@ -315,7 +348,7 @@
                                     </div>
 
                                     <div class="col-12 col-md-3 mb-3">
-                                        <label class="form-label">Deduction On</label>
+                                        <label class="form-label">Deduction On <span class="text-danger"> *</span></label>
                                         <select class="form-control form-control-sm"
                                                 v-model="employee.deduction_on"
                                                 :class="{ 'is-invalid': errors[`employees.${index}.deduction_on`] }">
@@ -393,6 +426,15 @@ export default {
                     { value: "bank transfer", label: "Bank Transfer" },
                     { value: "paycheck", label: "Paycheck" },
                     { value: "e_wallet", label: "E-Wallet" },
+                ],
+                suffixes: [
+                    { value: 'jr', label: 'Jr' },
+                    { value: 'sr', label: 'Sr' },
+                    { value: 'I', label: 'I' },
+                    { value: 'II', label: 'II' },
+                    { value: 'III', label: 'III' },
+                    { value: 'IV', label: 'IV' },
+                    { value: 'V', label: 'V' },
                 ],
             },
             errors: {},

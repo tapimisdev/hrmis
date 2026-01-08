@@ -67,7 +67,7 @@
                     </div>
 
                     <!-- Shift -->
-                    <div class="col-12 col-md-6 mb-3">
+                    <div class="col-12 col-md-4 mb-3">
                         <FormSkeletonVue v-if="loading" :rows="1" :columns="1"/>
                         <div v-else>
                             <label for="shift" class="mb-3">Shift</label>
@@ -85,7 +85,7 @@
                     </div>
 
                     <!-- Work Schedule -->
-                    <div class="col-12 col-md-6 mb-4">
+                    <div class="col-12 col-md-4 mb-4">
                         <FormSkeletonVue v-if="loading" :rows="1" :columns="1"/>
                         <div v-else>
                             <label for="schedule" class="mb-3">Work Schedule</label>
@@ -99,6 +99,23 @@
                                 </option>
                             </select>
                             <span class="text-danger" v-if="errors.schedule">{{ errors.schedule[0] }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Auto-generate Employee No Dropdown -->
+                    <div class="col-12 col-md-3 mb-3" v-if="isCOS">
+                        <FormSkeletonVue v-if="loading" :rows="1" :columns="1"/>
+                        <div v-else>
+                            <label for="auto_generate_empno" class="mb-3">Auto-generate Employee No</label>
+                            <select v-model="form.auto_generate_empno"
+                                    id="auto_generate_empno"
+                                    class="form-select text-uppercase"
+                                    :class="{ 'is-invalid': errors.auto_generate_empno }">
+                                <option value="">- CHOOSE -</option>
+                                <option value="yes">Yes</option>
+                                <option value="no">No</option>
+                            </select>
+                            <span class="text-danger" v-if="errors.auto_generate_empno">{{ errors.auto_generate_empno[0] }}</span>
                         </div>
                     </div>
 
@@ -174,10 +191,18 @@
                     shift: "",
                     schedule: "",
                     file: null, // file storage
+                    auto_generate_empno: "",
                 },
                 errors: {},
                 unitDisabled: false,
             };
+        },
+        computed: {
+            isCOS() {
+                // Find the selected employment type
+                const selected = this.employmentTypes.find(type => type.id == this.form.employment_type);
+                return selected?.code === 'COS'; // only show if COS
+            }
         },
         methods: {
             requestUnits(divisionId) {
@@ -206,6 +231,7 @@
                     formData.append("shift", this.form.shift);
                     formData.append("schedule", this.form.schedule);
                     formData.append("file", this.form.file);
+                    formData.append("auto_generate_empno", this.form.auto_generate_empno);
 
                     const res = await axios.post('/api/employee/upload', formData, {
                         headers: { 

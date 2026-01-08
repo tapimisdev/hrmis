@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin\Hris;
 
+use App\Enums\EmploymentTypesEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UploadEmployeeRequest extends FormRequest
@@ -27,7 +28,10 @@ class UploadEmployeeRequest extends FormRequest
             'unit' => 'required|exists:units,id',
             'shift' => 'required|exists:shifts,id',
             'schedule' => 'required|exists:work_schedule,id',
-            'file' => 'required|file|mimes:xlsx,xls|max:10,240' 
+            'file' => 'required|file|mimes:xlsx,xls|max:10,240',
+
+            // Auto-generate Employee No validation (only if COS)
+            'auto_generate_empno' => 'required_if:employment_type,' . EmploymentTypesEnum::COS->value . '|in:yes,no',
         ];
     }
 }

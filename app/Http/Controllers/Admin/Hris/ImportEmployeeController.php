@@ -7,13 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Hris\StoreEmployeeImportRequest;
 use App\Http\Requests\Admin\Hris\UploadEmployeeRequest;
 use App\Models\User;
+use Carbon\Carbon;
 use Exception;
-use Illuminate\Auth\Events\Validated;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
-use function PHPUnit\Framework\isEmpty;
 
 class ImportEmployeeController extends Controller
 {
@@ -44,6 +42,7 @@ class ImportEmployeeController extends Controller
         }
 
         $mapped['employees'] = collect($dataRows)->map(function ($row) use ($header, $validatedData) {
+
             $assoc = array_combine($header, $row);
 
            $salary_cutoff = $assoc['salary_frequency'] === 'twice' 
@@ -90,6 +89,18 @@ class ImportEmployeeController extends Controller
                 }
             }
 
+            if($validatedData['employment_type'] === EmploymentTypesEnum::COS->value) {
+
+                $date_hired_company = $this->excelDateOnly($assoc['date_hired']);
+                $date_hired_organization = $this->excelDateOnly($assoc['date_hired']);
+
+                if($validatedData['auto_generate_empno'] === 'yes') {
+                    $assoc['employee_no'] = $this->generateEmployeeNo($date_hired_company);
+                }
+            } else {
+                $date_hired_company = $this->excelDateOnly($assoc['Date of Last Promotion/Appointment']);
+                $date_hired_organization = $this->excelDateOnly($assoc['Date of Original Appointment']);
+            }
 
             $data = [
                 "employee_no"        => $assoc['employee_no'] ?? null,
@@ -99,12 +110,12 @@ class ImportEmployeeController extends Controller
                 "suffix"             => $assoc['suffix'] ?? null,
                 "email"              => $assoc['email'] ?? null,
                 "bio_id"             => $assoc['bio_id'] ?? null,
-                "date_hired_company"         => $assoc['date_hired_company'] ?? null,
-                "date_hired_organization"         => $assoc['date_hired_organization'] ?? null,
+                "date_hired_company" => $date_hired_company ?? null,
+                "date_hired_organization" => $date_hired_organization ?? null,
                 "isActive"           => strtolower($assoc['isActive'] ?? 'inactive'), // normalize
                 "position"           => $assoc['position'] ?? null,
                 "tranche"            => $tranche ?? null,
-                "step"               => $step ?? null,
+                "step"               => $step ?? 1,
                 "salary_grade"       => $assoc['salary_grade'] ?? null,
                 "salary_frequency"   => $assoc['salary_frequency'] ?? null,
                 "total_salary"       => $total_salary ?? null,
@@ -114,7 +125,6 @@ class ImportEmployeeController extends Controller
                 "salary_method"      => $assoc['salary_method'] ?? null,
                 "payroll_account_no" => $assoc['payroll_account_no'] ?? null,
             ];
-            
 
             return $data;
         });
@@ -136,7 +146,9 @@ class ImportEmployeeController extends Controller
     public function store(StoreEmployeeImportRequest $request)
     {
         $validatedData = $request->validated();
+
         $default_password = 'iamdostemployee';
+
         DB::beginTransaction();
         try {
 
@@ -194,7 +206,7 @@ class ImportEmployeeController extends Controller
                     'amount'            => $emp['total_salary'],
                     'daily_rate'        => $emp['daily_rate'],
                     'deduction_applied' => $emp['deduction_on'],
-                    'effectivity_date'  => now(),
+                    'effectivity_date'  => $emp['date_hired_company'],
                     'created_at'        => now(),
                     'updated_at'        => now(),
                 ]);
@@ -228,7 +240,7 @@ class ImportEmployeeController extends Controller
                     'unit_id'            => $validatedData['details']['unit_id'],
                     'employment_type_id' => $validatedData['details']['employment_type_id'],
                     'position_id'        => $position->id,
-                    'effectivity_date'   => now(),
+                    'effectivity_date'   => $emp['date_hired_company'],
                     'created_at'         => now(),
                     'updated_at'         => now(),
                 ]);
@@ -237,7 +249,7 @@ class ImportEmployeeController extends Controller
                     'employee_no'       => $emp['employee_no'],
                     'shift_id'          => $validatedData['details']['shift_id'],
                     'work_schedule_id'  => $validatedData['details']['work_schedule_id'],
-                    'effectivity_date'  => now(),
+                    'effectivity_date'  => $emp['date_hired_company'],
                     'created_at'        => now(),
                     'updated_at'        => now(),
                 ]);
@@ -257,4 +269,59 @@ class ImportEmployeeController extends Controller
                 'status' => 'store failed'], 500);
         }
     }
+
+    private function excelDateOnly($value)
+    {
+        // Excel's minimum valid date (1970-01-01)
+        $minExcelDate = 25569;
+
+        // Case 1: numeric Excel date
+        if (is_numeric($value) && $value >= $minExcelDate) {
+            return \Carbon\Carbon::createFromTimestamp(
+                ((float) $value - 25569) * 86400
+            )->format('Y-m-d');
+        }
+
+        // Case 2: valid date string
+        if (\Carbon\Carbon::hasFormat($value, 'Y-m-d') || strtotime($value) !== false) {
+            return \Carbon\Carbon::parse($value)->format('Y-m-d');
+        }
+
+        // Case 3: not a date → return original value
+        return $value;
+    }
+
+    private function generateEmployeeNo($dateHired)
+    {
+        // Ensure $dateHired is a Carbon instance
+        $date = \Carbon\Carbon::parse($dateHired);
+
+        $year = $date->format('Y');
+
+        // Determine semester: Jan-Jun = 1, Jul-Dec = 2
+        $month = $date->format('m');
+        $semester = ($month <= 6) ? 1 : 2;
+
+        // Find the highest existing sequential number for this year & semester
+        $lastEmployee = DB::table('employee_information')
+            ->whereYear('date_hired_company', $year)
+            ->whereRaw('CASE WHEN MONTH(date_hired_company) <= 6 THEN 1 ELSE 2 END = ?', [$semester])
+            ->orderByDesc('employee_no')
+            ->first();
+
+        if ($lastEmployee) {
+            // Extract last sequence number
+            $lastSequence = (int) substr($lastEmployee->employee_no, -3);
+            $sequence = $lastSequence + 1;
+        } else {
+            $sequence = 1;
+        }
+
+        // Format sequence to 3 digits, e.g., 001
+        $sequenceFormatted = str_pad($sequence, 3, '0', STR_PAD_LEFT);
+
+        // Combine to generate employee number
+        return "{$year}-{$semester}-{$sequenceFormatted}";
+    }
+
 }
