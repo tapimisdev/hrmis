@@ -106,13 +106,22 @@ class ImportEmployeeController extends Controller
                         in_array($employeeNo, $generatedEmployeeNos) ||
                         DB::table('employee_information')->where('employee_no', $employeeNo)->exists()
                     ) {
-                        preg_match('/(\d+)-(\d+)-(\d+)/', $employeeNo, $matches);
-                        $year = $matches[1];
-                        $semester = $matches[2];
-                        $sequence = (int)$matches[3] + 1;
+                        // Safely extract year, semester, and sequence
+                        if (preg_match('/(\d+)-(\d+)-(\d+)/', $employeeNo, $matches)) {
+                            $year = $matches[1];
+                            $semester = $matches[2];
+                            $sequence = isset($matches[3]) ? (int)$matches[3] + 1 : 1;
+                        } else {
+                            // fallback if format is unexpected
+                            $year = date('Y');
+                            $semester = 1;
+                            $sequence = 1;
+                        }
 
-                        $employeeNo = "{$year}-{$semester}-" . str_pad($sequence, 3, '0', STR_PAD_LEFT);
+                        // 2-digit sequence
+                        $employeeNo = "{$year}-{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
                     }
+
 
                     // Save to batch to prevent duplicates in this upload
                     $generatedEmployeeNos[] = $employeeNo;
@@ -311,7 +320,7 @@ class ImportEmployeeController extends Controller
         return $value;
     }
 
-    private function generateEmployeeNo($dateHired)
+   private function generateEmployeeNo($dateHired)
     {
         return DB::transaction(function () use ($dateHired) {
 
@@ -327,11 +336,15 @@ class ImportEmployeeController extends Controller
                     ->orderByDesc('employee_no')
                     ->first();
 
-                $sequence = $lastEmployee
-                    ? ((int) explode('-', $lastEmployee->employee_no)[2]) + 1
-                    : 1;
+                if ($lastEmployee) {
+                    $parts = explode('-', $lastEmployee->employee_no);
+                    // safely get sequence, default 0 if missing
+                    $sequence = isset($parts[2]) ? (int) $parts[2] + 1 : 1;
+                } else {
+                    $sequence = 1;
+                }
 
-                // Change str_pad to 2 digits instead of 3
+                // Use 2-digit padding
                 $employeeNo = "{$year}-{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
 
             } while (
@@ -341,5 +354,6 @@ class ImportEmployeeController extends Controller
             return $employeeNo;
         });
     }
+
 
 }
