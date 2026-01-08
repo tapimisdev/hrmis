@@ -31,7 +31,11 @@ class UploadEmployeeRequest extends FormRequest
             'file' => 'required|file|mimes:xlsx,xls|max:10,240',
 
             // Auto-generate Employee No validation (only if COS)
-            'auto_generate_empno' => 'required_if:employment_type,' . EmploymentTypesEnum::COS->value . '|in:yes,no',
+            'auto_generate_empno' => [
+                'nullable', // allow null
+                'required_if:employment_type,' . EmploymentTypesEnum::COS->value, // required only if COS
+                'in:yes,no', // must be yes or no if present
+            ],
         ];
     }
 }
