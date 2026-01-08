@@ -44,7 +44,7 @@ class EmployeeService {
         return false;
     }
 
-    public function getEmployees(?string $status, ?string $division_id, ?string $unit_id)
+    public function getEmployees(?string $status, ?string $division_id, ?string $unit_id, ?string $employment_type_id)
     {
         // Subqueries for latest rows
         $latestOrg = DB::table('employee_organization as eo1')
@@ -124,6 +124,9 @@ class EmployeeService {
             })
             ->when($unit_id, function ($query) use ($unit_id) {
                 return $query->where('org.unit_id', $unit_id);
+            })
+            ->when($employment_type_id, function ($query) use ($employment_type_id) {
+                return $query->where('org.employment_type_id', $employment_type_id);
             })
             ->get();
     }

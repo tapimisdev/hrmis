@@ -2,8 +2,7 @@
     <div>
         <!-- Filters -->
         <div class="row mb-3">
-            <!-- Employment Type -->
-            <div class="col-12 col-md-3 mb-3">
+          <div class="col-12 col-md-3 mb-3">
                 <label class="mb-3 text-body">Filter By Employment Type</label>
                 <select
                     v-model="employment_type"
@@ -20,8 +19,6 @@
                     </option>
                 </select>
             </div>
-
-            <!-- Division -->
             <div class="col-12 col-md-3 mb-3">
                 <label class="mb-3 text-body">Filter By Divisions</label>
                 <select
@@ -36,7 +33,6 @@
                 </select>
             </div>
 
-            <!-- Unit -->
             <div class="col-12 col-md-3 mb-3">
                 <label class="mb-3 text-body">Filter By Units</label>
                 <select
@@ -51,7 +47,6 @@
                 </select>
             </div>
 
-            <!-- Account Status -->
             <div class="col-12 col-md-3 mb-3">
                 <label class="mb-3 text-body">Filter By Account Status</label>
                 <select
@@ -87,24 +82,21 @@ import axios from "axios";
 
 export default {
     name: "HRISIndex",
-
     props: {
         url: {
             type: String,
             required: true,
         },
     },
-
     data() {
         return {
             division: "",
             unit: "",
-            employment_type: "",
             account_status: "active",
+            employment_type: "",
 
             divisions: [],
             units: [],
-            employment_types: [],
 
             table: null,
             token: localStorage.getItem("auth_token"),
@@ -112,13 +104,13 @@ export default {
     },
 
     mounted() {
+        this.loadEmploymentTypes();
         this.initTable();
         this.loadDivisions();
-        this.loadEmploymentTypes();
     },
 
     methods: {
-        /* ===============================
+        /** ===============================
          * DataTable Initialization
          * =============================== */
         initTable() {
@@ -162,27 +154,9 @@ export default {
             this.reloadTable();
         },
 
-        /* ===============================
+        /** ===============================
          * API Calls
          * =============================== */
-        async loadDivisions() {
-            const response = await axios.get("/api/divisions", {
-                headers: { Authorization: `Bearer ${this.token}` },
-            });
-
-            this.divisions = response.data.data;
-        },
-
-        async loadUnits(divisionId) {
-            if (!divisionId) return;
-
-            const response = await axios.get(`/api/units/${divisionId}`, {
-                headers: { Authorization: `Bearer ${this.token}` },
-            });
-
-            this.units = response.data.data;
-        },
-
         async loadEmploymentTypes() {
             const response = await axios.get("/api/employment-types", {
                 headers: { Authorization: `Bearer ${this.token}` },
@@ -190,8 +164,24 @@ export default {
 
             this.employment_types = response.data.data;
         },
+        async loadDivisions() {
+            const { data } = await axios.get("/api/divisions", {
+                headers: { Authorization: `Bearer ${this.token}` },
+            });
+            this.divisions = data;
+        },
 
-        /* ===============================
+        async loadUnits(divisionId) {
+            if (!divisionId) return;
+
+            const { data } = await axios.get(`/api/units/${divisionId}`, {
+                headers: { Authorization: `Bearer ${this.token}` },
+            });
+
+            this.units = data;
+        },
+
+        /** ===============================
          * Download Handler
          * =============================== */
         async downloadPDS(e) {
@@ -205,10 +195,11 @@ export default {
             const blobUrl = window.URL.createObjectURL(
                 new Blob([response.data])
             );
-
             const a = document.createElement("a");
+
             a.href = blobUrl;
             a.download = "pds.xlsx";
+
             document.body.appendChild(a);
             a.click();
             a.remove();

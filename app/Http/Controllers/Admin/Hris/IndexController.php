@@ -30,8 +30,9 @@ class IndexController extends Controller
             $status = $request->get('account_status');
             $division_id = $request->get('division');
             $unit_id = $request->get('unit');
+            $employment_type = $request->get('employment_type');
 
-            $query = $this->employeeService->getEmployees($status, $division_id, $unit_id);
+            $query = $this->employeeService->getEmployees($status, $division_id, $unit_id, $employment_type);
 
             return $this->datatable($query);
         }
