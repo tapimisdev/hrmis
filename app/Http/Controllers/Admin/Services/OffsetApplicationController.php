@@ -204,12 +204,12 @@ class OffsetApplicationController extends Controller {
     {
         try {
 
-            // DB::table('offset_applications')
-            //     ->where('id', $id)
-            //     ->update([
-            //         'status' => 'approved',
-            //         'approver_id' => Auth::id() ?? null
-            //     ]);
+            DB::table('offset_applications')
+                ->where('id', $id)
+                ->update([
+                    'status' => 'approved',
+                    'approver_id' => Auth::id() ?? null
+                ]);
 
             $this->updateCredits($id);
 

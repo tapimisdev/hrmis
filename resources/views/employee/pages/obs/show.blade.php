@@ -2,7 +2,6 @@
 <x-modal id="myModal" title="Pass Slip" size="modal-lg">
     <div class="p-4" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
-            <h3 class="fw-bold">Pass Slip</h3>
             <small class="text-muted">File No: <span id="obs-doc-id"></span></small>
         </div>
         <div id="approval-breadcrumbs">

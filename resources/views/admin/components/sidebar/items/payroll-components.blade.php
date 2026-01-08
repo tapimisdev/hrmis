@@ -53,7 +53,7 @@
                         @foreach ($modules as $module)
                             <li class="nested-item">
                                 <a href="{{ route('payroll-components.index', ['slug' => $module->slug]) }}"
-                                   class="{{ request()->routeIs('payroll-components.index') && request('slug') === $module->slug ? 'active' : '' }}">
+                                    class="{{ request()->is('admin/payroll-components/' . $module->slug . '*') ? 'active' : '' }}">
                                     <i class="{{ $module->icon }}"></i>
                                     <span class="text-capitalize">{{ $module->name }}</span>
                                 </a>

@@ -18,7 +18,7 @@
             @can('hr.timekeeping.view')
             <li class="nested-item">
                 <a href="{{ route('timelogs.index') }}"
-                    class="{{ request()->routeIs('timelogs.index') ? 'active' : '' }}">
+                    class="{{ request()->is('admin/timekeeping/timelogs*') || request()->is('admin/timekeeping/daily-time-record*') ? 'active' : '' }}">
                     <i class="fa-solid fa-stopwatch"></i>
                     <span>Timelogs</span>
                 </a>
@@ -27,7 +27,7 @@
             @can('hr.timekeeping.import')
             <li class="nested-item">
                 <a href="{{ route('import.timelogs.index') }}"
-                    class="{{ request()->routeIs('import.timelogs.index') ? 'active' : '' }}">
+                    class="{{ request()->is('admin/timekeeping/upload-timelogs*') ? 'active' : '' }}">
                     <i class="fa-solid fa-file-import"></i>
                     <span>Import</span>
                 </a>

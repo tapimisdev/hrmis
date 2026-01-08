@@ -142,8 +142,6 @@ class EmployeeService {
             'voluntary-works'  => ['table' => 'employee_voluntary_works', 'method' => 'get'],
             'skills'           => ['table' => 'employee_skills_hobbies', 'method' => 'get'],
             'account'          => ['table' => 'users', 'method' => 'first'],
-            'leave-credits'    => ['table' => 'employee_leave_credits', 'method' => 'first'],
-            'leave-card'       => ['table' => 'employee_leave_card', 'method' => 'get'],
         ];
 
         if (!isset($tables[$type])) {
@@ -163,30 +161,6 @@ class EmployeeService {
                 ->first();
         }
 
-        /**
-         * SPECIAL HANDLING: LEAVE-CARD
-         * If leave_id is given → get employee_no based on leave card row
-         */
-        if ($type === 'leave-card' && $leave_id !== null) {
-
-            $employee_no = DB::table('employee_leave_card')
-                ->where('leave_type', $leave_id)
-                ->value('employee_no');
-
-            if (!$employee_no) {
-                return collect(); // Return empty collection
-            }
-
-            return DB::table('employee_leave_card')
-                ->where('employee_no', $employee_no)
-                ->where('leave_type', $leave_id)
-                ->orderBy('year')
-                ->orderByRaw("FIELD(period, 
-                    'january','february','march','april','may','june',
-                    'july','august','september','october','november','december'
-                )")
-                ->get();
-        }
 
         /**
          * DEFAULT QUERY BUILDER

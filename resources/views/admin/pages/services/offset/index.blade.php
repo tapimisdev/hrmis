@@ -16,7 +16,6 @@
                     <th>#</th>
                     <th>Employee No</th>
                     <th>Name</th>
-                    <th>Dates</th>
                     <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>
@@ -39,7 +38,6 @@
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "employee_no", name: 'employee_no' },
                 { data: "name", name: 'name' },
-                { data: "dates", name: 'dates' },
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
 

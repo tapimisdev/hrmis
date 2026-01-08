@@ -17,7 +17,6 @@
                     <th>Employee No</th>
                     <th>Name</th>
                     <th>Type</th>
-                    <th>Dates</th>
                     <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>
@@ -41,7 +40,6 @@
                 { data: "employee_no", name: 'employee_no' },
                 { data: "name", name: 'name' },
                 { data: "type", name: 'type' },
-                { data: "dates", name: 'dates' },
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
 
