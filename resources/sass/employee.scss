@@ -396,6 +396,10 @@ $sidebar-width: 220px;
                         .side-link {
                             color: $light !important;
                         }
+
+                        a {
+                            color: $light !important;
+                        }
                     }
 
                     &:hover {
@@ -673,4 +677,11 @@ footer {
             }
         }
     }
+}
+#header-con {
+    filter:
+        drop-shadow(0.5px 0 0 white)
+        drop-shadow(-0.5px 0 0 white)
+        drop-shadow(0 0.5px 0 white)
+        drop-shadow(0 -0.5px 0 white);
 }
