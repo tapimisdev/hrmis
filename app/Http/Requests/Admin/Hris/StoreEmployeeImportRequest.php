@@ -32,8 +32,13 @@ class StoreEmployeeImportRequest extends FormRequest
             'details.work_schedule_id'                  => ['required', 'integer', 'exists:work_schedule,id'],
 
             // Employees array
-            'employees'                                 => ['required', 'array', 'min:1'],
-            'employees.*.employee_no'                   => ['required', 'string', 'unique:employee_information,employee_no'],
+            'employees' => ['required', 'array', 'min:1'],
+            'employees.*.employee_no' => [
+                'required',
+                'string',
+                'distinct',
+                'unique:employee_information,employee_no',
+            ],
             'employees.*.firstname'                     => ['required', 'string'],
             'employees.*.middlename'                    => ['nullable', 'string'],
             'employees.*.lastname'                      => ['required', 'string'],
@@ -61,4 +66,14 @@ class StoreEmployeeImportRequest extends FormRequest
             'employees.*.payroll_account_no'            => ['nullable', 'string'],
         ];
     }
+    public function messages()
+    {
+        return [
+            'employees.*.employee_no.distinct' =>
+                'Duplicate employee number found.',
+            'employees.*.employee_no.unique' =>
+                'Employee number already exists in the system.',
+        ];
+    }
+
 }

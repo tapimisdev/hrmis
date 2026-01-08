@@ -34,25 +34,29 @@ class ImportEmployeeController extends Controller
         $rows = Excel::toArray([], $validatedData['file'])[0];
         $header = $rows[1];
         $dataRows = array_slice($rows, 2);
-        
+
         // Combine header with each row
         $final = [];
         foreach ($dataRows as $row) {
             $final[] = array_combine($header, $row);
         }
 
-        $mapped['employees'] = collect($dataRows)->map(function ($row) use ($header, $validatedData) {
+        // Keep track of employee numbers generated in this batch
+        $generatedEmployeeNos = [];
+
+        $mapped['employees'] = collect($dataRows)->map(function ($row) use ($header, $validatedData, &$generatedEmployeeNos) {
 
             $assoc = array_combine($header, $row);
 
-           $salary_cutoff = $assoc['salary_frequency'] === 'twice' 
+            // --- Salary and tranche calculations ---
+            $salary_cutoff = $assoc['salary_frequency'] === 'twice' 
                 ? null 
                 : ($assoc['salary_cutoff'] ?? null);
 
             $tranche      = $assoc['tranche'] ?? null;
             $step         = $assoc['step'] ?? null;
             $total_salary = $assoc['total_salary'] ?? null; 
-            
+
             if ($tranche) {
                 $tranche = DB::table('tranche')
                     ->where('date', $tranche)
@@ -66,7 +70,6 @@ class ImportEmployeeController extends Controller
                         ->first();
 
                     if ($db_tranche_item) {
-
                         if ($validatedData['employment_type'] === EmploymentTypesEnum::REGULAR->value) {
                             $stepColumn   = 'step_' . $step;
                             $total_salary = $db_tranche_item->{$stepColumn} ?? null;
@@ -81,7 +84,6 @@ class ImportEmployeeController extends Controller
                         }
 
                     } else {
-                        // reset if not found
                         $tranche      = null;
                         $step         = null;
                         $total_salary = null;
@@ -89,20 +91,49 @@ class ImportEmployeeController extends Controller
                 }
             }
 
-            if($validatedData['employment_type'] === EmploymentTypesEnum::COS->value) {
+            // --- Employee number generation ---
+            if ($validatedData['employment_type'] === EmploymentTypesEnum::COS->value) {
 
                 $date_hired_company = $this->excelDateOnly($assoc['date_hired']);
                 $date_hired_organization = $this->excelDateOnly($assoc['date_hired']);
 
-                if($validatedData['auto_generate_empno'] === 'yes') {
-                    $assoc['employee_no'] = $this->generateEmployeeNo($date_hired_company);
+                if ($validatedData['auto_generate_empno'] === 'yes') {
+                    // Start with the first generated employee number
+                    $employeeNo = $this->generateEmployeeNo($date_hired_company);
+
+                    // Increment until it's unique (DB + batch)
+                    while (
+                        in_array($employeeNo, $generatedEmployeeNos) ||
+                        DB::table('employee_information')->where('employee_no', $employeeNo)->exists()
+                    ) {
+                        // Safely extract year, semester, and sequence
+                        if (preg_match('/(\d+)-(\d+)-(\d+)/', $employeeNo, $matches)) {
+                            $year = $matches[1];
+                            $semester = $matches[2];
+                            $sequence = isset($matches[3]) ? (int)$matches[3] + 1 : 1;
+                        } else {
+                            // fallback if format is unexpected
+                            $year = date('Y');
+                            $semester = 1;
+                            $sequence = 1;
+                        }
+
+                        // 2-digit sequence
+                        $employeeNo = "{$year}-{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
+                    }
+
+
+                    // Save to batch to prevent duplicates in this upload
+                    $generatedEmployeeNos[] = $employeeNo;
+                    $assoc['employee_no'] = $employeeNo;
                 }
+
             } else {
                 $date_hired_company = $this->excelDateOnly($assoc['Date of Last Promotion/Appointment']);
                 $date_hired_organization = $this->excelDateOnly($assoc['Date of Original Appointment']);
             }
 
-            $data = [
+            return [
                 "employee_no"        => $assoc['employee_no'] ?? null,
                 "firstname"          => $assoc['firstname'] ?? null,
                 "middlename"         => $assoc['middlename'] ?? null,
@@ -112,7 +143,7 @@ class ImportEmployeeController extends Controller
                 "bio_id"             => $assoc['bio_id'] ?? null,
                 "date_hired_company" => $date_hired_company ?? null,
                 "date_hired_organization" => $date_hired_organization ?? null,
-                "isActive"           => strtolower($assoc['isActive'] ?? 'inactive'), // normalize
+                "isActive"           => strtolower($assoc['isActive'] ?? 'inactive'),
                 "position"           => $assoc['position'] ?? null,
                 "tranche"            => $tranche ?? null,
                 "step"               => $step ?? 1,
@@ -125,8 +156,6 @@ class ImportEmployeeController extends Controller
                 "salary_method"      => $assoc['salary_method'] ?? null,
                 "payroll_account_no" => $assoc['payroll_account_no'] ?? null,
             ];
-
-            return $data;
         });
 
         $mapped['details'] = [
@@ -291,37 +320,40 @@ class ImportEmployeeController extends Controller
         return $value;
     }
 
-    private function generateEmployeeNo($dateHired)
+   private function generateEmployeeNo($dateHired)
     {
-        // Ensure $dateHired is a Carbon instance
-        $date = \Carbon\Carbon::parse($dateHired);
+        return DB::transaction(function () use ($dateHired) {
 
-        $year = $date->format('Y');
+            $date = \Carbon\Carbon::parse($dateHired);
+            $year = $date->format('Y');
+            $semester = ($date->month <= 6) ? 1 : 2;
 
-        // Determine semester: Jan-Jun = 1, Jul-Dec = 2
-        $month = $date->format('m');
-        $semester = ($month <= 6) ? 1 : 2;
+            do {
+                $lastEmployee = DB::table('employee_information')
+                    ->whereYear('date_hired_company', $year)
+                    ->whereRaw('CASE WHEN MONTH(date_hired_company) <= 6 THEN 1 ELSE 2 END = ?', [$semester])
+                    ->lockForUpdate()
+                    ->orderByDesc('employee_no')
+                    ->first();
 
-        // Find the highest existing sequential number for this year & semester
-        $lastEmployee = DB::table('employee_information')
-            ->whereYear('date_hired_company', $year)
-            ->whereRaw('CASE WHEN MONTH(date_hired_company) <= 6 THEN 1 ELSE 2 END = ?', [$semester])
-            ->orderByDesc('employee_no')
-            ->first();
+                if ($lastEmployee) {
+                    $parts = explode('-', $lastEmployee->employee_no);
+                    // safely get sequence, default 0 if missing
+                    $sequence = isset($parts[2]) ? (int) $parts[2] + 1 : 1;
+                } else {
+                    $sequence = 1;
+                }
 
-        if ($lastEmployee) {
-            // Extract last sequence number
-            $lastSequence = (int) substr($lastEmployee->employee_no, -3);
-            $sequence = $lastSequence + 1;
-        } else {
-            $sequence = 1;
-        }
+                // Use 2-digit padding
+                $employeeNo = "{$year}-{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
 
-        // Format sequence to 3 digits, e.g., 001
-        $sequenceFormatted = str_pad($sequence, 3, '0', STR_PAD_LEFT);
+            } while (
+                DB::table('employee_information')->where('employee_no', $employeeNo)->exists()
+            );
 
-        // Combine to generate employee number
-        return "{$year}-{$semester}-{$sequenceFormatted}";
+            return $employeeNo;
+        });
     }
+
 
 }
