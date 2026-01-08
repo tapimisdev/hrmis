@@ -12,11 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employee_information', function (Blueprint $table) {
-            $table->string('date_hired_organization')
-                ->nullable()
-                ->after('account_status');
-            $table->renameColumn('date_hired', 'date_hired_company')
-                ->nullable();
+            $table->unique('employee_no');
+            $table->unique('biometrics_id');
+        });
+
+        Schema::table('employee_personal', function (Blueprint $table) {
+            $table->unique('employee_no');
         });
     }
 
@@ -26,9 +27,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('employee_information', function (Blueprint $table) {
-            $table->dropColumn('date_hired_organization');
+            $table->dropUnique(['employee_no']);
+            $table->dropUnique(['biometrics_id']);
+        });
 
-            $table->renameColumn('date_hired_company', 'date_hired');
+        Schema::table('employee_personal', function (Blueprint $table) {
+            $table->dropUnique(['employee_no']);
         });
     }
+
 };
