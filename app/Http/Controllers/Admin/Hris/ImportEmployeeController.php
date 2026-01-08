@@ -320,7 +320,7 @@ class ImportEmployeeController extends Controller
         return $value;
     }
 
-   private function generateEmployeeNo($dateHired)
+    private function generateEmployeeNo($dateHired)
     {
         return DB::transaction(function () use ($dateHired) {
 
@@ -331,20 +331,21 @@ class ImportEmployeeController extends Controller
             do {
                 $lastEmployee = DB::table('employee_information')
                     ->whereYear('date_hired_company', $year)
-                    ->whereRaw('CASE WHEN MONTH(date_hired_company) <= 6 THEN 1 ELSE 2 END = ?', [$semester])
+                    ->whereRaw(
+                        'CASE WHEN MONTH(date_hired_company) <= 6 THEN 1 ELSE 2 END = ?',
+                        [$semester]
+                    )
                     ->lockForUpdate()
                     ->orderByDesc('employee_no')
                     ->first();
 
-                if ($lastEmployee) {
-                    $parts = explode('-', $lastEmployee->employee_no);
-                    // safely get sequence, default 0 if missing
-                    $sequence = isset($parts[2]) ? (int) $parts[2] + 1 : 1;
+                if ($lastEmployee && preg_match('/(\d{4})(\d{1})-(\d+)/', $lastEmployee->employee_no, $matches)) {
+                    $sequence = (int) $matches[3] + 1;
                 } else {
                     $sequence = 1;
                 }
 
-                // Use 2-digit padding
+                // YYYYSS-XX
                 $employeeNo = "{$year}{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
 
             } while (
@@ -354,6 +355,7 @@ class ImportEmployeeController extends Controller
             return $employeeNo;
         });
     }
+
 
 
 }
