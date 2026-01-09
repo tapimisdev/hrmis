@@ -43,12 +43,14 @@
                             <span>View Schedule</span>
                         </a>
                         <button
+                            :class="isRegular ? 'd-block' : 'd-none'"
                             @click="viewLeaveCredits"
-                            class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2"
+                            class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2 leave-creds"
                         >
                             <i class="fa-solid fa-plane-departure"></i>
                             <span>Leave Credits</span>
                         </button>
+
                         <button
                             @click="viewOffsetCredits"
                             class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2"
@@ -147,7 +149,14 @@ import axios from "axios";
 export default {
     name: "WelcomeHeader",
     props: {
-        name: String,
+     name: {
+        type: String,
+        required: true
+      },
+      isRegular: {
+        type: Boolean, 
+        required: true
+      }
     },
     data() {
         return {

@@ -87,6 +87,14 @@
                  @yield('content')
             </div>
             @include('employee.components.footer')
+            <div class="modal fade " id="forceChangePasswordModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <change-password></change-password>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 

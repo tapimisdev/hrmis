@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
 use App\Http\Requests\Employee\StoreLeaveApplication;
+use App\Enums\EmploymentTypesEnum;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,14 +22,19 @@ class LeaveApplicationController extends Controller
         $this->applicationService = $applicationService;
 
         $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
-        // $this->middleware('permission:emp.leave_application.apply')->only(['store']);
-    }
+        $this->middleware('permission:emp.leave_application.apply')->only(['store']);
+
+    }   
 
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        if(Auth::user()->employment_type_id != EmploymentTypesEnum::REGULAR->value) {
+            return redirect()->route('dashboard.index');
+        }
+
         if (request()->ajax()) {
 
             $data = $this->applicationService->getRawData('leave');
@@ -44,6 +50,11 @@ class LeaveApplicationController extends Controller
      */
     public function create()
     {
+
+        if(Auth::user()->employment_type_id != EmploymentTypesEnum::REGULAR->value) {
+            return redirect()->route('dashboard.index');
+        }
+
         $myId = Auth::id();
         $data = $this->applicationService->getData('leave');
         $leaves = $data['leaves'];

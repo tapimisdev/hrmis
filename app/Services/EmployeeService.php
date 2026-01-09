@@ -195,6 +195,7 @@ class EmployeeService {
                     'employee_information.salary_method',
                     'employee_information.account_status',
                     'employee_information.isDeleted',
+                    'employee_information.toUpdatePassword',
 
                     'employee_personal.profile',
                     'employee_personal.firstname',
@@ -286,25 +287,25 @@ class EmployeeService {
         if ($employment_type_id == $regular_id) {
 
             // Subquery: get latest leave credit per leave_id
-            $latestCredits = DB::table('employee_leave_credits as c1')
-                ->select('c1.*')
-                ->where('c1.employee_no', $employee_no)
-                ->whereRaw('c1.effectivity_date = (
-                    SELECT MAX(c2.effectivity_date)
-                    FROM employee_leave_credits AS c2
-                    WHERE c2.employee_no = c1.employee_no
-                    AND c2.leave_id = c1.leave_id
+            $latestCredits = DB::table('leave_credits as lc')
+                ->select('lc.*')
+                ->where('lc.employee_no', $employee_no)
+                ->whereRaw('lc.as_of = (
+                    SELECT MAX(lc2.as_of)
+                    FROM leave_credits AS lc2
+                    WHERE lc2.employee_no = lc.employee_no
+                    AND lc2.leave_id = lc.leave_id
                 )');
 
             $data = DB::table('leaves as l')
-                ->leftJoinSub($latestCredits, 'c', function ($join) {
-                    $join->on('l.id', '=', 'c.leave_id');
+                ->leftJoinSub($latestCredits, 'lc', function ($join) {
+                    $join->on('l.id', '=', 'lc.leave_id');
                 })
                 ->select(
-                    DB::raw('COALESCE(c.id, 0) as id'),
-                    DB::raw('COALESCE(c.employee_no, "") as employee_no'),
-                    DB::raw('COALESCE(c.amount, 0) as amount'),
-                    DB::raw('COALESCE(c.effectivity_date, NULL) as effectivity_date'),
+                    DB::raw('COALESCE(lc.id, 0) as id'),
+                    DB::raw('COALESCE(lc.employee_no, "") as employee_no'),
+                    DB::raw('COALESCE(lc.balance, 0) as balance'),
+                    DB::raw('COALESCE(lc.as_of, NULL) as as_of'),
                     'l.name',
                     'l.id as leave_id',
                     'l.is_cumulative',
@@ -312,8 +313,8 @@ class EmployeeService {
                     'l.is_active',
                     DB::raw("
                         CASE WHEN EXISTS (
-                            SELECT 1 FROM employee_leave_card elc
-                            WHERE elc.employee_no = '$employee_no'
+                            SELECT 1 FROM leave_credits lc_check
+                            WHERE lc_check.employee_no = '$employee_no'
                             LIMIT 1
                         )
                         THEN true ELSE false END as hasLeaveCredit
@@ -325,10 +326,10 @@ class EmployeeService {
                     'l.is_cumulative',
                     'l.credit_to_deduct',
                     'l.is_active',
-                    'c.id',
-                    'c.employee_no',
-                    'c.amount',
-                    'c.effectivity_date'
+                    'lc.id',
+                    'lc.employee_no',
+                    'lc.balance',
+                    'lc.as_of'
                 )
                 ->get();
 
@@ -344,15 +345,17 @@ class EmployeeService {
         ];
     }
 
-    public function checkLeaveCredits(string $employee_no, int $leave_id) {
-        $employeeLeaveCredits = DB::table('employee_leave_credits')
+    public function checkLeaveCredits(string $employee_no, int $leave_id)
+    {
+        $leaveCredit = DB::table('leave_credits')
             ->where('employee_no', $employee_no)
             ->where('leave_id', $leave_id)
-            ->latest('effectivity_date')
+            ->latest('as_of')
             ->first();
 
-        return $employeeLeaveCredits;
+        return $leaveCredit;
     }
+
 
     public function getLeaveSettings(int $leave_id) {
         return DB::table('leaves')

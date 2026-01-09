@@ -21,22 +21,24 @@
                 @scroll="updateScrollButtons"
             >
                 <div
-                    v-for="card in cards"
+                    v-for="(card, index) in cards"
                     :key="card.id"
                     class="card"
                     :style="{ '--card-color': card.color }"
                     @click="navigate(card.route)"
-                >
+                    :class="index === 0 ? (isRegular ? 'd-block' : 'd-none') : ''"
+                  >
                     <div class="card-icon">
-                        <i :class="card.icon"></i>
+                      <i :class="card.icon"></i>
                     </div>
                     <h6 class="card-title">{{ card.name }}</h6>
                     <p class="card-desc">{{ card.description }}</p>
                     <span v-if="card.pending > 0" class="badge">
-                        {{ card.pending }} pending
+                      {{ card.pending }} pending
                     </span>
                     <span v-else class="status">All set!</span>
                 </div>
+
             </div>
 
             <button
@@ -75,7 +77,6 @@ export default {
                 const response = await axios.get("/employee/get-pendings", {
                     headers: { Authorization: `Bearer ${this.token}` },
                 });
-
                 this.cards = response.data.data;
             } catch (error) {
                 console.error("Error fetching stats:", error);

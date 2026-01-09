@@ -54,6 +54,10 @@
 
 @import 'dark-mode.scss';
 
+* {
+    user-select: none;
+}
+
 .btn {
     border-radius: 8px;
 }

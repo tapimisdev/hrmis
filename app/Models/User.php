@@ -45,6 +45,9 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+    protected $appends = ['employment_type_id'];
+
+
     protected $employee_no;
 
     public function employee_no()
@@ -54,10 +57,19 @@ class User extends Authenticatable
             ->value('employee_no');
     }
 
-    public function employment_type_id()
+    // public function employment_type_id()
+    // {
+    //     return DB::table('employee_organization')
+    //         ->where('employee_no', $this->employee_no())
+    //         ->orderByDesc('id')
+    //         ->value('employment_type_id');
+    // }
+
+    public function getEmploymentTypeIdAttribute()
     {
         return DB::table('employee_organization')
             ->where('employee_no', $this->employee_no())
+            ->orderByDesc('id')
             ->value('employment_type_id');
     }
 

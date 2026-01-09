@@ -237,6 +237,8 @@ class InformationController extends Controller
                     ->value('user_id');
             }
 
+            $toChangePassword = (bool) $request->input('toUpdatePassword', 0);
+
             DB::table('employee_information')->updateOrInsert(
                 ['employee_no' => $request->employee_no],
                 [
@@ -248,6 +250,7 @@ class InformationController extends Controller
                     'salary_method'          => $request->salary_method ?? null,
                     'payroll_account_no'     => $request->payroll_account_number ?? null,
                     'user_id'                => $user_id,
+                    'toUpdatePassword'       => $toChangePassword,
                     'created_at'             => now(),
                     'updated_at'             => now(),
                 ]

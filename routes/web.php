@@ -41,3 +41,4 @@ Route::get('today-birthday', [BirthdayController::class, 'index']);
 
 Route::any('/iclock/cdata', [\App\Http\Controllers\ZktecoController::class, 'cdata'])
     ->middleware('biometric.ip');
+

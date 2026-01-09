@@ -4,7 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BirthdayController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Api\ForceUpdatePassword;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -22,6 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    
+    Route::get('force-update-password', [ForceUpdatePassword::class, 'index'])
+        ->name('api.force-employee-password');
 
     Route::post('/logout', [LoginController::class, 'logout']);
 
@@ -34,5 +37,6 @@ Route::middleware('auth:sanctum')->group(function () {
     require __DIR__ . '/apis/hris.php';
     require __DIR__ . '/apis/shift-work.php';
     require __DIR__ . '/apis/reports.php';
+    
 
 });

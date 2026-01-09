@@ -1,7 +1,7 @@
 <template>
-  <Welcome :name="name" />
-  <Card/>
-  <Announcement/>
+  <Welcome :isRegular="isRegular" :name="name" />
+  <Card :isRegular="isRegular"/>
+  <Announcement :isRegular="isRegular"/>
 </template>
 
 <script>
@@ -13,7 +13,14 @@ export default {
   name: 'Dashboard Index',
   components: { Welcome, Card, Announcement },
   props: {
-    name: String
+    name: {
+      type: String,
+      required: true
+    },
+    isRegular: {
+      type: Boolean,
+      required: true
+    }
   },
   data() {
     return {

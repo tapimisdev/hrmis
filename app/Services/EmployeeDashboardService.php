@@ -45,7 +45,13 @@ class EmployeeDashboardService {
 
     public function get_pendings($user_id)
     {
+        
         $leave_request = DB::table('leave_applications')
+                        ->where('user_id', $user_id)
+                        ->where('status', 'pending')
+                        ->count();
+
+        $offset_request = DB::table('offset_applications')
                         ->where('user_id', $user_id)
                         ->where('status', 'pending')
                         ->count();
@@ -80,15 +86,24 @@ class EmployeeDashboardService {
             ],
             [
                 'id' => 2,
-                'name' => 'Pass Slip Request',
-                'icon' => 'fa-solid fa-id-card',
-                'description' => 'Submit and monitor pass slip requests',
-                'pending' => $passlip_request,
+                'name' => 'Offset Request',
+                'icon' => 'fa-solid fa-ghost',
+                'description' => 'Apply for offset and view offset history',
+                'pending' => $offset_request,
                 'color' => '#032985',
-                'route' => '/employee/pass-slip'
+                'route' => '/employee/offset'
             ],
+            // [
+            //     'id' => 3,
+            //     'name' => 'Pass Slip Request',
+            //     'icon' => 'fa-solid fa-id-card',
+            //     'description' => 'Submit and monitor pass slip requests',
+            //     'pending' => $passlip_request,
+            //     'color' => '#032985',
+            //     'route' => '/employee/pass-slip'
+            // ],
             [
-                'id' => 3,
+                'id' => 4,
                 'name' => 'Overtime Request',
                 'icon' => 'fa-solid fa-hourglass-half',
                 'description' => 'Submit and track overtime applications',
@@ -97,7 +112,7 @@ class EmployeeDashboardService {
                 'route' => '/employee/overtime'
             ],
             [
-                'id' => 4,
+                'id' => 5,
                 'name' => 'Announcements',
                 'icon' => 'fa-solid fa-bullhorn',
                 'description' => 'View unread company announcements',

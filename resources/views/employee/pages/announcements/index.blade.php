@@ -8,7 +8,7 @@
 
         <x-header-employee
             subtitle="View all announcements" 
-            :breadcrumbs="['Pages', 'Dashboard', 'Announcements']"
+            :breadcrumbs="['Pages', 'Announcements']"
         >
         </x-header-employee>
         

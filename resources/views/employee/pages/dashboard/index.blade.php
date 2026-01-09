@@ -6,7 +6,16 @@
         <header-vue title="Dashboard"></header-vue>
     </x-employee-navbar>
 
-    <dashboard-index name="{{ $name }}"></dashboard-index>
+    @php
+        $isRegular = Auth::user()->employment_type_id == \App\Enums\EmploymentTypesEnum::REGULAR->value;
+    @endphp
+    
+    <dashboard-index
+        :is-regular='@json($isRegular)'
+        name="{{ $name }}"
+    ></dashboard-index>
+
+
 
 </div>
 @endsection

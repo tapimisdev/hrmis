@@ -2,11 +2,15 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\IDMakerController;
 
 
 Route::prefix('admin')->middleware(['auth'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('id-maker', [IDMakerController::class, 'index']);
+    Route::post('id-maker', [IDMakerController::class, 'save_configuration'])
+        ->name('id-maker.save_configuration');
 
     require __DIR__ . '/hris.php';
     require __DIR__ . '/timekeeping.php';

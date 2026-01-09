@@ -124,6 +124,18 @@
                                             <div class="error-field"></div>
                                         </div>
                                     </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="toUpdatePassword"
+                                            name="toUpdatePassword"
+                                            class="form-check-input mb-0 mt-0"
+                                            value="1"
+                                            {{$data->toUpdatePassword ? 'checked' : ''}}
+                                        />
+                                        <label for="toUpdatePassword">Require Change Password</label>
+                                        <div class="error-field"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

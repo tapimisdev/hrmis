@@ -7,66 +7,68 @@
         <div id="approval-breadcrumbs">
 
         </div>
-        <table class="table table-bordered">
-            <tr>
-                <th>Destination:</th>
-                <td id="obs-destination"></td>
-            </tr>
-            <tr>
-                <th>Purpose:</th>
-                <td id="obs-purpose"></td>
-            </tr>
-            <tr>
-                <th>Date From:</th>
-                <td id="obs-date-from"></td>
-            </tr>
-            <tr>
-                <th>Date To:</th>
-                <td id="obs-date-to"></td>
-            </tr>
-            <tr>
-                <th>Time Out:</th>
-                <td id="obs-time-out"></td>
-            </tr>
-            <tr>
-                <th>Time In:</th>
-                <td id="obs-time-in"></td>
-            </tr>
-            <tr>
-                <th>Mode of Transport:</th>
-                <td id="obs-transport"></td>
-            </tr>
-            <tr>
-                <th>Estimated Expense:</th>
-                <td id="obs-expense"></td>
-            </tr>
-            <tr>
-                <th>Charge To:</th>
-                <td id="obs-charge-to"></td>
-            </tr>
-            <tr>
-                <th>Remarks:</th>
-                <td id="obs-remarks"></td>
-            </tr>
-            <tr>
-                <th>Created At:</th>
-                <td id="obs-created-at"></td>
-            </tr>
-            <tr>
-                <th>Attachments:</th>
-                <td id="obs-attachments">
-                    <ul class="list-unstyled mb-0"></ul>
-                </td>
-            </tr>
-            <tr>
-                <th>Status:</th>
-                <td><span id="obs-status" class="badge"></span></td>
-            </tr>
-            <tr class="extended d-none">
-                <th>Remarks:</th>
-                <td><span id="remarks"></span></td>
-            </tr>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <th>Destination:</th>
+                    <td id="obs-destination"></td>
+                </tr>
+                <tr>
+                    <th>Purpose:</th>
+                    <td id="obs-purpose"></td>
+                </tr>
+                <tr>
+                    <th>Date From:</th>
+                    <td id="obs-date-from"></td>
+                </tr>
+                <tr>
+                    <th>Date To:</th>
+                    <td id="obs-date-to"></td>
+                </tr>
+                <tr>
+                    <th>Time Out:</th>
+                    <td id="obs-time-out"></td>
+                </tr>
+                <tr>
+                    <th>Time In:</th>
+                    <td id="obs-time-in"></td>
+                </tr>
+                <tr>
+                    <th>Mode of Transport:</th>
+                    <td id="obs-transport"></td>
+                </tr>
+                <tr>
+                    <th>Estimated Expense:</th>
+                    <td id="obs-expense"></td>
+                </tr>
+                <tr>
+                    <th>Charge To:</th>
+                    <td id="obs-charge-to"></td>
+                </tr>
+                <tr>
+                    <th>Remarks:</th>
+                    <td id="obs-remarks"></td>
+                </tr>
+                <tr>
+                    <th>Created At:</th>
+                    <td id="obs-created-at"></td>
+                </tr>
+                <tr>
+                    <th>Attachments:</th>
+                    <td id="obs-attachments">
+                        <ul class="list-unstyled mb-0"></ul>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Status:</th>
+                    <td><span id="obs-status" class="badge"></span></td>
+                </tr>
+                <tr class="extended d-none">
+                    <th>Remarks:</th>
+                    <td><span id="remarks"></span></td>
+                </tr>
+            </table>
+        </div>
         <div class="w-100">
             <div id="approvers-by-level" class="mb-2"></div>
         </div>

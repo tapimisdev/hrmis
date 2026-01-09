@@ -25,6 +25,7 @@
             </div>
             <ul class="side-container">
                 @can('emp.dashboard.view')
+
                 <!-- Dashboard -->
                 <li class="side-items {{ request()->routeIs('dashboard.*') ? 'active' : '' }}">
                     <a href="{{ route('dashboard.index') }}" class="side-link text-body">
@@ -50,6 +51,16 @@
                     </a>
                 </li>
                 @endcanany
+
+                <!-- Announcements -->
+                <li class="side-items {{ request()->is('employee/announcements*') ? 'active' : '' }}">
+                    <a href="{{ route('announcement.index') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-bullhorn"></i>
+                        </span>
+                        <span class="side-text">Announcements</span>
+                    </a>
+                </li>
 
                 <li class="side-items">
                     <a class="side-link text-body dropdown-toggle 
@@ -83,7 +94,7 @@
                             <li class="side-items nested-item py-1 px-4 mb-2 {{  Str::contains(request()->path(), 'credits/offset') ? 'active' : '' }}">
                                 <a href="{{ route('offset-credits.index') }}"
                                 class="d-flex justify-content-start align-items-center gap-2 text-body text-decoration-none">
-                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                    <i class="fa-solid fa-ghost"></i>
                                     <span>Offset</span>
                                 </a>
                             </li>
@@ -113,15 +124,17 @@
                     'emp.leave_application.view',
                     'emp.leave_application.apply'
                 ])
-                <!-- Leave Application -->
-                <li class="side-items has-submenu {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
-                    <a href="{{ route('leaves.index') }}" class="side-link text-body">
-                        <span class="side-icon">
-                            <i class="fa-solid fa-plane-departure"></i>
-                        </span>
-                        <span class="side-text">Leave</span>
-                    </a>
-                </li>
+                    @if(Auth::user()->employment_type_id == \App\Enums\EmploymentTypesEnum::REGULAR->value)
+                        <!-- Leave Application -->
+                        <li class="side-items has-submenu {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
+                            <a href="{{ route('leaves.index') }}" class="side-link text-body">
+                                <span class="side-icon">
+                                    <i class="fa-solid fa-plane-departure"></i>
+                                </span>
+                                <span class="side-text">Leave</span>
+                            </a>
+                        </li>
+                    @endif
                 @endcanany
 
                 @canany([
@@ -153,11 +166,11 @@
                 </li>
                 @endcanany
 
-                @canany([
+                <!-- @canany([
                     'emp.overtime_application.view',
                     'emp.overtime_application.apply'
                 ])
-                <!-- Pass Slip -->
+
                 <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
                     <a href="{{ route('obs.index') }}" class="side-link text-body">
                         <span class="side-icon">
@@ -166,7 +179,7 @@
                         <span class="side-text">Pass Slip</span>
                     </a>
                 </li>
-                @endcanany
+                @endcanany -->
 
                 {{--
                 <div class="sidebar-seperator"></div>

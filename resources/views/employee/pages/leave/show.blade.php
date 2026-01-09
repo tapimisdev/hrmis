@@ -7,46 +7,48 @@
         <div id="approval-breadcrumbs">
 
         </div>
-        <table class="table table-bordered">
-            <tr>
-                <th width="30%">Employee No:</th>
-                <td id="employee-no"></td>
-            </tr>
-            <tr>
-                <th>Leave Type:</th>
-                <td id="leave-type"></td>
-            </tr>
-            <tr>
-                <th>Dates:</th>
-                <td id="selectedDates"></td>
-            </tr>
-            <tr>
-                <th>Total Day(s):</th>
-                <td id="days"></td>
-            </tr>
-            <tr>
-                <th>Reason:</th>
-                <td id="reason"></td>
-            </tr>
-            <tr>
-                <th>Created At:</th>
-                <td id="created-at"></td>
-            </tr>
-            <tr>
-                <th>Attachments:</th>
-                <td id="attachments">
-                    <ul class="list-unstyled mb-0"></ul>
-                </td>
-            </tr>
-            <tr>
-                <th>Status:</th>
-                <td><span id="status" class="badge"></span></td>
-            </tr>
-            <tr class="extended d-none">
-                <th>Remarks:</th>
-                <td><span id="remarks"></span></td>
-            </tr>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <th width="30%">Employee No:</th>
+                    <td id="employee-no"></td>
+                </tr>
+                <tr>
+                    <th>Leave Type:</th>
+                    <td id="leave-type"></td>
+                </tr>
+                <tr>
+                    <th>Dates:</th>
+                    <td id="selectedDates"></td>
+                </tr>
+                <tr>
+                    <th>Total Day(s):</th>
+                    <td id="days"></td>
+                </tr>
+                <tr>
+                    <th>Reason:</th>
+                    <td id="reason"></td>
+                </tr>
+                <tr>
+                    <th>Created At:</th>
+                    <td id="created-at"></td>
+                </tr>
+                <tr>
+                    <th>Attachments:</th>
+                    <td id="attachments">
+                        <ul class="list-unstyled mb-0"></ul>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Status:</th>
+                    <td><span id="status" class="badge"></span></td>
+                </tr>
+                <tr class="extended d-none">
+                    <th>Remarks:</th>
+                    <td><span id="remarks"></span></td>
+                </tr>
+            </table>
+        </div>
         <div class="w-100">
             <div id="approvers-by-level" class="mb-2"></div>
         </div>
