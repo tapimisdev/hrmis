@@ -5,16 +5,15 @@
         :class="{ dragging: isDragging }"
         :style="{ left: pos.x + 'px', top: pos.y + 'px' }"
     >
-        <div class="card shadow" style="overflow: hidden">
-            <div class="card-header d-flex justify-content-between align-items-center gap: 10px; ">
+        <div class="card" style="overflow: hidden">
+            <div class="card-header drag-header d-flex justify-content-between align-items-center gap: 10px; " @pointerdown="startDrag">
                 <div class="d-flex align-items-center">
                     <div
-                        class="btn btn-danger btn-sm me-2 drag-header"
-                        @pointerdown="startDrag"
+                        class="bg-warning px-2 py-1 rounded-2 me-2"
                     >
                         <i class="fa-solid fa-arrows-up-down-left-right"></i>
                     </div>
-                    <div class="fw-bold text-danger text-uppercase">
+                    <div class="fw-bold text-warning text-uppercase">
                         Timelog Discrepancy!
                     </div>
                 </div>
@@ -26,7 +25,7 @@
             </div>
 
             <div class="card-body p-0">
-                <div class="accordion shadow">
+                <div class="accordion">
                     <div class="accordion-item rounded-0">
                         <button
                             ref="accordionBtn"

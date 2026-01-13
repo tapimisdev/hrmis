@@ -50,40 +50,49 @@ class ProfileController extends Controller
     public function update(ProfileRequest $request)
     {
         $user = $request->user();
-        $data = $request->validated(); // validated data from ProfileRequest
+        $data = $request->validated();
 
-        // Start DB transaction
         DB::beginTransaction();
 
         try {
-            // Handle profile upload if exists
-            if ($request->hasFile('profile')) {
-                $profileFile = $request->file('profile');
-                $employee_no = $data['employee_no'] ?? $user->employee_no;
+            $employee_no = $data['employee_no'] ?? $user->employee_no;
 
-                // Make directory if not exists
-                $path = 'uploads/employees/' . $employee_no . '/profile/';
+            // ==============================
+            // HANDLE PROFILE UPLOAD
+            // ==============================
+            if ($request->hasFile('profile') && $request->file('profile')->isValid()) {
+
+                $file = $request->file('profile');
+
+                $path = 'public/uploads/employees/' . $employee_no . '/profile';
+
+                // Ensure directory exists
                 Storage::makeDirectory($path);
 
+                // Get old profile
+                $oldProfile = DB::table('employee_personal')
+                    ->where('employee_no', $employee_no)
+                    ->value('profile');
+
                 // Delete old profile if exists
-                $oldProfile = DB::table('employee_personal')->where('employee_no', $employee_no)->value('profile');
-                if ($oldProfile && Storage::exists($path . $oldProfile)) {
-                    Storage::delete($path . $oldProfile);
+                if ($oldProfile && Storage::exists($path . '/' . $oldProfile)) {
+                    Storage::delete($path . '/' . $oldProfile);
                 }
 
-                // Save new profile
-                $filename = Str::random(20) . '.' . $profileFile->getClientOriginalExtension();
-                $profileFile->storeAs($path, $filename);
+                // Save new profile (reference-based naming)
+                $filename = 'profile_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs($path, $filename);
 
                 $data['profile'] = $filename;
             } else {
-                // If profile not uploaded, remove from $data to keep old value
-                unset($data['profile']);
+                unset($data['profile']); // keep old profile
             }
 
-            // Update employee_personal table
+            // ==============================
+            // UPDATE EMPLOYEE PERSONAL
+            // ==============================
             DB::table('employee_personal')
-                ->where('employee_no', $data['employee_no'])
+                ->where('employee_no', $employee_no)
                 ->update([
                     'firstname' => $data['firstname'] ?? null,
                     'middlename' => $data['middlename'] ?? null,
@@ -94,6 +103,7 @@ class ProfileController extends Controller
                     'civil_status' => $data['civil_status'] ?? null,
                     'sex' => $data['sex'] ?? null,
                     'blood_type' => $data['blood_type'] ?? null,
+
                     'present_block' => $data['present_block'] ?? null,
                     'present_street' => $data['present_street'] ?? null,
                     'present_subdivision' => $data['present_subdivision'] ?? null,
@@ -101,6 +111,7 @@ class ProfileController extends Controller
                     'present_city' => $data['present_city'] ?? null,
                     'present_province' => $data['present_province'] ?? null,
                     'present_zip' => $data['present_zip'] ?? null,
+
                     'permanent_block' => $data['permanent_block'] ?? null,
                     'permanent_street' => $data['permanent_street'] ?? null,
                     'permanent_subdivision' => $data['permanent_subdivision'] ?? null,
@@ -108,19 +119,23 @@ class ProfileController extends Controller
                     'permanent_city' => $data['permanent_city'] ?? null,
                     'permanent_province' => $data['permanent_province'] ?? null,
                     'permanent_zip' => $data['permanent_zip'] ?? null,
+
                     'gsis_no' => $data['gsis_no'] ?? null,
                     'pagibig_no' => $data['pagibig_no'] ?? null,
                     'philhealth_no' => $data['philhealth_no'] ?? null,
                     'sss_no' => $data['sss_no'] ?? null,
                     'tin_no' => $data['tin_no'] ?? null,
                     'philsys_no' => $data['philsys_no'] ?? null,
-                    'profile' => $data['profile'] ?? DB::raw('profile'), // keep old if not changed
+
+                    'profile' => $data['profile'] ?? DB::raw('profile'),
                     'updated_at' => now(),
                 ]);
 
-            // Update employee_information table if needed
+            // ==============================
+            // UPDATE EMPLOYEE INFORMATION
+            // ==============================
             DB::table('employee_information')
-                ->where('employee_no', $data['employee_no'])
+                ->where('employee_no', $employee_no)
                 ->update([
                     'biometrics_id' => $data['biometrics_id'] ?? null,
                     'updated_at' => now(),
@@ -135,11 +150,13 @@ class ProfileController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 500);
         }
     }
+
 
 }

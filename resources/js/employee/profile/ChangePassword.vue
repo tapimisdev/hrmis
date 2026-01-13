@@ -142,7 +142,7 @@ export default {
                     title:
                         response.data.message ||
                         "Password changed successfully",
-                });w
+                });
 
                 // clear fields
                 this.password.current = "";
@@ -154,6 +154,7 @@ export default {
                 if (error.response?.status === 422) {
                     this.errors = error.response.data.errors;
                 } else {
+                    console.log(error);
                     ErrorToast.fire({
                         title:
                             error.response?.data?.message ||
