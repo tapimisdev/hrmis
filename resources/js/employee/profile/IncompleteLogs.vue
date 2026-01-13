@@ -78,7 +78,7 @@
                                                 <td>
                                                     {{ log.time_out || "" }}
                                                 </td>
-                                                <td class="text-uppercase">
+                                                <td class="text-uppercase text-danger">
                                                     {{ log.remarks.join(", ") }}
                                                 </td>
                                             </tr>
