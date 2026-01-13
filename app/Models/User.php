@@ -57,13 +57,13 @@ class User extends Authenticatable
             ->value('employee_no');
     }
 
-    // public function employment_type_id()
-    // {
-    //     return DB::table('employee_organization')
-    //         ->where('employee_no', $this->employee_no())
-    //         ->orderByDesc('id')
-    //         ->value('employment_type_id');
-    // }
+    public function employment_type_id()
+    {
+        return DB::table('employee_organization')
+            ->where('employee_no', $this->employee_no())
+            ->orderByDesc('id')
+            ->value('employment_type_id');
+    }
 
     public function getEmploymentTypeIdAttribute()
     {
@@ -90,21 +90,21 @@ class User extends Authenticatable
     }
 
 
-    // public function getNameAttribute()
-    // {
-    //     $employee = DB::table('users as u')
-    //         ->leftJoin('employee_information as ei', 'ei.user_id', '=', 'u.id')
-    //         ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-    //         ->where('u.id', $this->id)
-    //         ->select('ep.firstname', 'ep.lastname')
-    //         ->first();
+    public function getNameAttribute()
+    {
+        $employee = DB::table('users as u')
+            ->leftJoin('employee_information as ei', 'ei.user_id', '=', 'u.id')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->where('u.id', $this->id)
+            ->select('ep.firstname', 'ep.lastname')
+            ->first();
 
-    //     if ($employee) {
-    //         return $employee->firstname . ' ' . $employee->lastname;
-    //     }
+        if ($employee) {
+            return $employee->firstname . ' ' . $employee->lastname;
+        }
 
-    //     return 'No Name';
-    // }
+        return 'No Name';
+    }
 
 
     public function getShiftAndWorkSchedule()
