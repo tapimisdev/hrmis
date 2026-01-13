@@ -98,64 +98,50 @@ const authApp = createApp({
             showChangePasswordModal: false, 
         };
     },
-
     mounted() {
         const token = localStorage.getItem('auth_token');
 
-        if (token) {
-            axios.get('/api/force-update-password', {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            })
-            .then(response => {
-                const res = response.data;
-                // response.data contains the API payload
-                if (res.isForcedUpdate) {
-                    this.showChangePasswordModal = true;
-                   
-                    setTimeout(() => {
-                        const modalEl = document.getElementById('forceChangePasswordModal');
-                        if (!modalEl) return;
+        if (!token) return;
 
-                        // Show the modal
-                        modalEl.classList.add('show');
-                        modalEl.style.display = 'block';
-                        modalEl.removeAttribute('aria-hidden');
-                        modalEl.setAttribute('aria-modal', 'true');
-                        modalEl.setAttribute('role', 'dialog');
+        axios.get('/api/force-update-password', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (response.data.isForcedUpdate) {
+                this.showChangePasswordModal = true;
 
-                        // Add backdrop
-                        const backdrop = document.createElement('div');
-                        backdrop.className = 'modal-backdrop fade';
-                        document.body.appendChild(backdrop);
+                this.$nextTick(() => {
+                    $('#forceChangePasswordModal').modal({
+                        backdrop: 'static',
+                        keyboard: false    
+                    });
 
-                        // Trigger fade-in effect
-                        requestAnimationFrame(() => {
-                            backdrop.classList.add('show');
-                        });
+                    $('#forceChangePasswordModal').modal('show');
+                });
+            }
+        })
+        .catch(error => {
+            console.error('API error:', error);
+        });
+    },
+    methods: {
+        handlePasswordChanged(payload) {
+            console.log("Password updated:", payload);
 
-                        // Optional: prevent closing by clicking outside
-                        modalEl.addEventListener('click', (e) => {
-                            if (e.target === modalEl) e.stopPropagation();
-                        });
+            // examples:
+            // close modal
+            $('#forceChangePasswordModal').modal('hide');
 
-                        // Optional: close button
-                        document.getElementById('closeBtn').addEventListener('click', () => {
-                            modalEl.classList.remove('show');
-                            modalEl.style.display = 'none';
-                            backdrop.classList.remove('show');
-                            setTimeout(() => backdrop.remove(), 300); // remove after fade-out
-                        });
-                    }, 100);
+            // refresh user data
+            this.fetchUser();
 
-                }
-            })
-            .catch(error => {
-                console.error('API error:', error);
-            });
+            // redirect
+            this.$router.push('/dashboard');
         }
     }
+
 });
 
 authApp.mount("#app");

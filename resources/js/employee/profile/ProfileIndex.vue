@@ -1,6 +1,6 @@
 <template>
   <employee-index>
-    <ChangePassword/>
+    <ChangePassword title='Change Password'/>
   </employee-index>
 </template>
 
