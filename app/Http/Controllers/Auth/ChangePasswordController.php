@@ -36,7 +36,7 @@ class ChangePasswordController extends Controller
         if($request->isForcedUpdate) {
             $this->isPasswordChanged($employee_no);
         }
-
+   
         return response()->json([
             'message' => 'Password changed successfully.',
         ]);

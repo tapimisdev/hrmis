@@ -9,7 +9,9 @@ import ProfileIndex from "./employee/profile/ProfileIndex.vue";
 import Announcements from "./employee/announcements/Announcements.vue";
 import PayslipIndex from "./employee/payslip/PayslipIndex.vue";
 import Show from "./employee/announcements/Show.vue";
-import ChangePassword from "./employee/profile/ChangePassword.vue"; // <-- import
+import ChangePassword from "./employee/profile/ChangePassword.vue";
+import BirthdayComponent from "./birthday/BirthdayComponent.vue";
+import IncompleteLogs from "./employee/profile/IncompleteLogs.vue";
 
 // Admin
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
@@ -48,8 +50,6 @@ import PeraRataIndex from "./admin/payroll/pera-rata/Index.vue";
 import PeraRataStepper from "./admin/payroll/pera-rata/create/PayrollStepper.vue";
 import PeraRataView from "./admin/payroll/pera-rata/show/ShowPayroll.vue";
 
-import BirthdayComponent from "./birthday/BirthdayComponent.vue";
-
 const authApp = createApp({
     components: {
         DashboardIndex,
@@ -60,7 +60,8 @@ const authApp = createApp({
         Show,
         PayslipIndex,
         BirthdayComponent,
-        ChangePassword, // <-- register component
+        ChangePassword, 
+        IncompleteLogs,
 
         DashboardVue,
         DtrViewVue,
@@ -99,6 +100,7 @@ const authApp = createApp({
         };
     },
     mounted() {
+        
         const token = localStorage.getItem('auth_token');
 
         if (!token) return;
@@ -127,21 +129,10 @@ const authApp = createApp({
         });
     },
     methods: {
-        handlePasswordChanged(payload) {
-            console.log("Password updated:", payload);
-
-            // examples:
-            // close modal
+        handlePasswordChanged() {
             $('#forceChangePasswordModal').modal('hide');
-
-            // refresh user data
-            this.fetchUser();
-
-            // redirect
-            this.$router.push('/dashboard');
-        }
+        },
     }
-
 });
 
 authApp.mount("#app");

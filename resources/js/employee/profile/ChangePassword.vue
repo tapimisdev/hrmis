@@ -142,14 +142,14 @@ export default {
                     title:
                         response.data.message ||
                         "Password changed successfully",
-                });
+                });w
 
                 // clear fields
                 this.password.current = "";
                 this.password.new = "";
                 this.password.confirm = "";
                 this.isForcedUpdate = "";
-                this.$emit("password-changed", response.data);
+                this.$emit("password-changed");
             } catch (error) {
                 if (error.response?.status === 422) {
                     this.errors = error.response.data.errors;

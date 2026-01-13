@@ -15,6 +15,7 @@ use App\Http\Controllers\Employee\ObsController;
 use App\Http\Controllers\Employee\CreditsController;
 use App\Http\Controllers\Employee\PayslipController;
 use App\Http\Controllers\Employee\ProfileController;
+use App\Http\Controllers\Employee\LogsController;
 use App\Http\Controllers\Employee\timelogs\CheckInOutController;
 
 Route::prefix('employee')->middleware(['auth'])->group(function () {

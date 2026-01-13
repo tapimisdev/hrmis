@@ -81,7 +81,7 @@
         </div>
         @include('employee.components.sidebar')
         <main>
-            <!-- to show birthdays -->
+            <!-- to incomplete birthdays -->
             <birthday-component></birthday-component>
             <div>
                  @yield('content')
@@ -106,7 +106,7 @@
                     </div>
                 </div>
             </div>
-
+            <incomplete-logs @incomplete-data="handleData"/>
         </main>
     </div>
 
