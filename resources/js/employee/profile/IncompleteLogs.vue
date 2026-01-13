@@ -5,35 +5,45 @@
         :class="{ dragging: isDragging }"
         :style="{ left: pos.x + 'px', top: pos.y + 'px' }"
     >
-        <div class="card">
-            <div class="card-header">
-                <div class="drag-header" @pointerdown="startDrag">
-                    <div class="btn btn-danger btn-sm me-2">
+        <div class="card shadow" style="overflow: hidden">
+            <div class="card-header d-flex justify-content-between align-items-center gap: 10px; ">
+                <div class="d-flex align-items-center">
+                    <div
+                        class="btn btn-danger btn-sm me-2 drag-header"
+                        @pointerdown="startDrag"
+                    >
                         <i class="fa-solid fa-arrows-up-down-left-right"></i>
                     </div>
-                    <span class="fw-bold text-danger text-uppercase">
+                    <div class="fw-bold text-danger text-uppercase">
                         Timelog Discrepancy!
-                    </span>
+                    </div>
+                </div>
+                <div>
+                  <button class="btn btn-transparent">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
                 </div>
             </div>
+
             <div class="card-body p-0">
-                <div class="accordion shadow" id="incompleteLogsAccordion">
+                <div class="accordion shadow">
                     <div class="accordion-item rounded-0">
                         <button
-                            class="accordion-button collapsed text-uppercase fw-bold py-2" style="font-size: 10px"
+                            ref="accordionBtn"
+                            class="accordion-button collapsed text-uppercase fw-bold py-2 rounded-0"
+                            style="font-size: 10px"
                             type="button"
                             data-bs-toggle="collapse"
                             data-bs-target="#collapseLogs"
                             aria-expanded="false"
-                            aria-controls="collapseLogs"
                         >
                             Show Details
                         </button>
 
                         <div
                             id="collapseLogs"
+                            ref="collapse"
                             class="accordion-collapse collapse"
-                            data-bs-parent="#incompleteLogsAccordion"
                         >
                             <div class="accordion-body p-3">
                                 <div v-if="loading">
@@ -90,6 +100,10 @@
 
 <script>
 import axios from "axios";
+import { Collapse } from "bootstrap";
+
+const POSITION_KEY = "incomplete-logs-position";
+const ACCORDION_KEY = "incomplete-logs-accordion";
 
 export default {
     data() {
@@ -97,19 +111,35 @@ export default {
             incompleteLogs: [],
             loading: false,
 
-            // Drag state
+            // Drag
             isDragging: false,
             start: { x: 0, y: 0 },
             offset: { x: 0, y: 0 },
+
             pos: { x: window.innerWidth - 470, y: 200 },
+
+            collapseInstance: null,
         };
     },
 
     mounted() {
+        this.loadPosition();
         this.fetchIncompleteLogs();
+
+        this.$nextTick(() => {
+            this.initAccordion();
+            this.restoreAccordionState();
+        });
+    },
+
+    beforeUnmount() {
+        this.destroyAccordion();
     },
 
     methods: {
+        /* =====================
+           API
+        ====================== */
         async fetchIncompleteLogs() {
             this.loading = true;
             try {
@@ -138,6 +168,64 @@ export default {
         },
 
         /* =====================
+           POSITION
+        ====================== */
+        loadPosition() {
+            const saved = localStorage.getItem(POSITION_KEY);
+            if (!saved) return;
+
+            try {
+                const { x, y } = JSON.parse(saved);
+
+                const maxX = window.innerWidth - 450;
+                const maxY = window.innerHeight - 300;
+
+                this.pos.x = Math.min(Math.max(0, x), maxX);
+                this.pos.y = Math.min(Math.max(0, y), maxY);
+            } catch {
+                console.warn("Invalid saved position");
+            }
+        },
+
+        savePosition() {
+            localStorage.setItem(POSITION_KEY, JSON.stringify(this.pos));
+        },
+
+        /* =====================
+           ACCORDION (PROPER WAY)
+        ====================== */
+        initAccordion() {
+            const el = this.$refs.collapse;
+            if (!el) return;
+
+            this.collapseInstance = new Collapse(el, {
+                toggle: false,
+            });
+
+            el.addEventListener("shown.bs.collapse", () => {
+                localStorage.setItem(ACCORDION_KEY, "open");
+            });
+
+            el.addEventListener("hidden.bs.collapse", () => {
+                localStorage.setItem(ACCORDION_KEY, "closed");
+            });
+        },
+
+        restoreAccordionState() {
+            const state = localStorage.getItem(ACCORDION_KEY);
+            if (state === "open" && this.collapseInstance) {
+                this.collapseInstance.show();
+            }
+        },
+
+        destroyAccordion() {
+            if (this.collapseInstance) {
+                this.collapseInstance.dispose();
+                this.collapseInstance = null;
+            }
+        },
+
+        /* =====================
            DRAGGING
         ====================== */
         startDrag(e) {
@@ -146,7 +234,6 @@ export default {
             const rect = this.$refs.wrapper.getBoundingClientRect();
 
             this.isDragging = true;
-
             this.start.x = e.clientX;
             this.start.y = e.clientY;
 
@@ -169,6 +256,8 @@ export default {
 
         stopDrag() {
             this.isDragging = false;
+            this.savePosition();
+
             window.removeEventListener("pointermove", this.onDrag);
             window.removeEventListener("pointerup", this.stopDrag);
         },
@@ -186,10 +275,6 @@ export default {
 
 /* HEADER */
 .drag-header {
-    display: flex;
-    align-items: center;
-    padding: 8px 12px;
-    border-bottom: none;
     cursor: grab;
 }
 .drag-header:active {
@@ -202,8 +287,9 @@ export default {
     cursor: grabbing;
 }
 
+/* Remove accordion focus outline */
 .accordion-button {
-  outline: none;
-  box-shadow: none !important;
+    outline: none;
+    box-shadow: none !important;
 }
 </style>
