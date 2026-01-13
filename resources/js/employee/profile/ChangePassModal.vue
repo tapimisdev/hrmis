@@ -1,32 +1,26 @@
 <template>
     <div
         class="modal fade"
-        id="chanePAssModal"
+        id="changePassModal"
         tabindex="-1"
         aria-hidden="true"
         data-bs-backdrop="static"
         data-bs-keyboard="false"
     >
-        <div class="modal-dialog modal-md modal-dialog-centered">
-            <div class="modal-content modern-modal">
-                <!-- Header -->
-                <div class="modal-header modern-header border-bottom">
-                    <div class="header-content mb-3 d-flex align-items-center">
-                        <div class="icon-wrapper me-2">
-                            <i class="text-light fas fa-clock"></i>
-                        </div>
-                        <div class="header-text">
-                            <h5 class="modal-title">Change Password</h5>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"
-                    ></button>
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content shadow-lg border-0 rounded-4">
+                
+                <button
+                    type="button"
+                    class="btn-close position-absolute"
+                    style="right: 16px; top: 24px; z-index: 99999;"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+
+                <div class="modal-body p-0">
+                    <change-password title="Change Password"></change-password>
                 </div>
-                <ChangePassword :title:="'change Password'" />
             </div>
         </div>
     </div>
@@ -34,11 +28,12 @@
 
 <script>
 import ChangePassword from "./ChangePassword.vue";
+
 export default {
     components: { ChangePassword },
     methods: {
         open() {
-            $("#chanePAssModal").modal("show");
+            $("#changePassModal").modal("show");
         },
     },
 };

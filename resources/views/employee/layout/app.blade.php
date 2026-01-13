@@ -87,10 +87,22 @@
                  @yield('content')
             </div>
             @include('employee.components.footer')
-            <div class="modal fade " id="forceChangePasswordModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <change-password></change-password>
+            <div class="modal fade" 
+                id="forceChangePasswordModal" 
+                tabindex="-1" 
+                aria-hidden="true"
+                data-bs-backdrop="static"
+                data-bs-keyboard="false">
+
+                <div class="modal-dialog modal-dialog-centered modal-md">
+                    <div class="modal-content shadow-lg border-0 rounded-4">
+                        <div class="modal-body px-4 p-5">
+                            <div class="alert alert-info small mb-4" role="alert">
+                                As part of our ongoing commitment to account security, you are required to update your password at this time. 
+                                This helps protect your account from unauthorized access.
+                            </div>
+                            <change-password title='Update Password' @password-changed="handlePasswordChanged"></change-password>
+                        </div>
                     </div>
                 </div>
             </div>

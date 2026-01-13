@@ -1,6 +1,5 @@
 <template>
   <div class="container-fluid position-relative py-4 employee-edit">
-
     <ChangePassModal ref="changePasswordMdl" />
     <div class="row g-4">
       <!-- LEFT PROFILE -->
