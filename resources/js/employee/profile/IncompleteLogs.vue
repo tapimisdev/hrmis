@@ -6,11 +6,12 @@
         :style="{ left: pos.x + 'px', top: pos.y + 'px' }"
     >
         <div class="card" style="overflow: hidden">
-            <div class="card-header drag-header d-flex justify-content-between align-items-center gap: 10px; " @pointerdown="startDrag">
+            <div
+                class="card-header drag-header d-flex justify-content-between align-items-center gap: 10px;"
+                @pointerdown="startDrag"
+            >
                 <div class="d-flex align-items-center">
-                    <div
-                        class="bg-warning px-2 py-1 rounded-2 me-2"
-                    >
+                    <div style="width: 30px; height: 30px;" class="bg-warning rounded-2 me-3 d-flex justify-content-center align-items-center">
                         <i class="fa-solid fa-arrows-up-down-left-right"></i>
                     </div>
                     <div class="fw-bold text-warning text-uppercase">
@@ -18,9 +19,9 @@
                     </div>
                 </div>
                 <div>
-                  <button class="btn btn-transparent">
-                    <i class="fa-solid fa-xmark"></i>
-                  </button>
+                    <button class="btn btn-transparent">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
             </div>
 
@@ -59,10 +60,30 @@
                                     >
                                         <thead class="table-light">
                                             <tr>
-                                                <th>Date</th>
-                                                <th>In</th>
-                                                <th>Out</th>
-                                                <th>Remarks</th>
+                                                <th
+                                                    class="px-2 p-2 text-uppercase fw-bold"
+                                                    style="font-size: 10px"
+                                                >
+                                                    Date
+                                                </th>
+                                                <th
+                                                    class="px-2 p-2 text-uppercase fw-bold"
+                                                    style="font-size: 10px"
+                                                >
+                                                    In
+                                                </th>
+                                                <th
+                                                    class="px-2 p-2 text-uppercase fw-bold"
+                                                    style="font-size: 10px"
+                                                >
+                                                    Out
+                                                </th>
+                                                <th
+                                                    class="px-2 p-2 text-uppercase fw-bold"
+                                                    style="font-size: 10px"
+                                                >
+                                                    Remarks
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -70,14 +91,28 @@
                                                 v-for="log in incompleteLogs"
                                                 :key="log.date + log.shift_id"
                                             >
-                                                <td>
+                                                <td
+                                                    style="font-size: 11px"
+                                                    class="fw-bold px-2 py-2"
+                                                >
                                                     {{ formatDate(log.date) }}
                                                 </td>
-                                                <td>{{ log.time_in || "" }}</td>
-                                                <td>
+                                                <td
+                                                    style="font-size: 11px"
+                                                    class="fw-bold px-2 py-2"
+                                                >
+                                                    {{ log.time_in || "" }}
+                                                </td>
+                                                <td
+                                                    style="font-size: 11px"
+                                                    class="fw-bold px-2 py-2"
+                                                >
                                                     {{ log.time_out || "" }}
                                                 </td>
-                                                <td class="text-uppercase text-danger">
+                                                <td
+                                                    style="font-size: 11px"
+                                                    class="fw-bold px-2 py-2 text-uppercase text-danger"
+                                                >
                                                     {{ log.remarks.join(", ") }}
                                                 </td>
                                             </tr>
