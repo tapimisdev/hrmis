@@ -34,7 +34,7 @@
                             <th class="col-time">Break</th>
                             <th class="col-time">Time Out</th>
                             <th class="col-overtime">Overtime</th>
-                            <th class="col-hours">Paid HRS</th>
+                            <th class="col-hours">Time Work (HRS)</th>
                             <th class="col-double">Double</th>
                             <th class="col-hours">UT</th>
                             <th class="col-remarks">Remarks</th>
@@ -105,7 +105,7 @@
                                 </td>
                                 <td class="hours-cell">
                                     <span class="hours-badge">
-                                        {{ convertToReadableTime(log.paid_hours) }}
+                                        {{ convertToReadableTime(log.total_time_work) }}
                                     </span>
                                 </td>
                                 <td class="double-cell">
@@ -146,7 +146,7 @@
                                         <li v-for="action in getActions(log.remarks)" :key="action.type">
                                             <button 
                                                 :class="['dropdown-item', action.danger ? 'dropdown-item-danger' : '']"
-                                                @click="openModal(action.type, index)"
+                                                @click="openModal(action.type, index + 1)"
                                             >
                                                 <i :class="action.icon"></i>
                                                 <span>{{ action.text }}</span>

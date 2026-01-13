@@ -48,6 +48,7 @@ class DailyTimeRecordService {
         $timelogs = $this->timelogs_services->getTimeLogsWithPeriod($userId, $startDate, $endDate);
 
         $mapPeriodToTimelogs = $this->mapPeriodToTimelogs($period, $timelogs);
+                
         return $this->compute($mapPeriodToTimelogs, $userId);
     }
 
@@ -294,18 +295,65 @@ class DailyTimeRecordService {
             $otOutCarbon       = $this->timelogs_services->parseTime($date['overtime_out']);
 
             $break = match (true) {
-                $breakOutCarbon && $breakInCarbon => "$breakOutCarbon to $breakInCarbon",
-                $breakOutCarbon => "$breakOutCarbon to -- : --",
-                $breakInCarbon => "-- : -- to $breakInCarbon",
+                !is_null($breakOutCarbon) && !is_null($breakInCarbon)
+                    => "$breakOutCarbon to $breakInCarbon",
+
+                !is_null($breakOutCarbon)
+                    => "$breakOutCarbon to -- : --",
+
+                !is_null($breakInCarbon)
+                    => "-- : -- to $breakInCarbon",
+
                 default => null,
             };
 
             $overtime = match (true) {
-                $otInCarbon && $otOutCarbon => "$otInCarbon to $otOutCarbon",
-                $otInCarbon => "$otInCarbon to -- : --",
-                $otOutCarbon => "-- : -- to $otOutCarbon",
+                !is_null($otInCarbon) && !is_null($otOutCarbon)
+                    => "$otInCarbon to $otOutCarbon",
+
+                !is_null($otInCarbon)
+                    => "$otInCarbon to -- : --",
+
+                !is_null($otOutCarbon)
+                    => "-- : -- to $otOutCarbon",
+
                 default => null,
             };
+
+            // ------------------ Prepare payload for discrepancy check ------------------
+            $payload = [
+                'time_in'       => $timeInCarbon,
+                'time_out'      => $timeOutCarbon,
+                'break_out'     => $breakOutCarbon,
+                'break_in'      => $breakInCarbon,
+                'overtime_in'   => $otInCarbon,
+                'overtime_out'  => $otOutCarbon,
+            ];
+
+            // ------------------ Check for discrepancies ------------------
+            $result = $this->timelogs_services->checkTimeDiscrepancy($payload);
+
+            if ($result['discrepancy']) {
+
+                $computedData[] = [
+                    'date'             => $date['date'],
+                    'user_id'          => $userId,
+                    'time_in'          => $timeInCarbon,
+                    'time_out'         => $timeOutCarbon,
+                    'break'            => $break,
+                    'overtime'         => $overtime,
+                    'shift_id'         => null,
+                    'work_schedule_id' => null,
+                    'ot_mins'          => 0,
+                    'total_time_work'  => 0,
+                    'doble'            => 1,
+                    'late_undertime'   => 0,
+                    'paid_hours'       => 0,
+                    'remarks'          => $result['remarks'],
+                ];
+
+                continue;
+            }
 
             if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday) {
                 $remarks[] = 'incomplete log';

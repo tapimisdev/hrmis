@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Http\Controllers\Admin\Services\SuspensionController;
 use Carbon\Carbon;
 use Database\Seeders\HolidaySeeder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -972,5 +973,64 @@ class TimelogsServices {
             'shift' => $suspension->shift ?? null,
         ];
     }
+
+    /**
+     * Check for time log discrepancies using payload
+     *
+     * @param  array $payload   // raw strings: 'H:i:s'
+     * @return array
+     */
+    public function checkTimeDiscrepancy(array $payload): array
+    {
+        $remarks = [];
+        $discrepancy = false;
+
+        // Convert times to Carbon instances, null if empty
+        $timeInCarbon   = !empty($payload['time_in']) ? Carbon::parse($payload['time_in']) : null;
+        $timeOutCarbon  = !empty($payload['time_out']) ? Carbon::parse($payload['time_out']) : null;
+        $breakOutCarbon = !empty($payload['break_out']) ? Carbon::parse($payload['break_out']) : null;
+        $breakInCarbon  = !empty($payload['break_in']) ? Carbon::parse($payload['break_in']) : null;
+        $otInCarbon     = !empty($payload['overtime_in']) ? Carbon::parse($payload['overtime_in']) : null;
+        $otOutCarbon    = !empty($payload['overtime_out']) ? Carbon::parse($payload['overtime_out']) : null;
+
+        // ------------------- CHECK DISCREPANCIES -------------------
+
+        if ($timeInCarbon && $timeOutCarbon && $timeOutCarbon->lt($timeInCarbon)) {
+            $discrepancy = true;
+            $remarks[] = 'Discrepancy';
+        }
+
+        if ($breakOutCarbon && $breakInCarbon && $breakInCarbon->lt($breakOutCarbon)) {
+            $discrepancy = true;
+            $remarks[] = 'Discrepancy';
+        }
+
+        if ($breakOutCarbon && $timeInCarbon && $breakOutCarbon->lt($timeInCarbon)) {
+            $discrepancy = true;
+            $remarks[] = 'Discrepancy';
+        }
+
+        if ($breakInCarbon && $timeOutCarbon && $breakInCarbon->gt($timeOutCarbon)) {
+            $discrepancy = true;
+            $remarks[] = 'Discrepancy';
+        }
+
+        if ($otInCarbon && $breakOutCarbon && $otInCarbon->lt($breakOutCarbon)) {
+            $discrepancy = true;
+            $remarks[] = 'Discrepancy';
+        }
+
+        if ($otInCarbon && $otOutCarbon && $otOutCarbon->lt($otInCarbon)) {
+            $discrepancy = true;
+            $remarks[] = 'Discrepancy';
+        }
+
+        return [
+            'discrepancy' => $discrepancy,
+            'remarks'     => $remarks,
+        ];
+    }
+
+
 
 }
