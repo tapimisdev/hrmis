@@ -1,5 +1,5 @@
 <template>
-    <div class="card shadow-sm bg-body-secondary rounded-4">
+    <div class="card shadow-sm bg-body rounded-4">
         <!-- Card Header -->
         <div class="card-header pt-4 pb-4 pb-0">
             <h5 class="fw-semibold mb-0">{{ title }}</h5>
