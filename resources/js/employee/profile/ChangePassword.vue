@@ -1,10 +1,5 @@
 <template>
-  <div class="card shadow-sm bg-body-secondary rounded-4">
-    <!-- Card Header -->
-    <div class="card-header pt-4 pb-4 pb-0">
-      <h5 class="fw-semibold mb-0">Change Password</h5>
-    </div>
-
+  <div class="card">
     <!-- Card Body -->
     <div class="card-body">
       <form @submit.prevent="submitChangePassword">

@@ -80,6 +80,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
         ->name('approval-overtime.save');
 
     Route::get('profile', [ProfileController::class, 'index'])->name('employee.profile');
+    Route::post('profile', [ProfileController::class, 'update'])->name('employee.profile.update');
 
     Route::put('change-password', [ChangePasswordController::class, 'change']);
 
