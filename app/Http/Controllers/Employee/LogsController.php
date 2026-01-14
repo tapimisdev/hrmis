@@ -32,11 +32,27 @@ class LogsController extends Controller
 
         $logs = $this->daily_time_record_service->getDtr($payload)['computedData'] ?? [];
 
-        // Filter logs where remarks contain "incomplete log"
-        $incompleteLogs = collect($logs)->filter(function ($log) {
-            return isset($log['remarks']) && is_array($log['remarks']) &&
-                in_array('incomplete log', array_map('strtolower', $log['remarks']));
-        })->values();
+        $incompleteLogs = collect($logs)
+            ->filter(function ($log) {
+                return isset($log['remarks']) &&
+                    is_array($log['remarks']) &&
+                    collect($log['remarks'])
+                            ->map('strtolower')
+                            ->contains('incomplete log');
+            })
+            ->map(function ($log) {
+                // Remove "incomplete log" only if there are other remarks
+                if (count($log['remarks']) > 1) {
+                    $log['remarks'] = array_values(
+                        array_filter($log['remarks'], function ($remark) {
+                            return strtolower($remark) !== 'incomplete log';
+                        })
+                    );
+                }
+
+                return $log;
+            })
+            ->values();
 
         return response()->json($incompleteLogs);
     }

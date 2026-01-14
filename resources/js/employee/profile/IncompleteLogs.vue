@@ -303,7 +303,7 @@ export default {
 .incomplete-logs-component {
     position: fixed;
     width: 450px;
-    z-index: 9999;
+    z-index: 999;
     user-select: none;
 }
 
