@@ -12,6 +12,7 @@ export default defineConfig({
                 'resources/sass/employee.scss',
                 'resources/sass/auth.scss',
                 'resources/sass/errors.scss',
+                'resources/sass/underconstruction.scss',
                 'resources/js/app.js',
                 'resources/js/auth.js'
             ],
