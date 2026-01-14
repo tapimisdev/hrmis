@@ -92,8 +92,9 @@
                                                     {{ log.time_out || '' }}
                                                 </td>
                                                 <td
-                                                    class="fw-bold px-2 py-2 text-uppercase text-danger"
+                                                    class="fw-bold px-2 py-2 text-uppercase"
                                                     style="font-size: 11px"
+                                                    :class="log.remarks.includes('today') ? 'text-primary' : 'text-danger'"
                                                 >
                                                     {{ log.remarks.join(', ') }}
                                                 </td>
