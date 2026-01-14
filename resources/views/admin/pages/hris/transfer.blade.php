@@ -20,7 +20,6 @@
                         <div class="col-12 col-md-12 mb-3">
                             <label class="mb-2" for="employee_no">Choose Employees</label>
                             <select id="employees" name="employees[]" class="form-select select2" multiple="multiple" style="width: 75%">
-                                <option value=""> - CHOOSE - </option>
                                 @foreach ($employees as $divisionName => $units)
                                     <optgroup label="{{ $divisionName }}">
                                         @foreach ($units as $unitName => $unitEmployees)

@@ -132,8 +132,10 @@ export default {
                     { data: "employee_no" },
                     { data: "name" },
                     { data: "date_hired" },
-                    { data: "actions", orderable: false, searchable: false },
+                    { data: "actions", orderable: true, searchable: false },
                 ],
+                "scrollX": true,
+                "autoWidth": false
             });
 
             // Download PDS

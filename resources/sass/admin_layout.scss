@@ -361,7 +361,7 @@
 main {
     font-size: 12px;
     width: 100%;
-    overflow: auto;
+    overflow-x: hidden;
     position: relative;
     min-height: 100vh;
     display: flex;

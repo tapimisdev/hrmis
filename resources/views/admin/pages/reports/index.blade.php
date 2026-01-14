@@ -306,6 +306,8 @@ $(function() {
                         },
                         { targets: '_all', width: '200px' } 
                     ],
+                    scrollX: true,
+                    autoWidth: false,
                     language: {
                         emptyTable: "No data found"
                     },

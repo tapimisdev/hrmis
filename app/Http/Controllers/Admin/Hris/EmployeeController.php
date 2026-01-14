@@ -31,7 +31,7 @@ class EmployeeController extends Controller
         $division_id = $request->division;
         $unit_id = $request->unit;
 
-        $employees = $this->employeeService->getEmployees(null, null, null);
+        $employees = $this->employeeService->getEmployees(null, null, null, null);
 
         $employees = collect($employees)
             ->groupBy('division_name')
@@ -55,7 +55,7 @@ class EmployeeController extends Controller
         $unit_id = $request->unit;
         $tranches = DB::table('tranche')->get();
 
-        $employees = $this->employeeService->getEmployees(null, null, null);
+        $employees = $this->employeeService->getEmployees(null, null, null, null);
         $employment_types = DB::table('employment_types')->get();
 
         $employees = collect($employees)
@@ -163,7 +163,7 @@ class EmployeeController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Employees ' . implode(', ', $request->employees) . ' was transferred successfully.',
-                'redirect' => '_self'
+                'redirect' => route('hris.employee.transfer')
             ]);
 
         } catch (\Exception $e) {
@@ -219,7 +219,7 @@ class EmployeeController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Employees ' . implode(', ', $request->employees) . ' salary was updated successfully.',
-                'redirect' => ''
+                'redirect' => route('hris.employee.salary')
             ]);
 
         } catch (\Exception $e) {

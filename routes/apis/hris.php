@@ -29,3 +29,5 @@ Route::get('trainings', [Employee::class, 'trainings'])
 
 Route::get('skills', [Employee::class, 'skills'])
     ->name('api.employee.skills');
+
+Route::get('generate-employee-no', [Employee::class, 'generateEmployeeNo']);

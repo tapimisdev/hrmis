@@ -45,6 +45,8 @@
                 { data: "date_added", name: 'date_added' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            "scrollX": true,
+            "autoWidth": false
         });
 
         $(document).on('click', '#btn-show', function () {

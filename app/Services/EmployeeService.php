@@ -443,5 +443,41 @@ class EmployeeService {
         ];
     }
 
+    # GENERATE EMPLOYEE NO BASED ON DATE HIRED FOR COS EMPLOYEES
+    public function generateEmployeeNo($dateHired)
+    {
+        return DB::transaction(function () use ($dateHired) {
+
+            $date = \Carbon\Carbon::parse($dateHired);
+            $year = $date->format('Y');
+            $semester = ($date->month <= 6) ? 1 : 2;
+
+            do {
+                $lastEmployee = DB::table('employee_information')
+                    ->whereYear('date_hired_company', $year)
+                    ->whereRaw(
+                        'CASE WHEN MONTH(date_hired_company) <= 6 THEN 1 ELSE 2 END = ?',
+                        [$semester]
+                    )
+                    ->lockForUpdate()
+                    ->orderByDesc('employee_no')
+                    ->first();
+
+                if ($lastEmployee && preg_match('/(\d{4})(\d{1})-(\d+)/', $lastEmployee->employee_no, $matches)) {
+                    $sequence = (int) $matches[3] + 1;
+                } else {
+                    $sequence = 1;
+                }
+
+                // YYYYSS-XX
+                $employeeNo = "{$year}{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
+
+            } while (
+                DB::table('employee_information')->where('employee_no', $employeeNo)->exists()
+            );
+
+            return $employeeNo;
+        });
+    }
 
 }

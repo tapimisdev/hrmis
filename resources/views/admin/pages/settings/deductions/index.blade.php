@@ -47,6 +47,8 @@
                 { data: "second_term", name: 'second_term' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            "scrollX": true,
+            "autoWidth": false
         });
 
         const myModal = $('#myModal');

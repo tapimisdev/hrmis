@@ -52,7 +52,7 @@
                     @else
                         @foreach ($modules as $module)
                             <li class="nested-item">
-                                <a href="{{ route('payroll-components.index', ['slug' => $module->slug]) }}"
+                                <a href="{{ route('payroll-components.index', ['slug' => urlencode($module->slug)]) }}"
                                     class="{{ request()->is('admin/payroll-components/' . $module->slug . '*') ? 'active' : '' }}">
                                     <i class="{{ $module->icon }}"></i>
                                     <span class="text-capitalize">{{ $module->name }}</span>

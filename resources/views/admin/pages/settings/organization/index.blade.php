@@ -195,7 +195,9 @@
                         }
                     }
                 },
-                columns: tableConfigs[type]
+                columns: tableConfigs[type],
+                scrollX: true,
+                autoWidth: false
             });
 
         }

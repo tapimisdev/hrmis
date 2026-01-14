@@ -44,7 +44,6 @@ class InformationController extends Controller
         }
 
         $data = $employee_no && $isExists ? $this->employeeService->getEmployee('information', $employee_no) : [];
-
         return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'shifts', 'schedules', 'isExists', 'employee_no', 'data'));
     }
 
@@ -198,180 +197,231 @@ class InformationController extends Controller
     }
 
     public function save(Request $request, ?string $employee_no = null)
-    {
-        $isExists = $employee_no &&
-            DB::table('employee_information')
-                ->where('employee_no', $employee_no)
-                ->exists();
+{
+    $isExists = $employee_no &&
+        DB::table('employee_information')
+            ->where('employee_no', $employee_no)
+            ->exists();
 
-        $request->validate($this->rules($employee_no, $isExists));
+    $request->validate($this->rules($employee_no, $isExists));
 
+    DB::beginTransaction();
 
-        DB::beginTransaction();
+    try {
 
-        try {
-            $now = Carbon::now()->toDateString();
+        $now = Carbon::now()->toDateString();
+        $employmentTypeId = $request->employment_type_id;
 
-            if (!$isExists) {
-                $existingUser = DB::table('users')
-                    ->where('email', $request->email)
-                    ->first();
-
-                if ($existingUser) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Email already exists for another user.'
-                    ], 422);
-                }
-
-                $user_id = DB::table('users')->insertGetId([
-                    'name'       => $request->firstname . ' ' . $request->lastname,
-                    'email'      => $request->email,
-                    'password'   => Hash::make($request->password),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } else {
-                $user_id = DB::table('employee_information')
-                    ->where('employee_no', $employee_no)
-                    ->value('user_id');
-            }
-
-            $toChangePassword = (bool) $request->input('toUpdatePassword', 0);
-
-            DB::table('employee_information')->updateOrInsert(
-                ['employee_no' => $request->employee_no],
-                [
-                    'biometrics_id'          => $request->biometrics_id ?? null,
-                    'date_hired_company'     => $request->date_hired_company ?? null,
-                    'date_hired_organization'=> $request->date_hired_organization ?? null,
-                    'date_resigned'          => $request->date_resigned ?? null,
-                    'account_status'         => $request->status ?? null,
-                    'salary_method'          => $request->salary_method ?? null,
-                    'payroll_account_no'     => $request->payroll_account_number ?? null,
-                    'user_id'                => $user_id,
-                    'toUpdatePassword'       => $toChangePassword,
-                    'created_at'             => now(),
-                    'updated_at'             => now(),
-                ]
-            );
-
-            if (!$isExists) {
-                DB::table('employee_personal')->insert([
-                    'employee_no' => $request->employee_no,
-                    'firstname'   => $request->firstname,
-                    'middlename'  => $request->middlename,
-                    'lastname'    => $request->lastname,
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
-                ]);
-            }
-
-            $latestOrg = DB::table('employee_organization')
-                ->where('employee_no', $request->employee_no)
-                ->latest('effectivity_date')
+        /**
+         * -------------------------------------------------
+         * CREATE OR GET USER
+         * -------------------------------------------------
+         */
+        if (!$isExists) {
+            $existingUser = DB::table('users')
+                ->where('email', $request->email)
                 ->first();
 
-            if (
-                !$latestOrg ||
-                $latestOrg->division_id != $request->division_id ||
-                $latestOrg->unit_id != $request->unit_id ||
-                $latestOrg->employment_type_id != $request->employment_type_id ||
-                $latestOrg->position_id != $request->position_id
-            ) {
-                DB::table('employee_organization')->insert([
-                    'employee_no'        => $request->employee_no,
-                    'division_id'        => $request->division_id,
-                    'unit_id'            => $request->unit_id,
-                    'employment_type_id' => $request->employment_type_id,
-                    'position_id'        => $request->position_id,
-                    'effectivity_date'   => $now,
-                    'created_at'         => now(),
-                    'updated_at'         => now(),
-                ]);
+            if ($existingUser) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Email already exists for another user.'
+                ], 422);
             }
 
-            $latestSalary = DB::table('employee_salary')
-                ->where('employee_no', $request->employee_no)
-                ->latest('effectivity_date')
-                ->first();
-
-            $salary = $this->getSalary($request->tranche_id, $request->step_id, $request->salary_grade);
-
-            if (!$latestSalary || $latestSalary->amount != $salary->amount) {
-                $salary_cutoff = $request->salary_frequency === 'twice'
-                    ? 'both'
-                    : $request->salary_cutoff;
-
-                DB::table('employee_salary')->insert([
-                    'employee_no'      => $request->employee_no,
-                    'tranche_id'       => $request->tranche_id,
-                    'salary_grade'     => $request->salary_grade,
-                    'step'             => $request->step_id,
-                    'salary_frequency' => $request->salary_frequency,
-                    'salary_cutoff'    => $salary_cutoff,
-                    'deduction_applied'=> $request->deduction_applied,
-                    'salary_basis'     => $request->salary_basis ?? null,
-                    'amount'           => $salary->amount,
-                    'daily_rate'       => $salary->daily_rate,
-                    'effectivity_date' => $now,
-                    'created_at'       => now(),
-                    'updated_at'       => now(),
-                ]);
-            }
-
-            $latestShift = DB::table('employee_shift_work_schedule')
-                ->where('employee_no', $request->employee_no)
-                ->latest('effectivity_date')
-                ->first();
-
-            if (
-                !$latestShift ||
-                $latestShift->shift_id != $request->shift_id ||
-                $latestShift->work_schedule_id != $request->schedule_id
-            ) {
-                DB::table('employee_shift_work_schedule')->insert([
-                    'employee_no'      => $request->employee_no,
-                    'shift_id'         => $request->shift_id,
-                    'work_schedule_id' => $request->schedule_id,
-                    'effectivity_date' => $now,
-                    'created_at'       => now(),
-                    'updated_at'       => now(),
-                ]);
-            }
-
-            $user = User::findOrFail($user_id);
-
-            if($request->employment_type_id === EmploymentTypesEnum::COS->value) {
-                $user->assignRole('emp_contractual');
-            } else if ($request->employment_type_id === EmploymentTypesEnum::REGULAR->value) {
-                $user->assignRole('emp_regular');
-            } else {
-                throw new \Exception('Invalid employment type. Cannot assign role.');
-            }
-
-            DB::commit();
-
-            broadcast(new \App\Events\RefreshData());
-
-            return response()->json([
-                'status'   => 'success',
-                'message'  => 'Employee #' . $request->employee_no . ' saved successfully.',
-                'redirect' => !$isExists
-                    ? route('hris.employee.personal', ['employee_no' => $request->employee_no])
-                    : null
+            $user_id = DB::table('users')->insertGetId([
+                'name'       => $request->firstname . ' ' . $request->lastname,
+                'email'      => $request->email,
+                'password'   => Hash::make($request->password),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
-        } catch (\Exception $e) {
+            // ✅ generate employee no ONLY for new
+            $service = app(EmployeeService::class);
+            $employeeNo = $service->generateEmployeeNo(
+                $request->date_hired_company ?? now()
+            );
 
-            DB::rollBack();
+        } else {
+            // ✅ existing employee → reuse employee_no
+            $employeeNo = $employee_no;
 
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Error Occurred: ' . $e->getMessage()
-            ], 500);
+            $user_id = DB::table('employee_information')
+                ->where('employee_no', $employeeNo)
+                ->value('user_id');
         }
+
+        $toChangePassword = (bool) $request->input('toUpdatePassword', 0);
+
+        /**
+         * -------------------------------------------------
+         * EMPLOYEE INFORMATION
+         * -------------------------------------------------
+         */
+        DB::table('employee_information')->updateOrInsert(
+            ['employee_no' => $employeeNo],
+            [
+                'biometrics_id'           => $request->biometrics_id ?? null,
+                'date_hired_company'      => $request->date_hired_company ?? null,
+                'date_hired_organization' => $request->date_hired_organization ?? null,
+                'date_resigned'           => $request->date_resigned ?? null,
+                'account_status'          => $request->status ?? null,
+                'salary_method'           => $request->salary_method ?? null,
+                'payroll_account_no'      => $request->payroll_account_number ?? null,
+                'user_id'                 => $user_id,
+                'toUpdatePassword'        => $toChangePassword,
+                'updated_at'              => now(),
+                'created_at'              => $isExists ? DB::raw('created_at') : now(),
+            ]
+        );
+
+        /**
+         * -------------------------------------------------
+         * PERSONAL INFORMATION (NEW ONLY)
+         * -------------------------------------------------
+         */
+        if (!$isExists) {
+            DB::table('employee_personal')->insert([
+                'employee_no' => $employeeNo,
+                'firstname'   => $request->firstname,
+                'middlename'  => $request->middlename,
+                'lastname'    => $request->lastname,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        }
+
+        /**
+         * -------------------------------------------------
+         * ORGANIZATION
+         * -------------------------------------------------
+         */
+        $latestOrg = DB::table('employee_organization')
+            ->where('employee_no', $employeeNo)
+            ->latest('effectivity_date')
+            ->first();
+
+        if (
+            !$latestOrg ||
+            $latestOrg->division_id != $request->division_id ||
+            $latestOrg->unit_id != $request->unit_id ||
+            $latestOrg->employment_type_id != $employmentTypeId ||
+            $latestOrg->position_id != $request->position_id
+        ) {
+            DB::table('employee_organization')->insert([
+                'employee_no'        => $employeeNo,
+                'division_id'        => $request->division_id,
+                'unit_id'            => $request->unit_id,
+                'employment_type_id' => $employmentTypeId,
+                'position_id'        => $request->position_id,
+                'effectivity_date'   => $now,
+                'created_at'         => now(),
+                'updated_at'         => now(),
+            ]);
+        }
+
+        /**
+         * -------------------------------------------------
+         * SALARY
+         * -------------------------------------------------
+         */
+        $latestSalary = DB::table('employee_salary')
+            ->where('employee_no', $employeeNo)
+            ->latest('effectivity_date')
+            ->first();
+
+        $salary = $this->getSalary(
+            $request->tranche_id,
+            $request->step_id,
+            $request->salary_grade
+        );
+
+        if (!$latestSalary || $latestSalary->amount != $salary->amount) {
+
+            $salary_cutoff = $request->salary_frequency === 'twice'
+                ? 'both'
+                : $request->salary_cutoff;
+
+            DB::table('employee_salary')->insert([
+                'employee_no'       => $employeeNo,
+                'tranche_id'        => $request->tranche_id,
+                'salary_grade'      => $request->salary_grade,
+                'step'              => $request->step_id,
+                'salary_frequency'  => $request->salary_frequency,
+                'salary_cutoff'     => $salary_cutoff,
+                'deduction_applied' => $request->deduction_applied,
+                'salary_basis'      => $request->salary_basis ?? null,
+                'amount'            => $salary->amount,
+                'daily_rate'        => $salary->daily_rate,
+                'effectivity_date'  => $now,
+                'created_at'        => now(),
+                'updated_at'        => now(),
+            ]);
+        }
+
+        /**
+         * -------------------------------------------------
+         * SHIFT / WORK SCHEDULE
+         * -------------------------------------------------
+         */
+        $latestShift = DB::table('employee_shift_work_schedule')
+            ->where('employee_no', $employeeNo)
+            ->latest('effectivity_date')
+            ->first();
+
+        if (
+            !$latestShift ||
+            $latestShift->shift_id != $request->shift_id ||
+            $latestShift->work_schedule_id != $request->schedule_id
+        ) {
+            DB::table('employee_shift_work_schedule')->insert([
+                'employee_no'      => $employeeNo,
+                'shift_id'         => $request->shift_id,
+                'work_schedule_id' => $request->schedule_id,
+                'effectivity_date' => $now,
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ]);
+        }
+
+        /**
+         * -------------------------------------------------
+         * ROLE ASSIGNMENT
+         * -------------------------------------------------
+         */
+        $user = User::findOrFail($user_id);
+
+        if ($employmentTypeId === EmploymentTypesEnum::COS->value) {
+            $user->assignRole('emp_contractual');
+        } elseif ($employmentTypeId === EmploymentTypesEnum::REGULAR->value) {
+            $user->assignRole('emp_regular');
+        }
+
+        DB::commit();
+
+        broadcast(new \App\Events\RefreshData());
+
+        return response()->json([
+            'status'   => 'success',
+            'message'  => 'Employee #' . $employeeNo . ' saved successfully.',
+            'redirect' => !$isExists
+                ? route('hris.employee.personal', ['employee_no' => $employeeNo])
+                : null
+        ]);
+
+    } catch (\Exception $e) {
+
+        DB::rollBack();
+
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Error Occurred: ' . $e->getMessage()
+        ], 500);
     }
+}
+
+
 
 
     public function rules(?string $employee_no = null, bool $isExists)

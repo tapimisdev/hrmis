@@ -47,6 +47,8 @@
                 { data: "credit_to_deduct", name: 'credit_to_deduct' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            "scrollX": true,
+            "autoWidth": false
         });
 
         const myModal = $('#myModal');

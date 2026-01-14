@@ -65,6 +65,8 @@
                 { data: "status", name: 'status', orderable: false, searchable: false },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            scrollX: true,
+            autoWidth: false
         });
     });
 </script>
