@@ -18,9 +18,17 @@
             @can('hr.timekeeping.view')
             <li class="nested-item">
                 <a href="{{ route('timelogs.index') }}"
-                    class="{{ request()->is('admin/timekeeping/timelogs*') || request()->is('admin/timekeeping/daily-time-record*') ? 'active' : '' }}">
+                class="{{ Route::is('timelogs.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-stopwatch"></i>
                     <span>Timelogs</span>
+                </a>
+            </li>
+
+            <li class="nested-item">
+                <a href="{{ route('timelogs-correction.index') }}"
+                class="{{ Route::is('timelogs-correction.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-stopwatch"></i>
+                    <span>Correction Request</span>
                 </a>
             </li>
             @endcan

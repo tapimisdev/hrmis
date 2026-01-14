@@ -39,6 +39,7 @@
               <thead class="table-dark">
                 <tr>
                   <th>#</th>
+                  <th>Reference No.</th>
                   <th>Date</th>
                   <th>Time In</th>
                   <th>Break Out</th>
@@ -54,6 +55,7 @@
               <tbody>
                 <tr v-for="(request, index) in requests" :key="index">
                   <td>{{ index + 1}}</td>
+                  <td>{{ request.reference_no }}</td>
                   <td>{{ formatDate(request.date) }}</td>
                   <td>{{ formatTime(request.time_in) }}</td>
                   <td>{{ formatTime(request.break_out) }}</td>

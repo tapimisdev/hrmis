@@ -316,7 +316,7 @@ export default {
 
                 Swal.fire({
                     title: "Success!",
-                    text: "Logs saved successfully.",
+                    text: "TCR requested succesfully.",
                     icon: "success"
                 }).then(() => {
                     this.$emit("success", response.data);

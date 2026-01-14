@@ -102,6 +102,8 @@ class CorrectionTimelogController extends Controller
                 ->first();
 
             $data = DB::table('timelog_corrections')->insert([
+                'reference_no'      => $this->generate_reference_no(),
+                'employee_no'       => $employee_no,
                 'date'              => $validatedData['date'],
                 'time_in'           => $combineDateTime($date, $validatedData['time_in']),
                 'break_out'         => $combineDateTime($date, $validatedData['break_out']),
@@ -132,5 +134,22 @@ class CorrectionTimelogController extends Controller
                 'message' => 'Error Occurred: ' . $e->getMessage()
             ]);
         }    
+    }
+
+    private function generate_reference_no(): string
+    {
+        do {
+            $date = now()->format('Ymd');
+            $sequence = DB::table('timelog_corrections')
+                ->whereDate('created_at', now()->toDateString())
+                ->count() + 1;
+            $ref = 'TCR-' . $date . '-' . str_pad($sequence, 2, '0', STR_PAD_LEFT);
+        } while (
+            DB::table('timelog_corrections')
+                ->where('reference_no', $ref)
+                ->exists()
+        );
+
+        return $ref;
     }
 }
