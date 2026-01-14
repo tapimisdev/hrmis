@@ -27,8 +27,8 @@ class StoreTimeLogsRequest extends FormRequest
 
             // Times must be in proper format
             'time_in' => ['required', 'date_format:H:i:s'],
-            'break_out' => ['nullable', 'date_format:H:i:s'],
-            'break_in' => ['nullable', 'date_format:H:i:s'],
+            'break_out' => ['nullable', 'date_format:H:i:s', 'after:time_in'],
+            'break_in' => ['nullable', 'date_format:H:i:s', 'after:break_out'],
             'time_out' => ['required', 'date_format:H:i:s', 'after:time_in'],
 
             'overtime_in' => ['nullable', 'date_format:H:i:s', 'after:break_out'],
