@@ -1,0 +1,59 @@
+
+@import 'variables';
+
+body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: $primary; /* dark blue background */
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.card {
+    background: $light;
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    max-width: 550px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.card {
+  img {
+    height: 120px;
+    width: auto;
+    filter: drop-shadow(0 1px 1px white);
+  }
+}
+.card h1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, $primary, $dark);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.card p {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    color: #696969;
+}
+.btn-primary {
+    background: $warning;
+    color: $dark;
+    border: none;
+}
+.btn-primary:hover {
+    background-color: darken($color: $warning, $amount: 10);
+}
+.hris-logo {
+    width: 80px;
+    margin-bottom: 1rem;
+}
+.svg-illustration {
+    width: 200px;
+    margin: 0 auto 1.5rem;
+    display: block;
+}

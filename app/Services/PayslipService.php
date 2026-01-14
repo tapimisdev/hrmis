@@ -5,6 +5,7 @@ namespace App\Services;
 use App\DTO\PayslipData;
 use App\Enums\EmploymentTypesEnum;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PayslipService
 {
@@ -19,9 +20,9 @@ class PayslipService
             ->get();
 
         if ($approvedPayrolls->isEmpty()) {
-            throw new \Exception(
-                'Oops! There is no approved payroll for this month yet. Kindly contact HR for more details.',
-                422
+            throw new HttpException(
+                422,
+                'Oops! There is no approved payroll for this month yet. Kindly contact HR for more details.'
             );
         }
 

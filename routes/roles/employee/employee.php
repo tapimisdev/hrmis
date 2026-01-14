@@ -16,6 +16,7 @@ use App\Http\Controllers\Employee\CreditsController;
 use App\Http\Controllers\Employee\PayslipController;
 use App\Http\Controllers\Employee\ProfileController;
 use App\Http\Controllers\Employee\LogsController;
+use App\Http\Controllers\Employee\SettingsController;
 use App\Http\Controllers\Employee\timelogs\CheckInOutController;
 
 Route::prefix('employee')->middleware(['auth'])->group(function () {
@@ -82,6 +83,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
 
     Route::get('profile', [ProfileController::class, 'index'])->name('employee.profile');
     Route::post('profile', [ProfileController::class, 'update'])->name('employee.profile.update');
+    Route::get('settings', [SettingsController::class, 'index'])->name('employee.settings.index');
 
     Route::put('change-password', [ChangePasswordController::class, 'change']);
 

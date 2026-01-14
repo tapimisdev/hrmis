@@ -153,7 +153,7 @@
           </a>
         </li>
         <li>
-          <a class="dropdown-item py-2 px-3" href="/settings">
+          <a class="dropdown-item py-2 px-3" href="/employee/settings">
             <i class="fa-solid fa-gear me-2" style="width: 18px;"></i>
             Settings
           </a>
