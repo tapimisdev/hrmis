@@ -94,7 +94,7 @@
                                                 <td
                                                     class="fw-bold px-2 py-2 text-uppercase"
                                                     style="font-size: 11px"
-                                                    :class="log.remarks.includes('today') ? 'text-primary' : 'text-danger'"
+                                                    :class="log.remarks.includes('today') ? 'text-success' : 'text-danger'"
                                                 >
                                                     {{ log.remarks.join(', ') }}
                                                 </td>
