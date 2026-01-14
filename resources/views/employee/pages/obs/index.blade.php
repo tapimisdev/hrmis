@@ -48,8 +48,8 @@
                 { data: "status", name: 'status', orderable: false, searchable: false },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
-            "scrollY": "500px",       
-            "scrollCollapse": true, 
+            "scrollX": true,
+            "autoWidth": false
         });
 
         // Cancel OBS

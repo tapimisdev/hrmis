@@ -52,7 +52,8 @@
             </div>
         </div>
         
-        <x-table id="myTable">
+        <div class="table-responsive">
+            <x-table id="myTable">
             <thead>
                 <tr>
                     <th>#</th>
@@ -67,6 +68,7 @@
             <tbody >
             </tbody>
         </x-table>
+        </div>
     </div>
 @endsection
 
@@ -95,6 +97,8 @@
                 { data: "units_name", name: 'units_name' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            "scrollX": true,
+            "autoWidth": false
         });
         
         // Reload table when filters change

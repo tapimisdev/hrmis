@@ -43,6 +43,8 @@
                 { data: "date_created", name: 'date_created' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            "scrollX": true,
+            "autoWidth": false
         });
         
     });

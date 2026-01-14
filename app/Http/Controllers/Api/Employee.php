@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Yajra\DataTables\Facades\DataTables;
+use App\Services\EmployeeService;
 
 class Employee extends Controller
 {
@@ -472,6 +473,12 @@ class Employee extends Controller
         }
 
         return response()->json(['message' => 'Invalid request'], 400);
+    }
+
+    public function generateEmployeeNo(Request $request) {
+        $dateHired = $request->dateHired;
+        $service = app(EmployeeService::class);
+        return $service->generateEmployeeNo($dateHired);
     }
 
 }

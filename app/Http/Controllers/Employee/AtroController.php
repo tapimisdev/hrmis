@@ -124,7 +124,7 @@ class AtroController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Overtime application has been submitted',
-                'redirect' => route('obs.create')
+                'redirect' => route('overtime.create')
             ]);
 
         } catch (\Exception $e) {

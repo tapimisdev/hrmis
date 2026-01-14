@@ -48,8 +48,8 @@
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],  
-            "scrollY": "500px",       
-            "scrollCollapse": true, 
+            "scrollX": true,
+            "autoWidth": false
         });
 
         $(document).on('click', '.cancel-button', function() {

@@ -45,6 +45,8 @@
                 { data: "is_taxable", name: 'is_taxable'},
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            "scrollX": true,
+            "autoWidth": false
         });
 
         const myModal = $('#myModal');

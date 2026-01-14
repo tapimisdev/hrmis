@@ -20,6 +20,10 @@ class PayrollComponentsController extends Controller
                 ->where('slug', $slug)
                 ->first();
 
+        if(!$component) {
+            return redirect()->route('dashboard.index');
+        }
+
         if ($request->ajax()) {
 
             $yearsFromDb = DB::table('payroll_components_years')

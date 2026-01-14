@@ -100,13 +100,13 @@
                                             <div class="error-field"></div>
                                         </div>
                                         <div class="col-12 col-md-3 mb-3">
-                                            <label class="mb-2" for="date_hired_organization">Date Hired (Organization) <span class="text-danger">*</span></label>
-                                            <input type="date" id="date_hired_organization" name="date_hired_organization" class="form-control" value="{{ optional($data)->date_hired_organization ?? '' }}">
+                                            <label class="mb-2" for="date_hired_company">Date Hired (Company) <span class="text-danger">*</span></label>
+                                            <input type="date" id="date_hired_company" name="date_hired_company" class="form-control" value="{{ optional($data)->date_hired_company ?? '' }}">
                                             <div class="error-field"></div>
                                         </div>
                                         <div class="col-12 col-md-3 mb-3">
-                                            <label class="mb-2" for="date_hired_company">Date Hired (Company) <span class="text-danger">*</span></label>
-                                            <input type="date" id="date_hired_company" name="date_hired_company" class="form-control" value="{{ optional($data)->date_hired_company ?? '' }}">
+                                            <label class="mb-2" for="date_hired_organization">Date Hired (Organization) <span class="text-danger">*</span></label>
+                                            <input type="date" id="date_hired_organization" name="date_hired_organization" class="form-control" value="{{ optional($data)->date_hired_organization ?? '' }}">
                                             <div class="error-field"></div>
                                         </div>
                                         <div class="col-12 col-md-3 mb-3">
@@ -131,7 +131,7 @@
                                             name="toUpdatePassword"
                                             class="form-check-input mb-0 mt-0"
                                             value="1"
-                                            {{$data->toUpdatePassword ? 'checked' : ''}}
+                                            {{isset($data->toUpdatePassword) ? $data->toUpdatePassword ? 'checked' : '' : ''}}
                                         />
                                         <label for="toUpdatePassword">Require Change Password</label>
                                         <div class="error-field"></div>
@@ -379,6 +379,35 @@
         const infoUrl = @json(route('hris.employee.information'));
 
         post(url);
+
+       $('#date_hired_company, #employment_type_id, #employee_no').on('change', function() {
+            const employmentType = $('#employment_type_id').val();
+            const dateHired = $('#date_hired_company').val();
+            const biometricsId = $('#employee_no').val();
+
+            if (employmentType == "2" && dateHired && !biometricsId) {
+                console.log(123);
+
+                const token = localStorage.getItem("auth_token");
+                axios.get('/api/generate-employee-no', {
+                    params: {
+                        dateHired: dateHired
+                    },
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(function(response) {
+                    $('#employee_no').val(response.data);
+                })
+                .catch(function(error) {
+                    console.error('Error generating employee number:', error);
+                });
+            }
+        });
+
+
+
 
         $('#division_id').on('change', function () {
             const id = $(this).val();

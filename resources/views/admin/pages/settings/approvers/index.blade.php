@@ -74,7 +74,9 @@
                 { data: "no_approvers", name: 'no_approvers' },
                 { data: "date_created", name: 'date_created' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
-            ]
+            ],
+            scrollX: true,
+            autoWidth: false
         });
 
         $('#myTable tbody').on('click', 'td.dt-control', function() {

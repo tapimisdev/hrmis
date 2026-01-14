@@ -46,8 +46,9 @@
                 { data: "earliest_time", name: 'earliest_time' },
                 { data: "is_flexible", name: 'is_flexible' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
-
             ],
+            "scrollX": true,
+            "autoWidth": false
         });
 
         const shiftModal = $('#shiftModal');

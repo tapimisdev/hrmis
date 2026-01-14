@@ -144,7 +144,9 @@
             ],
             "columnDefs": [
                 { targets: '_all', className: 'dt-nowrap' } 
-            ]
+            ],
+            "scrollX": true,
+            "autoWidth": false
         });    
 
         $('#openItemModal').on('click', function() {

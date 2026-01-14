@@ -59,6 +59,8 @@ $(document).ready(function () {
                 searchable: false
             }
         ],
+        scrollX: true,
+        autoWidth: false,
         order: [[1, 'desc']]
     });
 
