@@ -146,7 +146,7 @@
                                         <li v-for="action in getActions(log.remarks)" :key="action.type">
                                             <button 
                                                 :class="['dropdown-item', action.danger ? 'dropdown-item-danger' : '']"
-                                                @click="openModal(action.type, index + 1)"
+                                                @click="openModal(action.type, index)"
                                             >
                                                 <i :class="action.icon"></i>
                                                 <span>{{ action.text }}</span>
