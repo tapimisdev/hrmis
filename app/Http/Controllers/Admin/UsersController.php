@@ -15,6 +15,15 @@ use Spatie\Permission\Models\Role;
 
 class UsersController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:hr.users.view')->only('index');
+        $this->middleware('permission:hr.users.create')->only(['create', 'store']);
+        $this->middleware('permission:hr.users.edit')->only(['edit', 'update']);
+        $this->middleware('permission:hr.users.delete')->only('delete');
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -11,6 +11,11 @@ use App\Enums\EmploymentTypesEnum;
 
 class ReportsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.report.view')->only('index');
+    }
+
     public function index(Request $request) {
 
         $positions = DB::table('positions')

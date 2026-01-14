@@ -1,3 +1,4 @@
+@can('hr.users.view')
 <li class="sidebar-item {{ Str::contains(request()->path(), 'users') ? 'active' : '' }}">
     <a href="{{ route('users.index') }}" class="sidebar-link 
         {{ Str::contains(request()->path(), 'users') ? '' : 'collapsed' }}">
@@ -5,3 +6,4 @@
         <span>Users</span>
     </a>
 </li>
+@endcan
