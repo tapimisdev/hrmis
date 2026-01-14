@@ -322,7 +322,7 @@ export default {
 
 /* Table */
 .table-wrapper {
-  // max-height: 720px;
+  max-height: 600px;
   &::-webkit-scrollbar { width: 6px; height: 6px; }
   &::-webkit-scrollbar-thumb { background: var(--bs-border-color); border-radius: 3px; }
 }

@@ -24,7 +24,7 @@
                     </div>
                 </div>
 
-                <button class="btn btn-transparent" @click.stop="handleHide">
+                <button class="btn btn-transparent" @click.stop="handleToggle">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -119,13 +119,15 @@
 import axios from "axios";
 import { Collapse } from "bootstrap";
 
-/* STORAGE KEYS */
+/* STORAGE KEYS (SHARED) */
 const POSITION_KEY = "incomplete-logs-position";
 const ACCORDION_KEY = "incomplete-logs-accordion";
-const HIDE_KEY = "incomplete-logs-hidden";
-const HIDE_DATE_KEY = "incomplete-logs-hide-date";
+const HIDE_KEY = "hide_timelog_discrepancy";
+const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
 
 export default {
+    name: "IncompleteLogs",
+
     data() {
         return {
             show: true,
@@ -137,13 +139,17 @@ export default {
             isDragging: false,
             offset: { x: 0, y: 0 },
 
-            pos: { x: window.innerWidth - 470, y: 200 },
+            pos: {
+                x: window.innerWidth - 470,
+                y: 200,
+            },
+
             collapseInstance: null,
         };
     },
 
     mounted() {
-        this.restoreVisibility();
+        this.syncVisibility();
         this.loadPosition();
         this.fetchIncompleteLogs();
 
@@ -151,17 +157,20 @@ export default {
             this.initAccordion();
             this.restoreAccordionState();
         });
+
+        window.addEventListener("timelog-toggle", this.syncVisibility);
     },
 
     beforeUnmount() {
         this.destroyAccordion();
+        window.removeEventListener("timelog-toggle", this.syncVisibility);
     },
 
     methods: {
         /* =====================
-           VISIBILITY (DAILY RESET)
+           VISIBILITY (DAILY RESET + SYNC)
         ====================== */
-        restoreVisibility() {
+        syncVisibility() {
             const today = new Date().toDateString();
             const hidden = localStorage.getItem(HIDE_KEY);
             const hideDate = localStorage.getItem(HIDE_DATE_KEY);
@@ -175,10 +184,15 @@ export default {
             }
         },
 
-        handleHide() {
+        handleToggle() {
             this.show = false;
             localStorage.setItem(HIDE_KEY, "true");
-            localStorage.setItem(HIDE_DATE_KEY, new Date().toDateString());
+            localStorage.setItem(
+                HIDE_DATE_KEY,
+                new Date().toDateString()
+            );
+
+            window.dispatchEvent(new Event("timelog-toggle"));
         },
 
         /* =====================
@@ -195,9 +209,11 @@ export default {
                     },
                 });
 
-                this.incompleteLogs = res.data || [];
+                this.incompleteLogs = Array.isArray(res.data)
+                    ? res.data
+                    : [];
             } catch (err) {
-                console.error(err);
+                console.error("Fetch incomplete logs failed:", err);
             } finally {
                 this.loading = false;
             }
@@ -222,7 +238,9 @@ export default {
                 const { x, y } = JSON.parse(saved);
                 this.pos.x = x;
                 this.pos.y = y;
-            } catch {}
+            } catch {
+                localStorage.removeItem(POSITION_KEY);
+            }
         },
 
         savePosition() {
@@ -238,13 +256,8 @@ export default {
 
             this.collapseInstance = new Collapse(el, { toggle: false });
 
-            el.addEventListener("shown.bs.collapse", () => {
-                localStorage.setItem(ACCORDION_KEY, "open");
-            });
-
-            el.addEventListener("hidden.bs.collapse", () => {
-                localStorage.setItem(ACCORDION_KEY, "closed");
-            });
+            el.addEventListener("shown.bs.collapse", this.onAccordionOpen);
+            el.addEventListener("hidden.bs.collapse", this.onAccordionClose);
         },
 
         restoreAccordionState() {
@@ -253,8 +266,17 @@ export default {
             }
         },
 
+        onAccordionOpen() {
+            localStorage.setItem(ACCORDION_KEY, "open");
+        },
+
+        onAccordionClose() {
+            localStorage.setItem(ACCORDION_KEY, "closed");
+        },
+
         destroyAccordion() {
-            this.collapseInstance?.dispose();
+            if (!this.collapseInstance) return;
+            this.collapseInstance.dispose();
             this.collapseInstance = null;
         },
 
@@ -277,14 +299,25 @@ export default {
         onDrag(e) {
             if (!this.isDragging) return;
 
-            const maxX = window.innerWidth - this.$refs.wrapper.offsetWidth;
-            const maxY = window.innerHeight - this.$refs.wrapper.offsetHeight;
+            const el = this.$refs.wrapper;
+            if (!el) return;
 
-            this.pos.x = Math.min(Math.max(0, e.clientX - this.offset.x), maxX);
-            this.pos.y = Math.min(Math.max(0, e.clientY - this.offset.y), maxY);
+            const maxX = window.innerWidth - el.offsetWidth;
+            const maxY = window.innerHeight - el.offsetHeight;
+
+            this.pos.x = Math.min(
+                Math.max(0, e.clientX - this.offset.x),
+                maxX
+            );
+            this.pos.y = Math.min(
+                Math.max(0, e.clientY - this.offset.y),
+                maxY
+            );
         },
 
         stopDrag() {
+            if (!this.isDragging) return;
+
             this.isDragging = false;
             this.savePosition();
 
@@ -294,6 +327,7 @@ export default {
     },
 };
 </script>
+
 
 <style scoped>
 .incomplete-logs-component {
