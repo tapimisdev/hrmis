@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
-use App\Services\EmployeeDashboardService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -72,6 +71,18 @@ class AnnouncementsController extends Controller
                             return $d;
                         });
 
+        $exists = DB::table('events_announcements_viewers')
+            ->where('event_announcement_id', $announcement->id)
+            ->where('user_id', auth()->user()->id)
+            ->exists();
+
+        if (! $exists) {
+            DB::table('events_announcements_viewers')->insert([
+                'event_announcement_id' => $announcement->id,
+                'user_id' => auth()->user()->id,
+                'viewed_at' => now()
+            ]);
+        }
         
         $randomAnnouncements = $this->get_random_announcements(4, $announcement->id);
             
