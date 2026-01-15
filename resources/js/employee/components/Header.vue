@@ -1,99 +1,7 @@
 <template>
     <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰</button>
     <div class="d-flex gap-4 align-items-center">
-        <div class="toggle-container">
-            <button
-                class="theme-toggle"
-                id="theme-toggle"
-                title="Toggles light & dark"
-                aria-label="light"
-                aria-live="polite"
-            >
-                <div class="toggle-icon sun">
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <circle
-                            cx="12"
-                            cy="12"
-                            r="5"
-                            fill="#FFD700"
-                            stroke="#FFD700"
-                        />
-                        <line x1="12" y1="1" x2="12" y2="3" stroke="#FFD700" />
-                        <line
-                            x1="12"
-                            y1="21"
-                            x2="12"
-                            y2="23"
-                            stroke="#FFD700"
-                        />
-                        <line
-                            x1="4.22"
-                            y1="4.22"
-                            x2="5.64"
-                            y2="5.64"
-                            stroke="#FFD700"
-                        />
-                        <line
-                            x1="18.36"
-                            y1="18.36"
-                            x2="19.78"
-                            y2="19.78"
-                            stroke="#FFD700"
-                        />
-                        <line x1="1" y1="12" x2="3" y2="12" stroke="#FFD700" />
-                        <line
-                            x1="21"
-                            y1="12"
-                            x2="23"
-                            y2="12"
-                            stroke="#FFD700"
-                        />
-                        <line
-                            x1="4.22"
-                            y1="19.78"
-                            x2="5.64"
-                            y2="18.36"
-                            stroke="#FFD700"
-                        />
-                        <line
-                            x1="18.36"
-                            y1="5.64"
-                            x2="19.78"
-                            y2="4.22"
-                            stroke="#FFD700"
-                        />
-                    </svg>
-                </div>
-                <div class="toggle-icon moon">
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path
-                            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-                            fill="#93C5FD"
-                            stroke="#93C5FD"
-                        />
-                    </svg>
-                </div>
-            </button>
-            <div class="tooltip">
-                <span class="tooltip-text"></span>
-            </div>
-        </div>
-
-        <!-- Notification Dropdown -->
+        <!-- Widget Dropdown -->
         <div class="dropdown position-relative">
             <a
                 class="text-decoration-none position-relative d-inline-block"
@@ -103,20 +11,11 @@
                 data-bs-auto-close="outside"
                 aria-expanded="false"
                 style="cursor: pointer"
-                @click="loadNotifications"
             >
                 <i
                     class="fa-solid fa-gear fa-spin text-light"
                     style="font-size: 1.5rem"
                 ></i>
-                <span
-                    v-if="unreadCount > 0"
-                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                    style="font-size: 0.65rem; padding: 0.25rem 0.45rem"
-                >
-                    {{ unreadCount }}
-                    <span class="visually-hidden">unread notifications</span>
-                </span>
             </a>
 
             <ul
@@ -136,10 +35,39 @@
                         <h6 class="mb-0 fw-semibold">Widgets</h6>
                     </div>
                 </li>
-                <li class="py-2 px-4">
-                    <div>
+                <div class="px-4 py-3">
+                    <!-- Dark Mode Toggle -->
+                    <li class="pb-2">
                         <div
-                            class="form-check form-switch d-flex align-items-center gap-2 my-3"
+                            class="form-check form-switch d-flex align-items-center gap-2"
+                        >
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="darkModeSwitch"
+                                v-model="isDarkMode"
+                                @change="handleThemeToggle"
+                                style="
+                                    cursor: pointer;
+                                    transform: scale(1.2);
+                                    margin-right: 0.5rem;
+                                    margin-bottom: 2px;
+                                "
+                            />
+                            <label
+                                class="form-check-label text-uppercase fw-medium"
+                                for="darkModeSwitch"
+                                style="font-size: 12px; cursor: pointer;"
+                            >
+                                Dark Mode
+                            </label>
+                        </div>
+                    </li>
+
+                    <!-- Timelog Toggle -->
+                    <li class="pb-2">
+                        <div
+                            class="form-check form-switch d-flex align-items-center gap-2"
                         >
                             <input
                                 class="form-check-input"
@@ -157,13 +85,13 @@
                             <label
                                 class="form-check-label text-uppercase fw-medium"
                                 for="timelogDiscrepancySwitch"
-                                style="font-size: 12px"
+                                style="font-size: 12px; cursor: pointer;"
                             >
-                                Timelog Discrepancy
+                                Timelogs Discrepancy
                             </label>
                         </div>
-                    </div>
-                </li>
+                    </li>
+                </div>
             </ul>
         </div>
 
@@ -366,20 +294,8 @@
                         <i
                             class="fa-regular fa-user me-2"
                             style="width: 18px"
-                        ></i>
-                        My Account
-                    </a>
-                </li>
-                <li>
-                    <a
-                        class="dropdown-item py-2 px-3"
-                        href="/employee/settings"
-                    >
-                        <i
-                            class="fa-solid fa-gear me-2"
-                            style="width: 18px"
-                        ></i>
-                        Settings
+                        ></i
+                        >My Account
                     </a>
                 </li>
                 <li><hr class="dropdown-divider my-1" /></li>
@@ -392,8 +308,8 @@
                         <i
                             class="fa-solid fa-right-from-bracket me-2"
                             style="width: 18px"
-                        ></i>
-                        {{ loggingOut ? "Logging out..." : "Logout" }}
+                        ></i
+                        >{{ loggingOut ? "Logging out..." : "Logout" }}
                     </button>
                 </li>
             </ul>
@@ -413,7 +329,6 @@ const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
 
 export default {
     name: "AppHeader",
-
     data() {
         return {
             token,
@@ -426,9 +341,9 @@ export default {
             loggingOut: false,
 
             showTimelogDiscrepancy: true,
+            isDarkMode: false,
         };
     },
-
     computed: {
         userAvatar() {
             return `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -436,29 +351,84 @@ export default {
             )}&background=4f46e5&color=fff&size=128`;
         },
     },
-
     mounted() {
-        this.fetchNotificationCount();
+        // Initialize dark mode
+        this.initTheme();
 
+        // Timelog toggle state
         this.syncTimelogToggle();
 
+        // Fetch notifications
+        this.fetchNotificationCount();
         this.notificationInterval = setInterval(
             this.fetchNotificationCount,
             30000
         );
 
+        // Event listener for timelog toggle
         window.addEventListener("timelog-toggle", this.syncTimelogToggle);
     },
-
     beforeUnmount() {
         clearInterval(this.notificationInterval);
         window.removeEventListener("timelog-toggle", this.syncTimelogToggle);
     },
-
     methods: {
         /* =====================
-           Timelog Toggle (sync with IncompleteLogs)
-        ====================== */
+       Dark Mode
+    ====================== */
+        initTheme() {
+            const storageKey = "theme-preference";
+            const savedTheme = localStorage.getItem(storageKey);
+            const systemPrefersDark = window.matchMedia(
+                "(prefers-color-scheme: dark)"
+            ).matches;
+
+            // Determine theme: saved preference > system preference > light
+            const currentTheme =
+                savedTheme || (systemPrefersDark ? "dark" : "light");
+            this.isDarkMode = currentTheme === "dark";
+
+            // Apply immediately
+            this.applyTheme();
+
+            // Listen for system theme changes
+            window
+                .matchMedia("(prefers-color-scheme: dark)")
+                .addEventListener("change", (e) => {
+                    this.isDarkMode = e.matches;
+                    this.applyTheme();
+                    localStorage.setItem(
+                        "theme-preference",
+                        this.isDarkMode ? "dark" : "light"
+                    );
+                });
+        },
+
+        handleThemeToggle() {
+            const theme = this.isDarkMode ? "dark" : "light";
+            localStorage.setItem("theme-preference", theme);
+            this.applyTheme();
+        },
+
+        applyTheme() {
+            const theme = this.isDarkMode ? "dark" : "light";
+
+            document.documentElement.classList.remove("light", "dark");
+            document.body.classList.remove("light", "dark");
+            document.documentElement.classList.add(theme);
+            document.body.classList.add(theme);
+
+            // Bootstrap attribute
+            document.documentElement.setAttribute("data-bs-theme", theme);
+
+            // Update switch aria-label
+            const switchEl = document.querySelector("#darkModeSwitch");
+            if (switchEl) switchEl.setAttribute("aria-label", theme);
+        },
+
+        /* =====================
+       Timelog Toggle
+    ====================== */
         syncTimelogToggle() {
             const today = new Date().toDateString();
             const hidden = localStorage.getItem(HIDE_KEY);
@@ -481,25 +451,23 @@ export default {
                 localStorage.removeItem(HIDE_KEY);
                 localStorage.removeItem(HIDE_DATE_KEY);
             }
-
             window.dispatchEvent(new Event("timelog-toggle"));
         },
 
         /* =====================
-           Notifications
-        ====================== */
+       Notifications
+    ====================== */
         async fetchNotificationCount() {
             try {
                 const res = await axios.get("/api/notifications/unread-count");
                 this.unreadCount = res.data.count ?? 0;
             } catch (err) {
-                console.error("Error fetching notification count:", err);
+                console.error(err);
             }
         },
 
         async loadNotifications() {
             if (this.notifications.length) return;
-
             this.loadingNotifications = true;
             try {
                 const res = await axios.get("/api/notifications", {
@@ -531,12 +499,11 @@ export default {
         },
 
         /* =====================
-           Logout & UI
-        ====================== */
+       Logout & UI
+    ====================== */
         async logout() {
             if (this.loggingOut) return;
             this.loggingOut = true;
-
             try {
                 await axios.post("/logout");
                 window.location.href = "/login";
@@ -610,45 +577,18 @@ export default {
     }
 }
 
-#notificationDropdown {
-    &:hover {
-        i {
-            transform: rotate(15deg);
-            transition: transform 0.3s ease;
-        }
-    }
-}
-
-#profileDropdown {
-    &:hover {
-        img {
-            opacity: 0.9;
-            transition: opacity 0.2s ease;
-        }
-
-        .bg-primary {
-            transform: scale(1.1);
-            transition: transform 0.2s ease;
-        }
-    }
-}
-
 .dropdown-menu {
     max-height: 500px;
     overflow-y: auto;
-
     &::-webkit-scrollbar {
         width: 6px;
     }
-
     &::-webkit-scrollbar-track {
         background: #f1f1f1;
     }
-
     &::-webkit-scrollbar-thumb {
         background: #888;
         border-radius: 3px;
-
         &:hover {
             background: #555;
         }
@@ -657,11 +597,10 @@ export default {
 
 @media (max-width: 767.98px) {
     .dropdown-menu {
-      min-width: 300px !important;
-      label {
-        font-size: 10px !important;
-      }
+        min-width: 300px !important;
+        label {
+            font-size: 10px !important;
+        }
     }
 }
-
 </style>

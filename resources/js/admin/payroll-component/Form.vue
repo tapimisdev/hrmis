@@ -1,7 +1,7 @@
 <template>
     <!-- Header -->
     <div
-        class="card-header d-flex justify-content-between align-items-end pb-3"
+        class="card-header d-md-flex justify-content-between align-items-center pb-3"
     >
         <Printables />
 
@@ -10,7 +10,7 @@
         </div>
 
         <div
-            class="search-pill d-flex align-items-center px-2 py-1 bg-body-bg rounded-pill"
+            class="search-pill mt-3 d-flex align-items-center px-2 py-1 bg-body-bg rounded-pill"
         >
             <i class="fa-solid fa-magnifying-glass me-2"></i>
             <input
@@ -35,7 +35,7 @@
                 status="loading"
                 message="loading, please wait..."
             />
-            <table v-if="!loading" class="table table-hover mb-0 compact-table">
+            <table class="table table-hover mb-0 compact-table">
                 <thead>
                     <tr>
                         <th class="sticky-col ps-1">Employee</th>
@@ -52,15 +52,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="items.length == 0">
+                    <tr v-if="filtered.length === 0">
                         <td colspan="14" class="text-center">
                             <div class="alert alert-secondary mx-2 mt-2 py-4">
                                 No employee(s) found.
                             </div>
                         </td>
                     </tr>
+
+                    <!-- Employee rows -->
                     <tr
-                        v-else
                         v-for="item in filtered"
                         :key="item.employee_no"
                         :data-employee_no="item.employee_no"
@@ -128,12 +129,14 @@
                             />
                         </td>
                     </tr>
-                    <tr class="grand-total">
+
+                    <!-- Grand total row -->
+                    <tr v-if="filtered.length > 0" class="grand-total">
                         <td class="sticky-col text-end fw-bold bg-body-color">
                             Grand Total
                         </td>
                         <td class="text-end">
-                            {{ formatNumber(total_all_line_tota()) }}
+                            {{ formatNumber(total_all_line_total()) }}
                         </td>
                         <td v-for="monthKey in monthKeys" :key="monthKey">
                             <div class="text-end">
@@ -153,21 +156,12 @@ import Printables from "../../components/Printables.vue";
 import axios from "axios";
 
 export default {
-    name: "PayrollEmployeeComponentForm", 
+    name: "PayrollEmployeeComponentForm",
     components: { LoaderVue, Printables },
     props: {
-        selected_employee: {
-            type: String,
-            required: false,
-        },
-        url: {
-            type: String,
-            required: true,
-        },
-        parent_table: {
-            type: Object,
-            required: true,
-        },
+        selected_employee: { type: String, required: false },
+        url: { type: String, required: true },
+        parent_table: { type: Object, required: true },
     },
     data() {
         return {
@@ -201,14 +195,12 @@ export default {
             ],
             items: [],
             filtered: [],
-            isFetched: false,
             search: "",
             loading: false,
         };
     },
     created() {
         this.fetchTable();
-        this.isFetched = true;
     },
     methods: {
         fetchTable() {
@@ -221,10 +213,9 @@ export default {
                     this.filteredItems();
                 })
                 .catch((error) => {
-                    console.log(error);
+                    console.error(error);
                     ErrorToast.fire({
                         title:
-                            error.response?.data?.error ||
                             error.response?.data?.message ||
                             "An error occurred",
                     });
@@ -236,12 +227,7 @@ export default {
         create_update(id, amount, month, employee_no) {
             this.loading = true;
             axios
-                .post(this.url, {
-                    id: id,
-                    amount: amount,
-                    month: month,
-                    employee_no: employee_no,
-                })
+                .post(this.url, { id, amount, month, employee_no })
                 .then((res) => {
                     this.fetchTable();
                     SuccesToast.fire({
@@ -249,55 +235,56 @@ export default {
                     });
                 })
                 .catch((error) => {
-                    console.log(error);
+                    console.error(error);
                     ErrorToast.fire({
                         title:
-                            error.response?.data?.error ||
                             error.response?.data?.message ||
                             "An error occurred",
-                    }).finally(() => {
-                        this.loading = false;
                     });
+                })
+                .finally(() => {
+                    this.loading = false;
                 });
         },
         line_total(employee) {
-            let line_total = 0;
-
-            this.monthKeys.forEach((month) => {
-                line_total += parseFloat(employee[month]) || 0;
-            });
-
-            return line_total;
+            return this.monthKeys.reduce(
+                (sum, month) => sum + (parseFloat(employee[month]) || 0),
+                0
+            );
         },
-        total_all_line_tota() {
-            let total = 0;
-
-            this.filtered.forEach((item) => {
-                total += parseFloat(this.line_total(item)) ?? 0;
-            });
-
-            return total;
+        total_all_line_total() {
+            return this.filtered.reduce(
+                (sum, item) => sum + this.line_total(item),
+                0
+            );
         },
         grand_total(month) {
-            return this.filtered.reduce((sum, item) => {
-                return sum + (parseFloat(item[month]) || 0);
-            }, 0);
+            return this.filtered.reduce(
+                (sum, item) => sum + (parseFloat(item[month]) || 0),
+                0
+            );
         },
         formatNumber(number) {
             return Number(number).toLocaleString();
         },
         filteredItems() {
-            const query = (this.search ?? '').toLowerCase().trim();
-
-            if (!query) return this.items;
-
-            return this.items.filter(item =>
-                (item.firstname ?? '').toLowerCase().includes(query) ||
-                (item.lastname ?? '').toLowerCase().includes(query) ||
-                (item.division_code ?? '').toLowerCase().includes(query) ||
-                (item.division_name ?? '').toLowerCase().includes(query)
-            );
-        }
+            const query = (this.search ?? "").toLowerCase().trim();
+            this.filtered = !query
+                ? this.items
+                : this.items.filter(
+                      (item) =>
+                          (item.firstname ?? "")
+                              .toLowerCase()
+                              .includes(query) ||
+                          (item.lastname ?? "").toLowerCase().includes(query) ||
+                          (item.division_code ?? "")
+                              .toLowerCase()
+                              .includes(query) ||
+                          (item.division_name ?? "")
+                              .toLowerCase()
+                              .includes(query)
+                  );
+        },
     },
 };
 </script>
@@ -450,6 +437,18 @@ export default {
             background-color: var(--bs-secondary-bg);
             color: var(--bs-body-color);
         }
+    }
+}
+
+@media (max-width: 768px) {
+    .sticky-header,
+    .sticky-col {
+        position: static; /* remove sticky */
+        z-index: auto;
+    }
+
+    .sticky-col {
+        min-width: auto; /* allow full width on small screens */
     }
 }
 </style>

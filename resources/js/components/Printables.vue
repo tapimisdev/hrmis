@@ -1,5 +1,5 @@
 <template>
-    <div class="d-flex gap-2 flex-wrap align-items-center">
+    <div class="d-flex gap-2 flex-wrap justify-content-center align-items-center">
         <button
             type="button"
             class="btn btn-sm btn-outline-primary px-3 py-2 fw-500 d-flex align-items-center gap-2"

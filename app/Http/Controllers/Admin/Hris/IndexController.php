@@ -132,7 +132,7 @@ class IndexController extends Controller
                     : '';
             })
             ->addColumn('actions', function ($row) {
-                $div = '<div class="d-block d-md-flex gap-2 justify-content-start">';
+                $div = '<div class="d-block d-flex gap-2 justify-content-start">';
 
                 if ($row->account_status != 'archived') {
                     $div .= '

@@ -13,7 +13,7 @@
         <form id="form" action="{{ route('hris.employee.salary') }}" method="post">
             @method('POST')
             @csrf
-            <div class="card shadow p-3">
+            <div class="card shadow">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-12 mb-3">

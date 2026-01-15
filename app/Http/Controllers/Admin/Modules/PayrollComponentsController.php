@@ -27,7 +27,7 @@ class PayrollComponentsController extends Controller
         if ($request->ajax()) {
 
             $yearsFromDb = DB::table('payroll_components_years')
-                ->where('payroll_  ]component_id', $component->id)
+                ->where('payroll_component_id', $component->id)
                 ->distinct()
                 ->orderBy('year', 'asc')
                 ->get();

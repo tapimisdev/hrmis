@@ -4,7 +4,11 @@
         class="incomplete-logs-component"
         ref="wrapper"
         :class="{ dragging: isDragging }"
-        :style="{ left: pos.x + 'px', top: pos.y + 'px' }"
+        :style="
+            isMobile
+                ? { top: '30%', left: '50%', transform: 'translateX(-50%)' }
+                : { left: pos.x + 'px', top: pos.y + 'px', transform: 'none' }
+        "
     >
         <div class="card" style="overflow: hidden">
             <!-- HEADER -->
@@ -63,16 +67,28 @@
                                     >
                                         <thead class="table-light">
                                             <tr>
-                                                <th class="px-2 p-2 text-uppercase fw-bold" style="font-size: 10px">
+                                                <th
+                                                    class="px-2 p-2 text-uppercase fw-bold"
+                                                    style="font-size: 10px"
+                                                >
                                                     Date
                                                 </th>
-                                                <th class="px-2 p-2 text-uppercase fw-bold" style="font-size: 10px">
+                                                <th
+                                                    class="px-2 p-2 text-uppercase fw-bold"
+                                                    style="font-size: 10px"
+                                                >
                                                     In
                                                 </th>
-                                                <th class="px-2 p-2 text-uppercase fw-bold" style="font-size: 10px">
+                                                <th
+                                                    class="px-2 p-2 text-uppercase fw-bold"
+                                                    style="font-size: 10px"
+                                                >
                                                     Out
                                                 </th>
-                                                <th class="px-2 p-2 text-uppercase fw-bold" style="font-size: 10px">
+                                                <th
+                                                    class="px-2 p-2 text-uppercase fw-bold"
+                                                    style="font-size: 10px"
+                                                >
                                                     Remarks
                                                 </th>
                                             </tr>
@@ -82,21 +98,36 @@
                                                 v-for="log in incompleteLogs"
                                                 :key="log.date + log.shift_id"
                                             >
-                                                <td class="fw-bold px-2 py-2" style="font-size: 11px">
+                                                <td
+                                                    class="fw-bold px-2 py-2"
+                                                    style="font-size: 11px"
+                                                >
                                                     {{ formatDate(log.date) }}
                                                 </td>
-                                                <td class="fw-bold px-2 py-2" style="font-size: 11px">
-                                                    {{ log.time_in || '' }}
+                                                <td
+                                                    class="fw-bold px-2 py-2"
+                                                    style="font-size: 11px"
+                                                >
+                                                    {{ log.time_in || "" }}
                                                 </td>
-                                                <td class="fw-bold px-2 py-2" style="font-size: 11px">
-                                                    {{ log.time_out || '' }}
+                                                <td
+                                                    class="fw-bold px-2 py-2"
+                                                    style="font-size: 11px"
+                                                >
+                                                    {{ log.time_out || "" }}
                                                 </td>
                                                 <td
                                                     class="fw-bold px-2 py-2 text-uppercase"
                                                     style="font-size: 11px"
-                                                    :class="log.remarks.includes('today') ? 'text-success' : 'text-danger'"
+                                                    :class="
+                                                        log.remarks.includes(
+                                                            'today'
+                                                        )
+                                                            ? 'text-success'
+                                                            : 'text-danger'
+                                                    "
                                                 >
-                                                    {{ log.remarks.join(', ') }}
+                                                    {{ log.remarks.join(", ") }}
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -119,7 +150,6 @@
 import axios from "axios";
 import { Collapse } from "bootstrap";
 
-/* STORAGE KEYS (SHARED) */
 const POSITION_KEY = "incomplete-logs-position";
 const ACCORDION_KEY = "incomplete-logs-accordion";
 const HIDE_KEY = "hide_timelog_discrepancy";
@@ -131,21 +161,26 @@ export default {
     data() {
         return {
             show: true,
-
             incompleteLogs: [],
             loading: false,
-
-            // Dragging
             isDragging: false,
             offset: { x: 0, y: 0 },
-
-            pos: {
-                x: window.innerWidth - 470,
-                y: 200,
-            },
-
+            pos: { x: window.innerWidth - 470, y: 200 },
             collapseInstance: null,
+            windowWidth: window.innerWidth,
         };
+    },
+
+    computed: {
+        isMobile() {
+            return this.windowWidth < 768;
+        },
+        mobilePos() {
+            return {
+                x: (window.innerWidth - Math.min(window.innerWidth, 450)) / 2,
+                y: window.innerHeight / 2,
+            };
+        },
     },
 
     mounted() {
@@ -159,45 +194,45 @@ export default {
         });
 
         window.addEventListener("timelog-toggle", this.syncVisibility);
+        window.addEventListener("resize", this.onResize);
+        window.addEventListener("orientationchange", this.onResize);
+
+        // Center on mobile initially if no saved position
+        if (this.isMobile && !localStorage.getItem(POSITION_KEY)) {
+            this.pos = { ...this.mobilePos };
+        }
     },
 
     beforeUnmount() {
         this.destroyAccordion();
         window.removeEventListener("timelog-toggle", this.syncVisibility);
+        window.removeEventListener("resize", this.onResize);
+        window.removeEventListener("orientationchange", this.onResize);
     },
 
     methods: {
-        /* =====================
-           VISIBILITY (DAILY RESET + SYNC)
-        ====================== */
+        onResize() {
+            this.windowWidth = window.innerWidth;
+            // On mobile, if user has not dragged, start centered
+            if (this.isMobile && !localStorage.getItem(POSITION_KEY)) {
+                this.pos = { ...this.mobilePos };
+            }
+        },
+
         syncVisibility() {
             const today = new Date().toDateString();
             const hidden = localStorage.getItem(HIDE_KEY);
             const hideDate = localStorage.getItem(HIDE_DATE_KEY);
-
-            if (hidden === "true" && hideDate === today) {
-                this.show = false;
-            } else {
-                localStorage.removeItem(HIDE_KEY);
-                localStorage.removeItem(HIDE_DATE_KEY);
-                this.show = true;
-            }
+            this.show = !(hidden === "true" && hideDate === today);
         },
 
         handleToggle() {
             this.show = false;
             localStorage.setItem(HIDE_KEY, "true");
-            localStorage.setItem(
-                HIDE_DATE_KEY,
-                new Date().toDateString()
-            );
-
+            localStorage.setItem(HIDE_DATE_KEY, new Date().toDateString());
             window.dispatchEvent(new Event("timelog-toggle"));
         },
 
-        /* =====================
-           API
-        ====================== */
         async fetchIncompleteLogs() {
             this.loading = true;
             try {
@@ -208,10 +243,7 @@ export default {
                         Accept: "application/json",
                     },
                 });
-
-                this.incompleteLogs = Array.isArray(res.data)
-                    ? res.data
-                    : [];
+                this.incompleteLogs = Array.isArray(res.data) ? res.data : [];
             } catch (err) {
                 console.error("Fetch incomplete logs failed:", err);
             } finally {
@@ -227,35 +259,26 @@ export default {
             });
         },
 
-        /* =====================
-           POSITION
-        ====================== */
         loadPosition() {
             const saved = localStorage.getItem(POSITION_KEY);
             if (!saved) return;
-
             try {
                 const { x, y } = JSON.parse(saved);
-                this.pos.x = x;
-                this.pos.y = y;
+                this.pos = { x, y };
             } catch {
                 localStorage.removeItem(POSITION_KEY);
             }
         },
 
         savePosition() {
+            if (this.isMobile) return; // do not save on mobile
             localStorage.setItem(POSITION_KEY, JSON.stringify(this.pos));
         },
 
-        /* =====================
-           ACCORDION
-        ====================== */
         initAccordion() {
             const el = this.$refs.collapse;
             if (!el) return;
-
             this.collapseInstance = new Collapse(el, { toggle: false });
-
             el.addEventListener("shown.bs.collapse", this.onAccordionOpen);
             el.addEventListener("hidden.bs.collapse", this.onAccordionClose);
         },
@@ -280,54 +303,37 @@ export default {
             this.collapseInstance = null;
         },
 
-        /* =====================
-           DRAGGING
-        ====================== */
         startDrag(e) {
+            if (this.isMobile) return; // disable dragging on mobile
             e.preventDefault();
-
             const rect = this.$refs.wrapper.getBoundingClientRect();
             this.isDragging = true;
-
             this.offset.x = e.clientX - rect.left;
             this.offset.y = e.clientY - rect.top;
-
             window.addEventListener("pointermove", this.onDrag);
             window.addEventListener("pointerup", this.stopDrag);
         },
 
         onDrag(e) {
             if (!this.isDragging) return;
-
             const el = this.$refs.wrapper;
             if (!el) return;
-
             const maxX = window.innerWidth - el.offsetWidth;
             const maxY = window.innerHeight - el.offsetHeight;
-
-            this.pos.x = Math.min(
-                Math.max(0, e.clientX - this.offset.x),
-                maxX
-            );
-            this.pos.y = Math.min(
-                Math.max(0, e.clientY - this.offset.y),
-                maxY
-            );
+            this.pos.x = Math.min(Math.max(0, e.clientX - this.offset.x), maxX);
+            this.pos.y = Math.min(Math.max(0, e.clientY - this.offset.y), maxY);
         },
 
         stopDrag() {
             if (!this.isDragging) return;
-
             this.isDragging = false;
             this.savePosition();
-
             window.removeEventListener("pointermove", this.onDrag);
             window.removeEventListener("pointerup", this.stopDrag);
         },
     },
 };
 </script>
-
 
 <style scoped>
 .incomplete-logs-component {
@@ -355,5 +361,16 @@ export default {
 .accordion-button {
     outline: none;
     box-shadow: none !important;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .incomplete-logs-component {
+        position: fixed;
+        top: 20% !important;
+        width: 100%;
+        max-width: 450px;
+        padding: 0 10px;
+    }
 }
 </style>

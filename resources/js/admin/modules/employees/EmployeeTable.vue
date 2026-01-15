@@ -1,13 +1,12 @@
 <template>
     <!-- Header -->
     <div
-        class="card-header d-flex justify-content-between align-items-end pb-3 pt-4"
+        class="card-header d-md-flex justify-content-between align-items-center pb-3 pt-4"
     >
         <Printables />
 
         <div
-            class="fw-bold display-6 w-100 d-flex justify-content-between flex-wrap"
-            style="max-width: 220px"
+            class="fw-bold display-6 w-100 d-flex justify-content-between flex-wrap responsive-elements align-items-center my-3"
         >
             <button class="btn btn-sm" @click="adjustYear(-1)">
                 <i class="fa-solid fa-angles-left"></i>
@@ -61,7 +60,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-if="items.length == 0">
+                    <tr v-if="filtered.length === 0">
                         <td colspan="14" class="text-center">
                             <div class="alert alert-secondary mx-2 mt-2 py-4">
                                 No employee(s) found.
@@ -74,12 +73,13 @@
                         :key="item.employee_no"
                         class="row-hover"
                     >
-                        <td class="sticky-col border-end ps-3"
+                        <td
+                            class="sticky-col border-end ps-3"
                             :class="{
                                 'bg-primary fw-bold':
                                     selected_employee === item.employee_no,
                             }"
-                            >
+                        >
                             <div class="d-flex align-items-center">
                                 <div class="avatar">
                                     {{ item.firstname?.charAt(0) || "N"
@@ -102,16 +102,19 @@
                             </div>
                         </td>
 
-                        <td class="text-end total-score"
-                          :class="{
+                        <td
+                            class="text-end total-score"
+                            :class="{
                                 'bg-primary fw-bold':
                                     selected_employee === item.employee_no,
                             }"
-                          >
+                        >
                             {{ line_total(item) }}
                         </td>
-                        <td v-for="monthKey in monthKeys" :key="monthKey"
-                          :class="{
+                        <td
+                            v-for="monthKey in monthKeys"
+                            :key="monthKey"
+                            :class="{
                                 'bg-primary fw-bold':
                                     selected_employee === item.employee_no,
                             }"
@@ -244,7 +247,6 @@ export default {
         },
         create_update(id, amount, month, employee_no) {
             this.loading = true;
-            console.log(this.year);
             axios
                 .post(`/admin/modules/store-employees`, {
                     module_tab_id: id,
@@ -298,16 +300,22 @@ export default {
             return Number(number).toLocaleString();
         },
         filteredItems() {
-            const query = (this.search ?? '').toLowerCase().trim();
-
-            if (!query) return this.items;
-
-            return this.items.filter(item =>
-                (item.firstname ?? '').toLowerCase().includes(query) ||
-                (item.lastname ?? '').toLowerCase().includes(query) ||
-                (item.division_code ?? '').toLowerCase().includes(query) ||
-                (item.division_name ?? '').toLowerCase().includes(query)
-            );
+            const query = (this.search ?? "").toLowerCase().trim();
+            this.filtered = !query
+                ? this.items
+                : this.items.filter(
+                      (item) =>
+                          (item.firstname ?? "")
+                              .toLowerCase()
+                              .includes(query) ||
+                          (item.lastname ?? "").toLowerCase().includes(query) ||
+                          (item.division_code ?? "")
+                              .toLowerCase()
+                              .includes(query) ||
+                          (item.division_name ?? "")
+                              .toLowerCase()
+                              .includes(query)
+                  );
         },
         adjustYear(action) {
             this.year += action;
@@ -465,6 +473,27 @@ export default {
             background-color: var(--bs-secondary-bg);
             color: var(--bs-body-color);
         }
+    }
+}
+
+.responsive-elements {
+    max-width: 220px; /* default for larger screens */
+    width: 100%;
+
+    @media (max-width: 768px) {
+        max-width: 100%; /* full width on small screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .sticky-header,
+    .sticky-col {
+        position: static; /* remove sticky */
+        z-index: auto;
+    }
+
+    .sticky-col {
+        min-width: auto; /* allow full width on small screens */
     }
 }
 </style>

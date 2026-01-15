@@ -1,5 +1,5 @@
 <template>
-    <div class="card shadow p-3">
+    <div class="card shadow">
         <LoaderVue :visible="loading" status="uploading" message="Uploading, please wait..." />
         <div class="card-header bg-transparent">
             <h4 class="m-0 mb-1 pt-3 text-uppercase fw-medium">
