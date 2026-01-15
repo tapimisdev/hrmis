@@ -11,7 +11,9 @@
                 Employee Attendance
             </h5>
             <div class="filters d-md-flex gap-2">
-                <button class="btn btn-sm btn-link" @click="openCorretionList">View Corrections for this month</button>
+                <button class="btn btn-sm btn-link" @click="openCorretionList">
+                    View Corrections for this month
+                </button>
                 <select v-model="selectedMonth" @change="loadTimelogs">
                     <option v-for="(month, index) in months" :key="index" :value="index + 1">
                         {{ month }}
@@ -47,7 +49,7 @@
                 <!-- Loading -->
                 <tbody v-if="loading">
                     <tr v-for="n in 15" :key="n">
-                        <td v-for="col in 10" :key="col">
+                        <td v-for="col in 11" :key="col">
                             <div class="skeleton"></div>
                         </td>
                     </tr>
@@ -55,36 +57,77 @@
 
                 <!-- Data -->
                 <tbody v-else>
-                    <tr v-for="(log, index) in logs" :key="log.id || index" :class="getRowClass(log.remarks)">
+                    <tr
+                        v-for="(log, index) in logs"
+                        :key="log.id || index"
+                        :class="getRowClass(log.remarks)"
+                    >
                         <td>{{ index + 1 }}</td>
                         <td>{{ getDayName(index) }}</td>
 
-                        <!-- Status Row -->
-                        <td v-if="hasStatus(log.remarks)" colspan="9" class="status-cell">
-                            <span class="status" :class="getStatusClass(log.remarks)">
-                                <i :class="getStatusIcon(log.remarks)"></i>
-                                {{ getStatusText(log.remarks) }}
-                                <span v-if="hasRemark(log.remarks, 'holiday') && log.doble">
-                                    (X2: {{ log.doble }})
+                        <!-- STATUS ROW -->
+                        <template v-if="hasStatus(log.remarks)">
+                            <td colspan="8" class="status-cell">
+                                <span class="status" :class="getStatusClass(log.remarks)">
+                                    <i :class="getStatusIcon(log.remarks)"></i>
+                                    {{ getStatusText(log.remarks) }}
+                                    <span v-if="hasRemark(log.remarks, 'holiday') && log.doble">
+                                        (X2: {{ log.doble }})
+                                    </span>
                                 </span>
-                            </span>
-                        </td>
+                            </td>
 
-                        <!-- Regular Row -->
+                            <!-- ACTIONS (ABSENT) -->
+                            <td>
+                                <button
+                                    v-if="hasRemark(log.remarks, 'absent')"
+                                    class="btn btn-sm btn-transparent"
+                                    title="Request Timelog Correction"
+                                    @click="openModal(index + 1)"
+                                >
+                                    <i class="fa-solid fa-code-pull-request"></i>
+                                </button>
+                            </td>
+                        </template>
+
+                        <!-- REGULAR ROW -->
                         <template v-else>
                             <td>{{ log.time_in || '--:--' }}</td>
                             <td class="small-text">{{ log.break || '--:--' }}</td>
                             <td>{{ log.time_out || '--:--' }}</td>
+
                             <td>
-                                <div v-if="log.overtime" class="small-text">{{ log.overtime }}</div>
-                                <div v-else class="small-text empty">--:-- to --:--</div>
-                                <span :class="{ 'highlight': hasRemark(log.remarks, 'overtime') || hasRemark(log.remarks, 'pending overtime') }">
+                                <div v-if="log.overtime" class="small-text">
+                                    {{ log.overtime }}
+                                </div>
+                                <div v-else class="small-text empty">
+                                    --:-- to --:--
+                                </div>
+                                <span
+                                    :class="{
+                                        highlight:
+                                            hasRemark(log.remarks, 'overtime') ||
+                                            hasRemark(log.remarks, 'pending overtime')
+                                    }"
+                                >
                                     {{ convertToReadableTime(log.ot_mins) }}
                                 </span>
                             </td>
-                            <td><span class="badge">{{ convertToReadableTime(log.total_time_work) }}</span></td>
+
+                            <td>
+                                <span class="badge">
+                                    {{ convertToReadableTime(log.total_time_work) }}
+                                </span>
+                            </td>
+
                             <td class="highlight">{{ log.doble || 0 }}</td>
-                            <td><span class="badge ut">{{ convertToReadableTime(log.late_undertime) }}</span></td>
+
+                            <td>
+                                <span class="badge ut">
+                                    {{ convertToReadableTime(log.late_undertime) }}
+                                </span>
+                            </td>
+
                             <td>
                                 <div class="remarks">
                                     <span
@@ -97,8 +140,15 @@
                                     </span>
                                 </div>
                             </td>
+
                             <td>
-                                <button class="btn btn-sm btn-transparent" title="Request Correction" @click="openModal(index + 1)" ><i class="fa-solid fa-code-pull-request"></i></button>
+                                <button
+                                    class="btn btn-sm btn-transparent"
+                                    title="Request Correction"
+                                    @click="openModal(index + 1)"
+                                >
+                                    <i class="fa-solid fa-code-pull-request"></i>
+                                </button>
                             </td>
                         </template>
                     </tr>
