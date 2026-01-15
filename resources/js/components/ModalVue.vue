@@ -7,7 +7,7 @@
     data-bs-backdrop="static"
     data-bs-keyboard="false"
   >
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="size">
+    <div class="modal-dialog modal-dialog-scrollable" :class="size">
       <div class="modal-content modern-modal">
         
         <!-- Header -->

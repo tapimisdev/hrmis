@@ -1,7 +1,7 @@
 <template>
     <div class="container-fluid">
         <div class="row g-4">
-            <div class="col-12 col-md-8">
+            <div class="col-12 col-md-8" id="main-event-content">
                 <Content
                     :data="data.announcement"
                     :tags="data.tags"
@@ -16,7 +16,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-4" id="sub-event-content">
                 <SideEvents :data="data.random_announcements" />
             </div>
         </div>

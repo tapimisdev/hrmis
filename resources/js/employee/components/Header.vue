@@ -654,4 +654,14 @@ export default {
         }
     }
 }
+
+@media (max-width: 767.98px) {
+    .dropdown-menu {
+      min-width: 300px !important;
+      label {
+        font-size: 10px !important;
+      }
+    }
+}
+
 </style>

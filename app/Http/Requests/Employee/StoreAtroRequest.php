@@ -31,15 +31,16 @@ class StoreAtroRequest extends FormRequest
                 'required',
                 'date',
                 Rule::unique('overtime_applications')->where(function ($query) use ($userId) {
-                    return $query->where('user_id', $userId);
+                    return $query->where('user_id', $userId)
+                        ->whereNotIn('status', ['approved', 'cancelled']);
                 }),
             ],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'reason' => ['required', 'string', 'max:500'],
             'status' => ['nullable', Rule::in(['pending', 'approved'])], // only for timekeeping adjustment only
-            
-            // 'approvers'     => ['nullable', 'array', 'min:1'],
+            'attachments'   => ['required', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:8192'],            // 'approvers'     => ['nullable', 'array', 'min:1'],
             // 'approvers.*'   => ['nullable', 'array', 'min:1'],
             // 'approvers.*.*' => ['nullable', 'exists:users,id'],
         ];

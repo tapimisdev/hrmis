@@ -37,7 +37,7 @@
                     <div class="action-buttons d-flex gap-2 mb-3">
                         <a
                             href="/employee/check-in-out"
-                            class="btn btn-warning px-4 py-2 d-flex align-items-center gap-2"
+                            class="btn btn-warning px-4 py-2 d-flex justify-content-center align-items-center gap-2"
                         >
                             <i class="fa-regular fa-calendar"></i>
                             <span>View Schedule</span>
@@ -45,7 +45,7 @@
                         <button
                             :class="isRegular ? 'd-block' : 'd-none'"
                             @click="viewLeaveCredits"
-                            class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2 leave-creds"
+                            class="btn btn-outline-light px-4 py-2 d-flex justify-content-center align-items-center gap-2 leave-creds"
                         >
                             <i class="fa-solid fa-plane-departure"></i>
                             <span>Leave Credits</span>
@@ -53,7 +53,7 @@
 
                         <button
                             @click="viewOffsetCredits"
-                            class="btn btn-outline-light px-4 py-2 d-flex align-items-center gap-2"
+                            class="btn btn-outline-light px-4 py-2 d-flex justify-content-center align-items-center gap-2"
                         >
                             <i class="fa-solid fa-ghost"></i>
                             <span>Offset Credits</span>

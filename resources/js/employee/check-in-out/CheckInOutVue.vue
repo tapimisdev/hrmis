@@ -17,16 +17,16 @@
                 <div
                     class="d-flex flex-column align-items-center border-end px-5 month-year"
                 >
-                    <h2 class="month fw-bold p-0 m-0 text-uppercase">
+                    <h1 class="month fw-bold p-0 m-0 text-uppercase">
                         {{ getMonthShort() }}
-                    </h2>
+                    </h1>
                     <h1 class="text-body p-0 m-0 fw-bold">
                         {{ getDayToday() }}
                     </h1>
                 </div>
 
                 <div
-                    class="w-100 d-flex justify-content-center justify-content-md-start gap-3 px-3 d-lg-flex-wrap month-year-button"
+                    class="w-100 d-md-flex justify-content-center justify-content-md-start gap-3 px-3 d-lg-flex-wrap month-year-button"
                 >
                     <button
                         class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold"
@@ -326,6 +326,10 @@ onMounted(() => {
 }
 
 @media (max-width: 767.98px) {
+    button {
+      width: 100%;
+      margin: 6px 0 6px 0;
+    }
     .month-year, .month-year-button {
       margin-bottom: 20px;
     }

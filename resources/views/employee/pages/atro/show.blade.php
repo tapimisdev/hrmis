@@ -31,6 +31,12 @@
                     <td id="created-at"></td>
                 </tr>
                 <tr>
+                    <th>Attachments:</th>
+                    <td id="attachments">
+                        <ul class="list-unstyled mb-0"></ul>
+                    </td>
+                </tr>
+                <tr>
                     <th>Status:</th>
                     <td><span id="status" class="badge"></span></td>
                 </tr>

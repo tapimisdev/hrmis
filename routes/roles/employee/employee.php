@@ -52,6 +52,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
     # ANNOUNCEMENTS 
     Route::get('announcements', [AnnouncementsController::class, 'index'])->name('announcement.index');
     Route::get('announcements/{slug}', [AnnouncementsController::class, 'show'])->name('announcement.show');
+    Route::get('announcements/search', [AnnouncementsController::class, 'search'])->name('announcement.search');
 
     # EMPLOYEE LEAVES, OVERTIME, AND OBS -- APPROVAL --
     Route::get('approval-leaves/{level?}', [LeaveApprovalController::class, 'index'])

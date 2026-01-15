@@ -119,6 +119,19 @@ class AtroController extends Controller
             //     }
             // }
 
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store('overtime_attachments', 'public'); // saves in storage/app/public/overtime_attachments
+
+                    DB::table('overtime_attachments')->insert([
+                        'overtime_applications_id' => $atroId,
+                        'file_path'            => $path,
+                        'file_name'            => $file->getClientOriginalName(),
+                        'file_type'            => $file->getMimeType(),
+                    ]);
+                }
+            }
+
             DB::commit();
             
             return response()->json([

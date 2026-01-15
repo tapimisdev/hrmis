@@ -78,8 +78,8 @@ class ApplicationController extends Controller
                 'alias' => 'ot',
                 'id_col' => 'id',
                 'user_col' => 'user_id',
-                'attachment_table' => null,
-                'attachment_fk' => null,
+                'attachment_table' => 'overtime_attachments',
+                'attachment_fk' => 'overtime_applications_id',
                 'approval_table' => 'overtime_approvals',
                 'approval_fk' => 'overtime_applications_id',
                 'select_extra' => [

@@ -132,72 +132,46 @@ class IndexController extends Controller
                     : '';
             })
             ->addColumn('actions', function ($row) {
-                $div = '<div class="d-block d-md-flex gap-1 justify-content-start">';
+                $div = '<div class="d-block d-md-flex gap-2 justify-content-start">';
 
                 if ($row->account_status != 'archived') {
                     $div .= '
-                        <div class="dropdown">
-                           <button
-                                class="action-btn"
-                                type="button"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false"
-                            >
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-modern" aria-labelledby="actionDropdown">
-                                <li>
-                                    <a class="dropdown-item" href="' . route('hris.employee.transfer', [
-                                        'employee_no' => $row->employee_no
-                                    ]) . '">
-                                        <i class="fa-solid fa-retweet"></i> Transfer Unit
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="' . route('hris.employee.salary', [
-                                        'employee_no' => $row->employee_no
-                                    ]) . '">
-                                        <i class="fa-solid fa-money-bill"></i> Update Salary
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="' . route('hris.employee.information', [
-                                        'employee_no' => $row->employee_no
-                                    ]) . '">
-                                        <i class="fa-solid fa-pen-to-square"></i> Edit
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item download-pds" data-url="'.route('reports.employee.pds', [
-                                        'employee_no' => $row->employee_no
-                                    ]).'" href="javascript:void(0);">
-                                        <i class="fa-solid fa-download"></i> Download PDS
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <button id="btn-delete"
-                                        class="dropdown-item text-danger" 
-                                        data-target="' . route('hris.employee.remove', [
-                                            'employee_no' => $row->employee_no
-                                        ]) . '">
-                                        <i class="fa-solid fa-trash-can"></i> Delete
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
+                        <a href="' . route('hris.employee.transfer', ['employee_no' => $row->employee_no]) . '" 
+                        class="btn btn-secondary me-1" 
+                        title="Transfer Unit">
+                            <i class="fa-solid fa-retweet"></i>
+                        </a>
+                        <a href="' . route('hris.employee.salary', ['employee_no' => $row->employee_no]) . '" 
+                        class="btn btn-info me-1" 
+                        title="Update Salary">
+                            <i class="fa-solid fa-money-bill"></i>
+                        </a>
+                        <a href="' . route('hris.employee.information', ['employee_no' => $row->employee_no]) . '" 
+                        class="btn btn-primary me-1" 
+                        title="Edit">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <button class="btn btn-dark me-1 download-pds" 
+                            data-url="' . route('reports.employee.pds', ['employee_no' => $row->employee_no]) . '" 
+                            title="Download PDS">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                        <button id="btn-delete" 
+                            class="btn btn-danger" 
+                            data-target="' . route('hris.employee.remove', ['employee_no' => $row->employee_no]) . '" 
+                            title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
                     ';
                 }
 
                 if ($row->account_status == 'archived') {
                     $div .= '
-                        <button id="btn-restore"
-                            class="btn btn-outline-success btn ms-1 my-1"
-                            data-target="' . route('hris.employee.restore', [
-                                'employee_no' => $row->employee_no
-                            ]) . '"
+                        <button id="btn-restore" 
+                            class="btn btn-success ms-1" 
+                            data-target="' . route('hris.employee.restore', ['employee_no' => $row->employee_no]) . '" 
                             title="Restore">
-                                <i class="fa-solid fa-rotate-left"></i>
+                            <i class="fa-solid fa-rotate-left"></i>
                         </button>
                     ';
                 }
@@ -205,6 +179,7 @@ class IndexController extends Controller
                 $div .= '</div>';
 
                 return $div;
+
             })
 
 

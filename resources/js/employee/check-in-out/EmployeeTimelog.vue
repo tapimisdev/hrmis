@@ -10,7 +10,7 @@
                 <i class="fa-solid fa-calendar-days"></i>
                 Employee Attendance
             </h5>
-            <div class="filters d-flex gap-2">
+            <div class="filters d-md-flex gap-2">
                 <button class="btn btn-sm btn-link" @click="openCorretionList">View Corrections for this month</button>
                 <select v-model="selectedMonth" @change="loadTimelogs">
                     <option v-for="(month, index) in months" :key="index" :value="index + 1">
@@ -271,7 +271,12 @@ export default {
           .title{
               margin-bottom: 15px;
           }
+          button {
+            width: 100%;
+            text-align: center;
+          }
           select {
+            margin: 6px 0 6px 0;
             width: 100%;
           }
         }

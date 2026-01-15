@@ -172,6 +172,14 @@ export default {
     }
 }
 
+
+ @media (max-width: 767.98px) {
+  .close-btn {
+    top: -40px;
+    right: -2px;
+  }   
+}
+
 /* Animations */
 .fade-scale-enter-active,
 .fade-scale-leave-active {

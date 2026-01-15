@@ -11,10 +11,11 @@ class AnnouncementsController extends Controller
 {
     public function index(Request $request)
     {
+        
         if ($request->wantsJson() || $request->query('json')) {
 
-            $announcements = $this->get_announcements(null, 10);
-
+            $announcements = $this->get_announcements(null, 10, $request->search);
+            
             return response()->json([
                 'data' => $announcements,
                 'message' => 'success getting announcements',
@@ -98,7 +99,7 @@ class AnnouncementsController extends Controller
         return view('employee.pages.announcements.show', compact('data'));
     }
 
-    public function get_announcements($count = 4, $paginated_by = null)
+    public function get_announcements($count = 4, $paginated_by = null, $search = null)
     {
         $query = DB::table('events_announcements as ea')
             ->leftJoin('events_announcements_tags as eat', 'ea.id', '=', 'eat.event_announcement_id')
@@ -120,12 +121,26 @@ class AnnouncementsController extends Controller
                 'ea.title',
                 'ea.description',
                 'ea.banner',
+                'ea.slug',
                 'ea.posted_on',
                 'ea.created_at'
             )
             ->orderByRaw('COALESCE(ea.posted_on, ea.created_at) DESC');
 
-        // Limit if $paginated_by is null
+        /* =========================
+        * SEARCH FILTER
+        * ========================= */
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('ea.title', 'LIKE', "%{$search}%")
+                ->orWhere('ea.description', 'LIKE', "%{$search}%")
+                ->orWhere('eat.name', 'LIKE', "%{$search}%");
+            });
+        }
+
+        /* =========================
+        * PAGINATION / LIMIT
+        * ========================= */
         if (is_null($paginated_by) && !is_null($count)) {
             $query->limit($count);
             $announcements = $query->get();
@@ -133,7 +148,9 @@ class AnnouncementsController extends Controller
             $announcements = $query->paginate($paginated_by);
         }
 
-        // Map the results
+        /* =========================
+        * MAP RESULTS
+        * ========================= */
         $announcements->getCollection()->transform(function ($item) {
             $tags = $item->tags ? explode(',', $item->tags) : [];
 
@@ -141,7 +158,10 @@ class AnnouncementsController extends Controller
             if ($item->seeners) {
                 foreach (explode(',', $item->seeners) as $seener) {
                     [$id, $name] = explode(':', $seener);
-                    $seeners[] = ['id' => (int) $id, 'name' => $name];
+                    $seeners[] = [
+                        'id' => (int) $id,
+                        'name' => $name,
+                    ];
                 }
             }
 
@@ -149,9 +169,9 @@ class AnnouncementsController extends Controller
                 'id' => $item->id,
                 'name' => $item->title,
                 'tags' => $tags,
-                'url' => route('announcement.show', [ 'slug' => $item->slug ]),
+                'url' => route('announcement.show', ['slug' => $item->slug]),
                 'body' => $item->description,
-                'image' => $item->banner 
+                'image' => $item->banner
                     ? asset(Storage::url('events/attachments/' . $item->banner))
                     : asset('./img/placeholder.png'),
                 'seeners' => $seeners,
@@ -160,6 +180,7 @@ class AnnouncementsController extends Controller
 
         return $announcements;
     }
+
 
     public function get_random_announcements($count = 4, $where_not = null)
     {
@@ -220,6 +241,5 @@ class AnnouncementsController extends Controller
 
         return $announcements;
     }
-
 
 }
