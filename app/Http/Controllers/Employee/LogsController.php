@@ -57,4 +57,26 @@ class LogsController extends Controller
         return response()->json($incompleteLogs);
     }
 
+    public function getCurrentTimelog()
+    {
+        $userId = Auth::id();
+        $today = Carbon::today()->format('Y-m-d');
+
+        // Prepare payload to fetch today's DTR
+        $payload = [
+            'user_id' => $userId,
+            'startDate' => $today,
+            'endDate' => $today,
+        ];
+
+        // Fetch DTR from your service
+        $logs = $this->daily_time_record_service->getDtr($payload)['computedData'][0] ?? [];
+
+        return response()->json($logs);
+
+        // Return null if no current incomplete log
+        return response()->json(null);
+    }
+
+
 }
