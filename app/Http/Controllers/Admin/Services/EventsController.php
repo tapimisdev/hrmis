@@ -377,7 +377,7 @@ class EventsController extends Controller
             'tags'                => 'required|array|max:5|min:1',
             'banner'              => 'nullable|image|mimes:jpg,jpeg,png',
             'content'             => 'required|string',
-            'posted_on'           => 'nullable|date|after_or_equal:today',
+            'posted_on'           => 'nullable|date',
             'posted_by'           => 'required',
             'posted_by.*'         => 'exists:users,id',
             'attachment_titles.*' => 'nullable|string|max:255',
