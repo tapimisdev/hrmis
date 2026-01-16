@@ -6,10 +6,18 @@
     height: 100%;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 768px) {
     .toggle-container {
         position: absolute;
         right: 67px;
+        bottom: 0 !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .toggle-container {
+        position: relative;
+        right: 0;
         top: 0;
     }
 }

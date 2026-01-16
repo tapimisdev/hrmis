@@ -83,7 +83,7 @@
         <div class="toggle-container">
             <button class="theme-toggle" id="theme-toggle" title="Toggles light & dark" aria-label="light" aria-live="polite">
                 <div class="toggle-icon sun">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 q0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="5" fill="#FFD700" stroke="#FFD700"/>
                         <line x1="12" y1="1" x2="12" y2="3" stroke="#FFD700"/>
                         <line x1="12" y1="21" x2="12" y2="23" stroke="#FFD700"/>
