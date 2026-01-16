@@ -80,7 +80,7 @@ class AnnouncementsController extends Controller
 
         $employment_type_id = auth()->user()->employment_type_id;
 
-        if (!$exists && in_array($employment_type_id, EmploymentTypesEnum::values())) {
+        if (!$exists && in_array($employment_type_id, array_map(fn($case) => $case->value, EmploymentTypesEnum::cases()))) {
             DB::table('events_announcements_viewers')->insert([
                 'event_announcement_id' => $announcement->id,
                 'user_id' => auth()->user()->id,
