@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Enums\EmploymentTypesEnum;
 
 class AnnouncementsController extends Controller
 {
@@ -77,7 +78,9 @@ class AnnouncementsController extends Controller
             ->where('user_id', auth()->user()->id)
             ->exists();
 
-        if (! $exists) {
+        $employment_type_id = auth()->user()->employment_type_id;
+
+        if (!$exists && in_array($employment_type_id, array_map(fn($case) => $case->value, EmploymentTypesEnum::cases()))) {
             DB::table('events_announcements_viewers')->insert([
                 'event_announcement_id' => $announcement->id,
                 'user_id' => auth()->user()->id,
