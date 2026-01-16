@@ -122,7 +122,6 @@ $(function () {
                         $tranche.append(`<option value="${item.id}">${formatted}</option>`);
                     });
 
-                    $employees.html('<option value=""> - CHOOSE - </option>');
                     const seen = new Set();
                     employees.forEach(emp => {
                         if (!seen.has(emp.employee_no)) {
