@@ -177,7 +177,13 @@
             ],
             "scrollX": true,
             "columnDefs": [
-                { targets: '_all', className: 'dt-nowrap' } 
+                {
+                    targets: "_all",
+                    className: "min-table-width",
+                    render: function(data, type, row, meta) {
+                        return data ?? "";
+                    }
+                }
             ],
             "scrollX": true,
             "autoWidth": false

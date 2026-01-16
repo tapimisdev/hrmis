@@ -71,7 +71,7 @@
                                         {{ stats.totalHours }}
                                     </div>
                                     <div
-                                        class="stat-label text-uppercase text-muted"
+                                        class="stat-label text-uppercase text-muted mt-1"
                                         style="font-size: 12px; margin-top: 4px"
                                     >
                                         Total Hours
@@ -90,7 +90,7 @@
                                         {{ stats.pendingLeaves }}
                                     </div>
                                     <div
-                                        class="stat-label text-uppercase text-muted"
+                                        class="stat-label text-uppercase text-muted mt-1"
                                         style="font-size: 12px; margin-top: 4px"
                                     >
                                         Pending Leaves
@@ -109,7 +109,7 @@
                                         {{ stats.overtime }}
                                     </div>
                                     <div
-                                        class="stat-label text-uppercase text-muted"
+                                        class="stat-label text-uppercase text-muted mt-1"
                                         style="font-size: 12px; margin-top: 4px"
                                     >
                                         Overtime | Offsets
@@ -128,7 +128,7 @@
                                         {{ stats.absent }}
                                     </div>
                                     <div
-                                        class="stat-label text-uppercase text-muted"
+                                        class="stat-label text-uppercase text-muted mt-1"
                                         style="font-size: 12px; margin-top: 4px"
                                     >
                                         Absences
@@ -399,7 +399,7 @@ export default {
                 line-height: 1;
             }
 
-            .stat-label text-uppercase text-muted {
+            .stat-label text-uppercase text-muted mt-1 {
                 font-size: 0.75rem;
                 opacity: 0.8;
                 line-height: 1.2;

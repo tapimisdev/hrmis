@@ -1,7 +1,7 @@
 <template>
   <div class="position-relative tem">
     <!-- Search Bar -->
-    <div class="mb-4 search-bar d-flex justify-content-end">
+    <div class="mb-4 search-bar d-flex justify-content-center justify-content-md-end">
       <div class="input-group" style="max-width: 320px;">
         <input
           v-model="searchQuery"
@@ -172,6 +172,18 @@ export default {
   position: absolute;
   top: -78px;
   right: 0;
+
+  @media (max-width: 768px) {
+    position: relative;
+    top: 0;        // reset
+    right: auto;
+    margin-top: -60px;
+
+    .announcements-grid {
+      position: relative;
+      margin-top: 200px; // use spacing, not top
+    }
+  }
 }
 
 .announcements-section {

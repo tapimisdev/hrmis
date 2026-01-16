@@ -16,7 +16,7 @@
                 "Pages", 
                 "Dashboard", 
                 "Announcements", 
-                Str::limit($data["announcement"]->slug, 20)  // limit to 20 chars
+                Str::limit($data["announcement"]->slug, 10) 
             ]'
         >
             <a href="{{ route('announcement.index') }}" class="btn btn-danger py-3 px-4 me-5">
@@ -26,4 +26,14 @@
         
         <show :data='@json($data)'/>
     </div>
+@endsection
+
+@section('styles')
+ <style>
+    @media (max-width: 768px) {
+        .btn {
+        margin-top: 20px;
+        }
+    }
+</style>
 @endsection

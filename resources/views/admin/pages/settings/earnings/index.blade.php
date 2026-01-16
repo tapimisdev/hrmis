@@ -45,6 +45,15 @@
                 { data: "is_taxable", name: 'is_taxable'},
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
+            "columnDefs": [
+                {
+                    targets: "_all",
+                    className: "min-table-width",
+                    render: function(data, type, row, meta) {
+                        return data ?? "";
+                    }
+                }
+            ],
             "scrollX": true,
             "autoWidth": false
         });

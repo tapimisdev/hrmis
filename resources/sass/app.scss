@@ -62,6 +62,13 @@
     border-radius: 8px;
 }
 
+.min-table-width {
+    min-width: 200px !important;
+    white-space: nowrap;   
+    overflow: hidden;    
+    text-overflow: ellipsis;
+}
+
 .dataTables_length label, 
 .dataTables_filter label {
     color: var(--bs-body-color);
