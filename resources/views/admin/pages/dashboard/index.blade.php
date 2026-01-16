@@ -5,7 +5,7 @@
 
     <x-header 
         title="Dashboard" 
-        subtitle="Lorem ipsum dolor sit amet consectetur adipisicing elit. Eligendi sit reiciendis officia! Neque porro eligendi harum repellat error. Totam, quidem!">
+        subtitle="Monitor employee attendance, workforce movement, and daily activity across the organization. Gain real-time insights into operational trends and key performance indicators. Use this dashboard to support informed decision-making and efficient workforce management.">
     </x-header>
     
     <dashboard-vue></dashboard-vue>
