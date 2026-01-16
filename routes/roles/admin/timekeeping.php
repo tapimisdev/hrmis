@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\Timekeeping\TimelogController;
 use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogCorrectionController;
+use App\Http\Controllers\Admin\WebTimeAccess\WebTimeAccessController;
 
 Route::prefix('timekeeping')->group(function() {
     # TIMELOGS
@@ -20,4 +21,7 @@ Route::prefix('timekeeping')->group(function() {
     Route::get('daily-time-record/{employee_no}/show', [DailyTimeRecordController::class, 'show'])
         ->name('daily-time-record.show');
     Route::get('daily-time-record/{employee_no}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
+
+    Route::resource('web-time-access', WebTimeAccessController::class)->only('index', 'show', 'store')->names('webtime');
+
 });
