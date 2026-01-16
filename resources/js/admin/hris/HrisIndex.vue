@@ -134,6 +134,12 @@ export default {
                     { data: "date_hired" },
                     { data: "actions", orderable: true, searchable: false },
                 ],
+                columnDefs: [
+                    {
+                        targets: [1, 2, 3, 4],
+                        className: 'min-table-width'
+                    }
+                ],
                 "scrollX": true,
                 "autoWidth": false
             });

@@ -1,9 +1,10 @@
 <div class="position-relative mb-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
         <div class="flex-grow-1">
-            <div class="d-flex align-items-center gap-2 mb-1">
+
+            {{-- Breadcrumbs --}}
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                 @php
-                    // Use the passed breadcrumbs if provided, otherwise fallback
                     $breadcrumbs = $breadcrumbs ?? ['Pages', $title];
                 @endphp
 
@@ -21,6 +22,7 @@
                 @endforeach
             </div>
 
+            {{-- Subtitle --}}
             @if($subtitle)
                 <p class="mb-0 text-light" style="font-size: 0.875rem; line-height: 1.5;">
                     {{ $subtitle }}
@@ -28,6 +30,7 @@
             @endif
         </div>
 
+        {{-- Actions / Slot --}}
         <div class="d-flex gap-2 flex-shrink-0 align-items-center">
             {{ $slot }}
         </div>

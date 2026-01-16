@@ -59,6 +59,15 @@ $(document).ready(function () {
                 searchable: false
             }
         ],
+        "columnDefs": [
+                {
+                    targets: "_all",
+                    className: "min-table-width",
+                    render: function(data, type, row, meta) {
+                        return data ?? "";
+                    }
+                }
+            ],
         scrollX: true,
         autoWidth: false,
         order: [[1, 'desc']]
