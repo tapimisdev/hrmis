@@ -18,7 +18,7 @@
                             <i class="text-light fas fa-clock"></i>
                         </div>
                         <div class="header-text">
-                            <h5 class="modal-title">Request for Correction</h5>
+                            <h5 class="modal-title">Timelog Correction Request</h5>
                         </div>
                     </div>
                     <button
