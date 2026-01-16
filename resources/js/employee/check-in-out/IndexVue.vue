@@ -1,7 +1,12 @@
 <template lang="">
     <div>
-        <check-in-out-vue :is-allowed="isAllowed" @submit-log="handleSubmit"></check-in-out-vue>
-        <employee-timelog ref="employeeTimelog" :employee-number='employeeNumber' /> 
+        <check-in-out-vue 
+          :is-allowed="isAllowed" 
+          @submit-log="handleSubmit">
+        </check-in-out-vue>
+        <employee-timelog ref="employeeTimelog" 
+          :employee-number='employeeNumber' 
+        /> 
     </div>
 </template>
 

@@ -356,318 +356,321 @@
 </template>
 
 <script>
-import axios from "axios";
+  import axios from "axios";
 
-const HIDE_KEY = "hide_timelog_discrepancy";
-const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
-const WORKED_HOURS_KEY = "show_worked_hours";
+  const HIDE_KEY = "hide_timelog_discrepancy";
+  const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
+  const WORKED_HOURS_KEY = "show_worked_hours";
 
-export default {
-    name: "AppHeader",
-    data() {
-        const token = localStorage.getItem("auth_token");
-        const name = localStorage.getItem("name");
-        const email = localStorage.getItem("email");
+  export default {
+      name: "AppHeader",
+      data() {
+          const token = localStorage.getItem("auth_token");
+          const name = localStorage.getItem("name");
+          const email = localStorage.getItem("email");
 
-        return {
-            token,
-            user: { name, email },
+          return {
+              token,
+              user: { name, email },
 
-            // Notifications
-            notifications: [],
-            unreadCount: 0,
-            loadingNotifications: false,
+              // Notifications
+              notifications: [],
+              unreadCount: 0,
+              loadingNotifications: false,
 
-            // Toggles
-            showTimelogDiscrepancy: true,
-            showWorkedHours: true,
-            isDarkMode: false,
+              // Toggles
+              showTimelogDiscrepancy: true,
+              showWorkedHours: true,
+              isDarkMode: false,
 
-            // Logout
-            loggingOut: false,
+              // Logout
+              loggingOut: false,
 
-            // Time tracking
-            todayTimeIn: null,
-            todayTimeOut: null,
-            now: Date.now(),
-            clockInterval: null,
-            loading: false,
-        };
-    },
-    computed: {
-        userAvatar() {
-            return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                this.user.name || "User"
-            )}&background=4f46e5&color=fff&size=128`;
-        },
-        workedHours() {
-            if (!this.todayTimeIn) return "NO TIME IN";
+              // Time tracking
+              todayTimeIn: null,
+              todayTimeOut: null,
+              now: Date.now(),
+              clockInterval: null,
+              loading: false,
+          };
+      },
+      computed: {
+          userAvatar() {
+              return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  this.user.name || "User"
+              )}&background=4f46e5&color=fff&size=128`;
+          },
+          workedHours() {
+              if (!this.todayTimeIn) return "NO TIME IN";
 
-            const timeInDate = this.parseTimeIn(this.todayTimeIn);
-            if (!timeInDate) return "NO TIME IN";
+              const timeInDate = this.parseTimeIn(this.todayTimeIn);
+              if (!timeInDate) return "NO TIME IN";
 
-            let endTime;
-            if (this.todayTimeOut) {
-                // Timeout exists → stop ticking and calculate based on timein and timeout
-                const timeOutDate = this.parseTimeIn(this.todayTimeOut);
-                endTime = timeOutDate ? timeOutDate.getTime() : this.now;
-                this.stopClock();
-            } else {
-                // No timeout → use live now
-                endTime = this.now;
-                if (!this.clockInterval) this.startClock(); // start ticking if not already
-            }
+              let endTime;
+              if (this.todayTimeOut) {
+                  // Timeout exists → stop ticking and calculate based on timein and timeout
+                  const timeOutDate = this.parseTimeIn(this.todayTimeOut);
+                  endTime = timeOutDate ? timeOutDate.getTime() : this.now;
+                  this.stopClock();
+              } else {
+                  // No timeout → use live now
+                  endTime = this.now;
+                  if (!this.clockInterval) this.startClock(); // start ticking if not already
+              }
 
-            const diffMs = endTime - timeInDate.getTime();
-            if (diffMs <= 0) return "0 HRS 0 MINS";
+              const diffMs = endTime - timeInDate.getTime();
+              if (diffMs <= 0) return "0 HRS 0 MINS";
 
-            const totalMinutes = Math.floor(diffMs / 60000);
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
+              const totalMinutes = Math.floor(diffMs / 60000);
+              const hours = Math.floor(totalMinutes / 60);
+              const minutes = totalMinutes % 60;
 
-            const hourLabel = hours === 1 ? "HR" : "HRS";
-            const minuteLabel = minutes === 1 ? "MIN" : "MINS";
+              const hourLabel = hours === 1 ? "HR" : "HRS";
+              const minuteLabel = minutes === 1 ? "MIN" : "MINS";
 
-            return `${hours} ${hourLabel} & ${minutes} ${minuteLabel}`;
-        },
-    },
-    mounted() {
-        this.initializeTheme();
-        this.syncTimelogToggleState();
+              return `${hours} ${hourLabel} & ${minutes} ${minuteLabel}`;
+          },
+      },
+      mounted() {
+          this.initializeTheme();
+          this.syncTimelogToggleState();
 
-        const saved = localStorage.getItem(WORKED_HOURS_KEY);
-        if (saved !== null) this.showWorkedHours = saved === "true";
+          const saved = localStorage.getItem(WORKED_HOURS_KEY);
+          if (saved !== null) this.showWorkedHours = saved === "true";
 
-        if (this.showWorkedHours) this.fetchLatestTimeLog();
+          if (this.showWorkedHours) this.fetchLatestTimeLog();
 
-        this.fetchNotificationCount();
-        this.notificationInterval = setInterval(
-            this.fetchNotificationCount,
-            30000
-        );
+          this.fetchNotificationCount();
+          this.notificationInterval = setInterval(
+              this.fetchNotificationCount,
+              30000
+          );
 
-        window.addEventListener("timelog-toggle", this.syncTimelogToggleState);
-    },
-    beforeUnmount() {
-        this.stopClock();
-        clearInterval(this.notificationInterval);
-        window.removeEventListener(
-            "timelog-toggle",
-            this.syncTimelogToggleState
-        );
-    },
-    methods: {
-        /* ==========================
-       THEME
-    ========================== */
-        initializeTheme() {
-            const saved = localStorage.getItem("theme-preference");
-            this.isDarkMode = saved === "dark";
-            this.applyTheme();
-        },
-        handleThemeToggle() {
-            localStorage.setItem(
-                "theme-preference",
-                this.isDarkMode ? "dark" : "light"
-            );
-            this.applyTheme();
-        },
-        applyTheme() {
-            document.documentElement.setAttribute(
-                "data-bs-theme",
-                this.isDarkMode ? "dark" : "light"
-            );
-        },
+          window.addEventListener("timelog-toggle", this.syncTimelogToggleState);
+          window.addEventListener("stop-clock-ticking", this.stopClock);
+      },
+      beforeUnmount() {
+          this.stopClock();
+          clearInterval(this.notificationInterval);
+          window.removeEventListener(
+              "timelog-toggle",
+              this.syncTimelogToggleState
+          );
+          window.removeEventListener("stop-clock-ticking", this.stopClock);
+      },
+      methods: {
+          /* ==========================
+        THEME
+      ========================== */
+          initializeTheme() {
+              const saved = localStorage.getItem("theme-preference");
+              this.isDarkMode = saved === "dark";
+              this.applyTheme();
+          },
+          handleThemeToggle() {
+              localStorage.setItem(
+                  "theme-preference",
+                  this.isDarkMode ? "dark" : "light"
+              );
+              this.applyTheme();
+          },
+          applyTheme() {
+              document.documentElement.setAttribute(
+                  "data-bs-theme",
+                  this.isDarkMode ? "dark" : "light"
+              );
+          },
 
-        /* ==========================
-       TIME LOG
-    ========================== */
-        parseTimeIn(timeIn) {
-            const direct = new Date(timeIn);
-            if (!isNaN(direct.getTime())) return direct;
+          /* ==========================
+        TIME LOG
+      ========================== */
+          parseTimeIn(timeIn) {
+              const direct = new Date(timeIn);
+              if (!isNaN(direct.getTime())) return direct;
 
-            const match = timeIn?.match(
-                /(\d{1,2}):(\d{2})(?::(\d{2}))?\s?(AM|PM)/i
-            );
-            if (!match) return null;
+              const match = timeIn?.match(
+                  /(\d{1,2}):(\d{2})(?::(\d{2}))?\s?(AM|PM)/i
+              );
+              if (!match) return null;
 
-            let hours = Number(match[1]);
-            const minutes = Number(match[2]);
-            const seconds = Number(match[3] || 0);
-            const meridiem = match[4].toUpperCase();
+              let hours = Number(match[1]);
+              const minutes = Number(match[2]);
+              const seconds = Number(match[3] || 0);
+              const meridiem = match[4].toUpperCase();
 
-            if (meridiem === "PM" && hours < 12) hours += 12;
-            if (meridiem === "AM" && hours === 12) hours = 0;
+              if (meridiem === "PM" && hours < 12) hours += 12;
+              if (meridiem === "AM" && hours === 12) hours = 0;
 
-            const date = new Date();
-            date.setHours(hours, minutes, seconds, 0);
+              const date = new Date();
+              date.setHours(hours, minutes, seconds, 0);
 
-            return date;
-        },
-        startClock() {
-            if (this.clockInterval) return;
-            this.now = Date.now();
-            // Tick every minute
-            this.clockInterval = setInterval(() => {
-                this.now = Date.now();
-            }, 1000);
-        },
-        stopClock() {
-            if (this.clockInterval) clearInterval(this.clockInterval);
-            this.clockInterval = null;
-        },
-        async fetchLatestTimeLog() {
-            if (this.loading) return;
-            this.loading = true;
+              return date;
+          },
+          startClock() {
+              if (this.clockInterval) return;
+              this.now = Date.now();
+              // Tick every minute
+              this.clockInterval = setInterval(() => {
+                  this.now = Date.now();
+                  console.log(123);
+              }, 1000);
+          },
+          stopClock() {
+              if (this.clockInterval) clearInterval(this.clockInterval);
+              this.clockInterval = null;
+          },
+          async fetchLatestTimeLog() {
+              if (this.loading) return;
+              this.loading = true;
 
-            try {
-                const res = await axios.get("/api/employee/current-logs", {
-                    headers: { Authorization: `Bearer ${this.token}` },
-                });
+              try {
+                  const res = await axios.get("/api/employee/current-logs", {
+                      headers: { Authorization: `Bearer ${this.token}` },
+                  });
 
-                const logs = res.data || [];
+                  const logs = res.data || [];
 
-                this.todayTimeIn = logs?.time_in || null;
-                this.todayTimeOut = logs?.time_out || null;
+                  this.todayTimeIn = logs?.time_in || null;
+                  this.todayTimeOut = logs?.time_out || null;
 
-                if (this.todayTimeIn && !this.todayTimeOut) {
-                    this.startClock();
-                } else {
-                    this.stopClock();
-                }
-            } catch (err) {
-                console.error("Failed to fetch time logs:", err);
-            } finally {
-                this.loading = false;
-            }
-        },
-        handleWorkedHoursToggle() {
-            localStorage.setItem(
-                WORKED_HOURS_KEY,
-                this.showWorkedHours ? "true" : "false"
-            );
-            if (this.showWorkedHours) this.fetchLatestTimeLog();
-            else {
-                this.todayTimeIn = null;
-                this.todayTimeOut = null;
-                this.stopClock();
-            }
-        },
+                  if (this.todayTimeIn && !this.todayTimeOut) {
+                      this.startClock();
+                  } else {
+                      this.stopClock();
+                  }
+              } catch (err) {
+                  console.error("Failed to fetch time logs:", err);
+              } finally {
+                  this.loading = false;
+              }
+          },
+          handleWorkedHoursToggle() {
+              localStorage.setItem(
+                  WORKED_HOURS_KEY,
+                  this.showWorkedHours ? "true" : "false"
+              );
+              if (this.showWorkedHours) this.fetchLatestTimeLog();
+              else {
+                  this.todayTimeIn = null;
+                  this.todayTimeOut = null;
+                  this.stopClock();
+              }
+          },
 
-        /* ==========================
-       TIMELOG DISCREPANCY
-    ========================== */
-        syncTimelogToggleState() {
-            const today = new Date().toDateString();
-            const hidden = localStorage.getItem(HIDE_KEY);
-            const hideDate = localStorage.getItem(HIDE_DATE_KEY);
-            this.showTimelogDiscrepancy = !(
-                hidden === "true" && hideDate === today
-            );
-        },
-        handleTimelogToggle() {
-            if (!this.showTimelogDiscrepancy) {
-                localStorage.setItem(HIDE_KEY, "true");
-                localStorage.setItem(HIDE_DATE_KEY, new Date().toDateString());
-            } else {
-                localStorage.removeItem(HIDE_KEY);
-                localStorage.removeItem(HIDE_DATE_KEY);
-            }
-            window.dispatchEvent(new Event("timelog-toggle"));
-        },
+          /* ==========================
+        TIMELOG DISCREPANCY
+      ========================== */
+          syncTimelogToggleState() {
+              const today = new Date().toDateString();
+              const hidden = localStorage.getItem(HIDE_KEY);
+              const hideDate = localStorage.getItem(HIDE_DATE_KEY);
+              this.showTimelogDiscrepancy = !(
+                  hidden === "true" && hideDate === today
+              );
+          },
+          handleTimelogToggle() {
+              if (!this.showTimelogDiscrepancy) {
+                  localStorage.setItem(HIDE_KEY, "true");
+                  localStorage.setItem(HIDE_DATE_KEY, new Date().toDateString());
+              } else {
+                  localStorage.removeItem(HIDE_KEY);
+                  localStorage.removeItem(HIDE_DATE_KEY);
+              }
+              window.dispatchEvent(new Event("timelog-toggle"));
+          },
 
-        /* ==========================
-       NOTIFICATIONS
-    ========================== */
-        async fetchNotificationCount() {
-            try {
-                const res = await axios.get("/api/notifications/unread-count");
-                this.unreadCount = res.data.count ?? 0;
-            } catch (err) {
-                console.error(err);
-            }
-        },
-        async loadNotifications() {
-            if (this.notifications.length) return;
-            this.loadingNotifications = true;
-            try {
-                const res = await axios.get("/api/notifications", {
-                    params: { limit: 5 },
-                });
-                this.notifications = res.data.data || [];
-            } catch (err) {
-                console.error(err);
-            } finally {
-                this.loadingNotifications = false;
-            }
-        },
-        async markAsRead(id) {
-            try {
-                await axios.post(`/api/notifications/${id}/read`);
-                const n = this.notifications.find((n) => n.id === id);
-                if (n && !n.read_at) {
-                    n.read_at = new Date();
-                    this.unreadCount = Math.max(0, this.unreadCount - 1);
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        },
-        viewAllNotifications() {
-            window.location.href = "/notifications";
-        },
-        getNotificationIcon(type) {
-            return (
-                {
-                    success: "fa-solid fa-check text-success",
-                    warning: "fa-solid fa-exclamation text-warning",
-                    alert: "fa-solid fa-triangle-exclamation text-danger",
-                    message: "fa-solid fa-message text-info",
-                }[type] || "fa-solid fa-bell text-primary"
-            );
-        },
-        getNotificationIconClass(type) {
-            return (
-                {
-                    success: "bg-success bg-opacity-10",
-                    warning: "bg-warning bg-opacity-10",
-                    alert: "bg-danger bg-opacity-10",
-                    message: "bg-info bg-opacity-10",
-                }[type] || "bg-primary bg-opacity-10"
-            );
-        },
-        formatTime(time) {
-            const diff = Date.now() - new Date(time);
-            const mins = Math.floor(diff / 60000);
-            if (mins < 1) return "Just now";
-            if (mins < 60) return `${mins} min ago`;
-            if (mins < 1440) return `${Math.floor(mins / 60)} hrs ago`;
-            return new Date(time).toLocaleDateString();
-        },
+          /* ==========================
+        NOTIFICATIONS
+      ========================== */
+          async fetchNotificationCount() {
+              try {
+                  const res = await axios.get("/api/notifications/unread-count");
+                  this.unreadCount = res.data.count ?? 0;
+              } catch (err) {
+                  console.error(err);
+              }
+          },
+          async loadNotifications() {
+              if (this.notifications.length) return;
+              this.loadingNotifications = true;
+              try {
+                  const res = await axios.get("/api/notifications", {
+                      params: { limit: 5 },
+                  });
+                  this.notifications = res.data.data || [];
+              } catch (err) {
+                  console.error(err);
+              } finally {
+                  this.loadingNotifications = false;
+              }
+          },
+          async markAsRead(id) {
+              try {
+                  await axios.post(`/api/notifications/${id}/read`);
+                  const n = this.notifications.find((n) => n.id === id);
+                  if (n && !n.read_at) {
+                      n.read_at = new Date();
+                      this.unreadCount = Math.max(0, this.unreadCount - 1);
+                  }
+              } catch (err) {
+                  console.error(err);
+              }
+          },
+          viewAllNotifications() {
+              window.location.href = "/notifications";
+          },
+          getNotificationIcon(type) {
+              return (
+                  {
+                      success: "fa-solid fa-check text-success",
+                      warning: "fa-solid fa-exclamation text-warning",
+                      alert: "fa-solid fa-triangle-exclamation text-danger",
+                      message: "fa-solid fa-message text-info",
+                  }[type] || "fa-solid fa-bell text-primary"
+              );
+          },
+          getNotificationIconClass(type) {
+              return (
+                  {
+                      success: "bg-success bg-opacity-10",
+                      warning: "bg-warning bg-opacity-10",
+                      alert: "bg-danger bg-opacity-10",
+                      message: "bg-info bg-opacity-10",
+                  }[type] || "bg-primary bg-opacity-10"
+              );
+          },
+          formatTime(time) {
+              const diff = Date.now() - new Date(time);
+              const mins = Math.floor(diff / 60000);
+              if (mins < 1) return "Just now";
+              if (mins < 60) return `${mins} min ago`;
+              if (mins < 1440) return `${Math.floor(mins / 60)} hrs ago`;
+              return new Date(time).toLocaleDateString();
+          },
 
-        /* ==========================
-       LOGOUT & UI
-    ========================== */
-        async logout() {
-            if (this.loggingOut) return;
-            this.loggingOut = true;
-            try {
-                await axios.post("/logout");
-                window.location.href = "/login";
-            } catch (err) {
-                console.error(err);
-            } finally {
-                this.loggingOut = false;
-            }
-        },
-        toggleMobileMenu() {
-            document.querySelector("aside")?.classList.toggle("mobile-open");
-            document
-                .querySelector(".sidebar-overlay")
-                ?.classList.toggle("active");
-        },
-    },
-};
+          /* ==========================
+        LOGOUT & UI
+      ========================== */
+          async logout() {
+              if (this.loggingOut) return;
+              this.loggingOut = true;
+              try {
+                  await axios.post("/logout");
+                  window.location.href = "/login";
+              } catch (err) {
+                  console.error(err);
+              } finally {
+                  this.loggingOut = false;
+              }
+          },
+          toggleMobileMenu() {
+              document.querySelector("aside")?.classList.toggle("mobile-open");
+              document
+                  .querySelector(".sidebar-overlay")
+                  ?.classList.toggle("active");
+          },
+      },
+  };
 </script>
 
 <style lang="scss" scoped>

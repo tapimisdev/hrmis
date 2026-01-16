@@ -221,7 +221,7 @@
 <script setup>
 import axios from 'axios';
 import { reactive, ref, onMounted, computed } from 'vue';
-const emit = defineEmits(['submit-log', 'stop-shotclock'])
+const emit = defineEmits(['submit-log'])
 
 const props = defineProps({
     isAllowed: {
@@ -293,9 +293,9 @@ function setTime(type) {
                     });
                     emit('submit-log')
                     getTodayLogs(false);
-
-                    if(type == 'timeOut') {
-                      emit('stop-shotclock')
+                    console.log(type);
+                    if(type == 1) {
+                      window.dispatchEvent(new Custom('stop-clock-ticking'));
                     }
 
                 })
