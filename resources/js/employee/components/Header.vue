@@ -1,5 +1,14 @@
 <template>
     <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰</button>
+
+    <div v-if="showWorkedHours" class="shot-clock-wrapper">
+        <div class="shot-clock">
+            <h4 :class="{ 'text-muted': !todayTimeIn }">
+                {{ todayTimeIn ? workedHours : "NO TIME IN YET" }}
+            </h4>
+        </div>
+    </div>
+
     <div class="d-flex gap-4 align-items-center">
         <!-- Widget Dropdown -->
         <div class="dropdown position-relative">
@@ -35,6 +44,7 @@
                         <h6 class="mb-0 fw-semibold">Widgets</h6>
                     </div>
                 </li>
+
                 <div class="px-4 py-3">
                     <!-- Dark Mode Toggle -->
                     <li class="pb-2">
@@ -57,14 +67,14 @@
                             <label
                                 class="form-check-label text-uppercase fw-medium"
                                 for="darkModeSwitch"
-                                style="font-size: 12px; cursor: pointer;"
+                                style="font-size: 12px; cursor: pointer"
                             >
                                 Dark Mode
                             </label>
                         </div>
                     </li>
 
-                    <!-- Timelog Toggle -->
+                    <!-- Timelog Discrepancy Toggle -->
                     <li class="pb-2">
                         <div
                             class="form-check form-switch d-flex align-items-center gap-2"
@@ -85,9 +95,37 @@
                             <label
                                 class="form-check-label text-uppercase fw-medium"
                                 for="timelogDiscrepancySwitch"
-                                style="font-size: 12px; cursor: pointer;"
+                                style="font-size: 12px; cursor: pointer"
                             >
                                 Timelogs Discrepancy
+                            </label>
+                        </div>
+                    </li>
+
+                    <!-- Worked Hours Toggle -->
+                    <li class="pb-2">
+                        <div
+                            class="form-check form-switch d-flex align-items-center gap-2"
+                        >
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="workedHoursSwitch"
+                                v-model="showWorkedHours"
+                                @change="handleWorkedHoursToggle"
+                                style="
+                                    cursor: pointer;
+                                    transform: scale(1.2);
+                                    margin-right: 0.5rem;
+                                    margin-bottom: 2px;
+                                "
+                            />
+                            <label
+                                class="form-check-label text-uppercase fw-medium"
+                                for="workedHoursSwitch"
+                                style="font-size: 12px; cursor: pointer"
+                            >
+                                Today's Worked Hours
                             </label>
                         </div>
                     </li>
@@ -320,28 +358,40 @@
 <script>
 import axios from "axios";
 
-const token = localStorage.getItem("auth_token");
-const name = localStorage.getItem("name");
-const email = localStorage.getItem("email");
-
 const HIDE_KEY = "hide_timelog_discrepancy";
 const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
+const WORKED_HOURS_KEY = "show_worked_hours";
 
 export default {
     name: "AppHeader",
     data() {
+        const token = localStorage.getItem("auth_token");
+        const name = localStorage.getItem("name");
+        const email = localStorage.getItem("email");
+
         return {
             token,
             user: { name, email },
 
+            // Notifications
             notifications: [],
             unreadCount: 0,
             loadingNotifications: false,
 
+            // Toggles
+            showTimelogDiscrepancy: true,
+            showWorkedHours: true,
+            isDarkMode: false,
+
+            // Logout
             loggingOut: false,
 
-            showTimelogDiscrepancy: true,
-            isDarkMode: false,
+            // Time tracking
+            todayTimeIn: null,
+            todayTimeOut: null,
+            now: Date.now(),
+            clockInterval: null,
+            loading: false,
         };
     },
     computed: {
@@ -350,99 +400,171 @@ export default {
                 this.user.name || "User"
             )}&background=4f46e5&color=fff&size=128`;
         },
+        workedHours() {
+            if (!this.todayTimeIn) return "NO TIME IN";
+
+            const timeInDate = this.parseTimeIn(this.todayTimeIn);
+            if (!timeInDate) return "NO TIME IN";
+
+            let endTime;
+            if (this.todayTimeOut) {
+                // Timeout exists → stop ticking and calculate based on timein and timeout
+                const timeOutDate = this.parseTimeIn(this.todayTimeOut);
+                endTime = timeOutDate ? timeOutDate.getTime() : this.now;
+                this.stopClock();
+            } else {
+                // No timeout → use live now
+                endTime = this.now;
+                if (!this.clockInterval) this.startClock(); // start ticking if not already
+            }
+
+            const diffMs = endTime - timeInDate.getTime();
+            if (diffMs <= 0) return "0 HRS 0 MINS";
+
+            const totalMinutes = Math.floor(diffMs / 60000);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+
+            const hourLabel = hours === 1 ? "HR" : "HRS";
+            const minuteLabel = minutes === 1 ? "MIN" : "MINS";
+
+            return `${hours} ${hourLabel} & ${minutes} ${minuteLabel}`;
+        },
     },
     mounted() {
-        // Initialize dark mode
-        this.initTheme();
+        this.initializeTheme();
+        this.syncTimelogToggleState();
 
-        // Timelog toggle state
-        this.syncTimelogToggle();
+        const saved = localStorage.getItem(WORKED_HOURS_KEY);
+        if (saved !== null) this.showWorkedHours = saved === "true";
 
-        // Fetch notifications
+        if (this.showWorkedHours) this.fetchLatestTimeLog();
+
         this.fetchNotificationCount();
         this.notificationInterval = setInterval(
             this.fetchNotificationCount,
             30000
         );
 
-        // Event listener for timelog toggle
-        window.addEventListener("timelog-toggle", this.syncTimelogToggle);
+        window.addEventListener("timelog-toggle", this.syncTimelogToggleState);
     },
     beforeUnmount() {
+        this.stopClock();
         clearInterval(this.notificationInterval);
-        window.removeEventListener("timelog-toggle", this.syncTimelogToggle);
+        window.removeEventListener(
+            "timelog-toggle",
+            this.syncTimelogToggleState
+        );
     },
     methods: {
-        /* =====================
-       Dark Mode
-    ====================== */
-        initTheme() {
-            const storageKey = "theme-preference";
-            const savedTheme = localStorage.getItem(storageKey);
-            const systemPrefersDark = window.matchMedia(
-                "(prefers-color-scheme: dark)"
-            ).matches;
-
-            // Determine theme: saved preference > system preference > light
-            const currentTheme =
-                savedTheme || (systemPrefersDark ? "dark" : "light");
-            this.isDarkMode = currentTheme === "dark";
-
-            // Apply immediately
+        /* ==========================
+       THEME
+    ========================== */
+        initializeTheme() {
+            const saved = localStorage.getItem("theme-preference");
+            this.isDarkMode = saved === "dark";
             this.applyTheme();
-
-            // Listen for system theme changes
-            window
-                .matchMedia("(prefers-color-scheme: dark)")
-                .addEventListener("change", (e) => {
-                    this.isDarkMode = e.matches;
-                    this.applyTheme();
-                    localStorage.setItem(
-                        "theme-preference",
-                        this.isDarkMode ? "dark" : "light"
-                    );
-                });
         },
-
         handleThemeToggle() {
-            const theme = this.isDarkMode ? "dark" : "light";
-            localStorage.setItem("theme-preference", theme);
+            localStorage.setItem(
+                "theme-preference",
+                this.isDarkMode ? "dark" : "light"
+            );
             this.applyTheme();
         },
-
         applyTheme() {
-            const theme = this.isDarkMode ? "dark" : "light";
-
-            document.documentElement.classList.remove("light", "dark");
-            document.body.classList.remove("light", "dark");
-            document.documentElement.classList.add(theme);
-            document.body.classList.add(theme);
-
-            // Bootstrap attribute
-            document.documentElement.setAttribute("data-bs-theme", theme);
-
-            // Update switch aria-label
-            const switchEl = document.querySelector("#darkModeSwitch");
-            if (switchEl) switchEl.setAttribute("aria-label", theme);
+            document.documentElement.setAttribute(
+                "data-bs-theme",
+                this.isDarkMode ? "dark" : "light"
+            );
         },
 
-        /* =====================
-       Timelog Toggle
-    ====================== */
-        syncTimelogToggle() {
-            const today = new Date().toDateString();
-            const hidden = localStorage.getItem(HIDE_KEY);
-            const hideDate = localStorage.getItem(HIDE_DATE_KEY);
+        /* ==========================
+       TIME LOG
+    ========================== */
+        parseTimeIn(timeIn) {
+            const direct = new Date(timeIn);
+            if (!isNaN(direct.getTime())) return direct;
 
-            if (hidden === "true" && hideDate === today) {
-                this.showTimelogDiscrepancy = false;
-            } else {
-                localStorage.removeItem(HIDE_KEY);
-                localStorage.removeItem(HIDE_DATE_KEY);
-                this.showTimelogDiscrepancy = true;
+            const match = timeIn?.match(
+                /(\d{1,2}):(\d{2})(?::(\d{2}))?\s?(AM|PM)/i
+            );
+            if (!match) return null;
+
+            let hours = Number(match[1]);
+            const minutes = Number(match[2]);
+            const seconds = Number(match[3] || 0);
+            const meridiem = match[4].toUpperCase();
+
+            if (meridiem === "PM" && hours < 12) hours += 12;
+            if (meridiem === "AM" && hours === 12) hours = 0;
+
+            const date = new Date();
+            date.setHours(hours, minutes, seconds, 0);
+
+            return date;
+        },
+        startClock() {
+            if (this.clockInterval) return;
+            this.now = Date.now();
+            // Tick every minute
+            this.clockInterval = setInterval(() => {
+                this.now = Date.now();
+            }, 1000);
+        },
+        stopClock() {
+            if (this.clockInterval) clearInterval(this.clockInterval);
+            this.clockInterval = null;
+        },
+        async fetchLatestTimeLog() {
+            if (this.loading) return;
+            this.loading = true;
+
+            try {
+                const res = await axios.get("/api/employee/current-logs", {
+                    headers: { Authorization: `Bearer ${this.token}` },
+                });
+
+                const logs = res.data || [];
+
+                this.todayTimeIn = logs?.time_in || null;
+                this.todayTimeOut = logs?.time_out || null;
+
+                if (this.todayTimeIn && !this.todayTimeOut) {
+                    this.startClock();
+                } else {
+                    this.stopClock();
+                }
+            } catch (err) {
+                console.error("Failed to fetch time logs:", err);
+            } finally {
+                this.loading = false;
+            }
+        },
+        handleWorkedHoursToggle() {
+            localStorage.setItem(
+                WORKED_HOURS_KEY,
+                this.showWorkedHours ? "true" : "false"
+            );
+            if (this.showWorkedHours) this.fetchLatestTimeLog();
+            else {
+                this.todayTimeIn = null;
+                this.todayTimeOut = null;
+                this.stopClock();
             }
         },
 
+        /* ==========================
+       TIMELOG DISCREPANCY
+    ========================== */
+        syncTimelogToggleState() {
+            const today = new Date().toDateString();
+            const hidden = localStorage.getItem(HIDE_KEY);
+            const hideDate = localStorage.getItem(HIDE_DATE_KEY);
+            this.showTimelogDiscrepancy = !(
+                hidden === "true" && hideDate === today
+            );
+        },
         handleTimelogToggle() {
             if (!this.showTimelogDiscrepancy) {
                 localStorage.setItem(HIDE_KEY, "true");
@@ -454,9 +576,9 @@ export default {
             window.dispatchEvent(new Event("timelog-toggle"));
         },
 
-        /* =====================
-       Notifications
-    ====================== */
+        /* ==========================
+       NOTIFICATIONS
+    ========================== */
         async fetchNotificationCount() {
             try {
                 const res = await axios.get("/api/notifications/unread-count");
@@ -465,7 +587,6 @@ export default {
                 console.error(err);
             }
         },
-
         async loadNotifications() {
             if (this.notifications.length) return;
             this.loadingNotifications = true;
@@ -480,7 +601,6 @@ export default {
                 this.loadingNotifications = false;
             }
         },
-
         async markAsRead(id) {
             try {
                 await axios.post(`/api/notifications/${id}/read`);
@@ -493,33 +613,9 @@ export default {
                 console.error(err);
             }
         },
-
         viewAllNotifications() {
             window.location.href = "/notifications";
         },
-
-        /* =====================
-       Logout & UI
-    ====================== */
-        async logout() {
-            if (this.loggingOut) return;
-            this.loggingOut = true;
-            try {
-                await axios.post("/logout");
-                window.location.href = "/login";
-            } catch (err) {
-                console.error(err);
-                this.loggingOut = false;
-            }
-        },
-
-        toggleMobileMenu() {
-            document.querySelector("aside")?.classList.toggle("mobile-open");
-            document
-                .querySelector(".sidebar-overlay")
-                ?.classList.toggle("active");
-        },
-
         getNotificationIcon(type) {
             return (
                 {
@@ -530,7 +626,6 @@ export default {
                 }[type] || "fa-solid fa-bell text-primary"
             );
         },
-
         getNotificationIconClass(type) {
             return (
                 {
@@ -541,7 +636,6 @@ export default {
                 }[type] || "bg-primary bg-opacity-10"
             );
         },
-
         formatTime(time) {
             const diff = Date.now() - new Date(time);
             const mins = Math.floor(diff / 60000);
@@ -549,6 +643,28 @@ export default {
             if (mins < 60) return `${mins} min ago`;
             if (mins < 1440) return `${Math.floor(mins / 60)} hrs ago`;
             return new Date(time).toLocaleDateString();
+        },
+
+        /* ==========================
+       LOGOUT & UI
+    ========================== */
+        async logout() {
+            if (this.loggingOut) return;
+            this.loggingOut = true;
+            try {
+                await axios.post("/logout");
+                window.location.href = "/login";
+            } catch (err) {
+                console.error(err);
+            } finally {
+                this.loggingOut = false;
+            }
+        },
+        toggleMobileMenu() {
+            document.querySelector("aside")?.classList.toggle("mobile-open");
+            document
+                .querySelector(".sidebar-overlay")
+                ?.classList.toggle("active");
         },
     },
 };
@@ -598,9 +714,45 @@ export default {
 @media (max-width: 767.98px) {
     .dropdown-menu {
         min-width: 300px !important;
+
         label {
             font-size: 10px !important;
         }
+    }
+
+    .shot-clock-wrapper {
+        position: fixed !important;
+        width: 80%;
+        top: auto !important;
+        bottom: -40px !important;
+        left: 50%;
+        transform: translate(-50%, -25%) !important;
+        padding: 20px 0 30px 0 !important;
+        border-radius: 16px 16px 0 0 !important;
+
+        h4 {
+            font-size: 1rem;
+            text-align: center;
+        }
+    }
+}
+
+.shot-clock-wrapper {
+    position: fixed;
+    top: 25px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: $primary;
+    color: $light;
+    padding: 40px 50px 10px;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+
+    h4 {
+        font-weight: 600;
+        text-align: center;
     }
 }
 </style>

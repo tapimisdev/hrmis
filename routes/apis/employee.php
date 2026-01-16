@@ -16,5 +16,6 @@ Route::prefix('employee')->group(function() {
         ->name('api.employee.children');
 
     Route::get('incomplete-logs', [LogsController::class, 'getIncompleteLogs']);
+    Route::get('current-logs', [LogsController::class, 'getCurrentTimelog']);
 
 });

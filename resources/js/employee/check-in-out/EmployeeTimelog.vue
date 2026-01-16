@@ -1,6 +1,5 @@
 <template>
     <div class="attendance-container">
-
         <CorrectionLog ref="correctionModal" />
         <CorrectionList ref="correctionListModal" />
 
@@ -11,11 +10,18 @@
                 Employee Attendance
             </h5>
             <div class="filters d-md-flex align-items-center gap-3">
-                <button class="btn btn-sm btn-link text-uppercase fw-medium" @click="openCorretionList">
+                <button
+                    class="btn btn-sm btn-link text-uppercase fw-medium"
+                    @click="openCorretionList"
+                >
                     View Corrections for this month
                 </button>
                 <select v-model="selectedMonth" @change="loadTimelogs">
-                    <option v-for="(month, index) in months" :key="index" :value="index + 1">
+                    <option
+                        v-for="(month, index) in months"
+                        :key="index"
+                        :value="index + 1"
+                    >
                         {{ month }}
                     </option>
                 </select>
@@ -68,10 +74,18 @@
                         <!-- STATUS ROW -->
                         <template v-if="hasStatus(log.remarks)">
                             <td colspan="8" class="status-cell">
-                                <span class="status" :class="getStatusClass(log.remarks)">
+                                <span
+                                    class="status"
+                                    :class="getStatusClass(log.remarks)"
+                                >
                                     <i :class="getStatusIcon(log.remarks)"></i>
                                     {{ getStatusText(log.remarks) }}
-                                    <span v-if="hasRemark(log.remarks, 'holiday') && log.doble">
+                                    <span
+                                        v-if="
+                                            hasRemark(log.remarks, 'holiday') &&
+                                            log.doble
+                                        "
+                                    >
                                         (X2: {{ log.doble }})
                                     </span>
                                 </span>
@@ -85,16 +99,20 @@
                                     title="Request Timelog Correction"
                                     @click="openModal(index + 1)"
                                 >
-                                    <i class="fa-solid fa-code-pull-request"></i>
+                                    <i
+                                        class="fa-solid fa-code-pull-request"
+                                    ></i>
                                 </button>
                             </td>
                         </template>
 
                         <!-- REGULAR ROW -->
                         <template v-else>
-                            <td>{{ log.time_in || '--:--' }}</td>
-                            <td class="small-text">{{ log.break || '--:--' }}</td>
-                            <td>{{ log.time_out || '--:--' }}</td>
+                            <td>{{ log.time_in || "--:--" }}</td>
+                            <td class="small-text">
+                                {{ log.break || "--:--" }}
+                            </td>
+                            <td>{{ log.time_out || "--:--" }}</td>
 
                             <td>
                                 <div v-if="log.overtime" class="small-text">
@@ -106,8 +124,14 @@
                                 <span
                                     :class="{
                                         highlight:
-                                            hasRemark(log.remarks, 'overtime') ||
-                                            hasRemark(log.remarks, 'pending overtime')
+                                            hasRemark(
+                                                log.remarks,
+                                                'overtime'
+                                            ) ||
+                                            hasRemark(
+                                                log.remarks,
+                                                'pending overtime'
+                                            ),
                                     }"
                                 >
                                     {{ convertToReadableTime(log.ot_mins) }}
@@ -116,7 +140,11 @@
 
                             <td>
                                 <span class="badge">
-                                    {{ convertToReadableTime(log.total_time_work) }}
+                                    {{
+                                        convertToReadableTime(
+                                            log.total_time_work
+                                        )
+                                    }}
                                 </span>
                             </td>
 
@@ -124,14 +152,20 @@
 
                             <td>
                                 <span class="badge ut">
-                                    {{ convertToReadableTime(log.late_undertime) }}
+                                    {{
+                                        convertToReadableTime(
+                                            log.late_undertime
+                                        )
+                                    }}
                                 </span>
                             </td>
 
                             <td>
                                 <div class="remarks">
                                     <span
-                                        v-for="(remark, rIndex) in getFilteredRemarks(log.remarks)"
+                                        v-for="(
+                                            remark, rIndex
+                                        ) in getFilteredRemarks(log.remarks)"
                                         :key="rIndex"
                                         class="tag"
                                         :class="getRemarkClass(remark)"
@@ -147,7 +181,9 @@
                                     title="Request Correction"
                                     @click="openModal(index + 1)"
                                 >
-                                    <i class="fa-solid fa-code-pull-request"></i>
+                                    <i
+                                        class="fa-solid fa-code-pull-request"
+                                    ></i>
                                 </button>
                             </td>
                         </template>
@@ -159,23 +195,23 @@
 </template>
 
 <script>
-import axios from 'axios';
-import CorrectionLog from './Corrections/CorrectionLog.vue';
-import CorrectionList from './Corrections/CorrectionList.vue';
+import axios from "axios";
+import CorrectionLog from "./Corrections/CorrectionLog.vue";
+import CorrectionList from "./Corrections/CorrectionList.vue";
 
-const token = localStorage.getItem('auth_token');
+const token = localStorage.getItem("auth_token");
 
 export default {
     components: { CorrectionLog, CorrectionList },
     props: {
         employeeNumber: { type: String, required: true },
         month: { type: Number, default: null },
-        year: { type: Number, default: null }
+        year: { type: Number, default: null },
     },
     data() {
         const currentDate = new Date();
         const currentYear = currentDate.getFullYear();
-        
+
         return {
             token: token,
             logs: [],
@@ -184,13 +220,23 @@ export default {
             selectedMonth: this.month || currentDate.getMonth() + 1,
             selectedYear: this.year || currentYear,
             months: [
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
             ],
-            years: Array.from({ length: 6 }, (_, i) => currentYear - i)
+            years: Array.from({ length: 6 }, (_, i) => currentYear - i),
         };
     },
-    emits: ['send-summary'],
+    emits: ["send-summary"],
     methods: {
         async loadTimelogs() {
             this.loading = true;
@@ -198,16 +244,19 @@ export default {
                 const response = await axios.get(
                     `/employee/employee-timelogs/${this.employeeNumber}/get`,
                     {
-                        params: { month: this.selectedMonth, year: this.selectedYear },
+                        params: {
+                            month: this.selectedMonth,
+                            year: this.selectedYear,
+                        },
                         headers: {
                             Authorization: `Bearer ${this.token}`,
-                            Accept: 'application/json'
-                        }
+                            Accept: "application/json",
+                        },
                     }
                 );
                 this.logs = response.data.computedData;
                 this.summary = response.data.summary;
-                this.$emit('send-summary', response.data.summary);
+                this.$emit("send-summary", response.data.summary);
             } catch (error) {
                 console.error("Error fetching logs:", error);
             }
@@ -215,68 +264,92 @@ export default {
         },
         hasRemark(remarks, keyword) {
             if (!Array.isArray(remarks)) return false;
-            return remarks.some(r => String(r).trim().toLowerCase() === keyword.trim().toLowerCase());
+            return remarks.some(
+                (r) =>
+                    String(r).trim().toLowerCase() ===
+                    keyword.trim().toLowerCase()
+            );
         },
         hasStatus(remarks) {
-            return this.hasRemark(remarks, 'restday') || 
-                   this.hasRemark(remarks, 'holiday') || 
-                   this.hasRemark(remarks, 'leave') || 
-                   this.hasRemark(remarks, 'ob') || 
-                   this.hasRemark(remarks, 'absent');
+            return (
+                this.hasRemark(remarks, "restday") ||
+                this.hasRemark(remarks, "holiday") ||
+                this.hasRemark(remarks, "leave") ||
+                this.hasRemark(remarks, "ob") ||
+                this.hasRemark(remarks, "absent")
+            );
         },
         getRowClass(remarks) {
-            if (this.hasRemark(remarks, 'today')) return 'today';
-            if (this.hasRemark(remarks, 'restday')) return 'restday';
-            if (this.hasRemark(remarks, 'holiday')) return 'holiday';
-            if (this.hasRemark(remarks, 'leave')) return 'leave';
-            if (this.hasRemark(remarks, 'absent')) return 'absent';
-            return '';
+            if (this.hasRemark(remarks, "today")) return "today";
+            if (this.hasRemark(remarks, "restday")) return "restday";
+            if (this.hasRemark(remarks, "holiday")) return "holiday";
+            if (this.hasRemark(remarks, "leave")) return "leave";
+            if (this.hasRemark(remarks, "absent")) return "absent";
+            return "";
         },
         getStatusClass(remarks) {
-            if (this.hasRemark(remarks, 'restday')) return 'restday';
-            if (this.hasRemark(remarks, 'holiday')) return 'holiday';
-            if (this.hasRemark(remarks, 'leave')) return 'leave';
-            if (this.hasRemark(remarks, 'ob')) return 'ob';
-            if (this.hasRemark(remarks, 'absent')) return 'absent';
-            return '';
+            if (this.hasRemark(remarks, "restday")) return "restday";
+            if (this.hasRemark(remarks, "holiday")) return "holiday";
+            if (this.hasRemark(remarks, "leave")) return "leave";
+            if (this.hasRemark(remarks, "ob")) return "ob";
+            if (this.hasRemark(remarks, "absent")) return "absent";
+            return "";
         },
         getStatusIcon(remarks) {
-            if (this.hasRemark(remarks, 'restday')) return 'fa-solid fa-mug-hot';
-            if (this.hasRemark(remarks, 'holiday')) return 'fa-solid fa-calendar-star';
-            if (this.hasRemark(remarks, 'leave')) return 'fa-solid fa-plane-departure';
-            if (this.hasRemark(remarks, 'ob')) return 'fa-solid fa-briefcase';
-            if (this.hasRemark(remarks, 'absent')) return 'fa-solid fa-user-xmark';
-            return '';
+            if (this.hasRemark(remarks, "restday"))
+                return "fa-solid fa-mug-hot";
+            if (this.hasRemark(remarks, "holiday"))
+                return "fa-solid fa-calendar-star";
+            if (this.hasRemark(remarks, "leave"))
+                return "fa-solid fa-plane-departure";
+            if (this.hasRemark(remarks, "ob")) return "fa-solid fa-briefcase";
+            if (this.hasRemark(remarks, "absent"))
+                return "fa-solid fa-user-xmark";
+            return "";
         },
         getStatusText(remarks) {
-            if (this.hasRemark(remarks, 'restday')) return 'Rest Day';
-            if (this.hasRemark(remarks, 'holiday')) return 'Holiday';
-            if (this.hasRemark(remarks, 'leave')) return 'Leave';
-            if (this.hasRemark(remarks, 'ob')) return 'Official Business';
-            if (this.hasRemark(remarks, 'absent')) return 'Absent';
-            return '';
+            if (this.hasRemark(remarks, "restday")) return "Rest Day";
+            if (this.hasRemark(remarks, "holiday")) return "Holiday";
+            if (this.hasRemark(remarks, "leave")) return "Leave";
+            if (this.hasRemark(remarks, "ob")) return "Official Business";
+            if (this.hasRemark(remarks, "absent")) return "Absent";
+            return "";
         },
         getFilteredRemarks(remarks) {
             if (!Array.isArray(remarks)) return [];
-            return remarks.filter(r => 
-                !['restday', 'holiday', 'leave', 'ob', 'absent', 'today', 'overtime', 'pending overtime'].includes(r.toLowerCase())
+            return remarks.filter(
+                (r) =>
+                    ![
+                        "restday",
+                        "holiday",
+                        "leave",
+                        "ob",
+                        "absent",
+                        "today",
+                        "overtime",
+                        "pending overtime",
+                    ].includes(r.toLowerCase())
             );
         },
         getRemarkClass(remark) {
             const lower = String(remark).toLowerCase();
-            if (lower === 'incomplete log') return 'danger';
-            if (lower === 'late' || lower === 'undertime') return 'warning';
-            return '';
+            if (lower === "incomplete log") return "danger";
+            if (lower === "late" || lower === "undertime") return "warning";
+            return "";
         },
         convertToReadableTime(minutes) {
-            if (!minutes || minutes === 0) return '0h 0m';
+            if (!minutes || minutes === 0) return "0h 0m";
             const hours = Math.floor(minutes / 60);
             const mins = minutes % 60;
             return `${hours}h ${mins}m`;
         },
         getDayName(day) {
-            const date = new Date(this.selectedYear, this.selectedMonth - 1, day + 1);
-            return date.toLocaleDateString('en-US', { weekday: 'short' });
+            const date = new Date(
+                this.selectedYear,
+                this.selectedMonth - 1,
+                day + 1
+            );
+            return date.toLocaleDateString("en-US", { weekday: "short" });
         },
         openModal(day) {
             // Use passed props (month, year, index) to set date
@@ -285,15 +358,21 @@ export default {
             const selectedDay = day ?? new Date().getDate();
 
             const date = new Date(year, month - 1, selectedDay);
-            const formatted = date.getFullYear() + '-' +
-                              String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                              String(date.getDate()).padStart(2, '0');
+            const formatted =
+                date.getFullYear() +
+                "-" +
+                String(date.getMonth() + 1).padStart(2, "0") +
+                "-" +
+                String(date.getDate()).padStart(2, "0");
 
             this.$refs.correctionModal.open(formatted);
         },
         openCorretionList() {
-            this.$refs.correctionListModal.open(this.selectedMonth, this.selectedYear);
-        }
+            this.$refs.correctionListModal.open(
+                this.selectedMonth,
+                this.selectedYear
+            );
+        },
     },
     watch: {
         month(newVal) {
@@ -302,11 +381,11 @@ export default {
         year(newVal) {
             if (newVal) this.selectedYear = newVal;
         },
-        employeeNumber: 'loadTimelogs'
+        employeeNumber: "loadTimelogs",
     },
     mounted() {
         this.loadTimelogs();
-    }
+    },
 };
 </script>
 
@@ -318,21 +397,21 @@ export default {
 
     @media (max-width: 767.98px) {
         .header {
-          .title{
-              margin-bottom: 15px;
-          }
-          button {
-            width: 100%;
-            text-align: center;
-          }
-          select {
-            margin: 6px 0 6px 0;
-            width: 100%;
-          }
+            .title {
+                margin-bottom: 15px;
+            }
+            button {
+                width: 100%;
+                text-align: center;
+            }
+            select {
+                margin: 6px 0 6px 0;
+                width: 100%;
+            }
         }
 
         td {
-          padding: 5px;
+            padding: 5px;
         }
     }
 }
@@ -353,13 +432,13 @@ export default {
         font-size: 1rem;
         font-weight: 600;
         color: var(--bs-body-color);
-        
+
         i {
             color: var(--bs-primary);
             opacity: 0.8; /* less intense icon color */
         }
     }
-    
+
     .filters select {
         padding: 0.375rem 0.625rem;
         font-size: 0.875rem;
@@ -367,7 +446,7 @@ export default {
         border-radius: 4px;
         background: var(--bs-body-bg);
         color: var(--bs-body-color);
-        
+
         &:focus {
             outline: none;
             border-color: var(--bs-primary);
@@ -377,9 +456,15 @@ export default {
 
 /* Table */
 .table-wrapper {
-  max-height: 600px;
-  &::-webkit-scrollbar { width: 6px; height: 6px; }
-  &::-webkit-scrollbar-thumb { background: var(--bs-border-color); border-radius: 3px; }
+    max-height: 600px;
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: var(--bs-border-color);
+        border-radius: 3px;
+    }
 }
 
 table {
@@ -387,17 +472,18 @@ table {
     border-collapse: collapse;
     font-size: 0.875rem;
 
-    th, td {
+    th,
+    td {
         padding: 0.625rem 0.5rem;
         text-align: center;
         border-bottom: 1px solid var(--bs-border-color);
     }
-      thead {
+    thead {
         position: sticky;
         top: 0;
-      }
+    }
 
-      thead th {
+    thead th {
         background-color: var(--bs-primary);
         color: var(--bs-light);
         font-weight: 600;
@@ -422,31 +508,50 @@ table {
             border-left: 3px solid var(--bs-primary);
         }
 
-        &.restday { background: rgba(var(--bs-success-rgb), 0.03); }
-        &.holiday { background: rgba(var(--bs-warning-rgb), 0.03); }
-        &.leave { background: rgba(var(--bs-info-rgb), 0.03); }
-        &.absent { background: rgba(var(--bs-danger-rgb), 0.03); }
+        &.restday {
+            background: rgba(var(--bs-success-rgb), 0.03);
+        }
+        &.holiday {
+            background: rgba(var(--bs-warning-rgb), 0.03);
+        }
+        &.leave {
+            background: rgba(var(--bs-info-rgb), 0.03);
+        }
+        &.absent {
+            background: rgba(var(--bs-danger-rgb), 0.03);
+        }
     }
 }
 
 /* Loading Skeleton */
 .skeleton {
     height: 16px;
-    background: linear-gradient(90deg, var(--bs-secondary-bg) 25%, var(--bs-tertiary-bg) 50%, var(--bs-secondary-bg) 75%);
+    background: linear-gradient(
+        90deg,
+        var(--bs-secondary-bg) 25%,
+        var(--bs-tertiary-bg) 50%,
+        var(--bs-secondary-bg) 75%
+    );
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
     border-radius: 4px;
 }
 @keyframes loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 /* Text */
 .small-text {
     font-size: 0.75rem;
     color: var(--bs-secondary-color);
-    &.empty { opacity: 0.6; }
+    &.empty {
+        opacity: 0.6;
+    }
 }
 
 .highlight {
@@ -467,11 +572,26 @@ table {
     background: rgba(var(--bs-primary-rgb), 0.1);
     color: var(--bs-body-color);
 
-    &.restday { background: rgba(var(--bs-success-rgb), 0.15); color: var(--bs-success-text-emphasis); }
-    &.holiday { background: rgba(var(--bs-warning-rgb), 0.15); color: var(--bs-warning-text-emphasis); }
-    &.leave { background: rgba(var(--bs-info-rgb), 0.15); color: var(--bs-info-text-emphasis); }
-    &.ob { background: rgba(111, 66, 193, 0.15); color: #6f42c1; }
-    &.absent { background: rgba(var(--bs-danger-rgb), 0.15); color: var(--bs-danger-text-emphasis); }
+    &.restday {
+        background: rgba(var(--bs-success-rgb), 0.15);
+        color: var(--bs-success-text-emphasis);
+    }
+    &.holiday {
+        background: rgba(var(--bs-warning-rgb), 0.15);
+        color: var(--bs-warning-text-emphasis);
+    }
+    &.leave {
+        background: rgba(var(--bs-info-rgb), 0.15);
+        color: var(--bs-info-text-emphasis);
+    }
+    &.ob {
+        background: rgba(111, 66, 193, 0.15);
+        color: #6f42c1;
+    }
+    &.absent {
+        background: rgba(var(--bs-danger-rgb), 0.15);
+        color: var(--bs-danger-text-emphasis);
+    }
 }
 
 /* Badges */
@@ -483,7 +603,7 @@ table {
     border-radius: 4px;
     font-weight: 600;
     font-size: 0.75rem;
-    
+
     &.ut {
         background: rgba(var(--bs-warning-rgb), 0.08);
         color: var(--bs-warning);
@@ -521,8 +641,8 @@ table {
 
 /* Dark Mode Adjustments */
 [data-bs-theme="dark"] {
-  thead th {
-    background: var(--bs-primary);
-  }
+    thead th {
+        background: var(--bs-primary);
+    }
 }
 </style>

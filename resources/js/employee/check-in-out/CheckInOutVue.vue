@@ -221,7 +221,7 @@
 <script setup>
 import axios from 'axios';
 import { reactive, ref, onMounted, computed } from 'vue';
-const emit = defineEmits(['submit-log'])
+const emit = defineEmits(['submit-log', 'stop-shotclock'])
 
 const props = defineProps({
     isAllowed: {
@@ -264,7 +264,8 @@ function getDayToday() {
 }
 
 function setTime(type) {
-    const buttonNames = {
+
+  const buttonNames = {
         0: "timeIn",
         1: "timeOut",
         2: "breakOut",
@@ -290,8 +291,13 @@ function setTime(type) {
                         title:
                             response.data.message || "Time logged successfully",
                     });
-                    window.dispatchEvent(new Event("reload-datatable"));
+                    emit('submit-log')
                     getTodayLogs(false);
+
+                    if(type == 'timeOut') {
+                      emit('stop-shotclock')
+                    }
+
                 })
                 .catch((error) => {
                     console.error("Error setting time:", error);
@@ -352,11 +358,12 @@ onMounted(() => {
 
 @media (max-width: 767.98px) {
     button {
-      width: 100%;
-      margin: 6px 0 6px 0;
+        width: 100%;
+        margin: 6px 0 6px 0;
     }
-    .month-year, .month-year-button {
-      margin-bottom: 20px;
+    .month-year,
+    .month-year-button {
+        margin-bottom: 20px;
     }
 }
 </style>

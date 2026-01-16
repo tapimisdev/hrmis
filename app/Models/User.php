@@ -78,6 +78,22 @@ class User extends Authenticatable
         return $this->hasOne(EmployeeInformation::class, 'user_id', 'id');
     }
 
+    public function getTodayTimeIn()
+    {
+        $employeeNo = $this->employeeInformation?->employee_no;
+
+        if (!$employeeNo) {
+            return null; 
+        }
+
+        return DB::table('timelogs')
+            ->where('employee_no', $employeeNo)
+            ->whereDate('date_time', now()->toDateString())
+            ->where('fn', 0)
+            ->orderBy('date_time', 'asc') 
+            ->value('date_time');
+    }
+
     public function postedAnnouncements()
     {
         return $this->belongsToMany(EventAnnouncement::class, 'events_announcements_posted_by')
