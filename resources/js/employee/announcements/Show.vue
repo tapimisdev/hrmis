@@ -1,5 +1,5 @@
 <template>
-    <div class="container-fluid">
+    <div class="container-fluid overflow-hidden">
         <div class="row g-4">
             <div class="col-12 col-md-8" id="main-event-content">
                 <Content
