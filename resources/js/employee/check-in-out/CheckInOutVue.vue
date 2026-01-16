@@ -12,7 +12,7 @@
         <!-- Show content only when not loading -->
         <div v-else>
             <div
-                class="d-md-flex gap-1 align-items-center border-bottom pb-3 mb-3"
+                class="d-md-flex flex-wrap gap-1 align-items-center border-bottom pb-3 mb-3"
             >
                 <div
                     class="d-flex flex-column align-items-center border-end px-5 month-year"
@@ -26,14 +26,14 @@
                 </div>
 
                 <div
-                    class="w-100 d-md-flex justify-content-center justify-content-md-start gap-3 px-3 d-lg-flex-wrap month-year-button"
-                >
+                    class=" d-md-flex justify-content-center justify-content-md-start gap-3 px-3 d-lg-flex-wrap month-year-button"
+                    >
                     <button
                         class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold"
                         @click="setTime(0)"
                         v-if="!isTimeInDisabled"
                         :disabled="
-                            isTimeInDisabled || buttonLoading === 'timeIn'
+                            !props.isAllowed || isTimeInDisabled || buttonLoading === 'timeIn'
                         "
                         style="border-width: 2px"
                     >
@@ -50,7 +50,7 @@
                         @click="setTime(2)"
                         v-if="!isBreakOutDisabled"
                         :disabled="
-                            isBreakOutDisabled || buttonLoading === 'breakOut'
+                            !props.isAllowed || isBreakOutDisabled || buttonLoading === 'breakOut'
                         "
                         style="border-width: 2px"
                     >
@@ -67,7 +67,7 @@
                         @click="setTime(3)"
                         v-if="!isBreakInDisabled"
                         :disabled="
-                            isBreakInDisabled || buttonLoading === 'breakIn'
+                            !props.isAllowed || isBreakInDisabled || buttonLoading === 'breakIn'
                         "
                         style="border-width: 2px"
                     >
@@ -83,7 +83,7 @@
                         class="btn btn-danger text-uppercase fw-bold py-3 px-4 fw-semibold"
                         @click="setTime(1)"
                         :disabled="
-                            isTimeOutDisabled || buttonLoading === 'timeOut'
+                            !props.isAllowed || isTimeOutDisabled || buttonLoading === 'timeOut'
                         "
                         style="border-width: 2px"
                     >
@@ -100,6 +100,7 @@
                         @click="setTime(4)"
                         v-if="!isOvertimeInDisabled"
                         :disabled="
+                            !props.isAllowed ||
                             isOvertimeInDisabled ||
                             buttonLoading === 'overtimeIn'
                         "
@@ -118,6 +119,7 @@
                         @click="setTime(5)"
                         v-if="!isOvertimeOutDisabled"
                         :disabled="
+                            !props.isAllowed ||
                             isOvertimeOutDisabled ||
                             buttonLoading === 'overtimeOut'
                         "
@@ -135,6 +137,21 @@
                         Finish OT
                     </button>
                 </div>
+
+                 <div
+                    v-if="!props.isAllowed"
+                    class="alert alert-info d-flex align-items-start m-3"
+                    role="alert"
+                >
+                    <i class="fas fa-info-circle me-2 mt-1"></i>
+                    <div>
+                        <strong>Web Time Access Unavailable</strong>
+                        <div class="small mt-1">
+                            Web Time is not available today. Please use the biometric scanner.
+                        </div>
+                    </div>
+                </div>   
+ 
             </div>
 
             <div class="row py-4 px-5 g-4">
@@ -205,6 +222,14 @@
 import axios from 'axios';
 import { reactive, ref, onMounted, computed } from 'vue';
 const emit = defineEmits(['submit-log'])
+
+const props = defineProps({
+    isAllowed: {
+        type: Boolean,
+        default: false,
+    },
+})
+
 const log = reactive({
     timeIn: "",
     breakOut: "",

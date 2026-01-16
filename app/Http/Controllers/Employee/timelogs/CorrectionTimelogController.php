@@ -27,6 +27,9 @@ class CorrectionTimelogController extends Controller
         $this->timelog_service = $timelog_service;
         $this->employee_service = $employee_service;
 
+        $this->middleware('permission:hr.correction.view')->only('index');
+        $this->middleware('permission:hr.correction.approval')->only(['edit', 'store']);
+
     }
 
     public function index(Request $request)

@@ -1,6 +1,6 @@
 <template lang="">
     <div>
-        <check-in-out-vue @submit-log="handleSubmit"></check-in-out-vue>
+        <check-in-out-vue :is-allowed="isAllowed" @submit-log="handleSubmit"></check-in-out-vue>
         <employee-timelog ref="employeeTimelog" :employee-number='employeeNumber' /> 
     </div>
 </template>
@@ -15,6 +15,7 @@
             EmployeeTimelog,
         },  
         props: {
+            isAllowed: { type: Boolean, required: true },
             employeeNumber: { type: String, required: true },
         },
         methods: {

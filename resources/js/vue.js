@@ -20,6 +20,8 @@ import HrisIndex from "./admin/hris/HrisIndex.vue";
 import ImportEmployeeVue from "./admin/hris/ImportEmployeeVue.vue";
 import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
 
+import WebtimeIndex from "./admin/web-time-access/WebtimeIndex.vue";
+
 import TabModule from "./admin/modules/TabModule.vue";
 import TaxSettings from "./admin/settings/TaxIndex.vue";
 
@@ -62,6 +64,7 @@ const authApp = createApp({
         BirthdayComponent,
         ChangePassword, 
         IncompleteLogs,
+        WebtimeIndex,
 
         DashboardVue,
         DtrViewVue,
