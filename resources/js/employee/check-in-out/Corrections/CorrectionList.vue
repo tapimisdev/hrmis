@@ -89,7 +89,7 @@
                 </tr>
 
                 <tr v-if="requests.length === 0">
-                  <td colspan="11" class="text-center text-muted">
+                  <td colspan="12" class="text-center text-muted">
                     No correction requests found.
                   </td>
                 </tr>

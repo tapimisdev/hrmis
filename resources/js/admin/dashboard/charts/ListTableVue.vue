@@ -13,22 +13,23 @@
     </div>
 
     <!-- TABLE -->
-    <table v-else class="w-100 h-100 align-middle">
+    <table v-else class="table table-transparent w-100 h-100 align-middle">
       <thead>
         <tr>
-          <th class="text-center" scope="col">Profile</th>
-          <th scope="col">Name</th>
-          <th scope="col">Birthday</th>
+          <th class="pb-2" scope="col">Profile</th>
+          <th class="pb-2" scope="col">Name</th>
+          <th class="pb-2" scope="col">Birthday</th>
         </tr>
       </thead>
 
       <tbody v-if="people.length">
         <tr v-for="(person, index) in people" :key="index">
-          <td class="text-center">
+          <td>
             <img
               :src="person.image"
               alt="Profile Picture"
               class="profile-picture"
+              
             />
           </td>
           <td>{{ person.name }}</td>

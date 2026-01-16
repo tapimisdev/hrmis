@@ -306,29 +306,34 @@ class DashboardApiController extends Controller
     private function employee_movement()
     {
         $year = now()->year;
-
-        $months = collect(range(1, now()->month))->map(fn ($m) => Carbon::create($year, $m, 1));
+        $currentMonth = now()->month;
 
         $labels = [];
         $hires = [];
-        $resigned = [];
+        $resignations = [];
 
-        foreach ($months as $date) {
+        for ($month = 1; $month <= $currentMonth; $month++) {
+
+            $date = Carbon::create($year, $month, 1);
+
+            $start = $date->copy()->startOfMonth();
+            $end   = $date->copy()->endOfMonth();
+
             $labels[] = $date->format('M');
 
             $hires[] = DB::table('employee_information')
-                ->whereBetween('date_hired_organization', [$date->startOfMonth(), $date->endOfMonth()])
+                ->whereBetween('date_hired_company', [$start, $end])
                 ->count();
 
-            $resigned[] = DB::table('employee_information')
-                ->whereBetween('date_resigned', [$date->startOfMonth(), $date->endOfMonth()])
+            $resignations[] = DB::table('employee_information')
+                ->whereBetween('date_resigned', [$start, $end])
                 ->count();
         }
-
+                
         return [
             'labels' => $labels,
             'hires' => $hires,
-            'resignations' => $resigned,
+            'resignations' => $resignations,
         ];
     }
 }

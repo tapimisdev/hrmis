@@ -10,8 +10,8 @@
                 <i class="fa-solid fa-calendar-days"></i>
                 Employee Attendance
             </h5>
-            <div class="filters d-md-flex gap-2">
-                <button class="btn btn-sm btn-link" @click="openCorretionList">
+            <div class="filters d-md-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-link text-uppercase fw-medium" @click="openCorretionList">
                     View Corrections for this month
                 </button>
                 <select v-model="selectedMonth" @change="loadTimelogs">
@@ -49,7 +49,7 @@
                 <!-- Loading -->
                 <tbody v-if="loading">
                     <tr v-for="n in 15" :key="n">
-                        <td v-for="col in 11" :key="col">
+                        <td v-for="col in 12" :key="col">
                             <div class="skeleton"></div>
                         </td>
                     </tr>
