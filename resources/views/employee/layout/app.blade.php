@@ -106,7 +106,6 @@
                     </div>
                 </div>
             </div>
-            <incomplete-logs @incomplete-data="handleData"/>
         </main>
     </div>
 

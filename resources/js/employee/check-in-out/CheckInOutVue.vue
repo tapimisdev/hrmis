@@ -26,14 +26,16 @@
                 </div>
 
                 <div
-                    class=" d-md-flex justify-content-center justify-content-md-start gap-3 px-3 d-lg-flex-wrap month-year-button"
-                    >
+                    class="d-md-flex justify-content-center justify-content-md-start gap-3 px-3 d-lg-flex-wrap month-year-button"
+                >
                     <button
                         class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold"
                         @click="setTime(0)"
                         v-if="!isTimeInDisabled"
                         :disabled="
-                            !props.isAllowed || isTimeInDisabled || buttonLoading === 'timeIn'
+                            !props.isAllowed ||
+                            isTimeInDisabled ||
+                            buttonLoading === 'timeIn'
                         "
                         style="border-width: 2px"
                     >
@@ -50,7 +52,9 @@
                         @click="setTime(2)"
                         v-if="!isBreakOutDisabled"
                         :disabled="
-                            !props.isAllowed || isBreakOutDisabled || buttonLoading === 'breakOut'
+                            !props.isAllowed ||
+                            isBreakOutDisabled ||
+                            buttonLoading === 'breakOut'
                         "
                         style="border-width: 2px"
                     >
@@ -67,7 +71,9 @@
                         @click="setTime(3)"
                         v-if="!isBreakInDisabled"
                         :disabled="
-                            !props.isAllowed || isBreakInDisabled || buttonLoading === 'breakIn'
+                            !props.isAllowed ||
+                            isBreakInDisabled ||
+                            buttonLoading === 'breakIn'
                         "
                         style="border-width: 2px"
                     >
@@ -83,7 +89,9 @@
                         class="btn btn-danger text-uppercase fw-bold py-3 px-4 fw-semibold"
                         @click="setTime(1)"
                         :disabled="
-                            !props.isAllowed || isTimeOutDisabled || buttonLoading === 'timeOut'
+                            !props.isAllowed ||
+                            isTimeOutDisabled ||
+                            buttonLoading === 'timeOut'
                         "
                         style="border-width: 2px"
                     >
@@ -138,7 +146,7 @@
                     </button>
                 </div>
 
-                 <div
+                <div
                     v-if="!props.isAllowed"
                     class="alert alert-info d-flex align-items-start m-3"
                     role="alert"
@@ -147,11 +155,11 @@
                     <div>
                         <strong>Web Time Access Unavailable</strong>
                         <div class="small mt-1">
-                            Web Time is not available today. Please use the biometric scanner.
+                            Web Time is not available today. Please use the
+                            biometric scanner.
                         </div>
                     </div>
-                </div>   
- 
+                </div>
             </div>
 
             <div class="row py-4 px-5 g-4">
@@ -219,16 +227,23 @@
 </template>
 
 <script setup>
-import axios from 'axios';
-import { reactive, ref, onMounted, computed } from 'vue';
-const emit = defineEmits(['submit-log'])
+import axios from "axios";
+import { reactive, ref, onMounted, computed } from "vue";
+const emit = defineEmits(["submit-log"]);
+window.clockTrigger = reactive({
+    isReloaded: false,
+});
+
+window.stopClockTrigger = reactive({
+    isStopped: false,
+});
 
 const props = defineProps({
     isAllowed: {
         type: Boolean,
         default: false,
     },
-})
+});
 
 const log = reactive({
     timeIn: "",
@@ -264,8 +279,7 @@ function getDayToday() {
 }
 
 function setTime(type) {
-
-  const buttonNames = {
+    const buttonNames = {
         0: "timeIn",
         1: "timeOut",
         2: "breakOut",
@@ -283,7 +297,7 @@ function setTime(type) {
     }).then((result) => {
         if (result.isConfirmed) {
             buttonLoading.value = buttonNames[type];
-
+            
             axios
                 .post("/employee/check-in-out", { type })
                 .then((response) => {
@@ -291,13 +305,16 @@ function setTime(type) {
                         title:
                             response.data.message || "Time logged successfully",
                     });
-                    emit('submit-log')
+                    emit("submit-log");
                     getTodayLogs(false);
-                    console.log(type);
-                    if(type == 1) {
-                      window.dispatchEvent(new Custom('stop-clock-ticking'));
-                    }
 
+                    window.clockTrigger.reload =
+                            !window.clockTrigger.reload;
+
+                    if (type == 1) {
+                        window.stopClockTrigger.isStopped =
+                            !window.stopClockTrigger.isStopped;
+                    }
                 })
                 .catch((error) => {
                     console.error("Error setting time:", error);
