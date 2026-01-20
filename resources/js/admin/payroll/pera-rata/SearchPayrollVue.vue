@@ -15,6 +15,7 @@
                     v-model.number="form.employment_type"
                     class="form-select"
                     :class="{ 'is-invalid': errors.employment_type }"
+                    @change="search"
                 >
                     <option disabled value="">-- CHOOSE EMPLOYMENT TYPE -- </option>
                     <option :value="1">Regular</option>
@@ -36,6 +37,7 @@
                     class="form-control"
                     v-model="form.month"
                     :class="{ 'is-invalid': errors.month }"
+                    @change="search"
                 />
             </div>
 
@@ -52,6 +54,7 @@
                     class="form-select"
                     v-model="form.status"
                     :class="{ 'is-invalid': errors.status }"
+                    @change="search"
                 >
                     <option disabled value="">-- CHOOSE STATUS --</option>
                     <option value="draft">Draft</option>
@@ -61,19 +64,6 @@
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
-            </div>
-
-            <!-- SEARCH BUTTON -->
-            <div class="col-12 col-md-3 mb-3 d-flex align-items-end">
-                <button
-                    type="button"
-                    id="submit-button"
-                    class="btn btn-warning text-uppercase"
-                    @click="search"
-                    :disabled="loading"
-                >
-                    <i class="fas fa-search me-1"></i> Search
-                </button>
             </div>
 
         </div>
@@ -93,7 +83,7 @@ export default {
             token,
             loading: false,
             errors: {},
-
+            dataStorage: [],
             form: {
                 employment_type: 1,
                 month: currentMonth,
@@ -107,7 +97,7 @@ export default {
             this.errors = {};
             this.loading = true;
 
-            this.$emit("payroll-list", [], this.loading);
+            this.$emit("payroll-list", this.datastorage, true);
 
             axios
                 .post("/api/payroll/pera-rata/processed", this.form, {
@@ -119,6 +109,7 @@ export default {
                 .then((response) => {
                     console.log(response);
                     this.$emit("payroll-list", response.data.data, false);
+                    this.datastorage = response.data.data;
                     this.loading = false;
                 })
                 .catch((error) => {

@@ -356,7 +356,11 @@ class DailyTimeRecordService {
             }
 
             if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday) {
-                $remarks[] = 'incomplete log';
+                if($is_same_day) {
+                    $remarks[] = 'incomplete log';
+                }else{
+                    $remarks[] = 'not pasok pasok';
+                }
                 $TOTAL_INCOMPLETE_LOGS++;
 
                 $computedData[] = [

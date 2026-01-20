@@ -4,16 +4,12 @@ namespace App\Http\Controllers\Admin\Payroll\PeraRata;
 
 use App\Http\Controllers\Controller;
 use App\Enums\EmploymentTypesEnum;
-use App\Models\User;
-use App\Notifications\PayrollBatchCompleted;
 use App\Services\PeraRata\PayrollService;
 use App\Http\Requests\Admin\PeraRata\StoreRequest;
-use Illuminate\Bus\Batch;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Throwable;
 
@@ -165,5 +161,109 @@ class PeraRataController extends Controller
         }
     }
 
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => [
+                'required',
+                'string',
+                Rule::in([
+                    'draft',
+                    'pending',
+                    'approved',
+                    'for_releasing',
+                    'complete',
+                    'cancelled',
+                    'failed',
+                ]),
+            ],
+        ]);
+
+        $payroll = DB::table('payroll_pera_rata')->where('id', $id)->first();
+
+        if (!$payroll) {
+            return response()->json([
+                'message' => 'No Payroll found',
+                'status'  => 'not_found'
+            ], 404);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            // Allowed transitions (your flow)
+            $allowedTransitions = [
+                'draft' => ['pending', 'cancelled'],
+                'pending' => ['draft', 'approved', 'cancelled'],
+                'approved' => ['for_releasing', 'cancelled'],
+                'for_releasing' => ['complete'],
+                'complete' => [],
+                'cancelled' => [],
+                'failed' => [],
+            ];
+
+            if (
+                isset($allowedTransitions[$payroll->status]) &&
+                !in_array($request->status, $allowedTransitions[$payroll->status])
+            ) {
+                return response()->json([
+                    'message' => 'Invalid status transition',
+                    'status'  => 'invalid_transition'
+                ], 422);
+            }
+
+            /**
+             * STRICT MONTH CONSTRAINT
+             * Only ONE payroll per month can be in ANY active status.
+             * If one is approved, others cannot become pending, etc.
+             */
+            $activeStatuses = ['pending', 'approved', 'for_releasing', 'completed'];
+
+            if (in_array($request->status, $activeStatuses)) {
+
+                $exists = DB::table('payroll_pera_rata')
+                    ->where('month', $payroll->month)      // YYYY-MM
+                    ->whereIn('status', $activeStatuses)   // any active status
+                    ->where('id', '!=', $id)               // exclude current record
+                    ->exists();
+
+                if ($exists) {
+                    return response()->json([
+                        'message' => "Active payroll detected for this month.",
+                        'status'  => 'month_active_conflict'
+                    ], 422);
+                }
+            }
+
+            DB::table('payroll_pera_rata')
+                ->where('id', $id)
+                ->update([
+                    'status' => $request->status,
+                    'updated_at' => now(),
+                ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Payroll status updated successfully',
+                'status'  => 'success',
+                'data'    => [
+                    'id' => $id,
+                    'status' => $request->status,
+                    'month' => $payroll->month
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'status'  => 'update failed'
+            ], 500);
+        }
+    }
 
 }

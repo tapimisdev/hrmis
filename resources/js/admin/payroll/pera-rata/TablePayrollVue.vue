@@ -153,11 +153,8 @@ export default {
                                     title: "Deleted!",
                                     text: "Payroll has been successfully deleted!.",
                                     icon: "success",
-                                }).then((ok) => {
-                                    if (ok.isConfirmed) {
-                                        window.location.reload();
-                                    }
-                                });
+                                })
+                                this.$emit("deleted");
                             } else {
                                 Swal.fire({
                                     title: "Oops!",
