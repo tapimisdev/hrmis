@@ -17,5 +17,5 @@ Route::prefix('employee')->group(function() {
 
     Route::get('incomplete-logs', [LogsController::class, 'getIncompleteLogs']);
     Route::get('current-logs', [LogsController::class, 'getCurrentTimelog']);
-
+    Route::get('announcements/{slug}', [Employee::class, 'getAnnouncement']);   
 });

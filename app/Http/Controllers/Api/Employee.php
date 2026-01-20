@@ -481,4 +481,16 @@ class Employee extends Controller
         return $service->generateEmployeeNo($dateHired);
     }
 
+    public function getAnnouncement(string $slug) {
+        $data = DB::table('events_announcements')
+            ->where('slug', $slug)
+            ->first();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Announcement retrieved successfully',
+            'data' => $data,
+        ]);
+    }
+
 }

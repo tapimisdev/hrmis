@@ -193,10 +193,10 @@ export default {
         });
 
         this.$watch(
-            () => window.clockTrigger.reload,
+            () => window.clockTriggers?.reload,
             () => {
                 this.handleTriggerClocking();
-                window.clockTrigger.reload = false;
+                window.clockTriggers.reload = false;
             }
         );
 

@@ -230,12 +230,11 @@
 import axios from "axios";
 import { reactive, ref, onMounted, computed } from "vue";
 const emit = defineEmits(["submit-log"]);
-window.clockTrigger = reactive({
-    isReloaded: false,
-});
 
-window.stopClockTrigger = reactive({
-    isStopped: false,
+window.clockTriggers = reactive({
+    reload: false,
+    stopped: false,
+    start: false,
 });
 
 const props = defineProps({
@@ -308,12 +307,14 @@ function setTime(type) {
                     emit("submit-log");
                     getTodayLogs(false);
 
-                    window.clockTrigger.reload =
-                            !window.clockTrigger.reload;
+                    window.clockTriggers.reload = true;
+
+                    if (type == 0) {
+                        window.clockTriggers.start = true;
+                    }
 
                     if (type == 1) {
-                        window.stopClockTrigger.isStopped =
-                            !window.stopClockTrigger.isStopped;
+                        window.clockTriggers.stopped = true;
                     }
                 })
                 .catch((error) => {

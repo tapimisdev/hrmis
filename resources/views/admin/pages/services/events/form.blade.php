@@ -433,6 +433,7 @@
         const url = $('#form').attr('action');
         if (!isEdit) {
             post(url);
+            
         } else {
             put(url);
         }

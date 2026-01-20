@@ -12,7 +12,6 @@ class AnnouncementsController extends Controller
 {
     public function index(Request $request)
     {
-        
         if ($request->wantsJson() || $request->query('json')) {
 
             $announcements = $this->get_announcements(null, 10, $request->search);

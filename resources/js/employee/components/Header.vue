@@ -1,7 +1,6 @@
 <template>
     <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰</button>
     <incomplete-logs
-        @trigger-clocking="handleTriggerClocking"
         @incomplete-data="handleData"
     >
     </incomplete-logs>
@@ -416,17 +415,9 @@ export default {
             const timeInDate = this.parseTimeIn(this.todayTimeIn);
             if (!timeInDate) return "NO TIME IN";
 
-            let endTime;
-            if (this.todayTimeOut) {
-                // Timeout exists → stop ticking and calculate based on timein and timeout
-                const timeOutDate = this.parseTimeIn(this.todayTimeOut);
-                endTime = timeOutDate ? timeOutDate.getTime() : this.now;
-                this.stopClock();
-            } else {
-                // No timeout → use live now
-                endTime = this.now;
-                if (!this.clockInterval) this.startClock(); // start ticking if not already
-            }
+            const endTime = this.todayTimeOut
+                ? this.parseTimeIn(this.todayTimeOut)?.getTime()
+                : this.now;
 
             const diffMs = endTime - timeInDate.getTime();
             if (diffMs <= 0) return "0 HRS 0 MINS";
@@ -457,15 +448,20 @@ export default {
         );
 
         this.$watch(
-            () => window.stopClockTrigger.isStopped,
-            (newVal) => {
-                if (!newVal) return; 
-                this.stopClock();
-                clearInterval(this.notificationInterval);
-                console.log("Stopped clock as triggered");
-                window.stopClockTrigger.isStopped = false;
-            }
+            () => window.clockTriggers,
+            ({ stopped, start }) => {
+                if (stopped) {
+                    this.stopClock();
+                    window.clockTriggers.stopped = false;
+                }
+                if (start) {
+                    this.startClock();
+                    window.clockTriggers.start = false;
+                }
+            },
+            { deep: true }
         );
+
     },
     beforeUnmount() {
         this.stopClock();
@@ -527,7 +523,8 @@ export default {
         startClock() {
             if (this.clockInterval) return;
             this.now = Date.now();
-            // Tick every minute
+            this.fetchLatestTimeLog();
+
             this.clockInterval = setInterval(() => {
                 this.now = Date.now();
                 console.log(123);
