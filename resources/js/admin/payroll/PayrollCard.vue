@@ -10,7 +10,7 @@
           <div class="min-w-0">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <h6 class="mb-0 fw-semibold text-truncate">
-                {{ payroll.label || "Untitled Payroll" }}
+                {{ toCamelCase(payroll.label || "Untitled Payroll") }}
               </h6>
 
               <span class="status-pill" :style="statusPill">
@@ -99,16 +99,63 @@
 </template>
 
 <script>
-const STATUS_THEME = {
-  draft: "warning",
-  pending: "secondary",
-  pending_approval: "secondary",
-  approved: "success",
-  for_releasing: "info",
-  complete: "info",
-  completed: "info",
-  cancelled: "danger",
-  failed: "dark",
+const STATUS_META = {
+  draft: {
+    label: "Draft",
+    icon: "fa-file-pen",
+    color: "#f39c12",
+    bg: "#fef9e7",
+    darkColor: "#f5a623",
+    darkBg: "#3a2a0f",
+  },
+  pending: {
+    label: "Pending Review",
+    icon: "fa-clock",
+    color: "#3498db",
+    bg: "#ebf5fb",
+    darkColor: "#5dade2",
+    darkBg: "#1a2f3a",
+  },
+  approved: {
+    label: "Approved",
+    icon: "fa-circle-check",
+    color: "#27ae60",
+    bg: "#eafaf1",
+    darkColor: "#2ecc71",
+    darkBg: "#1a3a28",
+  },
+  for_releasing: {
+    label: "For Releasing",
+    icon: "fa-paper-plane",
+    color: "#9b59b6",
+    bg: "#f5eef8",
+    darkColor: "#af7ac5",
+    darkBg: "#2d1f35",
+  },
+  completed: {
+    label: "Completed",
+    icon: "fa-circle-check",
+    color: "#16a085",
+    bg: "#e8f8f5",
+    darkColor: "#1abc9c",
+    darkBg: "#183a32",
+  },
+  cancelled: {
+    label: "Cancelled",
+    icon: "fa-ban",
+    color: "#e74c3c",
+    bg: "#fadbd8",
+    darkColor: "#ec7063",
+    darkBg: "#3a1f1c",
+  },
+  failed: {
+    label: "Failed",
+    icon: "fa-ban",
+    color: "#454444",
+    bg: "#949292",
+    darkColor: "#7f8c8d",
+    darkBg: "#2c2c2c",
+  },
 }
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -126,23 +173,34 @@ export default {
       return this.payroll?.status || ""
     },
 
-    themeName() {
-      return STATUS_THEME[this.statusKey] || "secondary"
+    // detect dark mode from bootstrap attribute (works with Bootstrap 5.3)
+    isDark() {
+      return document?.documentElement?.getAttribute("data-bs-theme") === "dark"
+    },
+
+    statusMeta() {
+      return (
+        STATUS_META[this.statusKey] || {
+          label: "Unknown",
+          icon: "fa-circle-question",
+          color: "#6c757d",
+          bg: "#f8f9fa",
+          darkColor: "#adb5bd",
+          darkBg: "#2c2c2c",
+        }
+      )
     },
 
     accent() {
-      // uses Bootstrap variables (works with dark/light)
-      return `var(--bs-${this.themeName})`
+      // used for highlights / icons / borders
+      return this.isDark ? this.statusMeta.darkColor : this.statusMeta.color
     },
 
     statusPill() {
-      const rgb = (n) => `rgba(var(--bs-${n}-rgb), 0.14)`
-      const border = (n) => `rgba(var(--bs-${n}-rgb), 0.26)`
-
       return {
-        color: `var(--bs-${this.themeName})`,
-        background: rgb(this.themeName),
-        borderColor: border(this.themeName),
+        color: this.isDark ? this.statusMeta.darkColor : this.statusMeta.color,
+        background: this.isDark ? this.statusMeta.darkBg : this.statusMeta.bg,
+        borderColor: this.isDark ? this.statusMeta.darkColor : this.statusMeta.color,
       }
     },
 
@@ -151,7 +209,6 @@ export default {
     },
 
     actions() {
-      // Base action always present
       const items = [
         {
           type: "link",
@@ -161,21 +218,20 @@ export default {
         },
       ]
 
-      // Status-based actions
       const byStatus = {
         draft: [
           {
             type: "button",
-            label: "Proceed to Pending",
-            icon: "fa fa-arrow-right me-2 text-success",
+            label: "Submit for Approval",
+            icon: "fa fa-arrow-right me-2",
             onClick: () => this.$emit("change-status", this.payroll.id, "pending"),
           },
           { type: "divider" },
           {
             type: "button",
-            label: "Cancel",
+            label: "Delete Permanent",
             class: "text-danger",
-            icon: "fa fa-ban me-2",
+            icon: "fa fa-trash-can me-2",
             onClick: () => this.$emit("cancel", this.payroll.id),
           },
         ],
@@ -184,34 +240,58 @@ export default {
           {
             type: "button",
             label: "Back to Draft",
-            icon: "fa fa-undo me-2 text-warning",
+            icon: "fa fa-undo me-2",
             onClick: () => this.$emit("change-status", this.payroll.id, "draft"),
+          },
+          {
+            type: "button",
+            label: "Approve",
+            icon: "fa fa-circle-check me-2",
+            onClick: () => this.$emit("change-status", this.payroll.id, "approved"),
           },
           { type: "divider" },
           {
             type: "button",
             label: "Cancel",
-            class: "text-danger",
-            icon: "fa fa-ban me-2",
-            onClick: () => this.$emit("cancel", this.payroll.id),
+            icon: "fa fa-circle-xmark me-2",
+            onClick: () => this.$emit("change-status", this.payroll.id, "cancelled"),
           },
         ],
 
         approved: [
           {
             type: "button",
+            label: "Back to Draft",
+            icon: "fa fa-undo me-2",
+            onClick: () => this.$emit("change-status", this.payroll.id, "draft"),
+          },
+          {
+            type: "button",
+            label: "For Releasing",
+            icon: "fa fa-paper-plane me-2",
+            onClick: () => this.$emit("change-status", this.payroll.id, "for_releasing"),
+          },
+          { type: "divider" },
+          {
+            type: "button",
             label: "Cancel",
-            class: "text-danger",
-            icon: "fa fa-ban me-2",
-            onClick: () => this.$emit("cancel", this.payroll.id),
+            icon: "fa fa-circle-xmark me-2",
+            onClick: () => this.$emit("change-status", this.payroll.id, "cancelled"),
           },
         ],
 
-        // view-only
-        for_releasing: [],
+        for_releasing: [
+          {
+            type: "button",
+            label: "Mark as Complete",
+            icon: "fa fa-circle-check me-2",
+            onClick: () => this.$emit("change-status", this.payroll.id, "completed"),
+          },
+        ],
+
         cancelled: [],
-        complete: [],
         completed: [],
+        failed: [],
       }
 
       return items.concat(byStatus[this.statusKey] ?? [])
@@ -223,6 +303,15 @@ export default {
       return String(v || "")
         .replace(/_/g, " ")
         .replace(/\b\w/g, (l) => l.toUpperCase())
+    },
+
+    toCamelCase(text) {
+      return text
+        .toLowerCase()
+        .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) =>
+          index === 0 ? word.toLowerCase() : word.toUpperCase()
+        )
+        .replace(/\s+/g, '')
     },
 
     formatMonthYear(ym) {

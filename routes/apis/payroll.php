@@ -35,6 +35,7 @@ Route::prefix('payroll')->group(function() {
         Route::get('{payroll_id}', [SalaryApiController::class, 'getPayrollData']);
         Route::post('generate', [SalaryController::class, 'store']);
         Route::delete('{id}/delete', [SalaryController::class, 'destroy']);
+        Route::patch('{id}/status', [SalaryController::class, 'updateStatus']);
 
         # DOWNLOAD
 

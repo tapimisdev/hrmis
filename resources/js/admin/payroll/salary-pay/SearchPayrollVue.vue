@@ -16,8 +16,9 @@
                     class="form-select"
                     v-model="form[field.model]"
                     :class="{ 'is-invalid': errors[field.model] }"
+                    @change="search"
                 >
-                    <option value="">{{ field.placeholder }}</option>
+                    <option v-if="field.placeholder" value="">{{ field.placeholder }}</option>
                     <option
                         v-for="(option, i) in field.options"
                         :key="i"
@@ -26,18 +27,6 @@
                         {{ option.text ?? option }}
                     </option>
                 </select>
-            </div>
-
-            <div class="col-12 col-md-3 mb-3 d-flex align-items-end">
-                <button
-                    type="button"
-                    id="submit-button"
-                    class="btn btn-warning text-uppercase"
-                    @click="search"
-                    :disabled="loading"
-                >
-                    <span> <i class="fas fa-search px-1"></i> Search </span>
-                </button>
             </div>
         </div>
     </div>
@@ -77,14 +66,13 @@ export default {
                 employment_type: 1,
                 year: new Date().getFullYear(),
                 month: new Date().getMonth() + 1,
-                cutoff: "",
-                status: "",
+                cutoff: "first_cutoff",
+                status: "draft",
             },
             selects: [
                 {
                     label: "Employment Type",
                     model: "employment_type",
-                    placeholder: "-- CHOOSE EMPLOYMENT TYPE --",
                     options: [
                         { text: 'regular', value: 1 },
                         { text: 'contractual', value: 2 },
@@ -93,35 +81,20 @@ export default {
                 {
                     label: "Year",
                     model: "year",
-                    placeholder: "-- CHOOSE YEAR --",
                     options: years,
                 },
                 {
                     label: "Month",
                     model: "month",
-                    placeholder: "-- CHOOSE MONTH --",
                     options: months.map((m, i) => ({ text: m, value: i + 1 })),
                 },
                 {
                     label: "Cutoff",
                     model: "cutoff",
-                    placeholder: "-- CHOOSE CUTOFF --",
+                    // placeholder: "-- CHOOSE STATUS --",
                     options: [
                         { text: "1st Cutoff", value: "first_cutoff" },
                         { text: "2nd Cutoff", value: "second_cutoff" },
-                    ],
-                },
-                {
-                    label: "Status",
-                    model: "status",
-                    placeholder: "-- CHOOSE STATUS --",
-                    options: [
-                        { text: "Draft", value: "draft" },
-                        { text: "Pending Approval", value: "pending" },
-                        { text: "Approved", value: "approved" },
-                        { text: "For Releasing", value: "for_releasing" },
-                        { text: "Completed", value: "completed" },
-                        { text: "Cancelled", value: "cancelled" },
                     ],
                 },
             ],

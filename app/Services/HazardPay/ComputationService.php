@@ -79,8 +79,6 @@ class ComputationService {
 
         $netPay = $total - $less_healthcard;
 
-        dd('asdads');
-
         DB::table('payroll_hazard_pay_employee')
             ->insert([
                 'payroll_hazard_pay_id' => $this->payroll_id,
