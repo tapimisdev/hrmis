@@ -192,10 +192,10 @@ export default {
                         searchable: false,
                         render: (data, type, row) => {
                             return `
-                                <button class="btn btn-sm btn-info text-light" onclick="window.vueApp.showModal('${row.employee_no}')">
+                                <button title="history" class="btn btn-info text-light" onclick="window.vueApp.showModal('${row.employee_no}')">
                                     <i class="fas fa-history"></i>
                                 </button>
-                                <button class="btn btn-sm btn-primary" 
+                                <button title="set schedule" class="btn btn-primary" 
                                         title="Schedule"
                                         onclick="window.vueApp.editEmployee('${row.employee_no}')">
                                     <i class="fas fa-calendar-alt"></i>

@@ -174,21 +174,21 @@ class PayrollService {
         }
 
         // Check incomplete logs
-        if ($incompleteLogs > 0) {
-            $remarks[] = [
-                'text' => sprintf(
-                    "This Employee %s %d missing log%s",
-                    $incompleteLogs === 1 ? 'has' : 'have',
-                    $incompleteLogs,
-                    $incompleteLogs === 1 ? '' : 's'
-                ),
-                'url' => route('daily-time-record.index', [
-                    'employee_no' => $employee->employee_no,
-                    'month' => \Carbon\Carbon::parse($this->date)->format('m'),
-                    'year' => \Carbon\Carbon::parse($this->date)->format('Y'),
-                ]),
-            ];
-        }
+        // if ($incompleteLogs > 0) {
+        //     $remarks[] = [
+        //         'text' => sprintf(
+        //             "This Employee %s %d missing log%s",
+        //             $incompleteLogs === 1 ? 'has' : 'have',
+        //             $incompleteLogs,
+        //             $incompleteLogs === 1 ? '' : 's'
+        //         ),
+        //         'url' => route('daily-time-record.index', [
+        //             'employee_no' => $employee->employee_no,
+        //             'month' => \Carbon\Carbon::parse($this->date)->format('m'),
+        //             'year' => \Carbon\Carbon::parse($this->date)->format('Y'),
+        //         ]),
+        //     ];
+        // }
 
         // Determine eligibility
         $employee->remarks = $remarks ?: $eligibleRemarks;

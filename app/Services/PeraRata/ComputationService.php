@@ -6,6 +6,7 @@ use App\Services\DailyTimeRecordService;
 use App\Enums\EmploymentTypesEnum;
 use App\Enums\PayrollStatusEnum;
 use App\Enums\TableSettingsEnum;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -22,6 +23,8 @@ class ComputationService {
     protected $position;
     protected $salary_amount;
     protected $payroll_date;
+    protected $start_date;
+    protected $end_date;
 
 
     public function __construct(DailyTimeRecordService $daily_time_record_service) 
@@ -29,7 +32,7 @@ class ComputationService {
         $this->daily_time_record_service = $daily_time_record_service;
     }
 
-     private function computeUTDeduction(int $minutes): int
+    private function computeUTDeduction(int $minutes): int
     {
         return match (true) {
             $minutes >= 241 => 150,   // 4 hrs 1 min and above
@@ -40,24 +43,53 @@ class ComputationService {
         };
     }
 
-    private function getPeraRata(string $employee_no) {
+    private function getPeraRata(string $employee_no)
+    {
         [$year, $month] = explode('-', $this->payroll_date);
-        $componentIds = DB::table('payroll_components_settings')
-            ->whereIn('type', [TableSettingsEnum::PERA->value, TableSettingsEnum::RATA->value])
+        $year = (int) $year;
+        $month = (int) $month;
+
+        // type => payroll_component_id
+        $componentIdsByType = DB::table('payroll_components_settings')
+            ->whereIn('type', [
+                TableSettingsEnum::PERA->value,
+                TableSettingsEnum::RATA->value,
+            ])
             ->pluck('table_id', 'type');
 
-        $amounts = DB::table('employee_payroll_components')
-            ->whereIn('tax_deduction_id', $componentIds)
+        // payroll_component_id list (for whereIn)
+        $componentIds = $componentIdsByType->values();
+
+        // type => payroll_components_years.id  (THIS is the key fix)
+        $componentYearIdByType = DB::table('payroll_components_years as pcy')
+            ->join('payroll_components_settings as pcs', function ($join) {
+                $join->on('pcs.table_id', '=', 'pcy.payroll_component_id');
+            })
+            ->whereIn('pcs.type', [
+                TableSettingsEnum::PERA->value,
+                TableSettingsEnum::RATA->value,
+            ])
+            ->where('pcy.year', $year)
+            ->pluck('pcy.id', 'pcs.type');
+
+        // year_id list for whereIn
+        $yearIds = $componentYearIdByType->values();
+
+        // tax_deduction_id(year_id) => amount
+        $amountsByYearId = DB::table('employee_payroll_components')
+            ->whereIn('tax_deduction_id', $yearIds)
             ->where('employee_no', $employee_no)
             ->where('month', $month)
             ->pluck('amount', 'tax_deduction_id');
 
+        $peraYearId = $componentYearIdByType[TableSettingsEnum::PERA->value] ?? null;
+        $rataYearId = $componentYearIdByType[TableSettingsEnum::RATA->value] ?? null;
+
         return [
-            'pera_employee' => $amounts[$componentIds[TableSettingsEnum::PERA->value]] ?? 0,
-            'rata_employee' => $amounts[$componentIds[TableSettingsEnum::RATA->value]] ?? 0,
+            'pera_employee' => $peraYearId ? (float) ($amountsByYearId[$peraYearId] ?? 0) : 0,
+            'rata_employee' => $rataYearId ? (float) ($amountsByYearId[$rataYearId] ?? 0) : 0,
         ];
     }
-
 
     public function process($employee_no, $payroll_id) 
     {
@@ -92,7 +124,10 @@ class ComputationService {
 
         $ut_deductions = $this->computeUTDeduction($total_ut);
 
-        $total = $pera + $rata_total - $absences - $ut_deductions;
+        $gross = $pera + $rata_total;
+        $deductions = $absences + $ut_deductions;
+
+        $total = max($gross - $deductions, 0);
 
         $netPay = $total - $less_healthcard;
         
@@ -140,12 +175,11 @@ class ComputationService {
     {
         Log::info("Fetching salary details for employee number: {$this->employee_no} as of payroll month: {$this->payroll_date}");
 
+        $cutoff = $this->payroll_date . '-31';
+
         $employee_salary = DB::table('employee_salary')
             ->where('employee_no', $this->employee_no)
-            ->where(function($query) {
-                $query->whereYear('effectivity_date', '<=', substr($this->payroll_date, 0, 4))
-                    ->whereMonth('effectivity_date', '<=', substr($this->payroll_date, 5, 2));
-            })
+            ->where('effectivity_date', '<=', $cutoff)
             ->orderByDesc('effectivity_date')
             ->first();
 
