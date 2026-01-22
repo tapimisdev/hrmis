@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
 use App\Http\Requests\Employee\StoreOffsetApplication;
+use App\Events\NotificationEvents;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -157,6 +158,15 @@ class OffsetApplicationController extends Controller
                     ]);
                 }
             }
+
+            $author = ucwords(Auth::user()->name);
+
+            $message = '%b' . $author . '%b filed an offset application (%bi' . strtoupper($application_no) . ') %bi';
+            
+            event(new NotificationEvents('application', $author, 'admin', [
+                'message' => $message,
+                'link'    => route('services.offset.show', ['application' => $applicationID])
+            ]));
 
             DB::commit();
 

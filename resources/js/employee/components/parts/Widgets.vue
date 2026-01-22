@@ -29,11 +29,12 @@
             style="
                 min-width: 300px;
                 max-width: 380px;
-                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                border: 1px solid rgba(0, 0, 0, 0.2);
             "
         >
             <!-- Header -->
-            <li class="px-4 py-3 border-bottom bg-body">
+            <li class="px-4 py-3 border-bottom bg-body" style="border-top-left-radius: 30px; border-top-right-radius: 30px;">
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 fw-semibold text-uppercase">Widgets</h6>
                 </div>

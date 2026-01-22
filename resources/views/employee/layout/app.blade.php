@@ -82,7 +82,6 @@
         </div>
         @include('employee.components.sidebar')
         <main>
-            <!-- to incomplete birthdays -->
             <birthday-component></birthday-component>
             <div>
                  @yield('content')
@@ -107,7 +106,7 @@
                     </div>
                 </div>
             </div>
-            <push-notification></push-notification>
+            <push-notification :user-role="'employee'"></push-notification>
         </main>
     </div>
 

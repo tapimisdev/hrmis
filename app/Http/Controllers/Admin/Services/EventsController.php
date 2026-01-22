@@ -260,7 +260,7 @@ class EventsController extends Controller
             $author = ucwords(Auth::user()->name);
             $message = '%b' . $author . '%b posted %bi' . ucwords($request->title) . '%bi';
             
-            event(new NotificationEvents($author, '*', [
+            event(new NotificationEvents('event', $author, '*', [
                 'message' => $message,
                 'link'    => route('announcement.show', ['slug' => $slug])
             ]));

@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\DashboardApiController;
+use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\BirthdayController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;

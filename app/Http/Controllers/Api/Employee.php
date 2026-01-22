@@ -10,10 +10,17 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 use App\Services\EmployeeService;
+use App\Services\NotificationService;
 
 class Employee extends Controller
 {
     
+    public $notificationService;
+
+    public function __construct(NotificationService $notificationService) {
+        $this->notificationService = $notificationService;
+    }
+
     public function children(Request $request)
     {
         $employee_no = $request->employee_no;
@@ -624,49 +631,16 @@ class Employee extends Controller
 
     public function getNotifications(Request $request)
     {
-        $filter = $request->filter;
-        $limit = $request->limit ?? 10;
-
-        $query = DB::table('notifications')
-            ->where(function ($q) {
-                $q->where('receiver', '*')
-                ->orWhere('receiver', Auth::id());
-            });
-
-        if ($filter === 'unread') {
-            $query->where('is_read', 0);
-        } elseif ($filter === 'read') {
-            $query->where('is_read', 1);
-        }
-
-        $query->limit($limit);
-        $query->orderBy('created_at', 'desc');
-
-        $data = $query->get()->map(function ($item) {
-            if (isset($item->data)) {
-                $item->data = json_decode($item->data, true);
-            }
-            return $item;
-        });
-
-
+        $data = $this->notificationService->getNotifications($request, ['*', Auth::id()]);
         return response()->json($data);
     }
 
-   public function saveReadNotification(Request $request)
+    public function saveReadNotification(Request $request)
     {
-        DB::table('notifications')
-            ->where('id', $request->notification_id)
-            ->update([
-                'is_read' => true,
-            ]);
+        $data = $this->notificationService->saveReadNotification($request);
 
-        return response()->json([
-            'status' => 'success',
-            'notification_id' => $request->notification_id,
-            'is_read_at' => now(),
-        ]);
-    }
+        return response()->json($data);
+    } 
 
 
 

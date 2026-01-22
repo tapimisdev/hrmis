@@ -19,6 +19,11 @@ return new class extends Migration
         // Create table
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
+            $table->enum('type', [
+                'event',
+                'application',
+                'message',
+            ]);
             $table->string('sender');              
             $table->string('receiver')
                 ->default('*')

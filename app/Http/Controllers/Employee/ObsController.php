@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreObsRequest;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Events\NotificationEvents;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -133,6 +134,15 @@ class ObsController extends Controller
             //         ]);
             //     }
             // }
+
+            $author = ucwords(Auth::user()->name);
+
+            $message = '%b' . $author . '%b filed a pass slip application (%bi' . strtoupper($application_no) . ') %bi';
+            
+            event(new NotificationEvents('application', $author, 'admin', [
+                'message' => $message,
+                'link'    => route('services.obs.show', ['application' => $obsId])
+            ]));
 
             DB::commit();
 

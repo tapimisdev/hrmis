@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreAtroRequest;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Events\NotificationEvents;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -132,8 +133,16 @@ class AtroController extends Controller
                 }
             }
 
-            DB::commit();
+            $author = ucwords(Auth::user()->name);
+
+            $message = '%b' . $author . '%b filed an overtime application (%bi' . strtoupper($application_no) . ') %bi';
             
+            event(new NotificationEvents('application', $author, 'admin', [
+                'message' => $message,
+                'link'    => route('services.overtime.show', ['application' => $atroId])
+            ]));
+
+            DB::commit();            
             return response()->json([
                 'status' => 'success',
                 'message' => 'Overtime application has been submitted',

@@ -49,6 +49,12 @@ import * as bootstrap from "bootstrap";
 
 export default {
     name: "PushNotification",
+    props: {
+        userRole: {
+            type: String,
+            required: true,
+        },
+    },
     data() {
         const token = localStorage.getItem("auth_token");
         return {
@@ -59,6 +65,7 @@ export default {
         };
     },
     mounted() {
+      console.log(this.userRole);
         // Preload notification sound
         this.audio = new Audio("/sounds/notification.mp3");
         this.audio.preload = "auto";
@@ -72,8 +79,24 @@ export default {
             });
         }
 
+        // Listen to role-specific channel
+        const roleChannel = this.userRole === 'admin' ? 'admin-channel' : 'employee-channel';
+        window.Echo.channel(roleChannel).listen(
+            ".notification-event", 
+            (e) => {
+                this.addToast({
+                    id: e.id,
+                    message: this.formatMessage(
+                        e.data.message || "posted a new notification!",
+                    ),
+                    link: e.data.link || null,
+                });
+            },
+        );
+
+        // Also listen to public-channel for global notifications (optional)
         window.Echo.channel("public-channel").listen(
-            ".public-channel-event",
+            ".notification-event",
             (e) => {
                 this.addToast({
                     id: e.id,
@@ -136,9 +159,13 @@ export default {
                         (event) => {
                             if (event.target.closest(".btn-close")) return;
                             this.removeToast(newToast.id);
+                            // Dynamic API endpoint based on role
+                            const apiEndpoint = this.userRole === 'admin' 
+                                ? "/api/admin/notifications" 
+                                : "/api/employee/notifications";
                             axios
                               .post(
-                                  "/api/employee/notifications",
+                                  apiEndpoint,
                                   {
                                       notification_id: newToast.id,
                                   },
@@ -163,7 +190,7 @@ export default {
                 // Play sound
                 this.playNotificationSound();
 
-                // Auto-remove after 10s (safeguard in case Bootstrap fails)
+                // Auto-remove after 30s (safeguard in case Bootstrap fails)
                 setTimeout(() => {
                     this.removeToast(newToast.id);
                 }, 30000);

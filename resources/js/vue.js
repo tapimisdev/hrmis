@@ -14,6 +14,7 @@ import BirthdayComponent from "./birthday/BirthdayComponent.vue";
 import PushNotification from "./employee/profile/PushNotification.vue";
 
 // Admin
+import AdminHeader from "./admin/components/Header.vue";
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
 import DtrViewVue from "./admin/timekeeping/DtrViewVue.vue";
 import HrisIndex from "./admin/hris/HrisIndex.vue";
@@ -54,6 +55,7 @@ import PeraRataView from "./admin/payroll/pera-rata/show/ShowPayroll.vue";
 
 const authApp = createApp({
     components: {
+        AdminHeader,
         DashboardIndex,
         IndexVue,
         HeaderVue,

@@ -127,7 +127,7 @@ export default {
         fetchCards() {
             this.isLoading = true;
             axios
-                .get("/api/dashboard/metrics", {
+                .get("/api/admin/metrics", {
                     headers: { Authorization: `Bearer ${token}` },
                 })
                 .then((response) => {

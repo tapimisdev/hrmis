@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
 use App\Http\Requests\Employee\StoreLeaveApplication;
 use App\Enums\EmploymentTypesEnum;
+use App\Events\NotificationEvents;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -172,6 +173,15 @@ class LeaveApplicationController extends Controller
                     ]);
                 }
             }
+
+            $author = ucwords(Auth::user()->name);
+
+            $message = '%b' . $author . '%b filed a leave application (# %bi' . strtoupper($application_no) . ') %bi';
+            
+            event(new NotificationEvents('application', $author, '*', [
+                'message' => $message,
+                'link'    => route('services.leaves.show ', ['application' => $applicationID])
+            ]));
 
             DB::commit();
 

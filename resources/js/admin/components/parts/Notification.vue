@@ -155,20 +155,24 @@
 import axios from "axios";
 
 export default {
-    name: "NotificationComponent",
+    name: "Notification",
     props: {
+        username: {
+            type: String,
+            required: true,
+        },
         userRole: {
             type: String,
             required: true,
         },
         userId: {
-            type: [String, Number],
+            type: String,
             required: true,
         },
     },
     data() {
         const token = localStorage.getItem("auth_token");
-
+      
         return {
             token,
             notifications: [],
@@ -176,21 +180,25 @@ export default {
             loadingNotifications: false,
             currentOffset: 0,
             hasMore: true,
-            displayedIds: new Set(), // Track displayed notification IDs to avoid duplicates
+            displayedIds: new Set(), 
         };
     },
     mounted() {
         this.fetchNotifications("unread");
-
-        window.Echo.channel("employee-channel").listen(
-            ".notification-event",
-            (e) => {
-                this.fetchNotifications("unread");
-            },
-        );
+        if (window.Echo) {
+            window.Echo.channel("admin-channel").listen(
+                ".notification-event",
+                (e) => {
+                    this.fetchNotifications("unread");
+                },
+            );
+        }
     },
     beforeUnmount() {
-        clearInterval(this.notificationInterval);
+        // Clear any intervals if added later
+        if (this.notificationInterval) {
+            clearInterval(this.notificationInterval);
+        }
     },
     methods: {
         async fetchNotifications(filter = null, limit = 10, offset = 0) {
@@ -200,10 +208,9 @@ export default {
             }
             try {
                 // Only include filter if it's not null
-                const receivers = ['*', this.userId];
-                const params = filter ? { filter, limit, receivers } : { limit, offset: this.currentOffset, receivers };
+                const params = filter ? { filter, limit } : { limit, offset: this.currentOffset };
 
-                const res = await axios.get("/api/employee/notifications", {
+                const res = await axios.get("/api/admin/notifications", {
                     params,
                     headers: { Authorization: `Bearer ${this.token}` },
                 });
@@ -211,7 +218,6 @@ export default {
                 // Update unreadCount if fetching unread notifications
                 if (filter === "unread") {
                     this.unreadCount = res.data?.length ?? 0;
-                    console.log(this.unreadCount);
                 } else {
                     // For initial load (offset 0), reset the list and displayed IDs
                     if (this.currentOffset === 0) {
@@ -227,8 +233,7 @@ export default {
                     // Append new notifications to the list
                     this.notifications = [...this.notifications, ...newNotifications];
                     // Check if there are more notifications
-                    this.hasMore = res.data.length === 0;
-                    console.log(res.data);
+                    this.hasMore = res.data.length === limit;
                 }
             } catch (err) {
                 console.error("Error fetching notifications:", err);
@@ -307,7 +312,7 @@ export default {
         navigateUrl(notification_id, redirectURL) {
             axios
                 .post(
-                    "/api/employee/notifications",
+                    "/api/admin/notifications",
                     {
                         notification_id: notification_id,
                     },

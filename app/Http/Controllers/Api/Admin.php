@@ -5,11 +5,21 @@ namespace App\Http\Controllers\Api;
 use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Services\NotificationService;
 
-class DashboardApiController extends Controller
+class Admin extends Controller
 {
+
+    public $notificationService;
+
+    public function __construct(NotificationService $notificationService) {
+        $this->notificationService = $notificationService;
+    }
+
     /**
      * DASHBOARD METRICS
      */
@@ -336,4 +346,17 @@ class DashboardApiController extends Controller
             'resignations' => $resignations,
         ];
     }
+
+    public function getNotifications(Request $request)
+    {
+        $data = $this->notificationService->getNotifications($request, ['admin']);
+        return response()->json($data);
+    }
+
+    public function saveReadNotification(Request $request)
+    {
+        $data = $this->notificationService->saveReadNotification($request);
+        return response()->json($data);
+    }
+    
 }

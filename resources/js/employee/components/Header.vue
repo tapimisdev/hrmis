@@ -3,7 +3,7 @@
     <incomplete-logs @incomplete-data="handleData"> </incomplete-logs>
     <div class="d-flex gap-5 justify-content-end align-items-center">
       <widget-component />
-      <notification-component />
+      <notification-component :userRole="userRole" :userId="userId" />  
       <profile-component />
     </div>
 </template>
