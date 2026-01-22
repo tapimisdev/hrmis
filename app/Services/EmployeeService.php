@@ -480,4 +480,13 @@ class EmployeeService {
         });
     }
 
+    public function getAllActiveEmployee($employment_type_id)
+    {
+        return DB::table('employee_information as ei')
+            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
+            ->where('eo.employment_type_id', $employment_type_id)
+            ->where('ei.account_status', 'active')
+            ->pluck('ei.employee_no')
+            ->toArray();
+    }
 }
