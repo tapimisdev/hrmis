@@ -11,7 +11,6 @@ import PayslipIndex from "./employee/payslip/PayslipIndex.vue";
 import Show from "./employee/announcements/Show.vue";
 import ChangePassword from "./employee/profile/ChangePassword.vue";
 import BirthdayComponent from "./birthday/BirthdayComponent.vue";
-import IncompleteLogs from "./employee/profile/IncompleteLogs.vue";
 import PushNotification from "./employee/profile/PushNotification.vue";
 
 // Admin
@@ -64,7 +63,6 @@ const authApp = createApp({
         PayslipIndex,
         BirthdayComponent,
         ChangePassword, 
-        IncompleteLogs,
         PushNotification,
         WebtimeIndex,
 

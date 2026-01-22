@@ -53,7 +53,10 @@
                             class="accordion-collapse collapse"
                         >
                             <div class="accordion-body p-3">
-                                <div v-if="loading" class="text-center text-muted py-2">
+                                <div
+                                    v-if="loading"
+                                    class="text-center text-muted py-2"
+                                >
                                     Loading incomplete logs...
                                 </div>
 
@@ -121,7 +124,7 @@
                                                     style="font-size: 11px"
                                                     :class="
                                                         log.remarks.includes(
-                                                            'today'
+                                                            'today',
                                                         )
                                                             ? 'text-success'
                                                             : 'text-danger'
@@ -157,6 +160,7 @@ const HIDE_KEY = "hide_timelog_discrepancy";
 const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
 
 export default {
+    name: "IncompleteLogs",
     data() {
         return {
             show: true,
@@ -197,7 +201,7 @@ export default {
             () => {
                 this.handleTriggerClocking();
                 window.clockTriggers.reload = false;
-            }
+            },
         );
 
         window.addEventListener("timelog-toggle", this.syncVisibility);

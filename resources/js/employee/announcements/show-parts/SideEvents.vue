@@ -1,5 +1,5 @@
 <template>
-    <div class="other">
+    <div class="other" 5>
         <h5 class="sidebar-title">Others</h5>
 
         <!-- If there is data -->

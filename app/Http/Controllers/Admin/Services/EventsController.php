@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\EventAnnouncement;
 use Illuminate\Support\Facades\Storage;
+use App\Events\NotificationEvents;
 
 class EventsController extends Controller
 {
@@ -132,6 +133,7 @@ class EventsController extends Controller
 
     public function store(Request $request)
     {
+
         $request->merge([
             'is_suspension' => $request->has('is_suspension') && $request->boolean('is_suspension') ? true : false,
         ]);
@@ -254,6 +256,14 @@ class EventsController extends Controller
             }
 
             DB::commit();
+
+            $author = ucwords(Auth::user()->name);
+            $message = '%b' . $author . '%b posted %bi' . ucwords($request->title) . '%bi';
+            
+            event(new NotificationEvents($author, '*', [
+                'message' => $message,
+                'link'    => route('announcement.show', ['slug' => $slug])
+            ]));
 
             return response()->json([
                 'status'   => 'success',
