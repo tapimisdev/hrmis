@@ -1,8 +1,8 @@
 <template>
-    <div class="d-flex gap-2 flex-wrap justify-content-center align-items-center">
+    <div class="d-flex gap-1 flex-wrap justify-content-center align-items-center">
         <button
             type="button"
-            class="btn btn-sm btn-outline-primary px-3 py-2 fw-500 d-flex align-items-center gap-2"
+            class="btn btn-sm btn-transparent border px-3 py-2 fw-500 d-flex align-items-center gap-2"
             title="Download CSV"
         >
             <i class="fa-solid fa-file-csv"></i>
@@ -10,7 +10,7 @@
         </button>
         <button
             type="button"
-            class="btn btn-sm btn-outline-success px-3 py-2 fw-500 d-flex align-items-center gap-2"
+            class="btn btn-sm btn-transparent border px-3 py-2 fw-500 d-flex align-items-center gap-2"
             title="Download Excel"
         >
             <i class="fa-solid fa-file-excel"></i>
@@ -18,7 +18,7 @@
         </button>
         <button
             type="button"
-            class="btn btn-sm btn-outline-danger px-3 py-2 fw-500 d-flex align-items-center gap-2"
+            class="btn btn-sm btn-transparent border px-3 py-2 fw-500 d-flex align-items-center gap-2"
             title="Download PDF"
         >
             <i class="fa-solid fa-file-pdf"></i>

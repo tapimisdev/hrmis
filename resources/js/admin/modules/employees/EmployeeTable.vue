@@ -7,10 +7,10 @@
             <Printables />
             <button
                 @click="openaddModal"
-                class="btn btn-outline-warning mt-3"
+                class="btn bg-warning text-black mt-3"
             >
                 <i class="fa-solid fa-plus me-1"></i>
-                Add Amount
+                Bulk
             </button>
 
             <!-- Modal -->
