@@ -35,6 +35,7 @@ Route::prefix('payroll')->group(function() {
         Route::get('{payroll_id}', [SalaryApiController::class, 'getPayrollData']);
         Route::post('generate', [SalaryController::class, 'store']);
         Route::delete('{id}/delete', [SalaryController::class, 'destroy']);
+        Route::patch('{id}/status', [SalaryController::class, 'updateStatus']);
 
         # DOWNLOAD
 
@@ -55,6 +56,7 @@ Route::prefix('payroll')->group(function() {
         Route::get('{payroll_id}', [HazardApiController::class, 'getPayrollData']);
         Route::post('generate', [HazardPayController::class, 'store']);
         Route::delete('{id}/delete', [HazardPayController::class, 'destroy']);
+        Route::patch('{id}/status', [HazardPayController::class, 'updateStatus']);
     });
 
     # SLA Payroll
@@ -65,6 +67,7 @@ Route::prefix('payroll')->group(function() {
         Route::get('{payroll_id}', [SLAApiController::class, 'getPayrollData']);
         Route::post('generate', [SLAPayController::class, 'store']);
         Route::delete('{id}/delete', [SLAPayController::class, 'destroy']);
+        Route::patch('{id}/status', [SLAPayController::class, 'updateStatus']);
     });
 
     # PERA RATA Payroll
@@ -75,6 +78,7 @@ Route::prefix('payroll')->group(function() {
         Route::get('{payroll_id}', [PeraRataApiController::class, 'getPayrollData']);
         Route::post('generate', [PeraRataController::class, 'store']);
         Route::delete('{id}/delete', [PeraRataController::class, 'destroy']);
+        Route::patch('{id}/status', [PeraRataController::class, 'updateStatus']);
     });
 
 });

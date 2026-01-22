@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Services\SalaryPay\PayrollService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Throwable;
 use Exception;
 
@@ -192,6 +194,114 @@ class SalaryController extends Controller
             return response()->json([
                 'message' => $e->getMessage(),
                 'status'  => 'destroy failed'
+            ], 500);
+        }
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => [
+                'required',
+                'string',
+                Rule::in([
+                    'draft',
+                    'pending',
+                    'approved',
+                    'for_releasing',
+                    'completed',
+                    'cancelled',
+                    'failed',
+                ]),
+            ],
+        ]);
+
+        $payroll = DB::table('payroll_salary')->where('id', $id)->first();
+        
+        if (!$payroll) {
+            return response()->json([
+                'message' => 'No Payroll found',
+                'status'  => 'not_found'
+            ], 404);
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            // Allowed transitions (your flow)
+            $allowedTransitions = [
+                'draft' => ['pending', 'cancelled'],
+                'pending' => ['draft', 'approved', 'cancelled'],
+                'approved' => ['for_releasing', 'cancelled'],
+                'for_releasing' => ['completed'],
+                'completed' => [],
+                'cancelled' => [],
+                'failed' => [],
+            ];
+
+            if (
+                isset($allowedTransitions[$payroll->status]) &&
+                !in_array($request->status, $allowedTransitions[$payroll->status])
+            ) {
+                return response()->json([
+                    'message' => 'Invalid status transition',
+                    'status'  => 'invalid_transition'
+                ], 422);
+            }
+
+            /**
+             * STRICT MONTH + CUTOFF CONSTRAINT
+             * Only ONE payroll per (month, cutoff) can be in ANY active status.
+             * If one is approved, others cannot become pending, etc. for the same cutoff.
+             */
+            $activeStatuses = ['pending', 'approved', 'for_releasing', 'completed'];
+
+            if (in_array($request->status, $activeStatuses)) {
+
+                $exists = DB::table('payroll_salary')
+                    ->whereYear('payroll_date', date('Y', strtotime($payroll->payroll_date)))
+                    ->whereMonth('payroll_date', date('m', strtotime($payroll->payroll_date)))
+                    ->where('employment_type_id', $payroll->employment_type_id)
+                    ->where('cutoff', $payroll->cutoff)        // e.g. 1 or 2 (or whatever your cutoff values are)
+                    ->whereIn('status', $activeStatuses)       // any active status
+                    ->where('id', '!=', $id)                   // exclude current record
+                    ->exists();
+
+                if ($exists) {
+                    return response()->json([
+                        'message' => "Active payroll detected for this month and cutoff.",
+                        'status'  => 'month_cutoff_active_conflict'
+                    ], 422);
+                }
+            }
+
+            DB::table('payroll_salary')
+                ->where('id', $id)
+                ->update([
+                    'status' => $request->status,
+                    'updated_at' => now(),
+                ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Payroll status updated successfully',
+                'status'  => 'success',
+                'data'    => [
+                    'id' => $id,
+                    'status' => $request->status,
+                    'month' => date('m', strtotime($payroll->payroll_date)) . ' ' . date('Y', strtotime($payroll->payroll_date)),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'message' => $e->getMessage(),
+                'status'  => 'update failed'
             ], 500);
         }
     }

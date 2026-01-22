@@ -274,10 +274,13 @@ class PayrollService {
         $employees = collect($this->getEligibleEmployees($payload));
         $eligibleEmployees = $employees->get('eligible', []);
 
+
         if (empty($eligibleEmployees)) {
             Log::warning("No eligible employees found for payroll ID: {$payroll_id}");
             return null;
         }
+
+
         $batch = Bus::batch([])
             ->then(function (Batch $batch) {
                 // $admin = \App\Models\User::role('admin')->first();
@@ -297,15 +300,17 @@ class PayrollService {
                 // Log::error("Payroll batch failed: {$e->getMessage()}");
             })
             ->name("Subsistence and Allowance Payroll Report #{$payroll_id}")
-            ->dispatch();
+            ->dispatch();        
 
         DB::table('payroll_sla_pay')
             ->where('id', $payroll_id)
             ->update(['batch_id' => $batch->id]);
 
+        
         foreach ($eligibleEmployees as $employee) {
             $batch->add(new SLAPayReport($employee, $payroll_id));
         }
+        
         
         return $batch->id;
     }

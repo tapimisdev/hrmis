@@ -356,8 +356,13 @@ class DailyTimeRecordService {
             }
 
             if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday) {
-                $remarks[] = 'incomplete log';
-                $TOTAL_INCOMPLETE_LOGS++;
+                if($is_same_day) {
+                    $remarks[] = 'incomplete log';
+                    $TOTAL_INCOMPLETE_LOGS++;
+                }else{
+                    $remarks[] = 'Consider Absent';
+                    $TOTAL_ABSENT++;
+                }
 
                 $computedData[] = [
                     'date'              => $logDate,

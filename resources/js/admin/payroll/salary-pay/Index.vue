@@ -4,22 +4,31 @@
             ref="searchPayroll"
             @payroll-list="handlePayrollList"
         />
-        <TablePayrollVue
+        <PayrollLayout
             :payrolls="payrollList"
             :loading="loading"
+            :url="'salary-pay'"
             @deleted="handleDelete"
-        />
+            @status-changed="handleChange"
+        ></PayrollLayout>
     </div>
 </template>
 <script>
+import PayrollLayout from "./../PayrollLayout.vue";
 import SearchPayrollVue from "./SearchPayrollVue.vue";
-import TablePayrollVue from "./TablePayrollVue.vue";
 export default {
     name: "SalaryPayIndex",
-    components: { SearchPayrollVue, TablePayrollVue },
+    components: { SearchPayrollVue, PayrollLayout },
     data() {
+        const today = new Date();
+        const currentMonth = today.toISOString().slice(0, 7);
         return {
             payrollList: [],
+            formDefaults: {
+                employment_type: "1",
+                month: currentMonth,
+                status: "",
+            },
             loading: false,
         };
     },
@@ -32,6 +41,9 @@ export default {
             if (this.$refs.searchPayroll) {
                 this.$refs.searchPayroll.fetchData();
             }
+        },
+        handleChange() {
+            this.$refs.searchPayroll.search();
         },
     },
 };

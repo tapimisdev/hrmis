@@ -255,7 +255,6 @@ export default {
 
 .empty-state {
     font-size: 0.95rem;
-    color: rgba(0, 0, 0, 0.6);
     padding: 12px;
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.03);

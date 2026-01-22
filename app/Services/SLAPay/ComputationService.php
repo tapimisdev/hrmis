@@ -6,6 +6,7 @@ use App\Services\DailyTimeRecordService;
 use App\Enums\EmploymentTypesEnum;
 use App\Enums\PayrollStatusEnum;
 use App\Enums\TableSettingsEnum;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -28,6 +29,8 @@ class ComputationService {
     protected $work_schedule_id;
     protected $working_hours;
     protected $withHoldingTax;
+    protected $start_date;
+    protected $end_date;
 
     public function __construct(DailyTimeRecordService $daily_time_record_service) 
     {
@@ -55,10 +58,11 @@ class ComputationService {
         $this->getEmployeeSalaryDetails();
         $this->getEmployeeInformation();
 
+        // SLA payroll is previous month
         $payload = [
-            'user_id' => $this->user_id,
-            'startDate' => $this->start_date,
-            'endDate' => $this->end_date
+            'user_id'   => $this->user_id,
+            'startDate' => Carbon::parse($this->start_date)->subMonth()->format('Y-m-d'),
+            'endDate'   => Carbon::parse($this->end_date)->subMonth()->format('Y-m-d'),
         ];
 
         $dtr = $this->daily_time_record_service->getDTR($payload);
@@ -74,8 +78,8 @@ class ComputationService {
 
         $uniform_deduction = 350;
         $less_healthcard = 0;
-        $total = $total_sla - $ut_deductions - $uniform_deduction;
-        $netPay = $total - $less_healthcard;
+        $total = max($total_sla - $ut_deductions - $uniform_deduction, 0);
+        $netPay = max($total - $less_healthcard, 0);
 
         DB::table('payroll_sla_pay_employee')
             ->insert([
@@ -150,12 +154,11 @@ class ComputationService {
     {
         Log::info("Fetching salary details for employee number: {$this->employee_no} as of payroll month: {$this->payroll_date}");
 
+        $cutoff = $this->payroll_date . '-31';
+
         $employee_salary = DB::table('employee_salary')
             ->where('employee_no', $this->employee_no)
-            ->where(function($query) {
-                $query->whereYear('effectivity_date', '<=', substr($this->payroll_date, 0, 4))
-                    ->whereMonth('effectivity_date', '<=', substr($this->payroll_date, 5, 2));
-            })
+            ->where('effectivity_date', '<=', $cutoff)
             ->orderByDesc('effectivity_date')
             ->first();
 

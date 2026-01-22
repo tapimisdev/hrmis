@@ -29,7 +29,7 @@ class SalaryApiController extends Controller
             'year' => 'required|integer|min:2000|max:' . date('Y'),
             'month' => 'required|integer|min:1|max:12',
             'cutoff' => 'nullable|string|max:50',
-            'status' => 'nullable|string|in:draft,pending,approved,for_releasing,completed,cancelled',
+            // 'status' => 'nullable|string|in:draft,pending,approved,for_releasing,completed,cancelled',
         ]);
 
         $list = $this->salary_payroll_service->getPayrolls($validated);
