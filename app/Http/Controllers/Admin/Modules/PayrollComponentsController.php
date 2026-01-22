@@ -29,7 +29,7 @@ class PayrollComponentsController extends Controller
             $yearsFromDb = DB::table('payroll_components_years')
                 ->where('payroll_component_id', $component->id)
                 ->distinct()
-                ->orderBy('year', 'asc')
+                ->orderBy('year', 'desc')
                 ->get();
 
             return response(['data' => $yearsFromDb, 'message' => 'get data', 'status' => 'success']);

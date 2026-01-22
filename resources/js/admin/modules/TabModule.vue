@@ -47,6 +47,7 @@
             :headerIcon="'fa-solid fa-plus'"
             :title="'Add tab to ' + tab_name"
             :size="'modal-md'"
+            id="tax-modal"
             subtitle="Manage the settings and options for this specific module with ease."
             type="default"
         >

@@ -9,6 +9,10 @@ Route::prefix('modules')->group(function() {
 
     Route::post('/store-employees', [ModuleTabEmployeeController::class, 'store'])
             ->name('module.employee.store');
+    Route::post('/bulk/store-employees', [ModuleTabEmployeeController::class, 'bulkStore'])
+            ->name('module.employee.bulk.store');
+   Route::post('/bulk/philhealth/store-employees', [ModuleTabEmployeeController::class, 'PhilhealthBulkStore'])
+            ->name('module.employee.ph.bulk.store');
 
     # slug
     Route::get('/{slug}', [ModulesController::class, 'index'])->name('modules.index');

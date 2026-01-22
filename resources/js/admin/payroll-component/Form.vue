@@ -3,11 +3,41 @@
     <div
         class="card-header d-md-flex justify-content-between align-items-center pb-3"
     >
-        <Printables />
+        <div>
+            <Printables />
+            <button
+                v-if="parent_table.slug != 'longetivity-pay'"
+                @click="handleOpenaddModal"
+                class="btn bg-warning text-black mt-3"
+            >
+                <i class="fa-solid fa-plus me-1"></i>
+                Bulk
+            </button>
 
-        <div class="fw-bold display-6">
-            {{ parent_table.year }}
+            <!-- Modal -->
+            <ModalVue
+                ref="addModal"
+                headerIcon="fa-solid fa-plus"
+                :title="tab"
+                id="add-modal"
+                size="modal-md"
+                subtitle="Add employee's loan/deduction in here by range."
+                type="default"
+                v-if="parent_table.slug != 'longetivity-pay'"
+            >
+                <AddAmountForm
+                    ref="addForm"
+                    :module_tab="parent_table.slug"
+                    @cancel="$refs.addModal.close()"
+                    @success="handleAddAmountSuccess"
+                    :id="parent_table.id"
+                    :year="year"
+                    :url="`/admin/payroll-components/${parent_table.slug}/bulk/employees`"
+                />
+            </ModalVue>
         </div>
+
+        <div class="fw-bold display-6">{{ year }}</div>
 
         <div
             class="search-pill mt-3 d-flex align-items-center px-2 py-1 bg-body-bg rounded-pill"
@@ -122,7 +152,7 @@
                                         item[monthKey + '_id'],
                                         item[monthKey],
                                         monthKey,
-                                        item.employee_no
+                                        item.employee_no,
                                     )
                                 "
                                 class="border-less-input"
@@ -154,14 +184,17 @@
 import LoaderVue from "../../components/LoaderVue.vue";
 import Printables from "../../components/Printables.vue";
 import axios from "axios";
+import AddAmountForm from "./AddAmountForm.vue";
+import ModalVue from "../../components/ModalVue.vue";
 
 export default {
     name: "PayrollEmployeeComponentForm",
-    components: { LoaderVue, Printables },
+    components: { LoaderVue, Printables, AddAmountForm, ModalVue },
     props: {
         selected_employee: { type: String, required: false },
         url: { type: String, required: true },
         parent_table: { type: Object, required: true },
+        year: { type: String, required: true },
     },
     data() {
         return {
@@ -203,6 +236,14 @@ export default {
         this.fetchTable();
     },
     methods: {
+        handleOpenaddModal() {
+            this.$refs.addModal.open();
+            this.$refs.addForm.resetForm();
+        },
+        handleAddAmountSuccess() {
+            this.$refs.addModal.close();
+            this.fetchTable();
+        },
         fetchTable() {
             this.loading = true;
             axios
@@ -247,21 +288,29 @@ export default {
                 });
         },
         line_total(employee) {
-            return this.monthKeys.reduce(
-                (sum, month) => sum + (parseFloat(employee[month]) || 0),
-                0
-            );
+            let line_total = 0;
+
+            this.monthKeys.forEach((month) => {
+                line_total += parseFloat(employee[month]) || 0;
+            });
+
+            return new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(line_total);
         },
         total_all_line_total() {
             return this.filtered.reduce(
                 (sum, item) => sum + this.line_total(item),
-                0
+                0,
             );
         },
         grand_total(month) {
             return this.filtered.reduce(
                 (sum, item) => sum + (parseFloat(item[month]) || 0),
-                0
+                0,
             );
         },
         formatNumber(number) {
@@ -282,7 +331,7 @@ export default {
                               .includes(query) ||
                           (item.division_name ?? "")
                               .toLowerCase()
-                              .includes(query)
+                              .includes(query),
                   );
         },
     },

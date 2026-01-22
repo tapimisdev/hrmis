@@ -3,7 +3,45 @@
     <div
         class="card-header d-md-flex justify-content-between align-items-center pb-3 pt-4"
     >
-        <Printables />
+        <div>
+            <Printables />
+            <button
+                @click="openaddModal"
+                class="btn bg-warning text-black mt-3"
+            >
+                <i class="fa-solid fa-plus me-1"></i>
+                Bulk
+            </button>
+
+            <!-- Modal -->
+            <ModalVue
+                :ref="`addModal_${tab}`"
+                headerIcon="fa-solid fa-plus"
+                :title="tab"
+                id="add-modal"
+                size="modal-md"
+                subtitle="Add employee's loan/deduction in here by range."
+                type="default"
+            >
+                <AddAmountForm
+                    ref="addForm"
+                    :module_tab="tab"
+                    @cancel="$refs[`addModal_${tab}`].close()"
+                    @success="handleAddAmountSuccess"
+                    v-if="tab != 'phil-health'"
+                />
+                <PhilHealth
+                    ref="addForm"
+                    :module_tab="tab"
+                    :year="year"
+                    @cancel="$refs[`addModal_${tab}`].close()"
+                    @success="handleAddAmountSuccess"
+                    v-else
+                />
+            </ModalVue>
+            
+
+        </div>
 
         <div
             class="fw-bold display-6 w-100 d-flex justify-content-between flex-wrap responsive-elements align-items-center my-3"
@@ -156,11 +194,14 @@
 <script>
 import LoaderVue from "../../../components/LoaderVue.vue";
 import Printables from "../../../components/Printables.vue";
+import ModalVue from "../../../components/ModalVue.vue";
+import AddAmountForm from "./AddAmountForm.vue";
+import PhilHealth from "./PhilHealth.vue";
 
 import axios from "axios";
 
 export default {
-    components: { LoaderVue, Printables },
+    components: { LoaderVue, Printables, ModalVue, AddAmountForm, PhilHealth },
     props: {
         selected_employee: {
             type: String,
@@ -223,6 +264,10 @@ export default {
         },
     },
     methods: {
+        handleAddAmountSuccess(){
+            this.fetchTable();
+            this.$refs[`addModal_${this.tab}`].close();
+        },
         fetchTable() {
             this.loading = true;
             axios
@@ -280,7 +325,12 @@ export default {
                 line_total += parseFloat(employee[month]) || 0;
             });
 
-            return line_total;
+            return new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(line_total);
         },
         total_all_line_tota() {
             let total = 0;
@@ -321,6 +371,11 @@ export default {
             this.year += action;
             this.fetchTable();
         },
+        openaddModal() {
+            console.log(`addModal_${this.tab}`);
+            this.$refs[`addModal_${this.tab}`].open();
+            this.$refs.addForm.resetForm();
+        }
     },
 };
 </script>

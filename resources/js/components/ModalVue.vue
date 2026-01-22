@@ -1,7 +1,7 @@
 <template>
   <div 
     class="modal fade" 
-    id="myModal" 
+    :id="id" 
     tabindex="-1" 
     aria-hidden="true"
     data-bs-backdrop="static"
@@ -46,13 +46,14 @@ export default {
     title: { type: String, default: "" },
     subtitle: { type: String, default: "" },
     size: { type: String, default: "modal-lg" },
+    id: { type: String, default: "myModal" }
   },
   methods: {
     close() {
-      $('#myModal').modal('hide');
+      $('#' + this.id).modal('hide')
     },
     open() {
-      $('#myModal').modal('show');
+      $('#' + this.id).modal('show')
     },
   },
 };
