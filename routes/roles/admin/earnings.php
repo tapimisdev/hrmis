@@ -12,4 +12,5 @@ Route::prefix('payroll-components/{slug}')->group(function () {
 
     Route::get('employees/{year}', [PayrollComponentsEmployeeController::class, 'index'])->name('payroll-employee-components.index');
     Route::post('employees/{year}', [PayrollComponentsEmployeeController::class, 'store'])->name('payroll-employee-components.store');
+    Route::post('bulk/employees', [PayrollComponentsEmployeeController::class, 'bulkStore'])->name('payroll-employee-components.bulk.store');
 });

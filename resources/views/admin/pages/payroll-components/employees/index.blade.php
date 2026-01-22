@@ -10,10 +10,11 @@
                 variant="danger"
             />
         </x-header>
-
+        
         <payroll-employee-component-form
             url="{{ $url }}"
             selected_employee="{{ $selectedEmployee }}"
+            year="{{ $year }}"
             :parent_table='@json($component)'
         />
     </div>
