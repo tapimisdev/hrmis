@@ -7,7 +7,7 @@
             <Printables />
             <button
                 v-if="parent_table.slug != 'longetivity-pay'"
-                @click="$refs.addModal.open()"
+                @click="handleOpenaddModal"
                 class="btn bg-warning text-black mt-3"
             >
                 <i class="fa-solid fa-plus me-1"></i>
@@ -26,6 +26,7 @@
                 v-if="parent_table.slug != 'longetivity-pay'"
             >
                 <AddAmountForm
+                    ref="addForm"
                     :module_tab="parent_table.slug"
                     @cancel="$refs.addModal.close()"
                     @success="handleAddAmountSuccess"
@@ -235,6 +236,10 @@ export default {
         this.fetchTable();
     },
     methods: {
+        handleOpenaddModal() {
+            this.$refs.addModal.open();
+            this.$refs.addForm.resetForm();
+        },
         handleAddAmountSuccess() {
             this.$refs.addModal.close();
             this.fetchTable();

@@ -24,12 +24,14 @@
                 type="default"
             >
                 <AddAmountForm
+                    ref="addForm"
                     :module_tab="tab"
                     @cancel="$refs[`addModal_${tab}`].close()"
                     @success="handleAddAmountSuccess"
                     v-if="tab != 'phil-health'"
                 />
                 <PhilHealth
+                    ref="addForm"
                     :module_tab="tab"
                     :year="year"
                     @cancel="$refs[`addModal_${tab}`].close()"
@@ -372,6 +374,7 @@ export default {
         openaddModal() {
             console.log(`addModal_${this.tab}`);
             this.$refs[`addModal_${this.tab}`].open();
+            this.$refs.addForm.resetForm();
         }
     },
 };
