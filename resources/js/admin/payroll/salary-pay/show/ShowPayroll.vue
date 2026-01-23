@@ -14,6 +14,7 @@
       :status="status"
       :payroll_no="payroll_no"
       @fetch_data="fetchRegistry"
+      :period_covered="period_covered"
     />
     <div v-else-if="employment_type === 'REGULAR'">
       <RegularPayrollRegistry
@@ -21,6 +22,7 @@
         :status="status"
         :payroll_no="payroll_no"
         @fetch_data="fetchRegistry"
+        :period_covered="period_covered"
       />
     </div>
   </div>
@@ -28,7 +30,7 @@
 
 <script>
 import axios from "axios";
-import ShowProgressBar from "./parts/ShowProgressBar.vue";
+import ShowProgressBar from "../../ShowProgressBar.vue";
 import CosPayrollRegistry from "./parts/CosPayrollRegistry.vue";
 import RegularPayrollRegistry from "./parts/RegularPayrollRegistry.vue";
 
@@ -40,7 +42,8 @@ export default {
     payroll_id: Number|String,
     payroll_no: String,
     status: String,
-    employment_type: String //REGULAR OR COS
+    employment_type: String,
+    period_covered: String
   },
   data() {
     return {

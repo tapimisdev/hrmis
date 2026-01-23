@@ -21,6 +21,7 @@
             :payroll_id="{{ json_encode($payroll->id) }}"
             :status="{{ json_encode($payroll->status) }}"
             :employment_type="{{ json_encode($employmentTypeName) }}"
+            :period_covered="{{ json_encode($payroll->period_covered) }}"
         ></show-payroll>
     </div>
 @endsection

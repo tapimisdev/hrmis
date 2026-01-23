@@ -60,7 +60,7 @@ class SalaryItemController extends Controller
                 abort(400, 'Unsupported employment type.');
             }
 
-            $remarks = $validatedData['remarks'] ?? $salary_item->remarks;
+            $remarks = $validatedData['remarks'];
 
             // Update
             DB::table($table)
