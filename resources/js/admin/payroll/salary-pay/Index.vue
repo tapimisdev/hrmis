@@ -2,6 +2,7 @@
     <div>
         <SearchPayrollVue
             ref="searchPayroll"
+            url="/api/payroll/sla-pay/processed"
             @payroll-list="handlePayrollList"
         />
         <PayrollLayout
@@ -38,9 +39,7 @@ export default {
             this.loading = isLoading;
         },
         handleDelete() {
-            if (this.$refs.searchPayroll) {
-                this.$refs.searchPayroll.fetchData();
-            }
+            this.$refs.searchPayroll.search();
         },
         handleChange() {
             this.$refs.searchPayroll.search();
