@@ -231,7 +231,7 @@ class PayrollService {
 
     public function createPayroll($payload)
     {
-        $payroll_no = generateNo('REF-', 4);
+        $payroll_no = generateNo('PR-', 4);
 
         // Insert payroll and get its ID
         $payroll_id = DB::table('payroll_pera_rata')->insertGetId([

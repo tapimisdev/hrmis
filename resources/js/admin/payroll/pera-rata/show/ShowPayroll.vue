@@ -23,7 +23,7 @@
 
 <script>
 import axios from "axios";
-import ShowProgressBar from "./parts/ShowProgressBar.vue";
+import ShowProgressBar from "../../ShowProgressBar.vue";
 import RegularPayrollRegistry from "./parts/RegularPayrollRegistry.vue";
 
 export default {
