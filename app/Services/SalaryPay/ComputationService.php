@@ -95,29 +95,28 @@ class ComputationService {
         $absences_amount        = round($this->daily_rate * $absences, 4);
         $late_undertime_amount  = round($this->min_rate * $late_undertime, 4);
 
-        // $deductions = $this->getDeductions();
-        // $sum_of_deduction = $deductions->sum('amount');
-
         //  -------------------------------------- COS PAYROLL ---------------------------------------------------
         if ($this->employment_type == EmploymentTypesEnum::COS->value) {
 
-            // --- Fetch COS tax components ---
-            $cos_taxes = DB::table('payroll_components_settings')
-                ->leftJoin('payroll_components', 'payroll_components.id', '=', 'payroll_components_settings.tax_id')
-                ->leftJoin('payroll_components_years', 'payroll_components_years.payroll_component_id', '=', 'payroll_components.id')
-                ->leftJoin('employee_payroll_components', 'employee_payroll_components.tax_deduction_id', '=', 'payroll_components_years.id')
-                ->select('payroll_components_settings.type', 'employee_payroll_components.amount', 'employee_payroll_components.employee_no')
-                ->where('year', $year)
-                ->where('month', $month)
-                ->where('employee_no', $this->employee_no)
-                ->get();
+            $month = (int) $month;
+
+           $cos_taxes = DB::table('employee_payroll_components as epc')
+                ->leftJoin('payroll_components_years as pcy', 'epc.tax_deduction_id', '=', 'pcy.id')
+                ->leftJoin('payroll_components as pc', 'pcy.payroll_component_id', '=', 'pc.id')
+                ->leftJoin('payroll_components_settings as pcs', 'pc.id', '=', 'pcs.tax_id')
+                ->select([
+                    'epc.amount as amount',
+                    'pcs.type as type',
+                ])
+                ->where('epc.employee_no', $this->employee_no)
+                ->where('pcy.year', $year)
+                ->where('epc.month', $month)
+                ->pluck('amount', 'type');
 
             // --- Compute taxes using formulas ---
             $total_earnings = $overtime_amount + $holiday_excess_amount;
-            $total_deductions = $sum_of_deduction ?? 0;
             $basic_salary = round($basic_salary, 2);
             $total_earnings = round($total_earnings, 2);
-            $total_deductions = round($total_deductions, 2);
 
             $gross = round($basic_salary - $absences_amount - $late_undertime_amount + $total_earnings, 2);
 
@@ -125,40 +124,12 @@ class ComputationService {
             // COS TAX COMPUTATION (BASED ON COLLECTION)
             // -------------------------------------------------
 
-            $ewt_2prct             = 0;
-            $percentage_tax_3prct  = 0;
-            $tax_ewt_5prct         = 0;
-
-            if ($cos_taxes instanceof \Illuminate\Support\Collection && $cos_taxes->isNotEmpty()) {
-
-                foreach ($cos_taxes as $tax) {
-
-                    switch ($tax->type) {
-
-                        // --- EWT 2% (on excess over 10,417) ---
-                        case 'ewt_2%':
-                            $rate = (float) $tax->amount; // 0.02
-                            $ewt_2prct = max(0, ($gross - 10417) * $rate);
-                            $ewt_2prct = round($ewt_2prct, 2);
-                            break;
-
-                        // --- Percentage Tax 3% ---
-                        case 'percentage_tax_3%':
-                            $rate = (float) $tax->amount; // 0.03
-                            $percentage_tax_3prct = round($gross * $rate, 2);
-                            break;
-
-                        // --- Tax EWT 5% ---
-                        case 'tax_ewt_5%':
-                            $rate = (float) $tax->amount; // 0.05
-                            $tax_ewt_5prct = round($gross * $rate, 2);
-                            break;
-                    }
-                }
-            }
+            $ewt_2prct             = $cos_taxes['percentage_tax_3%'] ?? 0;
+            $percentage_tax_3prct  = $cos_taxes['tax_ewt_5%'] ?? 0;
+            $tax_ewt_5prct         = $cos_taxes['ewt_2%'] ?? 0;
 
             // --- Final Net Pay after deductions ---
-            $total_deductions += $ewt_2prct + $percentage_tax_3prct + $tax_ewt_5prct;
+            $total_deductions = $ewt_2prct + $percentage_tax_3prct + $tax_ewt_5prct;
             $net = round($gross - $total_deductions, 2);
 
             // --- Logging ---

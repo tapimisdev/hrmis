@@ -9,4 +9,9 @@ enum TableSettingsEnum: string
     case LONGETIVITY  = 'longetivity_pay';
     case PERA         = 'pera_allowance';
     case RATA         = 'rata_allowance';
+
+    case TWO_PERCENT  = 'ewt_2%';
+    case THREE_PERCENT  = 'percentage_tax_3%';
+    case FIVE_PERCENT  = 'tax_ewt_5%';
+
 }
