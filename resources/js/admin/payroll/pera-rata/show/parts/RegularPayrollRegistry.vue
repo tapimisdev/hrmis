@@ -307,7 +307,6 @@ export default {
             }
         },
         async adjustRow(emp) {
-          console.log(emp); 
             this.loading = true;
             try {
                 await axios.post(

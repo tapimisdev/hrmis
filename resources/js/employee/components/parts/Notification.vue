@@ -93,7 +93,7 @@
                         </div>
                         <div class="flex-grow-1 position-relative">
                             <p
-                                class="mb-1 fw-semibold notification-message"
+                                class="mb-1 fw-semibold texty-clamp-2"
                                 style="font-size: 12px; margin-right: 35px"
                                 v-html="
                                     formatMessage(notification.data.message)
@@ -162,13 +162,12 @@ export default {
             required: true,
         },
         userId: {
-            type: [String, Number],
+            type: Number,
             required: true,
         },
     },
     data() {
         const token = localStorage.getItem("auth_token");
-
         return {
             token,
             notifications: [],
@@ -176,18 +175,21 @@ export default {
             loadingNotifications: false,
             currentOffset: 0,
             hasMore: true,
-            displayedIds: new Set(), // Track displayed notification IDs to avoid duplicates
+            displayedIds: new Set(), 
         };
     },
     mounted() {
         this.fetchNotifications("unread");
-
-        window.Echo.channel("employee-channel").listen(
-            ".notification-event",
-            (e) => {
+       
+        window.Echo.channel("employees.notifications")
+            .listen(".notification-event", (e) => {
                 this.fetchNotifications("unread");
-            },
-        );
+            });
+
+        window.Echo.private(`user.notifications.${this.userId}`)
+          .listen(".notification-event", (e) => {
+              this.fetchNotifications("unread");
+          });
     },
     beforeUnmount() {
         clearInterval(this.notificationInterval);
@@ -199,9 +201,8 @@ export default {
                 this.loadingNotifications = true;
             }
             try {
-                // Only include filter if it's not null
-                const receivers = ['*', this.userId];
-                const params = filter ? { filter, limit, receivers } : { limit, offset: this.currentOffset, receivers };
+                const receivers = ['employees', this.userId];
+                const params = filter ? { filter, receivers } : { limit, offset: this.currentOffset, receivers };
 
                 const res = await axios.get("/api/employee/notifications", {
                     params,
@@ -211,7 +212,6 @@ export default {
                 // Update unreadCount if fetching unread notifications
                 if (filter === "unread") {
                     this.unreadCount = res.data?.length ?? 0;
-                    console.log(this.unreadCount);
                 } else {
                     // For initial load (offset 0), reset the list and displayed IDs
                     if (this.currentOffset === 0) {
@@ -227,8 +227,7 @@ export default {
                     // Append new notifications to the list
                     this.notifications = [...this.notifications, ...newNotifications];
                     // Check if there are more notifications
-                    this.hasMore = res.data.length === 0;
-                    console.log(res.data);
+                    this.hasMore = res.data.length > limit;
                 }
             } catch (err) {
                 console.error("Error fetching notifications:", err);
@@ -279,21 +278,29 @@ export default {
         getNotificationIcon(type) {
             return (
                 {
-                    success: "fa-solid fa-check text-success",
-                    warning: "fa-solid fa-exclamation text-warning",
-                    alert: "fa-solid fa-triangle-exclamation text-danger",
-                    message: "fa-solid fa-message text-info",
+                    event: "fa-solid fa-bullhorn",
+                    application: "fa-solid fa-pen-to-square",
+                    message: "fa-regular fa-message",
+                    approved: "fa-regular fa-thumbs-up",
+                    rejected: "fa-regular fa-thumbs-down",
+                    removed: "fa-solid fa-ban",
+                    processing: "fa-solid fa-clock-rotate-left",
+                    system: "fa-solid fa-chart-diagram",
                 }[type] || "fa-solid fa-bell text-primary"
             );
         },
         getNotificationIconClass(type) {
             return (
                 {
-                    success: "bg-success bg-opacity-10",
-                    warning: "bg-warning bg-opacity-10",
-                    alert: "bg-danger bg-opacity-10",
-                    message: "bg-info bg-opacity-10",
-                }[type] || "bg-primary bg-opacity-10"
+                    event: "bg-primary bg-opacity-25",
+                    application: "bg-primary bg-opacity-25",
+                    message: "bg-primary bg-opacity-25",
+                    approved: "bg-primary bg-opacity-25",
+                    rejected: "bg-warning bg-opacity-25",
+                    removed: "bg-danger bg-opacity-25",
+                    processing: "bg-primary bg-opacity-25",
+                    system: "bg-primary bg-opacity-25",
+                }[type] || "bg-primary bg-opacity-25"
             );
         },
         formatTime(time) {
@@ -305,11 +312,13 @@ export default {
             return new Date(time).toLocaleDateString();
         },
         navigateUrl(notification_id, redirectURL) {
+            console.log(this.userId);
             axios
                 .post(
                     "/api/employee/notifications",
                     {
                         notification_id: notification_id,
+                        user_id: this.userId,
                     },
                     {
                         headers: {
@@ -330,14 +339,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.notification-message {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    word-break: break-word;
-}
 
 .dropdown-menu {
     max-height: 500px;

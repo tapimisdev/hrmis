@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Services;
 
 use App\Http\Controllers\Controller;
+use App\Services\EventService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,10 +12,14 @@ use Carbon\Carbon;
 
 class PassSlipController extends Controller {
 
-    public function __construct()
+
+    protected $EventService;
+
+    public function __construct(EventService $EventService)
     {
         $this->middleware('permission:hr.pass_slip_approval.view')->only(['index', 'show']);
         $this->middleware('permission:hr.pass_slip_approval.save')->only('save');
+        $this->EventService = $EventService;
     }
 
     public function getRawData(?int $id = null)
@@ -132,8 +137,6 @@ class PassSlipController extends Controller {
 
         $data = $this->getRawData($id)[0] ?? [];
 
-        // dd($data);
-
         if(!$data) {
             return redirect()->back();
         }
@@ -171,12 +174,32 @@ class PassSlipController extends Controller {
     {
         try {
 
+            $existingData = DB::table('obs_applications')
+                ->where('id', $id)
+                ->first();
+
+            if (!$existingData) {
+                return response()->json(['error' => 'Record not found'], 404);
+            }
+
             DB::table('obs_applications')
                 ->where('id', $id)
                 ->update([
                     'status' => 'approved',
                     'approver_id' => Auth::id() ?? null
                 ]);
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $existingData->user_id;
+            $application_no = $existingData->application_no;
+            $payload = [
+                'type' => 'approved',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has approved your pass slip application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/pass-slip'
+            ];
+            $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',
@@ -194,6 +217,15 @@ class PassSlipController extends Controller {
     public function decline(int $id, array $payload)
     {
         try {
+
+            $existingData = DB::table('obs_applications')
+                ->where('id', $id)
+                ->first();
+
+            if (!$existingData) {
+                return response()->json(['error' => 'Record not found'], 404);
+            }
+
             DB::table('obs_applications')
                 ->where('id', $id)
                 ->update([
@@ -206,6 +238,19 @@ class PassSlipController extends Controller {
                 ->update([
                     'status' => 'rejected'
                 ]);
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $existingData->user_id;
+            $application_no = $existingData->application_no;
+            $payload = [
+                'type' => 'rejected',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has rejected your pass slip application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/pass-slip'
+            ];
+            
+            $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',

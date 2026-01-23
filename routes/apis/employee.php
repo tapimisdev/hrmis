@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
 use App\Http\Controllers\Employee\LogsController;
+use App\Http\Controllers\Employee\NotesController;
 use App\Http\Controllers\Api\Employee;
 
 # EMPLOYEE
@@ -22,5 +23,7 @@ Route::prefix('employee')->group(function() {
 
     Route::get('notifications', [Employee::class, 'getNotifications']);
     Route::post('notifications', [Employee::class, 'saveReadNotification']);
+
+    Route::apiResource('notes', NotesController::class);
 
 });

@@ -54,6 +54,10 @@ export default {
             type: String,
             required: true,
         },
+        userId: {
+            type: Number,
+            required: true,
+        },
     },
     data() {
         const token = localStorage.getItem("auth_token");
@@ -65,7 +69,6 @@ export default {
         };
     },
     mounted() {
-      console.log(this.userRole);
         // Preload notification sound
         this.audio = new Audio("/sounds/notification.mp3");
         this.audio.preload = "auto";
@@ -75,33 +78,49 @@ export default {
         if (savedToasts) {
             const parsed = JSON.parse(savedToasts);
             parsed.forEach((toast) => {
-                this.addToast(toast, false); 
+                this.addToast(toast, false);
             });
         }
 
-        // Listen to role-specific channel
-        const roleChannel = this.userRole === 'admin' ? 'admin-channel' : 'employee-channel';
-        window.Echo.channel(roleChannel).listen(
-            ".notification-event", 
-            (e) => {
-                this.addToast({
-                    id: e.id,
-                    message: this.formatMessage(
-                        e.data.message || "posted a new notification!",
-                    ),
-                    link: e.data.link || null,
-                });
-            },
-        );
+        // Employees receive employee-wide notifications
+        if (this.userRole === "employee") {
+            window.Echo.channel("employees.notifications").listen(
+                ".notification-event",
+                (e) => {
+                    this.addToast({
+                        id: e.id,
+                        message: this.formatMessage(
+                            e.data.message || "posted a new notification!",
+                        ),
+                        link: e.data.link || null,
+                    });
+                },
+            );
+        }
 
-        // Also listen to public-channel for global notifications (optional)
-        window.Echo.channel("public-channel").listen(
+        // Admins receive admin-wide notifications
+        if (this.userRole === "admin") {
+            window.Echo.channel("admins.notifications").listen(
+                ".notification-event",
+                (e) => {
+                    this.addToast({
+                        id: e.id,
+                        message: this.formatMessage(
+                            e.data.message || "posted a new notification!",
+                        ),
+                        link: e.data.link || null,
+                    });
+                },
+            );
+        }
+
+        window.Echo.private(`user.notifications.${this.userId}`).listen(
             ".notification-event",
             (e) => {
                 this.addToast({
                     id: e.id,
                     message: this.formatMessage(
-                        e.data.message || "posted a new notification!",
+                        e.data.message || "sent you a notification!",
                     ),
                     link: e.data.link || null,
                 });
@@ -160,28 +179,29 @@ export default {
                             if (event.target.closest(".btn-close")) return;
                             this.removeToast(newToast.id);
                             // Dynamic API endpoint based on role
-                            const apiEndpoint = this.userRole === 'admin' 
-                                ? "/api/admin/notifications" 
-                                : "/api/employee/notifications";
+                            const apiEndpoint =
+                                this.userRole === "admin"
+                                    ? "/api/admin/notifications"
+                                    : "/api/employee/notifications";
                             axios
-                              .post(
-                                  apiEndpoint,
-                                  {
-                                      notification_id: newToast.id,
-                                  },
-                                  {
-                                      headers: {
-                                          Authorization: `Bearer ${this.token}`,
-                                          Accept: "application/json",
-                                      },
-                                  },
-                              )
-                              .then((response) => {
-                                  window.location.href = newToast.link;
-                              })
-                              .catch((error) => {
-                                  console.error(error);
-                              });
+                                .post(
+                                    apiEndpoint,
+                                    {
+                                        notification_id: newToast.id,
+                                    },
+                                    {
+                                        headers: {
+                                            Authorization: `Bearer ${this.token}`,
+                                            Accept: "application/json",
+                                        },
+                                    },
+                                )
+                                .then((response) => {
+                                    window.location.href = newToast.link;
+                                })
+                                .catch((error) => {
+                                    console.error(error);
+                                });
                         },
                         { once: true },
                     );

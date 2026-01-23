@@ -106,7 +106,7 @@
                     </div>
                 </div>
             </div>
-            <push-notification :user-role="'employee'"></push-notification>
+            <push-notification :user-role="'employee'" :user-id='@json(Auth::id())'></push-notification>
         </main>
     </div>
 

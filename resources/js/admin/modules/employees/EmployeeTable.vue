@@ -278,7 +278,6 @@ export default {
                     this.filteredItems();
                 })
                 .catch((error) => {
-                    console.log(error);
                     ErrorToast.fire({
                         title:
                             error.response?.data?.error ||
@@ -307,7 +306,6 @@ export default {
                     });
                 })
                 .catch((error) => {
-                    console.log(error);
                     ErrorToast.fire({
                         title:
                             error.response?.data?.error ||
@@ -372,7 +370,6 @@ export default {
             this.fetchTable();
         },
         openaddModal() {
-            console.log(`addModal_${this.tab}`);
             this.$refs[`addModal_${this.tab}`].open();
             this.$refs.addForm.resetForm();
         }

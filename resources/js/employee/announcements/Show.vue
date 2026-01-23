@@ -71,12 +71,10 @@ export default {
         };
     },
     mounted() {
-      console.log(this.slug)
         this.fetchAnnouncement();
     },
     methods: {
         async fetchAnnouncement() {
-            console.log(this.slug);
             this.loading = true;
             this.error = null;
             try {

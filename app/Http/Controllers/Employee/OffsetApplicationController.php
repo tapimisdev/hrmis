@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
 use App\Http\Requests\Employee\StoreOffsetApplication;
 use App\Events\NotificationEvents;
+use App\Services\EventService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,13 +17,14 @@ use Carbon\Carbon;
 class OffsetApplicationController extends Controller
 {
     protected $applicationService;
+    protected $EventService;
 
-    public function __construct(ApplicationController $applicationService)
+    public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
+        $this->middleware('permission:emp.offset_application.view')->only(['index', 'create', 'show']);
+        $this->middleware('permission:emp.offset_application.apply')->only(['store']);
         $this->applicationService = $applicationService;
-
-        // $this->middleware('permission:emp.offset_application.view')->only(['index', 'create', 'show']);
-        // $this->middleware('permission:emp.offset_application.apply')->only(['store']);
+        $this->EventService = $EventService;
     }
 
     /**
@@ -159,14 +161,15 @@ class OffsetApplicationController extends Controller
                 }
             }
 
-            $author = ucwords(Auth::user()->name);
-
-            $message = '%b' . $author . '%b filed an offset application (%bi' . strtoupper($application_no) . ') %bi';
-            
-            event(new NotificationEvents('application', $author, 'admin', [
-                'message' => $message,
-                'link'    => route('services.offset.show', ['application' => $applicationID])
-            ]));
+            $sender = ucwords(Auth::user()->name);
+            $payload = [
+                'type' => 'event',
+                'sender' => $sender,
+                'receiver' => 'admins',
+                'message' => '%b' . $sender . '%b filed an offset application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => route('services.offset.show', ['application' => $applicationID])
+            ];
+            $this->EventService->pushNotification($payload);
 
             DB::commit();
 

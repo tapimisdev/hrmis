@@ -7,6 +7,8 @@
         </div>
     </div>
 
+    <Notes v-if="showNotes" :isDarkMode="isDarkMode" @close="showNotes = false" />
+
     <div class="dropdown position-relative">
         <a
             class="text-decoration-none position-relative d-inline-block"
@@ -124,6 +126,34 @@
                         </label>
                     </div>
                 </li>
+
+                <!-- Notes Toggle -->
+                <li class="pb-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="notepadSwitch"
+                            v-model="showNotes"
+                            @change="handleNotes"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
+                        />
+                        <label
+                            class="form-check-label text-uppercase fw-medium"
+                            for="notepadSwitch"
+                            style="font-size: 12px; cursor: pointer"
+                        >
+                            Notes
+                        </label>
+                    </div>
+                </li>
             </div>
         </ul>
     </div>
@@ -132,20 +162,25 @@
 <script>
 import axios from "axios";
 import { watch } from "vue";
+import Notes from "./Notes.vue"; // Adjust path as needed
 
 const HIDE_KEY = "hide_timelog_discrepancy";
 const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
 const WORKED_HOURS_KEY = "show_worked_hours";
+const NOTES_KEY = "show_notes";
 
 export default {
     name: "WidgetComponent",
+    components: {
+        Notes,
+    },
     data() {
         const token = localStorage.getItem("auth_token");
-
         return {
             token,
             showTimelogDiscrepancy: true,
             showWorkedHours: true,
+            showNotes: false,
             isDarkMode: false,
             todayTimeIn: null,
             todayTimeOut: null,
@@ -184,6 +219,9 @@ export default {
 
         const saved = localStorage.getItem(WORKED_HOURS_KEY);
         if (saved !== null) this.showWorkedHours = saved === "true";
+
+        const notesSaved = localStorage.getItem(NOTES_KEY);
+        if (notesSaved !== null) this.showNotes = notesSaved === "true";
 
         if (this.showWorkedHours) this.fetchLatestTimeLog();
 
@@ -258,7 +296,6 @@ export default {
 
             this.clockInterval = setInterval(() => {
                 this.now = Date.now();
-                console.log(123);
             }, 1000);
         },
         stopClock() {
@@ -319,6 +356,9 @@ export default {
                 localStorage.removeItem(HIDE_DATE_KEY);
             }
             window.dispatchEvent(new Event("timelog-toggle"));
+        },
+        handleNotes() {
+            localStorage.setItem(NOTES_KEY, this.showNotes ? "true" : "false");
         },
     },
 };

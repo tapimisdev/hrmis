@@ -107,7 +107,6 @@ export default {
                     },
                 })
                 .then((response) => {
-                    console.log(response);
                     this.$emit("payroll-list", response.data.data, false);
                     this.datastorage = response.data.data;
                     this.loading = false;

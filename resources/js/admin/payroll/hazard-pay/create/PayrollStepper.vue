@@ -235,7 +235,6 @@ export default {
                     }
                 );
                 this.form.employees = res.data.data;
-                console.log(res.data.batch_id);
                 const batch_id = res.data.batch_id;
                 const payroll_no = res.data.payroll_no;
                 window.location.href = `/admin/payroll/hazard-pay/${payroll_no}?batch_id=${batch_id}`;
@@ -266,7 +265,6 @@ export default {
     mounted() {
         window.Echo.channel("refresh")
             .listen(".RefreshData", (e) => {
-                console.log("Got refresh event!", e);
                 this.validateAndGetReview();
             })
             .error((error) => {

@@ -23,17 +23,32 @@ return new class extends Migration
                 'event',
                 'application',
                 'message',
+                'approved',
+                'rejected',
+                'removed',
+                'processing',
+                'system'
             ]);
             $table->string('sender');              
             $table->string('receiver')
                 ->default('*')
                 ->nullable(); 
             $table->json('data');                  
-            $table->boolean('is_read')
-                ->default(false); 
+            // $table->boolean('is_read')
+            //     ->default(false); 
             $table->timestamp('read_at')
                 ->nullable();
             $table->timestamps();
+        });
+
+        Schema::create('notification_reads', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('notification_id')->constrained('notifications')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');  // Assuming users table exists
+            $table->boolean('is_read')->default(false);
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+            $table->unique(['notification_id', 'user_id']);  // Ensure one read record per user per notification
         });
     }
 
@@ -42,6 +57,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('notification_reads');
         Schema::dropIfExists('notifications');
     }
 };

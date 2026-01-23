@@ -1,6 +1,6 @@
 <!-- Sidebar -->
 <aside>
-    <button @click="toggleMobileMenu" class="d-md-none x-mark"><i class="fa-solid fa-xmark"></i></button>
+    <button class="d-md-none x-mark"><i class="fa-solid fa-xmark"></i></button>
     <div class="sidebar shadow" id="sidebar">
         <!-- Header -->
         <header class="sidebar-header">
@@ -166,7 +166,7 @@
                 </li>
                 @endcanany
 
-                <!-- @canany([
+                @canany([
                     'emp.overtime_application.view',
                     'emp.overtime_application.apply'
                 ])
@@ -179,7 +179,7 @@
                         <span class="side-text">Pass Slip</span>
                     </a>
                 </li>
-                @endcanany -->
+                @endcanany
 
                 {{--
                 <div class="sidebar-seperator"></div>
