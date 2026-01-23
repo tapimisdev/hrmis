@@ -35,6 +35,16 @@ class PayrollComponentsController extends Controller
             return response(['data' => $yearsFromDb, 'message' => 'get data', 'status' => 'success']);
         }
 
+        if(
+            $component->slug === 'ewt-2%' ||
+            $component->slug === 'percentage-tax-3%' ||
+            $component->slug === 'tax-ewt-5%'
+            ) {
+            $component->employment_type = 'Contract of Service';
+        } else {
+            $component->employment_type = 'Permanent / Regular';
+        }
+
         return view('admin.pages.payroll-components.index', compact('slug', 'component'));
     }
 
