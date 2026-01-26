@@ -26,10 +26,10 @@ class NotesController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:35',
             'content' => 'required|string',
             'hasPin' => 'boolean',
-            'pin' => 'nullable|string|size:4|regex:/^\d{4}$/', // 4-digit numeric string
+            'pin' => 'nullable|numeric|min:6',
         ]);
 
         $data = $request->only(['title', 'content', 'hasPin']);
@@ -47,7 +47,7 @@ class NotesController extends Controller
         $this->authorize('view', $note);
 
         if ($note->hasPin) {
-            $request->validate(['pin' => 'required|string|size:4|regex:/^\d{4}$/']);
+            $request->validate(['pin' => 'required|numeric']);
             if (!$note->verifyPin($request->pin)) {
                 return response()->json(['error' => 'Invalid PIN'], 403);
             }
@@ -56,33 +56,37 @@ class NotesController extends Controller
         return response()->json($note);
     }
 
-    // Update a note (requires PIN if hasPin)
     public function update(Request $request, Note $note)
     {
         $this->authorize('update', $note);
 
-        if ($note->hasPin) {
-            $request->validate(['pin' => 'required|string|size:4|regex:/^\d{4}$/']);
-            if (!$note->verifyPin($request->pin)) {
-                return response()->json(['error' => 'Invalid PIN'], 403);
+        $request->validate([
+            'title'   => 'required|string|max:255',
+            'content' => 'required|string',
+            'hasPin'  => 'boolean',
+            'pin'     => 'nullable|numeric|min:6',
+        ]);
+
+        // Removed PIN requirement for unpinning or updating PIN
+        // Note: This may reduce security, as unpinning no longer requires the current PIN
+
+        $data = $request->only(['title', 'content']);
+
+        // Handle pin logic explicitly
+        if ($request->has('hasPin')) {
+            $data['hasPin'] = $request->hasPin;
+
+            if ($request->hasPin && $request->filled('pin')) {
+                $data['pin'] = Hash::make($request->pin);
+            }
+
+            if (!$request->hasPin) {
+                $data['pin'] = null;
             }
         }
 
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'hasPin' => 'boolean',
-            'pin' => 'nullable|string|size:4|regex:/^\d{4}$/',
-        ]);
-
-        $data = $request->only(['title', 'content', 'hasPin']);
-        if ($request->hasPin && $request->pin) {
-            $data['pin'] = Hash::make($request->pin);
-        } else {
-            $data['pin'] = null; // Clear PIN if not provided
-        }
-
         $note->update($data);
+
         return response()->json($note);
     }
 

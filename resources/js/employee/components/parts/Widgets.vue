@@ -8,6 +8,7 @@
     </div>
 
     <Notes v-if="showNotes" :isDarkMode="isDarkMode" @close="showNotes = false" />
+    <Tutorials v-if="showTutorial" :isDarkMode="isDarkMode" @close="showTutorial = false" />
 
     <div class="dropdown position-relative">
         <a
@@ -71,34 +72,6 @@
                     </div>
                 </li>
 
-                <!-- Timelog Discrepancy Toggle -->
-                <li class="pb-2">
-                    <div
-                        class="form-check form-switch d-flex align-items-center gap-2"
-                    >
-                        <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="timelogDiscrepancySwitch"
-                            v-model="showTimelogDiscrepancy"
-                            @change="handleTimelogToggle"
-                            style="
-                                cursor: pointer;
-                                transform: scale(1.2);
-                                margin-right: 0.5rem;
-                                margin-bottom: 2px;
-                            "
-                        />
-                        <label
-                            class="form-check-label text-uppercase fw-medium"
-                            for="timelogDiscrepancySwitch"
-                            style="font-size: 12px; cursor: pointer"
-                        >
-                            Timelogs Discrepancy
-                        </label>
-                    </div>
-                </li>
-
                 <!-- Worked Hours Toggle -->
                 <li class="pb-2">
                     <div
@@ -123,6 +96,34 @@
                             style="font-size: 12px; cursor: pointer"
                         >
                             Today's Worked Hours
+                        </label>
+                    </div>
+                </li>
+
+                <!-- Timelog Discrepancy Toggle -->
+                <li class="pb-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="timelogDiscrepancySwitch"
+                            v-model="showTimelogDiscrepancy"
+                            @change="handleTimelogToggle"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
+                        />
+                        <label
+                            class="form-check-label text-uppercase fw-medium"
+                            for="timelogDiscrepancySwitch"
+                            style="font-size: 12px; cursor: pointer"
+                        >
+                            Timelogs Discrepancy
                         </label>
                     </div>
                 </li>
@@ -154,6 +155,34 @@
                         </label>
                     </div>
                 </li>
+
+                <!-- Tutorial Toggle -->
+                <li class="pb-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="videoTutorialSwitch"
+                            v-model="showTutorial"
+                            @change="handleTutorials"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
+                        />
+                        <label
+                            class="form-check-label text-uppercase fw-medium"
+                            for="videoTutorialSwitch"
+                            style="font-size: 12px; cursor: pointer"
+                        >
+                            Video Tutorial
+                        </label>
+                    </div>
+                </li>
             </div>
         </ul>
     </div>
@@ -162,17 +191,20 @@
 <script>
 import axios from "axios";
 import { watch } from "vue";
-import Notes from "./Notes.vue"; // Adjust path as needed
+import Notes from "./Notes.vue"; 
+import Tutorials from "./Tutorials.vue";
 
 const HIDE_KEY = "hide_timelog_discrepancy";
 const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
 const WORKED_HOURS_KEY = "show_worked_hours";
 const NOTES_KEY = "show_notes";
+const TUTORIAL_KEY = "show_tutorials";
 
 export default {
     name: "WidgetComponent",
     components: {
         Notes,
+        Tutorials
     },
     data() {
         const token = localStorage.getItem("auth_token");
@@ -181,6 +213,7 @@ export default {
             showTimelogDiscrepancy: true,
             showWorkedHours: true,
             showNotes: false,
+            showTutorial: false,
             isDarkMode: false,
             todayTimeIn: null,
             todayTimeOut: null,
@@ -222,6 +255,9 @@ export default {
 
         const notesSaved = localStorage.getItem(NOTES_KEY);
         if (notesSaved !== null) this.showNotes = notesSaved === "true";
+
+        const tutorialSaved = localStorage.getItem(TUTORIAL_KEY);
+        if (tutorialSaved !== null) this.showTutorial = tutorialSaved === "true";
 
         if (this.showWorkedHours) this.fetchLatestTimeLog();
 
@@ -359,6 +395,9 @@ export default {
         },
         handleNotes() {
             localStorage.setItem(NOTES_KEY, this.showNotes ? "true" : "false");
+        },
+        handleTutorials() {
+            localStorage.setItem(TUTORIAL_KEY, this.showTutorial ? "true" : "false");
         },
     },
 };
