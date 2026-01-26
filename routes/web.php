@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\BirthdayController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
+
     if (!Auth::check()) {
         return redirect('/login');
     }
@@ -42,3 +44,4 @@ Route::get('today-birthday', [BirthdayController::class, 'index']);
 Route::any('/iclock/cdata', [\App\Http\Controllers\ZktecoController::class, 'cdata'])
     ->middleware('biometric.ip');
 
+Route::get('test', [TestController::class, 'index']);

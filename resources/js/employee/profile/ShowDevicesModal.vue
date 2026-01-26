@@ -50,11 +50,10 @@
                                     <td>{{ device.user_agent }}</td>
                                     <td>
                                         <button
-                                            class="btn btn-sm btn-outline-danger"
+                                            class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2"
                                             @click="confirmDelete(device)"
                                         >
-                                            <i class="fa-solid fa-trash"></i>
-                                            Delete
+                                            <i class="fa-solid fa-arrow-right-from-bracket fa-rotate-180"></i>
                                         </button>
                                     </td>
                                 </tr>

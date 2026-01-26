@@ -30,6 +30,9 @@
                         {{ year }}
                     </option>
                 </select>
+                <button class="btn btn-primary">
+                  <i class="fa-solid fa-download" @click="downloadDTR" data-bs-toggle="tooltip" title="Download DTR"></i>
+                </button>
             </div>
         </div>
 
@@ -126,11 +129,11 @@
                                         highlight:
                                             hasRemark(
                                                 log.remarks,
-                                                'overtime'
+                                                'overtime',
                                             ) ||
                                             hasRemark(
                                                 log.remarks,
-                                                'pending overtime'
+                                                'pending overtime',
                                             ),
                                     }"
                                 >
@@ -142,7 +145,7 @@
                                 <span class="badge">
                                     {{
                                         convertToReadableTime(
-                                            log.total_time_work
+                                            log.total_time_work,
                                         )
                                     }}
                                 </span>
@@ -154,7 +157,7 @@
                                 <span class="badge ut">
                                     {{
                                         convertToReadableTime(
-                                            log.late_undertime
+                                            log.late_undertime,
                                         )
                                     }}
                                 </span>
@@ -252,7 +255,7 @@ export default {
                             Authorization: `Bearer ${this.token}`,
                             Accept: "application/json",
                         },
-                    }
+                    },
                 );
                 this.logs = response.data.computedData;
                 this.summary = response.data.summary;
@@ -267,7 +270,7 @@ export default {
             return remarks.some(
                 (r) =>
                     String(r).trim().toLowerCase() ===
-                    keyword.trim().toLowerCase()
+                    keyword.trim().toLowerCase(),
             );
         },
         hasStatus(remarks) {
@@ -328,7 +331,7 @@ export default {
                         "today",
                         "overtime",
                         "pending overtime",
-                    ].includes(r.toLowerCase())
+                    ].includes(r.toLowerCase()),
             );
         },
         getRemarkClass(remark) {
@@ -347,7 +350,7 @@ export default {
             const date = new Date(
                 this.selectedYear,
                 this.selectedMonth - 1,
-                day + 1
+                day + 1,
             );
             return date.toLocaleDateString("en-US", { weekday: "short" });
         },
@@ -370,9 +373,33 @@ export default {
         openCorretionList() {
             this.$refs.correctionListModal.open(
                 this.selectedMonth,
-                this.selectedYear
+                this.selectedYear,
             );
         },
+        downloadDTR() {
+             // Build request parameters
+            const params = {
+                month: this.selectedMonth,
+                year: this.selectedYear
+            };
+
+            axios({
+                url: '/api/employee/timelogs/download',
+                method: 'GET',          
+                responseType: 'blob',   
+                params: params,
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            .then((response) => {
+                console.log(response);
+            })
+            .catch((error) => {
+                console.error('Error downloading DTR:', error);
+                alert('Failed to download DTR. Please try again.');
+            });
+        }
     },
     watch: {
         month(newVal) {
