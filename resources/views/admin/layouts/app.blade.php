@@ -58,7 +58,7 @@
             @include('admin.components.footer')
         </main>  
 
-        <push-notification :user-role="'admin'"></push-notification>
+        <push-notification :user-role="'admin'" :user-id='@json(Auth::id())'></push-notification>
     </div>
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>

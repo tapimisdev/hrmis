@@ -64,7 +64,7 @@ const authApp = createApp({
         Show,
         PayslipIndex,
         BirthdayComponent,
-        ChangePassword, 
+        ChangePassword,
         PushNotification,
         WebtimeIndex,
 
@@ -101,43 +101,43 @@ const authApp = createApp({
 
     data() {
         return {
-            showChangePasswordModal: false, 
+            showChangePasswordModal: false,
         };
     },
     mounted() {
-        
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem("auth_token");
 
         if (!token) return;
 
-        axios.get('/api/force-update-password', {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        })
-        .then(response => {
-            if (response.data.isForcedUpdate) {
-                this.showChangePasswordModal = true;
+        axios
+            .get("/api/force-update-password", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            .then((response) => {
+                if (response.data.isForcedUpdate) {
+                    this.showChangePasswordModal = true;
 
-                this.$nextTick(() => {
-                    $('#forceChangePasswordModal').modal({
-                        backdrop: 'static',
-                        keyboard: false    
+                    this.$nextTick(() => {
+                        $("#forceChangePasswordModal").modal({
+                            backdrop: "static",
+                            keyboard: false,
+                        });
+
+                        $("#forceChangePasswordModal").modal("show");
                     });
-
-                    $('#forceChangePasswordModal').modal('show');
-                });
-            }
-        })
-        .catch(error => {
-            console.error('API error:', error);
-        });
+                }
+            })
+            .catch((error) => {
+                console.error("API error:", error);
+            });
     },
     methods: {
         handlePasswordChanged() {
-            $('#forceChangePasswordModal').modal('hide');
+            $("#forceChangePasswordModal").modal("hide");
         },
-    }
+    },
 });
 
 authApp.mount("#app");

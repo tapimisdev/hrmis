@@ -386,7 +386,6 @@
             const biometricsId = $('#employee_no').val();
 
             if (employmentType == "2" && dateHired && !biometricsId) {
-                console.log(123);
 
                 const token = localStorage.getItem("auth_token");
                 axios.get('/api/generate-employee-no', {

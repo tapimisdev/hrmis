@@ -66,8 +66,6 @@ export default {
             'Content-Type': 'application/json',
           },
         });
-
-        console.log(response.data);
         this.employees = response.data;
       } catch (error) {
         console.error(

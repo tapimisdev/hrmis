@@ -48,12 +48,16 @@ const theme = {
 // Early apply to prevent FOUC (Flash Of Unstyled Content)
 reflectPreference();
 
-window.onload = () => {
+document.addEventListener("DOMContentLoaded", () => {
     reflectPreference();
 
-    // Button listener
-    document.querySelector("#theme-toggle").addEventListener("click", onClick);
-};
+    const toggleBtn = document.querySelector("#theme-toggle");
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", onClick);
+    }
+});
+
 
 // Listen to system theme changes
 window

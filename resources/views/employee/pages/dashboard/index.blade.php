@@ -3,7 +3,7 @@
 @section('content')
 <div class="container-fluid min-vh-100">
     <x-employee-navbar>
-        <header-vue title="Dashboard"></header-vue>
+        <header-vue :user-role="'employee'" :user-id='@json(Auth::id())'></header-vue>
     </x-employee-navbar>
 
     @php
@@ -14,8 +14,6 @@
         :is-regular='@json($isRegular)'
         name="{{ $name }}"
     ></dashboard-index>
-
-
 
 </div>
 @endsection

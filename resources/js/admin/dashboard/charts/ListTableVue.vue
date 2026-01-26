@@ -21,14 +21,17 @@
             <h5 class="border-bottom pb-3 text-uppercase fw-bolder">
                 Birthdays for this month
             </h5>
-            <div class="row g-1" v-if="people.length">
+            <div class="row g-2" v-if="people.length">
                 <div
                     class="col-md-4"
                     v-for="(person, index) in people"
                     :key="index"
                 >
-                    <div
-                        class="border rounded-2 p-1 d-flex align-items-center gap-2"
+                    <a
+                        target="_blank"
+                        :href="`/admin/hris/employee/information/${person.employee_no}`"
+                        class="border rounded-2 px-3 py-2 d-flex align-items-center gap-3 text-decoration-none"
+                        style="color: inherit !important;"
                     >
                         <img
                             :src="person.image"
@@ -39,7 +42,7 @@
                             <div>{{ person.name }}</div>
                             <div>{{ formatBirthday(person.birthday) }}</div>
                         </div>
-                    </div>
+                      </a>
                 </div>
             </div>
 

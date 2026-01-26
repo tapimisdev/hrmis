@@ -7,6 +7,9 @@
         </div>
     </div>
 
+    <Notes v-if="showNotes" :isDarkMode="isDarkMode" @close="showNotes = false" />
+    <Tutorials v-if="showTutorial" :isDarkMode="isDarkMode" @close="showTutorial = false" />
+
     <div class="dropdown position-relative">
         <a
             class="text-decoration-none position-relative d-inline-block"
@@ -69,6 +72,34 @@
                     </div>
                 </li>
 
+                <!-- Worked Hours Toggle -->
+                <li class="pb-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="workedHoursSwitch"
+                            v-model="showWorkedHours"
+                            @change="handleWorkedHoursToggle"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
+                        />
+                        <label
+                            class="form-check-label text-uppercase fw-medium"
+                            for="workedHoursSwitch"
+                            style="font-size: 12px; cursor: pointer"
+                        >
+                            Today's Worked Hours
+                        </label>
+                    </div>
+                </li>
+
                 <!-- Timelog Discrepancy Toggle -->
                 <li class="pb-2">
                     <div
@@ -97,7 +128,7 @@
                     </div>
                 </li>
 
-                <!-- Worked Hours Toggle -->
+                <!-- Notes Toggle -->
                 <li class="pb-2">
                     <div
                         class="form-check form-switch d-flex align-items-center gap-2"
@@ -105,9 +136,9 @@
                         <input
                             class="form-check-input"
                             type="checkbox"
-                            id="workedHoursSwitch"
-                            v-model="showWorkedHours"
-                            @change="handleWorkedHoursToggle"
+                            id="notepadSwitch"
+                            v-model="showNotes"
+                            @change="handleNotes"
                             style="
                                 cursor: pointer;
                                 transform: scale(1.2);
@@ -117,10 +148,38 @@
                         />
                         <label
                             class="form-check-label text-uppercase fw-medium"
-                            for="workedHoursSwitch"
+                            for="notepadSwitch"
                             style="font-size: 12px; cursor: pointer"
                         >
-                            Today's Worked Hours
+                            Notes
+                        </label>
+                    </div>
+                </li>
+
+                <!-- Tutorial Toggle -->
+                <li class="pb-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="videoTutorialSwitch"
+                            v-model="showTutorial"
+                            @change="handleTutorials"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
+                        />
+                        <label
+                            class="form-check-label text-uppercase fw-medium"
+                            for="videoTutorialSwitch"
+                            style="font-size: 12px; cursor: pointer"
+                        >
+                            Video Tutorial
                         </label>
                     </div>
                 </li>
@@ -132,20 +191,29 @@
 <script>
 import axios from "axios";
 import { watch } from "vue";
+import Notes from "./Notes.vue"; 
+import Tutorials from "./Tutorials.vue";
 
 const HIDE_KEY = "hide_timelog_discrepancy";
 const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
 const WORKED_HOURS_KEY = "show_worked_hours";
+const NOTES_KEY = "show_notes";
+const TUTORIAL_KEY = "show_tutorials";
 
 export default {
     name: "WidgetComponent",
+    components: {
+        Notes,
+        Tutorials
+    },
     data() {
         const token = localStorage.getItem("auth_token");
-
         return {
             token,
             showTimelogDiscrepancy: true,
             showWorkedHours: true,
+            showNotes: false,
+            showTutorial: false,
             isDarkMode: false,
             todayTimeIn: null,
             todayTimeOut: null,
@@ -184,6 +252,12 @@ export default {
 
         const saved = localStorage.getItem(WORKED_HOURS_KEY);
         if (saved !== null) this.showWorkedHours = saved === "true";
+
+        const notesSaved = localStorage.getItem(NOTES_KEY);
+        if (notesSaved !== null) this.showNotes = notesSaved === "true";
+
+        const tutorialSaved = localStorage.getItem(TUTORIAL_KEY);
+        if (tutorialSaved !== null) this.showTutorial = tutorialSaved === "true";
 
         if (this.showWorkedHours) this.fetchLatestTimeLog();
 
@@ -258,7 +332,6 @@ export default {
 
             this.clockInterval = setInterval(() => {
                 this.now = Date.now();
-                console.log(123);
             }, 1000);
         },
         stopClock() {
@@ -319,6 +392,12 @@ export default {
                 localStorage.removeItem(HIDE_DATE_KEY);
             }
             window.dispatchEvent(new Event("timelog-toggle"));
+        },
+        handleNotes() {
+            localStorage.setItem(NOTES_KEY, this.showNotes ? "true" : "false");
+        },
+        handleTutorials() {
+            localStorage.setItem(TUTORIAL_KEY, this.showTutorial ? "true" : "false");
         },
     },
 };

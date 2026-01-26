@@ -4,7 +4,7 @@
 <div class="container-fluid pb-4 check-in-out position-static min-vh-100">
     
     <x-employee-navbar>
-        <header-vue title="DOST TAPI"></header-vue>
+        <header-vue :user-role="'employee'" :user-id='@json(Auth::id())'></header-vue>
     </x-employee-navbar>
         
     <x-header-employee title="Timelogs" subtitle="View your timelogs in this module">

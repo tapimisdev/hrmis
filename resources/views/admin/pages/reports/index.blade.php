@@ -331,7 +331,6 @@ $(function() {
                 $('#preview-result').on('click', '.download-btn', function() {
                     const rowIndex = $(this).data('id');
                     const rowData = rows[rowIndex];
-                    console.log('Download clicked for row:', rowData);
                 });
             },
 
@@ -348,10 +347,7 @@ $(function() {
 
     function setExpiration() {
         if (countdown > 0) return; 
-
         countdown = 60;
-        console.log('Countdown started: 60s');
-
         timerInterval = setInterval(() => {
             countdown--;
 

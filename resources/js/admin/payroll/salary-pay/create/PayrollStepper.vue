@@ -271,7 +271,6 @@ export default {
     mounted() {
         window.Echo.channel("refresh")
             .listen(".RefreshData", (e) => {
-                console.log("Got refresh event!", e);
                 this.validateAndGetReview();
             })
             .error((error) => {

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\Services\ApplicationController;
 use App\Http\Requests\Employee\StoreLeaveApplication;
 use App\Enums\EmploymentTypesEnum;
 use App\Events\NotificationEvents;
+use App\Services\EventService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,14 +18,14 @@ use Carbon\Carbon;
 class LeaveApplicationController extends Controller
 {
     protected $applicationService;
+    protected $EventService;
 
-    public function __construct(ApplicationController $applicationService)
+    public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
-        $this->applicationService = $applicationService;
-
         $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
         $this->middleware('permission:emp.leave_application.apply')->only(['store']);
-
+        $this->applicationService = $applicationService;
+        $this->EventService = $EventService;
     }   
 
     /**
@@ -174,14 +175,15 @@ class LeaveApplicationController extends Controller
                 }
             }
 
-            $author = ucwords(Auth::user()->name);
-
-            $message = '%b' . $author . '%b filed a leave application (# %bi' . strtoupper($application_no) . ') %bi';
-            
-            event(new NotificationEvents('application', $author, '*', [
-                'message' => $message,
-                'link'    => route('services.leaves.show ', ['application' => $applicationID])
-            ]));
+            $sender = ucwords(Auth::user()->name);
+            $payload = [
+                'type' => 'application',
+                'sender' => $sender,
+                'receiver' => 'admins',
+                'message' => '%b' . $sender . '%b filed a leave application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => route('services.leaves.show', ['application' => $applicationID])
+            ];
+            $this->EventService->pushNotification($payload);
 
             DB::commit();
 

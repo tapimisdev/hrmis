@@ -1,22 +1,31 @@
 <template>
     <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰</button>
-    <incomplete-logs @incomplete-data="handleData"> </incomplete-logs>
+    <incomplete-logs> </incomplete-logs>
     <div class="d-flex gap-5 justify-content-end align-items-center">
       <widget-component />
-      <notification-component :userRole="userRole" :userId="userId" />  
+      <notification-component :user-role="userRole" :user-id="userId" />  
       <profile-component />
     </div>
 </template>
 
 <script>
-import axios from "axios";
 import WidgetComponent from "./parts/Widgets.vue";
 import NotificationComponent from "./parts/Notification.vue";
 import ProfileComponent from "./parts/Profile.vue";
 import IncompleteLogs from "./parts/IncompleteLogs.vue";
 
 export default {
-    name: "AppHeader",
+    name: "HeaderVue",
+    props: {
+      userRole: {
+          type: String,
+          required: true,
+      },
+      userId: {
+          type: Number,
+          required: true,
+      },
+    },  
     components: {
         WidgetComponent,
         NotificationComponent,
@@ -29,9 +38,6 @@ export default {
             document
                 .querySelector(".sidebar-overlay")
                 ?.classList.toggle("active");
-        },
-        handleData(data) {
-            // Handle incomplete data as before
         },
     },
 };

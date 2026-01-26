@@ -139,4 +139,9 @@ class User extends Authenticatable
             'work_schedule_id' => $schedule->work_schedule_id,
         ];
     }
+
+    public function notes()
+    {
+        return $this->hasMany(Note::class);
+    }
 }

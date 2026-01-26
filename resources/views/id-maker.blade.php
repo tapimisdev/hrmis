@@ -80,7 +80,7 @@
 <div class="container-fluid min-vh-100">
     
     <x-employee-navbar>
-        <header-vue title="DOST TAPI"></header-vue>
+        <header-vue :user-role="'employee'" :user-id='@json(Auth::id())'></header-vue>
     </x-employee-navbar>
 
     <x-header-employee title="ID MAKER" subtitle="Manage or update employee's ID in this module" >

@@ -10,15 +10,15 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 use App\Services\EmployeeService;
-use App\Services\NotificationService;
+use App\Services\EventService;
 
 class Employee extends Controller
 {
     
-    public $notificationService;
+    public $EventService;
 
-    public function __construct(NotificationService $notificationService) {
-        $this->notificationService = $notificationService;
+    public function __construct(EventService $EventService) {
+        $this->EventService = $EventService;
     }
 
     public function children(Request $request)
@@ -631,13 +631,13 @@ class Employee extends Controller
 
     public function getNotifications(Request $request)
     {
-        $data = $this->notificationService->getNotifications($request, ['*', Auth::id()]);
+        $data = $this->EventService->getNotifications($request, ['employees', Auth::id()]);
         return response()->json($data);
     }
 
     public function saveReadNotification(Request $request)
     {
-        $data = $this->notificationService->saveReadNotification($request);
+        $data = $this->EventService->saveReadNotification($request);
 
         return response()->json($data);
     } 

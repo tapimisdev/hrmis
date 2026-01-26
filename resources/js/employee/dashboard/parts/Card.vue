@@ -56,6 +56,12 @@
 <script>
 export default {
     name: "FeatureCards",
+    props: {
+        isRegular: {
+            type: Boolean,
+            required: true,
+        },
+    },
     data() {
         return {
             canScrollLeft: false,
