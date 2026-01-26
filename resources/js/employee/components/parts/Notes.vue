@@ -700,6 +700,7 @@ export default {
     justify-content: center;
     align-items: center;
     z-index: 10001;
+    animation: fadeIn 0.2s ease-out forwards;
 }
 
 .modal-content {
@@ -708,10 +709,14 @@ export default {
     border-radius: 8px;
     max-width: 380px;
     width: 100%;
+    color: #000;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    border: 2px solid #dc3545; 
 
-    .dark-mode & {
+    [data-bs-theme="dark"] & {
         background-color: #25282b;
         color: #fff;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
     }
 }
 
@@ -721,5 +726,10 @@ export default {
     margin-top: -0.25rem;
     font-size: 0.875em;
     color: #dc3545;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 </style>

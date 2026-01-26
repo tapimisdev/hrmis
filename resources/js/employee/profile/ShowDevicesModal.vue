@@ -1,4 +1,5 @@
 <template>
+    <!-- Show Devices Modal -->
     <div
         class="modal fade"
         id="showDevices"
@@ -10,36 +11,41 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content shadow-lg border-0 rounded-4">
                 <div class="modal-header p-3">
-                    <h5 class="text-uppercase fw-bold text-center mb-0">Active Devices</h5>
+                    <h5 class="text-uppercase fw-bold text-center mb-0">
+                        Active Devices
+                    </h5>
                     <button
                         type="button"
                         class="btn-close position-absolute"
-                        style="right: 16px; top: 24px; z-index: 99999;"
+                        style="right: 16px; top: 24px; z-index: 99999"
                         data-bs-dismiss="modal"
                         aria-label="Close"
                     ></button>
                 </div>
 
                 <div class="modal-body p-3">
-                    <div v-if="loading" class="text-center">
+                    <!-- Loading Spinner -->
+                    <div v-if="loading" class="text-center py-5">
                         <div class="spinner-border" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
+                        <p class="mt-2">Loading devices...</p>
                     </div>
-                    <div v-else-if="devices.length === 0" class="text-center text-muted">
-                        No active devices found.
-                    </div>
-                    <div  v-else class="table-responsive">
-                        <table class="table table-striped">
+                    <div v-else class="table-responsive">
+                        <table id="myTable" class="table table-striped w-100">
                             <thead>
                                 <tr>
-                                    <th>IP Address</th>
-                                    <th>User Agent</th>
-                                    <th>Actions</th>
+                                    <th class="text-nowrap">IP Address</th>
+                                    <th class="text-nowrap">User Agent</th>
+                                    <th class="text-nowrap">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="device in devices" :key="device.id">
+                                <tr
+                                    v-for="device in devices"
+                                    :key="device.id"
+                                    :data-id="device.id"
+                                >
                                     <td>{{ device.ip }}</td>
                                     <td>{{ device.user_agent }}</td>
                                     <td>
@@ -47,8 +53,17 @@
                                             class="btn btn-sm btn-outline-danger"
                                             @click="confirmDelete(device)"
                                         >
-                                            <i class="fa-solid fa-trash"></i> Delete
+                                            <i class="fa-solid fa-trash"></i>
+                                            Delete
                                         </button>
+                                    </td>
+                                </tr>
+                                <tr
+                                    v-if="devices.length === 0"
+                                    class="text-center text-muted"
+                                >
+                                    <td colspan="3">
+                                        No active devices found.
                                     </td>
                                 </tr>
                             </tbody>
@@ -59,19 +74,17 @@
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- Delete Confirmation Modal (Custom, like Notes) -->
     <div v-if="showDeleteModal" class="modal-overlay" @click="cancelDelete">
-        <div class="modal-content" @click.stop>
-            <h5>Confirm Delete</h5>
+        <div class="modal-overlay-content" @click.stop>
+            <h5 class="fw-bold text-danger">Confirm Delete</h5>
             <p>Are you sure you want to delete this device? This will log it out.</p>
-            <div class="mt-3 d-block w-100">
-                <button class="btn btn-danger w-100 mb-2" @click="proceedDelete" :disabled="isDeleting">
-                    <span v-if="isDeleting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    {{ isDeleting ? 'Deleting...' : 'Delete' }}
+            <div class="d-flex flex-column gap-2 mt-3">
+                <button class="btn btn-danger w-100" @click="proceedDelete" :disabled="isDeleting">
+                    <span v-if="isDeleting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    {{ isDeleting ? "Deleting..." : "Delete" }}
                 </button>
-                <button class="btn btn-secondary w-100" @click="cancelDelete">
-                    Cancel
-                </button>
+                <button class="btn btn-secondary w-100" @click="cancelDelete">Cancel</button>
             </div>
         </div>
     </div>
@@ -88,15 +101,26 @@ export default {
             showDeleteModal: false,
             deviceToDelete: null,
             isDeleting: false,
+            dataTable: null,
         };
     },
     methods: {
         async open() {
-            $("#showDevices").modal("show");
-            await this.fetchDevices();
-        },
-        async fetchDevices() {
             this.loading = true;
+            await this.fetchDevices();
+
+            const modal = document.getElementById("showDevices");
+            $(modal).modal("show");
+
+            $(modal).on("shown.bs.modal", () => {
+                this.$nextTick(() => {
+                    this.initDataTable();
+                    this.loading = false;
+                });
+            });
+        },
+
+        async fetchDevices() {
             const token = localStorage.getItem("auth_token");
             try {
                 const response = await axios.get("/api/employee/devices", {
@@ -105,49 +129,95 @@ export default {
                 this.devices = response.data;
             } catch (error) {
                 console.error("Error fetching devices:", error);
-                // Optionally show an error message, e.g., this.$toast.error("Failed to load devices");
-            } finally {
                 this.loading = false;
             }
         },
+
+        initDataTable() {
+            if (this.dataTable) this.dataTable.destroy();
+
+            this.dataTable = $("#myTable").DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                info: true,
+                responsive: true,
+                autoWidth: false,
+                lengthMenu: [5, 10, 25, 50],
+                pageLength: 10,
+                language: {
+                    search: "Search devices:",
+                    lengthMenu: "Show _MENU_ devices per page",
+                    info: "Showing _START_ to _END_ of _TOTAL_ devices",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous",
+                    },
+                },
+            });
+        },
+
         confirmDelete(device) {
-            this.showDeleteModal = true;
             this.deviceToDelete = device;
+            this.showDeleteModal = true;
         },
-        async proceedDelete() {
-            if (!this.deviceToDelete) return;
-            this.isDeleting = true;
-            const token = localStorage.getItem("auth_token");
-            try {
-                await axios.delete(`/api/employee/devices/${this.deviceToDelete.id}/delete`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                this.devices = this.devices.filter(d => d.id !== this.deviceToDelete.id);
-                this.showDeleteModal = false;
-                this.deviceToDelete = null;
-                // Optionally show success message, e.g., this.$toast.success("Device logged out");
-            } catch (error) {
-                console.error("Error deleting device:", error);
-                // Optionally show error message
-            } finally {
-                this.isDeleting = false;
-            }
-        },
+
         cancelDelete() {
             this.showDeleteModal = false;
             this.deviceToDelete = null;
         },
+
+        async proceedDelete() {
+            if (!this.deviceToDelete) return;
+
+            this.isDeleting = true;
+            const token = localStorage.getItem("auth_token");
+
+            try {
+                await axios.delete(
+                    `/api/employee/devices/${this.deviceToDelete.id}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    },
+                );
+
+                this.devices = this.devices.filter(
+                    (d) => d.id !== this.deviceToDelete.id,
+                );
+
+                if (this.dataTable) {
+                    const row = $(
+                        `#myTable tbody tr[data-id="${this.deviceToDelete.id}"]`,
+                    );
+                    this.dataTable.row(row).remove().draw();
+                }
+
+                this.showDeleteModal = false;
+                this.deviceToDelete = null;
+            } catch (error) {
+                console.error("Error deleting device:", error);
+            } finally {
+                this.isDeleting = false;
+            }
+        },
+    },
+
+    beforeUnmount() {
+        if (this.dataTable) {
+            this.dataTable.destroy();
+            this.dataTable = null;
+        }
     },
 };
 </script>
 
 <style scoped>
-.badge {
-    font-size: 0.85rem;
+.table th.text-nowrap {
+    white-space: nowrap;
 }
-.table {
-    font-size: 0.9rem;
-}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -157,12 +227,33 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10001;
+    z-index: 1070; 
+    background-color: rgba(0, 0, 0, 0.5);
 }
-.modal-content {
+
+.modal-overlay-content {
+    background: #f1f1f1;
     padding: 30px;
     border-radius: 8px;
     max-width: 380px;
     width: 100%;
+    color: #000;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    border: 2px solid #dc3545; 
+
+    [data-bs-theme="dark"] & {
+        background-color: #25282b;
+        color: #fff;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+    }
+}
+
+.modal-overlay {
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 </style>
