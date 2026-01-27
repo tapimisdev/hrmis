@@ -449,7 +449,6 @@ function cellClass(row, fieldKey) {
   font-size: 0.72rem;
   letter-spacing: .04em;
   text-transform: uppercase;
-  color: rgba(0,0,0,.6);
   background: rgba(0,0,0,.03);
   white-space: nowrap;
   padding: 0.35rem 0.5rem;
@@ -458,7 +457,6 @@ function cellClass(row, fieldKey) {
 .top-td {
   font-size: 0.92rem;
   font-weight: 600;
-  color: rgba(0,0,0,.85);
   padding: 0.35rem 0.5rem;
 }
 
