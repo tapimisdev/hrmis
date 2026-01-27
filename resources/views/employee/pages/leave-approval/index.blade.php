@@ -5,7 +5,7 @@
     <div class="container-fluid">
         
         <x-employee-navbar>
-            <header-vue title="DOST TAPI"></header-vue>
+            <header-vue :user-role="'employee'" :user-id='@json(Auth::id())'></header-vue>
         </x-employee-navbar>
 
         <x-header-employee title="Leaves Approval" subtitle="Review and approve leave applications here">

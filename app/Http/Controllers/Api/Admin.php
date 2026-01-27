@@ -5,11 +5,21 @@ namespace App\Http\Controllers\Api;
 use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Services\EventService;
 
-class DashboardApiController extends Controller
+class Admin extends Controller
 {
+
+    public $EventService;
+
+    public function __construct(EventService $EventService) {
+        $this->EventService = $EventService;
+    }
+
     /**
      * DASHBOARD METRICS
      */
@@ -204,6 +214,7 @@ class DashboardApiController extends Controller
                         '&background=random&color=fff&font-size=0.4&font-weight=bold';
 
                 return [
+                    'employee_no' => $row->employee_no,
                     'name' => trim("{$row->firstname} {$row->lastname}"),
                     'birthday' => $row->birthday,
                     'image' => $image,
@@ -336,4 +347,17 @@ class DashboardApiController extends Controller
             'resignations' => $resignations,
         ];
     }
+
+    public function getNotifications(Request $request)
+    {
+        $data = $this->EventService->getNotifications($request, ['admins', Auth::id()]);
+        return response()->json($data);
+    }
+
+    public function saveReadNotification(Request $request)
+    {
+        $data = $this->EventService->saveReadNotification($request);
+        return response()->json($data);
+    }
+    
 }

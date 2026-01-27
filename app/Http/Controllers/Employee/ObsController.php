@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreObsRequest;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Services\EventService;
+use App\Events\NotificationEvents;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,13 +16,16 @@ class ObsController extends Controller
 {
 
     protected $applicationService;
+    protected $EventService;
 
-    public function __construct(ApplicationController $applicationService)
+    public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
-        $this->applicationService = $applicationService;
 
         $this->middleware('permission:emp.pass_slip_application.view')->only(['index', 'create', 'show']);
         $this->middleware('permission:emp.pass_slip_application.apply')->only(['store']);
+    
+        $this->applicationService = $applicationService;
+        $this->EventService = $EventService;
     }
 
     /**
@@ -134,6 +139,16 @@ class ObsController extends Controller
             //     }
             // }
 
+            $sender = ucwords(Auth::user()->name);
+            $payload = [
+                'type' => 'application',
+                'sender' => $sender,
+                'receiver' => 'admins',
+                'message' => '%b' . $sender . '%b filed a pass slip application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => route('services.pass_slip.show', ['application' => $obsId])
+            ];
+            $this->EventService->pushNotification($payload);
+
             DB::commit();
 
             return response()->json([
@@ -238,7 +253,7 @@ class ObsController extends Controller
                     ';
 
                     // Only show cancel if status is pending or approved
-                    if (in_array($row->status, ['pending', 'approved'])) {
+                    if (in_array($row->status, ['pending'])) {
                         $buttons .= '
                             <button data-id="' . $row->id . '" 
                                 class="btn btn-danger btn-sm ms-1 cancel-button" 

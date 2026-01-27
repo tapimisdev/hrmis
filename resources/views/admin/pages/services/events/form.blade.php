@@ -167,7 +167,7 @@
 
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" value="1" 
-                                    name="push_notif" id="push_notif"
+                                    name="push_notif" id="push_notif" checked
                                     {{ old('push_notif', $data['push_notif'] ?? 0) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="push_notif">
                                     Push Notification
@@ -433,6 +433,7 @@
         const url = $('#form').attr('action');
         if (!isEdit) {
             post(url);
+            
         } else {
             put(url);
         }

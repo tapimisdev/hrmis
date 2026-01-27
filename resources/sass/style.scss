@@ -3,6 +3,32 @@
 @import './hamburger.scss';
 @import './ckeditor.scss';
 
+// Mixin for text clamping
+@mixin text-clamp($lines) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  // Optional: Add word-break or other properties if needed
+  word-break: break-word;
+}
+
+// Generate classes for 1 to 5 lines
+@for $i from 1 through 5 {
+  .text-clamp-#{$i} {
+    @include text-clamp($i);
+  }
+}
+
+.scroll-hidden {
+    /* Hide scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+.scroll-hidden::-webkit-scrollbar {
+    display: none; /* WebKit */
+}
+
 .restricted {
     cursor: no-drop;   
 }
@@ -314,8 +340,8 @@ label {
 
 
 .mini-logo {
-    height: 24px;
-    width: 24px;
+    height: 44px;
+    width: 44px;
     filter: drop-shadow(0 0 1px white) drop-shadow(0 0 6px rgba(255, 255, 255, 0.1));
 }
 

@@ -9,7 +9,6 @@ import { alert, fieldError, confirmAction } from './helper';
  * @param {string} formSelector - The target form selector.
  */
 function handleFormSubmit(method, url, hasRemarks = false, formSelector) {
-    console.log(method, url, hasRemarks, formSelector);
 
     // Bind submit event to selected form(s)
     $(formSelector).on('submit', function (e) {

@@ -3,7 +3,7 @@
 @section('content')
     <div class="container-fluid min-vh-100">
         <x-employee-navbar>
-            <header-vue title="DOST TAPI"></header-vue>
+            <header-vue :user-role="'employee'" :user-id='@json(Auth::id())'></header-vue>
         </x-employee-navbar>
 
         @php
@@ -16,7 +16,7 @@
                 "Pages", 
                 "Dashboard", 
                 "Announcements", 
-                Str::limit($data["announcement"]->slug, 10) 
+                ucwords(Str::limit($announcement->slug, 10)) 
             ]'
         >
             <a href="{{ route('announcement.index') }}" class="btn btn-danger py-3 px-4 me-5">
@@ -24,7 +24,7 @@
             </a>
         </x-header-employee>
         
-        <show :data='@json($data)'/>
+        <show :slug='@json($announcement->slug)' />
     </div>
 @endsection
 

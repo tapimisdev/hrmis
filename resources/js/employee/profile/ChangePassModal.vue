@@ -7,7 +7,7 @@
         data-bs-backdrop="static"
         data-bs-keyboard="false"
     >
-        <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-dialog modal-md">
             <div class="modal-content shadow-lg border-0 rounded-4">
                 
                 <button

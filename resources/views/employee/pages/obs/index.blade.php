@@ -6,7 +6,7 @@
 <div class="container-fluid min-vh-100">
 
     <x-employee-navbar>
-        <header-vue title="DOST TAPI"></header-vue>
+        <header-vue :user-role="'employee'" :user-id='@json(Auth::id())'></header-vue>
     </x-employee-navbar>
 
     <x-header-employee title="Pass Slip" subtitle="Manage pass slip applications in this module">

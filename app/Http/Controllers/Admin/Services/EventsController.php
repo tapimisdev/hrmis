@@ -11,25 +11,31 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\EventAnnouncement;
 use Illuminate\Support\Facades\Storage;
+use App\Services\EventService;
 
 class EventsController extends Controller
 {
+
+    protected $EventService;
     
-    public function __construct()
+    public function __construct(EventService $EventService)
     {
+        
         $this->middleware('permission:hr.events_and_announcements.view')->only(['index', 'show']);
         $this->middleware('permission:hr.events_and_announcements.create')->only(['create', 'store']);
         $this->middleware('permission:hr.events_and_announcements.edit')->only(['edit', 'update']);
         $this->middleware('permission:hr.events_and_announcements.delete')->only('destroy');
+
+        $this->EventService = $EventService;
     }
 
     public function index()
     {
-        $perPage = 10;
+        $perPage = 12;
 
         $data = EventAnnouncement::with(['tags', 'attachments', 'posted_by', 'viewers'])
             ->paginate($perPage);
-
+            
         return view('admin.pages.services.events.index', compact('data'));
     }
 
@@ -132,6 +138,7 @@ class EventsController extends Controller
 
     public function store(Request $request)
     {
+
         $request->merge([
             'is_suspension' => $request->has('is_suspension') && $request->boolean('is_suspension') ? true : false,
         ]);
@@ -140,7 +147,7 @@ class EventsController extends Controller
 
         $rules = [
             'title'               => 'required|string|max:255',
-            'tags'                => 'required|array|max:5|min:1',
+            'tags'                => 'required|array|max:10|min:1',
             'banner'              => 'required|image|mimes:jpg,jpeg,png',
             'content'             => 'required|string',
             'posted_on'           => 'nullable|date|after_or_equal:today',
@@ -254,6 +261,20 @@ class EventsController extends Controller
             }
 
             DB::commit();
+
+            if($request->has('push_notif') && $request->push_notif) {
+                $sender = ucwords(Auth::user()->name);
+                $payload = [
+                    'type' => 'event',
+                    'sender' => $sender,
+                    'receiver' => 'employees',
+                    'message' => '%b' . $sender . '%b posted %bi' . ucwords($request->title) . '%bi',
+                    'link' => route('announcement.show', ['slug' => $slug]),
+                ];
+
+                $this->EventService->pushNotification($payload);
+
+            }
 
             return response()->json([
                 'status'   => 'success',

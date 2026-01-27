@@ -11,9 +11,11 @@ import PayslipIndex from "./employee/payslip/PayslipIndex.vue";
 import Show from "./employee/announcements/Show.vue";
 import ChangePassword from "./employee/profile/ChangePassword.vue";
 import BirthdayComponent from "./birthday/BirthdayComponent.vue";
-import IncompleteLogs from "./employee/profile/IncompleteLogs.vue";
+import PushNotification from "./employee/profile/PushNotification.vue";
+import ViewDtr from "./employee/check-in-out/ViewDtr.vue";
 
 // Admin
+import AdminHeader from "./admin/components/Header.vue";
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
 import DtrViewVue from "./admin/timekeeping/DtrViewVue.vue";
 import HrisIndex from "./admin/hris/HrisIndex.vue";
@@ -54,6 +56,7 @@ import PeraRataView from "./admin/payroll/pera-rata/show/ShowPayroll.vue";
 
 const authApp = createApp({
     components: {
+        AdminHeader,
         DashboardIndex,
         IndexVue,
         HeaderVue,
@@ -62,9 +65,10 @@ const authApp = createApp({
         Show,
         PayslipIndex,
         BirthdayComponent,
-        ChangePassword, 
-        IncompleteLogs,
+        ChangePassword,
+        PushNotification,
         WebtimeIndex,
+        ViewDtr,
 
         DashboardVue,
         DtrViewVue,
@@ -99,43 +103,43 @@ const authApp = createApp({
 
     data() {
         return {
-            showChangePasswordModal: false, 
+            showChangePasswordModal: false,
         };
     },
     mounted() {
-        
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem("auth_token");
 
         if (!token) return;
 
-        axios.get('/api/force-update-password', {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        })
-        .then(response => {
-            if (response.data.isForcedUpdate) {
-                this.showChangePasswordModal = true;
+        axios
+            .get("/api/force-update-password", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            .then((response) => {
+                if (response.data.isForcedUpdate) {
+                    this.showChangePasswordModal = true;
 
-                this.$nextTick(() => {
-                    $('#forceChangePasswordModal').modal({
-                        backdrop: 'static',
-                        keyboard: false    
+                    this.$nextTick(() => {
+                        $("#forceChangePasswordModal").modal({
+                            backdrop: "static",
+                            keyboard: false,
+                        });
+
+                        $("#forceChangePasswordModal").modal("show");
                     });
-
-                    $('#forceChangePasswordModal').modal('show');
-                });
-            }
-        })
-        .catch(error => {
-            console.error('API error:', error);
-        });
+                }
+            })
+            .catch((error) => {
+                console.error("API error:", error);
+            });
     },
     methods: {
         handlePasswordChanged() {
-            $('#forceChangePasswordModal').modal('hide');
+            $("#forceChangePasswordModal").modal("hide");
         },
-    }
+    },
 });
 
 authApp.mount("#app");

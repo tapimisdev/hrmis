@@ -187,9 +187,6 @@
             const previous = parseFloat($('#previous_balance').val()) || 0;
             const earned = parseFloat($('#earned').val()) || 0;
             const deduction = parseFloat($('#deduction').val()) || 0;
-
-            console.log(earned, deduction, previous);
-
             $('#balance').val(previous + earned - deduction);
         }
         

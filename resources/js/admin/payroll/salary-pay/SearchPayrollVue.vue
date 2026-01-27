@@ -62,6 +62,7 @@ export default {
             token,
             loading: false,
             errors: {},
+            dataStorage: [],
             form: {
                 employment_type: 1,
                 year: new Date().getFullYear(),
@@ -117,7 +118,7 @@ export default {
         search() {
             this.errors = {};
             this.loading = true;
-            this.$emit("payroll-list", [], this.loading);
+            this.$emit("payroll-list", this.dataStorage, this.loading);
 
             axios
                 .post("/api/payroll/salary-pay/processed", this.form, {
@@ -127,6 +128,7 @@ export default {
                     },
                 })
                 .then((response) => {
+                    this.dataStorage = response.data.data;
                     this.$emit("payroll-list", response.data.data, false);
                     this.loading = false;
                 })

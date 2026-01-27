@@ -214,7 +214,7 @@ export default {
             };
         }
     },
-    emits: ['send-summary'],
+    emits: ['send-payload'],
     methods: {
         async loadTimelogs() {
             this.loading = true;
@@ -225,7 +225,7 @@ export default {
                 );
                 this.logs = data.computedData;
                 this.summary = data.summary;
-                this.$emit('send-summary', data.summary);
+                this.$emit('send-payload', data);
             } catch (error) {
                 console.error("Error fetching logs:", error);
             } finally {

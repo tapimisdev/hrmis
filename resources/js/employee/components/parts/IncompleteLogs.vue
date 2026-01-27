@@ -53,7 +53,10 @@
                             class="accordion-collapse collapse"
                         >
                             <div class="accordion-body p-3">
-                                <div v-if="loading">
+                                <div
+                                    v-if="loading"
+                                    class="text-center text-muted py-2"
+                                >
                                     Loading incomplete logs...
                                 </div>
 
@@ -121,7 +124,7 @@
                                                     style="font-size: 11px"
                                                     :class="
                                                         log.remarks.includes(
-                                                            'today'
+                                                            'today',
                                                         )
                                                             ? 'text-success'
                                                             : 'text-danger'
@@ -148,6 +151,7 @@
 
 <script>
 import axios from "axios";
+import { watch } from "vue";
 import { Collapse } from "bootstrap";
 
 const POSITION_KEY = "incomplete-logs-position";
@@ -157,7 +161,6 @@ const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
 
 export default {
     name: "IncompleteLogs",
-
     data() {
         return {
             show: true,
@@ -192,6 +195,14 @@ export default {
             this.initAccordion();
             this.restoreAccordionState();
         });
+
+        this.$watch(
+            () => window.clockTriggers?.reload,
+            () => {
+                this.handleTriggerClocking();
+                window.clockTriggers.reload = false;
+            },
+        );
 
         window.addEventListener("timelog-toggle", this.syncVisibility);
         window.addEventListener("resize", this.onResize);
@@ -231,6 +242,10 @@ export default {
             localStorage.setItem(HIDE_KEY, "true");
             localStorage.setItem(HIDE_DATE_KEY, new Date().toDateString());
             window.dispatchEvent(new Event("timelog-toggle"));
+        },
+
+        handleTriggerClocking() {
+            this.fetchIncompleteLogs();
         },
 
         async fetchIncompleteLogs() {

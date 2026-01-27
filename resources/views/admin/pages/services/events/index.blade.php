@@ -27,7 +27,7 @@
         </div>
         <div class="row">
             @forelse ($data as $item)
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-3">
                     <a href="{{ route('services.events.show', ['event' => $item->slug]) }}" class="text-decoration-none text-dark mb-4 d-block">
                         <div class="card shadow">
                             <div class="position-relative">
@@ -42,27 +42,30 @@
                             </div>
 
                             <div class="card-body">
-                                <h5 class="card-title mb-2 text-uppercase fw-medium">{{ $item->title }}</h5>
-                                @php
+                                <h5 class="card-title mb-2 text-uppercase fw-medium text-clamp-1">{{ $item->title }}</h5>
+                               @php
                                     $maxTags = 5;
                                     $tagCount = $item->tags->count();
                                 @endphp
 
-                                @foreach ($item->tags->take($maxTags) as $tag)
-                                    <span class="badge bg-primary text-uppercase m-1 px-3 py-2" style="font-size: 10px">{{ $tag->name ?? $tag }}</span>
-                                @endforeach
+                                <div>
+                                    @foreach ($item->tags->take($maxTags) as $tag)
+                                        <span class="badge bg-primary text-uppercase m-1 px-3 py-2" style="font-size: 10px">{{ $tag->name ?? $tag }}</span>
+                                    @endforeach
 
-                                @if ($tagCount > $maxTags)
-                                    <span class="badge bg-secondary text-uppercase m-1 px-3 py-2">
-                                        +{{ $tagCount - $maxTags }}
-                                    </span>
-                                @endif
+                                    @if ($tagCount > $maxTags)
+                                        <span class="badge bg-primary text-uppercase m-1 px-3 py-2">
+                                            +{{ $tagCount - $maxTags }}
+                                        </span>
+                                    @endif
+                                </div>
 
-                                <h6 class="card-text text-muted mt-3">
-                                    {{ \Illuminate\Support\Str::limit(strip_tags($item->description), 300, '...') }}
-                                </h6>
+                                <div class="card-text text-muted mt-3">
+                                    {{ \Illuminate\Support\Str::limit(strip_tags($item->description), 200, '...') }}
+                                </div>
 
-                                <div class="text-muted text-end small">
+                                <div class="text-muted text-end small"
+                                    style="position: absolute; bottom: 10px; right: 10px;">
                                     (click to view)
                                 </div>
                             </div>

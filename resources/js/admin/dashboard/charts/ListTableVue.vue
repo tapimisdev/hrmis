@@ -1,82 +1,86 @@
 <template>
-  <div>
-    <h5 class="border-bottom pb-3 text-uppercase fw-bolder">
-      Today's Birthday
-    </h5>
+    <div>
+        <!-- LOADING STATE -->
+        <div
+            v-if="loading"
+            class="text-center d-flex align-items-center justify-content-center gap-2 py-4"
+        >
+            <div
+                class="spinner-border text-body text-opacity-25"
+                role="status"
+                style="height: 12px; width: 12px"
+            >
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="mt-2 fw-semibold text-body text-opacity-25">
+                Loading ...
+            </div>
+        </div>
 
-    <!-- LOADING STATE -->
-    <div v-if="loading" class="text-center d-flex align-items-center justify-content-center gap-2 py-4">
-      <div class="spinner-border text-body text-opacity-25" role="status" style="height: 12px; width: 12px;">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <div class="mt-2 fw-semibold text-body text-opacity-25">Loading ...</div>
+        <div v-else>
+            <h5 class="border-bottom pb-3 text-uppercase fw-bolder">
+                Birthdays for this month
+            </h5>
+            <div class="row g-2" v-if="people.length">
+                <div
+                    class="col-md-4"
+                    v-for="(person, index) in people"
+                    :key="index"
+                >
+                    <a
+                        target="_blank"
+                        :href="`/admin/hris/employee/information/${person.employee_no}`"
+                        class="border rounded-2 px-3 py-2 d-flex align-items-center gap-3 text-decoration-none"
+                        style="color: inherit !important;"
+                    >
+                        <img
+                            :src="person.image"
+                            alt="Profile Picture"
+                            class="profile-picture"
+                        />
+                        <div>
+                            <div>{{ person.name }}</div>
+                            <div>{{ formatBirthday(person.birthday) }}</div>
+                        </div>
+                      </a>
+                </div>
+            </div>
+
+            <div class="alert alert-info text-center" v-if="!people.length">
+                No birthdays for this month 🎂
+            </div>
+        </div>
     </div>
-
-    <!-- TABLE -->
-    <table v-else class="table table-transparent w-100 h-100 align-middle">
-      <thead>
-        <tr>
-          <th class="pb-2" scope="col">Profile</th>
-          <th class="pb-2" scope="col">Name</th>
-          <th class="pb-2" scope="col">Birthday</th>
-        </tr>
-      </thead>
-
-      <tbody v-if="people.length">
-        <tr v-for="(person, index) in people" :key="index">
-          <td>
-            <img
-              :src="person.image"
-              alt="Profile Picture"
-              class="profile-picture"
-              
-            />
-          </td>
-          <td>{{ person.name }}</td>
-          <td>{{ formatBirthday(person.birthday) }}</td>
-        </tr>
-      </tbody>
-
-      <!-- EMPTY STATE -->
-      <tbody v-else>
-        <tr>
-          <td colspan="3" class="text-center text-muted py-4">
-            No birthdays today 🎂
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 </template>
 
 <script>
 export default {
-  name: "ProfileList",
-  props: {
-    people: {
-      type: Array,
-      required: true,
-      validator(value) {
-        return value.every(
-          (p) => "name" in p && "birthday" in p && "image" in p
-        );
-      },
+    name: "ProfileList",
+    props: {
+        people: {
+            type: Array,
+            required: true,
+            validator(value) {
+                return value.every(
+                    (p) => "name" in p && "birthday" in p && "image" in p,
+                );
+            },
+        },
+        loading: {
+            type: Boolean,
+            default: true,
+        },
     },
-    loading: {
-      type: Boolean,
-      default: true,
+    methods: {
+        formatBirthday(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            });
+        },
     },
-  },
-  methods: {
-    formatBirthday(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    },
-  },
 };
 </script>
 
@@ -84,10 +88,10 @@ export default {
 @import "./../../../../sass/variables";
 
 .profile-picture {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--bs-primary);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--bs-primary);
 }
 </style>

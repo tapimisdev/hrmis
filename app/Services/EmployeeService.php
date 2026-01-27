@@ -479,6 +479,7 @@ class EmployeeService {
             return $employeeNo;
         });
     }
+    
 
     public function getAllActiveEmployee($employment_type_id)
     {

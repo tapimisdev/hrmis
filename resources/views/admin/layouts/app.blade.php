@@ -56,8 +56,9 @@
                 @yield('content')
             </div>
             @include('admin.components.footer')
-        </main>
+        </main>  
 
+        <push-notification :user-role="'admin'" :user-id='@json(Auth::id())'></push-notification>
     </div>
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>

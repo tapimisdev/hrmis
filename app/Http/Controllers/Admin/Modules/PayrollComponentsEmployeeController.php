@@ -195,8 +195,21 @@ class PayrollComponentsEmployeeController extends Controller
         $raw = trim($payload['employee_nos'] ?? '');
 
         if (strtoupper($raw) === 'ALL') {
-            $employeeNos = $this->employeeService
-                ->getAllActiveEmployee(EmploymentTypesEnum::REGULAR->value);
+            
+            // if the tax type is cos, get all cos employees
+            if(
+                $payload['module_tab'] === 'ewt-2%' ||
+                $payload['module_tab'] === 'percentage-tax-3%' ||
+                $payload['module_tab'] === 'tax-ewt-5%'
+                
+                ) {
+                $employeeNos = $this->employeeService
+                    ->getAllActiveEmployee(EmploymentTypesEnum::COS->value);
+            } else {
+                $employeeNos = $this->employeeService
+                    ->getAllActiveEmployee(EmploymentTypesEnum::REGULAR->value);
+            }
+
         } else {
             $employeeNos = collect(explode(',', $raw))
                 ->map(fn($v) => trim($v))
@@ -237,9 +250,24 @@ class PayrollComponentsEmployeeController extends Controller
 
             foreach ($employeeNos as $employeeNo) {
                 // Skip employees who are not REGULAR / Permanent
-                if (!$this->checkIfPermanentEmployee($employeeNo)) {
-                    $skipped[] = $employeeNo;
-                    continue;
+
+                // if the tax type is cos, get all cos employees
+                if(
+                    $payload['module_tab'] === 'ewt-2%' ||
+                    $payload['module_tab'] === 'percentage-tax-3%' ||
+                    $payload['module_tab'] === 'tax-ewt-5%'
+                    
+                    ) {
+                    
+                    if ($this->checkIfPermanentEmployee($employeeNo)) {
+                        $skipped[] = $employeeNo;
+                        continue;
+                    }
+                } else {
+                    if (!$this->checkIfPermanentEmployee($employeeNo)) {
+                        $skipped[] = $employeeNo;
+                        continue;
+                    }
                 }
 
                 // Determine amount based on type
@@ -274,6 +302,7 @@ class PayrollComponentsEmployeeController extends Controller
                 }
             }
 
+            // dd($updated, $skipped, $employeeNos);
             DB::commit();
 
             return response()->json([

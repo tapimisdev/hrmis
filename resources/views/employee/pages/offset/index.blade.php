@@ -5,7 +5,7 @@
     <div class="container-fluid min-vh-100">
         
         <x-employee-navbar>
-            <header-vue title="DOST TAPI"></header-vue>
+            <header-vue :user-role="'employee'" :user-id='@json(Auth::id())'></header-vue>
         </x-employee-navbar>
 
         <x-header-employee title="Offset Applications" subtitle="Manage offset applications in this module" >
@@ -45,7 +45,7 @@
                 { data: "date", name: 'date' },
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
-            ],  
+            ],
             columnDefs: [
                 {
                     targets: "_all",

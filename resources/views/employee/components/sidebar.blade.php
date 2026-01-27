@@ -1,6 +1,6 @@
 <!-- Sidebar -->
 <aside>
-    <button @click="toggleMobileMenu" class="d-md-none x-mark"><i class="fa-solid fa-xmark"></i></button>
+    <button class="d-md-none x-mark"><i class="fa-solid fa-xmark"></i></button>
     <div class="sidebar shadow" id="sidebar">
         <!-- Header -->
         <header class="sidebar-header">
@@ -166,11 +166,11 @@
                 </li>
                 @endcanany
 
-                <!-- @canany([
+                @canany([
                     'emp.overtime_application.view',
                     'emp.overtime_application.apply'
                 ])
-
+<!-- 
                 <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
                     <a href="{{ route('obs.index') }}" class="side-link text-body">
                         <span class="side-icon">
@@ -178,8 +178,8 @@
                         </span>
                         <span class="side-text">Pass Slip</span>
                     </a>
-                </li>
-                @endcanany -->
+                </li> -->
+                @endcanany
 
                 {{--
                 <div class="sidebar-seperator"></div>

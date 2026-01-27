@@ -31,7 +31,13 @@
         </div>
 
         <!-- Announcements Grid -->
-        <div class="announcements-grid">
+        <div v-if="loading" class="announcements-grid">
+            <SkeletonCard
+                v-for="n in 6"
+                :key="n"
+            />
+        </div>
+        <div v-else class="announcements-grid">
             <AnnouncementCard
                 v-for="announcement in announcements.data"
                 :key="announcement.id"
@@ -40,7 +46,7 @@
         </div>
 
         <!-- No Results Message -->
-        <div v-if="announcements.data.length === 0" class="text-center py-5">
+        <div v-if="!loading && announcements.data.length === 0" class="text-center py-5">
             <p class="text-muted">No announcements found.</p>
         </div>
 
@@ -101,11 +107,12 @@
 
 <script>
 import AnnouncementCard from "./AnnouncementCard.vue";
+import SkeletonCard from "./Skeleton/SkeletonCard.vue";
 import axios from "axios";
 
 export default {
     name: "Announcements",
-    components: { AnnouncementCard },
+    components: { AnnouncementCard, SkeletonCard },
     data() {
         return {
             announcements: {
@@ -117,6 +124,7 @@ export default {
             },
             searchQuery: "",
             searchTimeout: null,
+            loading: false, // Added loading state
         };
     },
     computed: {
@@ -143,6 +151,7 @@ export default {
     methods: {
         async fetchAnnouncements(url = "/employee/announcements") {
             try {
+                this.loading = true; // Set loading before fetch
                 const response = await axios.get(url, {
                     headers: { Authorization: `Bearer ${this.token}` },
                 });
@@ -162,10 +171,13 @@ export default {
                 window.history.pushState({}, "", newUrl);
             } catch (error) {
                 console.error("Error fetching announcements:", error);
+            } finally {
+                this.loading = false; // Always reset loading
             }
         },
         goToPage(page) {
             if (page >= 1 && page <= this.announcements.last_page) {
+                this.loading = true; // Set loading before fetch
                 const url = `/employee/announcements?page=${page}${
                     this.searchQuery ? `&search=${this.searchQuery}` : ""
                 }`;
@@ -180,6 +192,7 @@ export default {
             }, 500);
         },
         performSearch() {
+            this.loading = true; // Set loading before fetch
             // Reset to page 1 when searching
             const url = `/employee/announcements?page=1${
                 this.searchQuery ? `&search=${this.searchQuery}` : ""

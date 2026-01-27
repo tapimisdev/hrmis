@@ -2,6 +2,13 @@
     <div class="attendance-container">
         <CorrectionLog ref="correctionModal" />
         <CorrectionList ref="correctionListModal" />
+        <PrintableDtrView ref="printableModal">
+            <ViewDtr
+                :payload="dtr_all"
+                :month="selectedMonth"
+                :year="selectedYear"
+            />
+        </PrintableDtrView>
 
         <!-- Header -->
         <div class="header d-block d-lg-flex gap-3">
@@ -30,6 +37,9 @@
                         {{ year }}
                     </option>
                 </select>
+                <button class="btn btn-primary" @click="openPrintables" title="Print View">
+                    <i class="fa-solid fa-print"></i>
+                </button>
             </div>
         </div>
 
@@ -126,11 +136,11 @@
                                         highlight:
                                             hasRemark(
                                                 log.remarks,
-                                                'overtime'
+                                                'overtime',
                                             ) ||
                                             hasRemark(
                                                 log.remarks,
-                                                'pending overtime'
+                                                'pending overtime',
                                             ),
                                     }"
                                 >
@@ -142,7 +152,7 @@
                                 <span class="badge">
                                     {{
                                         convertToReadableTime(
-                                            log.total_time_work
+                                            log.total_time_work,
                                         )
                                     }}
                                 </span>
@@ -154,7 +164,7 @@
                                 <span class="badge ut">
                                     {{
                                         convertToReadableTime(
-                                            log.late_undertime
+                                            log.late_undertime,
                                         )
                                     }}
                                 </span>
@@ -198,11 +208,13 @@
 import axios from "axios";
 import CorrectionLog from "./Corrections/CorrectionLog.vue";
 import CorrectionList from "./Corrections/CorrectionList.vue";
+import PrintableDtrView from "./printables/PrintableDtrView.vue";
+import ViewDtr from "./ViewDtr.vue";
 
 const token = localStorage.getItem("auth_token");
 
 export default {
-    components: { CorrectionLog, CorrectionList },
+    components: { CorrectionLog, CorrectionList, PrintableDtrView, ViewDtr },
     props: {
         employeeNumber: { type: String, required: true },
         month: { type: Number, default: null },
@@ -233,6 +245,7 @@ export default {
                 "November",
                 "December",
             ],
+            dtr_all: [],
             years: Array.from({ length: 6 }, (_, i) => currentYear - i),
         };
     },
@@ -252,10 +265,11 @@ export default {
                             Authorization: `Bearer ${this.token}`,
                             Accept: "application/json",
                         },
-                    }
+                    },
                 );
                 this.logs = response.data.computedData;
                 this.summary = response.data.summary;
+                this.dtr_all = response.data;
                 this.$emit("send-summary", response.data.summary);
             } catch (error) {
                 console.error("Error fetching logs:", error);
@@ -267,7 +281,7 @@ export default {
             return remarks.some(
                 (r) =>
                     String(r).trim().toLowerCase() ===
-                    keyword.trim().toLowerCase()
+                    keyword.trim().toLowerCase(),
             );
         },
         hasStatus(remarks) {
@@ -328,7 +342,7 @@ export default {
                         "today",
                         "overtime",
                         "pending overtime",
-                    ].includes(r.toLowerCase())
+                    ].includes(r.toLowerCase()),
             );
         },
         getRemarkClass(remark) {
@@ -347,7 +361,7 @@ export default {
             const date = new Date(
                 this.selectedYear,
                 this.selectedMonth - 1,
-                day + 1
+                day + 1,
             );
             return date.toLocaleDateString("en-US", { weekday: "short" });
         },
@@ -370,9 +384,38 @@ export default {
         openCorretionList() {
             this.$refs.correctionListModal.open(
                 this.selectedMonth,
-                this.selectedYear
+                this.selectedYear,
             );
         },
+        downloadDTR() {
+             // Build request parameters
+            const params = {
+                month: this.selectedMonth,
+                year: this.selectedYear
+            };
+
+            axios({
+                url: '/api/employee/timelogs/download',
+                method: 'GET',          
+                responseType: 'blob',   
+                params: params,
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            .then((response) => {
+                console.log(response);
+            })
+            .catch((error) => {
+                console.error('Error downloading DTR:', error);
+                alert('Failed to download DTR. Please try again.');
+            });
+        },
+
+        openPrintables() {
+            this.$refs.printableModal.open();
+        }
+        
     },
     watch: {
         month(newVal) {

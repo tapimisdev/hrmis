@@ -23,3 +23,6 @@ Broadcast::channel('refresh', function () {
     return true;
 });
 
+Broadcast::channel('user.notifications.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

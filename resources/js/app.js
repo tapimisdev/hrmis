@@ -6,7 +6,7 @@ import './dark-mode';
 import axios from 'axios';
 import { post, put } from './action';
 import { 
-    confirmAction, alert, pushQuery, redirectToTab, loadCountries
+    confirmAction, alert, pushQuery, redirectToTab, loadCountries, createWatch
 } from './helper';
 import lightGallery from 'lightgallery';
 import lgThumbnail from 'lightgallery/plugins/thumbnail'

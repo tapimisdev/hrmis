@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
 use App\Http\Requests\Employee\StoreOffsetApplication;
+use App\Events\NotificationEvents;
+use App\Services\EventService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,13 +17,14 @@ use Carbon\Carbon;
 class OffsetApplicationController extends Controller
 {
     protected $applicationService;
+    protected $EventService;
 
-    public function __construct(ApplicationController $applicationService)
+    public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
+        $this->middleware('permission:emp.offset_application.view')->only(['index', 'create', 'show']);
+        $this->middleware('permission:emp.offset_application.apply')->only(['store']);
         $this->applicationService = $applicationService;
-
-        // $this->middleware('permission:emp.offset_application.view')->only(['index', 'create', 'show']);
-        // $this->middleware('permission:emp.offset_application.apply')->only(['store']);
+        $this->EventService = $EventService;
     }
 
     /**
@@ -158,6 +161,16 @@ class OffsetApplicationController extends Controller
                 }
             }
 
+            $sender = ucwords(Auth::user()->name);
+            $payload = [
+                'type' => 'event',
+                'sender' => $sender,
+                'receiver' => 'admins',
+                'message' => '%b' . $sender . '%b filed an offset application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => route('services.offset.show', ['application' => $applicationID])
+            ];
+            $this->EventService->pushNotification($payload);
+
             DB::commit();
 
             return response()->json([
@@ -253,7 +266,7 @@ class OffsetApplicationController extends Controller
                 ';
 
                 // Only show cancel if status is pending or approved
-                if (in_array($row->status, ['pending', 'approved'])) {
+                if (in_array($row->status, ['pending'])) {
                     $buttons .= '
                         <button data-id="' . $row->id . '" 
                             class="btn btn-danger btn-sm ms-1 cancel-button" 

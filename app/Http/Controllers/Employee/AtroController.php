@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreAtroRequest;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Services\EventService;
+use App\Events\NotificationEvents;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -14,13 +16,14 @@ class AtroController extends Controller
 {
 
     protected $applicationService;
+    protected $EventService;
 
-    public function __construct(ApplicationController $applicationService)
+    public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
-        $this->applicationService = $applicationService;
-
         $this->middleware('permission:emp.overtime_application.view')->only(['index', 'create', 'show']);
         $this->middleware('permission:emp.overtime_application.apply')->only(['store']);
+        $this->applicationService = $applicationService;
+        $this->EventService = $EventService;
     }
 
     /**
@@ -132,8 +135,18 @@ class AtroController extends Controller
                 }
             }
 
-            DB::commit();
-            
+            $sender = ucwords(Auth::user()->name);
+            $payload = [
+                'type' => 'application',
+                'sender' => $sender,
+                'receiver' => 'admins',
+                'message' => '%b' . $sender . '%b filed an overtime application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => route('services.overtime.show', ['application' => $atroId])
+            ];
+            $this->EventService->pushNotification($payload);
+
+
+            DB::commit();            
             return response()->json([
                 'status' => 'success',
                 'message' => 'Overtime application has been submitted',
@@ -222,7 +235,7 @@ class AtroController extends Controller
                     ';
 
                     // Only show cancel if status is pending or approved
-                    if (in_array($row->status, ['pending', 'approved'])) {
+                    if (in_array($row->status, ['pending'])) {
                         $buttons .= '
                             <button data-id="' . $row->id . '" 
                                 class="btn btn-danger btn-sm ms-1 cancel-button" 

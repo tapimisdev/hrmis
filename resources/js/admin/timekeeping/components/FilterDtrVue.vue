@@ -1,5 +1,13 @@
 <template>
   <div class="timekeeping-summary">
+    <PrintableDtrView ref="printableModal">
+        <ViewDtr
+            :payload="payload"
+            :month="localMonth"
+            :year="localYear"
+        />
+    </PrintableDtrView>
+    
     <SkeletonProfile v-if="loading" :lines="1" />
 
     <div v-else class="card">
@@ -35,10 +43,6 @@
           <button class="btn btn-outline-secondary btn-sm" @click="handlePrint">
             <i class="fa-solid fa-print"></i>
             <span class="d-none d-sm-inline ms-1">Print</span>
-          </button>
-          <button class="btn btn-outline-secondary btn-sm" @click="handleDownload">
-            <i class="fa-solid fa-download"></i>
-            <span class="d-none d-sm-inline ms-1">Export</span>
           </button>
         </div>
       </div>
@@ -102,7 +106,7 @@
         <div class="row g-3">
           <div
             class="col-md-6 col-lg-3"
-            v-for="(card, index) in summary"
+            v-for="(card, index) in payload"
             :key="index"
           >
             <div class="card h-100 border">
@@ -129,17 +133,20 @@
 
 <script>
 import SkeletonProfile from "./SkeletonProfile.vue";
+import PrintableDtrView from "../../../employee/check-in-out/printables/PrintableDtrView.vue";
+import ViewDtr from "../../../employee/check-in-out/ViewDtr.vue";
 
 export default {
-  components: { SkeletonProfile },
+  components: { SkeletonProfile,PrintableDtrView, ViewDtr },
   props: {
     month: { type: Number, default: () => new Date().getMonth() + 1 },
     year: { type: Number, default: () => new Date().getFullYear() },
     employee_id: { type: String, required: true },
-    summary: { type: Array, required: true },
+    payload: { type: Array, required: true },
   },
   data() {
     return {
+      sum: this.payload,
       loading: false,
       showSummary: false,
       localMonth: this.month,
@@ -161,10 +168,7 @@ export default {
       this.showSummary = !this.showSummary;
     },
     handlePrint() {
-      // Print functionality
-    },
-    handleDownload() {
-      // Download functionality
+        this.$refs.printableModal.open();
     },
     getSummaryIcon(label) {
       const iconMap = {

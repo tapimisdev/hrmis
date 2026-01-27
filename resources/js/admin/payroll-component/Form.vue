@@ -18,7 +18,7 @@
             <ModalVue
                 ref="addModal"
                 headerIcon="fa-solid fa-plus"
-                :title="tab"
+                :title="parent_table.name"
                 id="add-modal"
                 size="modal-md"
                 subtitle="Add employee's loan/deduction in here by range."

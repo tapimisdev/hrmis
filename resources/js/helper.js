@@ -120,3 +120,7 @@ export function loadCountries() {
         dataType: 'json'
     });
 }
+
+export function createWatch(getter, callback) {
+
+}

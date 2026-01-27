@@ -63,9 +63,28 @@ class DailyTimeRecordController extends Controller
      */
     public function show(Request $request, $employee_no)
     {
-        $user_id = DB::table('employee_information')
-            ->where('employee_no', $employee_no)
-            ->value('user_id');
+        $user = DB::table('employee_personal as ep')
+            ->leftJoin('employee_information as ei', 'ep.employee_no', 'ei.employee_no')
+            ->leftJoin('employee_organization as eo', 'ep.employee_no', 'eo.employee_no')
+            ->leftJoin('positions as p', 'eo.position_id', 'p.id')
+            ->leftJoin('units as u', 'eo.unit_id', 'u.id')
+            ->select(
+                'ei.user_id',
+
+                'ep.firstname',
+                'ep.middlename',
+                'ep.lastname',
+                'ep.suffix',
+                'ep.age',
+
+                'p.code as position_code',
+                'p.name as position_name',
+
+                'u.code as unit_code',
+                'u.name as unit_name',
+            )
+            ->where('ep.employee_no', $employee_no)
+            ->first();
 
         try {
             // Get month and year from query params, default to current month/year
@@ -78,11 +97,13 @@ class DailyTimeRecordController extends Controller
 
             // Fetch daily time records from the service
             $daily_time_record = $this->daily_time_record_service->getDTR([
-                'user_id'     => $user_id,
+                'user_id'     => $user->user_id,
                 'employee_no' => $employee_no ?? null,
                 'startDate'   => $startDate->toDateTimeString(),
                 'endDate'     => $endDate->toDateTimeString(),
             ]);
+            
+            $daily_time_record['information'] = $user;
 
             return response()->json($daily_time_record, 200);   
         } catch (\Exception $e) {

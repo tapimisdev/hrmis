@@ -57,7 +57,7 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th style="width: 50px">Img</th>
+                    <th style="width: 50px">Profile Image</th>
                     <th>Employee #</th>
                     <th>Fullname</th>
                     <th>Position</th>
@@ -99,11 +99,8 @@
             ],
             "columnDefs": [
                 {
-                    targets: "_all",
-                    className: "min-table-width",
-                    render: function(data, type, row, meta) {
-                        return data ?? "";
-                    }
+                    targets: [2, 3, 4, 5],
+                    className: 'min-table-width'
                 }
             ],
             "scrollX": true,
@@ -118,5 +115,3 @@
     });
 </script>
 @endsection
-
-

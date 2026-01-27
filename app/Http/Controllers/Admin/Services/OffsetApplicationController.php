@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Services;
 
 use App\Http\Controllers\Controller;
 use App\Services\EmployeeService;
+use App\Services\EventService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,14 +13,16 @@ use Carbon\Carbon;
 
 class OffsetApplicationController extends Controller {
 
-    public $employeeService;
-    public $generateService;
+    protected $employeeService;
+    protected $generateService;
+    protected $EventService;
 
-    public function __construct(EmployeeService $employeeService)
+    public function __construct(EmployeeService $employeeService, EventService $EventService)
     {
-        $this->employeeService = $employeeService;
         $this->middleware('permission:hr.offset_approval.view')->only(['view', 'show']);
         $this->middleware('permission:hr.offset_approval.save')->only('save');
+        $this->employeeService = $employeeService;
+        $this->EventService = $EventService;
     }
 
     public function getRawData(?int $id = null)
@@ -117,8 +120,6 @@ class OffsetApplicationController extends Controller {
         return $results;
     }
 
-
-
     public function index() 
     {
         if (request()->ajax()) {
@@ -133,7 +134,7 @@ class OffsetApplicationController extends Controller {
     {
 
         $data = $this->getRawData($id)[0] ?? [];
-
+        
         if(!$data) {
             return redirect()->back();
         }
@@ -204,6 +205,14 @@ class OffsetApplicationController extends Controller {
     {
         try {
 
+            $existingData = DB::table('offset_applications')
+                ->where('id', $id)
+                ->first();
+
+            if (!$existingData) {
+                return response()->json(['error' => 'Record not found'], 404);
+            }
+
             DB::table('offset_applications')
                 ->where('id', $id)
                 ->update([
@@ -212,6 +221,18 @@ class OffsetApplicationController extends Controller {
                 ]);
 
             $this->updateCredits($id);
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $existingData->user_id;
+            $application_no = $existingData->application_no;
+            $payload = [
+                'type' => 'approved',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has approved your offset application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/offset'
+            ];
+            $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',
@@ -230,6 +251,15 @@ class OffsetApplicationController extends Controller {
     public function decline(int $id, array $payload)
     {
         try {
+
+            $existingData = DB::table('offset_applications')
+                ->where('id', $id)
+                ->first();
+
+            if (!$existingData) {
+                return response()->json(['error' => 'Record not found'], 404);
+            }
+
             DB::table('offset_applications')
                 ->where('id', $id)
                 ->update([
@@ -242,6 +272,18 @@ class OffsetApplicationController extends Controller {
                 ->update([
                     'status' => 'rejected'
                 ]);
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $existingData->user_id;
+            $application_no = $existingData->application_no;
+            $payload = [
+                'type' => 'rejected',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has rejected your offset application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/offset'
+            ];
+            $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',

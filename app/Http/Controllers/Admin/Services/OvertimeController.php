@@ -3,18 +3,24 @@
 namespace App\Http\Controllers\Admin\Services;
 
 use App\Http\Controllers\Controller;
+use App\Services\EventService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+
 use Carbon\Carbon;
 
 class OvertimeController extends Controller {
 
-    public function __construct()
+
+    protected $EventService;
+
+    public function __construct(EventService $EventService)
     {
         $this->middleware('permission:hr.overtime_approval.view')->only(['index', 'show']);
         $this->middleware('permission:hr.overtime_approval.save')->only('save');
+        $this->EventService = $EventService;
     }
 
     public function getRawData(?int $id = null)
@@ -147,12 +153,32 @@ class OvertimeController extends Controller {
     {
         try {
 
+            $existingData = DB::table('overtime_applications')
+                ->where('id', $id)
+                ->first();
+
+            if (!$existingData) {
+                return response()->json(['error' => 'Record not found'], 404);
+            }
+
             DB::table('overtime_applications')
                 ->where('id', $id)
                 ->update([
                     'status' => 'approved',
                     'approver_id' => Auth::id() ?? null
                 ]);
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $existingData->user_id;
+            $application_no = $existingData->application_no;
+            $payload = [
+                'type' => 'approved',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has approved your overtime application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/overtime'
+            ];
+            $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',
@@ -170,6 +196,15 @@ class OvertimeController extends Controller {
     public function decline(int $id, array $payload)
     {
         try {
+
+            $existingData = DB::table('overtime_applications')
+                ->where('id', $id)
+                ->first();
+
+            if (!$existingData) {
+                return response()->json(['error' => 'Record not found'], 404);
+            }
+
             DB::table('overtime_applications')
                 ->where('id', $id)
                 ->update([
@@ -178,10 +213,22 @@ class OvertimeController extends Controller {
                 ]);
 
             DB::table('overtime_approvals')
-                ->where('overtime_approvals_id', $id)
+                ->where('overtime_applications_id', $id)
                 ->update([
                     'status' => 'rejected'
                 ]);
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $existingData->user_id;
+            $application_no = $existingData->application_no;
+            $payload = [
+                'type' => 'rejected',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has rejected your overtime application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/overtime'
+            ];
+            $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',

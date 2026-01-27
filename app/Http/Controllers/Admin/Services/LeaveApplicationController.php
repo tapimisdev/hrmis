@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Services;
 
 use App\Http\Controllers\Controller;
 use App\Services\EmployeeService;
+use App\Services\EventService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,14 +13,16 @@ use Carbon\Carbon;
 
 class LeaveApplicationController extends Controller {
 
-    public $employeeService;
-    public $generateService;
+    protected $employeeService;
+    protected $generateService;
+    protected $EventService;
 
-    public function __construct(EmployeeService $employeeService)
+    public function __construct(EmployeeService $employeeService, EventService $EventService)
     {
-        $this->employeeService = $employeeService;
         $this->middleware('permission:hr.leave_approval.view')->only(['view', 'show']);
         $this->middleware('permission:hr.leave_approval.save')->only('save');
+        $this->employeeService = $employeeService;
+        $this->EventService = $EventService;
     }
 
     public function getRawData(?int $id = null)
@@ -148,7 +151,7 @@ class LeaveApplicationController extends Controller {
         $currentMonth = Carbon::now()->format('Y-m');
         $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
         $remaining_balance = (float) $latestCredits['current']?->balance ?? 0;
-        $toBeDeducted = (float) $this->compyte($data->dates);
+        $toBeDeducted = (float) $this->compute($data->dates);
         $new_balance = $remaining_balance - $toBeDeducted;
 
         $hasBalance = false;
@@ -169,7 +172,7 @@ class LeaveApplicationController extends Controller {
       
     }
 
-    public function compyte($dates): float
+    public function compute($dates): float
     {
         return $dates->sum(function ($item) {
             return match (strtolower($item['shift'] ?? '')) {
@@ -210,6 +213,14 @@ class LeaveApplicationController extends Controller {
     {
         try {
 
+            $existingData = DB::table('leave_applications')
+                ->where('id', $id)
+                ->first();
+
+            if (!$existingData) {
+                return response()->json(['error' => 'Record not found'], 404);
+            }
+            
             DB::table('leave_applications')
                 ->where('id', $id)
                 ->update([
@@ -218,6 +229,18 @@ class LeaveApplicationController extends Controller {
                 ]);
 
             $this->updateCredits($id);
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $existingData->user_id;
+            $application_no = $existingData->application_no;
+            $payload = [
+                'type' => 'approved',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has approved your leave application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/leaves'
+            ];
+            $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',
@@ -236,6 +259,15 @@ class LeaveApplicationController extends Controller {
     public function decline(int $id, array $payload)
     {
         try {
+
+            $existingData = DB::table('leave_applications')
+                ->where('id', $id)
+                ->first();
+
+            if (!$existingData) {
+                return response()->json(['error' => 'Record not found'], 404);
+            }
+
             DB::table('leave_applications')
                 ->where('id', $id)
                 ->update([
@@ -248,6 +280,18 @@ class LeaveApplicationController extends Controller {
                 ->update([
                     'status' => 'rejected'
                 ]);
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $existingData->user_id;
+            $application_no = $existingData->application_no;
+            $payload = [
+                'type' => 'rejected',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has rejected your leave application (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/leaves'
+            ];
+            $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',
@@ -286,7 +330,7 @@ class LeaveApplicationController extends Controller {
                 ->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
 
             $remaining_balance = (float) ($latestCredits['current']->balance ?? 0);
-            $toBeDeducted     = (float) $this->compyte($data->dates);
+            $toBeDeducted     = (float) $this->compute($data->dates);
             $new_balance      = $remaining_balance - $toBeDeducted;
 
             // --- Step 2: Group dates by month ---

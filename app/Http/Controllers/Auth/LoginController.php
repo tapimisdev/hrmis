@@ -51,7 +51,6 @@ class LoginController extends Controller
             'name' => $user->name,
             'email' => $user->email
         ]);
-
     }
 
 
@@ -68,9 +67,6 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
-        // Delete all tokens for this user
-        $request->user()->tokens()->delete();
-
         // Forget the session variable
         $request->session()->forget('auth_token');
         $request->session()->forget('name');
