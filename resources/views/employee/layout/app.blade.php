@@ -4,12 +4,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Laravel') }}</title>
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Bunny Fonts (Nunito font family) -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
@@ -33,8 +33,7 @@
     <!-- Fancybox UI CSS (for image/content lightbox modals) -->
     <link
         rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/fancybox/fancybox.css"
-    />
+        href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/fancybox/fancybox.css" />
 
     <!-- Favicon icons -->
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
@@ -45,7 +44,7 @@
     <script>
         // init-theme-sidebar.js
 
-        (function () {
+        (function() {
             //  Theme setup
             const storageKey = 'theme-preference';
             const storedTheme = localStorage.getItem(storageKey);
@@ -54,7 +53,7 @@
             document.documentElement.setAttribute('data-bs-theme', theme);
         })();
 
-        (function () {
+        (function() {
             // Sidebar collapse setup
             const collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
             const sidebar = document.querySelector('.sidebar');
@@ -63,18 +62,18 @@
                 sidebar.classList.add('collapsed');
             }
         })();
-
     </script>
 
     @yield('styles')
 
     <!-- Vite compiled assets (SASS + JS) -->
     @vite([
-        'resources/sass/app.scss', 
-        'resources/js/app.js',
-        'resources/sass/employee.scss',
+    'resources/sass/app.scss',
+    'resources/js/app.js',
+    'resources/sass/employee.scss',
     ])
 </head>
+
 <body>
     <div class="top-space"></div>
     <div id="app">
@@ -84,12 +83,12 @@
         <main>
             <birthday-component></birthday-component>
             <div>
-                 @yield('content')
+                @yield('content')
             </div>
             @include('employee.components.footer')
-            <div class="modal fade" 
-                id="forceChangePasswordModal" 
-                tabindex="-1" 
+            <div class="modal fade"
+                id="forceChangePasswordModal"
+                tabindex="-1"
                 aria-hidden="true"
                 data-bs-backdrop="static"
                 data-bs-keyboard="false">
@@ -98,7 +97,7 @@
                     <div class="modal-content shadow-lg border-0 rounded-4">
                         <div class="modal-body px-4 p-5">
                             <div class="alert alert-info small mb-4" role="alert">
-                                As part of our ongoing commitment to account security, you are required to update your password at this time. 
+                                As part of our ongoing commitment to account security, you are required to update your password at this time.
                                 This helps protect your account from unauthorized access.
                             </div>
                             <change-password title='Update Password' @password-changed="handlePasswordChanged"></change-password>
@@ -165,16 +164,27 @@
         });
     </script>
 
-     <script>
+    <script>
         @if(session('auth_token'))
-            localStorage.setItem('auth_token', "{{ session('auth_token') }}");
-            localStorage.setItem('name', "{{ session('name') }}");
-            localStorage.setItem('email', "{{ session('email') }}");
-            {{ session()->forget('auth_token') }}
-            {{ session()->forget('name') }}
-            {{ session()->forget('email') }}
+        localStorage.setItem('auth_token', "{{ session('auth_token') }}");
+        localStorage.setItem('name', "{{ session('name') }}");
+        localStorage.setItem('email', "{{ session('email') }}");
+        {
+            {
+                session() - > forget('auth_token')
+            }
+        } {
+            {
+                session() - > forget('name')
+            }
+        } {
+            {
+                session() - > forget('email')
+            }
+        }
         @endif
     </script>
 
 </body>
+
 </html>

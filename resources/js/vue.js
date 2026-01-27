@@ -12,6 +12,7 @@ import Show from "./employee/announcements/Show.vue";
 import ChangePassword from "./employee/profile/ChangePassword.vue";
 import BirthdayComponent from "./birthday/BirthdayComponent.vue";
 import PushNotification from "./employee/profile/PushNotification.vue";
+import ViewDtr from "./employee/check-in-out/ViewDtr.vue";
 
 // Admin
 import AdminHeader from "./admin/components/Header.vue";
@@ -67,6 +68,7 @@ const authApp = createApp({
         ChangePassword,
         PushNotification,
         WebtimeIndex,
+        ViewDtr,
 
         DashboardVue,
         DtrViewVue,

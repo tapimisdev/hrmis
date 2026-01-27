@@ -2,6 +2,13 @@
     <div class="attendance-container">
         <CorrectionLog ref="correctionModal" />
         <CorrectionList ref="correctionListModal" />
+        <PrintableDtrView ref="printableModal">
+            <ViewDtr
+                :payload="dtr_all"
+                :month="selectedMonth"
+                :year="selectedYear"
+            />
+        </PrintableDtrView>
 
         <!-- Header -->
         <div class="header d-block d-lg-flex gap-3">
@@ -30,8 +37,8 @@
                         {{ year }}
                     </option>
                 </select>
-                <button class="btn btn-primary">
-                  <i class="fa-solid fa-download" @click="downloadDTR" data-bs-toggle="tooltip" title="Download DTR"></i>
+                <button class="btn btn-primary" @click="openPrintables" title="Print View">
+                    <i class="fa-solid fa-print"></i>
                 </button>
             </div>
         </div>
@@ -201,11 +208,13 @@
 import axios from "axios";
 import CorrectionLog from "./Corrections/CorrectionLog.vue";
 import CorrectionList from "./Corrections/CorrectionList.vue";
+import PrintableDtrView from "./printables/PrintableDtrView.vue";
+import ViewDtr from "./ViewDtr.vue";
 
 const token = localStorage.getItem("auth_token");
 
 export default {
-    components: { CorrectionLog, CorrectionList },
+    components: { CorrectionLog, CorrectionList, PrintableDtrView, ViewDtr },
     props: {
         employeeNumber: { type: String, required: true },
         month: { type: Number, default: null },
@@ -236,6 +245,7 @@ export default {
                 "November",
                 "December",
             ],
+            dtr_all: [],
             years: Array.from({ length: 6 }, (_, i) => currentYear - i),
         };
     },
@@ -259,6 +269,7 @@ export default {
                 );
                 this.logs = response.data.computedData;
                 this.summary = response.data.summary;
+                this.dtr_all = response.data;
                 this.$emit("send-summary", response.data.summary);
             } catch (error) {
                 console.error("Error fetching logs:", error);
@@ -399,7 +410,12 @@ export default {
                 console.error('Error downloading DTR:', error);
                 alert('Failed to download DTR. Please try again.');
             });
+        },
+
+        openPrintables() {
+            this.$refs.printableModal.open();
         }
+        
     },
     watch: {
         month(newVal) {
