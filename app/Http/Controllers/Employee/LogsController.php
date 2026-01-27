@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+
 use App\Services\DailyTimeRecordService;
 use Carbon\Carbon;
 
@@ -37,18 +39,20 @@ class LogsController extends Controller
             ->filter(function ($log) {
                 return isset($log['remarks']) &&
                     is_array($log['remarks']) &&
-                    collect($log['remarks'])
-                            ->map('strtolower')
-                            ->contains('incomplete log');
+                    collect($log['remarks'])->contains(function ($remark) {
+                        return Str::contains(
+                            strtolower($remark),
+                            ['incomplete log', 'considered absent']
+                        );
+                    });
             })
             ->map(function ($log) {
-                // Remove "incomplete log" only if there are other remarks
-                if (count($log['remarks']) > 1) {
-                    $log['remarks'] = array_values(
-                        array_filter($log['remarks'], function ($remark) {
-                            return strtolower($remark) !== 'incomplete log';
-                        })
-                    );
+                $remarks = collect($log['remarks'])->map(fn ($r) => strtolower($r));
+
+                if ($remarks->contains(fn ($r) => Str::contains($r, 'considered absent'))) {
+                    $log['remarks'] = ['need corrections'];
+                } else {
+                    $log['remarks'] = ['today'];
                 }
 
                 return $log;
@@ -78,38 +82,5 @@ class LogsController extends Controller
         // Return null if no current incomplete log
         return response()->json(null);
     }
-
-    public function downloadLogs(Request $request)
-    {
-        // Validate request
-        $request->validate([
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:1900',
-        ]);
-
-        $userId = Auth::id();
-
-        // Get first and last day of the month/year
-        $firstDay = Carbon::create($request->year, $request->month, 1)->startOfDay();
-        $lastDay = Carbon::create($request->year, $request->month, 1)->endOfMonth()->endOfDay();
-
-        $payload = [
-            'user_id' => $userId,
-            'startDate' => $firstDay->toDateString(),  // or ->format('Y-m-d H:i:s') if needed
-            'endDate'   => $lastDay->toDateString(),   // same as above
-        ];
-
-        // Fetch logs
-        $logs = $this->daily_time_record_service->getDtr($payload) ?? [];
-
-        dd($logs);
-
-        return response()->json([
-            'success' => true,
-            'data' => $logs,
-        ]);
-    }
-
-
 
 }

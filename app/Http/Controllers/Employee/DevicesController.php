@@ -19,13 +19,12 @@ class DevicesController extends Controller
      */
     public function index(Request $request)
     {
-
+        
         $user = $request->user();
 
-        // Fetch active sessions for the user (excluding current session)
         $devices = DB::table('sessions')
             ->where('user_id', $user->id)
-            ->where('id', '!=', session()->getId()) // Exclude current session
+            ->where('id', '!=', session()->getId()) 
             ->get(['id', 'ip_address', 'user_agent', 'last_activity'])
             ->map(function ($session) {
                 return [

@@ -235,7 +235,7 @@ class AtroController extends Controller
                     ';
 
                     // Only show cancel if status is pending or approved
-                    if (in_array($row->status, ['pending', 'approved'])) {
+                    if (in_array($row->status, ['pending'])) {
                         $buttons .= '
                             <button data-id="' . $row->id . '" 
                                 class="btn btn-danger btn-sm ms-1 cancel-button" 

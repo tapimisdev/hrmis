@@ -139,78 +139,42 @@
                             
                         @endif
 
-                        <div class="mt-5 mb-5">
-                            <table class="table table-bordered table-sm mb-0">
-                                <thead class="bg-primary text-white">
-                                    <tr>
-                                        <th colspan="3" class="text-center py-2">Credits Deduction Breakdown</th>
-                                    </tr>
-                                    <tr class="bg-primary">
-                                        <th class="p-2">Date</th>
-                                        <th class="p-2">Shift</th>
-                                        <th class="p-2">Credits</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($data->dates as $item)
-                                        @php
-                                            $date = \Carbon\Carbon::parse($item['date'])->format('M d, Y - (l)');
-                                            $shift = $item['shift'];
-                                            $credit = match($shift) {
-                                                'morning', 'afternoon' => 0.5,
-                                                'wholeday' => 1.0,
-                                                default => 0
-                                            };
-                                        @endphp
-                                        <tr>
-                                            <td class="p-2">{{ $date }}</td>
-                                            <td class="p-2">{{ ucfirst($shift) }}</td>
-                                            <td class="p-2">{{ number_format($credit, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                        @if($data->status != 'approved')
+                            <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
+                                <div class="d-flex align-items-center gap-4">
+                                    <h5 class="fw-bold text-uppercase text-center mb-0">
+                                        <div>Offset Credit Balance</div>
+                                        <div>
+                                            {{ \Carbon\Carbon::createFromDate(now()->year, $month ?? now()->month, 1)->format('F') }}
+                                            ({{ now()->year }})
+                                        </div>
+                                    </h5>
+                                    <h2 class="fw-bold px-4 py-3 bg-primary rounded-3 mb-0">
+                                        {{$computation['remaining_balance']}}
+                                    </h2>
+                                </div>
 
-                        <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
-                            <div class="d-flex align-items-center gap-4">
-                                <h5 class="fw-bold text-uppercase text-center mb-0">
-                                    <div>Offset Credit Balance</div>
-                                    <div>January (2026)</div>
-                                </h5>
-                                <h2 class="fw-bold px-4 py-3 bg-primary rounded-3 mb-0">
-                                    {{$computation['remaining_balance']}}
-                                </h2>
-                            </div>
+                                <div class="d-flex align-items-center gap-4">
+                                    <h5 class="fw-bold text-uppercase text-center mb-0">
+                                        <div>To be deducted</div>
+                                        <div></div>
+                                    </h5>
+                                    <h2 class="fw-bold px-4 py-3 bg-danger rounded-3 mb-0">
+                                        {{$computation['deduction']}}
+                                    </h2>
+                                </div>
 
-                            <div class="d-flex align-items-center gap-4">
-                                <h5 class="fw-bold text-uppercase text-center mb-0">
-                                    <div>To be deducted</div>
-                                    <div></div>
-                                </h5>
-                                <h2 class="fw-bold px-4 py-3 bg-danger rounded-3 mb-0">
-                                    {{$computation['deduction']}}
-                                </h2>
+                                <div class="d-flex align-items-center gap-4">
+                                    <h5 class="fw-bold text-uppercase text-center mb-0">
+                                        <div>New Balance</div>
+                                        <div></div>
+                                    </h5>
+                                    <h2 class="fw-bold px-4 py-3 {{ $hasBalance ? 'bg-info' : 'bg-danger' }} rounded-3 mb-0">
+                                        {{$computation['new_balance']}}
+                                    </h2>
+                                </div>
                             </div>
-
-                            <div class="d-flex align-items-center gap-4">
-                                <h5 class="fw-bold text-uppercase text-center mb-0">
-                                    <div>New Balance</div>
-                                    <div></div>
-                                </h5>
-                                <h2 class="fw-bold px-4 py-3 {{ $hasBalance ? 'bg-info' : 'bg-danger' }} rounded-3 mb-0">
-                                    {{$computation['new_balance']}}
-                                </h2>
-                            </div>
-                        </div>
-                        <div class="w-100 text-center mt-4">
-                            <a href="{{ route('hris.employee.offset-credits', ['employee_no' => $employee_no]) }}" 
-                                class="w-100 text-uppercase fw-bold" 
-                                target="_blank" 
-                                rel="noopener noreferrer">
-                                View Offset Credits
-                            </a>
-                        </div>
+                        @endif
                     </div>
                 </div>
                 <div class="mt-4 mb-3">

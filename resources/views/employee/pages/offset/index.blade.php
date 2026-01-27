@@ -45,7 +45,7 @@
                 { data: "date", name: 'date' },
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
-            ],  
+            ],
             columnDefs: [
                 {
                     targets: "_all",

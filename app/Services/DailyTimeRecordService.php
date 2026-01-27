@@ -241,7 +241,7 @@ class DailyTimeRecordService {
                 }
 
                 if(!$is_future && $suspension['is_suspended'] && $suspension['type'] === 'whole_day') {
-                    $remarks[] = 'suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['type']));
+                    $remarks[] = 'Suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['type']));
                     $TOTAL_SUSPENSION++;
                     $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
                     continue;
@@ -249,7 +249,7 @@ class DailyTimeRecordService {
 
                  // If halfday suspended
                 if(!$is_future && $suspension['is_suspended'] && $suspension['type'] === 'half_day') {
-                    $remarks[] = 'suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['shift']));
+                    $remarks[] = 'Suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['shift']));
                     $TOTAL_SUSPENSION++;
                     $computedData[] = [
                         'date'              => $date['date'],
@@ -360,7 +360,7 @@ class DailyTimeRecordService {
                     $remarks[] = 'incomplete log';
                     $TOTAL_INCOMPLETE_LOGS++;
                 }else{
-                    $remarks[] = 'Consider Absent';
+                    $remarks[] = 'considered absent';
                     $TOTAL_ABSENT++;
                 }
 

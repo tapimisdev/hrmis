@@ -174,38 +174,42 @@
                                 </tbody>
                             </table>
                         </div>
-                        
-                        <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
-                            <div class="d-flex align-items-center gap-4">
-                                <h5 class="fw-bold text-uppercase text-center mb-0">
-                                    <div>Leave Credit Balance</div>
-                                    <div>January (2026)</div>
-                                </h5>
-                                <h2 class="fw-bold px-4 py-3 bg-primary rounded-3 mb-0">
-                                    {{$computation['remaining_balance']}}
-                                </h2>
-                            </div>
+                        @if($data->status != 'pending')
+                            <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
+                                <div class="d-flex align-items-center gap-4">
+                                    <h5 class="fw-bold text-uppercase text-center mb-0">
+                                        <div>Leave Credit Balance</div>
+                                        <div>
+                                            {{ \Carbon\Carbon::createFromDate(now()->year, $month ?? now()->month, 1)->format('F') }}
+                                            ({{ now()->year }})
+                                        </div>
+                                    </h5>
+                                    <h2 class="fw-bold px-4 py-3 bg-primary rounded-3 mb-0">
+                                        {{$computation['remaining_balance']}}
+                                    </h2>
+                                </div>
 
-                            <div class="d-flex align-items-center gap-4">
-                                <h5 class="fw-bold text-uppercase text-center mb-0">
-                                    <div>To be deducted</div>
-                                    <div></div>
-                                </h5>
-                                <h2 class="fw-bold px-4 py-3 bg-danger rounded-3 mb-0">
-                                    {{$computation['deduction']}}
-                                </h2>
-                            </div>
+                                <div class="d-flex align-items-center gap-4">
+                                    <h5 class="fw-bold text-uppercase text-center mb-0">
+                                        <div>To be deducted</div>
+                                        <div></div>
+                                    </h5>
+                                    <h2 class="fw-bold px-4 py-3 bg-danger rounded-3 mb-0">
+                                        {{$computation['deduction']}}
+                                    </h2>
+                                </div>
 
-                            <div class="d-flex align-items-center gap-4">
-                                <h5 class="fw-bold text-uppercase text-center mb-0">
-                                    <div>New Balance</div>
-                                    <div></div>
-                                </h5>
-                                <h2 class="fw-bold px-4 py-3 {{ $hasBalance ? 'bg-info' : 'bg-danger' }} rounded-3 mb-0">
-                                    {{$computation['new_balance']}}
-                                </h2>
+                                <div class="d-flex align-items-center gap-4">
+                                    <h5 class="fw-bold text-uppercase text-center mb-0">
+                                        <div>New Balance</div>
+                                        <div></div>
+                                    </h5>
+                                    <h2 class="fw-bold px-4 py-3 {{ $hasBalance ? 'bg-info' : 'bg-danger' }} rounded-3 mb-0">
+                                        {{$computation['new_balance']}}
+                                    </h2>
+                                </div>
                             </div>
-                        </div>
+                        @endif
                         <div class="w-100 text-center mt-4">
                             <a href="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" 
                                 class="w-100 text-uppercase fw-bold" 

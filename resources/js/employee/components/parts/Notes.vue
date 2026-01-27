@@ -2,7 +2,15 @@
     <div
         class="widget-container"
         ref="notesEl"
-        :style="isMobile ? { left: '50%', top: '50%', transform: 'translate(-50%, -50%)' } : { left: notesPos.x + 'px', top: notesPos.y + 'px' }"
+        :style="
+            isMobile
+                ? {
+                      left: '50%',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                  }
+                : { left: notesPos.x + 'px', top: notesPos.y + 'px' }
+        "
         :class="{ 'dark-mode': isDarkMode }"
     >
         <div class="widget-header text-uppercase" @mousedown="startDrag">
@@ -73,7 +81,7 @@
         <!-- View Mode -->
         <div v-else-if="viewingNote && !editingNote" class="widget-content">
             <div class="note-viewer">
-               <div class="viewer-actions mb-4">
+                <div class="viewer-actions mb-4">
                     <button
                         class="btn btn-dark px-3 text-uppercase fw-medium btn-sm"
                         @click="backToList"
@@ -93,10 +101,13 @@
                         Delete
                     </button>
                 </div>
-                <h5 class="note-title-view">{{ currentNote.title || "Untitled" }}</h5>
+                <h5 class="note-title-view">
+                    {{ currentNote.title || "Untitled" }}
+                </h5>
                 <p class="note-content-view">{{ currentNote.content }}</p>
                 <div v-if="currentNote.hasPin" class="text-muted small mt-5">
-                    <i class="fa-solid fa-lock me-2"></i> This note is protected with a PIN.
+                    <i class="fa-solid fa-lock me-2"></i> This note is protected
+                    with a PIN.
                 </div>
             </div>
         </div>
@@ -158,8 +169,13 @@
                         @click="saveNote"
                         :disabled="isSaving"
                     >
-                        <span v-if="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        {{ isSaving ? 'Saving...' : 'Save' }}
+                        <span
+                            v-if="isSaving"
+                            class="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                        ></span>
+                        {{ isSaving ? "Saving..." : "Save" }}
                     </button>
                 </div>
             </div>
@@ -182,9 +198,18 @@
                     {{ pinError }}
                 </div>
                 <div class="mt-3 d-block w-100">
-                    <button class="btn btn-primary w-100 mb-2" @click="submitPin" :disabled="isSubmittingPin">
-                        <span v-if="isSubmittingPin" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        {{ isSubmittingPin ? 'Submitting...' : 'Submit' }}
+                    <button
+                        class="btn btn-primary w-100 mb-2"
+                        @click="submitPin"
+                        :disabled="isSubmittingPin"
+                    >
+                        <span
+                            v-if="isSubmittingPin"
+                            class="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                        ></span>
+                        {{ isSubmittingPin ? "Submitting..." : "Submit" }}
                     </button>
                     <button class="btn btn-dark w-100" @click="closePinModal">
                         Cancel
@@ -199,13 +224,25 @@
                 <h5>Confirm Delete</h5>
                 <p>Are you sure you want to delete this note?</p>
                 <div class="mt-3 d-block w-100">
-                  <button class="btn btn-danger w-100 mb-2" @click="proceedDelete" :disabled="isDeleting">
-                      <span v-if="isDeleting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      {{ isDeleting ? 'Deleting...' : 'Delete' }}
-                  </button>
-                  <button class="btn btn-secondary w-100" @click="cancelDelete">
-                      Cancel
-                  </button>
+                    <button
+                        class="btn btn-danger w-100 mb-2"
+                        @click="proceedDelete"
+                        :disabled="isDeleting"
+                    >
+                        <span
+                            v-if="isDeleting"
+                            class="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                        ></span>
+                        {{ isDeleting ? "Deleting..." : "Delete" }}
+                    </button>
+                    <button
+                        class="btn btn-secondary w-100"
+                        @click="cancelDelete"
+                    >
+                        Cancel
+                    </button>
                 </div>
             </div>
         </div>
@@ -248,7 +285,7 @@ export default {
             showPinModal: false,
             enteredPin: "",
             pinError: "",
-            pendingAction: null, 
+            pendingAction: null,
             showDeleteModal: false,
             noteToDelete: null,
             isSaving: false, // Added for loading state
@@ -264,26 +301,25 @@ export default {
             );
         }
         this.loadNotes();
-        window.addEventListener('resize', this.updateIsMobile);
+        window.addEventListener("resize", this.updateIsMobile);
     },
     beforeUnmount() {
         document.removeEventListener("mousemove", this.onDrag);
         document.removeEventListener("mouseup", this.stopDrag);
-        window.removeEventListener('resize', this.updateIsMobile);
+        window.removeEventListener("resize", this.updateIsMobile);
     },
     methods: {
         updateIsMobile() {
             const wasMobile = this.isMobile;
             this.isMobile = window.innerWidth <= 767;
             if (wasMobile && !this.isMobile) {
-                // Became desktop, load saved position
                 this.notesPos = JSON.parse(
                     localStorage.getItem(NOTES_POS_KEY) || '{"x":100,"y":100}',
                 );
             }
         },
         async loadNotes() {
-            if (!this.token) return; 
+            if (!this.token) return;
             try {
                 const response = await axios.get(API_BASE, {
                     headers: { Authorization: `Bearer ${this.token}` },
@@ -335,7 +371,10 @@ export default {
             document.removeEventListener("mousemove", this.onDrag);
             document.removeEventListener("mouseup", this.stopDrag);
             if (!this.isMobile) {
-                localStorage.setItem(NOTES_POS_KEY, JSON.stringify(this.notesPos));
+                localStorage.setItem(
+                    NOTES_POS_KEY,
+                    JSON.stringify(this.notesPos),
+                );
             }
         },
         addNote() {
@@ -429,7 +468,11 @@ export default {
                     title: this.currentNote.title,
                     content: this.currentNote.content,
                     hasPin: this.currentNote.hasPin,
-                    pin: this.currentNote.hasPin && this.currentNote.pin !== "******" ? this.currentNote.pin : null,
+                    pin:
+                        this.currentNote.hasPin &&
+                        this.currentNote.pin !== "******"
+                            ? this.currentNote.pin
+                            : null,
                 };
                 const config = {
                     headers: { Authorization: `Bearer ${this.token}` },
@@ -443,9 +486,9 @@ export default {
                 } else {
                     await axios.post(API_BASE, data, config);
                 }
-                this.errors = { title: "", content: "", pin: "" }; 
+                this.errors = { title: "", content: "", pin: "" };
                 this.loadNotes();
-                this.backToList(); 
+                this.backToList();
             } catch (error) {
                 if (error.response && error.response.status === 422) {
                     this.errors = error.response.data.errors || {};
@@ -485,8 +528,12 @@ export default {
                 this.editingNote = false;
                 this.closePinModal();
             } catch (error) {
-                if (error.response && (error.response.status === 422 || error.response.status === 403)) {
-                    this.pinError = "PIN is incorrect"; 
+                if (
+                    error.response &&
+                    (error.response.status === 422 ||
+                        error.response.status === 403)
+                ) {
+                    this.pinError = "PIN is incorrect";
                 } else {
                     console.error("Error loading note:", error);
                 }
@@ -503,23 +550,26 @@ export default {
                     headers: { Authorization: `Bearer ${this.token}` },
                 });
                 this.notes = this.notes.filter((n) => n.id !== note.id);
-                this.pinError = ""; 
-                this.backToList(); 
+                this.pinError = "";
+                this.backToList();
                 this.closePinModal();
             } catch (error) {
-                if (error.response && error.response.status === 403) {
-                    this.pinError = "PIN is incorrect"; 
+                if (
+                    (error.response && error.response.status === 422) ||
+                    error.response.status === 403
+                ) {
+                    this.pinError = "PIN is incorrect";
                 } else {
                     console.error("Error deleting note:", error);
                 }
             } finally {
-                this.isDeleting = false; // Stop loading
+                this.isDeleting = false;
             }
         },
         closePinModal() {
             this.showPinModal = false;
             this.enteredPin = "";
-            this.pinError = ""; 
+            this.pinError = "";
             this.pendingAction = null;
         },
     },
@@ -527,7 +577,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-
 @media (max-width: 767.98px) {
     .widget-container {
         min-width: 280px !important;
@@ -547,7 +596,6 @@ export default {
     overflow: hidden;
 
     &.dark-mode {
-      
         background-color: #343a40;
         border-color: #495057;
         color: #fff;
@@ -604,7 +652,7 @@ export default {
     cursor: pointer;
 
     span {
-      margin-right: 12px;
+        margin-right: 12px;
     }
 
     &:hover {
@@ -711,7 +759,7 @@ export default {
     width: 100%;
     color: #000;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-    border: 2px solid #dc3545; 
+    border: 2px solid #dc3545;
 
     [data-bs-theme="dark"] & {
         background-color: #25282b;
@@ -729,7 +777,11 @@ export default {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 </style>

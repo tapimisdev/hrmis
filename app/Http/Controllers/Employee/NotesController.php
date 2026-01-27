@@ -96,7 +96,7 @@ class NotesController extends Controller
         $this->authorize('delete', $note);
 
         if ($note->hasPin) {
-            $request->validate(['pin' => 'required|string|size:4|regex:/^\d{4}$/']);
+            $request->validate(['pin' => 'required']);
             if (!$note->verifyPin($request->pin)) {
                 return response()->json(['error' => 'Invalid PIN'], 403);
             }

@@ -1,89 +1,99 @@
 <template>
-  <div
-    class="modal fade"
-    id="printableModal"
-    tabindex="-1"
-    aria-hidden="true"
-    data-bs-backdrop="static"
-    data-bs-keyboard="false"
-  >
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-      <div class="modal-content modern-modal">
-        <!-- Header -->
-        <div class="modal-header modern-header border-bottom">
-          <div class="header-content mb-3 d-flex align-items-center">
-            <div class="icon-wrapper me-2">
-              <i class="text-light fas fa-clock"></i>
+    <div
+        class="modal fade"
+        id="printableModal"
+        tabindex="-1"
+        aria-hidden="true"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
+    >
+        <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+            <div class="modal-content modern-modal">
+                <!-- Header -->
+                <div class="modal-header modern-header border-bottom">
+                    <div class="header-content mb-3 d-flex align-items-center">
+                        <div class="icon-wrapper me-2">
+                            <i class="text-light fas fa-clock"></i>
+                        </div>
+                        <div class="header-text">
+                            <h5 class="modal-title">Print View DTR</h5>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                    ></button>
+                </div>
+
+                <!-- Content -->
+                <div class="modal-body" ref="printArea">
+                    <slot></slot>
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer">
+                    <button
+                        class="btn py-2 px-4 btn-primary"
+                        type="button"
+                        @click="printModalBody"
+                    >
+                        Print
+                    </button>
+
+                    <button
+                        class="btn py-2 px-4 btn-danger"
+                        type="button"
+                        data-bs-dismiss="modal"
+                    >
+                        Close
+                    </button>
+                </div>
             </div>
-            <div class="header-text">
-              <h5 class="modal-title">Print View DTR</h5>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
         </div>
-
-        <!-- Content -->
-        <div class="modal-body" ref="printArea">
-          <slot></slot>
-        </div>
-
-        <!-- Footer -->
-        <div class="modal-footer">
-          <button class="btn py-2 px-4 btn-primary" type="button" @click="printModalBody">
-            Print
-          </button>
-
-          <button class="btn py-2 px-4 btn-danger" type="button" data-bs-dismiss="modal">
-            Close
-          </button>
-        </div>
-      </div>
     </div>
-  </div>
 </template>
 
 <script>
 export default {
-  name: "PrintableModal",
-  methods: {
-    open() {
-      $("#printableModal").modal("show");
-    },
+    name: "PrintableModal",
+    methods: {
+        open() {
+            $("#printableModal").modal("show");
+        },
 
-    printModalBody() {
-      const el = this.$refs.printArea;
-      if (!el) return;
+        printModalBody() {
+            const el = this.$refs.printArea;
+            if (!el) return;
 
-      const content = el.innerHTML;
+            const content = el.innerHTML;
 
-      // hidden iframe
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "0";
-      document.body.appendChild(iframe);
+            // hidden iframe
+            const iframe = document.createElement("iframe");
+            iframe.style.position = "fixed";
+            iframe.style.right = "0";
+            iframe.style.bottom = "0";
+            iframe.style.width = "0";
+            iframe.style.height = "0";
+            iframe.style.border = "0";
+            document.body.appendChild(iframe);
 
-      const win = iframe.contentWindow;
-      const doc = win.document;
+            const win = iframe.contentWindow;
+            const doc = win.document;
 
-      const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-        .map((link) => `<link rel="stylesheet" href="${link.href}">`)
-        .join("\n");
+            const styles = Array.from(
+                document.querySelectorAll('link[rel="stylesheet"]'),
+            )
+                .map((link) => `<link rel="stylesheet" href="${link.href}">`)
+                .join("\n");
 
-      const inlineStyles = Array.from(document.querySelectorAll("style"))
-        .map((style) => `<style>${style.innerHTML}</style>`)
-        .join("\n");
+            const inlineStyles = Array.from(document.querySelectorAll("style"))
+                .map((style) => `<style>${style.innerHTML}</style>`)
+                .join("\n");
 
-      const printCss = `
+            const printCss = `
         <style>
           @page { size: A4 landscape; margin: 6mm; }
 
@@ -126,8 +136,8 @@ export default {
         </style>
       `;
 
-      doc.open();
-      doc.write(`
+            doc.open();
+            doc.write(`
         <!doctype html>
         <html>
           <head>
@@ -143,11 +153,11 @@ export default {
           </body>
         </html>
       `);
-      doc.close();
+            doc.close();
 
-      // attach script safely (NO <script> string)
-      const script = doc.createElement("script");
-      script.text = `
+            // attach script safely (NO <script> string)
+            const script = doc.createElement("script");
+            script.text = `
         (function () {
           function fitToOnePage() {
             const root = document.getElementById('print-root');
@@ -181,20 +191,25 @@ export default {
           }, 50);
         })();
       `;
-      doc.body.appendChild(script);
+            doc.body.appendChild(script);
 
-      // cleanup after printing
-      win.onafterprint = () => {
-        setTimeout(() => {
-          if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
-        }, 200);
-      };
+            // cleanup after printing
+            win.onafterprint = () => {
+                setTimeout(() => {
+                    if (iframe && iframe.parentNode)
+                        iframe.parentNode.removeChild(iframe);
+                }, 200);
+            };
+        },
     },
-  },
 };
 </script>
 
 <style scoped>
-.badge { font-size: 0.85rem; }
-.table { font-size: 0.9rem; }
+.badge {
+    font-size: 0.85rem;
+}
+.table {
+    font-size: 0.9rem;
+}
 </style>

@@ -279,8 +279,8 @@ class LeaveApplicationController extends Controller
                         </button>
                 ';
 
-                // Only show cancel if status is pending or approved
-                if (in_array($row->status, ['pending', 'approved'])) {
+                // Only show cancel if status is pending
+                if (in_array($row->status, ['pending'])) {
                     $buttons .= '
                         <button data-id="' . $row->id . '" 
                             class="btn btn-danger btn-sm ms-1 cancel-button" 
