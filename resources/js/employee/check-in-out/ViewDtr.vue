@@ -542,10 +542,14 @@ const monthRows = computed(() => {
     const totalDays = daysInMonth(y, m);
 
     const rows = [];
+
     for (let dayNo = 1; dayNo <= totalDays; dayNo++) {
-        const day = String(dayNo).padStart(2, "0");
-        const mm = String(m).padStart(2, "0");
-        const key = `${y}-${mm}-${day}`;
+
+        // 👉 Create real Date object (LOCAL time)
+        const localDate = new Date(y, m - 1, dayNo);
+
+        // 👉 Format as YYYY-MM-DD safely
+        const key = localDate.toISOString().split('T')[0];
 
         const candidates = byDay.value.get(key);
         const chosen = candidates ? pickBestRow(candidates) : null;
@@ -556,6 +560,7 @@ const monthRows = computed(() => {
         const breakPair = chosen?.break
             ? String(chosen.break).split(" to ")
             : [];
+
         const overtimePair = chosen?.overtime
             ? String(chosen.overtime).split(" to ")
             : [];
@@ -577,15 +582,13 @@ const monthRows = computed(() => {
 
             daily_total: statusDay
                 ? ""
-                : Number(chosen?.paid_hours) > 0
-                  ? minutesToHM(chosen.paid_hours)
-                  : Number(chosen?.total_time_work) > 0
+                : Number(chosen?.total_time_work) > 0
                     ? minutesToHM(chosen.total_time_work)
                     : "",
         });
     }
 
-    // fill to 31
+    // fill to 31 rows (for print layout)
     for (let d = totalDays + 1; d <= 31; d++) {
         rows.push({
             dayNo: d,

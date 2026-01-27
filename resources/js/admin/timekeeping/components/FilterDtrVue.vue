@@ -106,7 +106,7 @@
         <div class="row g-3">
           <div
             class="col-md-6 col-lg-3"
-            v-for="(card, index) in payload"
+            v-for="(card, index) in payload.summary"
             :key="index"
           >
             <div class="card h-100 border">
@@ -171,6 +171,7 @@ export default {
         this.$refs.printableModal.open();
     },
     getSummaryIcon(label) {
+      console.log(label)
       const iconMap = {
         'total hours': 'fa-solid fa-clock',
         'days present': 'fa-solid fa-calendar-check',
