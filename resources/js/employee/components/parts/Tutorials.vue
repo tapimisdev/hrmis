@@ -27,7 +27,7 @@
                 frameborder="0"
                 allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
                 referrerpolicy="strict-origin-when-cross-origin"
-                style="position:absolute;top:0;left:0;width:100%;height:100%;"
+                style=""
                 title="ORBIT ESS">
             </iframe>
         </div>
@@ -128,52 +128,64 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@media (max-width: 767.98px) {
-    .widget-container {
-        min-width: 280px !important;
-        max-width: 90vw !important;
-    }
-}
+  @media (max-width: 767.98px) {
+      .widget-container {
+          min-width: 280px !important;
+          max-width: 90vw !important;
+      }
+  }
 
-.widget-container {
-    position: fixed;
-    min-width: 420px;
-    max-width: 400px; /* Fixed from 40px to 400px */
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 999; /* Kept lower than Notes (10000) to avoid overlap issues */
-    overflow: hidden;
+  .widget-container {
+      position: fixed;
+      min-width: 420px;
+      max-width: 400px; /* Fixed from 40px to 400px */
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 999; /* Kept lower than Notes (10000) to avoid overlap issues */
+      overflow: hidden;
 
-    &.dark-mode {
-        background-color: #343a40;
-        border-color: #495057;
-        color: #fff;
-    }
-}
+      &.dark-mode {
+          background-color: #343a40;
+          border-color: #495057;
+          color: #fff;
+      }
+  }
 
-.widget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    background-color: inherit !important;
-    border-bottom: 1px solid #ddd;
-    cursor: move;
-    font-weight: 600;
-    position: relative;
+  .widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background-color: inherit !important;
+      border-bottom: 1px solid #ddd;
+      cursor: move;
+      font-weight: 600;
+      position: relative;
 
-    .dark-mode & {
-        background-color: inherit !important;
-        border-bottom-color: #6c757d;
-        color: #fff;
-    }
+      .dark-mode & {
+          background-color: inherit !important;
+          border-bottom-color: #6c757d;
+          color: #fff;
+      }
 
-    .btn-close {
-        position: absolute;
-        right: 14px;
-        font-size: 0.8rem;
-    }
-}
+      .btn-close {
+          position: absolute;
+          right: 14px;
+          font-size: 0.8rem;
+      }
+  }
+
+  .widget-content {
+      height: 220px;
+      width: 100%;
+      overflow-y: hidden;
+
+      iframe {
+        width: 100%;
+        height: 100%;
+      }
+
+  }
 </style>

@@ -104,7 +104,7 @@ class TimelogController extends Controller
                     . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
             }
 
-            return '<div style="width: 50px; height: 50px; border:1px solid #ccc; border-radius:8px; 
+            return '<div style="margin: auto; width: 50px; height: 50px; border:1px solid #ccc; border-radius:8px; 
                                 display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f9f9f9;">
                         <img src="' . $profile . '" 
                             alt="Avatar of ' . e(($row->firstname ?? '') . ' ' . ($row->lastname ?? '')) . '" 
