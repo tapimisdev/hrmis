@@ -170,7 +170,7 @@
                     'emp.overtime_application.view',
                     'emp.overtime_application.apply'
                 ])
-
+<!-- 
                 <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
                     <a href="{{ route('obs.index') }}" class="side-link text-body">
                         <span class="side-icon">
@@ -178,7 +178,7 @@
                         </span>
                         <span class="side-text">Pass Slip</span>
                     </a>
-                </li>
+                </li> -->
                 @endcanany
 
                 {{--
