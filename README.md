@@ -1,66 +1,76 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+🚀 Run Laravel App Locally with Docker
+Easily spin up your Laravel application locally using Docker and Docker Compose. This guide walks you through setting up a fully functional development environment in just a few steps.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+📋 Prerequisites
+Before you begin, ensure you have the following installed on your machine:
 
-## About Laravel
+Docker — Container platform
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Docker Compose — Multi-container orchestration
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Git — Version control
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+🎯 Quick Start
+Step 1: Clone the Repository
+Start by cloning your Laravel project:
 
-## Learning Laravel
+Bash
+git clone https://github.com/KemuelJoshua/dost.git orbit
+cd orbit
+Step 2: Build and Start Containers
+Build and run your Docker containers in detached mode:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Bash
+docker-compose up -d --build
+This command will download necessary images and start all services defined in your docker-compose.yml.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Step 3: Fix Entrypoint Script (Linux Users)
+This prevents execution errors caused by Windows line endings (CRLF) and ensures the script is executable:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Bash
+sed -i 's/\r$//' docker/php-apache/entrypoint.sh
+chmod +x docker/php-apache/entrypoint.sh
+Step 4: Storage & Cache Setup
+The entrypoint script usually handles permissions, but you can manually ensure the web server has access:
 
-## Laravel Sponsors
+Bash
+docker exec -it orbit chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+docker exec -it orbit chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+Step 5: Run Migrations & Seed Database
+Initialize your database with tables and sample data:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Bash
+docker exec -it orbit php artisan migrate --force
+docker exec -it orbit php artisan db:seed --force
+Step 6: Install Node Dependencies & Build Assets
+Compile your front-end assets if they weren't bundled during the image build:
 
-### Premium Partners
+Bash
+docker exec -it orbit npm install
+docker exec -it orbit npm run build
+Step 7: Access Your Application
+Open your browser and navigate to:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+Plaintext
+http://localhost:8001
+Your Laravel application is now running! 🎉
 
-## Contributing
+🔗 Useful Commands
+Here are some handy Docker commands for development:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Bash
+# View running containers
+docker-compose ps
 
-## Code of Conduct
+# View container logs
+docker-compose logs -f orbit
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Stop containers
+docker-compose down
 
-## Security Vulnerabilities
+# Rebuild containers
+docker-compose up -d --build
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Access the application container shell
+docker exec -it orbit bash
+Would you like me to help you generate a docker-compose.yml file or a Dockerfile to match this specific setup?
