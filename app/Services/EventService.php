@@ -14,6 +14,7 @@ class EventService {
         $limit = $request->limit ?? 10;
         $offset = $request->offset ?? 0;
 
+        // Base query
         $query = DB::table('notifications')
             ->select(
                 'notifications.id',
@@ -25,17 +26,16 @@ class EventService {
                 DB::raw('COALESCE(notification_reads.is_read, 0) as is_read'),
                 'notification_reads.read_at'
             )
-            ->leftJoin('notification_reads', function($join) use ($receivers) {
+            ->leftJoin('notification_reads', function ($join) use ($receivers) {
                 $join->on('notifications.id', '=', 'notification_reads.notification_id')
                     ->whereIn('notification_reads.user_id', $receivers);
             })
             ->whereIn('notifications.receiver', $receivers)
-            ->orderBy('notifications.created_at', 'desc')
-            ->offset($offset)
-            ->limit($limit);
+            ->orderBy('notifications.created_at', 'desc');
 
+        // Apply filter
         if ($filter === 'unread') {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $q->where('notification_reads.is_read', 0)
                 ->orWhereNull('notification_reads.is_read');
             });
@@ -43,12 +43,23 @@ class EventService {
             $query->where('notification_reads.is_read', 1);
         }
 
-        $data = $query->get()->map(function ($item) {
-            $item->data = $item->data ? json_decode($item->data, true) : null;
-            return $item;
-        });
+        // Clone query to get total count for this filter
+        $totalCount = (clone $query)->count();
 
-        return $data;
+        // Fetch paginated data
+        $notifications = $query->offset($offset)
+                            ->limit($limit)
+                            ->get()
+                            ->map(function ($item) {
+                                $item->data = $item->data ? json_decode($item->data, true) : null;
+                                return $item;
+                            });
+
+        return [
+            'notifications' => $notifications,
+            'total' => $totalCount,
+            'isUnreadMoreThanLimit' => $totalCount > ($offset + $limit),
+        ];
     }
 
     public function saveReadNotification($request)

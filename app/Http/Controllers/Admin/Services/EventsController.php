@@ -272,8 +272,7 @@ class EventsController extends Controller
                     'link' => route('announcement.show', ['slug' => $slug]),
                 ];
 
-                $this->EventService->pushNotification($payload);
-
+                 $this->EventService->pushNotification($payload);
             }
 
             return response()->json([

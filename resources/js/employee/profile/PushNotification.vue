@@ -84,9 +84,8 @@ export default {
 
         // Employees receive employee-wide notifications
         if (this.userRole === "employee") {
-            window.Echo.channel("employees.notifications").listen(
-                ".notification-event",
-                (e) => {
+            window.Echo.channel("employees.notifications")
+                .listen("notification-event", (e) => {
                     this.addToast({
                         id: e.id,
                         message: this.formatMessage(
@@ -94,15 +93,22 @@ export default {
                         ),
                         link: e.data.link || null,
                     });
-                },
-            );
+                })
+                .listen(".notification-event", (e) => {
+                    this.addToast({
+                        id: e.id,
+                        message: this.formatMessage(
+                            e.data.message || "posted a new notification!",
+                        ),
+                        link: e.data.link || null,
+                    });
+                });
         }
 
         // Admins receive admin-wide notifications
         if (this.userRole === "admin") {
-            window.Echo.channel("admins.notifications").listen(
-                ".notification-event",
-                (e) => {
+            window.Echo.channel("admins.notifications")
+                .listen("notification-event", (e) => {
                     this.addToast({
                         id: e.id,
                         message: this.formatMessage(
@@ -110,22 +116,37 @@ export default {
                         ),
                         link: e.data.link || null,
                     });
-                },
-            );
+                })
+                .listen(".notification-event", (e) => {
+                    this.addToast({
+                        id: e.id,
+                        message: this.formatMessage(
+                            e.data.message || "posted a new notification!",
+                        ),
+                        link: e.data.link || null,
+                    });
+                });
         }
 
-        window.Echo.private(`user.notifications.${this.userId}`).listen(
-            ".notification-event",
-            (e) => {
-                this.addToast({
-                    id: e.id,
-                    message: this.formatMessage(
-                        e.data.message || "sent you a notification!",
-                    ),
-                    link: e.data.link || null,
-                });
-            },
-        );
+        window.Echo.private(`user.notifications.${this.userId}`)
+        .listen("notification-event", (e) => {
+            this.addToast({
+                id: e.id,
+                message: this.formatMessage(
+                    e.data.message || "sent you a notification!",
+                ),
+                link: e.data.link || null,
+            });
+        })
+        .listen(".notification-event", (e) => {
+            this.addToast({
+                id: e.id,
+                message: this.formatMessage(
+                    e.data.message || "sent you a notification!",
+                ),
+                link: e.data.link || null,
+            });
+        });
     },
     methods: {
         addToast(notification = null, saveToSession = true) {
@@ -188,6 +209,7 @@ export default {
                                     apiEndpoint,
                                     {
                                         notification_id: newToast.id,
+                                        user_id: this.userId,
                                     },
                                     {
                                         headers: {

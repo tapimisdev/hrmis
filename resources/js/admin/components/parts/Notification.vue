@@ -19,7 +19,7 @@
                 class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                 style="font-size: 0.65rem; padding: 0.20rem 0.45rem"
             >
-                {{ unreadCount }}
+                {{ unreadCount }}{{ isUnreadMoreThanLimit ? '+' : '' }}
                 <span class="visually-hidden">unread notifications</span>
             </span>
         </a>
@@ -177,24 +177,31 @@ export default {
             token,
             notifications: [],
             unreadCount: 0,
+            hasMore: false,
+            isUnreadMoreThanLimit: false,
             loadingNotifications: false,
             currentOffset: 0,
-            hasMore: true,
             displayedIds: new Set(), 
         };
     },
     mounted() {
         this.fetchNotifications("unread");
 
-        window.Echo.channel("admins.notifications")
-              .listen("notification-event", (e) => {
-                  this.fetchNotifications("unread");
-              });
+      window.Echo.channel("admins.notifications")
+      .listen("notification-event", (e) => {
+          this.fetchNotifications("unread");
+      })
+      .listen(".notification-event", (e) => {
+          this.fetchNotifications("unread");
+      });
 
-        window.Echo.private(`user.notifications.${this.userId}`)
-          .listen("notification-event", (e) => {
-              this.fetchNotifications("unread");
-          });
+      window.Echo.private(`user.notifications.${this.userId}`)
+      .listen("notification-event", (e) => {
+          this.fetchNotifications("unread");
+      })
+      .listen(".notification-event", (e) => {
+          this.fetchNotifications("unread");
+      });
     },
     beforeUnmount() {
         // Clear any intervals if added later
@@ -218,9 +225,12 @@ export default {
                     headers: { Authorization: `Bearer ${this.token}` },
                 });
 
+                this.hasMore = res.data.total > limit ? true : false;
+
                 // Update unreadCount if fetching unread notifications
                 if (filter === "unread") {
-                    this.unreadCount = res.data?.length ?? 0;
+                    this.unreadCount = res.data.notifications?.length ?? 0;
+                    this.isUnreadMoreThanLimit = res.data.isUnreadMoreThanLimit;
                 } else {
                     // For initial load (offset 0), reset the list and displayed IDs
                     if (this.currentOffset === 0) {
@@ -228,15 +238,13 @@ export default {
                         this.displayedIds.clear();
                     }
                     // Filter out already displayed notifications by ID
-                    const newNotifications = res.data.filter(
+                    const newNotifications = res.data.notifications.filter(
                         (n) => !this.displayedIds.has(n.id)
                     );
                     // Add new IDs to the set
                     newNotifications.forEach((n) => this.displayedIds.add(n.id));
                     // Append new notifications to the list
                     this.notifications = [...this.notifications, ...newNotifications];
-                    // Check if there are more notifications
-                    this.hasMore = res.data.length > limit;
                 }
             } catch (err) {
                 console.error("Error fetching notifications:", err);
