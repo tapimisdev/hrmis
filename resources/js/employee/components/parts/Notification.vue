@@ -182,12 +182,12 @@ export default {
         this.fetchNotifications("unread");
        
         window.Echo.channel("employees.notifications")
-            .listen(".notification-event", (e) => {
+            .listen("notification-event", (e) => {
                 this.fetchNotifications("unread");
             });
 
         window.Echo.private(`user.notifications.${this.userId}`)
-          .listen(".notification-event", (e) => {
+          .listen("notification-event", (e) => {
               this.fetchNotifications("unread");
           });
     },
