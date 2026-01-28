@@ -28,6 +28,7 @@
             document.documentElement.setAttribute('data-bs-theme', theme);
         })();
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.0/moment.min.js"></script>
 
     <!-- Extra styles pushed from child views -->
     @yield('styles')

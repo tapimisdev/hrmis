@@ -1,7 +1,7 @@
 <template>
     <div class="container-fluid position-relative py-4 employee-edit">
         <ChangePassModal ref="changePasswordMdl" />
-        <ShowDevicesModal ref="showDevices"/>
+        <ShowDevicesModal :session-id="sessionId" ref="showDevices"/>
         <div class="row g-4">
             <!-- LEFT PROFILE -->
             <div class="col-xl-3 col-lg-4">
@@ -355,19 +355,20 @@ export default {
         SectionCard: {
             props: ["icon", "title"],
             template: `
-        <section class="card border shadow-sm mb-4">
-          <div class="card-header bg-body-secondary fw-semibold">
-            <i :class="icon + ' me-2'"></i> {{ title }}
-          </div>
-          <div class="card-body">
-            <slot></slot>
-          </div>
-        </section>
-      `,
+                <section class="card border shadow-sm mb-4">
+                  <div class="card-header bg-body-secondary fw-semibold">
+                    <i :class="icon + ' me-2'"></i> {{ title }}
+                  </div>
+                  <div class="card-body">
+                    <slot></slot>
+                  </div>
+                </section>
+            `,
         },
     },
     props: {
         id: { type: Number, required: true },
+        sessionId: {type: String, required: true}
     },
     data() {
         return {

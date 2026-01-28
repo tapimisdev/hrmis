@@ -9,22 +9,17 @@ use Illuminate\Support\Facades\Auth;
 
 class DevicesController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum'); // Ensure Sanctum auth
-    }
-
     /**
      * Fetch active devices (sessions) for the authenticated user.
      */
     public function index(Request $request)
     {
-        
         $user = $request->user();
+        $session_id = $request->session_id;
 
         $devices = DB::table('sessions')
             ->where('user_id', $user->id)
-            ->where('id', '!=', session()->getId()) 
+            ->where('id', '!=', $session_id) 
             ->get(['id', 'ip_address', 'user_agent', 'last_activity'])
             ->map(function ($session) {
                 return [
@@ -43,10 +38,7 @@ class DevicesController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-       
         $user = $request->user();
-
-        // Find and delete the session (only if it belongs to the user)
         $deleted = DB::table('sessions')
             ->where('id', $id)
             ->where('user_id', $user->id)

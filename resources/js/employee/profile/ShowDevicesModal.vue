@@ -53,7 +53,9 @@
                                             class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2"
                                             @click="confirmDelete(device)"
                                         >
-                                            <i class="fa-solid fa-arrow-right-from-bracket fa-rotate-180"></i>
+                                            <i
+                                                class="fa-solid fa-arrow-right-from-bracket fa-rotate-180"
+                                            ></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -77,13 +79,26 @@
     <div v-if="showDeleteModal" class="modal-overlay" @click="cancelDelete">
         <div class="modal-overlay-content" @click.stop>
             <h5 class="fw-bold text-danger">Confirm Delete</h5>
-            <p>Are you sure you want to delete this device? This will log it out.</p>
+            <p>
+                Are you sure you want to delete this device? This will log it
+                out.
+            </p>
             <div class="d-flex flex-column gap-2 mt-3">
-                <button class="btn btn-danger w-100" @click="proceedDelete" :disabled="isDeleting">
-                    <span v-if="isDeleting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                <button
+                    class="btn btn-danger w-100"
+                    @click="proceedDelete"
+                    :disabled="isDeleting"
+                >
+                    <span
+                        v-if="isDeleting"
+                        class="spinner-border spinner-border-sm me-2"
+                        role="status"
+                    ></span>
                     {{ isDeleting ? "Deleting..." : "Delete" }}
                 </button>
-                <button class="btn btn-secondary w-100" @click="cancelDelete">Cancel</button>
+                <button class="btn btn-secondary w-100" @click="cancelDelete">
+                    Cancel
+                </button>
             </div>
         </div>
     </div>
@@ -93,6 +108,9 @@
 import axios from "axios";
 
 export default {
+    props: {
+        sessionId: { type: String, required: true },
+    },
     data() {
         return {
             devices: [],
@@ -123,7 +141,12 @@ export default {
             const token = localStorage.getItem("auth_token");
             try {
                 const response = await axios.get("/api/employee/devices", {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                    params: {
+                        session_id: this.sessionId,
+                    },
                 });
                 this.devices = response.data;
             } catch (error) {
@@ -202,7 +225,6 @@ export default {
             }
         },
     },
-
     beforeUnmount() {
         if (this.dataTable) {
             this.dataTable.destroy();
@@ -226,7 +248,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1070; 
+    z-index: 1070;
     background-color: rgba(0, 0, 0, 0.5);
 }
 
@@ -238,7 +260,7 @@ export default {
     width: 100%;
     color: #000;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-    border: 2px solid #dc3545; 
+    border: 2px solid #dc3545;
 
     [data-bs-theme="dark"] & {
         background-color: #25282b;
@@ -252,7 +274,11 @@ export default {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 </style>

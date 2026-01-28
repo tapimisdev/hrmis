@@ -11,7 +11,7 @@
 
     </x-header-employee>
 
-    <profile-index/>
+    <profile-index :session-id='@json($session_id)'/>
 
     
 </div>

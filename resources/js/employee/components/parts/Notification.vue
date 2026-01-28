@@ -293,7 +293,7 @@ export default {
                     rejected: "fa-regular fa-thumbs-down",
                     removed: "fa-solid fa-ban",
                     processing: "fa-solid fa-clock-rotate-left",
-                    system: "fa-solid fa-chart-diagram",
+                    system: "fa-solid fa-diagram-project",
                 }[type] || "fa-solid fa-bell text-primary"
             );
         },
