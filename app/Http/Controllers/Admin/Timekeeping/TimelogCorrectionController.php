@@ -14,6 +14,13 @@ use Yajra\DataTables\DataTables;
 
 class TimelogCorrectionController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:hr.correction.view')->only('index');
+        $this->middleware('permission:hr.correction.approval')->only(['edit', 'store']);
+    }
+
     public function index()
     {
         if(request()->ajax()) {
