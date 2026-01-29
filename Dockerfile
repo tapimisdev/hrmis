@@ -10,6 +10,12 @@ RUN apt update && apt install -y \
   && rm -rf /var/lib/apt/lists/*
 
 # -----------------------------
+# Supervisor (process manager)
+# -----------------------------
+RUN apt update && apt install -y supervisor \
+  && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------
 # PHP 8.2 + Apache
 # -----------------------------
 RUN add-apt-repository -y ppa:ondrej/php \
@@ -52,6 +58,13 @@ COPY . /var/www/html
 RUN mkdir -p storage/logs storage/framework/{sessions,views,cache} bootstrap/cache \
   && chown -R www-data:www-data /var/www/html \
   && chmod -R ug+rwX storage bootstrap/cache
+
+# -----------------------------
+# Supervisor config
+# -----------------------------
+COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/supervisor/conf.d /etc/supervisor/conf.d
+
 
 # Install PHP deps
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts
