@@ -65,14 +65,10 @@ RUN mkdir -p storage/logs storage/framework/{sessions,views,cache} bootstrap/cac
 COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY docker/supervisor/conf.d /etc/supervisor/conf.d
 
-
 # Install PHP deps
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts
 
-# Build frontend assets
-# RUN npm ci && npm run build
-
-# (Optional) Clear caches at build-time; runtime entrypoint should also clear safely
+# (Optional) Clear caches at build-time
 RUN php artisan optimize:clear || true
 
 # -----------------------------
@@ -82,5 +78,8 @@ COPY docker/php-apache/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-EXPOSE 80
-CMD ["apache2ctl", "-D", "FOREGROUND"]
+# Apache + Reverb ports
+EXPOSE 80 8080
+
+# IMPORTANT: Supervisor must be PID 1 (Apache will be run by supervisor)
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
