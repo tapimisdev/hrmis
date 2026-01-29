@@ -18,4 +18,10 @@ touch storage/framework/sessions/.keep || true
 # Optional: clear caches
 php artisan optimize:clear || true
 
+# Start Supervisor (NEW)
+
+echo "Starting Supervisor..."
+/usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+
+
 exec apache2ctl -D FOREGROUND
