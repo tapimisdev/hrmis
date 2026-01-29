@@ -222,11 +222,13 @@
             localStorage.setItem('auth_token', @json(session('auth_token')));
             localStorage.setItem('name', @json(session('name')));
             localStorage.setItem('email', @json(session('email')));
+            localStorage.setItem('session_id', @json(session('session_id')));
 
             @php
                 session()->forget('auth_token');
                 session()->forget('name');
                 session()->forget('email');
+                session()->forget('session_id');
             @endphp
         @endif
     </script>

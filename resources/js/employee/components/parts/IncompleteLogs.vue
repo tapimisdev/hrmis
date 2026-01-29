@@ -21,15 +21,19 @@
                         style="width: 30px; height: 30px"
                         class="bg-warning rounded-2 me-3 d-flex justify-content-center align-items-center"
                     >
-                        <i class="fa-solid fa-arrows-up-down-left-right"></i>
+                        <i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i>
                     </div>
                     <div class="fw-bold text-warning text-uppercase">
                         Timelog Discrepancy!
                     </div>
                 </div>
 
-                <button class="btn btn-transparent" @click.stop="handleToggle">
-                    <i class="fa-solid fa-xmark"></i>
+                <button
+                    class="btn btn-transparent"
+                    @click.stop="handleToggle"
+                    aria-label="Close timelog discrepancy"
+                >
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
             </div>
 
@@ -43,6 +47,8 @@
                             type="button"
                             data-bs-toggle="collapse"
                             data-bs-target="#collapseLogs"
+                            aria-expanded="false"
+                            aria-controls="collapseLogs"
                         >
                             Show Details
                         </button>
@@ -67,30 +73,36 @@
                                     <table
                                         class="table table-sm table-bordered align-middle mb-0"
                                         style="font-size: 12px"
+                                        role="table"
+                                        aria-label="Incomplete logs table"
                                     >
                                         <thead class="table-light">
                                             <tr>
                                                 <th
                                                     class="px-2 p-2 text-uppercase fw-bold"
                                                     style="font-size: 10px"
+                                                    scope="col"
                                                 >
                                                     Date
                                                 </th>
                                                 <th
                                                     class="px-2 p-2 text-uppercase fw-bold"
                                                     style="font-size: 10px"
+                                                    scope="col"
                                                 >
                                                     In
                                                 </th>
                                                 <th
                                                     class="px-2 p-2 text-uppercase fw-bold"
                                                     style="font-size: 10px"
+                                                    scope="col"
                                                 >
                                                     Out
                                                 </th>
                                                 <th
                                                     class="px-2 p-2 text-uppercase fw-bold"
                                                     style="font-size: 10px"
+                                                    scope="col"
                                                 >
                                                     Remarks
                                                 </th>
@@ -100,22 +112,26 @@
                                             <tr
                                                 v-for="log in incompleteLogs"
                                                 :key="log.date + log.shift_id"
+                                                role="row"
                                             >
                                                 <td
                                                     class="fw-bold px-2 py-2"
                                                     style="font-size: 11px"
+                                                    role="cell"
                                                 >
                                                     {{ formatDate(log.date) }}
                                                 </td>
                                                 <td
                                                     class="fw-bold px-2 py-2"
                                                     style="font-size: 11px"
+                                                    role="cell"
                                                 >
                                                     {{ log.time_in || "" }}
                                                 </td>
                                                 <td
                                                     class="fw-bold px-2 py-2"
                                                     style="font-size: 11px"
+                                                    role="cell"
                                                 >
                                                     {{ log.time_out || "" }}
                                                 </td>
@@ -123,12 +139,11 @@
                                                     class="fw-bold px-2 py-2 text-uppercase"
                                                     style="font-size: 11px"
                                                     :class="
-                                                        log.remarks.includes(
-                                                            'today',
-                                                        )
+                                                        log.remarks.includes('today')
                                                             ? 'text-success'
                                                             : 'text-danger'
                                                     "
+                                                    role="cell"
                                                 >
                                                     {{ log.remarks.join(", ") }}
                                                 </td>
@@ -154,10 +169,11 @@ import axios from "axios";
 import { watch } from "vue";
 import { Collapse } from "bootstrap";
 
+// Local storage keys
 const POSITION_KEY = "incomplete-logs-position";
 const ACCORDION_KEY = "incomplete-logs-accordion";
-const HIDE_KEY = "hide_timelog_discrepancy";
-const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
+const INCOMPLETE_KEY = "hide_timelog_discrepancy";
+const INCOMPLETE_DATE_KEY = "hide_timelog_discrepancy_date";
 
 export default {
     name: "IncompleteLogs",
@@ -171,6 +187,8 @@ export default {
             pos: { x: window.innerWidth - 470, y: 200 },
             collapseInstance: null,
             windowWidth: window.innerWidth,
+            // Internal triggers to replace global window.clockTriggers
+            clockTriggers: { reload: false },
         };
     },
 
@@ -181,7 +199,7 @@ export default {
         mobilePos() {
             return {
                 x: (window.innerWidth - Math.min(window.innerWidth, 450)) / 2,
-                y: window.innerHeight / 2,
+                y: window.innerHeight * 0.3, // 30% from top for centering
             };
         },
     },
@@ -196,14 +214,19 @@ export default {
             this.restoreAccordionState();
         });
 
+        // Watch internal clock triggers (replaces global window.clockTriggers)
         this.$watch(
-            () => window.clockTriggers?.reload,
-            () => {
-                this.handleTriggerClocking();
-                window.clockTriggers.reload = false;
+            () => this.clockTriggers.reload,
+            (newVal) => {
+                if (newVal) {
+                    this.handleTriggerClocking();
+                    this.clockTriggers.reload = false;
+                }
             },
+            { immediate: false }
         );
 
+        // Event listeners
         window.addEventListener("timelog-toggle", this.syncVisibility);
         window.addEventListener("resize", this.onResize);
         window.addEventListener("orientationchange", this.onResize);
@@ -216,42 +239,59 @@ export default {
 
     beforeUnmount() {
         this.destroyAccordion();
-        window.removeEventListener("timelog-toggle", this.syncVisibility);
-        window.removeEventListener("resize", this.onResize);
-        window.removeEventListener("orientationchange", this.onResize);
+        if (typeof window !== "undefined") {
+            window.removeEventListener("timelog-toggle", this.syncVisibility);
+            window.removeEventListener("resize", this.onResize);
+            window.removeEventListener("orientationchange", this.onResize);
+        }
     },
 
     methods: {
+        // Handle window resize/orientation change
         onResize() {
             this.windowWidth = window.innerWidth;
-            // On mobile, if user has not dragged, start centered
             if (this.isMobile && !localStorage.getItem(POSITION_KEY)) {
                 this.pos = { ...this.mobilePos };
             }
         },
 
+        // Sync visibility based on localStorage (for hiding discrepancy)
         syncVisibility() {
             const today = new Date().toDateString();
-            const hidden = localStorage.getItem(HIDE_KEY);
-            const hideDate = localStorage.getItem(HIDE_DATE_KEY);
+            const hidden = localStorage.getItem(INCOMPLETE_KEY);
+            const hideDate = localStorage.getItem(INCOMPLETE_DATE_KEY);
             this.show = !(hidden === "true" && hideDate === today);
         },
 
+        // Handle closing the discrepancy (fixes the switch in widgets)
         handleToggle() {
             this.show = false;
-            localStorage.setItem(HIDE_KEY, "true");
-            localStorage.setItem(HIDE_DATE_KEY, new Date().toDateString());
-            window.dispatchEvent(new Event("timelog-toggle"));
+            try {
+                localStorage.setItem(INCOMPLETE_KEY, "true");
+                localStorage.setItem(INCOMPLETE_DATE_KEY, new Date().toDateString());
+                console.log("Timelog discrepancy closed: Switch in widgets should now be off."); // Debug log
+            } catch (error) {
+                console.error("Failed to save hide state to localStorage:", error);
+            }
+            this.$emit("close"); // Emit to parent if used as child
+            // Dispatch event to notify WidgetComponent to update the toggle
+            if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("timelog-toggle"));
+            }
         },
 
+        // Handle clock trigger (reload logs)
         handleTriggerClocking() {
             this.fetchIncompleteLogs();
         },
 
+        // Fetch incomplete logs from API
         async fetchIncompleteLogs() {
+            if (this.loading) return;
             this.loading = true;
             try {
                 const token = localStorage.getItem("auth_token");
+                if (!token) throw new Error("No auth token found");
                 const res = await axios.get("/api/employee/incomplete-logs", {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -260,36 +300,51 @@ export default {
                 });
                 this.incompleteLogs = Array.isArray(res.data) ? res.data : [];
             } catch (err) {
-                console.error("Fetch incomplete logs failed:", err);
+                console.error("Failed to fetch incomplete logs:", err);
+                this.incompleteLogs = [];
             } finally {
                 this.loading = false;
             }
         },
 
+        // Format date for display
         formatDate(date) {
-            return new Date(date).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-            });
+            try {
+                return new Date(date).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                });
+            } catch (error) {
+                console.error("Invalid date format:", date, error);
+                return date; // Fallback to raw date
+            }
         },
 
+        // Load saved position from localStorage
         loadPosition() {
             const saved = localStorage.getItem(POSITION_KEY);
             if (!saved) return;
             try {
                 const { x, y } = JSON.parse(saved);
                 this.pos = { x, y };
-            } catch {
+            } catch (error) {
+                console.error("Failed to parse saved position:", error);
                 localStorage.removeItem(POSITION_KEY);
             }
         },
 
+        // Save position to localStorage (only on desktop)
         savePosition() {
-            if (this.isMobile) return; // do not save on mobile
-            localStorage.setItem(POSITION_KEY, JSON.stringify(this.pos));
+            if (this.isMobile) return;
+            try {
+                localStorage.setItem(POSITION_KEY, JSON.stringify(this.pos));
+            } catch (error) {
+                console.error("Failed to save position:", error);
+            }
         },
 
+        // Initialize Bootstrap accordion
         initAccordion() {
             const el = this.$refs.collapse;
             if (!el) return;
@@ -298,28 +353,33 @@ export default {
             el.addEventListener("hidden.bs.collapse", this.onAccordionClose);
         },
 
+        // Restore accordion state from localStorage
         restoreAccordionState() {
             if (localStorage.getItem(ACCORDION_KEY) === "open") {
                 this.collapseInstance?.show();
             }
         },
 
+        // Handle accordion open
         onAccordionOpen() {
             localStorage.setItem(ACCORDION_KEY, "open");
         },
 
+        // Handle accordion close
         onAccordionClose() {
             localStorage.setItem(ACCORDION_KEY, "closed");
         },
 
+        // Destroy accordion instance
         destroyAccordion() {
             if (!this.collapseInstance) return;
             this.collapseInstance.dispose();
             this.collapseInstance = null;
         },
 
+        // Start dragging (desktop only)
         startDrag(e) {
-            if (this.isMobile) return; // disable dragging on mobile
+            if (this.isMobile) return;
             e.preventDefault();
             const rect = this.$refs.wrapper.getBoundingClientRect();
             this.isDragging = true;
@@ -329,6 +389,7 @@ export default {
             window.addEventListener("pointerup", this.stopDrag);
         },
 
+        // Handle drag movement
         onDrag(e) {
             if (!this.isDragging) return;
             const el = this.$refs.wrapper;
@@ -339,6 +400,7 @@ export default {
             this.pos.y = Math.min(Math.max(0, e.clientY - this.offset.y), maxY);
         },
 
+        // Stop dragging
         stopDrag() {
             if (!this.isDragging) return;
             this.isDragging = false;

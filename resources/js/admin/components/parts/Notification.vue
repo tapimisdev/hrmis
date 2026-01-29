@@ -309,15 +309,15 @@ export default {
         getNotificationIconClass(type) {
             return (
                 {
-                    event: "bg-primary bg-opacity-20",
-                    application: "bg-primary bg-opacity-20",
-                    message: "bg-primary bg-opacity-20",
-                    approved: "bg-primary bg-opacity-20",
-                    rejected: "bg-warning bg-opacity-20",
-                    removed: "bg-danger bg-opacity-20",
-                    processing: "bg-primary bg-opacity-20",
-                    system: "bg-primary bg-opacity-20",
-                }[type] || "bg-primary bg-opacity-20"
+                    event: "bg-primary bg-opacity-20 text-light",
+                    application: "bg-primary bg-opacity-20 text-light",
+                    message: "bg-primary bg-opacity-20 text-light",
+                    approved: "bg-primary bg-opacity-20 text-light",
+                    rejected: "bg-warning bg-opacity-20 text-light",
+                    removed: "bg-danger bg-opacity-20 text-light",
+                    processing: "bg-primary bg-opacity-20 text-light",
+                    system: "bg-primary bg-opacity-20 text-light",
+                }[type] || "bg-primary bg-opacity-20 text-light"
             );
         },
         formatTime(time) {
@@ -374,4 +374,11 @@ export default {
         }
     }
 }
+
+[data-bs-theme="light"] {
+  #notificationDropdown i {
+    color: var(--primary) !important;
+  }
+}
+
 </style>
