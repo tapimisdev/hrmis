@@ -1,10 +1,8 @@
 <template>
     <div v-if="showWorkedHours" class="shot-clock-wrapper">
         <div class="shot-clock">
-            <h4 :class="{ 'no-time-in': !todayTimeIn }">
-                <span v-if="loading">Loading...</span>
-                <span v-else-if="errorMessage">{{ errorMessage }}</span>
-                <span v-else>{{ todayTimeIn ? workedHours : "NO TIME IN YET" }}</span>
+            <h4 :class="{ '': !todayTimeIn }">
+                {{ todayTimeIn ? workedHours : "NO TIME IN YET" }}
             </h4>
         </div>
     </div>
@@ -20,7 +18,6 @@
             data-bs-toggle="dropdown"
             data-bs-auto-close="outside"
             aria-expanded="false"
-            aria-label="Open widget settings"
             style="cursor: pointer"
         >
             <i
@@ -49,18 +46,26 @@
             <div class="px-4 py-3">
                 <!-- Dark Mode Toggle -->
                 <li class="pb-2">
-                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
                         <input
-                            class="form-check-input toggle-input"
+                            class="form-check-input"
                             type="checkbox"
                             id="darkModeSwitch"
                             v-model="isDarkMode"
                             @change="handleThemeToggle"
-                            :aria-checked="isDarkMode"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
                         />
                         <label
-                            class="form-check-label text-uppercase fw-medium toggle-label"
+                            class="form-check-label text-uppercase fw-medium"
                             for="darkModeSwitch"
+                            style="font-size: 12px; cursor: pointer"
                         >
                             Dark Mode
                         </label>
@@ -69,18 +74,26 @@
 
                 <!-- Worked Hours Toggle -->
                 <li class="pb-2">
-                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
                         <input
-                            class="form-check-input toggle-input"
+                            class="form-check-input"
                             type="checkbox"
                             id="workedHoursSwitch"
                             v-model="showWorkedHours"
                             @change="handleWorkedHoursToggle"
-                            :aria-checked="showWorkedHours"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
                         />
                         <label
-                            class="form-check-label text-uppercase fw-medium toggle-label"
+                            class="form-check-label text-uppercase fw-medium"
                             for="workedHoursSwitch"
+                            style="font-size: 12px; cursor: pointer"
                         >
                             Today's Worked Hours
                         </label>
@@ -89,18 +102,26 @@
 
                 <!-- Timelog Discrepancy Toggle -->
                 <li class="pb-2">
-                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
                         <input
-                            class="form-check-input toggle-input"
+                            class="form-check-input"
                             type="checkbox"
                             id="timelogDiscrepancySwitch"
                             v-model="showTimelogDiscrepancy"
                             @change="handleTimelogToggle"
-                            :aria-checked="showTimelogDiscrepancy"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
                         />
                         <label
-                            class="form-check-label text-uppercase fw-medium toggle-label"
+                            class="form-check-label text-uppercase fw-medium"
                             for="timelogDiscrepancySwitch"
+                            style="font-size: 12px; cursor: pointer"
                         >
                             Timelogs Discrepancy
                         </label>
@@ -109,18 +130,26 @@
 
                 <!-- Notes Toggle -->
                 <li class="pb-2">
-                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
                         <input
-                            class="form-check-input toggle-input"
+                            class="form-check-input"
                             type="checkbox"
                             id="notepadSwitch"
                             v-model="showNotes"
                             @change="handleNotes"
-                            :aria-checked="showNotes"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
                         />
                         <label
-                            class="form-check-label text-uppercase fw-medium toggle-label"
+                            class="form-check-label text-uppercase fw-medium"
                             for="notepadSwitch"
+                            style="font-size: 12px; cursor: pointer"
                         >
                             Notes
                         </label>
@@ -129,18 +158,26 @@
 
                 <!-- Tutorial Toggle -->
                 <li class="pb-2">
-                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                    <div
+                        class="form-check form-switch d-flex align-items-center gap-2"
+                    >
                         <input
-                            class="form-check-input toggle-input"
+                            class="form-check-input"
                             type="checkbox"
                             id="videoTutorialSwitch"
                             v-model="showTutorial"
                             @change="handleTutorials"
-                            :aria-checked="showTutorial"
+                            style="
+                                cursor: pointer;
+                                transform: scale(1.2);
+                                margin-right: 0.5rem;
+                                margin-bottom: 2px;
+                            "
                         />
                         <label
-                            class="form-check-label text-uppercase fw-medium toggle-label"
+                            class="form-check-label text-uppercase fw-medium"
                             for="videoTutorialSwitch"
+                            style="font-size: 12px; cursor: pointer"
                         >
                             Video Tutorial
                         </label>
@@ -154,10 +191,9 @@
 <script>
 import axios from "axios";
 import { watch } from "vue";
-import Notes from "./Notes.vue";
+import Notes from "./Notes.vue"; 
 import Tutorials from "./Tutorials.vue";
 
-// Local storage keys
 const HIDE_KEY = "hide_timelog_discrepancy";
 const HIDE_DATE_KEY = "hide_timelog_discrepancy_date";
 const WORKED_HOURS_KEY = "show_worked_hours";
@@ -171,7 +207,7 @@ export default {
         Tutorials
     },
     data() {
-        const token = localStorage.getItem("auth_token") || "";
+        const token = localStorage.getItem("auth_token");
         return {
             token,
             showTimelogDiscrepancy: true,
@@ -184,9 +220,6 @@ export default {
             now: Date.now(),
             clockInterval: null,
             loading: false,
-            errorMessage: null,
-            // Internal triggers to replace global window.clockTriggers
-            clockTriggers: { stopped: false, start: false },
         };
     },
     computed: {
@@ -194,15 +227,15 @@ export default {
             if (!this.todayTimeIn) return "NO TIME IN";
 
             const timeInDate = this.parseTimeIn(this.todayTimeIn);
-            if (!timeInDate) return "INVALID TIME FORMAT";
+            if (!timeInDate) return "NO TIME IN";
 
             const endTime = this.todayTimeOut
                 ? this.parseTimeIn(this.todayTimeOut)?.getTime()
                 : this.now;
 
-            if (!endTime || endTime <= timeInDate.getTime()) return "0 HRS 0 MINS";
-
             const diffMs = endTime - timeInDate.getTime();
+            if (diffMs <= 0) return "0 HRS 0 MINS";
+
             const totalMinutes = Math.floor(diffMs / 60000);
             const hours = Math.floor(totalMinutes / 60);
             const minutes = totalMinutes % 60;
@@ -216,106 +249,108 @@ export default {
     mounted() {
         this.initializeTheme();
         this.syncTimelogToggleState();
-        this.loadSavedStates();
 
-        // FIX: Add the missing event listener for timelog-toggle (enables auto-close of switch)
-        if (typeof window !== "undefined") {
-            window.addEventListener("timelog-toggle", this.syncTimelogToggleState);
-        }
+        const saved = localStorage.getItem(WORKED_HOURS_KEY);
+        if (saved !== null) this.showWorkedHours = saved === "true";
 
-        // Watch internal clock triggers
+        const notesSaved = localStorage.getItem(NOTES_KEY);
+        if (notesSaved !== null) this.showNotes = notesSaved === "true";
+
+        const tutorialSaved = localStorage.getItem(TUTORIAL_KEY);
+        if (tutorialSaved !== null) this.showTutorial = tutorialSaved === "true";
+
+        if (this.showWorkedHours) this.fetchLatestTimeLog();
+
         this.$watch(
-            () => this.clockTriggers,
+            () => window.clockTriggers,
             ({ stopped, start }) => {
                 if (stopped) {
                     this.stopClock();
-                    this.clockTriggers.stopped = false;
+                    window.clockTriggers.stopped = false;
                 }
                 if (start) {
                     this.startClock();
-                    this.clockTriggers.start = false;
+                    window.clockTriggers.start = false;
                 }
             },
-            { deep: true }
+            { deep: true },
         );
-
-        if (this.showWorkedHours) this.fetchLatestTimeLog();
     },
     beforeUnmount() {
         this.stopClock();
-        if (typeof window !== "undefined") {
-            window.removeEventListener("timelog-toggle", this.syncTimelogToggleState);
-            window.removeEventListener("stop-clock-ticking", this.stopClock);
-        }
+        window.removeEventListener(
+            "timelog-toggle",
+            this.syncTimelogToggleState,
+        );
+        window.removeEventListener("stop-clock-ticking", this.stopClock);
     },
     methods: {
-        // Theme management
         initializeTheme() {
             const saved = localStorage.getItem("theme-preference");
             this.isDarkMode = saved === "dark";
             this.applyTheme();
         },
         handleThemeToggle() {
-            localStorage.setItem("theme-preference", this.isDarkMode ? "dark" : "light");
+            localStorage.setItem(
+                "theme-preference",
+                this.isDarkMode ? "dark" : "light",
+            );
             this.applyTheme();
         },
         applyTheme() {
-            document.documentElement.setAttribute("data-bs-theme", this.isDarkMode ? "dark" : "light");
+            document.documentElement.setAttribute(
+                "data-bs-theme",
+                this.isDarkMode ? "dark" : "light",
+            );
         },
-
-        // Time parsing
         parseTimeIn(timeIn) {
-            if (!timeIn) return null;
-
             const direct = new Date(timeIn);
             if (!isNaN(direct.getTime())) return direct;
 
-            const match = timeIn.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s?(AM|PM)/i);
+            const match = timeIn?.match(
+                /(\d{1,2}):(\d{2})(?::(\d{2}))?\s?(AM|PM)/i,
+            );
             if (!match) return null;
 
             let hours = Number(match[1]);
             const minutes = Number(match[2]);
             const seconds = Number(match[3] || 0);
-            const meridiem = match[4]?.toUpperCase();
+            const meridiem = match[4].toUpperCase();
 
             if (meridiem === "PM" && hours < 12) hours += 12;
             if (meridiem === "AM" && hours === 12) hours = 0;
 
             const date = new Date();
             date.setHours(hours, minutes, seconds, 0);
+
             return date;
         },
-
-        // Clock management
         startClock() {
             if (this.clockInterval) return;
             this.now = Date.now();
             this.fetchLatestTimeLog();
+
             this.clockInterval = setInterval(() => {
                 this.now = Date.now();
             }, 1000);
         },
         stopClock() {
-            if (this.clockInterval) {
-                clearInterval(this.clockInterval);
-                this.clockInterval = null;
-            }
+            if (this.clockInterval) clearInterval(this.clockInterval);
+            this.clockInterval = null;
         },
-
-        // API fetching
         async fetchLatestTimeLog() {
             if (this.loading) return;
             this.loading = true;
-            this.errorMessage = null;
 
             try {
                 const res = await axios.get("/api/employee/current-logs", {
                     headers: { Authorization: `Bearer ${this.token}` },
                 });
 
-                const logs = res.data || {};
-                this.todayTimeIn = logs.time_in || null;
-                this.todayTimeOut = logs.time_out || null;
+                const logs = res.data || [];
+
+                this.todayTimeIn = logs?.time_in || null;
+                this.todayTimeOut = logs?.time_out || null;
 
                 if (this.todayTimeIn && !this.todayTimeOut) {
                     this.startClock();
@@ -324,19 +359,17 @@ export default {
                 }
             } catch (err) {
                 console.error("Failed to fetch time logs:", err);
-                this.errorMessage = "Failed to load time logs.";
-                this.stopClock();
             } finally {
                 this.loading = false;
             }
         },
-
-        // Toggle handlers
         handleWorkedHoursToggle() {
-            localStorage.setItem(WORKED_HOURS_KEY, this.showWorkedHours ? "true" : "false");
-            if (this.showWorkedHours) {
-                this.fetchLatestTimeLog();
-            } else {
+            localStorage.setItem(
+                WORKED_HOURS_KEY,
+                this.showWorkedHours ? "true" : "false",
+            );
+            if (this.showWorkedHours) this.fetchLatestTimeLog();
+            else {
                 this.todayTimeIn = null;
                 this.todayTimeOut = null;
                 this.stopClock();
@@ -346,8 +379,9 @@ export default {
             const today = new Date().toDateString();
             const hidden = localStorage.getItem(HIDE_KEY);
             const hideDate = localStorage.getItem(HIDE_DATE_KEY);
-            this.showTimelogDiscrepancy = !(hidden === "true" && hideDate === today);
-            console.log("Timelog toggle event received: Switch updated to", this.showTimelogDiscrepancy); // Debug log
+            this.showTimelogDiscrepancy = !(
+                hidden === "true" && hideDate === today
+            );
         },
         handleTimelogToggle() {
             if (!this.showTimelogDiscrepancy) {
@@ -357,28 +391,13 @@ export default {
                 localStorage.removeItem(HIDE_KEY);
                 localStorage.removeItem(HIDE_DATE_KEY);
             }
-            // Dispatch event for other components
-            if (typeof window !== "undefined") {
-                window.dispatchEvent(new Event("timelog-toggle"));
-            }
+            window.dispatchEvent(new Event("timelog-toggle"));
         },
         handleNotes() {
             localStorage.setItem(NOTES_KEY, this.showNotes ? "true" : "false");
         },
         handleTutorials() {
             localStorage.setItem(TUTORIAL_KEY, this.showTutorial ? "true" : "false");
-        },
-
-        // Load saved states
-        loadSavedStates() {
-            const savedWorkedHours = localStorage.getItem(WORKED_HOURS_KEY);
-            if (savedWorkedHours !== null) this.showWorkedHours = savedWorkedHours === "true";
-
-            const savedNotes = localStorage.getItem(NOTES_KEY);
-            if (savedNotes !== null) this.showNotes = savedNotes === "true";
-
-            const savedTutorial = localStorage.getItem(TUTORIAL_KEY);
-            if (savedTutorial !== null) this.showTutorial = savedTutorial === "true";
         },
     },
 };
@@ -387,32 +406,13 @@ export default {
 <style lang="scss" scoped>
 @import "./../../../../sass/variables";
 
-// Toggle styles
-.toggle-input {
-    cursor: pointer;
-    transform: scale(1.2);
-    margin-right: 0.5rem;
-    margin-bottom: 2px;
-}
-
-.toggle-label {
-    font-size: 12px;
-    cursor: pointer;
-}
-
-// No time-in styling
-.no-time-in {
-    opacity: 0.7;
-    font-style: italic;
-}
-
 @media (max-width: 767.98px) {
     .dropdown-menu {
         min-width: 300px !important;
-    }
 
-    .toggle-label {
-        font-size: 10px !important;
+        label {
+            font-size: 10px !important;
+        }
     }
 
     .shot-clock-wrapper {
