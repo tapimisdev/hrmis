@@ -170,15 +170,16 @@
                     'emp.overtime_application.view',
                     'emp.overtime_application.apply'
                 ])
-<!-- 
-                <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
-                    <a href="{{ route('obs.index') }}" class="side-link text-body">
-                        <span class="side-icon">
-                            <i class="fa-solid fa-torii-gate"></i>
-                        </span>
-                        <span class="side-text">Pass Slip</span>
-                    </a>
-                </li> -->
+                <!-- 
+                    <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
+                        <a href="{{ route('obs.index') }}" class="side-link text-body">
+                            <span class="side-icon">
+                                <i class="fa-solid fa-torii-gate"></i>
+                            </span>
+                            <span class="side-text">Pass Slip</span>
+                        </a>
+                    </li> 
+                -->
                 @endcanany
 
                 {{--

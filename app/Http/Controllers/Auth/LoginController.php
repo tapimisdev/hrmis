@@ -49,7 +49,8 @@ class LoginController extends Controller
         session([
             'auth_token' => $token,
             'name' => $user->name,
-            'email' => $user->email
+            'email' => $user->email,
+            'session_id' => session()->getId()
         ]);
     }
 

@@ -44,7 +44,9 @@ class ProfileController extends Controller
 
         }
 
-        return view('employee.pages.profile.index');
+        $session_id = session()->getId();
+
+        return view('employee.pages.profile.index', compact('session_id'));
     }
 
     public function update(ProfileRequest $request)

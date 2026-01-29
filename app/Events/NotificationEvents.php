@@ -12,6 +12,7 @@ use Illuminate\Queue\SerializesModels;
 
 class NotificationEvents implements ShouldBroadcast
 {
+    
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $id;
@@ -25,7 +26,7 @@ class NotificationEvents implements ShouldBroadcast
 
     public function __construct(
         string $type,
-        string $sender,
+        string $sender = null,
         string|int $receiver,
         array $data
     ) {

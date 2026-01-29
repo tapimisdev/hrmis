@@ -229,9 +229,6 @@ export default {
         };
     },
     async mounted() {
-        this.loadShifts();
-        this.loadSchedules();
-        this.setClickedDate();
     },
     methods: {
         open(date) {

@@ -29,7 +29,8 @@ return new class extends Migration
                 'processing',
                 'system'
             ]);
-            $table->string('sender');              
+            $table->string('sender')
+                ->nullable();              
             $table->string('receiver')
                 ->default('*')
                 ->nullable(); 
