@@ -1,67 +1,216 @@
-🚀 How to Run Orbit (Laravel + Docker)
+# 🚀 Run Orbit (Laravel --- No Docker)
 
-Easily spin up your Laravel Orbit application locally using Docker and
-Docker Compose. This guide walks you through setting up a fully
-functional development environment in just a few steps.
+Easily run the **Laravel Orbit** application locally using PHP, MySQL,
+and Node --- no Docker required.
 
-📋 Prerequisites
+Follow this step-by-step guide to get your development environment up
+and running smoothly.
 
-Before you begin, make sure you have the following installed:
+------------------------------------------------------------------------
 
--   Docker — Container platform
--   Docker Compose — Multi-container orchestration
--   Git — Version control
+## 📋 Prerequisites
 
-🎯 Quick Start
+Make sure you have the following installed:
 
-Step 1: Clone the Repository
+-   PHP 8.2+\
+-   Composer\
+-   Node.js & npm\
+-   MySQL or MariaDB\
+-   Git
 
-    git clone https://github.com/KemuelJoshua/dost.git orbit
+------------------------------------------------------------------------
 
-    cd orbit
+## 🎯 Quick Start
 
-Step 2: Build and Start Containers
+### Step 1: Clone the Repository
 
-    docker-compose up -d --build
+``` bash
+git clone https://github.com/KemuelJoshua/dost.git orbit
+cd orbit
+```
 
-Step 3: Fix Entrypoint Script (Linux Users)
+------------------------------------------------------------------------
 
-    sed -i 's/\r$//' docker/php-apache/entrypoint.sh
+### Step 2: Install Backend Dependencies
 
-    chmod +x docker/php-apache/entrypoint.sh
+``` bash
+composer install
+```
 
-Step 4: Enter the Application Container
+------------------------------------------------------------------------
 
-    docker exec -it orbit bash
+### Step 3: Setup Environment
 
-Step 5: Install Dependencies
+``` bash
+cp .env.example .env
+php artisan key:generate
+```
 
-    composer install
+------------------------------------------------------------------------
 
-    npm install
+### Step 4: Configure Database
 
-    npm run build
+Edit `.env`:
 
-Step 6: Storage & Cache Permissions
+``` env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=orbit
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-    docker exec -it orbit chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+Create DB:
 
-    docker exec -it orbit chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+``` bash
+mysql -u root -p
+```
 
-Step 7: Run Migrations & Seed
+``` sql
+CREATE DATABASE orbit;
+EXIT;
+```
 
-    docker exec -it orbit php artisan migrate --force
+------------------------------------------------------------------------
 
-    docker exec -it orbit php artisan db:seed --force
+### Step 5: Install Frontend & Build
 
-Step 8: Access the Application
+``` bash
+npm install
+npm run build
+```
 
-http://localhost:8001
+For dev mode:
 
-🔧 Useful Docker Commands
+``` bash
+npm run dev
+```
 
-    docker-compose ps
-    docker-compose logs -f orbit
-    docker-compose down
-    docker-compose up -d --build
-    docker exec -it orbit bash
+------------------------------------------------------------------------
+
+### Step 6: Fix Permissions (Linux/macOS)
+
+``` bash
+chmod -R 775 storage bootstrap/cache
+sudo chown -R $USER:www-data storage bootstrap/cache
+```
+
+Windows usually needs no changes.
+
+------------------------------------------------------------------------
+
+### Step 7: Run Migrations & Seed
+
+``` bash
+php artisan migrate
+php artisan db:seed
+```
+
+------------------------------------------------------------------------
+
+### Step 8: Serve App
+
+``` bash
+php artisan serve
+```
+
+Visit:
+
+http://127.0.0.1:8000
+
+Custom port:
+
+``` bash
+php artisan serve --port=8001
+```
+
+------------------------------------------------------------------------
+
+## 🛠 Useful Commands
+
+``` bash
+php artisan optimize:clear
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+```
+
+Logs:
+
+``` bash
+tail -f storage/logs/laravel.log
+```
+
+Queues:
+
+``` bash
+php artisan queue:work
+```
+
+------------------------------------------------------------------------
+
+## ⚠️ Troubleshooting
+
+### Storage Permission Error
+
+``` bash
+chmod -R 775 storage bootstrap/cache
+```
+
+### App Key Missing
+
+``` bash
+php artisan key:generate
+```
+
+### Blank Page / 500 Error
+
+``` bash
+php artisan optimize:clear
+```
+
+Check logs:
+
+``` bash
+storage/logs/laravel.log
+```
+
+------------------------------------------------------------------------
+
+## 🚧 Common Errors
+
+  Issue                   Fix
+  ----------------------- ----------------------------------
+  DB connection refused   Check MySQL running & env config
+  Permission denied       Fix storage permissions
+  Missing vendor          Run composer install
+  Vite not loading        Run npm install & npm run dev
+
+------------------------------------------------------------------------
+
+## 🌐 Production Tips
+
+-   Use Nginx or Apache instead of `php artisan serve`
+-   Set `.env`:
+
+``` env
+APP_ENV=production
+APP_DEBUG=false
+```
+
+-   Run:
+
+``` bash
+php artisan config:cache
+php artisan route:cache
+```
+
+-   Setup Supervisor for queues
+
+------------------------------------------------------------------------
+
+## ✅ Done!
+
+Orbit is now running locally without Docker 🚀\
+Happy coding!
