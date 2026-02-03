@@ -4,7 +4,7 @@
 <div class="wrapper p-3">
     <div class="form-container border shadow">
         <div class='logo-container'>
-            <img src="{{ asset('img/orbit.png') }}" alt="">
+            <img src="{{ asset('img/dost-tapi.png') }}" alt="">
             <div class="seperator"></div>
             <div class="form-header">
                <h5>Welcome Back, Genius!</h5>

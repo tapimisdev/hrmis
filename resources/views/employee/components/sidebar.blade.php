@@ -9,7 +9,7 @@
                     <button id="imgSwitchBtn" class="p-0 border-0 btn btn-transparent">
                         <img src="{{ asset('img/dost-tapi.png') }}" alt="TAPI Logo">
                     </button>
-                    <h5>DOST-TAPI</h5>
+                    <h5>HRIMS</h5>
                 </div>
 
                 <button id="switchMenuBtn" class="sidebar-toggle-btn">
