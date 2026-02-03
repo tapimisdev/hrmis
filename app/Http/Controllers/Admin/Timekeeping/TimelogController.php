@@ -97,7 +97,7 @@ class TimelogController extends Controller
             $profile = $row->profile ?? null;
 
             if ($profile) {
-                $profile = Storage::url('uploads/employees/' . $row->employee_no . '/profile/' . $row->profile);
+                $profile = Storage::url('public/users/' . $row->employee_no . '/profile/' . $row->profile);
             } else {
                 $profile = 'https://ui-avatars.com/api/?name='
                     . urlencode(($row->firstname ?? '?') . ' ' . ($row->lastname ?? '?'))

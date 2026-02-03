@@ -164,11 +164,13 @@ class LeaveApplicationController extends Controller
             // Handle multiple attachments (if any)
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
-                    $path = $file->store('leave_attachments', 'public'); // saves in storage/app/public/leave_attachments
+
+                    $path = 'users/' . $employee_no . '/leave-attachments/';
+                    $attachmentPath = $file->store($path, 'public');
 
                     DB::table('leave_attachments')->insert([
                         'leave_application_id' => $applicationID,
-                        'file_path'            => $path,
+                        'file_path'            => $attachmentPath,
                         'file_name'            => $file->getClientOriginalName(),
                         'file_type'            => $file->getMimeType(),
                     ]);

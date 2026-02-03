@@ -15,6 +15,7 @@ import { initCalendar, setEvents, generateEventsWithAvailability } from './calen
 
 const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 const token = localStorage.getItem('auth_token');
+console.log(token);
 
 if (csrf) {
     axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf;

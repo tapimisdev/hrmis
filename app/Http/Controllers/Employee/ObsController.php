@@ -116,10 +116,13 @@ class ObsController extends Controller
             // Handle multiple attachments (if any)
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
-                    $path = $file->store('obs_attachments', 'public');
+                   
+                    $path = 'users/' . $employee_no . '/pass-slip-attachments/';
+                    $attachmentPath = $file->store($path, 'public');
+
                     DB::table('obs_attachments')->insert([
                         'obs_applications_id'     => $obsId,
-                        'file_path'  => $path,
+                        'file_path'  => $attachmentPath,
                         'file_name'  => $file->getClientOriginalName(),
                         'file_type'  => $file->getMimeType(),
                         'created_at' => now(),

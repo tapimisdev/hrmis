@@ -27,8 +27,8 @@ class CorrectionTimelogController extends Controller
         $this->timelog_service = $timelog_service;
         $this->employee_service = $employee_service;
 
-        $this->middleware('permission:hr.correction.view')->only('index');
-        $this->middleware('permission:hr.correction.approval')->only(['edit', 'store']);
+        // $this->middleware('permission:hr.correction.view')->only('index');
+        // $this->middleware('permission:hr.correction.approval')->only(['edit', 'store']);
 
     }
 
@@ -94,9 +94,11 @@ class CorrectionTimelogController extends Controller
             };
 
             // Handle attachment if exists
-            $attachmentPath = null;
             if ($request->hasFile('attachment')) {
-                $attachmentPath = $request->file('attachment')->store('corrections', 'public');
+
+                $path = 'users/' . $employee_no . '/timelog-corrections-attachments/';
+                $attachmentPath = $request->file('attachment')->store($path, 'public');
+
             }
 
             $schedule_and_Schift = DB::table('employee_shift_work_schedule')

@@ -62,6 +62,22 @@ class OvertimeController extends Controller {
 
         /*
         |--------------------------------------------------------------------------
+        | Attachments
+        |--------------------------------------------------------------------------
+        */
+        $attachments = DB::table('overtime_attachments')
+            ->select(
+                'overtime_applications_id',
+                'file_name',
+                'file_path',
+                'file_type'
+            )
+            ->whereIn('overtime_applications_id', $applicationIds)
+            ->get()
+            ->groupBy('overtime_applications_id');
+
+        /*
+        |--------------------------------------------------------------------------
         | Approvals
         |--------------------------------------------------------------------------
         */
@@ -81,22 +97,30 @@ class OvertimeController extends Controller {
 
         /*
         |--------------------------------------------------------------------------
-        | Group approvals by level (UI)
+        | Group approvals PER application → PER level (UI-friendly)
         |--------------------------------------------------------------------------
         */
-        $groupedApprovals = $approvalsRaw
-            ->groupBy('level')
-            ->map(fn ($items) => $items->unique('user_id')->values())
-            ->sortKeys()
-            ->toArray();
+        $approvalsByApplication = $approvalsRaw
+            ->groupBy('overtime_applications_id')
+            ->map(function ($items) {
+                return $items
+                    ->groupBy('level')
+                    ->map(fn ($levelItems) =>
+                        $levelItems->unique('user_id')->values()
+                    )
+                    ->sortKeys()
+                    ->values();
+            });
 
         /*
         |--------------------------------------------------------------------------
         | Merge Data
         |--------------------------------------------------------------------------
         */
-        return $applications->map(function ($item) use ($groupedApprovals) {
-            $item->approvals = $groupedApprovals;
+        return $applications->map(function ($item) use ($attachments, $approvalsByApplication) {
+            $item->attachments = $attachments->get($item->id, collect())->values();
+            $item->approvals   = $approvalsByApplication->get($item->id, collect());
+
             return $item;
         });
     }

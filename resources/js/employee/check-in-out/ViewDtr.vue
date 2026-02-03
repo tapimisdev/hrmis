@@ -339,20 +339,24 @@
                         </div>
                     </div>
 
-                    <div
-                        class="mt-3 small text-center fst-italic text-body-secondary"
-                    >
-                        I hereby certify that the above records are true and
-                        correct.
-                    </div>
-
-                    <div class="d-flex justify-content-center mt-4">
-                        <div class="text-center" style="min-width: 220px">
-                            <div class="border-top pt-1 small fw-semibold">
-                                EMPLOYEE'S SIGNATURE
-                            </div>
+                   <div class="d-flex justify-content-center w-100 text-center mt-5" style="gap: 100px;">
+                      <div>
+                        <div
+                          class="mt-3 small text-center fst-italic text-body-secondary"
+                        >
+                            I hereby certify that the above records are true and
+                            correct.
                         </div>
+                        <div class="border-top pt-1 small fw-semibold mt-5" style="min-width: 220px">
+                            EMPLOYEE'S SIGNATURE
+                        </div>
+                      </div>
+                    <div style="position: relative; top: 36px;">
+                      <div class="border-top pt-1 small fw-semibold mt-5" style="min-width: 320px">
+                          SUPERVISOR'S SIGNATURE
+                      </div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>

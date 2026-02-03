@@ -30,7 +30,7 @@ class ProfileController extends Controller
                 ->first();
 
             if ($employee_personal->profile) {
-                $employee_personal->profile = Storage::url('uploads/employees/' . $employee_personal->employee_no . '/profile/' . $employee_personal->profile);
+                $employee_personal->profile = Storage::url('public/users/' . $employee_personal->employee_no . '/profile/' . $employee_personal->profile);
             } else {
                 $employee_personal->profile = 'https://ui-avatars.com/api/?name='
                     . urlencode(($employee_personal->firstname ?? '?') . ' ' . ($employee_personal->lastname ?? '?'))
@@ -66,7 +66,7 @@ class ProfileController extends Controller
 
                 $file = $request->file('profile');
 
-                $path = 'public/uploads/employees/' . $employee_no . '/profile';
+                $path = 'public/users/' . $employee_no . '/profile-image';
 
                 // Ensure directory exists
                 Storage::makeDirectory($path);

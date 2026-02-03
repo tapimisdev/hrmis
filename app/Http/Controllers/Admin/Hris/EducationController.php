@@ -51,7 +51,7 @@ class EducationController extends Controller
         $filename = $filename . '.' . $extension;
 
         $file->storeAs(
-            'uploads/employees/' . $employee_no . '/education' , 
+            'users/' . $employee_no .  '/pds' . '/education' , 
             $filename, 
             'public'
         );   

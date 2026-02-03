@@ -50,7 +50,7 @@ class Employee extends Controller
                         return 'N/A';
                     }
 
-                    $file = Storage::url('public/uploads/employees/' . $row->employee_no . '/' . $row->documents);
+                    $file = Storage::url('public/users/' . $row->employee_no . '/pds/children/' . $row->documents);
 
                     return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
 
@@ -117,7 +117,7 @@ class Employee extends Controller
                         return 'N/A';
                     }
 
-                    $file = Storage::url('public/uploads/employees/' . $row->employee_no . '/' . $row->documents);
+                    $file = Storage::url('public/users/' . $row->employee_no . '/pds/education/' . $row->documents);
 
                     return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
 
@@ -183,7 +183,7 @@ class Employee extends Controller
                         return 'N/A';
                     }
 
-                    $file = Storage::url('public/uploads/employees/' . $row->employee_no . '/' . $row->documents);
+                    $file = Storage::url('public/users/' . $row->employee_no . '/pds/civil-service/' . $row->documents);
 
                     return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
 
@@ -249,7 +249,7 @@ class Employee extends Controller
                         return 'N/A';
                     }
 
-                    $file = Storage::url('public/uploads/employees/' . $row->employee_no . '/' . $row->documents);
+                    $file = Storage::url('public/users/' . $row->employee_no . '/pds/work-experience/' . $row->documents);
 
                     return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
 
@@ -315,7 +315,7 @@ class Employee extends Controller
                         return 'N/A';
                     }
 
-                    $file = Storage::url('public/uploads/employees/' . $row->employee_no . '/' . $row->documents);
+                    $file = Storage::url('public/users/' . $row->employee_no . '/pds/voluntary-works/' . $row->documents);
 
                     return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
 
@@ -381,7 +381,7 @@ class Employee extends Controller
                         return 'N/A';
                     }
 
-                    $file = Storage::url('public/uploads/employees/' . $row->employee_no . '/' . $row->documents);
+                    $file = Storage::url('public/users/' . $row->employee_no . '/pds/trainings/' . $row->documents);
 
                     return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
 
@@ -447,7 +447,7 @@ class Employee extends Controller
                         return 'N/A';
                     }
 
-                    $file = Storage::url('public/uploads/employees/' . $row->employee_no . '/' . $row->documents);
+                    $file = Storage::url('public/users/' . $row->employee_no . '/pds/skills/' . $row->documents);
 
                     return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
 

@@ -50,7 +50,7 @@ class TrainingsController extends Controller
         $filename = $filename . '.' . $extension;
 
         $file->storeAs(
-            'uploads/employees/' . $employee_no . '/trainings' , 
+            'users/' . $employee_no .  '/pds' . '/trainings', 
             $filename, 
             'public'
         );   

@@ -36,7 +36,7 @@ class PersonalController extends Controller
         $profile = $data->profile ?? null;
 
         if (!is_null($profile)) {
-            $profile = Storage::url('uploads/employees/' . $employee_no . '/profile/' . $profile);
+            $profile = Storage::url('public/users/' . $employee_no . '/profile/' . $profile);
         } else {
             $profile = 'https://ui-avatars.com/api/?name=' 
                 . urlencode(($data->firstname ?? '?') . ' ' . ($data->lastname ?? '?')) 
@@ -111,8 +111,8 @@ class PersonalController extends Controller
             // Handle profile upload
             if ($request->hasFile('profile') && $request->file('profile')->isValid()) {
                 $file = $request->file('profile');
-                $profile = 'profile_' . time() . '.' . $file->getClientOriginalExtension();
-                $file->storeAs('public/uploads/employees/' . $employee_no . '/profile', $profile);
+                $profile = time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('public/users/' . $employee_no . '/profile', $profile);
                 $data['profile'] = $profile;
                 $hasFiles = true;
             }
@@ -120,8 +120,8 @@ class PersonalController extends Controller
             // Handle birth certificate upload
             if ($request->hasFile('birth_certificate') && $request->file('birth_certificate')->isValid()) {
                 $file = $request->file('birth_certificate');
-                $birth_certificate = 'birth_certificate_' . time() . '.' . $file->getClientOriginalExtension();
-                $file->storeAs('public/uploads/employees/' . $employee_no . '/birth_certificate', $birth_certificate);
+                $birth_certificate = time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('public/users/' . $employee_no . '/pds/birth-certificate', $birth_certificate);
                 $data['birth_certificate'] = $birth_certificate;
                 $hasFiles = true;
             }
@@ -129,8 +129,8 @@ class PersonalController extends Controller
             // Handle marriage certificate upload
             if ($request->hasFile('marriage_certificate') && $request->file('marriage_certificate')->isValid()) {
                 $file = $request->file('marriage_certificate');
-                $marriage_certificate = 'marriage_certificate_' . time() . '.' . $file->getClientOriginalExtension();
-                $file->storeAs('public/uploads/employees/' . $employee_no . '/marriage_certificate', $marriage_certificate);
+                $marriage_certificate = time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('public/users/' . $employee_no . '/pds/marriage-certificate', $marriage_certificate);
                 $data['marriage_certificate'] = $marriage_certificate;
                 $hasFiles = true;
             }

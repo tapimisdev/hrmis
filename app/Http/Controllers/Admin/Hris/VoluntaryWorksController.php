@@ -52,7 +52,7 @@ class VoluntaryWorksController extends Controller
         $filename = $filename . '.' . $extension;
 
         $file->storeAs(
-            'uploads/employees/' . $employee_no . '/voluntary-works' , 
+            'users/' . $employee_no .  '/pds' . '/voluntary-works', 
             $filename, 
             'public'
         );   

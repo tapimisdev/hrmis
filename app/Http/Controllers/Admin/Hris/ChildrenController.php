@@ -50,7 +50,7 @@ class ChildrenController extends Controller
         $filename = $filename . '.' . $extension;
 
         $file->storeAs(
-            'uploads/employees/' . $employee_no , 
+            'users/' . $employee_no .  '/pds' . '/children' , 
             $filename, 
             'public'
         );   

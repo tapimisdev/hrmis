@@ -124,11 +124,13 @@ class AtroController extends Controller
 
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
-                    $path = $file->store('overtime_attachments', 'public'); // saves in storage/app/public/overtime_attachments
+                    
+                    $path = 'users/' . $employee_no . '/overtime-attachments/';
+                    $attachmentPath = $file->store($path, 'public');
 
                     DB::table('overtime_attachments')->insert([
                         'overtime_applications_id' => $atroId,
-                        'file_path'            => $path,
+                        'file_path'            => $attachmentPath,
                         'file_name'            => $file->getClientOriginalName(),
                         'file_type'            => $file->getMimeType(),
                     ]);

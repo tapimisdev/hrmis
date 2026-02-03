@@ -66,7 +66,24 @@
                         <th>Reason:</th>
                         <td>{{ $data->reason ?? '—' }}</td>
                     </tr>
-
+                    <tr>
+                        <th>Attachments:</th>
+                        <td id="attachments">
+                            <ul class="list-unstyled mb-0">
+                                @if (!empty($data->attachments) && count($data->attachments) > 0)
+                                    @foreach ($data->attachments as $attachment)
+                                        <li>
+                                            <a download href="{{ '/storage/' . $attachment->file_path }}">
+                                                {{ $attachment->file_name }}
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                @else
+                                    <li>No attachments available.</li>
+                                @endif
+                            </ul>
+                        </td>
+                    </tr>
                     <tr>
                         <th>Status:</th>
                         <td>

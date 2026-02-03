@@ -150,11 +150,13 @@ class OffsetApplicationController extends Controller
             // Handle multiple attachments (if any)
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
-                    $path = $file->store('offset_attachments', 'public'); // saves in storage/app/public/offset_attachments
+                    
+                    $path = 'users/' . $employee_no . '/offset-attachments/';
+                    $attachmentPath = $file->store($path, 'public');
 
                     DB::table('offset_attachments')->insert([
                         'offset_application_id' => $applicationID,
-                        'file_path'            => $path,
+                        'file_path'            => $attachmentPath,
                         'file_name'            => $file->getClientOriginalName(),
                         'file_type'            => $file->getMimeType(),
                     ]);

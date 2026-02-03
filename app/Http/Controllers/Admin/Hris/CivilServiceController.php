@@ -16,10 +16,12 @@ class CivilServiceController extends Controller
 {
     
     public $employeeService;
+    public $generateService;
 
-    public function __construct(EmployeeService $employeeService)
+    public function __construct(EmployeeService $employeeService, GenerateService $generateService)
     {
-        $this->employeeService = $employeeService;    
+        $this->employeeService = $employeeService;  
+        $this->generateService = $generateService;     
         $this->middleware('permission:hr.hris.view')->only('index');
         $this->middleware('permission:hr.hris.edit')->only('save');
         $this->middleware('permission:hr.hris.delete')->only('destroy');
@@ -49,7 +51,7 @@ class CivilServiceController extends Controller
         $filename = $filename . '.' . $extension;
 
         $file->storeAs(
-            'uploads/employees/' . $employee_no . '/civil-service' , 
+            'users/' . $employee_no .  '/pds' . '/civil-service', 
             $filename, 
             'public'
         );   
