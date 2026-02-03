@@ -6,7 +6,7 @@
         <header class="sidebar-header">
             <div class="sidebar-brand">
                 <div class="brand-body">
-                    <button id="imgSwitchBtn" class="p-0 border-0 ">
+                    <button id="imgSwitchBtn" class="p-0 border-0 btn btn-transparent">
                         <img src="{{ asset('img/dost-tapi.png') }}" alt="TAPI Logo">
                     </button>
                     <h5>DOST-TAPI</h5>

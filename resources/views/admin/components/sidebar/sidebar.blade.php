@@ -1,7 +1,7 @@
 <div class="sidebar boder bg-body-secondary border-right">
     <!-- Logo Section -->
     <div class="sidebar-title">
-        <img src="{{ asset('img/orbit.png') }}" alt="Orbit">
+        <img src="{{ asset('img/dost-tapi.png') }}" alt="Orbit">
     </div>
 
     <!-- Navigation List -->

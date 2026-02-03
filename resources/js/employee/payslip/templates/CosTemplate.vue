@@ -4,7 +4,7 @@
 
       <!-- HEADER -->
       <div class="text-center mb-4">
-        <img src="/public/img/dost-tapi.png" class="tapi-logo mb-2" alt="">
+        <img src="/public/img/dost-logo.png" class="tapi-logo mb-2" alt="">
         <div class="fw-bold fs-6">
           TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE
         </div>

@@ -339,7 +339,7 @@
                         </div>
                     </div>
 
-                   <div class="d-flex justify-content-center w-100 text-center mt-5" style="gap: 100px;">
+                   <div class="d-flex justify-content-center w-100 text-center mt-5 pb-4" style="gap: 100px;">
                       <div>
                         <div
                           class="mt-3 small text-center fst-italic text-body-secondary"
@@ -347,11 +347,14 @@
                             I hereby certify that the above records are true and
                             correct.
                         </div>
-                        <div class="border-top pt-1 small fw-semibold mt-5" style="min-width: 220px">
+                        <div class="mt-5 text-uppercase mb-1">
+                          {{ originalName }}
+                        </div>
+                        <div class="border-top pt-1 small fw-semibold" style="min-width: 220px">
                             EMPLOYEE'S SIGNATURE
                         </div>
                       </div>
-                    <div style="position: relative; top: 36px;">
+                    <div style="position: relative; top: 63.5px;">
                       <div class="border-top pt-1 small fw-semibold mt-5" style="min-width: 320px">
                           SUPERVISOR'S SIGNATURE
                       </div>
@@ -396,6 +399,9 @@ const props = defineProps({
 
 const computedData = computed(() => props.payload?.computedData ?? []);
 const info = computed(() => props.payload?.information ?? {});
+const originalName = computed(() =>
+  `${props.payload?.information?.firstname ?? ''} ${props.payload?.information?.lastname ?? ''}`.trim()
+)
 
 /** Labels */
 const monthNames = [

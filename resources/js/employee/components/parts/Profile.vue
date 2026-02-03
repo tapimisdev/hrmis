@@ -53,7 +53,7 @@
             <li>
                 <a class="dropdown-item py-2 px-3" href="/employee/profile">
                     <i class="fa-regular fa-user me-2" style="width: 18px"></i
-                    >My Account
+                    >My Profile
                 </a>
             </li>
             <li><hr class="dropdown-divider my-1" /></li>
