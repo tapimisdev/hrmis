@@ -183,7 +183,7 @@ class LeaveApplicationController extends Controller
                 'sender' => $sender,
                 'receiver' => 'admins',
                 'message' => '%b' . $sender . '%b filed a leave application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => route('services.leaves.show', ['application' => $applicationID])
+                'link' => url()->route('services.leaves.show', ['application' => $applicationID])
             ];
             $this->EventService->pushNotification($payload);
 

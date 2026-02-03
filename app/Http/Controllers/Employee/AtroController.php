@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreAtroRequest;
 use App\Http\Controllers\Admin\Services\ApplicationController;
 use App\Services\EventService;
-use App\Events\NotificationEvents;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
@@ -143,7 +142,7 @@ class AtroController extends Controller
                 'sender' => $sender,
                 'receiver' => 'admins',
                 'message' => '%b' . $sender . '%b filed an overtime application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => route('services.overtime.show', ['application' => $atroId])
+                'link' => url()->route('services.overtime.show', ['application' => $atroId])
             ];
             $this->EventService->pushNotification($payload);
 

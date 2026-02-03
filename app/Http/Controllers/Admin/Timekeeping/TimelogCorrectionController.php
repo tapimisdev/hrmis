@@ -6,17 +6,22 @@ use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\Timelogs\CorrectionRequest;
 use App\Services\EmployeeService;
+use App\Services\EventService;
 use Carbon\Carbon;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Yajra\DataTables\DataTables;
 
 class TimelogCorrectionController extends Controller
 {
 
-    public function __construct()
+    protected $EventService;
+
+    public function __construct(EventService $EventService)
     {
+        $this->EventService = $EventService;
         $this->middleware('permission:hr.correction.view')->only('index');
         $this->middleware('permission:hr.correction.approval')->only(['edit', 'store']);
     }
@@ -88,7 +93,6 @@ class TimelogCorrectionController extends Controller
 
         $employee_no = $correction->employee_no;
         $employee_service = app(EmployeeService::class);
-
         $user_id = $employee_service->getEmployeeUserId($employee_no);
 
         DB::beginTransaction();
@@ -146,6 +150,19 @@ class TimelogCorrectionController extends Controller
                 'updated_at' => now()
             ]);
 
+
+            $sender = ucwords(Auth::user()->name);
+            $reciever = $user_id;
+            $application_no = $correction->reference_no;
+            $payload = [
+                'type' => 'approved',
+                'sender' => $sender,
+                'receiver' => $reciever,
+                'message' => '%b' . $sender . '%b has approved your timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/employee/check-in-out'
+            ];
+            $this->EventService->pushNotification($payload);
+
             DB::commit();
 
             return response()->json([
@@ -186,6 +203,22 @@ class TimelogCorrectionController extends Controller
                 'status' => 'rejected',
                 'updated_at' => now()
             ]);
+
+        $employee_no = $correction->employee_no;
+        $employee_service = app(EmployeeService::class);
+        $user_id = $employee_service->getEmployeeUserId($employee_no);
+
+        $sender = ucwords(Auth::user()->name);
+        $reciever = $user_id;
+        $application_no = $correction->reference_no;
+        $payload = [
+            'type' => 'rejected',
+            'sender' => $sender,
+            'receiver' => $reciever,
+            'message' => '%b' . $sender . '%b has rejected your timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
+            'link' => '/employee/check-in-out'
+        ];
+        $this->EventService->pushNotification($payload);
 
         return response()->json([
             'message' => 'Timelog correction rejected.'

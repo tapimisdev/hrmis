@@ -7,10 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\Timelogs\CorrectionRequest;
 use App\Services\EmployeeService;
 use App\Services\TimelogsServices;
+use App\Services\EventService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 use function PHPUnit\Framework\returnArgument;
 
@@ -19,16 +21,18 @@ class CorrectionTimelogController extends Controller
 
     protected $timelog_service;
     protected $employee_service;
+    protected $EventService;
 
     protected $user_id;
 
-    public function __construct(TimelogsServices $timelog_service, EmployeeService $employee_service)
+    public function __construct(TimelogsServices $timelog_service, EmployeeService $employee_service, EventService $EventService)
     {
         $this->timelog_service = $timelog_service;
         $this->employee_service = $employee_service;
+        $this->EventService = $EventService;
 
-        $this->middleware('permission:emp.correction.view')->only('index');
-        $this->middleware('permission:emp.correction.apply')->only(['store']);
+        // $this->middleware('permission:emp.correction.view')->only('index');
+        // $this->middleware('permission:emp.correction.apply')->only(['store']);
 
     }
 
@@ -86,6 +90,7 @@ class CorrectionTimelogController extends Controller
         DB::beginTransaction();
 
         try {
+            
             $date = Carbon::parse($validatedData['date'])->format('Y-m-d');
 
             // Helper function to combine date + time
@@ -106,8 +111,10 @@ class CorrectionTimelogController extends Controller
                 ->latest('effectivity_date')
                 ->first();
 
+            $application_no = $this->generate_reference_no();
+
             $data = DB::table('timelog_corrections')->insert([
-                'reference_no'      => $this->generate_reference_no(),
+                'reference_no'      => $application_no,
                 'employee_no'       => $employee_no,
                 'date'              => $validatedData['date'],
                 'time_in'           => $combineDateTime($date, $validatedData['time_in']),
@@ -123,6 +130,16 @@ class CorrectionTimelogController extends Controller
                 'created_at'        => now(),
                 'updated_at'        => now(),
             ]);
+
+            $sender = ucwords(Auth::user()->name);
+            $payload = [
+                'type' => 'application',
+                'sender' => $sender,
+                'receiver' => 'admins',
+                'message' => '%b' . $sender . '%b filed a timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
+                'link' => '/admin/timekeeping/timelogs-correction'
+            ];
+            $this->EventService->pushNotification($payload);
 
             DB::commit();
 

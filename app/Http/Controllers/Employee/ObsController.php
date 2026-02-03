@@ -148,7 +148,7 @@ class ObsController extends Controller
                 'sender' => $sender,
                 'receiver' => 'admins',
                 'message' => '%b' . $sender . '%b filed a pass slip application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => route('services.pass_slip.show', ['application' => $obsId])
+                'link' => url()->route('services.pass_slip.show', ['application' => $obsId])
             ];
             $this->EventService->pushNotification($payload);
 

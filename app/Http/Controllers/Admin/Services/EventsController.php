@@ -269,7 +269,7 @@ class EventsController extends Controller
                     'sender' => $sender,
                     'receiver' => 'employees',
                     'message' => '%b' . $sender . '%b posted %bi' . ucwords($request->title) . '%bi',
-                    'link' => route('announcement.show', ['slug' => $slug]),
+                    'link' => url()->route('announcement.show', ['slug' => $slug], false)
                 ];
 
                  $this->EventService->pushNotification($payload);
