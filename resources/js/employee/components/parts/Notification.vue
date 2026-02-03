@@ -8,6 +8,7 @@
             data-bs-auto-close="outside"
             aria-expanded="false"
             style="cursor: pointer"
+            title="Notifications"
             @click="loadNotifications"
         >
             <i

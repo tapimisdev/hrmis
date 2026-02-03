@@ -19,6 +19,7 @@
             data-bs-auto-close="outside"
             aria-expanded="false"
             style="cursor: pointer"
+            title="Widgets"
         >
             <i
                 class="fa-solid fa-layer-group text-light"
