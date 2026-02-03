@@ -513,11 +513,14 @@ class Employee extends Controller
                     ->leftJoin('employee_information as ei', 'eav.user_id', '=', 'ei.user_id')
                     ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
                     ->where('eav.event_announcement_id', $announcement->id)
-                    ->select('eav.user_id', 'ep.firstname', 'ep.lastname')
+                    ->select('eav.user_id', 'ei.employee_no', 'ep.profile', 'ep.firstname', 'ep.lastname')
                     ->get()
                     ->map(function ($d) {
-                        $profile = "https://ui-avatars.com/api/?name=" . urlencode($d->firstname . ' ' . $d->lastname) . "&background=random&color=fff&font-size=0.5";
-                        $d->profile = $profile;
+                        if($d->profile != null) {
+                            $d->profile = '/storage/users/' . $d->employee_no . '/profile-image/'. $d->profile;
+                        } else {
+                            $d->profile = "https://ui-avatars.com/api/?name=" . urlencode($d->firstname . ' ' . $d->lastname) . "&background=random&color=fff&font-size=0.5";
+                        }
                         return $d;
                     });
 

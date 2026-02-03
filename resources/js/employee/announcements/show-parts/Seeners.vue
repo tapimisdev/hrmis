@@ -13,7 +13,7 @@
                         <img
                             :src="seener.profile"
                             :alt="seener.firstname + ' ' + seener.lastname"
-                            class="seener-item-avatar me-3"
+                            class="seener-item-avatar"
                         />
                         <span class="seener-name">
                             {{ seener.firstname }} {{ seener.lastname }}
@@ -73,6 +73,20 @@ export default {
 <style scoped lang="scss">
 .container-modal {
     overflow-y: auto;
+
+    .seener-itemp  {
+      .seener-item-avatar {
+        height: 80px;
+        width: 80px;
+        border-radius: 12px;
+        object-fit: cover;
+        margin-right: 12px;
+      }
+      .seener-name {
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+    }
 }
 // Viewers Section
 .viewers-section {
