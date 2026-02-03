@@ -1,7 +1,7 @@
 <template>
     <button @click="toggleMobileMenu" class="d-md-none menu-btn">☰</button>
     <incomplete-logs> </incomplete-logs>
-    <div class="d-flex gap-5 justify-content-end align-items-center">
+    <div class="d-flex gap-4 justify-content-end align-items-center">
       <widget-component />
       <notification-component :user-role="userRole" :user-id="userId" />  
       <profile-component />

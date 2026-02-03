@@ -21,7 +21,7 @@
             style="cursor: pointer"
         >
             <i
-                class="fa-solid fa-gear text-light"
+                class="fa-solid fa-layer-group text-light"
                 style="font-size: 1.5rem"
             ></i>
         </a>
