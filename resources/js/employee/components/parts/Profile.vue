@@ -9,17 +9,26 @@
             aria-expanded="false"
             style="cursor: pointer"
         >
-            <img
-                :src="userAvatar"
-                alt="Profile"
-                class="rounded-circle"
-                style="
-                    width: 40px;
-                    height: 40px;
-                    object-fit: cover;
-                    border: 2px solid var(--bs-light);
-                "
-            />
+            <div class="position-relative" style="width: 40px; height: 40px">
+                <div
+                    v-if="!avatarLoaded"
+                    class="rounded-circle bg-secondary position-absolute top-0 start-0 w-100 h-100 skeleton"
+                ></div>
+
+                <img
+                    :src="userAvatarUrl || defaultAvatar"
+                    alt="Profile"
+                    class="rounded-circle w-100 h-100"
+                    @load="onAvatarLoad"
+                    :style="{
+                        objectFit: 'cover',
+                        border: '2px solid var(--bs-light)',
+                        opacity: avatarLoaded ? 1 : 0,
+                        transition: 'opacity 0.3s ease-in-out',
+                    }"
+                />
+            </div>
+
             <span
                 class="position-absolute bg-primary rounded-circle d-flex align-items-center justify-content-center"
                 style="
@@ -43,17 +52,15 @@
             style="min-width: 220px; border: 1px solid #e0e0e0"
         >
             <li class="px-3 py-2 border-bottom">
-                <div class="fw-semibold text-dark small">
-                    {{ user.name }}
-                </div>
+                <div class="fw-semibold text-dark small">{{ user.name }}</div>
                 <div class="text-muted" style="font-size: 0.75rem">
                     {{ user.email }}
                 </div>
             </li>
             <li>
                 <a class="dropdown-item py-2 px-3" href="/employee/profile">
-                    <i class="fa-regular fa-user me-2" style="width: 18px"></i
-                    >My Profile
+                    <i class="fa-regular fa-user me-2" style="width: 18px"></i>
+                    My Profile
                 </a>
             </li>
             <li><hr class="dropdown-divider my-1" /></li>
@@ -66,8 +73,8 @@
                     <i
                         class="fa-solid fa-right-from-bracket me-2"
                         style="width: 18px"
-                    ></i
-                    >{{ loggingOut ? "Logging out..." : "Logout" }}
+                    ></i>
+                    {{ loggingOut ? "Logging out..." : "Logout" }}
                 </button>
             </li>
         </ul>
@@ -80,25 +87,62 @@ import axios from "axios";
 export default {
     name: "ProfileComponent",
     data() {
-        const name = localStorage.getItem("name");
-        const email = localStorage.getItem("email");
-
         return {
-            user: { name, email },
+            user: {
+                employee_no: null,
+                name: "User",
+                email: "",
+                profile_image: null,
+            },
             loggingOut: false,
+            userAvatarUrl: "",
+            avatarLoaded: false,
         };
     },
-    computed: {
-        userAvatar() {
-            return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                this.user.name || "User",
-            )}&background=4f46e5&color=fff&size=128`;
-        },
+
+    mounted() {
+        this.loadProfile();
     },
+
     methods: {
+        async loadProfile() {
+            try {
+                const { data } = await axios.get("/employee/profile");
+
+                this.user.employee_no = data.personal?.employee_no || null;
+                this.user.name = data.user?.name || "User";
+                this.user.email = data.user?.email || "";
+                this.user.profile_image = data.personal?.profile ?? null;
+
+                const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    this.user.name
+                )}&background=4f46e5&color=fff&size=128`;
+
+                this.userAvatarUrl = defaultAvatar;
+
+                if (this.user.profile_image && this.user.employee_no) {
+                    let avatarUrl = this.user.profile_image.startsWith("/storage")
+                        ? this.user.profile_image
+                        : `/storage/users/${this.user.employee_no}/profile-image/${this.user.profile_image}`;
+
+                    try {
+                        await axios.head(avatarUrl);
+                        this.userAvatarUrl = avatarUrl;
+                    } catch {
+                        this.userAvatarUrl = defaultAvatar;
+                    }
+                }
+            } catch {
+                this.userAvatarUrl = `https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff&size=128`;
+            }
+        },
+        onAvatarLoad() {
+            this.avatarLoaded = true;
+        },
         async logout() {
             if (this.loggingOut) return;
             this.loggingOut = true;
+
             try {
                 await axios.post("/logout");
                 window.location.href = "/login";
@@ -112,6 +156,21 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-// No specific styles for profile component in the original
+<style scoped>
+.skeleton {
+    animation: pulse 1.5s infinite;
+    z-index: 2;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.3;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}
 </style>
