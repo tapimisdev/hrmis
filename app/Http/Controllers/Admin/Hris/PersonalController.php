@@ -36,7 +36,7 @@ class PersonalController extends Controller
         $profile = $data->profile ?? null;
 
         if (!is_null($profile)) {
-            $profile = Storage::url('public/users/' . $employee_no . '/profile/' . $profile);
+            $profile = Storage::url('public/users/' . $employee_no . '/profile-image/' . $profile);
         } else {
             $profile = 'https://ui-avatars.com/api/?name=' 
                 . urlencode(($data->firstname ?? '?') . ' ' . ($data->lastname ?? '?')) 

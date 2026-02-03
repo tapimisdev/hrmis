@@ -146,7 +146,7 @@ class DailyTimeRecordController extends Controller
         $image = $employee->profile ?? null;
 
         if ($image) {
-            $image = Storage::url('public/users/' . $employee->employee_no . '/profile/' . $employee->profile);
+            $image = Storage::url('public/users/' . $employee->employee_no . '/profile-image/' . $employee->profile);
         } else {
             $image = 'https://ui-avatars.com/api/?name='
                 . $employee->full_name

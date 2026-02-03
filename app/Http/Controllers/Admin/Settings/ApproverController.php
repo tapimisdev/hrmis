@@ -123,7 +123,7 @@ class ApproverController extends Controller
             }
 
             if (!is_null($row->profile)) {
-                $profile = Storage::url('public/users/' . $employee_no . '/profile/' . $row->profile);
+                $profile = Storage::url('public/users/' . $employee_no . '/profile-image/' . $row->profile);
             } else {
                 $profile = 'https://ui-avatars.com/api/?name=' 
                     . urlencode($row->name) 

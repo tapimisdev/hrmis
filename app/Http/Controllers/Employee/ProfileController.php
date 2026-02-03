@@ -30,7 +30,7 @@ class ProfileController extends Controller
                 ->first();
 
             if ($employee_personal->profile) {
-                $employee_personal->profile = Storage::url('public/users/' . $employee_personal->employee_no . '/profile/' . $employee_personal->profile);
+                $employee_personal->profile = Storage::url('public/users/' . $employee_personal->employee_no . '/profile-image/' . $employee_personal->profile);
             } else {
                 $employee_personal->profile = 'https://ui-avatars.com/api/?name='
                     . urlencode(($employee_personal->firstname ?? '?') . ' ' . ($employee_personal->lastname ?? '?'))

@@ -1,5 +1,14 @@
 <template>
     <div class="wrapper" ref="wrapper" v-if="isVisible">
+        <iframe
+          src="https://www.youtube.com/embed/N6-0syjL9nU?start=3&autoplay=1&loop=1&playlist=N6-0syjL9nU"
+          title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen>
+        </iframe>
+
         <div class="image-box">
             <button class="close-btn" @click="close">×</button>
 
@@ -96,6 +105,8 @@ export default {
 
 <style scoped lang="scss">
 .wrapper {
+    width: 100%;
+    height: 100%;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.65);
@@ -104,6 +115,14 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.wrapper {
+  iframe {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+  }
 }
 
 .image-box {
@@ -138,9 +157,7 @@ export default {
 .birthday-text {
     font-size: 2rem;
     font-weight: 800;
-    background: linear-gradient(135deg, #ffd700, #ff8c00, #ff4d6d);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #ffd700;
     text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
 }
 

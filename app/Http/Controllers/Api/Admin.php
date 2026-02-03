@@ -208,7 +208,7 @@ class Admin extends Controller
             ->get()
             ->map(function ($row) {
                 $image = $row->profile
-                    ? Storage::url("public/users/{$row->employee_no}/profile/{$row->profile}")
+                    ? Storage::url("public/users/{$row->employee_no}/profile-image/{$row->profile}")
                     : 'https://ui-avatars.com/api/?name=' .
                         urlencode(trim("{$row->firstname} {$row->lastname}")) .
                         '&background=random&color=fff&font-size=0.4&font-weight=bold';

@@ -27,7 +27,7 @@ class BirthdayController extends Controller
             ->get()
             ->map(function ($row) {
                 $profile = $row->profile
-                    ? Storage::url('public/users/' . $row->employee_no . '/profile/' . $row->profile)
+                    ? Storage::url('public/users/' . $row->employee_no . '/profile-image/' . $row->profile)
                     : 'https://ui-avatars.com/api/?name='
                         . urlencode(($row->firstname ?? '?') . ' ' . ($row->lastname ?? '?'))
                         . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
