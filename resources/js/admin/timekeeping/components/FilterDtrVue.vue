@@ -171,7 +171,6 @@ export default {
         this.$refs.printableModal.open();
     },
     getSummaryIcon(label) {
-      console.log(label)
       const iconMap = {
         'total hours': 'fa-solid fa-clock',
         'days present': 'fa-solid fa-calendar-check',

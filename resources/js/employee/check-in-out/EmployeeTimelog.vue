@@ -404,7 +404,6 @@ export default {
                 }
             })
             .then((response) => {
-                console.log(response);
             })
             .catch((error) => {
                 console.error('Error downloading DTR:', error);

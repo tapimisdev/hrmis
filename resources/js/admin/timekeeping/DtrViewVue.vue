@@ -59,7 +59,6 @@ export default {
     },
 
     handleSummary(payload) {
-      console.log(payload);
       this.payload = payload
     },
   },

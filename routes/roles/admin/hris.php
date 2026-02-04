@@ -136,11 +136,6 @@ Route::prefix('hris')->group(function() {
     Route::put('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'save'])
         ->name('hris.employee.leave-credits.save');
 
-    Route::get('employee/leave-credits/{employee_no?}/import', [LeaveCreditController::class, 'import_index'])
-        ->name('hris.employee.leave-credits.import');
-    Route::post('employee/leave-credits/{employee_no?}/import', [LeaveCreditController::class, 'import_save'])
-        ->name('hris.employee.leave-credits.import');
-
     # OFFSET CREDITS
 
     Route::get('employee/offset-credits/{employee_no}', [OffsetCreditsController::class, 'index'])

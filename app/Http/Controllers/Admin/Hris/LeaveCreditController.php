@@ -15,8 +15,8 @@ use Carbon\Carbon;
 class LeaveCreditController extends Controller
 {
 
-    public $employeeService;
-    public $generateService;
+    protected $employeeService;
+    protected $generateService;
 
     public function __construct(EmployeeService $employeeService, GenerateService $generateService)
     {
@@ -113,11 +113,11 @@ class LeaveCreditController extends Controller
                 'as_of' => [
                     'required',
                     'date_format:Y-m',
-                    function ($attribute, $value, $fail) {
-                        if (Carbon::createFromFormat('Y-m', $value)->startOfMonth()->lt(now()->startOfMonth())) {
-                            $fail('The :attribute must be the current month or a future month.');
-                        }
-                    }
+                    // function ($attribute, $value, $fail) {
+                    //     if (Carbon::createFromFormat('Y-m', $value)->startOfMonth()->lt(now()->startOfMonth())) {
+                    //         $fail('The :attribute must be the current month or a future month.');
+                    //     }
+                    // }
                 ],
                 'earned'    => 'nullable|numeric',
                 'deduction' => 'nullable|numeric',
@@ -225,23 +225,5 @@ class LeaveCreditController extends Controller
 
         session()->flash('active_leave_id', $leave_id);
     }
-
-    # FOR IMPORTING
-
-    public function import_index(?string $employee_no = null) {
-
-        $credit_types = [
-            'leave',
-            'offset'
-        ];
-        $leave_types = DB::table('leaves')->get();
-
-        return view('admin.pages.hris.leave-credits.import', compact('employee_no', 'credit_types', 'leave_types'));
-    }
-
-    public function import_save(Request $request) {
-        
-    }
- 
 
 }

@@ -22,8 +22,6 @@ window.Echo = new Echo({
 const socket = window.Echo.connector.pusher.connection;
 
 socket.bind("connected", () => {
-    console.log(import.meta.env.VITE_REVERB_HOST ?? window.location.hostname);
-    console.log(Number(import.meta.env.VITE_REVERB_PORT ?? 8081))
     console.log("Connected to Reverb WebSocket server!");
 });
 

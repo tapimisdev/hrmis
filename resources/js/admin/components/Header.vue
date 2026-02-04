@@ -153,6 +153,7 @@ export default {
     },
     data() {
         return {
+            loggingOut: false,
             isLightTheme: true,
         };
     },

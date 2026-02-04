@@ -16,11 +16,11 @@
         </x-header>
 
         <import-credits 
-            :credit-types='@json($credit_types)' 
             :leave-types='@json($leave_types)' 
             :employee-no='@json($employee_no)'
+            save-url="{{ route('hris.employee.leave-credits.import', ['employee_no' => $employee_no]) }}"
         ></import-credits>
-        
+
     </div>
 @endsection
 

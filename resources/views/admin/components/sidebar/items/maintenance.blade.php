@@ -118,6 +118,16 @@
                 </a>
             </li>
             @endcan
+            
+            @can('hr.leave_type.view')
+            <li class="nested-item">
+                <a href="{{ route('settings.credits.index', ['type' => 'leave']) }}"
+                   class="{{ request()->is('admin/maintenance/credits*') ? 'active' : '' }}">
+                    <i class="fa-regular fa-hand-point-up"></i>
+                    <span>Credits</span>
+                </a>
+            </li>
+            @endcan
 
             @can('hr.tranche.view')
             <li class="nested-item">
