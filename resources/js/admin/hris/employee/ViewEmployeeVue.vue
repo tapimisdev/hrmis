@@ -406,7 +406,7 @@
 
 <script>
 const token = localStorage.getItem('auth_token');
-import CommonInfo from './components/CommonInfo.vue';
+import CommonInfo from '../components/CommonInfo.vue';
 export default {
     components: { CommonInfo },
     data() {
@@ -611,7 +611,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../sass/variables';
+@import '../../../../sass/variables';
 
 .is-invalid-accordion {
     background-color: rgba($danger, 0.1) !important;

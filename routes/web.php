@@ -24,12 +24,14 @@ Route::get('/', function () {
     }
 
     $user = Auth::user();
+    $roles = $user->getRoleNames();
 
-    if ($user->hasRole('employee')) {
-        return redirect('/employee/dashboard');
+    if ($roles->contains(fn ($role) => str_starts_with($role, 'emp'))) {
+        return redirect('employee/dashboard');
     }
 
-    return redirect('/admin/dashboard');
+    return redirect('admin/dashboard');
+
 });
 
 Auth::routes([

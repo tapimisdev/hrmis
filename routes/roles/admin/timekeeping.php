@@ -5,9 +5,14 @@ use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
 use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogCorrectionController;
 use App\Http\Controllers\Admin\WebTimeAccess\WebTimeAccessController;
+use App\Http\Controllers\Admin\Timekeeping\TimelogStatisticsController;
 
 Route::prefix('timekeeping')->group(function() {
+
+
     # TIMELOGS
+    Route::get('statistics', [TimelogStatisticsController::class, 'index'])
+        ->name('timelogs-statistics');
     Route::resource('timelogs', TimelogController::class)->only('index');
     Route::resource('upload-timelogs', UploadTimeLogController::class)->only('index')->names(['index' => 'import.timelogs.index']);
 

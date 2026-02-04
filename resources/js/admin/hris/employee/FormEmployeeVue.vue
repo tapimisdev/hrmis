@@ -170,8 +170,8 @@
 
 <script>
     const token = localStorage.getItem('auth_token');
-    import FormSkeletonVue from '../../components/FormSkeletonVue.vue';
-    import LoaderVue from '../../components/LoaderVue.vue';
+    import FormSkeletonVue from '../../../components/FormSkeletonVue.vue';
+    import LoaderVue from '../../../components/LoaderVue.vue';
     export default {
         components: { FormSkeletonVue, LoaderVue },
         props: {
@@ -256,7 +256,7 @@
 </script>
 
 <style lang="scss" scoped>
-@import '../../../sass/variables';
+@import '../../../../sass/variables';
 .upload-box {
   cursor: pointer;
   &:hover {

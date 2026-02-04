@@ -19,7 +19,8 @@ import AdminHeader from "./admin/components/Header.vue";
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
 import DtrViewVue from "./admin/timekeeping/DtrViewVue.vue";
 import HrisIndex from "./admin/hris/HrisIndex.vue";
-import ImportEmployeeVue from "./admin/hris/ImportEmployeeVue.vue";
+import ImportCredits from "./admin/hris/credits/ImportCredits.vue";
+import ImportEmployeeVue from "./admin/hris/employee/ImportEmployeeVue.vue";
 import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
 
 import WebtimeIndex from "./admin/web-time-access/WebtimeIndex.vue";
@@ -73,6 +74,7 @@ const authApp = createApp({
         DashboardVue,
         DtrViewVue,
         HrisIndex,
+        ImportCredits,
         ImportEmployeeVue,
         UploadTimelogVue,
 

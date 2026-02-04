@@ -22,6 +22,7 @@ class LeaveCreditController extends Controller
     {
         $this->employeeService = $employeeService;
         $this->generateService = $generateService;    
+
         $this->middleware('permission:hr.hris.view')->only('leave_credits');
         $this->middleware('permission:hr.hris.edit')->only('save_credits');
     }
@@ -225,7 +226,22 @@ class LeaveCreditController extends Controller
         session()->flash('active_leave_id', $leave_id);
     }
 
+    # FOR IMPORTING
 
+    public function import_index(?string $employee_no = null) {
 
+        $credit_types = [
+            'leave',
+            'offset'
+        ];
+        $leave_types = DB::table('leaves')->get();
+
+        return view('admin.pages.hris.leave-credits.import', compact('employee_no', 'credit_types', 'leave_types'));
+    }
+
+    public function import_save(Request $request) {
+        
+    }
+ 
 
 }

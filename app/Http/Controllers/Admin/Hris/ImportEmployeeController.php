@@ -133,8 +133,8 @@ class ImportEmployeeController extends Controller
                 }
 
             } else {
-                $date_hired_company = $this->excelDateOnly($assoc['Date of Last Promotion/Appointment']);
-                $date_hired_organization = $this->excelDateOnly($assoc['Date of Original Appointment']);
+                $date_hired_company = $this->excelDateOnly($assoc['Date of Last Promotion/Appointment'] ?? null);
+                $date_hired_organization = $this->excelDateOnly($assoc['Date of Original Appointment'] ?? null);
             }
 
             return [

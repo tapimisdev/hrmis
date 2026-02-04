@@ -30,8 +30,8 @@
 
 <script>
 const token = localStorage.getItem('auth_token');
-import ViewEmployeeVue from './ViewEmployeeVue.vue';
-import FormEmployeeVue from './FormEmployeeVue.vue';
+import ViewEmployeeVue from '../employee/ViewEmployeeVue.vue';
+import FormEmployeeVue from '../employee/FormEmployeeVue.vue';
 export default {
     components: {
         FormEmployeeVue,

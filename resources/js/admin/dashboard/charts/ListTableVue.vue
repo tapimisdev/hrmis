@@ -33,14 +33,16 @@
                         class="border rounded-2 px-3 py-2 d-flex align-items-center gap-3 text-decoration-none"
                         style="color: inherit !important;"
                     >
-                        <img
-                            :src="person.image"
-                            alt="Profile Picture"
-                            class="profile-picture"
-                        />
                         <div>
-                            <div>{{ person.name }}</div>
-                            <div>{{ formatBirthday(person.birthday) }}</div>
+                          <img
+                              :src="person.image"
+                              alt="Profile Picture"
+                              class="profile-picture"
+                          />
+                        </div>
+                        <div>
+                            <div class="text-clamp-1">{{ person.name }}</div>
+                            <div class="text-clamp-1">{{ formatBirthday(person.birthday) }}</div>
                         </div>
                       </a>
                 </div>

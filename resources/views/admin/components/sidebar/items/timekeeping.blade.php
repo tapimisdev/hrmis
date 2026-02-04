@@ -17,6 +17,15 @@
         <ul class="nested-list">
             @can('hr.timekeeping.view')
            <li class="nested-item">
+                <a href="{{ route('timelogs-statistics') }}"
+                class="{{ Route::is('timelogs-statistics.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Statistics</span>
+                </a>
+            </li>
+            @endcan
+            @can('hr.timekeeping.view')
+           <li class="nested-item">
                 <a href="{{ route('timelogs.index') }}"
                 class="{{ Route::is('timelogs.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-clock"></i>

@@ -5,7 +5,7 @@
         <x-header title="Employee List" subtitle="Manage employee's informations in this module" >
             <div class="d-flex flex-wrap gap-2 justify-content-end">
                 <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle"
+                    <button class="btn btn-dark dropdown-toggle"
                             type="button" 
                             id="employeeActionsDropdown" 
                             data-bs-toggle="dropdown" 
@@ -13,10 +13,15 @@
                         <i class="fa-solid fa-gear me-2"></i> Actions 
                     </button>
 
-                    <ul class="dropdown-menu dropdown-menu-end w-100 dropdown-menu-modern" aria-labelledby="employeeActionsDropdown">
+                    <ul class="dropdown-menu dropdown-menu-end mt-3 dropdown-menu-modern" aria-labelledby="employeeActionsDropdown">
                         <li>
                             <a class="dropdown-item fw-bold text-uppercase d-flex align-items-center" href="{{ route('hris.import.index') }}">
-                                <i class="fa-solid fa-file-import me-2"></i> Import
+                                <i class="fa-solid fa-file-import me-2"></i> Import Employees
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item fw-bold text-uppercase d-flex align-items-center" href="{{ route('hris.import.index') }}">
+                                <i class="fa-solid fa-file-import me-2"></i> Import Leave Credits
                             </a>
                         </li>
                         <li>
