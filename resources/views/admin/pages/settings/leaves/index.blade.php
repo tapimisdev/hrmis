@@ -22,7 +22,7 @@
                     <th>#</th>
                     <th>Name</th>
                     <th>Is Cumulative</th>
-                    <th>Deduction</th>
+                    <th>Accumulation per Month</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -44,7 +44,7 @@
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "name", name: 'name' },
                 { data: "is_cumulative", name: 'is_cumulative' },
-                { data: "credit_to_deduct", name: 'credit_to_deduct' },
+                { data: "to_be_credited", name: 'to_be_credited' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
             "columnDefs": [

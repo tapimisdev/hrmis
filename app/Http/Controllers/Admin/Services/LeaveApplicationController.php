@@ -125,8 +125,6 @@ class LeaveApplicationController extends Controller {
         return $results;
     }
 
-
-
     public function index() 
     {
         if (request()->ajax()) {
@@ -150,6 +148,7 @@ class LeaveApplicationController extends Controller {
         $leave_id = $data->leave_id;
         $currentMonth = Carbon::now()->format('Y-m');
         $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
+                
         $remaining_balance = (float) $latestCredits['current']?->balance ?? 0;
         $toBeDeducted = (float) $this->compute($data->dates);
         $new_balance = $remaining_balance - $toBeDeducted;
@@ -220,15 +219,15 @@ class LeaveApplicationController extends Controller {
             if (!$existingData) {
                 return response()->json(['error' => 'Record not found'], 404);
             }
-            
+
+            $this->updateCredits($id);
+
             DB::table('leave_applications')
                 ->where('id', $id)
                 ->update([
                     'status' => 'approved',
                     'approver_id' => Auth::id() ?? null
                 ]);
-
-            $this->updateCredits($id);
 
             $sender = ucwords(Auth::user()->name);
             $reciever = $existingData->user_id;
@@ -330,26 +329,64 @@ class LeaveApplicationController extends Controller {
                 ->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
 
             $remaining_balance = (float) ($latestCredits['current']->balance ?? 0);
-            $toBeDeducted     = (float) $this->compute($data->dates);
-            $new_balance      = $remaining_balance - $toBeDeducted;
 
-            // --- Step 2: Group dates by month ---
+            // --- Step 2: Process dates and calculate total deduction ---
             $datesByMonth = [];
+            $toBeDeducted = 0;
+
             foreach ($data->dates as $d) {
                 $dateObj = Carbon::parse($d['date']);
-                $month   = strtoupper($dateObj->format('M')); // e.g., JAN
-                $day     = $dateObj->format('j');            // day number
+                $month   = strtoupper($dateObj->format('M'));
+                $day     = $dateObj->format('j');
+                $shift   = strtolower($d['shift']);
 
-                if (!isset($datesByMonth[$month])) $datesByMonth[$month] = [];
-                $datesByMonth[$month][] = $day;
+                // Calculate leave equivalent
+                $credit = match ($shift) {
+                    'morning', 'afternoon' => 0.5,
+                    'wholeday' => 1.0,
+                    default => 0,
+                };
+
+                $toBeDeducted += $credit;
+
+                if (!isset($datesByMonth[$month])) {
+                    $datesByMonth[$month] = [];
+                }
+
+                $datesByMonth[$month][] = [
+                    'day'    => $day,
+                    'shift'  => $shift,
+                    'credit' => $credit,
+                ];
             }
 
-            // --- Step 3: Build formatted remark ---
-            // Example: "JAN 1,2,3 (3 days) | FEB 4,5 (2 days)"
+            $new_balance = $remaining_balance - $toBeDeducted;
+
+            // --- Step 3: Build remarks ---
             $formattedRemark = collect($datesByMonth)
                 ->map(function ($days, $month) {
-                    $totalDays = count($days);
-                    return sprintf("%s %s (%s %s)", $month, implode(', ', $days), $totalDays, $totalDays === 1 ? 'day' : 'days');
+                    $dayStrings = [];
+                    $totalCredit = 0;
+
+                    foreach ($days as $d) {
+                        // Short code mapping
+                        $shiftShort = match ($d['shift']) {
+                            'morning'  => 'AM',
+                            'afternoon'=> 'PM',
+                            'wholeday' => 'WD',
+                            default    => $d['shift'],
+                        };
+
+                        $dayStrings[] = sprintf("%s (%s)", $d['day'], $shiftShort);
+                        $totalCredit += $d['credit'];
+                    }
+
+                    return sprintf(
+                        "%s %s (Eqv: %.2f)",
+                        $month,
+                        implode(', ', $dayStrings),
+                        $totalCredit
+                    );
                 })
                 ->implode(" | ");
 
@@ -390,7 +427,7 @@ class LeaveApplicationController extends Controller {
 
             $runningBalance = $new_balance;
 
-            // --- Step 5: Recalculate future leave_credits for this leave type ---
+            // --- Step 5: Recalculate future leave_credits ---
             $futureCredits = DB::table('leave_credits')
                 ->where('employee_no', $employee_no)
                 ->where('leave_id', $leave_id)
@@ -429,6 +466,7 @@ class LeaveApplicationController extends Controller {
             ], 500);
         }
     }
+
 
 
     public function datatable($query)

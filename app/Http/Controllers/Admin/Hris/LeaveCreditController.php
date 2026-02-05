@@ -10,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use App\Services\EmployeeService;
 use App\Services\GenerateService;
+use App\Exports\LeaveCreditsExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 
 class LeaveCreditController extends Controller
@@ -51,7 +53,6 @@ class LeaveCreditController extends Controller
                     return ($q->as_of ?? '') === $monthYear;
                 })->values()->pluck('balance')->first() ?? 0;
 
-
                 $data[] = [
                     'leave' => $types,
                     'credits' => $credits,
@@ -66,6 +67,16 @@ class LeaveCreditController extends Controller
 
         return view('admin.pages.hris.leave-credits', compact('employee_no', 'isExists', 'data'));
 
+    }
+
+    public function download(string $employee_no, $leave_id)
+    {
+        $filename = "leave_credits_{$employee_no}_{$leave_id}.xlsx";
+
+        return Excel::download(
+            new LeaveCreditsExport($employee_no, $leave_id),
+            $filename
+        );
     }
 
     public function fetch($employee_no, Request $request) {
@@ -198,8 +209,12 @@ class LeaveCreditController extends Controller
     /**
      * Recalculate balances for all future credits of a specific leave type
      */
-    protected function recalculateFutureCredits(string $employee_no, int $leave_id, string $as_of, float $startingBalance)
-    {
+    protected function recalculateFutureCredits(
+        string $employee_no,
+        int $leave_id,
+        string $as_of,
+        float $startingBalance
+    ) {
         $futureCredits = DB::table('leave_credits')
             ->where('employee_no', $employee_no)
             ->where('leave_id', $leave_id)
@@ -207,10 +222,13 @@ class LeaveCreditController extends Controller
             ->orderBy('as_of')
             ->get();
 
-        $runningBalance = $startingBalance;
+        $runningBalance = round($startingBalance, 2);
 
         foreach ($futureCredits as $credit) {
-            $newBalance = $runningBalance + $credit->earned - $credit->deducted;
+            $earned   = round($credit->earned, 2);
+            $deducted = round($credit->deducted, 2);
+
+            $newBalance = round($runningBalance + $earned - $deducted, 2);
 
             DB::table('leave_credits')
                 ->where('id', $credit->id)
@@ -225,5 +243,6 @@ class LeaveCreditController extends Controller
 
         session()->flash('active_leave_id', $leave_id);
     }
+
 
 }

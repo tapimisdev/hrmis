@@ -13,6 +13,14 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+
+        $schedule->command('leave:accumulation')
+            ->everyMinute()
+            // ->monthlyOn(1, '0:00') 
+            ->onFailure(function () {
+                \Log::error('Scheduled job leave:accumulation failed.');
+            });
+            // ->emailOutputTo('iamcarlllemos@gmail.com');
     }
 
     /**

@@ -331,6 +331,7 @@ class EmployeeService {
                     'lc.balance',
                     'lc.as_of'
                 )
+                ->where('l.is_active', true)
                 ->get();
 
             return [
@@ -380,7 +381,6 @@ class EmployeeService {
         }
 
         return $data->get();
-
     }
 
     public function getOffsetCreditsByMonthYear(string $employee_no, string $monthYear)
@@ -480,7 +480,6 @@ class EmployeeService {
         });
     }
     
-
     public function getAllActiveEmployee($employment_type_id)
     {
         return DB::table('employee_information as ei')
@@ -489,5 +488,23 @@ class EmployeeService {
             ->where('ei.account_status', 'active')
             ->pluck('ei.employee_no')
             ->toArray();
+    }
+
+    public function getRegularEmployees()
+    {
+        $latestOrgSub = DB::table('employee_organization as eo1')
+            ->select('employee_no', 'id')
+            ->whereRaw('id = (SELECT MAX(id) FROM employee_organization eo2 WHERE eo2.employee_no = eo1.employee_no)');
+
+        $data = DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->leftJoin('employee_organization as eo', function ($join) use ($latestOrgSub) {
+                $join->on('ei.employee_no', '=', 'eo.employee_no')
+                    ->whereIn('eo.id', $latestOrgSub->pluck('id'));
+            })
+            ->select('ei.*', 'ep.*', 'eo.*')
+            ->get();
+
+        return $data;
     }
 }

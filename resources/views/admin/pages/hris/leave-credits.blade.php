@@ -19,14 +19,22 @@
         </div>
 
         <div class="col-12 {{ $isExists ? 'col-md-9' : '' }}">
-            @if(!empty($data))
-                <div class="mt-3 mb-4 d-flex justify-content-end">
-                    <a href="{{ route('settings.leaves.index') }}" class="btn btn-primary text-uppercase fw-bold px-4">Add Leave Type</a>
-                </div>
-            @endif
             <div class="accordion" id="leaveCreditsAccordion">
+                <div class="legend mt-3 mb-4">
+                    <h6 class="text-uppercase fw-bold">Legends</h6>
+                    <ul class="list-inline mb-4">
+                        <li class="list-inline-item"><span class="badge bg-primary">AM</span> Morning</li>
+                        <li class="list-inline-item"><span class="badge bg-success">PM</span> Afternoon</li>
+                        <li class="list-inline-item"><span class="badge bg-warning">WH</span> Whole Day</li>
+                        <li class="list-inline-item"><span class="badge bg-danger">EQV</span> Equivalent</li>    
+                    </ul>
+                    <hr>
+                </div>
                 @php
                     $activeLeaveId = session('active_leave_id');
+                    if (!$activeLeaveId && !empty($data)) {
+                        $activeLeaveId = $data[0]['leave']->leave_id;
+                    }
                 @endphp
                 @forelse($data as $leaveData)
                     <div class="accordion-item">
@@ -47,14 +55,17 @@
                             aria-labelledby="heading-{{ $leaveData['leave']->leave_id }}" 
                             data-bs-parent="#leaveCreditsAccordion">
                             <div class="accordion-body">
-                                <div class="mb-1 d-flex justify-content-end">
+                                <div class="mb-1 d-flex justify-content-end gap-3">
+                                    <a href="{{ route('hris.employee.leave-credits.download', ['employee_no' => $employee_no, 'leave_id' => $leaveData['leave']->leave_id]) }}" class="btn btn-dark mt-3 mb-3 text-uppercase px-4">
+                                        <i class="fa-solid fa-download me-1"></i> Download
+                                    </a>
                                     <button class="btn btn-primary mt-3 mb-3 text-uppercase px-4 btn-add-credit"
                                             data-bs-toggle="modal"
                                             data-bs-target="#add-modal-credits"
                                             data-leave-id="{{ $leaveData['leave']->leave_id }}"
                                             data-previous="{{ $leaveData['latestCredits']['previous_balance'] ?? 0 }}"
                                             data-as-of="{{ $leaveData['latestCredits']['current'] ?? now()->format('Y-m') }}">
-                                        Add Credits
+                                        <i class="fa-solid fa-folder-plus me-1"></i> Update
                                     </button>
                                 </div>
 
@@ -103,7 +114,7 @@
                                 </table>
 
                                 <div class="mt-4 mb-3">
-                                    <span class="badge bg-primary text-uppercase">{{ \Carbon\Carbon::now()->format('F') }}</span>
+                                    <span class="badge bg-primary text-uppercase"> as of {{ \Carbon\Carbon::now()->format('F') }}</span>
                                     <div>
                                         <strong class="text-uppercase">
                                             <span class="text-decoration-underline">
@@ -128,7 +139,7 @@
     </div>
 </div>
 
-{{-- Add Credits Modal --}}
+{{-- Add / Update Modal --}}
 <div class="modal fade" id="add-modal-credits" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <form id="form" action="{{ route('hris.employee.leave-credits.save', ['employee_no' => $employee_no]) }}" method="POST">
@@ -139,7 +150,7 @@
 
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title text-uppercase">Add Credits</h5>
+                    <h5 class="modal-title text-uppercase">Leave Credits</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 

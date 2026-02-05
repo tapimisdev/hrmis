@@ -31,6 +31,7 @@ class StoreLeaveRequest extends FormRequest
             ],
             'is_cumulative' => 'required|boolean',
             'credit_to_deduct' => 'required|numeric|min:0',
+            'to_be_credited'   => 'required|numeric|min:0',
         ];
     }
 }
