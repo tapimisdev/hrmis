@@ -10,6 +10,7 @@ use App\Services\PayrollComponentService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PayrollComponentsEmployeeController extends Controller
 {
@@ -282,7 +283,7 @@ class PayrollComponentsEmployeeController extends Controller
 
                 // Apply amount across the month range
                for ($month = $start; $month <= $end; $month++) {
-
+                    
                     $ok = DB::table('employee_payroll_components')->updateOrInsert(
                         [
                             'tax_deduction_id' => $payroll_component_years_id,
@@ -295,6 +296,7 @@ class PayrollComponentsEmployeeController extends Controller
                             'created_at' => now(),
                         ]
                     );
+                    
 
                     if ($ok) {
                         $updated++;
@@ -302,7 +304,6 @@ class PayrollComponentsEmployeeController extends Controller
                 }
             }
 
-            // dd($updated, $skipped, $employeeNos);
             DB::commit();
 
             return response()->json([
@@ -317,9 +318,15 @@ class PayrollComponentsEmployeeController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
 
+           
             return response()->json([
                 'message' => 'Bulk update failed.',
-                'error'   => $e->getMessage(),
+                'error' => [
+                    'message' => $e->getMessage(),
+                    'file'    => $e->getFile(),
+                    'line'    => $e->getLine(),
+                    'code'    => $e->getCode(),
+                ]
             ], 500);
         }
     }
@@ -382,10 +389,25 @@ class PayrollComponentsEmployeeController extends Controller
             ->orderByDesc('effectivity_date')
             ->value('amount');
 
-        if (!$salary || $percentage <= 0) {
+        // If no salary found
+        if ($salary === null) {
             return 0.0;
         }
 
-        return round($salary * ($percentage / 100), 2);
+        // Force numeric
+        if (!is_numeric($salary)) {
+            Log::warning('Non-numeric salary detected', [
+                'employee_no' => $employee_no,
+                'salary' => $salary,
+            ]);
+            return 0.0;
+        }
+
+        if ($percentage <= 0) {
+            return 0.0;
+        }
+
+        return round((float)$salary * ($percentage / 100), 2);
     }
+
 }

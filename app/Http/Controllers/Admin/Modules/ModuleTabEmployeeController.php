@@ -564,10 +564,14 @@ class ModuleTabEmployeeController extends Controller
             ->orderByDesc('effectivity_date')
             ->value('amount');
 
-        if (!$salary || $percentage <= 0) {
+        if (!is_numeric($salary) || !is_numeric($percentage) || $percentage <= 0) {
             return 0.0;
         }
 
+        $salary = (float) $salary;
+        $percentage = (float) $percentage;
+
         return round($salary * ($percentage / 100), 2);
     }
+
 }
