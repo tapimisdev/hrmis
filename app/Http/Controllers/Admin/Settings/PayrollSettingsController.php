@@ -77,12 +77,22 @@ class PayrollSettingsController extends Controller
                     ],
                 ],
             ],
-            'rata_allowance' => [
-                'label'  => 'RATA Allowance',
+            'representation_allowance' => [
+                'label'  => 'Representation Allowance',
                 'fields' => [
                     'table_id' => [
-                        'selected' => $getLatestId('rata_allowance')->max('table_id') ?? null,
-                        'label'    => 'RATA Table',
+                        'selected' => $getLatestId('representation_allowance')->max('table_id') ?? null,
+                        'label'    => 'Representation Allowance Table',
+                        'choices'  => $earnings,
+                    ],
+                ],
+            ],
+            'transportation_allowance' => [
+                'label'  => 'Transportation Allowance',
+                'fields' => [
+                    'table_id' => [
+                        'selected' => $getLatestId('transportation_allowance')->max('table_id') ?? null,
+                        'label'    => 'Transportation Allowance Table',
                         'choices'  => $earnings,
                     ],
                 ],
