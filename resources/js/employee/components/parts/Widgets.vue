@@ -246,7 +246,6 @@ export default {
             return `${hours} HRS & ${minutes} MINS`;
         },
 
-        // 🔥 LIVE CURRENT TIME
         currentTime() {
             return new Date(this.now).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -259,11 +258,31 @@ export default {
         this.initializeTheme();
         this.syncTimelogToggleState();
 
-        if (this.showWorkedHours) {
-            this.fetchLatestTimeLog();
-        }
+        const saved = localStorage.getItem(WORKED_HOURS_KEY);
+        if (saved !== null) this.showWorkedHours = saved === "true";
 
-        // 🔥 START CLOCK ON LOAD
+        const notesSaved = localStorage.getItem(NOTES_KEY);
+        if (notesSaved !== null) this.showNotes = notesSaved === "true";
+
+        const tutorialSaved = localStorage.getItem(TUTORIAL_KEY);
+        if (tutorialSaved !== null) this.showTutorial = tutorialSaved === "true";
+
+        if (this.showWorkedHours) this.fetchLatestTimeLog();
+
+        this.$watch(
+            () => window.clockTriggers,
+            ({ stopped, start }) => {
+                if (stopped) {
+                    this.stopClock();
+                    window.clockTriggers.stopped = false;
+                }
+                if (start) {
+                    this.startClock();
+                    window.clockTriggers.start = false;
+                }
+            },
+            { deep: true },
+        );
         this.startClock();
     },
     beforeUnmount() {
@@ -278,7 +297,19 @@ export default {
                 this.isDarkMode ? "dark" : "light"
             );
         },
-
+        handleThemeToggle() {
+            localStorage.setItem(
+                "theme-preference",
+                this.isDarkMode ? "dark" : "light",
+            );
+            this.applyTheme();
+        },
+        applyTheme() {
+            document.documentElement.setAttribute(
+                "data-bs-theme",
+                this.isDarkMode ? "dark" : "light",
+            );
+        },
         syncTimelogToggleState() {
             const today = new Date().toDateString();
             const hidden = localStorage.getItem(HIDE_KEY);
@@ -342,6 +373,42 @@ export default {
             } finally {
                 this.loading = false;
             }
+        },
+        handleWorkedHoursToggle() {
+            localStorage.setItem(
+                WORKED_HOURS_KEY,
+                this.showWorkedHours ? "true" : "false",
+            );
+            if (this.showWorkedHours) this.fetchLatestTimeLog();
+            else {
+                this.todayTimeIn = null;
+                this.todayTimeOut = null;
+                this.stopClock();
+            }
+        },
+        syncTimelogToggleState() {
+            const today = new Date().toDateString();
+            const hidden = localStorage.getItem(HIDE_KEY);
+            const hideDate = localStorage.getItem(HIDE_DATE_KEY);
+            this.showTimelogDiscrepancy = !(
+                hidden === "true" && hideDate === today
+            );
+        },
+        handleTimelogToggle() {
+            if (!this.showTimelogDiscrepancy) {
+                localStorage.setItem(HIDE_KEY, "true");
+                localStorage.setItem(HIDE_DATE_KEY, new Date().toDateString());
+            } else {
+                localStorage.removeItem(HIDE_KEY);
+                localStorage.removeItem(HIDE_DATE_KEY);
+            }
+            window.dispatchEvent(new Event("timelog-toggle"));
+        },
+        handleNotes() {
+            localStorage.setItem(NOTES_KEY, this.showNotes ? "true" : "false");
+        },
+        handleTutorials() {
+            localStorage.setItem(TUTORIAL_KEY, this.showTutorial ? "true" : "false");
         },
     },
 };

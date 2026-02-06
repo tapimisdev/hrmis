@@ -1026,10 +1026,10 @@ class TimelogsServices {
             $remarks[] = 'Discrepancy';
         }
 
-        if ($breakOutCarbon && $breakInCarbon && $breakInCarbon->lt($breakOutCarbon)) {
-            $discrepancy = true;
-            $remarks[] = 'Discrepancy';
-        }
+        // if ($breakOutCarbon && $breakInCarbon && $breakInCarbon->lt($breakOutCarbon)) {
+        //     $discrepancy = true;
+        //     $remarks[] = 'Discrepancy';
+        // }
 
         if ($breakOutCarbon && $timeInCarbon && $breakOutCarbon->lt($timeInCarbon)) {
             $discrepancy = true;
