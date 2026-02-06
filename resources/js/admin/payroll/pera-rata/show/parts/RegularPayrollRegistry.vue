@@ -138,7 +138,6 @@ export default {
       //   payslip: `/api/payroll/pera-rata/download/payslip/${this.payroll_no}`,
       // };
       // await this.downloadFile(urlArr[key], `${key}_${this.payroll_no}.xlsx`);
-      console.log("download", key, this.payroll_no);
     },
 
     formatNumber(value) {

@@ -158,6 +158,10 @@ import axios from "axios";
 export default {
     name: "NotificationComponent",
     props: {
+        username: {
+            type: String,
+            required: true,
+        },
         userRole: {
             type: String,
             required: true,
@@ -321,7 +325,6 @@ export default {
             return new Date(time).toLocaleDateString();
         },
         navigateUrl(notification_id, redirectURL) {
-            console.log(this.userId);
             axios
                 .post(
                     "/api/employee/notifications",

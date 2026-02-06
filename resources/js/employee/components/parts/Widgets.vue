@@ -1,9 +1,12 @@
 <template>
     <div v-if="showWorkedHours" class="shot-clock-wrapper">
         <div class="shot-clock">
-            <h4 :class="{ '': !todayTimeIn }">
+            <div>
+              <p class="mb-0 text-center fw-medium" style="letter-spacing: 2px;">{{ currentTime }}</p>
+            </div>
+            <h5 :class="{ '': !todayTimeIn }" class="fw-bold mt-1">
                 {{ todayTimeIn ? workedHours : "NO TIME IN YET" }}
-            </h4>
+            </h5>
         </div>
     </div>
 
@@ -191,7 +194,6 @@
 
 <script>
 import axios from "axios";
-import { watch } from "vue";
 import Notes from "./Notes.vue"; 
 import Tutorials from "./Tutorials.vue";
 
@@ -241,75 +243,57 @@ export default {
             const hours = Math.floor(totalMinutes / 60);
             const minutes = totalMinutes % 60;
 
-            const hourLabel = hours === 1 ? "HR" : "HRS";
-            const minuteLabel = minutes === 1 ? "MIN" : "MINS";
+            return `${hours} HRS & ${minutes} MINS`;
+        },
 
-            return `${hours} ${hourLabel} & ${minutes} ${minuteLabel}`;
+        // 🔥 LIVE CURRENT TIME
+        currentTime() {
+            return new Date(this.now).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+            });
         },
     },
     mounted() {
         this.initializeTheme();
         this.syncTimelogToggleState();
 
-        const saved = localStorage.getItem(WORKED_HOURS_KEY);
-        if (saved !== null) this.showWorkedHours = saved === "true";
+        if (this.showWorkedHours) {
+            this.fetchLatestTimeLog();
+        }
 
-        const notesSaved = localStorage.getItem(NOTES_KEY);
-        if (notesSaved !== null) this.showNotes = notesSaved === "true";
-
-        const tutorialSaved = localStorage.getItem(TUTORIAL_KEY);
-        if (tutorialSaved !== null) this.showTutorial = tutorialSaved === "true";
-
-        if (this.showWorkedHours) this.fetchLatestTimeLog();
-
-        this.$watch(
-            () => window.clockTriggers,
-            ({ stopped, start }) => {
-                if (stopped) {
-                    this.stopClock();
-                    window.clockTriggers.stopped = false;
-                }
-                if (start) {
-                    this.startClock();
-                    window.clockTriggers.start = false;
-                }
-            },
-            { deep: true },
-        );
+        // 🔥 START CLOCK ON LOAD
+        this.startClock();
     },
     beforeUnmount() {
         this.stopClock();
-        window.removeEventListener(
-            "timelog-toggle",
-            this.syncTimelogToggleState,
-        );
-        window.removeEventListener("stop-clock-ticking", this.stopClock);
     },
     methods: {
         initializeTheme() {
             const saved = localStorage.getItem("theme-preference");
             this.isDarkMode = saved === "dark";
-            this.applyTheme();
-        },
-        handleThemeToggle() {
-            localStorage.setItem(
-                "theme-preference",
-                this.isDarkMode ? "dark" : "light",
-            );
-            this.applyTheme();
-        },
-        applyTheme() {
             document.documentElement.setAttribute(
                 "data-bs-theme",
-                this.isDarkMode ? "dark" : "light",
+                this.isDarkMode ? "dark" : "light"
             );
         },
+
+        syncTimelogToggleState() {
+            const today = new Date().toDateString();
+            const hidden = localStorage.getItem(HIDE_KEY);
+            const hideDate = localStorage.getItem(HIDE_DATE_KEY);
+            this.showTimelogDiscrepancy = !(
+                hidden === "true" && hideDate === today
+            );
+        },
+
         parseTimeIn(timeIn) {
             const direct = new Date(timeIn);
             if (!isNaN(direct.getTime())) return direct;
 
             const match = timeIn?.match(
-                /(\d{1,2}):(\d{2})(?::(\d{2}))?\s?(AM|PM)/i,
+                /(\d{1,2}):(\d{2})(?::(\d{2}))?\s?(AM|PM)/i
             );
             if (!match) return null;
 
@@ -323,22 +307,24 @@ export default {
 
             const date = new Date();
             date.setHours(hours, minutes, seconds, 0);
-
             return date;
         },
+
         startClock() {
             if (this.clockInterval) return;
-            this.now = Date.now();
-            this.fetchLatestTimeLog();
 
             this.clockInterval = setInterval(() => {
                 this.now = Date.now();
             }, 1000);
         },
+
         stopClock() {
-            if (this.clockInterval) clearInterval(this.clockInterval);
-            this.clockInterval = null;
+            if (this.clockInterval) {
+                clearInterval(this.clockInterval);
+                this.clockInterval = null;
+            }
         },
+
         async fetchLatestTimeLog() {
             if (this.loading) return;
             this.loading = true;
@@ -348,61 +334,20 @@ export default {
                     headers: { Authorization: `Bearer ${this.token}` },
                 });
 
-                const logs = res.data || [];
-
-                this.todayTimeIn = logs?.time_in || null;
-                this.todayTimeOut = logs?.time_out || null;
-
-                if (this.todayTimeIn && !this.todayTimeOut) {
-                    this.startClock();
-                } else {
-                    this.stopClock();
-                }
+                const logs = res.data || {};
+                this.todayTimeIn = logs.time_in || null;
+                this.todayTimeOut = logs.time_out || null;
             } catch (err) {
                 console.error("Failed to fetch time logs:", err);
             } finally {
                 this.loading = false;
             }
         },
-        handleWorkedHoursToggle() {
-            localStorage.setItem(
-                WORKED_HOURS_KEY,
-                this.showWorkedHours ? "true" : "false",
-            );
-            if (this.showWorkedHours) this.fetchLatestTimeLog();
-            else {
-                this.todayTimeIn = null;
-                this.todayTimeOut = null;
-                this.stopClock();
-            }
-        },
-        syncTimelogToggleState() {
-            const today = new Date().toDateString();
-            const hidden = localStorage.getItem(HIDE_KEY);
-            const hideDate = localStorage.getItem(HIDE_DATE_KEY);
-            this.showTimelogDiscrepancy = !(
-                hidden === "true" && hideDate === today
-            );
-        },
-        handleTimelogToggle() {
-            if (!this.showTimelogDiscrepancy) {
-                localStorage.setItem(HIDE_KEY, "true");
-                localStorage.setItem(HIDE_DATE_KEY, new Date().toDateString());
-            } else {
-                localStorage.removeItem(HIDE_KEY);
-                localStorage.removeItem(HIDE_DATE_KEY);
-            }
-            window.dispatchEvent(new Event("timelog-toggle"));
-        },
-        handleNotes() {
-            localStorage.setItem(NOTES_KEY, this.showNotes ? "true" : "false");
-        },
-        handleTutorials() {
-            localStorage.setItem(TUTORIAL_KEY, this.showTutorial ? "true" : "false");
-        },
     },
 };
 </script>
+
+
 
 <style lang="scss" scoped>
 @import "./../../../../sass/variables";
@@ -440,7 +385,7 @@ export default {
     transform: translate(-50%, -50%);
     background-color: $primary;
     color: $light;
-    padding: 40px 50px 10px;
+    padding: 40px 45px 8px;
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

@@ -19,7 +19,7 @@ import AdminHeader from "./admin/components/Header.vue";
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
 import DtrViewVue from "./admin/timekeeping/DtrViewVue.vue";
 import HrisIndex from "./admin/hris/HrisIndex.vue";
-import ImportCredits from "./admin/hris/credits/ImportCredits.vue";
+import ImportCredits from "./admin/credits/Import.vue";
 import ImportEmployeeVue from "./admin/hris/employee/ImportEmployeeVue.vue";
 import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
 

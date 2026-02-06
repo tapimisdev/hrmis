@@ -10,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use App\Services\EmployeeService;
 use App\Services\GenerateService;
+use App\Exports\OffsetCreditsExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 
 class OffsetCreditsController extends Controller
@@ -36,16 +38,28 @@ class OffsetCreditsController extends Controller
 
         $isEdit = false;
         $id = null;
+        $currentMonth = Carbon::now()->format('Y-m');
         $credits = $this->employeeService->getOffsetCredits($employee_no, false);
-        $latestCredits = $this->employeeService->getOffsetCredits($employee_no, true);
-
+        $latestCredits = $credits->first(function ($credit) use ($currentMonth) {
+            return $credit->as_of === $currentMonth;
+        });
+        
         return view('admin.pages.hris.offset-credits', compact('isEdit', 'id', 'employee_no', 'isExists', 'credits', 'latestCredits'));
+    }
+
+    public function download(string $employee_no)
+    {
+        $filename = "offset_credits_{$employee_no}.xlsx";
+
+        return Excel::download(
+            new OffsetCreditsExport($employee_no),
+            $filename
+        );
     }
 
     public function fetch($employee_no, Request $request) {
         $monthYear = $request->as_of;
         $credits = $this->employeeService->getOffsetCreditsByMonthYear($employee_no, $monthYear);
-
         return response()->json([
             'status' => 'success',
             'data' => $credits ?? []
@@ -75,18 +89,10 @@ class OffsetCreditsController extends Controller
 
             // Validate input
             $validator = Validator::make($payload, [
-                'as_of' => [
-                    'required',
-                    'date_format:Y-m',
-                    function ($attribute, $value, $fail) {
-                        if (Carbon::createFromFormat('Y-m', $value)->startOfMonth()->lt(now()->startOfMonth())) {
-                            $fail('The :attribute must be the current month or a future month.');
-                        }
-                    }
-                ],
-                'earned' => 'nullable|numeric',
+                'as_of'     => 'required|date_format:Y-m',
+                'earned'    => 'nullable|numeric',
                 'deduction' => 'nullable|numeric',
-                'remarks' => 'nullable|string',
+                'remarks'   => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
@@ -95,16 +101,16 @@ class OffsetCreditsController extends Controller
 
             // Get current month credits
             $credits = $this->employeeService->getOffsetCreditsByMonthYear($employee_no, $as_of);
-            $previous_balance = (float) ($credits['previous_balance'] ?? 0);
-            $earned = (float) ($request->earned ?? 0);
-            $deduction = (float) ($request->deduction ?? 0);
-            $balance = $previous_balance + $earned - $deduction;
+            $previous_balance = round((float) ($credits['previous_balance'] ?? 0), 2);
+            $earned = round((float) ($request->earned ?? 0), 2);
+            $deduction = round((float) ($request->deduction ?? 0), 2);
+            $balance = round($previous_balance + $earned - $deduction, 2);
 
             // Save or update current month
             DB::table('offset_credits')->updateOrInsert(
                 [
                     'employee_no' => $employee_no,
-                    'as_of' => $as_of,
+                    'as_of'       => $as_of,
                 ],
                 [
                     'previous'   => $previous_balance,
@@ -159,18 +165,24 @@ class OffsetCreditsController extends Controller
     /**
      * Recalculate balances for all future credits
      */
-    protected function recalculateFutureCredits(string $employee_no, string $as_of, float $startingBalance)
-    {
+    protected function recalculateFutureCredits(
+        string $employee_no,
+        string $as_of,
+        float $startingBalance
+    ) {
         $futureCredits = DB::table('offset_credits')
             ->where('employee_no', $employee_no)
             ->where('as_of', '>', $as_of)
             ->orderBy('as_of')
             ->get();
 
-        $runningBalance = $startingBalance;
+        $runningBalance = round($startingBalance, 2);
 
         foreach ($futureCredits as $credit) {
-            $newBalance = $runningBalance + $credit->earned - $credit->deducted;
+            $earned   = round($credit->earned, 2);
+            $deducted = round($credit->deducted, 2);
+
+            $newBalance = round($runningBalance + $earned - $deducted, 2);
 
             DB::table('offset_credits')
                 ->where('id', $credit->id)

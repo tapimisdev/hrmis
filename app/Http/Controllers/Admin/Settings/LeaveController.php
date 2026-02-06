@@ -53,6 +53,7 @@ class LeaveController extends Controller
                 'name'              => $validated['name'],
                 'is_cumulative'     => $validated['is_cumulative'],
                 'credit_to_deduct'  => $validated['credit_to_deduct'],
+                'to_be_credited'    => $validated['to_be_credited'],
                 'created_at'        => now(),
                 'updated_at'        => now(),
             ]);
@@ -95,6 +96,7 @@ class LeaveController extends Controller
         if (!$leave) {
             abort(404, 'Leaves not found.');
         }
+
         return view('admin.pages.settings.leaves.edit', compact('leave'));
     }
 
@@ -113,6 +115,7 @@ class LeaveController extends Controller
                 'name'              => $validated['name'],
                 'is_cumulative'     => $validated['is_cumulative'],
                 'credit_to_deduct'  => $validated['credit_to_deduct'],
+                'to_be_credited'    => $validated['to_be_credited'],
                 'updated_at'        => now(),
             ]);
 

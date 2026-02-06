@@ -9,15 +9,15 @@
         >
             <div class="row container-modal mb-1">
                 <div class="col-md-4" v-for="seener in data" :key="seener.id">
-                    <div class="seener-itemp p-3">
+                    <div class="seener-item p-3 ">
                         <img
                             :src="seener.profile"
                             :alt="seener.firstname + ' ' + seener.lastname"
                             class="seener-item-avatar"
                         />
-                        <span class="seener-name">
+                        <div class="seener-name">
                             {{ seener.firstname }} {{ seener.lastname }}
-                        </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -74,7 +74,10 @@ export default {
 .container-modal {
     overflow-y: auto;
 
-    .seener-itemp  {
+    .seener-item  {
+      display: flex;
+      align-items: center;
+
       .seener-item-avatar {
         height: 80px;
         width: 80px;
@@ -83,9 +86,16 @@ export default {
         margin-right: 12px;
       }
       .seener-name {
-        font-weight: bold;
-        text-transform: uppercase;
-      }
+          width: 100%;
+          max-width: 200px;
+          font-weight: bold;
+          text-transform: uppercase;
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
     }
 }
 // Viewers Section

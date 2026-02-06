@@ -96,85 +96,53 @@
                     <div class="card-body p-5">
                         <h2 class="text-uppercase mb-4 fw-bold border-bottom border-3 w-100 pb-3">{{$data->leave_name}}</h2>
                         
-                        @if(!$hasBalance)
-                            <div class="mt-3 mb-5">
-                                <div class="alert alert-danger text-uppercase fw-bold text-center ">Oops! This employee has insuficcient leave credits. Please be advise that this application can be still approved.</div>
-                                <div class="w-100 text-center mt-2">
-                                    <a href="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" 
-                                        class="w-100 text-uppercase fw-bold" 
-                                        target="_blank" 
-                                        rel="noopener noreferrer">
-                                        View Leave Credits
-                                    </a>
-                                </div>
-                                <div class="mt-5">
-                                    <table class="table table-bordered table-sm mb-0">
-                                        <thead class="bg-primary text-white">
-                                            <tr>
-                                                <th colspan="3" class="text-center py-2">Credits Deduction Breakdown</th>
-                                            </tr>
-                                            <tr class="bg-primary">
-                                                <th class="p-2">Date</th>
-                                                <th class="p-2">Shift</th>
-                                                <th class="p-2">Credits</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($data->dates as $item)
-                                                @php
-                                                    $date = \Carbon\Carbon::parse($item['date'])->format('M d, Y - (l)');
-                                                    $shift = $item['shift'];
-                                                    $credit = match($shift) {
-                                                        'morning', 'afternoon' => 0.5,
-                                                        'wholeday' => 1.0,
-                                                        default => 0
-                                                    };
-                                                @endphp
-                                                <tr>
-                                                    <td class="p-2">{{ $date }}</td>
-                                                    <td class="p-2">{{ ucfirst($shift) }}</td>
-                                                    <td class="p-2">{{ number_format($credit, 2) }}</td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        @endif
-
-                        <div class="mt-5 mb-5">
-                            <table class="table table-bordered table-sm mb-0">
-                                <thead class="bg-primary text-white">
-                                    <tr>
-                                        <th colspan="3" class="text-center py-2">Credits Deduction Breakdown</th>
-                                    </tr>
-                                    <tr class="bg-primary">
-                                        <th class="p-2">Date</th>
-                                        <th class="p-2">Shift</th>
-                                        <th class="p-2">Credits</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($data->dates as $item)
-                                        @php
-                                            $date = \Carbon\Carbon::parse($item['date'])->format('M d, Y - (l)');
-                                            $shift = $item['shift'];
-                                            $credit = match($shift) {
-                                                'morning', 'afternoon' => 0.5,
-                                                'wholeday' => 1.0,
-                                                default => 0
-                                            };
-                                        @endphp
+                        <div class="mt-3 mb-5">
+                            @if($data->status == 'pending' && !$hasBalance)
+                                <div class="alert alert-danger text-uppercase fw-bold text-center ">This employee has insuficcient leave credits. Please be advise that this application can be still approved.</div>
+                            @endif
+                            <div class="mt-5">
+                                <table class="table table-bordered table-sm mb-0">
+                                    <thead class="bg-primary text-white">
                                         <tr>
-                                            <td class="p-2">{{ $date }}</td>
-                                            <td class="p-2">{{ ucfirst($shift) }}</td>
-                                            <td class="p-2">{{ number_format($credit, 2) }}</td>
+                                            <th colspan="3" class="text-center py-2">Credits Deduction Breakdown</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                        <tr class="bg-primary">
+                                            <th class="p-2">Date</th>
+                                            <th class="p-2">Shift</th>
+                                            <th class="p-2">Credits</th>
+                                        </tr>
+                                    </thead>
+                                   <tbody>
+                                        @php $totalCredits = 0; @endphp
+                                        @foreach($data->dates as $item)
+                                            @php
+                                                $date = \Carbon\Carbon::parse($item['date'])->format('M d, Y - (l)');
+                                                $shift = $item['shift'];
+                                                $credit = match($shift) {
+                                                    'morning', 'afternoon' => 0.5,
+                                                    'wholeday' => 1.0,
+                                                    default => 0
+                                                };
+                                                $totalCredits += $credit;
+                                            @endphp
+                                            <tr>
+                                                <td class="p-2">{{ $date }}</td>
+                                                <td class="p-2">{{ ucfirst($shift) }}</td>
+                                                <td class="p-2">{{ number_format($credit, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="2" class="bg-warning text-end pe-5 fw-bold text-uppercase">Total :</td>
+                                            <td class="bg-warning fw-bold text-uppercase p-2">{{ number_format($totalCredits, 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
-                        @if($data->status != 'pending')
+
+                        @if($data->status == 'pending')
                             <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
                                 <div class="d-flex align-items-center gap-4">
                                     <h5 class="fw-bold text-uppercase text-center mb-0">
@@ -210,7 +178,7 @@
                                 </div>
                             </div>
                         @endif
-                        <div class="w-100 text-center mt-4">
+                        <div class="w-100 text-center mt-5">
                             <a href="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" 
                                 class="w-100 text-uppercase fw-bold" 
                                 target="_blank" 

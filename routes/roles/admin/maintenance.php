@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
 use App\Http\Controllers\Admin\Settings\HolidayController;
 use App\Http\Controllers\Admin\Settings\LeaveController;
+use App\Http\Controllers\Admin\Settings\CreditsController;
 use App\Http\Controllers\Admin\Settings\ProjectsController;
 use App\Http\Controllers\Admin\Settings\OrganizationController;
 use App\Http\Controllers\Admin\Settings\PositionController;
@@ -58,6 +59,12 @@ use App\Http\Controllers\Admin\Settings\PayrollSettingsController;
 
     # LEAVES
     Route::resource('leaves', LeaveController::class)->names('settings.leaves');
+
+    # CREDITS IMPORT / EXPORT
+    Route::get('credits/{type}', [CreditsController::class, 'index'])
+        ->name('settings.credits.index');
+    Route::post('credits/{type}/import', [CreditsController::class, 'save'])
+        ->name('settings.credits.import');
 
     # TRANCHES
     Route::get('tranche', [TrancheController::class, 'index'])->name('settings.tranche.index');
