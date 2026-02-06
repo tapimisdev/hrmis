@@ -48,7 +48,11 @@ class DailyTimeRecordController extends Controller
      */
     public function index($employee_no)
     {
-        return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no'));
+        $employee_id = DB::table('employee_information')
+            ->where('employee_no', $employee_no)
+            ->value('user_id');
+
+        return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no', 'employee_id'));
     }
 
     /**
@@ -70,6 +74,8 @@ class DailyTimeRecordController extends Controller
             ->leftJoin('units as u', 'eo.unit_id', 'u.id')
             ->select(
                 'ei.user_id',
+                
+                'eo.employment_type_id',
 
                 'ep.firstname',
                 'ep.middlename',
@@ -104,7 +110,7 @@ class DailyTimeRecordController extends Controller
             ]);
             
             $daily_time_record['information'] = $user;
-
+    
             return response()->json($daily_time_record, 200);   
         } catch (\Exception $e) {
             return response(['message' => $e->getMessage(), 'status' => 'show dtr fails']);

@@ -68,7 +68,8 @@ class OffsetApplicationController extends Controller
     public function store(StoreOffsetApplication $request) 
     {
         $validatedData = $request->validated();
-        
+        $isDirectlyApproved = $validatedData['isDirectlyApproved'] ?? false;
+
         if(!empty($validatedData['user_id'])) {
             $user = User::with('employeeInformation')->findOrFail($validatedData['user_id']);
             $employee_no = $user->employeeInformation->employee_no;
@@ -120,7 +121,7 @@ class OffsetApplicationController extends Controller
                 'employee_no'   => $employee_no,
                 'days'          => $days,
                 'reason'        => $validatedData['reason'],
-                'status'        => 'pending',
+                'status'        =>  $isDirectlyApproved ? 'approved' : 'pending',
                 'level'         => 1,
                 // 'levels'        => json_encode($levels),
                 'created_at'    => now(),
@@ -163,15 +164,17 @@ class OffsetApplicationController extends Controller
                 }
             }
 
-            $sender = ucwords(Auth::user()->name);
-            $payload = [
-                'type' => 'event',
-                'sender' => $sender,
-                'receiver' => 'admins',
-                'message' => '%b' . $sender . '%b filed an offset application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => url()->route('services.offset.show', ['application' => $applicationID])
-            ];
-            $this->EventService->pushNotification($payload);
+            if(!$isDirectlyApproved) {
+                $sender = ucwords(Auth::user()->name);
+                $payload = [
+                    'type' => 'event',
+                    'sender' => $sender,
+                    'receiver' => 'admins',
+                    'message' => '%b' . $sender . '%b filed an offset application (%bi' . strtoupper($application_no) . ') %bi',
+                    'link' => url()->route('services.offset.show', ['application' => $applicationID])
+                ];
+                $this->EventService->pushNotification($payload);
+            }
 
             DB::commit();
 

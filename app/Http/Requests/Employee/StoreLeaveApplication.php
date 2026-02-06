@@ -25,6 +25,7 @@ class StoreLeaveApplication extends FormRequest
     public function rules(): array
     {
         return [
+            'isDirectlyApproved' => ['nullable'],
             'user_id'       => ['nullable', 'exists:users,id'],
             'leave_id'      => ['required', 'exists:leaves,id'],
             'reason'        => ['required', 'string', 'max:500'],

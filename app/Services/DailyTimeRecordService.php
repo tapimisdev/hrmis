@@ -136,7 +136,7 @@ class DailyTimeRecordService {
         // Totals
         $TOTAL_INCOMPLETE_LOGS = 0;
         $TOTAL_PENDING_LEAVES = 0;
-        $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
+        $TOTAL_OFFSET = $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
         $TOTAL_OVERTIME = $TOTAL_ACTUAL_PRESENCE = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
         $DOUBLE_EXCESS = 0;
 
@@ -232,6 +232,17 @@ class DailyTimeRecordService {
             if ($is_leave) {
                 $TOTAL_LEAVES++;
                 $remarks[] = $leave_status;
+            }
+
+            /** ----------------- OFFSET CHECK ------------- **/
+
+            $offset = $this->timelogs_services->checkIfOffset($date, $userId);
+            $is_offset = $offset['is_offset'];
+            $offset_status = $offset['status'];
+          
+            if ($is_offset) {
+                $TOTAL_OFFSET++;
+                $remarks[] = $offset_status;
             }
 
             if ($empty_log) {
@@ -460,6 +471,7 @@ class DailyTimeRecordService {
             'late_undertime'     => $TOTAL_UT,
             'absent'             => $TOTAL_ABSENT,
             'leaves'             => $TOTAL_LEAVES,
+            'offset'             => $TOTAL_OFFSET,
             'holiday'            => $TOTAL_HOLIDAY,
             'suspensions'        => $TOTAL_SUSPENSION,
             'excess'             => $DOUBLE_EXCESS,

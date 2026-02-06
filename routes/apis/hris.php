@@ -4,9 +4,13 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\Employee;
 use App\Http\Controllers\Employee\LeaveApplicationController;
+use App\Http\Controllers\Employee\OffsetApplicationController;
 use App\Http\Controllers\Api\CountriesApiController;
 
 Route::resource('leaves', LeaveApplicationController::class)
+    ->only('index', 'store', 'update');
+
+Route::resource('offset', OffsetApplicationController::class)
     ->only('index', 'store', 'update');
 
 Route::get('countries', [CountriesApiController::class, 'index'])

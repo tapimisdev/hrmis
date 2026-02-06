@@ -32,7 +32,6 @@
                     ></button>
                 </div>
 
-                <!-- Body and Footer -->
                 <slot />
             </div>
         </div>
@@ -59,6 +58,8 @@ export default {
                     return "Overtime";
                 case "leave":
                     return "Record Leave";
+                case "offset":
+                    return "Record Offset";
                 case "absent":
                     return "Mark as Absent";
                 case "overtime":
@@ -78,7 +79,9 @@ export default {
                 case "view_overtime":
                     return "fas fa-business-time";
                 case "leave":
-                    return "fas fa-umbrella-beach";
+                    return "fa-solid fa-plane-departure";
+                case "offset":
+                    return "fa-solid fa-ghost";
                 case "absent":
                     return "fas fa-user-times";
                 case "overtime":

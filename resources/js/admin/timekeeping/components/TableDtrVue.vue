@@ -168,20 +168,23 @@ import TableSkeletonVue from '../../../components/TableSkeletonVue.vue';
 import axios from 'axios';
 import ModalVue from './modal/ModalVue.vue';
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
+import RecordOffsetVue from './modal/RecordOffsetVue.vue';
 import AddTimeVue from './modal/AddTimeVue.vue';
 import AddOvertimeVue from './modal/AddOvertimeVue.vue';
 import ViewOvertimeVue from './modal/ViewOvertimeVue.vue';
 import MarkAsAbsentVue from './modal/MarkAsAbsentVue.vue'
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue },
+    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue },
     props: {
-        employee_id: { type: String, required: true },
+        employee_no: { type: [String, Number], required: true },
+        employee_id: { type: [String, Number], required: true },
         month: Number,
         year: Number
     },
     data() {
         return {
+            information: [],
             logs: [],
             loading: false,
             modalType: null,
@@ -199,6 +202,7 @@ export default {
             const components = {
                 adjustment: 'AddTimeVue',
                 leave: 'RecordLeaveVue',
+                offset: 'RecordOffsetVue',
                 overtime: 'AddOvertimeVue',
                 view_overtime: 'ViewOvertimeVue',
                 absent: 'MarkAsAbsentVue'
@@ -206,7 +210,9 @@ export default {
             return components[this.modalType] || null;
         },
         modalProps() {
+            console.log('empid: '+this.employee_no);
             return {
+                employee_no: this.employee_no,
                 employee_id: this.employee_id,
                 month: this.month,
                 year: this.year,
@@ -220,9 +226,10 @@ export default {
             this.loading = true;
             try {
                 const { data } = await axios.get(
-                    `/admin/timekeeping/daily-time-record/${this.employee_id}/show`,
+                    `/admin/timekeeping/daily-time-record/${this.employee_no}/show`,
                     { params: { month: this.month, year: this.year } }
                 );
+                this.information = data.information;
                 this.logs = data.computedData;
                 this.summary = data.summary;
                 this.$emit('send-payload', data);
@@ -245,6 +252,7 @@ export default {
             if (this.hasRemark(remarks, 'restday')) return 'row-restday';
             if (this.hasRemark(remarks, 'suspension')) return 'row-restday';
             if (this.hasRemark(remarks, 'leave')) return 'row-leave';
+            if (this.hasRemark(remarks, 'offset')) return 'row-offset';
             if (this.hasRemark(remarks, 'holiday')) return 'row-holiday';
             if (this.hasRemark(remarks, 'absent')) return 'row-absent';
             return '';
@@ -282,6 +290,13 @@ export default {
                         text: 'Leave',
                     };
 
+                case this.hasRemark(remarks, 'offset'):
+                    return {
+                        class: 'status-offset',
+                        icon: 'fa-solid fa-ghost',
+                        text: 'Offset',
+                    };
+
                 case this.hasRemark(remarks, 'ob'):
                     return {
                         class: 'status-ob',
@@ -307,23 +322,80 @@ export default {
             return '';
         },
         getActions(remarks) {
-            const actions = [
-                { type: 'adjustment', icon: 'fa-solid fa-clock-rotate-left', text: 'Add/Adjust Time' },
-                { type: 'overtime', icon: 'fa-solid fa-hourglass-half', text: 'Add Overtime' },
-                { type: 'leave', icon: 'fa-solid fa-plane-departure', text: 'Record Leave' }
-            ];
-            
-            if (!this.hasRemark(remarks, 'absent') && !this.hasRemark(remarks, 'restday')) {
-                actions.push({ 
-                    type: 'absent', 
-                    icon: 'fa-solid fa-user-xmark', 
-                    text: 'Mark Absent',
-                    danger: true
-                });
-            }
-            
-            return actions;
+          const hasLeave = this.hasRemark(remarks, 'leave');
+          const hasOffset = this.hasRemark(remarks, 'offset');
+
+          const isLeaveType = this.information.employment_type_id === 1;
+          const isOffsetType = this.information.employment_type_id === 2;
+
+          const actions = [];
+
+          if (hasLeave || hasOffset) {
+              if (hasLeave && isLeaveType) {
+                  actions.push({
+                      type: 'cancel_leave',
+                      icon: 'fa-solid fa-ban',
+                      text: 'Cancel Leave',
+                      danger: true
+                  });
+              }
+
+              if (hasOffset && isOffsetType) {
+                  actions.push({
+                      type: 'cancel_offset',
+                      icon: 'fa-solid fa-ban',
+                      text: 'Cancel Offset',
+                      danger: true
+                  });
+              }
+
+              return actions;
+          }
+
+          actions.push(
+              { 
+                  type: 'adjustment', 
+                  icon: 'fa-solid fa-clock-rotate-left', 
+                  text: 'Add/Adjust Time' 
+              },
+              { 
+                  type: 'overtime', 
+                  icon: 'fa-solid fa-hourglass-half', 
+                  text: 'Add Overtime' 
+              }
+          );
+
+          if (isLeaveType) {
+              actions.push({
+                  type: 'leave',
+                  icon: 'fa-solid fa-plane-departure',
+                  text: 'Record Leave'
+              });
+          }
+
+          if (isOffsetType) {
+              actions.push({
+                  type: 'offset',
+                  icon: 'fa-solid fa-ghost',
+                  text: 'Record Offset'
+              });
+          }
+
+          if (
+              !this.hasRemark(remarks, 'absent') &&
+              !this.hasRemark(remarks, 'restday')
+          ) {
+              actions.push({
+                  type: 'absent',
+                  icon: 'fa-solid fa-user-xmark',
+                  text: 'Mark Absent',
+                  danger: true
+              });
+          }
+
+          return actions;
         },
+
         openModal(type, index) {
             this.modalType = type;
             this.dateIndex = index + 1;

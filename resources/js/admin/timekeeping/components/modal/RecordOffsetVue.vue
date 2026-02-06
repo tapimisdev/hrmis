@@ -1,35 +1,7 @@
 <template>
     <div class="modal-body">
-        <form @submit.prevent="submitLeave">
+        <form @submit.prevent="submitRequest">
             <div class="row">
-
-                <!-- Leave Type -->
-                <div class="col-md-12">
-                    <div class="mb-3">
-                        <label class="form-label">
-                            Leave Type <span class="text-danger">*</span>
-                        </label>
-
-                        <select
-                            v-model="form.leave_id"
-                            class="form-select"
-                            :class="{ 'is-invalid': errors.leave_id }"
-                        >
-                            <option value="">Select Leave</option>
-                            <option
-                                v-for="leave in leaveTypes"
-                                :key="leave.id"
-                                :value="leave.id"
-                            >
-                                {{ leave.name }}
-                            </option>
-                        </select>
-
-                        <span v-if="errors.leave_id" class="text-danger">
-                            {{ errors.leave_id[0] }}
-                        </span>
-                    </div>
-                </div>
 
                 <!-- Date -->
                 <div class="col-md-6">
@@ -132,7 +104,7 @@
         <button
             class="btn btn-primary px-4"
             :disabled="loading"
-            @click="submitLeave"
+            @click="submitRequest"
         >
             <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
             <i v-else class="fas fa-save me-2"></i>
@@ -157,52 +129,32 @@ export default {
         return {
             loading: false,
             errors: {},
-            leaveTypes: [],
             attachments: [],
 
             form: {
                 isDirectlyApproved: true,
                 user_id: this.employee_id,
-                leave_id: "",
                 selectedDates: [
                     {
                         date: "",
                         shift: "",
                     },
                 ],
-                days: 1,
                 reason: "",
-                status: "pending",
             },
         };
     },
 
     mounted() {
-        this.loadLeaves();
         this.setDefaultDate();
     },
 
     methods: {
-        async loadLeaves() {
-            try {
-                const { data } = await axios.get("/api/timekeeping/leaves", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        Accept: "application/json",
-                    },
-                });
-                this.leaveTypes = data.leaves || [];
-            } catch (e) {
-                console.error(e);
-            }
-        },
-
         handleFileUpload(event) {
             this.attachments = Array.from(event.target.files);
         },
 
-        async submitLeave() {
-            console.log(this.user_id)
+        async submitRequest() {
             if (this.loading) return;
 
             this.loading = true;
@@ -214,7 +166,9 @@ export default {
                 Object.entries(this.form).forEach(([key, value]) => {
                     formData.append(
                         key,
-                        typeof value === "object" ? JSON.stringify(value) : value
+                        typeof value === "object"
+                            ? JSON.stringify(value)
+                            : value
                     );
                 });
 
@@ -222,14 +176,18 @@ export default {
                     formData.append(`attachments[${i}]`, file);
                 });
 
-                const { data } = await axios.post("/api/leaves", formData, {
+                const { data } = await axios.post("/api/offset", formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         Accept: "application/json",
                     },
                 });
 
-                Swal.fire("Success!", "Leave submitted successfully.", "success");
+                Swal.fire(
+                    "Success!",
+                    "Request submitted successfully.",
+                    "success"
+                );
 
                 this.$emit("success", data);
                 this.resetForm();
@@ -250,7 +208,6 @@ export default {
         },
 
         resetForm() {
-            this.form.leave_id = "";
             this.form.reason = "";
             this.form.selectedDates[0].shift = "";
             this.attachments = [];
@@ -263,14 +220,12 @@ export default {
             const day = this.index ?? new Date().getDate();
 
             const date = new Date(year, month - 1, day);
-            const formatted =
+            this.form.selectedDates[0].date =
                 date.getFullYear() +
                 "-" +
                 String(date.getMonth() + 1).padStart(2, "0") +
                 "-" +
                 String(date.getDate()).padStart(2, "0");
-                
-            this.form.selectedDates[0].date = formatted
         },
 
         close() {

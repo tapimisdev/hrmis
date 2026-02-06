@@ -490,6 +490,32 @@ class TimelogsServices {
         ];
     }
 
+    public function checkIfOffset($date, $userId)
+    {
+        $isOffset = false;
+        $status = 'pending offset';
+
+        $offset = DB::table('offset_applications as la')
+            ->leftJoin('offset_dates as ld', 'la.id', '=', 'ld.offset_application_id')
+            ->where('la.user_id', $userId)
+            ->whereDate('ld.date', $date)
+            ->first();
+        
+
+        if ($offset) {
+            $isOffset = true;
+
+            if ($offset->status === 'approved') {
+                $status = 'offset';
+            }
+        }
+
+        return [
+            'is_offset' => $isOffset,
+            'status'   => $status
+        ];
+    }
+
 
     /**
      * Check and compute overtime for a given user and date.

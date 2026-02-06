@@ -25,6 +25,7 @@ class StoreOffsetApplication extends FormRequest
     public function rules(): array
     {
         return [
+            'isDirectlyApproved' => ['nullable'],
             'user_id'       => ['nullable', 'exists:users,id'],
             'reason'        => ['required', 'string', 'max:500'],
             'selectedDates' => ['required', 'array', 'min:1'],

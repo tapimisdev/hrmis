@@ -78,7 +78,8 @@ class LeaveApplicationController extends Controller
     public function store(StoreLeaveApplication $request) 
     {
         $validatedData = $request->validated();
-        
+        $isDirectlyApproved = $validatedData['isDirectlyApproved'] ?? false;
+
         if(!empty($validatedData['user_id'])) {
             $user = User::with('employeeInformation')->findOrFail($validatedData['user_id']);
             $employee_no = $user->employeeInformation->employee_no;
@@ -134,7 +135,7 @@ class LeaveApplicationController extends Controller
                 'leave_id'      => $validatedData['leave_id'],
                 'days'          => $days,
                 'reason'        => $validatedData['reason'],
-                'status'        => 'pending',
+                'status'        =>  $isDirectlyApproved ? 'approved' : 'pending',
                 'level'         => 1,
                 // 'levels'        => json_encode($levels),
                 'created_at'    => now(),
@@ -178,14 +179,17 @@ class LeaveApplicationController extends Controller
             }
 
             $sender = ucwords(Auth::user()->name);
-            $payload = [
-                'type' => 'application',
-                'sender' => $sender,
-                'receiver' => 'admins',
-                'message' => '%b' . $sender . '%b filed a leave application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => url()->route('services.leaves.show', ['application' => $applicationID])
-            ];
-            $this->EventService->pushNotification($payload);
+
+            if(!$isDirectlyApproved) {
+                $payload = [
+                    'type' => 'application',
+                    'sender' => $sender,
+                    'receiver' => 'admins',
+                    'message' => '%b' . $sender . '%b filed a leave application (%bi' . strtoupper($application_no) . ') %bi',
+                    'link' => url()->route('services.leaves.show', ['application' => $applicationID])
+                ];
+                $this->EventService->pushNotification($payload);
+            }
 
             DB::commit();
 
