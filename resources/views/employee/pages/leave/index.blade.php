@@ -9,9 +9,11 @@
         </x-employee-navbar>
 
         <x-header-employee title="Leave Applications" subtitle="Manage leave applications in this module" >
-            <!-- <a href="{{ route('leaves.create') }}" class="btn btn-warning py-3 px-4">
-                <i class="fa-solid fa-paper-plane me-2"></i> Apply
-            </a> -->
+            @can('emp.leave_application.apply')
+                <a href="{{ route('leaves.create') }}" class="btn btn-warning py-3 px-4">
+                    <i class="fa-solid fa-paper-plane me-2"></i> Apply
+                </a>
+            @endcan
         </x-header-employee>
 
         <div class="card rounded-4 p-3">

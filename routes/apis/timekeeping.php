@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\Timekeeping\UploadTimeLogController;
 use App\Http\Controllers\Api\Timekeeping\AddTimeApiController;
 use App\Http\Controllers\Api\Timekeeping\AddOvertimeApiController;
 use App\Http\Controllers\Api\Timekeeping\MarkAsAbsentApiController;
+use App\Http\Controllers\Api\Timekeeping\CancelLeaveApiController;
+use App\Http\Controllers\Api\Timekeeping\CancelOffsetApiController;
 use App\Http\Controllers\Timekeeping\MarkAsAbsentController;
 use App\Http\Controllers\Api\LeavesApiController;
 use App\Http\Controllers\Employee\timelogs\CorrectionTimelogController;
@@ -20,6 +22,8 @@ Route::post('add-time', [AddTimeApiController::class, 'store']);
 Route::post('add-overtime', [AddOvertimeApiController::class, 'store']);
 Route::get('get-overtime', [AddOvertimeApiController::class, 'show']);
 Route::post('mark-as-absent', [MarkAsAbsentApiController::class, 'mark_as_absent']);
+Route::post('cancel-leave', [CancelLeaveApiController::class, 'cancel']);
+Route::post('cancel-offset', [CancelOffsetApiController::class, 'cancel']);
 
 Route::get('view-correction', [CorrectionTimelogController::class, 'index']);
 Route::get('request-correction', [CorrectionTimelogController::class, 'edit']);

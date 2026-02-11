@@ -473,6 +473,7 @@ class TimelogsServices {
             ->leftJoin('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
             ->where('la.user_id', $userId)
             ->whereDate('ld.date', $date)
+            ->where('ld.isActive', true)
             ->first();
         
 
@@ -498,6 +499,7 @@ class TimelogsServices {
         $offset = DB::table('offset_applications as la')
             ->leftJoin('offset_dates as ld', 'la.id', '=', 'ld.offset_application_id')
             ->where('la.user_id', $userId)
+            ->where('ld.isActive', true)
             ->whereDate('ld.date', $date)
             ->first();
         

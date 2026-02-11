@@ -57,7 +57,7 @@ export default {
         this.isMobile = window.innerWidth <= 767;
         if (!this.isMobile) {
             this.tutorialPos = JSON.parse(
-                localStorage.getItem(TUTORIAL_POS_KEY) || '{"x":100,"y":100}',
+                localStorage.getItem(TUTORIAL_POS_KEY) || '{"x":400,"y":200}',
             );
         }
         window.addEventListener('resize', this.updateIsMobile);

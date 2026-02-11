@@ -141,7 +141,7 @@
                             <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
                                 <div class="d-flex align-items-center gap-4">
                                     <h5 class="fw-bold text-uppercase text-center mb-0">
-                                        <div>Offset Credit Balance</div>
+                                        <div>Credit Balance</div>
                                         <div>
                                             {{ \Carbon\Carbon::createFromDate(now()->year, $month ?? now()->month, 1)->format('F') }}
                                             ({{ now()->year }})
@@ -154,7 +154,7 @@
 
                                 <div class="d-flex align-items-center gap-4">
                                     <h5 class="fw-bold text-uppercase text-center mb-0">
-                                        <div>To be deducted</div>
+                                        <div>Deduction</div>
                                         <div></div>
                                     </h5>
                                     <h2 class="fw-bold px-4 py-3 bg-danger rounded-3 mb-0">
@@ -183,7 +183,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-4 mb-3">
+                <!-- <div class="mt-4 mb-3">
                     <small class="text-uppercase fw-bold text-muted">Your Approvers</small>
 
                     @if (!empty($data->approvals) && count($data->approvals) > 0)
@@ -224,7 +224,7 @@
                     @else
                         <div class="fst-italic text-muted text-uppercase mt-3">No approvers assigned.</div>
                     @endif
-                </div>
+                </div> -->
             </div>
         
             {{-- Action Buttons --}}

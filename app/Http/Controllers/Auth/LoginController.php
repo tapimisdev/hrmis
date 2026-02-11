@@ -5,18 +5,12 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 
 class LoginController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
     */
 
     use AuthenticatesUsers;
@@ -51,8 +45,16 @@ class LoginController extends Controller
             'email' => $user->email,
             'session_id' => session()->getId()
         ]);
-    }
 
+        // Handle Remember Me: Save email and encrypted password to cookies for 30 days if checked, else remove cookies
+        if ($request->has('remember')) {
+            Cookie::queue('remember_email', $request->email, 60 * 24 * 30); // 30 days
+            Cookie::queue('remember_password', encrypt($request->password), 60 * 24 * 30);
+        } else {
+            Cookie::queue(Cookie::forget('remember_email'));
+            Cookie::queue(Cookie::forget('remember_password'));
+        }
+    }
 
     /**
      * Create a new controller instance.
@@ -67,10 +69,15 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
-        // Forget the session variable
+        // Log out the user
+        auth()->logout();
+
+        // Forget the session variables
         $request->session()->forget('auth_token');
         $request->session()->forget('name');
         $request->session()->forget('email');
+
+        // Do NOT clear the remember me cookies here, so they persist for pre-filling the login form
 
         // Optionally flush the whole session
         $request->session()->invalidate();

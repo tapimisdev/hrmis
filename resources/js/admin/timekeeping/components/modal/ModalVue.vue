@@ -13,7 +13,7 @@
             <div class="modal-content modern-modal">
                 <!-- Header -->
                 <div class="modal-header modern-header border-bottom">
-                    <div class="header-content">
+                    <div class="header-content mb-3">
                         <div class="icon-wrapper">
                             <i :class="headerIcon"></i>
                         </div>
@@ -68,6 +68,10 @@ export default {
                     return "Set as Rest Day";
                 case "ob":
                     return "Record Official Business";
+                case "cancel_leave":
+                    return "Cancel Leave";
+                case "cancel_offset":
+                    return "Cancel Offset"
                 default:
                     return "Modal";
             }
@@ -90,6 +94,9 @@ export default {
                     return "fas fa-calendar-day";
                 case "ob":
                     return "fas fa-briefcase";
+                case "cancel_leave":
+                case "cancel_offset":
+                    return "fas fa-cancel";
                 default:
                     return "fas fa-file-alt";
             }

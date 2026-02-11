@@ -35,7 +35,7 @@ class RoleRedirectMiddleware
             return redirect()->to('/admin/dashboard');
         }
 
-
         return $next($request);
+        
     }
 }

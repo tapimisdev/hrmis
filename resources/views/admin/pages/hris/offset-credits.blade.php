@@ -50,7 +50,7 @@
                                 <table class="table table-bordered table-striped">
                                     <thead>
                                         <tr>
-                                            <th>As Of</th>  
+                                            <th>Date</th>  
                                             <th>Previous</th>
                                             <th>Earned</th>
                                             <th>Deduction</th>
@@ -77,7 +77,7 @@
                                                         // Split remarks by newline to count actual lines
                                                         $lines = $credit->remarks ? explode("\n", $credit->remarks) : [];
                                                         $rows = count($lines);               // number of existing lines
-                                                        $rows = max(2, min($rows, 8));       // minimum 2 rows, maximum 8 rows
+                                                        $rows = max(5, min($rows, 10));       // minimum 5 rows, maximum 10 rows
                                                     @endphp
 
                                                     <textarea 
@@ -141,7 +141,7 @@
                                 <input type="number" step="0.01" class="form-control restricted" name="previous_balance" id="previous_balance" readonly value="0">
                             </div>
                             <div class="col-12 mb-3 col-md-9">
-                                <label class="form-label">As Of</label>
+                                <label class="form-label">Date</label>
                                 <input type="month"
                                     class="form-control"
                                     name="as_of"

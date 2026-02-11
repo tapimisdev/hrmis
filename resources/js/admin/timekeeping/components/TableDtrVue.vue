@@ -173,9 +173,11 @@ import AddTimeVue from './modal/AddTimeVue.vue';
 import AddOvertimeVue from './modal/AddOvertimeVue.vue';
 import ViewOvertimeVue from './modal/ViewOvertimeVue.vue';
 import MarkAsAbsentVue from './modal/MarkAsAbsentVue.vue'
+import CancelLeaveVue from './modal/CancelLeaveVue.vue';
+import CancelOffsetVue from './modal/CancelOffsetVue.vue';
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue },
+    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue, CancelLeaveVue, CancelOffsetVue },
     props: {
         employee_no: { type: [String, Number], required: true },
         employee_id: { type: [String, Number], required: true },
@@ -205,7 +207,9 @@ export default {
                 offset: 'RecordOffsetVue',
                 overtime: 'AddOvertimeVue',
                 view_overtime: 'ViewOvertimeVue',
-                absent: 'MarkAsAbsentVue'
+                absent: 'MarkAsAbsentVue',
+                cancel_offset: 'CancelOffsetVue',
+                cancel_leave: 'CancelLeaveVue',
             };
             return components[this.modalType] || null;
         },
@@ -340,7 +344,7 @@ export default {
                   });
               }
 
-              if (hasOffset && isOffsetType) {
+              if (hasOffset) {
                   actions.push({
                       type: 'cancel_offset',
                       icon: 'fa-solid fa-ban',
@@ -370,6 +374,11 @@ export default {
                   type: 'leave',
                   icon: 'fa-solid fa-plane-departure',
                   text: 'Record Leave'
+              });
+              actions.push({
+                  type: 'offset',
+                  icon: 'fa-solid fa-ghost',
+                  text: 'Record Offset'
               });
           }
 
@@ -418,6 +427,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+.dropdown-menu {
+  position: absolute;
+  z-index: 99999;
+}
+
 .attendance-container {
     border-radius: 0.4rem 0.4rem 0 0;
     position: static;

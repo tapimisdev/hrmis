@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class ApplicationController extends Controller
 {
@@ -250,12 +251,266 @@ class ApplicationController extends Controller
     }
 
 
-    public function getData(string $type)
+    // public function getData(string $type)
+    // {
+    //     $user = Auth::user()->load('employeeInformation');
+    //     $employeeNo = $user->employeeInformation->employee_no ?? null;
+
+    //     // Get user's organization
+    //     $organization = DB::table('employee_organization')
+    //         ->where('employee_no', $employeeNo)
+    //         ->latest()
+    //         ->first();
+
+    //     if (!$organization) {
+    //         return [
+    //             'leaves' => collect(),
+    //             'approvers' => collect(),
+    //             'applications' => collect(),
+    //         ];
+    //     }
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | Approvers
+    //     |--------------------------------------------------------------------------
+    //     */
+    //     $approvers = DB::table('application_approver as aa')
+    //         ->leftJoin('application_approver_users as aau', 'aa.id', '=', 'aau.application_approver_id')
+    //         ->leftJoin('users as u', 'aau.user_id', '=', 'u.id')
+    //         ->where('aa.type', $type)
+    //         ->where('aa.division_id', $organization->division_id)
+    //         ->where('aa.unit_id', $organization->unit_id)
+    //         ->select(
+    //             'aau.level',
+    //             'u.id as user_id',
+    //             'u.name as user_name'
+    //         )
+    //         ->get()
+    //         ->groupBy('level')
+    //         ->mapWithKeys(function ($items, $level) {
+    //             return [
+    //                 $level => $items
+    //                     ->unique('user_id')
+    //                     ->map(fn ($item) => [
+    //                         'id' => $item->user_id,
+    //                         'name' => $item->user_name,
+    //                     ])
+    //                     ->values(),
+    //             ];
+    //         })
+    //         ->sortKeys();
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | Applications (Leave / Offset)
+    //     |--------------------------------------------------------------------------
+    //     */
+    //     if ($type === 'leave') {
+    //         $applicationsQuery = DB::table('leave_applications as a')
+    //             ->join('leave_dates as d', 'a.id', '=', 'd.leave_application_id')
+    //             ->where('a.user_id', $user->id)
+    //             ->select(
+    //                 DB::raw("'leave' as title"),
+    //                 'a.status',
+    //                 'd.date'
+    //             );
+
+    //         $leaves = DB::table('leaves')
+    //             ->where('is_active', true)
+    //             ->get();
+    //     } else {
+    //         $applicationsQuery = DB::table('offset_applications as a')
+    //             ->join('offset_dates as d', 'a.id', '=', 'd.offset_application_id')
+    //             ->where('a.user_id', $user->id)
+    //             ->select(
+    //                 DB::raw("'offset' as title"),
+    //                 'a.status',
+    //                 'd.date'
+    //             );
+
+    //         $leaves = collect();
+    //     }
+
+    //     /*
+    //     |--------------------------------------------------------------------------
+    //     | Holidays & Suspensions (Shared)
+    //     |--------------------------------------------------------------------------
+    //     */
+    //     $holidaysQuery = DB::table('holidays')
+    //         ->select(
+    //             'name as title',
+    //             DB::raw("'holiday' as status"),
+    //             'date'
+    //         );
+
+    //     $suspensionsQuery = DB::table('suspension as s')
+    //         ->join('suspension_dates as sd', 's.id', '=', 'sd.suspension_id')
+    //         ->where('s.isActive', true)
+    //         ->select(
+    //             's.name as title',
+    //             DB::raw("'suspension' as status"),
+    //             'sd.date'
+    //         );
+
+    //     $applications = $applicationsQuery
+    //         ->unionAll($holidaysQuery)
+    //         ->unionAll($suspensionsQuery)
+    //         ->orderBy('date')
+    //         ->get();
+
+    //     return [
+    //         'leaves' => $leaves,
+    //         'approvers' => $approvers,
+    //         'applications' => $applications,
+    //     ];
+    // }
+
+    // public function getData(string|array $types)
+    //     {
+    //         if (is_string($types)) {
+    //             $types = [$types];
+    //         }
+
+    //         $user = Auth::user()->load('employeeInformation');
+    //         $employeeNo = $user->employeeInformation->employee_no ?? null;
+
+    //         // Get user's organization
+    //         $organization = DB::table('employee_organization')
+    //             ->where('employee_no', $employeeNo)
+    //             ->latest()
+    //             ->first();
+
+    //         if (!$organization) {
+    //             return [
+    //                 'leaves' => collect(),
+    //                 'approvers' => collect(),
+    //                 'applications' => collect(),
+    //             ];
+    //         }
+
+    //         /*
+    //         |--------------------------------------------------------------------------
+    //         */
+    //     $approvers = DB::table('application_approver as aa')
+    //         ->leftJoin('application_approver_users as aau', 'aa.id', '=', 'aau.application_approver_id')
+    //         ->leftJoin('users as u', 'aau.user_id', '=', 'u.id')
+    //         ->whereIn('aa.type', $types)
+    //         ->where('aa.division_id', $organization->division_id)
+    //         ->where('aa.unit_id', $organization->unit_id)
+    //         ->select(
+    //             'aau.level',
+    //             'u.id as user_id',
+    //             'u.name as user_name'
+    //         )
+    //         ->get()
+    //         ->groupBy('level')
+    //         ->mapWithKeys(function ($items, $level) {
+    //             return [
+    //                 $level => $items
+    //                     ->unique('user_id')
+    //                     ->map(fn ($item) => [
+    //                         'id' => $item->user_id,
+    //                         'name' => $item->user_name,
+    //                     ])
+    //                     ->values(),
+    //             ];
+    //         })
+    //         ->sortKeys();
+
+    //     /*
+    //     |--------------------------------------------------------------------------*/
+    //     $leaves = collect();
+    //     if (in_array('leave', $types)) {
+    //         $leaves = DB::table('leaves')
+    //             ->where('is_active', true)
+    //             ->get();
+    //     }
+
+    //     /*
+    //     |--------------------------------------------------------------------------*/
+    //     $applicationsQueries = collect();
+
+    //     if (in_array('leave', $types)) {
+    //         $leaveQuery = DB::table('leave_applications as a')
+    //             ->join('leave_dates as d', 'a.id', '=', 'd.leave_application_id')
+    //             ->where('a.user_id', $user->id)
+    //             ->select(
+    //                 DB::raw("'leave' as title"),
+    //                 'a.status',
+    //                 'd.date'
+    //             );
+    //         $applicationsQueries->push($leaveQuery);
+    //     }
+
+    //     if (in_array('offset', $types)) {
+    //         $offsetQuery = DB::table('offset_applications as a')
+    //             ->join('offset_dates as d', 'a.id', '=', 'd.offset_application_id')
+    //             ->where('a.user_id', $user->id)
+    //             ->select(
+    //                 DB::raw("'offset' as title"),
+    //                 'a.status',
+    //                 'd.date'
+    //             );
+    //         $applicationsQueries->push($offsetQuery);
+    //     }
+
+    //     /*
+    //     |--------------------------------------------------------------------------*/
+    //     $holidaysQuery = DB::table('holidays')
+    //         ->select(
+    //             'name as title',
+    //             DB::raw("'holiday' as status"),
+    //             'date'
+    //         );
+
+    //     $suspensionsQuery = DB::table('suspension as s')
+    //         ->join('suspension_dates as sd', 's.id', '=', 'sd.suspension_id')
+    //         ->where('s.isActive', true)
+    //         ->select(
+    //             's.name as title',
+    //             DB::raw("'suspension' as status"),
+    //             'sd.date'
+    //         );
+
+    //     // Combine all application queries
+    //     $applications = $applicationsQueries->reduce(function ($carry, $query) {
+    //         return $carry ? $carry->unionAll($query) : $query;
+    //     });
+
+    //     if ($applications) {
+    //         $applications = $applications
+    //             ->unionAll($holidaysQuery)
+    //             ->unionAll($suspensionsQuery)
+    //             ->orderBy('date')
+    //             ->get();
+    //     } else {
+    //         // If no type-specific applications, just holidays and suspensions
+    //         $applications = $holidaysQuery
+    //             ->unionAll($suspensionsQuery)
+    //             ->orderBy('date')
+    //             ->get();
+    //     }
+
+    //     return [
+    //         'leaves' => $leaves,
+    //         'approvers' => $approvers,
+    //         'applications' => $applications,
+    //     ];
+
+    // }
+
+
+    public function getData(string|array $types)
     {
+        $types = (array) $types;
+
         $user = Auth::user()->load('employeeInformation');
         $employeeNo = $user->employeeInformation->employee_no ?? null;
 
-        // Get user's organization
+        // ------------------------------------------------------------------
+        // Organization
+        // ------------------------------------------------------------------
         $organization = DB::table('employee_organization')
             ->where('employee_no', $employeeNo)
             ->latest()
@@ -263,21 +518,19 @@ class ApplicationController extends Controller
 
         if (!$organization) {
             return [
-                'leaves' => collect(),
-                'approvers' => collect(),
-                'applications' => collect(),
+                'leaves'        => collect(),
+                'approvers'     => collect(),
+                'applications'  => collect(),
             ];
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Approvers
-        |--------------------------------------------------------------------------
-        */
+        // ------------------------------------------------------------------
+        // Approvers
+        // ------------------------------------------------------------------
         $approvers = DB::table('application_approver as aa')
             ->leftJoin('application_approver_users as aau', 'aa.id', '=', 'aau.application_approver_id')
             ->leftJoin('users as u', 'aau.user_id', '=', 'u.id')
-            ->where('aa.type', $type)
+            ->whereIn('aa.type', $types)
             ->where('aa.division_id', $organization->division_id)
             ->where('aa.unit_id', $organization->unit_id)
             ->select(
@@ -287,63 +540,88 @@ class ApplicationController extends Controller
             )
             ->get()
             ->groupBy('level')
-            ->mapWithKeys(function ($items, $level) {
-                return [
-                    $level => $items
-                        ->unique('user_id')
-                        ->map(fn ($item) => [
-                            'id' => $item->user_id,
-                            'name' => $item->user_name,
-                        ])
-                        ->values(),
-                ];
-            })
+            ->mapWithKeys(fn ($items, $level) => [
+                $level => $items
+                    ->unique('user_id')
+                    ->map(fn ($i) => [
+                        'id'   => $i->user_id,
+                        'name' => $i->user_name,
+                    ])
+                    ->values()
+            ])
             ->sortKeys();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Applications (Leave / Offset)
-        |--------------------------------------------------------------------------
-        */
-        if ($type === 'leave') {
-            $applicationsQuery = DB::table('leave_applications as a')
+        // ------------------------------------------------------------------
+        // Leaves (master list)
+        // ------------------------------------------------------------------
+        $leaves = in_array('leave', $types) 
+            ? DB::table('leaves')->where('is_active', true)->get() 
+            : collect();
+
+        // ------------------------------------------------------------------
+        // Applications Queries
+        // ------------------------------------------------------------------
+        $queries = [];
+
+        // Leave applications
+        if (in_array('leave', $types)) {
+            $queries[] = DB::table('leave_applications as a')
                 ->join('leave_dates as d', 'a.id', '=', 'd.leave_application_id')
+                ->where('d.isActive', true)
                 ->where('a.user_id', $user->id)
                 ->select(
                     DB::raw("'leave' as title"),
                     'a.status',
                     'd.date'
                 );
+        }
 
-            $leaves = DB::table('leaves')
-                ->where('is_active', true)
-                ->get();
-        } else {
-            $applicationsQuery = DB::table('offset_applications as a')
+        // Offset applications
+        if (in_array('offset', $types)) {
+            $queries[] = DB::table('offset_applications as a')
                 ->join('offset_dates as d', 'a.id', '=', 'd.offset_application_id')
+                ->where('d.isActive', true)
                 ->where('a.user_id', $user->id)
                 ->select(
                     DB::raw("'offset' as title"),
                     'a.status',
                     'd.date'
                 );
-
-            $leaves = collect();
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Holidays & Suspensions (Shared)
-        |--------------------------------------------------------------------------
-        */
-        $holidaysQuery = DB::table('holidays')
+        // OBS applications (date range)
+        $obsApplications = collect();
+
+        if (in_array('obs', $types)) {
+            $obsRecords = DB::table('obs_applications')
+                ->where('user_id', $user->id)
+                ->get();
+
+            foreach ($obsRecords as $obs) {
+                $period = CarbonPeriod::create($obs->date_from, $obs->date_to);
+
+                $obsApplications = $obsApplications->merge(
+                    collect($period)->map(function ($date) use ($obs) {
+                        return (object) [
+                            'title'  => 'Pass Slip',
+                            'status' => $obs->status,
+                            'date'   => $date->format('Y-m-d'),
+                        ];
+                    })
+                );
+            }
+        }
+
+        // Holidays
+        $queries[] = DB::table('holidays')
             ->select(
                 'name as title',
                 DB::raw("'holiday' as status"),
                 'date'
             );
 
-        $suspensionsQuery = DB::table('suspension as s')
+        // Suspensions
+        $queries[] = DB::table('suspension as s')
             ->join('suspension_dates as sd', 's.id', '=', 'sd.suspension_id')
             ->where('s.isActive', true)
             ->select(
@@ -352,15 +630,27 @@ class ApplicationController extends Controller
                 'sd.date'
             );
 
+        // ------------------------------------------------------------------
+        // Merge all query builders safely
+        // ------------------------------------------------------------------
+        $applicationsQuery = array_shift($queries);
+
+        foreach ($queries as $query) {
+            $applicationsQuery->unionAll($query);
+        }
+
         $applications = $applicationsQuery
-            ->unionAll($holidaysQuery)
-            ->unionAll($suspensionsQuery)
             ->orderBy('date')
             ->get();
 
+        // Merge OBS applications (already a collection)
+        if ($obsApplications->isNotEmpty()) {
+            $applications = $applications->merge($obsApplications)->sortBy('date')->values();
+        }
+
         return [
-            'leaves' => $leaves,
-            'approvers' => $approvers,
+            'leaves'       => $leaves,
+            'approvers'    => $approvers,
             'applications' => $applications,
         ];
     }

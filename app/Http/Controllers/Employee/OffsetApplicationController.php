@@ -22,7 +22,7 @@ class OffsetApplicationController extends Controller
     public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
         $this->middleware('permission:emp.offset_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.offset_application.apply')->only(['store']);
+        $this->middleware('permission:emp.offset_application.apply')->only(['create', 'store']);
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
     }
@@ -48,7 +48,7 @@ class OffsetApplicationController extends Controller
     public function create()
     {
         $myId = Auth::id();
-        $data = $this->applicationService->getData('offset');
+        $data = $this->applicationService->getData(['leave', 'offset', 'obs']);
 
         // $approvers = $data['approvers'];
         // $approvers = $approvers->map(function ($collection) use ($myId) {

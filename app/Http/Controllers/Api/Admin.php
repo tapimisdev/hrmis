@@ -54,6 +54,7 @@ class Admin extends Controller
         $leaveToday = DB::table('leave_applications as la')
             ->join('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
             ->whereDate('ld.date', $today)
+            ->where('ld.date.isActive', true)
             ->select('la.name', DB::raw('COUNT(DISTINCT la.employee_no) as total'))
             ->groupBy('la.name')
             ->pluck('total', 'name')
@@ -65,6 +66,7 @@ class Admin extends Controller
         $offsetToday = DB::table('offset_applications as oa')
             ->join('offset_dates as od', 'oa.id', '=', 'od.offset_application_id')
             ->whereDate('od.date', $today)
+            ->where('od.isActive', true)
             ->where('oa.status', 'approved')
             ->distinct('oa.employee_no')
             ->count('oa.employee_no');

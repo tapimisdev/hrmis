@@ -20,7 +20,7 @@ class AtroController extends Controller
     public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
         $this->middleware('permission:emp.overtime_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.overtime_application.apply')->only(['store']);
+        $this->middleware('permission:emp.overtime_application.apply')->only(['create', 'store']);
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
     }

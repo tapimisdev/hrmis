@@ -14,6 +14,12 @@
                 text="Add Leave" 
                 variant="primary"
             />
+            <x-button-link 
+                :href="route('settings.leaves.assign')" 
+                icon="fa-solid fa-sliders" 
+                text="Configure Leave" 
+                variant="secondary"
+            />
         </x-header>
 
         <x-table id="myTable">
@@ -74,7 +80,6 @@
                     $('#leave-id').text(data.id);
                     $('#leave-name').text(data.name);
                     $('#leave-is-cumulative').text(data.is_cumulative ? 'Yes' : 'No');
-                    $('#leave-deduction').text(data.credit_to_deduct);
                     $('#leave-created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
 
                     // Show modal

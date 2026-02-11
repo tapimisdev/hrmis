@@ -23,7 +23,7 @@ class LeaveApplicationController extends Controller
     public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
         $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.leave_application.apply')->only(['store']);
+        $this->middleware('permission:emp.leave_application.apply')->only(['create', 'store']);
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
     }   
@@ -58,7 +58,7 @@ class LeaveApplicationController extends Controller
         }
 
         $myId = Auth::id();
-        $data = $this->applicationService->getData('leave');
+        $data = $this->applicationService->getData(['leave', 'offset', 'obs']);
         $leaves = $data['leaves'];
         // $approvers = $data['approvers'];
         // $approvers = $approvers->map(function ($collection) use ($myId) {

@@ -10,9 +10,11 @@
     </x-employee-navbar>
 
     <x-header-employee title="Pass Slip" subtitle="Manage pass slip applications in this module">
-        <!-- <a href="{{ route('obs.create') }}" class="btn btn-warning py-3 px-4">
-            <i class="fa-solid fa-paper-plane me-2"></i> Apply
-        </a> -->
+        @can('emp.pass_slip_application.apply')
+            <a href="{{ route('obs.create') }}" class="btn btn-warning py-3 px-4">
+                <i class="fa-solid fa-paper-plane me-2"></i> Apply
+            </a>
+        @endcan
     </x-header-employee>
 
     <div class="card rounded-4 p-3">

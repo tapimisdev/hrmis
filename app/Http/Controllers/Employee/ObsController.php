@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 class ObsController extends Controller
 {
@@ -22,7 +23,7 @@ class ObsController extends Controller
     {
 
         $this->middleware('permission:emp.pass_slip_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.pass_slip_application.apply')->only(['store']);
+        $this->middleware('permission:emp.pass_slip_application.apply')->only(['create', 'store']);
     
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
@@ -87,7 +88,32 @@ class ObsController extends Controller
             // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
             // $approvers = $validatedData['approvers'];
 
-            $data = $this->applicationService->getData('leave');
+            $data = $this->applicationService->getData(['leave', 'offset', 'obs']);
+            $applications = $data['applications'] ?? [];
+
+            $dateFrom = Carbon::parse($validatedData['date_from']);
+            $dateTo = Carbon::parse($validatedData['date_to']);
+
+            // Find the first matching application in the date range
+            $matchingApp = collect($applications)->first(function ($app) use ($dateFrom, $dateTo) {
+                $appDate = isset($app->date) ? $app->date : ($app['date'] ?? null);
+
+                if (!$appDate) return false;
+
+                $appDate = Carbon::parse($appDate);
+
+                return $appDate->between($dateFrom, $dateTo);
+            });
+
+            if ($matchingApp) {
+                $title = isset($matchingApp->title) ? $matchingApp->title : ($matchingApp['title'] ?? 'application');
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "The date of pass slip was already taken for {$title}, unable to submit application."
+                ]);
+            }
+                        
 
             // Insert obs record
             $obsId = DB::table('obs_applications')->insertGetId([

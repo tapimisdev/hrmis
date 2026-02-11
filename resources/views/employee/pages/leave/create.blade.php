@@ -15,7 +15,17 @@
 
     <div class="card rounded-3 mb-5">
         <div class="card-header fw-bold d-flex align-items-center text-uppercase py-3">
-            <i class="fa-solid fa-file-pen me-2"></i> Application Form
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div>
+                    <i class="fa-solid fa-file-pen me-2"></i> Application Form
+                </div>
+                <div>
+                    <a href="/forms/Application-for-Leave-CS-Form-No.-6-Revised-2020.xlsx" class="btn btn-dark">
+                        <i class="fa-solid fa-download me-1"></i>
+                         Form Download
+                    </a>
+                </div>
+            </div>
         </div>
         <form method="POST" action="{{ route('leaves.store') }}" id="form" enctype="multipart/form-data">
             @csrf

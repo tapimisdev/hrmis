@@ -30,6 +30,7 @@ class OffsetApplicationController extends Controller {
         $applications = DB::table('offset_applications as la')
             ->leftJoin('employee_personal as p', 'la.employee_no', '=', 'p.employee_no')
             ->leftJoin('offset_dates as ld', 'ld.offset_application_id', '=', 'la.id')
+            ->where('ld.isActive', true)
             ->select(
                 'p.firstname',
                 'p.lastname',
