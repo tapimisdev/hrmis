@@ -286,7 +286,6 @@ class EmployeeService {
 
         if ($employment_type_id == $regular_id) {
 
-            // Subquery: get latest leave credit per leave_id
             $latestCredits = DB::table('leave_credits as lc')
                 ->select('lc.*')
                 ->where('lc.employee_no', $employee_no)
@@ -309,7 +308,6 @@ class EmployeeService {
                     'l.name',
                     'l.id as leave_id',
                     'l.is_cumulative',
-                    'l.credit_to_deduct',
                     'l.is_active',
                     DB::raw("
                         CASE WHEN EXISTS (
@@ -324,7 +322,6 @@ class EmployeeService {
                     'l.id',
                     'l.name',
                     'l.is_cumulative',
-                    'l.credit_to_deduct',
                     'l.is_active',
                     'lc.id',
                     'lc.employee_no',
@@ -332,6 +329,7 @@ class EmployeeService {
                     'lc.as_of'
                 )
                 ->where('l.is_active', true)
+                ->where('showCreditsESS', true)
                 ->get();
 
             return [
@@ -357,16 +355,21 @@ class EmployeeService {
         return $leaveCredit;
     }
 
-
     public function getLeaveSettings(int $leave_id) {
-        return DB::table('leaves')
-            ->where('id', $leave_id)
+        return DB::table('leaves_settings')
+            ->where('leave_id', $leave_id)
             ->first();
     }
 
     public function getLeave(int $leave_id) {
         return DB::table('leave_applications')
             ->where('id', $leave_id)
+            ->first();
+    }
+
+    public function getLeaveInfo($id) {
+        return DB::table('leaves')
+            ->where('id', $id)
             ->first();
     }
 

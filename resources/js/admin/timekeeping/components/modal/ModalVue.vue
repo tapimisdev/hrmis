@@ -13,7 +13,7 @@
             <div class="modal-content modern-modal">
                 <!-- Header -->
                 <div class="modal-header modern-header border-bottom">
-                    <div class="header-content">
+                    <div class="header-content mb-3">
                         <div class="icon-wrapper">
                             <i :class="headerIcon"></i>
                         </div>
@@ -32,7 +32,6 @@
                     ></button>
                 </div>
 
-                <!-- Body and Footer -->
                 <slot />
             </div>
         </div>
@@ -59,14 +58,24 @@ export default {
                     return "Overtime";
                 case "leave":
                     return "Record Leave";
+                case "offset":
+                    return "Record Offset";
                 case "absent":
                     return "Mark as Absent";
+                case "so":
+                    return "Mark as SO";
                 case "overtime":
                     return "Add Overtime";
                 case "restday":
                     return "Set as Rest Day";
                 case "ob":
                     return "Record Official Business";
+                case "cancel_leave":
+                    return "Cancel Leave";
+                case "cancel_offset":
+                    return "Cancel Offset"
+                case "cancel_special_order":
+                    return "Cancel Special Order"
                 default:
                     return "Modal";
             }
@@ -78,15 +87,23 @@ export default {
                 case "view_overtime":
                     return "fas fa-business-time";
                 case "leave":
-                    return "fas fa-umbrella-beach";
+                    return "fa-solid fa-plane-departure";
+                case "offset":
+                    return "fa-solid fa-ghost";
                 case "absent":
                     return "fas fa-user-times";
+                case "so":
+                    return "fa-solid fa-car-on";
                 case "overtime":
                     return "fas fa-clock";
                 case "restday":
                     return "fas fa-calendar-day";
                 case "ob":
                     return "fas fa-briefcase";
+                case "cancel_leave":
+                case "cancel_offset":
+                case "cancel_special_order":
+                    return "fas fa-cancel";
                 default:
                     return "fas fa-file-alt";
             }

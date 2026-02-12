@@ -141,11 +141,6 @@ class IndexController extends Controller
                         title="Transfer Unit">
                             <i class="fa-solid fa-retweet"></i>
                         </a>
-                        <a href="' . route('hris.employee.salary', ['employee_no' => $row->employee_no]) . '" 
-                        class="btn btn-info me-1" 
-                        title="Update Salary">
-                            <i class="fa-solid fa-money-bill"></i>
-                        </a>
                         <a href="' . route('hris.employee.information', ['employee_no' => $row->employee_no]) . '" 
                         class="btn btn-primary me-1" 
                         title="Edit">

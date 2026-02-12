@@ -241,24 +241,21 @@
                                             </div>
 
                                             <div class="col-md-2 mb-3">
-                                                <label for="suspensions.{{ $index }}.from_time" class="form-label">From Time</label>
-                                                <input type="time"
+                                                <label for="suspensions.{{ $index }}.shift" class="form-label">Shift</label>
+                                                <select
                                                     class="form-control"
-                                                    name="suspensions[{{ $index }}][from_time]"
-                                                    id="suspensions.{{ $index }}.from_time"
-                                                    value="{{ \Carbon\Carbon::parse($suspension['from_time'])->format('H:i') }}"
-                                                    {{ ( ($suspension['type'] ?? '') !== 'half_day' ) ? 'disabled' : '' }}>
-                                                <div class="error-field"></div>
-                                            </div>
-
-                                            <div class="col-md-2 mb-3">
-                                                <label for="suspensions.{{ $index }}.to_time" class="form-label">To Time</label>
-                                                <input type="time"
-                                                    class="form-control"
-                                                    name="suspensions[{{ $index }}][to_time]"
-                                                    id="suspensions.{{ $index }}.to_time"
-                                                    value="{{ \Carbon\Carbon::parse($suspension['to_time'])->format('H:i') }}"
-                                                    {{ ( ($suspension['type'] ?? '') !== 'half_day' ) ? 'disabled' : '' }}>
+                                                    name="suspensions[{{ $index }}][shift]"
+                                                    id="suspensions.{{ $index }}.shift"
+                                                    {{ ( ($suspension['type'] ?? '') !== 'half_day' ) ? 'disabled' : '' }}
+                                                >
+                                                    <option value=""> - CHOOSE -</option>
+                                                    <option value="morning" {{ ($suspension['shift'] ?? '') === 'morning' ? 'selected' : '' }}>
+                                                        Morning
+                                                    </option>
+                                                    <option value="afternoon" {{ ($suspension['shift'] ?? '') === 'afternoon' ? 'selected' : '' }}>
+                                                        Afternoon
+                                                    </option>
+                                                </select>
                                                 <div class="error-field"></div>
                                             </div>
 
@@ -296,27 +293,26 @@
                                             <div class="error-field"></div>
                                         </div>
 
-                                        <div class="col-md-2 mb-3">
-                                            <label for="suspensions.0.from_time" class="form-label">From Time</label>
-                                            <input type="time"
+                                        <div class="col-md-3 mb-3">
+                                            <label for="suspensions.0.shift" class="form-label">Shift</label>
+                                            <select
                                                 class="form-control"
-                                                name="suspensions[0][from_time]"
-                                                id="suspensions.0.from_time"
-                                                value="{{ isset($suspension['from_time']) ? \Carbon\Carbon::parse($suspension['from_time'])->format('H:i') : '' }}"
-                                                {{ (($suspension['type'] ?? '') !== 'half_day') ? 'disabled' : '' }}>
+                                                name="suspensions[0][shift]"
+                                                id="suspensions.0.shift"
+                                                {{ (($suspension['type'] ?? '') !== 'half_day') ? 'disabled' : '' }}
+                                            >
+                                                <option value=""> - CHOOSE -</option>
+                                                <option value="morning" {{ ($suspension['shift'] ?? '') === 'morning' ? 'selected' : '' }}>
+                                                    Morning
+                                                </option>
+                                                <option value="afternoon" {{ ($suspension['shift'] ?? '') === 'afternoon' ? 'selected' : '' }}>
+                                                    Afternoon
+                                                </option>
+                                            </select>
                                             <div class="error-field"></div>
                                         </div>
 
-                                        <div class="col-md-2 mb-3">
-                                            <label for="suspensions.0.to_time" class="form-label">To Time</label>
-                                            <input type="time"
-                                                class="form-control"
-                                                name="suspensions[0][to_time]"
-                                                id="suspensions.0.to_time"
-                                                value="{{ isset($suspension['to_time']) ? \Carbon\Carbon::parse($suspension['to_time'])->format('H:i') : '' }}"
-                                                {{ (($suspension['type'] ?? '') !== 'half_day') ? 'disabled' : '' }}>
-                                            <div class="error-field"></div>
-                                        </div>
+
 
                                         <div class="col-md-2 d-flex align-items-center">
                                             <button type="button" class="btn btn-danger btn-remove-row">Delete</button>
@@ -461,17 +457,19 @@
                     <div class="error-field"></div>
                 </div>
                 <div class="col-md-2 mb-3">
-                    <label class="form-label" for="suspensions.${suspensionIndex}.from_time">From Time</label>
-                    <input type="time" class="form-control"
-                        name="suspensions[${suspensionIndex}][from_time]"
-                        id="suspensions.${suspensionIndex}.from_time" disabled>
-                    <div class="error-field"></div>
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label class="form-label" for="suspensions.${suspensionIndex}.to_time">To Time</label>
-                    <input type="time" class="form-control"
-                        name="suspensions[${suspensionIndex}][to_time]"
-                        id="suspensions.${suspensionIndex}.to_time" disabled>
+                    <label class="form-label" for="suspensions.${suspensionIndex}.shift">
+                        From Time
+                    </label>
+                    <select
+                        class="form-control"
+                        name="suspensions[${suspensionIndex}][shift]"
+                        id="suspensions.${suspensionIndex}.shift"
+                        disabled
+                    >
+                        <option value=""> - CHOOSE -</option>
+                        <option value="morning">Morning</option>
+                        <option value="afternoon">Afternoon</option>
+                    </select>
                     <div class="error-field"></div>
                 </div>
                 <div class="col-md-2 d-flex align-items-center">
@@ -499,14 +497,11 @@
         function bindSuspendSelectChange(index) {
             $(`#suspensions\\.${index}\\.type`).on('change', function () {
                 const val = $(this).val();
-                const fromInput = $(`#suspensions\\.${index}\\.from_time`);
-                const toInput   = $(`#suspensions\\.${index}\\.to_time`);
+                const shift = $(`#suspensions\\.${index}\\.shift`);
                 if (val === 'whole_day') {
-                    fromInput.val('').prop('disabled', true);
-                    toInput.val('').prop('disabled', true);
+                    shift.val('').prop('disabled', true);
                 } else if (val === 'half_day') {
-                    fromInput.prop('disabled', false);
-                    toInput.prop('disabled', false);
+                    shift.prop('disabled', false);
                 }
             });
         }

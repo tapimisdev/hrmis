@@ -5,6 +5,7 @@ namespace App\Http\Requests\Employee;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreLeaveApplication extends FormRequest
 {
@@ -25,6 +26,7 @@ class StoreLeaveApplication extends FormRequest
     public function rules(): array
     {
         return [
+            'isDirectlyApproved' => ['nullable'],
             'user_id'       => ['nullable', 'exists:users,id'],
             'leave_id'      => ['required', 'exists:leaves,id'],
             'reason'        => ['required', 'string', 'max:500'],
@@ -40,4 +42,30 @@ class StoreLeaveApplication extends FormRequest
             // 'approvers.*.*' => ['nullable', 'exists:users,id'],
         ];
     }
+
+    public function withValidator(Validator $validator)
+    {
+        $validator->after(function ($validator) {
+
+            $errors = $validator->errors();
+
+            // Normalize attachments.* → attachments
+            if (
+                $errors->has('attachments') ||
+                collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'attachments.'))
+            ) {
+                $messages = [];
+
+                foreach ($errors->keys() as $key) {
+                    if ($key === 'attachments' || str_starts_with($key, 'attachments.')) {
+                        $messages = array_merge($messages, $errors->get($key));
+                        $errors->forget($key);
+                    }
+                }
+
+                $errors->add('attachments', array_unique($messages));
+            }
+        });
+    }
+
 }

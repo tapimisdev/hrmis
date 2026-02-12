@@ -41,7 +41,6 @@ class CreditsController extends Controller
             return redirect()->route('hris.employee.information');
         }
 
-
         if($leaves['status'] == 'eligible') {
 
             $leaveTypes = $leaves['data'];
@@ -51,20 +50,30 @@ class CreditsController extends Controller
 
                 $credits = $this->employeeService->getLeaveCredits($employee_no, $types->leave_id, false);
                 $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $types->leave_id, true);
+                $leaveSettings = $this->employeeService->getLeaveSettings($types->leave_id);
+
                 $currBal = $credits->filter(function($q) use ($monthYear) {
                     return ($q->as_of ?? '') === $monthYear;
                 })->values()->pluck('balance')->first() ?? 0;
 
 
+                $hasAssignedDeduct = is_null($leaveSettings->deduct_credit_id)
+                    || $types->leave_id == $leaveSettings->deduct_credit_id;
+
+                $hasDeduction = !is_null($leaveSettings->deduct_credit_id);
+
                 $data[] = [
                     'leave' => $types,
                     'credits' => $credits,
                     'latestCredits' => $latestCredits,
-                    'currentMonthBalance' => $currBal 
+                    'currentMonthBalance' => $currBal,
+                    'hasAssignedDeduct' => $hasAssignedDeduct,
+                    'hasDeduction'  => $hasDeduction
                 ];    
             } 
+
             
-            return view('employee.pages.credits.leave', compact('isExists', 'data'));
+            return view('employee.pages.credits.leave', compact('isExists', 'data', 'leaveSettings'));
 
         }
 

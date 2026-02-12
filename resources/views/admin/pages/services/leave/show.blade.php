@@ -96,10 +96,7 @@
                     <div class="card-body p-5">
                         <h2 class="text-uppercase mb-4 fw-bold border-bottom border-3 w-100 pb-3">{{$data->leave_name}}</h2>
                         
-                        <div class="mt-3 mb-5">
-                            @if($data->status == 'pending' && !$hasBalance)
-                                <div class="alert alert-danger text-uppercase fw-bold text-center ">This employee has insuficcient leave credits. Please be advise that this application can be still approved.</div>
-                            @endif
+                        <div class="mt-3 mb-4">
                             <div class="mt-5">
                                 <table class="table table-bordered table-sm mb-0">
                                     <thead class="bg-primary text-white">
@@ -112,7 +109,7 @@
                                             <th class="p-2">Credits</th>
                                         </tr>
                                     </thead>
-                                   <tbody>
+                                    <tbody>
                                         @php $totalCredits = 0; @endphp
                                         @foreach($data->dates as $item)
                                             @php
@@ -134,8 +131,8 @@
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="2" class="bg-warning text-end pe-5 fw-bold text-uppercase">Total :</td>
-                                            <td class="bg-warning fw-bold text-uppercase p-2">{{ number_format($totalCredits, 2) }}</td>
+                                            <td colspan="2" class="bg-danger text-end pe-5 fw-bold text-uppercase">Total :</td>
+                                            <td class="bg-danger fw-bold text-uppercase p-2">{{ number_format($totalCredits, 2) }}</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -143,40 +140,47 @@
                         </div>
 
                         @if($data->status == 'pending')
-                            <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
-                                <div class="d-flex align-items-center gap-4">
-                                    <h5 class="fw-bold text-uppercase text-center mb-0">
-                                        <div>Leave Credit Balance</div>
-                                        <div>
-                                            {{ \Carbon\Carbon::createFromDate(now()->year, $month ?? now()->month, 1)->format('F') }}
-                                            ({{ now()->year }})
-                                        </div>
-                                    </h5>
-                                    <h2 class="fw-bold px-4 py-3 bg-primary rounded-3 mb-0">
-                                        {{$computation['remaining_balance']}}
-                                    </h2>
-                                </div>
+                            @if($computation['showBreakdown'])
+                                @if($data->leave_id !== $computation['toBeDeductedFromCredits']->id)
+                                    <div class="alert alert-danger text-uppercase mb-4">
+                                        Note: Credits applied for the employee’s <b>{{ $data->name }}</b> will be deducted from <b>{{ $computation['toBeDeductedFromCredits']->name }}</b>, as defined in the <a target="_blank" href="{{route('settings.leaves.assign')}}">leave configuration module </a>.
+                                    </div>
+                                @endif
+                                <div class="d-flex flex-wrap justify-content-between gap-5 mt-3">
+                                    <div class="d-flex align-items-center gap-4">
+                                        <h5 class="fw-bold text-uppercase text-center mb-0">
+                                            <div>Credit Balance</div>
+                                            <div>
+                                                {{ \Carbon\Carbon::createFromDate(now()->year, $month ?? now()->month, 1)->format('F') }}
+                                                ({{ now()->year }})
+                                            </div>
+                                        </h5>
+                                        <h2 class="fw-bold px-4 py-3 bg-primary rounded-3 mb-0">
+                                            {{$computation['remaining_balance']}}
+                                        </h2>
+                                    </div>
 
-                                <div class="d-flex align-items-center gap-4">
-                                    <h5 class="fw-bold text-uppercase text-center mb-0">
-                                        <div>To be deducted</div>
-                                        <div></div>
-                                    </h5>
-                                    <h2 class="fw-bold px-4 py-3 bg-danger rounded-3 mb-0">
-                                        {{$computation['deduction']}}
-                                    </h2>
-                                </div>
+                                    <div class="d-flex align-items-center gap-4">
+                                        <h5 class="fw-bold text-uppercase text-center mb-0">
+                                            <div>Deduction</div>
+                                            <div></div>
+                                        </h5>
+                                        <h2 class="fw-bold px-4 py-3 bg-danger rounded-3 mb-0">
+                                            {{$computation['deduction']}}
+                                        </h2>
+                                    </div>
 
-                                <div class="d-flex align-items-center gap-4">
-                                    <h5 class="fw-bold text-uppercase text-center mb-0">
-                                        <div>New Balance</div>
-                                        <div></div>
-                                    </h5>
-                                    <h2 class="fw-bold px-4 py-3 {{ $hasBalance ? 'bg-info' : 'bg-danger' }} rounded-3 mb-0">
-                                        {{$computation['new_balance']}}
-                                    </h2>
-                                </div>
-                            </div>
+                                    <div class="d-flex align-items-center gap-4">
+                                        <h5 class="fw-bold text-uppercase text-center mb-0">
+                                            <div>New Balance</div>
+                                            <div></div>
+                                        </h5>
+                                        <h2 class="fw-bold px-4 py-3 {{ $hasBalance ? 'bg-info' : 'bg-danger' }} rounded-3 mb-0">
+                                            {{$computation['new_balance']}}
+                                        </h2>
+                                    </div>
+                                </div>                                
+                            @endif
                         @endif
                         <div class="w-100 text-center mt-5">
                             <a href="{{ route('hris.employee.leave-credits', ['employee_no' => $employee_no]) }}" 
@@ -188,7 +192,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-4 mb-3">
+                <!-- <div class="mt-4 mb-3">
                     <small class="text-uppercase fw-bold text-muted">Your Approvers</small>
 
                     @if (!empty($data->approvals) && count($data->approvals) > 0)
@@ -229,7 +233,7 @@
                     @else
                         <div class="fst-italic text-muted text-uppercase mt-3">No approvers assigned.</div>
                     @endif
-                </div>
+                </div> -->
             </div>
         
             {{-- Action Buttons --}}

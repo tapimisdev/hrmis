@@ -14,6 +14,7 @@
     <div class="collapse collapsable {{ Str::contains(request()->path(), 'admin/payroll/') ? 'show' : '' }}" 
         id="payroll">
         <ul class="nested-list">
+
             @can('hr.salary_payroll.view')
                 <li class="nested-item">
                     <a href="{{ route('salary-pay.index') }}"
@@ -45,6 +46,14 @@
                 class="{{ request()->is('admin/payroll/pera-rata*') ? 'active' : '' }}">
                     <i class="fa-solid fa-money-bill-1-wave"></i>
                     <span>Pera & Rata</span>
+                </a>
+            </li>
+            <hr class="mt-2 mb-2">
+            <li class="nested-item">
+                <a href="{{ route('registry.index') }}"
+                class="{{ request()->is('admin/payroll/import/registry*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-upload"></i>
+                    <span>Import Registry</span>
                 </a>
             </li>
         </ul>

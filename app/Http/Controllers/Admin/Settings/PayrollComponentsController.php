@@ -54,7 +54,7 @@ class PayrollComponentsController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Payroll component created successfully',
-                'redirect' => url()->current(),
+                'redirect' => route('payroll-components.index', ['slug' => $validated['slug']]),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -93,7 +93,7 @@ class PayrollComponentsController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Payroll component updated successfully',
-                'redirect' => url()->current(),
+                'redirect' => route('settings.payroll-components.index'),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

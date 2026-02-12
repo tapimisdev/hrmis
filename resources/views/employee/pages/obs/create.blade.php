@@ -13,8 +13,18 @@
     </x-header-employee>
 
     <div class="card rounded-3">
-        <div class="card-header fw-bold d-flex align-items-center">
-            <i class="fa-solid fa-file-pen me-2"></i> Official Business / Pass Slip Application Form
+        <div class="card-header fw-bold d-flex align-items-center text-uppercase py-3">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div>
+                    <i class="fa-solid fa-file-pen me-2"></i> Official Business / Pass Slip Application Form
+                </div>
+                <div>
+                    <a href="#" class="btn btn-dark">
+                        <i class="fa-solid fa-download me-1"></i>
+                            Form Download
+                    </a>
+                </div>
+            </div>
         </div>
         <form method="POST" action="{{ route('obs.store') }}" id="form" enctype="multipart/form-data">
         @csrf
@@ -57,13 +67,6 @@
                     <div class="error-field"></div>
                 </div>
 
-                {{-- Time Out --}}
-                <div class="col-md-6 mb-3">
-                    <label for="time_out" class="form-label fw-semibold">Time Out</label>
-                    <input type="time" name="time_out" id="time_out" class="form-control">
-                    <div class="error-field"></div>
-                </div>
-
                 {{-- Time In --}}
                 <div class="col-md-6 mb-3">
                     <label for="time_in" class="form-label fw-semibold">Time In</label>
@@ -71,9 +74,16 @@
                     <div class="error-field"></div>
                 </div>
 
+                {{-- Time Out --}}
+                <div class="col-md-6 mb-3">
+                    <label for="time_out" class="form-label fw-semibold">Time Out</label>
+                    <input type="time" name="time_out" id="time_out" class="form-control">
+                    <div class="error-field"></div>
+                </div>
+
                 {{-- Mode of Transport --}}
                 <div class="col-md-6 mb-3">
-                    <label for="mode_of_transport" class="form-label fw-semibold">Mode of Transport</label>
+                    <label for="mode_of_transport" class="form-label fw-semibold">Mode of Transport <span class="text-danger">*</span></label>
                     <input type="text" name="mode_of_transport" id="mode_of_transport" class="form-control" placeholder="Car, Bus, Train...">
                     <div class="error-field"></div>
                 </div>
@@ -92,16 +102,23 @@
                     <div class="error-field"></div>
                 </div>
 
-                {{-- Note --}}
+                {{-- Notes --}}
                 <div class="col-md-12 mb-3">
-                    <label for="remarks" class="form-label fw-semibold">Note</label>
-                    <textarea name="remarks" id="remarks" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
+                    <label for="remarks" class="form-label fw-semibold">Notes</label>
+                    <textarea name="remarks" id="remarks" class="form-control" rows="4" placeholder="Additional notes..."></textarea>
                     <div class="error-field"></div>
                 </div>
 
                 {{-- Attachments --}}
                 <div class="col-md-12 mb-3">
-                    <label for="attachments" class="form-label fw-semibold">Attachments</label>
+                    <div class="alert alert-info text-muted fw-bold text-uppercase mt-3 mb-4" style="font-size: 10px">Note: 
+                        <br>
+                        <br>
+                        Accepts only the following files (jpg,jpeg,png,doc,docx,pdf)
+                        <br>
+                        Maximum of 5 files
+                    </div>
+                    <label for="attachments" class="form-label fw-semibold">Attachments <span class="text-danger">*</span></label>
                     <input type="file" name="attachments[]" id="attachments" class="form-control" multiple>
                     <div class="error-field"></div>
                 </div>
