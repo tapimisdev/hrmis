@@ -32,7 +32,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('portion_hazard_pay');
             $table->unsignedTinyInteger('portion_basic_pay');
             $table->unsignedTinyInteger('portion_longevity_pay');
-            
+
             $table->decimal('annual_taxable', 15, 2)->default(0);
             $table->decimal('annual_tax', 15, 2)->default(0);
             $table->decimal('monthly_tax', 15, 2)->default(0);
@@ -80,6 +80,36 @@ return new class extends Migration
             $table->tinyText('remarks');
 
             $table->timestamps();
+        });
+
+        Schema::create('tax_computation_logs', function (Blueprint $table) {
+            $table->id();
+
+            // Identifiers
+            $table->string('employee_no', 50)->index();
+
+            // Core amounts (use DECIMAL for money accuracy)
+            $table->decimal('annual_income', 15, 2)->default(0);
+            $table->decimal('fixed_tax', 15, 2)->default(0);
+            $table->decimal('tax_rate', 6, 2)->default(0); // e.g., 20.00
+            $table->decimal('excess_over', 15, 2)->default(0);
+            $table->decimal('excess_amount', 15, 2)->default(0);
+            $table->decimal('tax', 15, 2)->default(0);
+
+            // Bracket range (stored as decimals, not strings)
+            $table->decimal('bracket_from', 15, 2)->nullable();
+            $table->decimal('bracket_to', 15, 2)->nullable();
+
+            // Metadata / notes
+            $table->string('remarks', 255)->nullable();
+
+            // Optional: store the entire raw payload for auditing/debugging
+            $table->json('raw_payload')->nullable();
+
+            $table->timestamps();
+
+            // If you often query by employee + time
+            $table->index(['employee_no', 'created_at']);
         });
     }
 
