@@ -62,6 +62,8 @@ export default {
                     return "Record Offset";
                 case "absent":
                     return "Mark as Absent";
+                case "so":
+                    return "Mark as SO";
                 case "overtime":
                     return "Add Overtime";
                 case "restday":
@@ -72,6 +74,8 @@ export default {
                     return "Cancel Leave";
                 case "cancel_offset":
                     return "Cancel Offset"
+                case "cancel_special_order":
+                    return "Cancel Special Order"
                 default:
                     return "Modal";
             }
@@ -88,6 +92,8 @@ export default {
                     return "fa-solid fa-ghost";
                 case "absent":
                     return "fas fa-user-times";
+                case "so":
+                    return "fa-solid fa-car-on";
                 case "overtime":
                     return "fas fa-clock";
                 case "restday":
@@ -96,6 +102,7 @@ export default {
                     return "fas fa-briefcase";
                 case "cancel_leave":
                 case "cancel_offset":
+                case "cancel_special_order":
                     return "fas fa-cancel";
                 default:
                     return "fas fa-file-alt";

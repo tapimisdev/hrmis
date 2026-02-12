@@ -380,7 +380,7 @@
 
         post(url);
 
-       $('#date_hired_company, #employment_type_id, #employee_no').on('change', function() {
+        $('#date_hired_company, #employment_type_id, #employee_no').on('change', function() {
             const employmentType = $('#employment_type_id').val();
             const dateHired = $('#date_hired_company').val();
             const biometricsId = $('#employee_no').val();
@@ -404,9 +404,6 @@
                 });
             }
         });
-
-
-
 
         $('#division_id').on('change', function () {
             const id = $(this).val();

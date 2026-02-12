@@ -54,7 +54,7 @@ class Admin extends Controller
         $leaveToday = DB::table('leave_applications as la')
             ->join('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
             ->whereDate('ld.date', $today)
-            ->where('ld.date.isActive', true)
+            ->where('ld.isActive', true)
             ->select('la.name', DB::raw('COUNT(DISTINCT la.employee_no) as total'))
             ->groupBy('la.name')
             ->pluck('total', 'name')

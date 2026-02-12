@@ -589,6 +589,19 @@ class ApplicationController extends Controller
                 );
         }
 
+        # Special order applications
+        if (in_array('special_order', $types)) {
+            $queries[] = DB::table('special_order_applications as a')
+                ->join('special_order_dates as d', 'a.id', '=', 'd.special_order_application_id')
+                ->where('d.isActive', true)
+                ->where('a.user_id', $user->id)
+                ->select(
+                    DB::raw("'special order' as title"),
+                    'a.status',
+                    'd.date'
+                );
+        }
+
         // OBS applications (date range)
         $obsApplications = collect();
 

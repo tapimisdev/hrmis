@@ -62,7 +62,11 @@ class TimelogStatisticsController extends Controller
     }
 
     public function analyzeEmployeeTimelogs($data, $startOfMonth, $endOfMonth) {
+        
         $results = [];
+        
+        $accessedEmployees = []; // To collect accessed employee details
+        $notAccessedEmployees = []; // To collect not accessed employee details
 
         foreach ($data as $employeeId => $logs) {
             $absences = 0;
@@ -71,6 +75,7 @@ class TimelogStatisticsController extends Controller
             $discrepancies = 0;
             $leaves = 0;
             $offsets = 0;
+            $noLogin = false;
             $breakOutInDiscrepancies = 0;
             $absenceDates = [];
             $lateDates = [];
@@ -122,6 +127,29 @@ class TimelogStatisticsController extends Controller
                 ->pluck('offset_dates.date')
                 ->toArray();
 
+            $approvedSODates = DB::table('special_order_dates')
+                ->join('special_order_applications', 'special_order_dates.special_order_application_id', '=', 'special_order_applications.id')
+                ->where('special_order_applications.employee_no', $employeeId)
+                ->where('special_order_applications.status', 'approved')
+                ->where('special_order_dates.isActive', true)
+                ->whereBetween('special_order_dates.date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->pluck('special_order_dates.date')
+                ->toArray();
+
+            $noLoginEmployee = DB::table('employee_information as ei')
+                ->leftJoin('users as u', 'ei.user_id', '=', 'u.id')
+                ->where('ei.employee_no', $employeeId)
+                ->whereColumn('u.created_at', '=', 'u.updated_at')
+                ->count();
+            
+            $hasAccessed = $noLoginEmployee == 0;
+
+            if ($hasAccessed) {
+                $accessedEmployees[] = $logs['employee'];
+            } else {
+                $notAccessedEmployees[] = $logs['employee'];
+            }
+
             // Generate expected working dates based on work_schedule within the full month
             $expectedWorkingDates = [];
             $currentDate = $startDate->copy();
@@ -138,8 +166,10 @@ class TimelogStatisticsController extends Controller
             $leaves = count($leaveDates);
             $offsetDates = array_intersect($approvedOffsetDates, $expectedWorkingDates);
             $offsets = count($offsetDates);
+            $soDates = array_intersect($approvedSODates, $expectedWorkingDates);
+            $so = count($soDates);
 
-            $excludedDates = array_merge($approvedLeaveDates, $approvedOffsetDates); // Dates not to count as absences
+            $excludedDates = array_merge($approvedLeaveDates, $approvedOffsetDates, $approvedSODates); // Dates not to count as absences
 
             // Map logs by date for quick lookup
             $logsByDate = $logs['logs']->keyBy('date');
@@ -235,6 +265,7 @@ class TimelogStatisticsController extends Controller
                 'discrepancies' => $discrepancies,
                 'leaves' => $leaves,
                 'offsets' => $offsets,
+                'special_order' => $so,
                 'breakOutInDiscrepancies' => $breakOutInDiscrepancies,
                 'details' => [
                     'absence_dates' => $absenceDates,
@@ -247,6 +278,15 @@ class TimelogStatisticsController extends Controller
                 ],
             ];
         }
+
+        $results['accessed'] = [
+            'count' => count($accessedEmployees),
+            'details' => $accessedEmployees, 
+        ];
+        $results['notAccessed'] = [
+            'count' => count($notAccessedEmployees),
+            'details' => $notAccessedEmployees, 
+        ];
 
         return $results;
     }
@@ -291,7 +331,10 @@ class TimelogStatisticsController extends Controller
                 'topLate' => $this->findTop($data, 'lates'),
                 'topBreakOutInDiscrepancies' => $this->findTop($data, 'breakOutInDiscrepancies'),
                 'topLeave' => $this->findTop($data, 'leaves'),
-                'topOffset' => $this->findTop($data, 'offsets')
+                'topOffset' => $this->findTop($data, 'offsets'),
+                'topSO' => $this->findTop($data, 'special_order'),
+                'loginAccessed' => $data['accessed'],
+                'loginNotAccessed' => $data['notAccessed'],
             ];
 
             return response()->json([

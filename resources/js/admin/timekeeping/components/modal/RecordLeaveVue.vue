@@ -202,7 +202,6 @@ export default {
         },
 
         async submitLeave() {
-            console.log(this.user_id)
             if (this.loading) return;
 
             this.loading = true;

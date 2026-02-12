@@ -3,7 +3,7 @@
         <div class="modal-confirm">
             <i class="fa-solid fa-triangle-exclamation icon"></i>
             <p>
-                Do you confirm marking this employee as absent on
+                Are you sure you want to mark this employee as <strong class="text-uppercase">absent</strong> on
                 {{ formattedDate }}?
             </p>
 

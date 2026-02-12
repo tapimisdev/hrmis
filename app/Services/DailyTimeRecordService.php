@@ -136,7 +136,7 @@ class DailyTimeRecordService {
         // Totals
         $TOTAL_INCOMPLETE_LOGS = 0;
         $TOTAL_PENDING_LEAVES = 0;
-        $TOTAL_OFFSET = $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
+        $TOTAL_OFFSET = $TOTAL_SO = $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
         $TOTAL_OVERTIME = $TOTAL_ACTUAL_PRESENCE = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
         $DOUBLE_EXCESS = 0;
 
@@ -245,6 +245,17 @@ class DailyTimeRecordService {
                 $remarks[] = $offset_status;
             }
 
+            /** ----------------- OFFSET CHECK ------------- **/
+            $so = $this->timelogs_services->checkIfSO($date, $userId);
+            $is_so = $so['is_so'];
+            $so_status = $so['status'];
+          
+            if ($is_so) {
+                $TOTAL_SO++;
+                $remarks[] = $so_status;
+            }
+
+
             if ($empty_log) {
                 if ($is_future) {
                     $computedData[] = $this->timelogs_services->insertNoData($is_leave ? $leave_status : $remarks, $userId, $date['date']);
@@ -281,7 +292,7 @@ class DailyTimeRecordService {
                     continue;
                 }
 
-                if (!$is_future && !$is_leave && !$is_restday) {
+                if (!$is_future && !$is_leave && !$is_restday && !$is_offset && !$is_so) {
                     $remarks[] = 'absent';
                     $TOTAL_ABSENT++;
                     $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);

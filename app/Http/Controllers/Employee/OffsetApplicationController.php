@@ -48,7 +48,7 @@ class OffsetApplicationController extends Controller
     public function create()
     {
         $myId = Auth::id();
-        $data = $this->applicationService->getData(['leave', 'offset', 'obs']);
+        $data = $this->applicationService->getData(['leave', 'offset', 'obs', 'special_order']);
 
         // $approvers = $data['approvers'];
         // $approvers = $approvers->map(function ($collection) use ($myId) {

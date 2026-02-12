@@ -19,7 +19,7 @@ class CalendarController extends Controller
     public function index(Request $request) {
         if($request->ajax()) {
 
-            $application = $this->applicationService->getData(['leave', 'offset', 'obs'])['applications'];
+            $application = $this->applicationService->getData(['leave', 'offset', 'obs', 'special_order'])['applications'];
             
             $applications = $application->map(function ($item) {
 
@@ -39,7 +39,7 @@ class CalendarController extends Controller
             });
 
             $applicationsOnly = $applications->filter(function ($item) {
-                return in_array(strtolower($item->title), ['leave', 'offset', 'obs']);
+                return in_array(strtolower($item->title), ['leave', 'offset', 'obs', 'special order']);
             });
 
             $pendingApplications = $applicationsOnly->filter(function ($item) {

@@ -58,8 +58,9 @@ class LeaveApplicationController extends Controller
         }
 
         $myId = Auth::id();
-        $data = $this->applicationService->getData(['leave', 'offset', 'obs']);
+        $data = $this->applicationService->getData(['leave', 'offset', 'obs', 'special_order']);
         $leaves = $data['leaves'];
+        
         // $approvers = $data['approvers'];
         // $approvers = $approvers->map(function ($collection) use ($myId) {
         //     return $collection->reject(function ($approver) use ($myId) {

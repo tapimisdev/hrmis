@@ -175,9 +175,14 @@ import ViewOvertimeVue from './modal/ViewOvertimeVue.vue';
 import MarkAsAbsentVue from './modal/MarkAsAbsentVue.vue'
 import CancelLeaveVue from './modal/CancelLeaveVue.vue';
 import CancelOffsetVue from './modal/CancelOffsetVue.vue';
+import MarkAsSoVue from './modal/MarkAsSoVue.vue';
+import CancelSOVue from './modal/CancelSOVue.vue';
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue, CancelLeaveVue, CancelOffsetVue },
+    components: { 
+      TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, 
+      AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue, 
+      MarkAsSoVue, CancelLeaveVue, CancelOffsetVue, CancelSOVue },
     props: {
         employee_no: { type: [String, Number], required: true },
         employee_id: { type: [String, Number], required: true },
@@ -206,10 +211,12 @@ export default {
                 leave: 'RecordLeaveVue',
                 offset: 'RecordOffsetVue',
                 overtime: 'AddOvertimeVue',
+                so: 'MarkAsSoVue',
                 view_overtime: 'ViewOvertimeVue',
                 absent: 'MarkAsAbsentVue',
                 cancel_offset: 'CancelOffsetVue',
                 cancel_leave: 'CancelLeaveVue',
+                cancel_special_order: 'CancelSOVue',
             };
             return components[this.modalType] || null;
         },
@@ -236,6 +243,7 @@ export default {
                 this.information = data.information;
                 this.logs = data.computedData;
                 this.summary = data.summary;
+                console.log(data);
                 this.$emit('send-payload', data);
             } catch (error) {
                 console.error("Error fetching logs:", error);
@@ -259,6 +267,7 @@ export default {
             if (this.hasRemark(remarks, 'offset')) return 'row-offset';
             if (this.hasRemark(remarks, 'holiday')) return 'row-holiday';
             if (this.hasRemark(remarks, 'absent')) return 'row-absent';
+            if (this.hasRemark(remarks, 'special order')) return 'row-special-order';
             return '';
         },
         getStatusBadge(log) {
@@ -315,6 +324,13 @@ export default {
                         text: 'Absent',
                     };
 
+                case this.hasRemark(remarks, 'special order'):
+                    return {
+                        class: 'status-so',
+                        icon: 'fa-solid fa-car-on',
+                        text: 'Special Order',
+                    };
+
                 default:
                     return null;
             }
@@ -325,86 +341,115 @@ export default {
             if (remarkLower === 'late' || remarkLower === 'undertime') return 'remark-warning';
             return '';
         },
+        
         getActions(remarks) {
-          const hasLeave = this.hasRemark(remarks, 'leave');
-          const hasOffset = this.hasRemark(remarks, 'offset');
 
-          const isLeaveType = this.information.employment_type_id === 1;
-          const isOffsetType = this.information.employment_type_id === 2;
+            const hasLeave = this.hasRemark(remarks, 'leave');
+            const hasOffset = this.hasRemark(remarks, 'offset');
+            const hasSpecialOrder = this.hasRemark(remarks, 'special order');
 
-          const actions = [];
+            const isLeaveType = this.information.employment_type_id === 1;
+            const isOffsetType = this.information.employment_type_id === 2;
 
-          if (hasLeave || hasOffset) {
-              if (hasLeave && isLeaveType) {
-                  actions.push({
-                      type: 'cancel_leave',
-                      icon: 'fa-solid fa-ban',
-                      text: 'Cancel Leave',
-                      danger: true
-                  });
-              }
+            /* -------------------------------------------------
+              ✅ PRIORITY: IF SPECIAL ORDER → ONLY CANCEL SO
+            --------------------------------------------------*/
+            if (hasSpecialOrder) {
+                return [
+                    {
+                        type: 'cancel_special_order',
+                        icon: 'fa-solid fa-ban',
+                        text: 'Cancel Special Order',
+                        danger: true
+                    }
+                ];
+            }
 
-              if (hasOffset) {
-                  actions.push({
-                      type: 'cancel_offset',
-                      icon: 'fa-solid fa-ban',
-                      text: 'Cancel Offset',
-                      danger: true
-                  });
-              }
+            const actions = [];
 
-              return actions;
-          }
+            /* -------------------------------------------------
+              Cancel Leave / Offset
+            --------------------------------------------------*/
+            if (hasLeave && isLeaveType) {
+                return [
+                    {
+                        type: 'cancel_leave',
+                        icon: 'fa-solid fa-ban',
+                        text: 'Cancel Leave',
+                        danger: true
+                    }
+                ];
+            }
 
-          actions.push(
-              { 
-                  type: 'adjustment', 
-                  icon: 'fa-solid fa-clock-rotate-left', 
-                  text: 'Add/Adjust Time' 
-              },
-              { 
-                  type: 'overtime', 
-                  icon: 'fa-solid fa-hourglass-half', 
-                  text: 'Add Overtime' 
-              }
-          );
+            if (hasOffset) {
+                return [
+                    {
+                        type: 'cancel_offset',
+                        icon: 'fa-solid fa-ban',
+                        text: 'Cancel Offset',
+                        danger: true
+                    }
+                ];
+            }
 
-          if (isLeaveType) {
-              actions.push({
-                  type: 'leave',
-                  icon: 'fa-solid fa-plane-departure',
-                  text: 'Record Leave'
-              });
-              actions.push({
-                  type: 'offset',
-                  icon: 'fa-solid fa-ghost',
-                  text: 'Record Offset'
-              });
-          }
+            /* -------------------------------------------------
+              Default Actions
+            --------------------------------------------------*/
 
-          if (isOffsetType) {
-              actions.push({
-                  type: 'offset',
-                  icon: 'fa-solid fa-ghost',
-                  text: 'Record Offset'
-              });
-          }
+            actions.push(
+                {
+                    type: 'adjustment',
+                    icon: 'fa-solid fa-clock-rotate-left',
+                    text: 'Add/Adjust Time'
+                },
+                {
+                    type: 'overtime',
+                    icon: 'fa-solid fa-hourglass-half',
+                    text: 'Add Overtime'
+                },
+                {
+                    type: 'so',
+                    icon: 'fa-solid fa-car-on',
+                    text: 'Mark as SO'
+                }
+            );
 
-          if (
-              !this.hasRemark(remarks, 'absent') &&
-              !this.hasRemark(remarks, 'restday')
-          ) {
-              actions.push({
-                  type: 'absent',
-                  icon: 'fa-solid fa-user-xmark',
-                  text: 'Mark Absent',
-                  danger: true
-              });
-          }
+            if (isLeaveType) {
+                actions.push({
+                    type: 'leave',
+                    icon: 'fa-solid fa-plane-departure',
+                    text: 'Record Leave'
+                });
 
-          return actions;
+                actions.push({
+                    type: 'offset',
+                    icon: 'fa-solid fa-ghost',
+                    text: 'Record Offset'
+                });
+            }
+
+            if (isOffsetType) {
+                actions.push({
+                    type: 'offset',
+                    icon: 'fa-solid fa-ghost',
+                    text: 'Record Offset'
+                });
+            }
+
+            if (
+                !this.hasRemark(remarks, 'absent') &&
+                !this.hasRemark(remarks, 'restday')
+            ) {
+                actions.push({
+                    type: 'absent',
+                    icon: 'fa-solid fa-user-xmark',
+                    text: 'Mark Absent',
+                    danger: true
+                });
+            }
+
+            return actions;
         },
-
         openModal(type, index) {
             this.modalType = type;
             this.dateIndex = index + 1;

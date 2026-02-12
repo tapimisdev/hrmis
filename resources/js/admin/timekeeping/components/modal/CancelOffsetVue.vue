@@ -8,7 +8,7 @@
 
             <div class="modal-confirm-footer">
                 <button
-                    @click="cancelOffset()"
+                    @click="cancel()"
                     class="btn py-3 px-4 btn-primary"
                 >
                     <i class="fa-solid fa-check me-2"></i>
@@ -44,7 +44,7 @@ export default {
         close() {
             $("#myModal").modal("hide");
         },
-        async cancelOffset() {
+        async cancel() {
             this.loading = true;
             this.errors = {};
 

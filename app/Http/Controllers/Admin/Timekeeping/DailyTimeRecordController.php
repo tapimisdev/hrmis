@@ -67,29 +67,22 @@ class DailyTimeRecordController extends Controller
      */
     public function show(Request $request, $employee_no)
     {
-        $user = DB::table('employee_personal as ep')
-            ->leftJoin('employee_information as ei', 'ep.employee_no', 'ei.employee_no')
-            ->leftJoin('employee_organization as eo', 'ep.employee_no', 'eo.employee_no')
-            ->leftJoin('positions as p', 'eo.position_id', 'p.id')
-            ->leftJoin('units as u', 'eo.unit_id', 'u.id')
+        $user = DB::table('employee_organization')
+            ->leftJoin('employee_information', 'employee_organization.employee_no', '=', 'employee_information.employee_no')
+            ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
+            ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
             ->select(
-                'ei.user_id',
-                
-                'eo.employment_type_id',
-
-                'ep.firstname',
-                'ep.middlename',
-                'ep.lastname',
-                'ep.suffix',
-                'ep.age',
-
-                'p.code as position_code',
-                'p.name as position_name',
-
-                'u.code as unit_code',
-                'u.name as unit_name',
+                'employee_personal.firstname',
+                'employee_personal.middlename',
+                'employee_personal.lastname',
+                'employee_personal.suffix',
+                'employee_organization.employment_type_id',
+                'positions.name as position_name',
+                'users.id as user_id'
             )
-            ->where('ep.employee_no', $employee_no)
+            ->where('employee_organization.employee_no', $employee_no)
+            ->orderBy('employee_organization.id', 'desc') // Order by id descending to get the latest (max id)
             ->first();
 
         try {

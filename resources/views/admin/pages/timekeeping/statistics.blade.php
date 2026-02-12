@@ -1,6 +1,22 @@
 @extends('admin.layouts.app')
 @section('styles')
 <style>
+    #chartjs-tooltip {
+        background: inherit;
+        border-radius: 8px;
+        padding: 10px;
+        width: 300px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+        pointer-events: auto;
+    }
+
+    .tooltip-scroll {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 8px;
+        font-size: 13px;
+    }
+
    canvas{max-height:400px}
    .card-body{
    position:relative;
@@ -120,7 +136,20 @@
             </div>
         </div>
       <div class="row">
-         <div class="col-md-6">
+        <div class="col-md-12 mb-3">
+            <div class="card shadow">
+               <div class="card-body pb-4">
+                  <h6 class="fw-bold mb-3 text-uppercase mb-4">ESS Portal Statuses</h6>
+                  <div class="chart-skeleton">
+                     <div class="skeleton-center">
+                        <div class="skeleton-ring"></div>
+                     </div>
+                  </div>
+                  <canvas id="noLoginChart"></canvas>
+               </div>
+            </div>
+         </div>
+         <div class="col-md-6 mb-4">
             <div class="card shadow">
                <div class="card-body pb-4">
                   <h6 class="fw-bold mb-3 text-uppercase mb-4">Overall Distribution</h6>
@@ -133,7 +162,7 @@
                </div>
             </div>
          </div>
-         <div class="col-md-6">
+         <div class="col-md-6 mb-4">
             <div class="card shadow">
                <div class="card-body pb-4">
                   <h6 class="fw-bold mb-3 text-uppercase mb-4">Lates vs Undertimes</h6>
@@ -148,24 +177,20 @@
          </div>
       </div>
       <div class="row mt-4">
-         <div class="col-md-6">
+        <div class="col-md-6 mb-4">
             <div class="card shadow">
                <div class="card-body pb-4">
-                  <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Absences</h6>
+                  <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Lates</h6>
                   <div class="chart-skeleton">
-                     <div class="skeleton-bars">
-                        <div class="skeleton-bar"></div>
-                        <div class="skeleton-bar"></div>
-                        <div class="skeleton-bar"></div>
-                        <div class="skeleton-bar"></div>
-                        <div class="skeleton-bar"></div>
+                     <div class="skeleton-center">
+                        <div class="skeleton-ring"></div>
                      </div>
                   </div>
-                  <canvas id="barChartAbsences"></canvas>
+                  <canvas id="polarAreaChartLates"></canvas>
                </div>
             </div>
          </div>
-         <div class="col-md-6">
+         <div class="col-md-6 mb-4">
             <div class="card shadow">
                <div class="card-body pb-4">
                   <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Undertimes</h6>
@@ -184,7 +209,41 @@
          </div>
       </div>
       <div class="row mt-4">
-         <div class="col-md-6">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+               <div class="card-body pb-4">
+                  <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Absences</h6>
+                  <div class="chart-skeleton">
+                     <div class="skeleton-bars">
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                     </div>
+                  </div>
+                  <canvas id="barChartAbsences"></canvas>
+               </div>
+            </div>
+         </div>
+         <div class="col-md-6 mb-4">
+            <div class="card shadow">
+               <div class="card-body pb-4">
+                  <h6 class="fw-bold mb-3 text-uppercase mb-4">Break In/Out Discrepancies</h6>
+                  <div class="chart-skeleton">
+                     <div class="skeleton-bars">
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                     </div>
+                  </div>
+                  <canvas id="barChartBreakDiscrepancies"></canvas>
+               </div>
+            </div>
+         </div>
+         <div class="col-md-6 mb-4">
             <div class="card shadow">
                <div class="card-body pb-4">
                   <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Leaves</h6>
@@ -201,7 +260,7 @@
                </div>
             </div>
          </div>
-         <div class="col-md-6">
+         <div class="col-md-6 mb-4">
             <div class="card shadow">
                <div class="card-body pb-4">
                   <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Offsets</h6>
@@ -215,38 +274,6 @@
                      </div>
                   </div>
                   <canvas id="barChartOffsets"></canvas>
-               </div>
-            </div>
-         </div>
-      </div>
-      <div class="row mt-4">
-         <div class="col-md-6">
-            <div class="card shadow">
-               <div class="card-body pb-4">
-                  <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Lates</h6>
-                  <div class="chart-skeleton">
-                     <div class="skeleton-center">
-                        <div class="skeleton-ring"></div>
-                     </div>
-                  </div>
-                  <canvas id="polarAreaChartLates"></canvas>
-               </div>
-            </div>
-         </div>
-         <div class="col-md-6">
-            <div class="card shadow">
-               <div class="card-body pb-4">
-                  <h6 class="fw-bold mb-3 text-uppercase mb-4">Break Discrepancies</h6>
-                  <div class="chart-skeleton">
-                     <div class="skeleton-bars">
-                        <div class="skeleton-bar"></div>
-                        <div class="skeleton-bar"></div>
-                        <div class="skeleton-bar"></div>
-                        <div class="skeleton-bar"></div>
-                        <div class="skeleton-bar"></div>
-                     </div>
-                  </div>
-                  <canvas id="barChartBreakDiscrepancies"></canvas>
                </div>
             </div>
          </div>
@@ -267,7 +294,8 @@ $(function () {
         polarAreaChartLates: null,
         barChartLeaves: null,
         barChartOffsets: null,
-        barChartBreakDiscrepancies: null
+        barChartBreakDiscrepancies: null,
+        noLoginChart: null
     };
 
     // Show skeletons on initial load
@@ -363,6 +391,94 @@ $(function () {
             return dates?.length ? dates.join(', ') : 'None';
         }
 
+        
+        // PIE – ESS Portal Access Status
+        const accessed = resultData.loginAccessed ?? {};
+        const notAccessed = resultData.loginNotAccessed ?? {};
+
+        const accessedCount = Number(accessed.count ?? 0);
+        const notAccessedCount = Number(notAccessed.count ?? 0);
+        const totalEmployees = accessedCount + notAccessedCount;
+
+        chartInstances.noLoginChart = new Chart($('#noLoginChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Accessed', 'Not Accessed'],
+                datasets: [{
+                    data: [accessedCount, notAccessedCount]
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutQuart'
+                },
+                plugins: {
+                    tooltip: {
+                        enabled: false,
+                        external: function(context) {
+
+                            let tooltipEl = document.getElementById('chartjs-tooltip');
+
+                            if (!tooltipEl) {
+                                tooltipEl = document.createElement('div');
+                                tooltipEl.id = 'chartjs-tooltip';
+                                tooltipEl.innerHTML = '<div class="tooltip-content"></div>';
+                                document.body.appendChild(tooltipEl);
+
+                                // Prevent disappearing when hovering tooltip
+                                tooltipEl.addEventListener('mouseenter', function () {
+                                    tooltipEl.setAttribute('data-hover', 'true');
+                                });
+
+                                tooltipEl.addEventListener('mouseleave', function () {
+                                    tooltipEl.setAttribute('data-hover', 'false');
+                                    tooltipEl.style.opacity = 0;
+                                });
+                            }
+
+                            const tooltipModel = context.tooltip;
+
+                            // If not visible AND not hovering tooltip, hide it
+                            if (tooltipModel.opacity === 0) {
+                                if (tooltipEl.getAttribute('data-hover') !== 'true') {
+                                    tooltipEl.style.opacity = 0;
+                                }
+                                return;
+                            }
+
+                            const index = tooltipModel.dataPoints[0].dataIndex;
+                            const employees = index === 0
+                                ? accessed.details
+                                : notAccessed.details;
+
+                            const body = employees?.map(emp =>
+                                `<div>${emp.lastname}, ${emp.firstname} (${emp.employee_no})</div>`
+                            ).join('') ?? 'No data';
+
+                            tooltipEl.querySelector('.tooltip-content').innerHTML = `
+                                <strong>${tooltipModel.title}</strong>
+                                <div class="tooltip-scroll">${body}</div>
+                            `;
+
+                            const canvasRect = context.chart.canvas.getBoundingClientRect();
+
+                            tooltipEl.style.opacity = 1;
+                            tooltipEl.style.position = 'absolute';
+                            tooltipEl.style.left = canvasRect.left + window.pageXOffset + tooltipModel.caretX + 'px';
+                            tooltipEl.style.top = canvasRect.top + window.pageYOffset + tooltipModel.caretY + 'px';
+                            tooltipEl.style.zIndex = 9999;
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: `Total Employees: ${totalEmployees}`
+                    }
+                }
+            }
+        });
+            
         // PIE – Overall Distribution
         chartInstances.pieChart = new Chart($('#pieChart'), {
             type: 'pie',
@@ -446,16 +562,34 @@ $(function () {
             type: 'line',
             data: {
                 labels: undertimes.labels,
-                datasets: [{ label: 'Undertimes', data: undertimes.values }]
+                datasets: [{
+                    label: 'Undertimes',
+                    data: undertimes.values,
+                    borderColor: '#e74a3b',
+                    backgroundColor: 'rgba(231, 74, 59, 0.2)',
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#e74a3b',
+                    pointBorderColor: '#fff',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
             },
             options: {
                 responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
                 plugins: {
                     tooltip: {
                         callbacks: {
                             afterLabel(ctx) {
                                 const item = getItemByIndex(resultData.topUndertime, ctx.dataIndex);
-                                return item ? 'Undertime Dates: ' + formatDates(item.details.undertime_dates) : '';
+                                return item
+                                    ? 'Undertime Dates: ' + formatDates(item.details.undertime_dates)
+                                    : '';
                             }
                         }
                     }
@@ -463,16 +597,33 @@ $(function () {
             }
         });
 
-        // POLAR – Lates (with dates)
+
+        // LINE – Lates (with dates)
         const lates = extract(resultData.topLate, 'lates');
-        chartInstances.polarAreaChartLates = new Chart($('#polarAreaChartLates'), {
-            type: 'polarArea',
+        chartInstances.lineChartLates = new Chart($('#polarAreaChartLates'), {
+            type: 'line',
             data: {
                 labels: lates.labels,
-                datasets: [{ data: lates.values }]
+                datasets: [{
+                    label: 'Lates',
+                    data: lates.values,
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                    tension: 0.3,          // smooth curve (0 = straight lines)
+                    fill: true,            // fill area under line
+                    pointBackgroundColor: '#4e73df',
+                    pointBorderColor: '#fff',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
             },
             options: {
                 responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
                 plugins: {
                     tooltip: {
                         callbacks: {
@@ -485,6 +636,8 @@ $(function () {
                 }
             }
         });
+
+
 
         // BAR – Leaves
         const leaves = extract(resultData.topLeave, 'leaves');

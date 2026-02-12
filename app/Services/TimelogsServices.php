@@ -518,6 +518,33 @@ class TimelogsServices {
         ];
     }
 
+    public function checkIfSO($date, $userId)
+    {
+        $isSO = false;
+        $status = 'pending special order (SO)';
+
+        $special_order = DB::table('special_order_applications as soa')
+            ->leftJoin('special_order_dates as sod', 'soa.id', '=', 'sod.special_order_application_id')
+            ->where('soa.user_id', $userId)
+            ->where('sod.isActive', true)
+            ->whereDate('sod.date', $date)
+            ->first();
+        
+
+        if ($special_order) {
+            $isSO = true;
+
+            if ($special_order->status === 'approved') {
+                $status = 'special order';
+            }
+        }
+
+        return [
+            'is_so' => $isSO,
+            'status'   => $status
+        ];
+    }
+
 
     /**
      * Check and compute overtime for a given user and date.
