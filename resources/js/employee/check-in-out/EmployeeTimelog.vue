@@ -2,6 +2,7 @@
     <div class="attendance-container">
         <CorrectionLog ref="correctionModal" />
         <CorrectionList ref="correctionListModal" />
+
         <PrintableDtrView ref="printableModal">
             <ViewDtr
                 :payload="dtr_all"
@@ -270,6 +271,7 @@ export default {
                 this.logs = response.data.computedData;
                 this.summary = response.data.summary;
                 this.dtr_all = response.data;
+                console.log(response.data);
                 this.$emit("send-summary", response.data.summary);
             } catch (error) {
                 console.error("Error fetching logs:", error);

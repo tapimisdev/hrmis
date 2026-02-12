@@ -103,7 +103,9 @@ class DailyTimeRecordController extends Controller
                 'endDate'     => $endDate->toDateTimeString(),
             ]);
             
+
             $daily_time_record['information'] = $user;
+
 
             return response()->json($daily_time_record, 200);   
         } catch (\Exception $e) {

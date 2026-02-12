@@ -181,7 +181,7 @@ class DailyTimeRecordService {
                     $shift = $shiftsCache[$shift_id];
 
                     $computedData[] = [
-                        'date'              => $logDate,
+                        'date'              => Carbon::parse($logDate)->format('Y-m-d'),
                         'user_id'           => $userId,
                         'time_in'           => null,
                         'time_out'          => null,
@@ -364,8 +364,9 @@ class DailyTimeRecordService {
                     $TOTAL_ABSENT++;
                 }
 
+
                 $computedData[] = [
-                    'date'              => $logDate,
+                    'date'              => Carbon::parse($logDate)->format('Y-m-d'),
                     'user_id'          => $userId,
                     'time_in'          => $timeInCarbon,
                     'time_out'         => $timeOutCarbon,
@@ -416,7 +417,7 @@ class DailyTimeRecordService {
 
             /** ---------------- FINAL DATA ROW ---------------- **/
             $computedData[] = [
-                'date'              => $logDate,
+                'date'              => Carbon::parse($logDate)->format('Y-m-d'),
                 'user_id'           => $userId,
                 'time_in'           => $timeInCarbon,
                 'time_out'          => $timeOutCarbon,
@@ -465,6 +466,7 @@ class DailyTimeRecordService {
             'excess'             => $DOUBLE_EXCESS,
             'actual_presence'    => $TOTAL_ACTUAL_PRESENCE,
         ];
+
 
         return [
             'computedData' => $computedData,

@@ -998,29 +998,19 @@ class TimelogsServices {
         if ($timeInCarbon && $timeOutCarbon && $timeOutCarbon->lt($timeInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($breakOutCarbon && $breakInCarbon && $breakInCarbon->lt($breakOutCarbon)) {
+        } else if ($breakOutCarbon && $breakInCarbon && $breakInCarbon->lt($breakOutCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($breakOutCarbon && $timeInCarbon && $breakOutCarbon->lt($timeInCarbon)) {
+        } else if ($breakOutCarbon && $timeInCarbon && $breakOutCarbon->lt($timeInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($breakInCarbon && $timeOutCarbon && $breakInCarbon->gt($timeOutCarbon)) {
+        } else if ($breakInCarbon && $timeOutCarbon && $breakInCarbon->gt($timeOutCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($otInCarbon && $breakOutCarbon && $otInCarbon->lt($breakOutCarbon)) {
+        } else if ($otInCarbon && $breakOutCarbon && $otInCarbon->lt($breakOutCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($otInCarbon && $otOutCarbon && $otOutCarbon->lt($otInCarbon)) {
+        } else if ($otInCarbon && $otOutCarbon && $otOutCarbon->lt($otInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
         }
