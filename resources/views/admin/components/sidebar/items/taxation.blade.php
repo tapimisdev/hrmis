@@ -27,6 +27,14 @@
                     <span>TRAIN Law</span>
                 </a>
             </li>
+
+            <li class="nested-item">
+                <a href="{{ route('taxation.index') }}"
+                    class="{{ request()->is('admin/taxation') ? 'active' : '' }}">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                    <span>Taxation</span>
+                </a>
+            </li>
             <!-- @endcan -->
         </ul>
     </div>

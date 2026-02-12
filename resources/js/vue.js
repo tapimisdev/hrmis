@@ -23,6 +23,8 @@ import ImportCredits from "./admin/hris/credits/ImportCredits.vue";
 import ImportEmployeeVue from "./admin/hris/employee/ImportEmployeeVue.vue";
 import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
 
+import TaxationIndex from "./admin/taxation/TaxationIndex.vue";
+
 import WebtimeIndex from "./admin/web-time-access/WebtimeIndex.vue";
 
 import TabModule from "./admin/modules/TabModule.vue";
@@ -70,6 +72,7 @@ const authApp = createApp({
         PushNotification,
         WebtimeIndex,
         ViewDtr,
+        TaxationIndex,
 
         DashboardVue,
         DtrViewVue,

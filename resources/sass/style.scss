@@ -414,3 +414,97 @@ label {
         transform: scale(1.02);
     }
 }
+
+/* Buttons */
+.fb-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.fb-btn {
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 2px;
+    border: 1px solid var(--bs-border-color);
+    cursor: pointer;
+}
+
+/* Primary (FB blue feel but bootstrap) */
+.fb-primary {
+    background: var(--bs-primary);
+    color: #fff;
+    border-color: var(--bs-primary);
+}
+
+.fb-primary:hover {
+    filter: brightness(0.9);
+}
+
+/* Secondary */
+.fb-secondary {
+    background: var(--bs-secondary-bg, var(--bs-secondary));
+    color: var(--bs-body-color);
+}
+
+.fb-secondary:hover {
+    filter: brightness(0.95);
+}
+
+.fb-tabs {
+    display: flex;
+    gap: 3px;
+}
+
+.fb-tab {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+    line-height: 24px;
+
+    border: 1px solid var(--bs-border-color);
+    border-radius: 2px;
+
+    background: linear-gradient(
+        var(--bs-body-bg),
+        var(--bs-tertiary-bg)
+    );
+
+    color: var(--bs-secondary-color);
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.fb-tab span {
+    font-size: 11px;
+    color: var(--bs-tertiary-color);
+    margin-left: 4px;
+}
+
+/* Hover – subtle FB hover */
+.fb-tab:hover {
+    background: linear-gradient(
+        var(--bs-body-bg),
+        var(--bs-secondary-bg)
+    );
+}
+
+/* Active – classic FB blue using BS vars */
+.fb-tab.active {
+    background: linear-gradient(
+        var(--bs-primary),
+        color-mix(in srgb, var(--bs-primary) 85%, #000)
+    );
+    border-color: var(--bs-primary);
+    color: #fff;
+}
+
+.fb-tab.active span {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Pressed effect (old-school) */
+.fb-tab:active {
+    transform: translateY(1px);
+}
+

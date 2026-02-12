@@ -14,4 +14,12 @@ enum TableSettingsEnum: string
     case THREE_PERCENT  = 'percentage_tax_3%';
     case FIVE_PERCENT  = 'tax_ewt_5%';
 
+
+    // ID IN MODULE_TABS
+    // TO GET EMPLOYEES RECORD; USE WHERE MODULE_TAB_ID = CASE
+    case GSIS = '1';
+    case PAGIBIG = '2';
+    case PHILHEALTH = '3';
+
+
 }
