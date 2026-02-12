@@ -1,7 +1,7 @@
 <!-- Sidebar -->
 <aside>
     <button class="d-md-none x-mark"><i class="fa-solid fa-xmark"></i></button>
-    <div class="sidebar shadow" id="sidebar">
+    <div class="sidebar shadow pb-5" id="sidebar">
         <!-- Header -->
         <header class="sidebar-header">
             <div class="sidebar-brand">
@@ -52,6 +52,16 @@
                 </li>
                 @endcanany
 
+                <!-- Calendar -->
+                 <li class="side-items {{ request()->is('employee/calendar*') ? 'active' : '' }}">
+                    <a href="{{ route('calendar.index') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-calendar"></i>
+                        </span>
+                        <span class="side-text">Calendar</span>
+                    </a>
+                </li>
+                
                 <!-- Announcements -->
                 <li class="side-items {{ request()->is('employee/announcements*') ? 'active' : '' }}">
                     <a href="{{ route('announcement.index') }}" class="side-link text-body">
@@ -167,10 +177,10 @@
                 @endcanany
 
                 @canany([
-                    'emp.overtime_application.view',
-                    'emp.overtime_application.apply'
+                    'emp.pass_slip_application.view',
+                    'emp.pass_slip_application.apply'
                 ])
-                <!-- 
+                
                     <li class="side-items has-submenu {{ request()->routeIs('obs.*') ? 'active' : '' }}">
                         <a href="{{ route('obs.index') }}" class="side-link text-body">
                             <span class="side-icon">
@@ -179,42 +189,46 @@
                             <span class="side-text">Pass Slip</span>
                         </a>
                     </li> 
-                -->
+               
                 @endcanany
 
-                {{--
-                <div class="sidebar-seperator"></div>
+                @if(config('app.allow_multi_approval'))
+                    <div class="sidebar-seperator"></div>
                 
-                <!-- Leave Application -->
-                <li class="side-items has-submenu {{ request()->routeIs('approval-leave.*') ? 'active' : '' }}">
-                    <a href="{{ route('approval-leave.index') }}" class="side-link text-body">
-                        <span class="side-icon">
-                            <i class="fa-solid fa-calendar-days"></i>
-                        </span>
-                        <span class="side-text">Approval Leave</span>
-                    </a>
-                </li>
+                    <div class="mb-2 ms-1">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Approvals</small>
+                    </div>
 
-                <!-- Pass Slip -->
-                <li class="side-items has-submenu {{ request()->routeIs('approval-obs.*') ? 'active' : '' }}">
-                    <a href="{{ route('approval-obs.index') }}" class="side-link text-body">
-                        <span class="side-icon">
-                            <i class="fa-solid fa-file-lines"></i>
-                        </span>
-                        <span class="side-text">Approval Pass Slip</span>
-                    </a>
-                </li>
+                    <!-- Leave Application Approval -->
+                    <li class="side-items has-submenu {{ request()->routeIs('approval-leave.*') ? 'active' : '' }}">
+                        <a href="{{ route('approval-leave.index') }}" class="side-link text-body">
+                            <span class="side-icon">
+                                <i class="fa-solid fa-calendar-days"></i>
+                            </span>
+                            <span class="side-text">Leave Approvals </span>
+                        </a>
+                    </li>
 
-                <!-- Overtime -->
-                <li class="side-items has-submenu {{ request()->routeIs('approval-overtime.*') ? 'active' : '' }}">
-                    <a href="{{ route('approval-overtime.index') }}" class="side-link text-body">
-                        <span class="side-icon">
-                            <i class="fa-solid fa-hourglass-half"></i>
-                        </span>
-                        <span class="side-text">Approval Overtime</span>
-                    </a>
-                </li>
-                --}}
+                    <!-- Pass Slip -->
+                    <li class="side-items has-submenu {{ request()->routeIs('approval-obs.*') ? 'active' : '' }}">
+                        <a href="{{ route('approval-obs.index') }}" class="side-link text-body">
+                            <span class="side-icon">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </span>
+                            <span class="side-text">Pass Slip Approvals</span>
+                        </a>
+                    </li>
+
+                    <!-- Overtime -->
+                    <li class="side-items has-submenu {{ request()->routeIs('approval-overtime.*') ? 'active' : '' }}">
+                        <a href="{{ route('approval-overtime.index') }}" class="side-link text-body">
+                            <span class="side-icon">
+                                <i class="fa-solid fa-hourglass-half"></i>
+                            </span>
+                            <span class="side-text">Overtime Approvals</span>
+                        </a>
+                    </li>
+                @endif
             </ul>
         </nav>
     </div>

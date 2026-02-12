@@ -136,7 +136,7 @@ class DailyTimeRecordService {
         // Totals
         $TOTAL_INCOMPLETE_LOGS = 0;
         $TOTAL_PENDING_LEAVES = 0;
-        $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
+        $TOTAL_OFFSET = $TOTAL_SO = $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
         $TOTAL_OVERTIME = $TOTAL_ACTUAL_PRESENCE = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
         $DOUBLE_EXCESS = 0;
 
@@ -234,6 +234,28 @@ class DailyTimeRecordService {
                 $remarks[] = $leave_status;
             }
 
+            /** ----------------- OFFSET CHECK ------------- **/
+
+            $offset = $this->timelogs_services->checkIfOffset($date, $userId);
+            $is_offset = $offset['is_offset'];
+            $offset_status = $offset['status'];
+          
+            if ($is_offset) {
+                $TOTAL_OFFSET++;
+                $remarks[] = $offset_status;
+            }
+
+            /** ----------------- OFFSET CHECK ------------- **/
+            $so = $this->timelogs_services->checkIfSO($date, $userId);
+            $is_so = $so['is_so'];
+            $so_status = $so['status'];
+          
+            if ($is_so) {
+                $TOTAL_SO++;
+                $remarks[] = $so_status;
+            }
+
+
             if ($empty_log) {
                 if ($is_future) {
                     $computedData[] = $this->timelogs_services->insertNoData($is_leave ? $leave_status : $remarks, $userId, $date['date']);
@@ -270,7 +292,7 @@ class DailyTimeRecordService {
                     continue;
                 }
 
-                if (!$is_future && !$is_leave && !$is_restday) {
+                if (!$is_future && !$is_leave && !$is_restday && !$is_offset && !$is_so) {
                     $remarks[] = 'absent';
                     $TOTAL_ABSENT++;
                     $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
@@ -447,7 +469,8 @@ class DailyTimeRecordService {
             ['label' => 'Overtime',         'value' => $TOTAL_OVERTIME . ' MINS', 'actual_value' => $TOTAL_OVERTIME ],
             ['label' => 'Late / Undertime', 'value' => $TOTAL_UT . ' MINS', 'actual_value' => $TOTAL_UT ],
             ['label' => 'Absent',           'value' => $TOTAL_ABSENT . ' Days', 'actual_value' => $TOTAL_ABSENT ],
-            ['label' => 'Leaves',           'value' => $TOTAL_LEAVES . ' Day' . ($TOTAL_LEAVES != 1 ? 's' : ''), 'actual_value' => $TOTAL_LEAVES ],
+            ['label' => 'Leaves',           'value' => $TOTAL_LEAVES . ' ' . ($TOTAL_LEAVES != 1 ? '' : ''), 'actual_value' => $TOTAL_LEAVES ],
+            ['label' => 'Offsets',          'value' => $TOTAL_OFFSET . ' ' . ($TOTAL_OFFSET != 1 ? '' : ''), 'actual_value' => $TOTAL_OFFSET ],
             ['label' => 'Holiday',          'value' => $TOTAL_HOLIDAY . ' Day' . ($TOTAL_HOLIDAY != 1 ? 's' : ''), 'actual_value' => $TOTAL_HOLIDAY ],
             ['label' => 'Suspensions',      'value' => $TOTAL_SUSPENSION, 'actual_value' => $TOTAL_SUSPENSION ],
             ['label' => 'Excess',           'value' => number_format($DOUBLE_EXCESS, 2), 'actual_value' => number_format($DOUBLE_EXCESS, 2)],
@@ -461,6 +484,7 @@ class DailyTimeRecordService {
             'late_undertime'     => $TOTAL_UT,
             'absent'             => $TOTAL_ABSENT,
             'leaves'             => $TOTAL_LEAVES,
+            'offset'             => $TOTAL_OFFSET,
             'holiday'            => $TOTAL_HOLIDAY,
             'suspensions'        => $TOTAL_SUSPENSION,
             'excess'             => $DOUBLE_EXCESS,

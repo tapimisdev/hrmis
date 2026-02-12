@@ -5,9 +5,13 @@ use App\Http\Controllers\Admin\Payroll\Salary\SalaryController;
 use App\Http\Controllers\Admin\Payroll\HazardPay\HazardPayController;
 use App\Http\Controllers\Admin\Payroll\SLAPay\SLAPayController;
 use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataController;
+use App\Http\Controllers\Admin\Payroll\ImportRegistryController;
 
 Route::prefix('payroll')->group(function() {
     
+    # IMPORTING 
+    Route::resource('import/registry', ImportRegistryController::class)->only('index', 'store', 'update');
+
     # SALARY PAYROLL
     Route::resource('salary-pay', SalaryController::class)->only('index', 'create', 'show', 'store', 'destroy');
 

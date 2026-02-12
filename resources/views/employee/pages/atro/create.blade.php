@@ -15,7 +15,19 @@
 
     <div class="card rounded-3">
         <div class="card-header fw-bold d-flex align-items-center">
-            <i class="fa-solid fa-clock me-2"></i> Overtime Application Form
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div>
+                    <i class="fa-solid fa-clock me-2"></i> Overtime Application Form
+                </div>
+                <div>
+                    <div>
+                        <a href="#" class="btn btn-dark">
+                            <i class="fa-solid fa-download me-1"></i>
+                                Form Download
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
         <form method="POST" action="{{ route('overtime.store') }}" id="form" enctype="multipart/form-data">
             @csrf

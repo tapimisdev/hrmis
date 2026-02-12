@@ -104,7 +104,7 @@
                     </tr>
                 </table>
              
-                <div class="mt-4 mb-3">
+                <!-- <div class="mt-4 mb-3">
                     <small class="text-uppercase fw-bold text-muted">Your Approvers</small>
 
                     @if (!empty($data->approvals) && count($data->approvals) > 0)
@@ -145,7 +145,7 @@
                     @else
                         <div class="fst-italic text-muted text-uppercase mt-3">No approvers assigned.</div>
                     @endif
-                </div>
+                </div> -->
             </div>
         
             {{-- Action Buttons --}}

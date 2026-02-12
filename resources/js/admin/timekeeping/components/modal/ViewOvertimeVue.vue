@@ -53,7 +53,7 @@ import axios from "axios";
 export default {
     name: "OvertimeApplication",
     props: {
-        employee_id: { type: String, required: true },
+        employee_no: { type: String, required: true },
         month: { type: Number, required: true },
         year: { type: Number, required: true },
         index: { type: Number, required: true }
@@ -101,7 +101,7 @@ export default {
                         Authorization: `Bearer ${token}`,
                     },
                     params: {
-                        user_id: this.employee_id,
+                        user_id: this.employee_no,
                         date: date
                     }
                 });

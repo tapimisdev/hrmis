@@ -28,6 +28,16 @@
             </li>
             @endcan
 
+            @can('hr.suspensions.view')
+            <li class="nested-item">
+                <a href="{{ route('services.suspensions.index') }}"
+                    class="{{ request()->is('admin/service/suspensions*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-cloud-rain"></i>
+                    <span>Suspensions</span>
+                </a>
+            </li>
+            @endcan
+
             @can('hr.leave_approval.view')
             <li class="nested-item">
                 <a href="{{ route('services.leaves.index') }}"

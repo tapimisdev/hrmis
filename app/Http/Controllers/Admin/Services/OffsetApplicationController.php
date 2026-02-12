@@ -30,6 +30,7 @@ class OffsetApplicationController extends Controller {
         $applications = DB::table('offset_applications as la')
             ->leftJoin('employee_personal as p', 'la.employee_no', '=', 'p.employee_no')
             ->leftJoin('offset_dates as ld', 'ld.offset_application_id', '=', 'la.id')
+            ->where('ld.isActive', true)
             ->select(
                 'p.firstname',
                 'p.lastname',
@@ -321,26 +322,64 @@ class OffsetApplicationController extends Controller {
                 ->getOffsetCreditsByMonthYear($employee_no, $currentMonth);
 
             $remaining_balance = (float) ($latestCredits['current']->balance ?? 0);
-            $toBeDeducted     = (float) $this->computeEquivalent($data->dates);
-            $new_balance      = $remaining_balance - $toBeDeducted;
 
-            // --- Step 2: Group dates by month ---
+            // --- Step 2: Process dates and calculate total deduction ---
             $datesByMonth = [];
+            $toBeDeducted = 0;
+
             foreach ($data->dates as $d) {
                 $dateObj = Carbon::parse($d['date']);
-                $month   = strtoupper($dateObj->format('M')); // e.g., JAN
-                $day     = $dateObj->format('j');            // day number
+                $month   = strtoupper($dateObj->format('M')); // e.g., FEB
+                $day     = $dateObj->format('j');
+                $shift   = strtolower($d['shift']);
 
-                if (!isset($datesByMonth[$month])) $datesByMonth[$month] = [];
-                $datesByMonth[$month][] = $day;
+                // Calculate leave equivalent
+                $credit = match ($shift) {
+                    'morning', 'afternoon' => 0.5,
+                    'wholeday' => 1.0,
+                    default => 0,
+                };
+
+                $toBeDeducted += $credit;
+
+                if (!isset($datesByMonth[$month])) {
+                    $datesByMonth[$month] = [];
+                }
+
+                $datesByMonth[$month][] = [
+                    'day'    => $day,
+                    'shift'  => $shift,
+                    'credit' => $credit,
+                ];
             }
 
-            // --- Step 3: Build formatted remark ---
-            // Example: "JAN 1,2,3 (3 days) | FEB 4,5 (2 days)"
+            $new_balance = $remaining_balance - $toBeDeducted;
+
+            // --- Step 3: Build formatted remark with short shift codes ---
             $formattedRemark = collect($datesByMonth)
                 ->map(function ($days, $month) {
-                    $totalDays = count($days);
-                    return sprintf("%s %s - (%s %s)", $month, implode(', ', $days), $totalDays, $totalDays === 1 ? 'day' : 'days');
+                    $dayStrings = [];
+                    $totalCredit = 0;
+
+                    foreach ($days as $d) {
+                        // Short code mapping
+                        $shiftShort = match ($d['shift']) {
+                            'morning'  => 'AM',
+                            'afternoon'=> 'PM',
+                            'wholeday' => 'WD',
+                            default    => $d['shift'],
+                        };
+
+                        $dayStrings[] = sprintf("%s (%s)", $d['day'], $shiftShort);
+                        $totalCredit += $d['credit'];
+                    }
+
+                    return sprintf(
+                        "%s %s (Eqv: %.2f)",
+                        $month,
+                        implode(', ', $dayStrings),
+                        $totalCredit
+                    );
                 })
                 ->implode(" | ");
 
@@ -379,7 +418,7 @@ class OffsetApplicationController extends Controller {
 
             $runningBalance = $new_balance;
 
-            // --- Step 5: Recalculate future offset_credits for this offset type ---
+            // --- Step 5: Recalculate future offset_credits ---
             $futureCredits = DB::table('offset_credits')
                 ->where('employee_no', $employee_no)
                 ->where('as_of', '>', $currentMonth)
@@ -417,6 +456,7 @@ class OffsetApplicationController extends Controller {
             ], 500);
         }
     }
+
 
 
     public function datatable($query)

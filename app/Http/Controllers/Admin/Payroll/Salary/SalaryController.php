@@ -306,6 +306,12 @@ class SalaryController extends Controller
         }
     }
 
+    public function import_index() {
+        dd(123);
+    }
 
+    public function import_save(Request $request) {
+
+    }
 
 }

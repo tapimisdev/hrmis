@@ -23,7 +23,7 @@ class LeaveApplicationController extends Controller
     public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
         $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.leave_application.apply')->only(['store']);
+        $this->middleware('permission:emp.leave_application.apply')->only(['create', 'store']);
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
     }   
@@ -58,8 +58,9 @@ class LeaveApplicationController extends Controller
         }
 
         $myId = Auth::id();
-        $data = $this->applicationService->getData('leave');
+        $data = $this->applicationService->getData(['leave', 'offset', 'obs', 'special_order']);
         $leaves = $data['leaves'];
+        
         // $approvers = $data['approvers'];
         // $approvers = $approvers->map(function ($collection) use ($myId) {
         //     return $collection->reject(function ($approver) use ($myId) {
@@ -78,7 +79,8 @@ class LeaveApplicationController extends Controller
     public function store(StoreLeaveApplication $request) 
     {
         $validatedData = $request->validated();
-        
+        $isDirectlyApproved = $validatedData['isDirectlyApproved'] ?? false;
+
         if(!empty($validatedData['user_id'])) {
             $user = User::with('employeeInformation')->findOrFail($validatedData['user_id']);
             $employee_no = $user->employeeInformation->employee_no;
@@ -134,7 +136,7 @@ class LeaveApplicationController extends Controller
                 'leave_id'      => $validatedData['leave_id'],
                 'days'          => $days,
                 'reason'        => $validatedData['reason'],
-                'status'        => 'pending',
+                'status'        =>  $isDirectlyApproved ? 'approved' : 'pending',
                 'level'         => 1,
                 // 'levels'        => json_encode($levels),
                 'created_at'    => now(),
@@ -178,14 +180,17 @@ class LeaveApplicationController extends Controller
             }
 
             $sender = ucwords(Auth::user()->name);
-            $payload = [
-                'type' => 'application',
-                'sender' => $sender,
-                'receiver' => 'admins',
-                'message' => '%b' . $sender . '%b filed a leave application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => url()->route('services.leaves.show', ['application' => $applicationID])
-            ];
-            $this->EventService->pushNotification($payload);
+
+            if(!$isDirectlyApproved) {
+                $payload = [
+                    'type' => 'application',
+                    'sender' => $sender,
+                    'receiver' => 'admins',
+                    'message' => '%b' . $sender . '%b filed a leave application (%bi' . strtoupper($application_no) . ') %bi',
+                    'link' => url()->route('services.leaves.show', ['application' => $applicationID])
+                ];
+                $this->EventService->pushNotification($payload);
+            }
 
             DB::commit();
 

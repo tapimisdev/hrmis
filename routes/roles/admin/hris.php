@@ -39,12 +39,6 @@ Route::prefix('hris')->group(function() {
     Route::post('employee/transfer', [EmployeeController::class, 'updateTransfer'])
         ->name('hris.employee.transfer');
 
-    # UPDATE SALARY
-    Route::get('employee/update-salary', [EmployeeController::class, 'update_salary'])
-        ->name('hris.employee.salary');
-    Route::post('employee/update-salary', [EmployeeController::class, 'updateSalary'])
-        ->name('hris.employee.salary');
-
     # INFORMATION
     Route::get('employee/information/{employee_no?}', [InformationController::class, 'index'])
         ->name('hris.employee.information');
@@ -131,6 +125,8 @@ Route::prefix('hris')->group(function() {
 
     Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'index'])
         ->name('hris.employee.leave-credits');
+    Route::get('employee/leave-credits/{employee_no}/{leave_id}/download', [LeaveCreditController::class, 'download'])
+        ->name('hris.employee.leave-credits.download');
     Route::get('employee/leave-credits/{employee_no}/fetch', [LeaveCreditController::class, 'fetch'])
         ->name('hris.employee.leave-credits.fetch');
     Route::put('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'save'])
@@ -140,6 +136,8 @@ Route::prefix('hris')->group(function() {
 
     Route::get('employee/offset-credits/{employee_no}', [OffsetCreditsController::class, 'index'])
         ->name('hris.employee.offset-credits');
+    Route::get('employee/offset-credits/{employee_no}/download', [OffsetCreditsController::class, 'download'])
+        ->name('hris.employee.offset-credits.download');
     Route::get('employee/offset-credits/{employee_no}/fetch', [OffsetCreditsController::class, 'fetch'])
         ->name('hris.employee.offset-credits.fetch');
     Route::put('employee/offset-credits/{employee_no}', [OffsetCreditsController::class, 'save'])

@@ -43,9 +43,13 @@ class CorrectionTimelogController extends Controller
             'year'  => 'required|integer',
         ]);
 
+        $user_id = Auth::id();
+        $employee_no = $this->employee_service->getEmployeeNo($user_id);
+
         $corrections = DB::table('timelog_corrections')
             ->whereMonth('date', $request->input('month'))
             ->whereYear('date', $request->input('year'))
+            ->where('employee_no', $employee_no)
             ->get()
             ->map(function ($row) {
                 $row->attachment = Storage::url($row->attachment);

@@ -21,7 +21,7 @@
                     id="email" 
                     name="email" 
                     placeholder="Username" 
-                    value="{{ old('email') }}" 
+                    value="{{ old('email', request()->cookie('remember_email')) }}"
                     required 
                     autocomplete="email" 
                     autofocus
@@ -41,6 +41,7 @@
                     name="password" 
                     placeholder="Password" 
                     required 
+                    value="{{ request()->cookie('remember_password') ? decrypt(request()->cookie('remember_password')) : '' }}"
                     autocomplete="current-password"
                 >
                 @error('password')
@@ -53,7 +54,7 @@
             <div class="d-flex flex-wrap mx-2 justify-content-between align-items-center mb-4">
                 {{-- Remember Me --}}
                 <div class="d-flex gap-1">
-                    <input class="" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                    <input class="" type="checkbox" name="remember" id="remember" {{ (old('remember') || request()->cookie('remember_email')) ? 'checked' : '' }}>
                     <label for="remember">
                         Remember Me
                     </label>
@@ -66,7 +67,6 @@
                     </a>
                 @endif
             </div>
-
 
             <div class="d-grid">
                 <button type="submit" class="auth-btn">

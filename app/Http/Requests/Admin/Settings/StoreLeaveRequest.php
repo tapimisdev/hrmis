@@ -30,7 +30,6 @@ class StoreLeaveRequest extends FormRequest
                 Rule::unique('leaves', 'name')->ignore($this->route('leaf')),
             ],
             'is_cumulative' => 'required|boolean',
-            'credit_to_deduct' => 'required|numeric|min:0',
         ];
     }
 }
