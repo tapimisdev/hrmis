@@ -49,7 +49,7 @@ class ForeCastEmployeeJob implements ShouldQueue
         // Avg monthly salary based on months covered (already computed by service)
         $salary = (float) ($basic_pays['monthly_salary'] ?? 0);
 
-        // Hazard pay monthly (service already computed; fallback just in case)
+        // Hazard pay monthly (service already co mputed; fallback just in case)
         $hazard_pay = (float) ($basic_pays['hazard_pay'] ?? ($salary * 0.15));
 
         // Init totals
