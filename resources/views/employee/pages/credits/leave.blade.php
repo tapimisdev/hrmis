@@ -12,7 +12,7 @@
         </x-header-employee>
 
        @if(!empty($data))
-            <div class="accordion" id="leaveCreditsAccordion">
+            <div class="accordion pb-5" id="leaveCreditsAccordion">
                 @php
                     $activeLeaveId = session('active_leave_id');
                 @endphp

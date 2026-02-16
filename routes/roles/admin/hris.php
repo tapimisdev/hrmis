@@ -122,7 +122,6 @@ Route::prefix('hris')->group(function() {
         ->name('hris.employee.account');
 
     # LEAVE CREDITS
-
     Route::get('employee/leave-credits/{employee_no}', [LeaveCreditController::class, 'index'])
         ->name('hris.employee.leave-credits');
     Route::get('employee/leave-credits/{employee_no}/{leave_id}/download', [LeaveCreditController::class, 'download'])

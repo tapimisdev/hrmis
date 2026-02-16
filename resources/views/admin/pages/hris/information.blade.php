@@ -352,6 +352,54 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- TAXES FOR COS --}}
+                        @if(optional($data)->employment_type_id == 2)
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingSalary">
+                                    <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTaxes" aria-expanded="true">
+                                    TAXES
+                                    </button>
+                                </h2>
+                                <div id="collapseTaxes" class="accordion-collapse collapse show">
+                                    <div class="accordion-body">
+                                        <div class="row mt-3">
+                                            <div class="col-12 col-md-4 mb-3">
+                                                <label class="mb-2" for="has_two_percent">2% Tax</label>
+                                                <select id="has_two_percent" name="has_two_percent" class="form-select">
+                                                    <option value=""> - CHOOSE - </option>
+                                                    <option value="no" {{ optional($data)->two_percent ? 'selected' : '' }}>No</option>
+                                                    <option value="yes" {{ optional($data)->two_percent ? 'selected' : '' }}>Yes</option>
+                                                </select>
+                                                <div class="error-field"></div>
+                                            </div>
+
+                                            <div class="col-12 col-md-4 mb-3">
+                                                <label class="mb-2" for="has_three_percent">3% Tax</label>
+                                                <select id="has_three_percent" name="has_three_percent" class="form-select">
+                                                    <option value=""> - CHOOSE - </option>
+                                                    <option value="no" {{ optional($data)->three_percent ? 'selected' : '' }}>No</option>
+                                                    <option value="yes" {{ optional($data)->three_percent ? 'selected' : '' }}>Yes</option>
+                                                </select>
+                                                <div class="error-field"></div>
+                                            </div>
+
+                                            <div class="col-12 col-md-4 mb-3">
+                                                <label class="mb-2" for="has_five_percent">5% Tax</label>
+                                                <select id="has_five_percent" name="has_five_percent" class="form-select">
+                                                    <option value=""> - CHOOSE - </option>
+                                                    <option value="no" {{ optional($data)->five_percent ? 'selected' : '' }}>No</option>
+                                                    <option value="yes" {{ optional($data)->five_percent ? 'selected' : '' }}>Yes</option>
+                                                </select>
+                                                <div class="error-field"></div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                     </div>
 
                     <div class="bg-transparent border-0 d-flex justify-content-end mt-4">
