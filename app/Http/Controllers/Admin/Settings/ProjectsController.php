@@ -52,7 +52,7 @@ class ProjectsController extends Controller
         $isEdit = false;
         $id = null;
         
-        $employees = $this->employeeService->getEmployees(null, null, null);
+        $employees = $this->employeeService->getEmployees(null, null, null, null);
 
         $employees = collect($employees)
             ->groupBy('division_name')
@@ -158,7 +158,7 @@ class ProjectsController extends Controller
 
         $isEdit = true;
 
-        $employees = $this->employeeService->getEmployees(null, null, null);
+        $employees = $this->employeeService->getEmployees(null, null, null, null);
 
         $employees = collect($employees)
             ->groupBy('division_name')
