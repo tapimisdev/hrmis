@@ -384,7 +384,7 @@ class DailyTimeRecordService {
                 continue;
             }
 
-            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday) {
+            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday && !$is_so) {
                 if($is_same_day) {
                     $remarks[] = 'incomplete log';
                     $TOTAL_INCOMPLETE_LOGS++;

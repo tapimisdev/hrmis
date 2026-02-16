@@ -214,8 +214,9 @@ class TimelogStatisticsController extends Controller
 
                 // Check late: time_in > shift start_time
                 $lateThreshold = Carbon::parse($date . ' ' . $shift->start_time);
-                $isLate = $timeIn && $timeIn->greaterThan($lateThreshold);
-                if ($isLate) {
+                $isLate = $lateThreshold->diffInMinutes($timeIn, false);
+                
+                if ($isLate > 0) {
                     $lates++;
                     $lateDates[] = $date;
                 }

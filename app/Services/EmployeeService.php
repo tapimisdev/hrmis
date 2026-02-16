@@ -196,6 +196,9 @@ class EmployeeService {
                     'employee_information.account_status',
                     'employee_information.isDeleted',
                     'employee_information.toUpdatePassword',
+                    'employee_information.two_percent',
+                    'employee_information.three_percent',
+                    'employee_information.five_percent',
 
                     'employee_personal.profile',
                     'employee_personal.firstname',

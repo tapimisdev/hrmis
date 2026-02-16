@@ -271,6 +271,9 @@ class InformationController extends Controller
                     'payroll_account_no'      => $request->payroll_account_number ?? null,
                     'user_id'                 => $user_id,
                     'toUpdatePassword'        => $toChangePassword,
+                    'two_percent'             => $request->has_two_percent ? 1 : 0,
+                    'three_percent'           => $request->has_three_percent ? 1 : 0,
+                    'five_percent'            => $request->has_five_percent ? 1 : 0,
                     'updated_at'              => now(),
                     'created_at'              => $isExists ? DB::raw('created_at') : now(),
                 ]

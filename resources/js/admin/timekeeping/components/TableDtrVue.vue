@@ -324,13 +324,6 @@ export default {
                         text: 'Absent',
                     };
 
-                case this.hasRemark(remarks, 'special order'):
-                    return {
-                        class: 'status-so',
-                        icon: 'fa-solid fa-car-on',
-                        text: 'Special Order',
-                    };
-
                 default:
                     return null;
             }
@@ -356,6 +349,11 @@ export default {
             --------------------------------------------------*/
             if (hasSpecialOrder) {
                 return [
+                    {
+                        type: 'adjustment',
+                        icon: 'fa-solid fa-clock-rotate-left',
+                        text: 'Add/Adjust Time'
+                    },
                     {
                         type: 'cancel_special_order',
                         icon: 'fa-solid fa-ban',
