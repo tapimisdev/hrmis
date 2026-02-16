@@ -36,9 +36,9 @@ class PayrollComponentsController extends Controller
         }
 
         if(
-            $component->slug === 'ewt-2%' ||
-            $component->slug === 'percentage-tax-3%' ||
-            $component->slug === 'tax-ewt-5%'
+            $component->slug === 'ewt-2' ||
+            $component->slug === 'percentage-tax-3' ||
+            $component->slug === 'tax-ewt-5'
             ) {
             $component->employment_type = 'Contract of Service';
         } else {
@@ -70,7 +70,6 @@ class PayrollComponentsController extends Controller
      */
     public function store(Request $request, string $slug)
     {
-
         $component_id = DB::table('payroll_components')
             ->where('slug', $slug)
             ->value('id') ?? null;
