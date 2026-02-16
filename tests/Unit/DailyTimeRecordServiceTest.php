@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Services\DailyTimeRecordService;
@@ -15,7 +15,6 @@ class DailyTimeRecordServiceTest extends TestCase
             'endDate'   => '2026-01-15',
         ];
 
-        // Resolve service from Laravel container (boots facades properly)
         $service = app(DailyTimeRecordService::class);
 
         $result = $service->getDTR($payload);
