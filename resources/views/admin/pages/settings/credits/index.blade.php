@@ -38,12 +38,6 @@
                 Leave
             </a>
         </li>
-        <li class="nav-item" role="presentation">
-            <a href="{{ route('settings.credits.index', ['type' => 'offset']) }}" 
-               class="nav-link {{ $type === 'offset' ? 'active' : '' }}">
-                Offset
-            </a>
-        </li>
     </ul>
 
     @if($type === 'leave')

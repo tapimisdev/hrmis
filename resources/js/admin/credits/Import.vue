@@ -1,5 +1,5 @@
 <template>
-    <div class="uploading">
+    <div class="uploading pb-5">
         <!-- Upload -->
         <div v-if="upload && !loading">
             <label class="form-label fw-bold">Upload File (CSV)</label>
@@ -55,11 +55,10 @@
                             <th>#</th>
                             <th v-if="type === 'leave'">Leave</th>
                             <th>Employee No</th>
-                            <th>Previous</th>
-                            <th>Earned</th>
-                            <th>Deducted</th>
-                            <th>Balance</th>
-                            <th>As Of</th>
+                            <th>Month & Year</th>
+                            <th>Sick Leave</th>
+                            <th>Vacation Leave</th>
+                            <th>Total Credits</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
@@ -71,20 +70,6 @@
                             <td>
                                 <div class="px-3">{{ index + 1 }}</div>
                             </td>
-                            <td v-if="type === 'leave'">
-                                <select
-                                    v-model="credit.leave_id"
-                                    class="form-select"
-                                >
-                                    <option
-                                        v-for="leave in leaveTypes"
-                                        :key="leave.id"
-                                        :value="leave.id"
-                                    >
-                                        {{ leave.name }}
-                                    </option>
-                                </select>
-                            </td>
                             <td>
                                 <input
                                     type="text"
@@ -94,37 +79,30 @@
                             </td>
                             <td>
                                 <input
-                                    type="number"
-                                    class="form-control"
-                                    v-model.number="credit.previous"
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    class="form-control"
-                                    v-model.number="credit.earned"
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    class="form-control"
-                                    v-model.number="credit.deducted"
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    class="form-control"
-                                    v-model.number="credit.balance"
-                                />
-                            </td>
-                            <td>
-                                <input
                                     type="month"
                                     class="form-control"
-                                    v-model="credit.as_of"
+                                    v-model.number="credit.month_year"
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    v-model.number="credit.sick_leave"
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    v-model.number="credit.vacation_leave"
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    v-model.number="credit.total_credits"
                                 />
                             </td>
                             <td>
@@ -228,19 +206,16 @@ export default {
                     const obj = {};
                     headers.forEach((h, i) => (obj[h] = values[i] || ""));
                     return {
-                        type: obj.type || "leave",
-                        leave_id: obj.leave_id || "",
+                        month_year: obj.month_year || "",
                         employee_no: obj.employee_no || "",
-                        previous: Number(obj.previous || 0),
-                        earned: Number(obj.earned || 0),
-                        deducted: Number(obj.deducted || 0),
-                        balance: Number(obj.balance || 0),
-                        as_of: obj.as_of
-                            ? obj.as_of.split("/").reverse().join("-")
-                            : "",
+                        sick_leave: Number(obj.sick_leave) || 0,
+                        vacation_leave: Number(obj.vacation_leave || 0),
+                        total_credits: Number(obj.total_credits || 0),
                         remarks: obj.remarks || "",
                     };
                 });
+
+                console.log(headers, credits);
 
                 this.creditsData.credits = credits;
                 this.loading = false;
