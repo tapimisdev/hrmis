@@ -146,6 +146,7 @@ class DailyTimeRecordService {
             $remarks = [];
             $is_future = false;
             $empty_log = empty($date['time_in']) && empty($date['time_out']);
+
             $ot_mins = $total_time_work = 0;
             $double = 1;
 
@@ -211,7 +212,13 @@ class DailyTimeRecordService {
 
             /** ---------------- RESTDAY CHECK ---------------- **/
             if (in_array($dayName, $date_work_schedule)) {
-                $remarks[] = $empty_log ? 'restday' : 'restday ot';
+
+                if(empty($date['overtime_in']) && empty($date['overtime_in']) ) {
+                    $remarks[] = $empty_log ? 'restday' : 'restday ot';
+                } else {
+                    $remarks[] = 'restday ot';
+                }
+
                 $is_restday = true;
             }
 

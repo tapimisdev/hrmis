@@ -599,8 +599,8 @@ class TimelogsServices {
                 $approvedHours = (double) $overtime->total_hours;
 
                 // Breaks: 1 hour break for every 2 hours
-                $timelogBreaks  = floor($timelogHours / 2);
-                $approvedBreaks = floor($approvedHours / 2);
+                $timelogBreaks  = floor($timelogHours / 3);
+                $approvedBreaks = floor($approvedHours / 3);
 
                 // Payable hours after breaks
                 $payableTimelog  = max(0, $timelogHours - $timelogBreaks);
