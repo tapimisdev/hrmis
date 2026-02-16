@@ -75,7 +75,7 @@ class SalaryController extends Controller
         $batchProgress = $batch->progress(); // 0–100 %
 
         $employymentEnums = collect(EmploymentTypesEnum::cases())
-                            ->firstWhere('value', $payroll->employment_type_id);
+            ->firstWhere('value', $payroll->employment_type_id);
 
         $employmentTypeName = $employymentEnums->name; // REGULAR or COS
 
@@ -108,12 +108,11 @@ class SalaryController extends Controller
             $batch_id = $this->payroll_service->generatePayrollRegistryReport($validatedData, $payroll_id);
 
             return response()->json([
-                'batch_id' => $batch_id, 
+                'batch_id' => $batch_id,
                 'message' => 'Payroll created successfully.',
                 'payroll_id' => $payroll_id,
                 'payroll_no' => $payroll_no
             ], 201);
-
         } catch (\Throwable $e) {
             Log::error('Payroll creation failed: ' . $e->getMessage(), ['exception' => $e]);
             return response()->json([
@@ -155,7 +154,6 @@ class SalaryController extends Controller
                         ->whereIn('id', $permanentEmployeeIds)
                         ->delete();
                 }
-
             } else {
 
                 $employeeIds = DB::table('payroll_salary_employee')
@@ -187,7 +185,6 @@ class SalaryController extends Controller
                 'message' => 'Salary payroll deleted successfully',
                 'status'  => 'success'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -217,7 +214,7 @@ class SalaryController extends Controller
         ]);
 
         $payroll = DB::table('payroll_salary')->where('id', $id)->first();
-        
+
         if (!$payroll) {
             return response()->json([
                 'message' => 'No Payroll found',
@@ -225,10 +222,21 @@ class SalaryController extends Controller
             ], 404);
         }
 
+        $oldStatus = $payroll->status;
+        $newStatus = $request->status;
+
+        // Optional: avoid doing anything if same status
+        if ($oldStatus === $newStatus) {
+            return response()->json([
+                'message' => 'Status is already set',
+                'status'  => 'no_change',
+                'data'    => ['id' => $id, 'status' => $newStatus]
+            ]);
+        }
+
         DB::beginTransaction();
 
         try {
-
             // Allowed transitions (your flow)
             $allowedTransitions = [
                 'draft' => ['pending', 'cancelled'],
@@ -241,8 +249,8 @@ class SalaryController extends Controller
             ];
 
             if (
-                isset($allowedTransitions[$payroll->status]) &&
-                !in_array($request->status, $allowedTransitions[$payroll->status])
+                isset($allowedTransitions[$oldStatus]) &&
+                !in_array($newStatus, $allowedTransitions[$oldStatus], true)
             ) {
                 return response()->json([
                     'message' => 'Invalid status transition',
@@ -252,20 +260,18 @@ class SalaryController extends Controller
 
             /**
              * STRICT MONTH + CUTOFF CONSTRAINT
-             * Only ONE payroll per (month, cutoff) can be in ANY active status.
-             * If one is approved, others cannot become pending, etc. for the same cutoff.
              */
             $activeStatuses = ['pending', 'approved', 'for_releasing', 'completed'];
 
-            if (in_array($request->status, $activeStatuses)) {
+            if (in_array($newStatus, $activeStatuses, true)) {
 
                 $exists = DB::table('payroll_salary')
                     ->whereYear('payroll_date', date('Y', strtotime($payroll->payroll_date)))
                     ->whereMonth('payroll_date', date('m', strtotime($payroll->payroll_date)))
                     ->where('employment_type_id', $payroll->employment_type_id)
-                    ->where('cutoff', $payroll->cutoff)        // e.g. 1 or 2 (or whatever your cutoff values are)
-                    ->whereIn('status', $activeStatuses)       // any active status
-                    ->where('id', '!=', $id)                   // exclude current record
+                    ->where('cutoff', $payroll->cutoff)
+                    ->whereIn('status', $activeStatuses)
+                    ->where('id', '!=', $id)
                     ->exists();
 
                 if ($exists) {
@@ -276,10 +282,11 @@ class SalaryController extends Controller
                 }
             }
 
+            //  Update first
             DB::table('payroll_salary')
                 ->where('id', $id)
                 ->update([
-                    'status' => $request->status,
+                    'status' => $newStatus,
                     'updated_at' => now(),
                 ]);
 
@@ -290,13 +297,12 @@ class SalaryController extends Controller
                 'status'  => 'success',
                 'data'    => [
                     'id' => $id,
-                    'status' => $request->status,
+                    'from' => $oldStatus,
+                    'to' => $newStatus,
                     'month' => date('m', strtotime($payroll->payroll_date)) . ' ' . date('Y', strtotime($payroll->payroll_date)),
                 ]
             ]);
-
         } catch (\Exception $e) {
-
             DB::rollBack();
 
             return response()->json([
@@ -306,12 +312,11 @@ class SalaryController extends Controller
         }
     }
 
-    public function import_index() {
+
+    public function import_index()
+    {
         dd(123);
     }
 
-    public function import_save(Request $request) {
-
-    }
-
+    public function import_save(Request $request) {}
 }

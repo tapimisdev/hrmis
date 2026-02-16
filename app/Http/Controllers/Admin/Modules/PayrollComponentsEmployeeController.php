@@ -198,9 +198,9 @@ class PayrollComponentsEmployeeController extends Controller
             
             // if the tax type is cos, get all cos employees
             if(
-                $payload['module_tab'] === 'ewt-2%' ||
-                $payload['module_tab'] === 'percentage-tax-3%' ||
-                $payload['module_tab'] === 'tax-ewt-5%'
+                $payload['module_tab'] === 'ewt-2' ||
+                $payload['module_tab'] === 'percentage-tax-3' ||
+                $payload['module_tab'] === 'tax-ewt-5'
                 
                 ) {
                 $employeeNos = $this->employeeService
@@ -253,9 +253,9 @@ class PayrollComponentsEmployeeController extends Controller
 
                 // if the tax type is cos, get all cos employees
                 if(
-                    $payload['module_tab'] === 'ewt-2%' ||
-                    $payload['module_tab'] === 'percentage-tax-3%' ||
-                    $payload['module_tab'] === 'tax-ewt-5%'
+                    $payload['module_tab'] === 'ewt-2' ||
+                    $payload['module_tab'] === 'percentage-tax-3' ||
+                    $payload['module_tab'] === 'tax-ewt-5'
                     
                     ) {
                     
@@ -377,14 +377,24 @@ class PayrollComponentsEmployeeController extends Controller
      */
     private function computePercentageSalary(string $employee_no, float $percentage): float
     {
-        $salary = DB::table('employee_salary')
+        $salaryRaw = DB::table('employee_salary')
             ->where('employee_no', $employee_no)
             ->orderByDesc('effectivity_date')
             ->value('amount');
 
-        if (!$salary || $percentage <= 0) {
+        if (!$salaryRaw || $percentage <= 0) {
             return 0.0;
         }
+
+        $salaryClean = preg_replace('/[^0-9.\-]/', '', (string) $salaryRaw);
+
+        if (!is_numeric($salaryClean)) {
+            throw new \RuntimeException(
+                "Invalid salary format for {$employee_no}: " . var_export($salaryRaw, true)
+            );
+        }
+
+        $salary = (float) $salaryClean;
 
         return round($salary * ($percentage / 100), 2);
     }
