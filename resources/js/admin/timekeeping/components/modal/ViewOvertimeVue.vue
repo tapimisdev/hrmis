@@ -93,7 +93,7 @@ export default {
             this.loading = true;
             this.errors = {};
             try {
-                const date = this.buildDate(this.year, this.month, this.index);
+                const date = this.buildDate(this.year, this.month, this.index - 1);
 
                 const response = await axios.get(`/api/get-overtime`, {
                     headers: {
