@@ -354,7 +354,7 @@
                         </div>
 
                         {{-- TAXES FOR COS --}}
-                        @if($data->employment_type_id == 2)
+                        @if(optional($data)->employment_type_id == 2)
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="headingSalary">
                                     <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTaxes" aria-expanded="true">
