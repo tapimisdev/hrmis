@@ -17,7 +17,7 @@ jobs:
       CONTAINER: orbit
 
     steps:
-      - name: Update live code
+      - name: Update live code (pull main)
         shell: bash
         run: |
           set -euo pipefail
@@ -26,25 +26,34 @@ jobs:
 
           cd "$APP_DIR"
 
-          export GIT_TERMINAL_PROMPT=0
-          git fetch origin main
+          git fetch --all
           git reset --hard origin/main
           git clean -fd
 
       - name: Install PHP dependencies
-        run: docker exec $CONTAINER bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
 
       - name: Install Node dependencies
-        run: docker exec $CONTAINER bash -lc "cd /var/www/html && npm ci"
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "cd /var/www/html && npm ci"
 
       - name: Build frontend assets
-        run: docker exec $CONTAINER bash -lc "cd /var/www/html && npm run build"
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "cd /var/www/html && npm run build"
 
       - name: Run database migrations
-        run: docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan migrate --force"
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan migrate --force"
 
       - name: Optimize Laravel
-        run: docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan optimize:clear"
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan optimize:clear"
 
       - name: Deploy finished
         run: echo "Deploy done!"
