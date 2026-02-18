@@ -1,48 +1,61 @@
-name: Deploy to Production (selft-hosted)
+name: Deploy Production (Local)
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 concurrency:
-  group: deploy-main
+  group: deploy-production
   cancel-in-progress: true
 
 jobs:
   deploy:
-    runs-on: [self-hosted, orbit]
-    
+    runs-on: [self-hosted, orbit2]
+
+    env:
+      APP_DIR: /var/www/orbit
+      CONTAINER: orbit
+
     steps:
-      - name: Deploy on production server
+      - name: Go to app directory
         shell: bash
         run: |
-          set -euo pipefail
-
-          APP_DIR="/var/www/orbit"
-
-          echo "Going to $APP_DIR"
+          echo "Switching to $APP_DIR"
           cd "$APP_DIR"
 
-          echo "Fetching latest code (main)"
+      - name: Pull latest code
+        shell: bash
+        run: |
+          set -e
+          cd "$APP_DIR"
           git fetch --all
           git reset --hard origin/main
           git clean -fd
 
-          echo "Install PHP deps"
-          docker exec orbit bash -lc "composer install --no-interaction --prefer-dist --optimize-autoloader"
+      - name: Install PHP dependencies
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "composer install --no-interaction --prefer-dist --optimize-autoloader"
 
-          echo "Install Node deps"
-          docker exec orbit bash -lc "npm install"
+      - name: Install Node dependencies
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "npm ci"
 
-          echo "Build frontend assets"
-          docker exec orbit bash -lc "npm run build"
+      - name: Build frontend assets
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "npm run build"
 
-          echo "Run migrations"
-          docker exec orbit bash -lc "php artisan migrate --force"
+      - name: Run database migrations
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "php artisan migrate --force"
 
-          echo "Cache optimizations"
-          docker exec orbit bash -lc "php artisan optimize:clear"
+      - name: Optimize Laravel
+        shell: bash
+        run: |
+          docker exec $CONTAINER bash -lc "php artisan optimize"
 
-          echo "Deploy done!"
-
+      - name: Deploy finished
+        run: echo "Deploy done!"
