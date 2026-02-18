@@ -13,43 +13,38 @@ jobs:
     runs-on: [self-hosted, orbit2]
 
     env:
+      APP_DIR: /var/www/orbit
       CONTAINER: orbit
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Trust repo directory for git
+      - name: Update live code
         shell: bash
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          set -euo pipefail
+
+          git config --global --add safe.directory "$APP_DIR"
+
+          cd "$APP_DIR"
+
+          export GIT_TERMINAL_PROMPT=0
+          git fetch origin main
+          git reset --hard origin/main
+          git clean -fd
 
       - name: Install PHP dependencies
-        shell: bash
-        run: |
-          docker exec $CONTAINER bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
+        run: docker exec $CONTAINER bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
 
       - name: Install Node dependencies
-        shell: bash
-        run: |
-          docker exec $CONTAINER bash -lc "cd /var/www/html && npm ci"
+        run: docker exec $CONTAINER bash -lc "cd /var/www/html && npm ci"
 
       - name: Build frontend assets
-        shell: bash
-        run: |
-          docker exec $CONTAINER bash -lc "cd /var/www/html && npm run build"
+        run: docker exec $CONTAINER bash -lc "cd /var/www/html && npm run build"
 
       - name: Run database migrations
-        shell: bash
-        run: |
-          docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan migrate --force"
+        run: docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan migrate --force"
 
       - name: Optimize Laravel
-        shell: bash
-        run: |
-          docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan optimize:clear"
+        run: docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan optimize:clear"
 
       - name: Deploy finished
         run: echo "Deploy done!"
