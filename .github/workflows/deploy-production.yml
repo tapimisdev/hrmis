@@ -1,0 +1,48 @@
+name: Deploy to Production (selft-hosted)
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+job:
+  deploy:
+    runs-on: [self-hosted, orbit]
+    
+    steps:
+      - name: Deploy on production server
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APP_DIR="/var/www/orbit"
+
+          echo "Going to $APP_DIR"
+          cd "$APP_DIR"
+
+          echo "Fetching latest code (main)"
+          git fetch --all
+          git reset --hard origin/main
+          git clean -fd
+
+          echo "Install PHP deps"
+          docker exec orbit bash -lc "composer install --no-interaction --prefer-dist --optimize-autoloader"
+
+          echo "Install Node deps"
+          docker exec orbit bash -lc "npm install"
+
+          echo "Build frontend assets"
+          docker exec orbit bash -lc "npm run build"
+
+          echo "Run migrations"
+          docker exec orbit bash -lc "php artisan migrate --force"
+
+          echo "Cache optimizations"
+          docker exec orbit bash -lc "php artisan optimize:clear"
+
+          echo "Deploy done!"
+
