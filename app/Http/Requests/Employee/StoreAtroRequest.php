@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Employee;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -27,7 +28,8 @@ class StoreAtroRequest extends FormRequest
         $userId = request('user_id') ?? Auth::id();
 
         return [
-            'user_id' => ['nullable', 'exists:employee_information,employee_no'], // only for timekeeping adjustment only
+            'user_id' => ['nullable', 'exists:employee_information,employee_no'],
+
             'date' => [
                 'required',
                 'date',
@@ -36,17 +38,24 @@ class StoreAtroRequest extends FormRequest
                         ->whereNotIn('status', ['approved', 'cancelled']);
                 }),
             ],
+
             'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
+            'end_time'   => ['required', 'date_format:H:i', 'after:start_time'],
+
+            'total_hours' => [
+                'required',
+                'numeric',
+                'min:0.01',
+            ],
+
             'reason' => ['required', 'string', 'max:500'],
-            'status' => ['nullable', Rule::in(['pending', 'approved'])], // only for timekeeping adjustment only
-            
-            'attachments'   => ['required', 'array', 'max:5'],
-            'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:8192'],            // 'approvers'     => ['nullable', 'array', 'min:1'],
-            // 'approvers.*'   => ['nullable', 'array', 'min:1'],
-            // 'approvers.*.*' => ['nullable', 'exists:users,id'],
+            'status' => ['nullable', Rule::in(['pending', 'approved'])],
+
+            'attachments'   => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:8192'],
         ];
     }
+
 
     protected function withValidator(Validator $validator)
     {
@@ -71,7 +80,7 @@ class StoreAtroRequest extends FormRequest
 
             if (
                 $errors->has('attachments') ||
-                collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'attachments.'))
+                collect($errors->keys())->contains(fn($k) => str_starts_with($k, 'attachments.'))
             ) {
                 $messages = [];
 
