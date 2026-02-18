@@ -38,7 +38,7 @@ class OffsetApplicationController extends Controller {
                 'la.name',
                 'la.user_id',
                 'la.employee_no',
-                'la.days',
+                'la.credit_equivalent',
                 'la.reason',
                 'la.status',
                 'la.created_at',
@@ -56,7 +56,7 @@ class OffsetApplicationController extends Controller {
                 'la.name',
                 'la.user_id',
                 'la.employee_no',
-                'la.days',
+                'la.credit_equivalent',
                 'la.reason',
                 'la.status',
                 'la.created_at',
@@ -214,14 +214,23 @@ class OffsetApplicationController extends Controller {
                 return response()->json(['error' => 'Record not found'], 404);
             }
 
+            $updateCredits = $this->updateCredits($id);
+
+            if($updateCredits['status'] !== 'success') {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $updateCredits['message']
+                ], 500);
+            }
+
             DB::table('offset_applications')
                 ->where('id', $id)
                 ->update([
                     'status' => 'approved',
+                    'credit_remarks' => $updateCredits['single_remarks'] ?? null,
                     'approver_id' => Auth::id() ?? null
                 ]);
-
-            $this->updateCredits($id);
 
             $sender = ucwords(Auth::user()->name);
             $reciever = $existingData->user_id;
@@ -301,163 +310,144 @@ class OffsetApplicationController extends Controller {
 
     public function updateCredits(string $id)
     {
-        DB::beginTransaction();
+        $data = $this->getRawData($id)->first();
 
-        try {
-            // --- Step 0: Fetch offset application data ---
-            $data = $this->getRawData($id)->first();
-
-            if (!$data) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unable to find offset application ID: ' . $id,
-                ], 404);
-            }
-
-            $employee_no  = $data->employee_no;
-            $currentMonth = Carbon::now()->format('Y-m');
-
-            // --- Step 1: Fetch latest offset credits for the current month ---
-            $latestCredits = $this->employeeService
-                ->getOffsetCreditsByMonthYear($employee_no, $currentMonth);
-
-            $remaining_balance = (float) ($latestCredits['current']->balance ?? 0);
-
-            // --- Step 2: Process dates and calculate total deduction ---
-            $datesByMonth = [];
-            $toBeDeducted = 0;
-
-            foreach ($data->dates as $d) {
-                $dateObj = Carbon::parse($d['date']);
-                $month   = strtoupper($dateObj->format('M')); // e.g., FEB
-                $day     = $dateObj->format('j');
-                $shift   = strtolower($d['shift']);
-
-                // Calculate leave equivalent
-                $credit = match ($shift) {
-                    'morning', 'afternoon' => 0.5,
-                    'wholeday' => 1.0,
-                    default => 0,
-                };
-
-                $toBeDeducted += $credit;
-
-                if (!isset($datesByMonth[$month])) {
-                    $datesByMonth[$month] = [];
-                }
-
-                $datesByMonth[$month][] = [
-                    'day'    => $day,
-                    'shift'  => $shift,
-                    'credit' => $credit,
-                ];
-            }
-
-            $new_balance = $remaining_balance - $toBeDeducted;
-
-            // --- Step 3: Build formatted remark with short shift codes ---
-            $formattedRemark = collect($datesByMonth)
-                ->map(function ($days, $month) {
-                    $dayStrings = [];
-                    $totalCredit = 0;
-
-                    foreach ($days as $d) {
-                        // Short code mapping
-                        $shiftShort = match ($d['shift']) {
-                            'morning'  => 'AM',
-                            'afternoon'=> 'PM',
-                            'wholeday' => 'WD',
-                            default    => $d['shift'],
-                        };
-
-                        $dayStrings[] = sprintf("%s (%s)", $d['day'], $shiftShort);
-                        $totalCredit += $d['credit'];
-                    }
-
-                    return sprintf(
-                        "%s %s (Eqv: %.2f)",
-                        $month,
-                        implode(', ', $dayStrings),
-                        $totalCredit
-                    );
-                })
-                ->implode(" | ");
-
-            // --- Step 4: Update or insert offset_credits for current month ---
-            $existing = DB::table('offset_credits')
-                ->where('employee_no', $employee_no)
-                ->where('as_of', $currentMonth)
-                ->first();
-
-            if ($existing) {
-                $remarks = trim($existing->remarks ?? '');
-                if ($remarks) $remarks .= "\n"; // append new line
-                $remarks .= $formattedRemark;
-
-                DB::table('offset_credits')
-                    ->where('id', $existing->id)
-                    ->update([
-                        'deducted'   => (float) $existing->deducted + $toBeDeducted,
-                        'balance'    => $new_balance,
-                        'remarks'    => $remarks,
-                        'updated_at' => now(),
-                    ]);
-            } else {
-                DB::table('offset_credits')->insert([
-                    'employee_no' => $employee_no,
-                    'as_of'       => $currentMonth,
-                    'previous'    => $remaining_balance,
-                    'earned'      => 0,
-                    'deducted'    => $toBeDeducted,
-                    'balance'     => $new_balance,
-                    'remarks'     => $formattedRemark,
-                    'created_at'  => now(),
-                    'updated_at'  => now(),
-                ]);
-            }
-
-            $runningBalance = $new_balance;
-
-            // --- Step 5: Recalculate future offset_credits ---
-            $futureCredits = DB::table('offset_credits')
-                ->where('employee_no', $employee_no)
-                ->where('as_of', '>', $currentMonth)
-                ->orderBy('as_of')
-                ->get();
-
-            foreach ($futureCredits as $credit) {
-                $newBalance = $runningBalance + (float) $credit->earned - (float) $credit->deducted;
-
-                DB::table('offset_credits')
-                    ->where('id', $credit->id)
-                    ->update([
-                        'previous'   => $runningBalance,
-                        'balance'    => $newBalance,
-                        'updated_at' => now(),
-                    ]);
-
-                $runningBalance = $newBalance;
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Offset credits updated and future balances adjusted.',
-            ]);
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-
+        if (!$data) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Error updating offset credits.',
-                'error'   => $e->getMessage(),
-            ], 500);
+                'message' => 'Unable to find offset application ID: ' . $id,
+            ], 404);
         }
+
+        $employeeNo  = $data->employee_no;
+        $currentMonth = now()->format('Y-m');
+
+        // --- Fetch latest offset credits for current month ---
+        $latestCredits = $this->employeeService
+            ->getOffsetCreditsByMonthYear($employeeNo, $currentMonth);
+
+        $remainingBalance = (float) ($latestCredits['current']->balance ?? 0);
+
+        $datesByMonth = [];
+        $toBeDeducted = 0;
+
+        // --- Process dates ---
+        foreach ($data->dates as $d) {
+            $dateObj = Carbon::parse($d['date']);
+            $month   = strtoupper($dateObj->format('M'));
+            $day     = $dateObj->format('j');
+            $shift   = strtolower($d['shift']);
+
+            $credit = match ($shift) {
+                'morning', 'afternoon' => 0.5,
+                'wholeday'             => 1.0,
+                default                => 0,
+            };
+
+            $toBeDeducted += $credit;
+
+            $datesByMonth[$month][] = [
+                'day'    => $day,
+                'shift'  => $shift,
+                'credit' => $credit,
+            ];
+        }
+
+        $newBalance = $remainingBalance - $toBeDeducted;
+
+        // --- Build SINGLE remark (new only) ---
+        $singleRemark = collect($datesByMonth)
+            ->map(function ($days, $month) {
+
+                $totalCredit = 0;
+
+                $dayStrings = collect($days)->map(function ($d) use (&$totalCredit) {
+                    $totalCredit += $d['credit'];
+
+                    $shiftShort = match ($d['shift']) {
+                        'morning'   => 'AM',
+                        'afternoon' => 'PM',
+                        'wholeday'  => 'WD',
+                        default     => strtoupper($d['shift']),
+                    };
+
+                    return "{$d['day']} ({$shiftShort})";
+                })->implode(', ');
+
+                return sprintf("%s %s (Eqv: %.2f)", $month, $dayStrings, $totalCredit);
+
+            })
+            ->implode(' | ');
+
+        $combinedRemarks = $singleRemark;
+
+        // --- Insert / Update current month offset_credits ---
+        $existing = DB::table('offset_credits')
+            ->where('employee_no', $employeeNo)
+            ->where('as_of', $currentMonth)
+            ->first();
+
+        if ($existing) {
+            $previousRemarks = trim($existing->remarks ?? '');
+
+            $combinedRemarks = $previousRemarks
+                ? $previousRemarks . "\n" . $singleRemark
+                : $singleRemark;
+
+            DB::table('offset_credits')
+                ->where('id', $existing->id)
+                ->update([
+                    'deducted'   => (float) $existing->deducted + $toBeDeducted,
+                    'balance'    => $newBalance,
+                    'remarks'    => $combinedRemarks,
+                    'updated_at' => now(),
+                ]);
+
+        } else {
+
+            DB::table('offset_credits')->insert([
+                'employee_no' => $employeeNo,
+                'as_of'       => $currentMonth,
+                'previous'    => $remainingBalance,
+                'earned'      => 0,
+                'deducted'    => $toBeDeducted,
+                'balance'     => $newBalance,
+                'remarks'     => $singleRemark,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        }
+
+        // --- Recalculate future balances ---
+        $runningBalance = $newBalance;
+
+        $futureCredits = DB::table('offset_credits')
+            ->where('employee_no', $employeeNo)
+            ->where('as_of', '>', $currentMonth)
+            ->orderBy('as_of')
+            ->get();
+
+        foreach ($futureCredits as $credit) {
+            $updatedBalance = $runningBalance + (float) $credit->earned - (float) $credit->deducted;
+
+            DB::table('offset_credits')
+                ->where('id', $credit->id)
+                ->update([
+                    'previous'   => $runningBalance,
+                    'balance'    => $updatedBalance,
+                    'updated_at' => now(),
+                ]);
+
+            $runningBalance = $updatedBalance;
+        }
+
+        return response()->json([
+            'status'           => 'success',
+            'message'          => 'Offset credits updated successfully.',
+            'combined_remarks' => $combinedRemarks,
+            'single_remarks'   => $singleRemark,
+        ]);
     }
-
-
 
     public function datatable($query)
     {
