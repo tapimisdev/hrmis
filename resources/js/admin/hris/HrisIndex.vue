@@ -67,6 +67,7 @@
                 <tr>
                     <th></th>
                     <th>Employee No</th>
+                    <th>Biometrics ID</th>
                     <th>Name</th>
                     <th>Date Hired</th>
                     <th style="width: 120px">Action</th>
@@ -130,13 +131,14 @@ export default {
                 columns: [
                     { data: "profile" },
                     { data: "employee_no" },
+                    { data: "biometrics_id" },
                     { data: "name" },
                     { data: "date_hired" },
                     { data: "actions", orderable: true, searchable: false },
                 ],
                 columnDefs: [
                     {
-                        targets: [1, 2, 3, 4],
+                        targets: [3, 4],
                         className: 'min-table-width'
                     }
                 ],
