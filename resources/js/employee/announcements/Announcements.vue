@@ -106,6 +106,8 @@
 </template>
 
 <script>
+const token = localStorage.getItem("auth_token");
+
 import AnnouncementCard from "./AnnouncementCard.vue";
 import SkeletonCard from "./Skeleton/SkeletonCard.vue";
 import axios from "axios";
@@ -122,6 +124,7 @@ export default {
                 prev_page_url: null,
                 next_page_url: null,
             },
+            token: token,
             searchQuery: "",
             searchTimeout: null,
             loading: false, // Added loading state
