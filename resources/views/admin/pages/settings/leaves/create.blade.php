@@ -41,9 +41,9 @@
                         <div class="is_cumulative_error"></div>
                     </div>
                     <div class="col-12 col-md-4 mb-3">
-                        <label class="mb-2" for="credit_to_deduct">To Be Deducted <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" id="credit_to_deduct" placeholder="0" name="credit_to_deduct" class="form-control">
-                        <div class="credit_to_deduct_error error-field"></div>
+                        <label class="mb-2" for="to_be_credited">To Be Credited <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" id="to_be_credited" placeholder="0" name="to_be_credited" class="form-control">
+                        <div class="to_be_credited_error error-field"></div>
                     </div>
                 </div>
             </div>
@@ -74,7 +74,7 @@
             const formData = {
                 name: $('#name').val(),
                 is_cumulative: $('#is_cumulative').val(),
-                credit_to_deduct: $('#credit_to_deduct').val(),
+                to_be_credited: $('#to_be_credited').val(),
                 _token: $('input[name="_token"]').val()
             };
 

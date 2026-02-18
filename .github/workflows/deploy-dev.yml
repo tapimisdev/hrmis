@@ -1,0 +1,70 @@
+name: Deploy (Self-hosted)
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, 'develop']
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧩 Pick path by branch
+        id: pick
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "develop" ]; then
+            echo "dir=/var/www/html/hris" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=/var/www/html/hris" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🚀 Deploy locally on server
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DIR="${{ steps.pick.outputs.dir }}"
+          echo "Deploying to: $DIR"
+
+          cd "$DIR"
+          git fetch --all
+          git reset --hard "origin/${GITHUB_REF_NAME}"
+
+          # Backend deps
+          composer install --no-interaction --no-dev --optimize-autoloader
+
+          # --- NVM (make node/npm available) ---
+          export NVM_DIR="$HOME/.nvm"
+          if [ -s "$NVM_DIR/nvm.sh" ]; then
+            . "$NVM_DIR/nvm.sh"
+          else
+            echo "❌ nvm.sh not found at $NVM_DIR/nvm.sh"
+            echo "If nvm is installed elsewhere, set NVM_DIR accordingly."
+            exit 1
+          fi
+
+          # Use a specific Node version (recommended) OR the repo's .nvmrc if you have one
+          if [ -f ".nvmrc" ]; then
+            nvm install
+            nvm use
+          else
+            nvm install 20
+            nvm use 20
+          fi
+
+          node -v
+          npm -v
+
+          # Frontend build (Vite)
+          npm ci
+          npm run build
+
+          # Laravel optimize
+          php artisan migrate --force
+          php artisan optimize:clear
+
+          php artisan queue:restart

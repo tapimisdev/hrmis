@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('leaves', function(Blueprint $table) {
             $table->decimal('to_be_credited', 10, 2)
-                ->after('credit_to_deduct')
+                ->after('name')
                 ->default(1.25);
         });
     }

@@ -17,6 +17,16 @@
                 @endif
             </div>
             <div class="col-12 {{ $isExists ? 'col-md-9' : '' }}">
+                <div class="legend mt-3 mb-4">
+                    <h6 class="text-uppercase fw-bold">Legends</h6>
+                    <ul class="list-inline mb-4">
+                        <li class="list-inline-item"><span class="badge bg-primary">AM</span> Morning</li>
+                        <li class="list-inline-item"><span class="badge bg-success">PM</span> Afternoon</li>
+                        <li class="list-inline-item"><span class="badge bg-warning">WH</span> Whole Day</li>
+                        <li class="list-inline-item"><span class="badge bg-danger">EQV</span> Equivalent</li>    
+                    </ul>
+                    <hr>
+                </div>
                 <div class="accordion">
                     <div class="accordion-item">
                         <h2 class="accordion-header">
@@ -27,17 +37,20 @@
                         </h2>
                         <div id="flush-offset-credits" class="accordion-collapse collapse show">
                             <div class="accordion-body">
-                                <div class="mb-1 d-flex justify-content-end">
+                                <div class="mb-1 d-flex justify-content-end gap-3">
+                                    <a href="{{ route('hris.employee.offset-credits.download', ['employee_no' => $employee_no]) }}" class="btn btn-dark mt-3 mb-3 text-uppercase px-4">
+                                        <i class="fa-solid fa-download me-1"></i> Download
+                                    </a>
                                     <button class="btn btn-primary mt-3 mb-3 text-uppercase px-4"
                                             data-bs-toggle="modal"
                                             data-bs-target="#add-modal-credits">
-                                        Add Credits
+                                        <i class="fa-solid fa-folder-plus me-1"></i> Update
                                     </button>
                                 </div>
                                 <table class="table table-bordered table-striped">
                                     <thead>
                                         <tr>
-                                            <th>As Of</th>  
+                                            <th>Date</th>  
                                             <th>Previous</th>
                                             <th>Earned</th>
                                             <th>Deduction</th>
@@ -64,7 +77,7 @@
                                                         // Split remarks by newline to count actual lines
                                                         $lines = $credit->remarks ? explode("\n", $credit->remarks) : [];
                                                         $rows = count($lines);               // number of existing lines
-                                                        $rows = max(2, min($rows, 8));       // minimum 2 rows, maximum 8 rows
+                                                        $rows = max(5, min($rows, 10));       // minimum 5 rows, maximum 10 rows
                                                     @endphp
 
                                                     <textarea 
@@ -83,6 +96,19 @@
                                         @endforelse
                                     </tbody>
                                 </table>
+                                 <div class="mt-4 mb-3">
+                                    <span class="badge bg-primary text-uppercase"> as of {{ \Carbon\Carbon::now()->format('F') }}</span>
+                                    <div>
+                                        <strong class="text-uppercase">
+                                            <span class="text-decoration-underline">
+                                                Current Balance:  
+                                            </span>
+                                            <span class="bg-{{ ($latestCredits->balance ?? 0) <= 0 ? 'danger' : 'primary' }} rounded-2 py-2 px-3 ms-2" style="font-size: 1.25rem;">
+                                                {{ $latestCredits->balance ?? 0 }}
+                                            </span>
+                                        </strong>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -105,7 +131,7 @@
                 <input type="hidden" name="_method" id="method">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title text-uppercase" id="modalTitle">Add Credits</h5>
+                        <h5 class="modal-title text-uppercase" id="modalTitle">Offset Credits</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -115,7 +141,7 @@
                                 <input type="number" step="0.01" class="form-control restricted" name="previous_balance" id="previous_balance" readonly value="0">
                             </div>
                             <div class="col-12 mb-3 col-md-9">
-                                <label class="form-label">As Of</label>
+                                <label class="form-label">Date</label>
                                 <input type="month"
                                     class="form-control"
                                     name="as_of"
@@ -187,9 +213,8 @@
             const previous = parseFloat($('#previous_balance').val()) || 0;
             const earned = parseFloat($('#earned').val()) || 0;
             const deduction = parseFloat($('#deduction').val()) || 0;
-            $('#balance').val(previous + earned - deduction);
+            $('#balance').val((previous + earned - deduction).toFixed(2));
         }
-        
 
         function fetchCredits(as_of) {
             if (!as_of) return;

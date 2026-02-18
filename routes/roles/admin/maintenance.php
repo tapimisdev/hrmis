@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\Settings\EarningsController;
 use App\Http\Controllers\Admin\Settings\EmploymentTypesController;
 use App\Http\Controllers\Admin\Settings\HolidayController;
 use App\Http\Controllers\Admin\Settings\LeaveController;
+use App\Http\Controllers\Admin\Settings\LeaveAssignController;
+use App\Http\Controllers\Admin\Settings\CreditsController;
 use App\Http\Controllers\Admin\Settings\ProjectsController;
 use App\Http\Controllers\Admin\Settings\OrganizationController;
 use App\Http\Controllers\Admin\Settings\PositionController;
@@ -57,7 +59,26 @@ use App\Http\Controllers\Admin\Settings\PayrollSettingsController;
     Route::resource('deductions', DeductionController::class);
 
     # LEAVES
-    Route::resource('leaves', LeaveController::class)->names('settings.leaves');
+    Route::prefix('leaves')->name('settings.leaves.')->group(function () {
+        Route::get('/assign', [LeaveAssignController::class, 'index'])
+            ->name('assign');
+        Route::post('/assign', [LeaveAssignController::class, 'save'])
+            ->name('assign');
+        Route::get('/', [LeaveController::class, 'index'])->name('index');
+        Route::get('/create', [LeaveController::class, 'create'])->name('create');
+        Route::post('/', [LeaveController::class, 'store'])->name('store');
+        Route::get('/{leave}', [LeaveController::class, 'show'])->name('show');
+        Route::get('/{leave}/edit', [LeaveController::class, 'edit'])->name('edit');
+        Route::put('/{leave}', [LeaveController::class, 'update'])->name('update');
+        Route::patch('/{leave}', [LeaveController::class, 'update']);
+        Route::delete('/{leave}', [LeaveController::class, 'destroy'])->name('destroy');
+    });
+
+    # CREDITS IMPORT / EXPORT
+    Route::get('credits/{type}', [CreditsController::class, 'index'])
+        ->name('settings.credits.index');
+    Route::post('credits/{type}/import', [CreditsController::class, 'save'])
+        ->name('settings.credits.import');
 
     # TRANCHES
     Route::get('tranche', [TrancheController::class, 'index'])->name('settings.tranche.index');

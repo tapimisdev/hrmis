@@ -46,6 +46,15 @@ class ComputationService
     /** @var string|int|null */
     protected $salary_grade;
 
+    /** @var string|int|null */
+    protected $two_percent;
+
+    /** @var string|int|null */
+    protected $three_percent;
+
+    /** @var string|int|null */
+    protected $five_percent;
+
     /**
      * Determines whether the deduction would apply on the first or second cutoff
      * (or both).
@@ -277,45 +286,51 @@ class ComputationService
         if ($this->employment_type == EmploymentTypesEnum::COS->value) {
             $month = (int) $month;
 
-            /**
-             * Fetch COS tax components for the employee and month/year.
-             * Returns a collection keyed by type (e.g., 'ewt_2%') with amount values.
-             */
-            $cos_taxes = DB::table('employee_payroll_components as epc')
-                ->leftJoin('payroll_components_years as pcy', 'epc.tax_deduction_id', '=', 'pcy.id')
-                ->leftJoin('payroll_components as pc', 'pcy.payroll_component_id', '=', 'pc.id')
-                ->leftJoin('payroll_components_settings as pcs', 'pc.id', '=', 'pcs.tax_id')
-                ->select([
-                    'epc.amount as amount',
-                    'pcs.type as type',
-                ])
-                ->where('epc.employee_no', $this->employee_no)
-                ->where('pcy.year', $year)
-                ->where('epc.month', $month)
-                ->pluck('amount', 'type');
+            $toCents = fn(float $v): int => (int) round($v * 100, 0, PHP_ROUND_HALF_UP);
+            $fromCents = fn(int $c): float => $c / 100;
+
+            $percentOfCents = function(int $baseCents, float $rate): int {
+                return (int) round($baseCents * $rate, 0, PHP_ROUND_HALF_UP);
+            };
 
             // Earnings for COS are overtime + holiday excess only
             $total_earnings = $overtime_amount + $holiday_excess_amount;
 
-            // Payroll display precision (2 decimals for gross/net)
-            $basic_salary   = round($basic_salary, 2);
-            $total_earnings = round($total_earnings, 2);
+            // Convert all money inputs to cents (ASSUME these are already in pesos as floats)
+            $basicC          = $toCents($basic_salary);
+            $absencesC       = $toCents($absences_amount);
+            $lateUnderC      = $toCents($late_undertime_amount);
+            $earningsC       = $toCents($total_earnings);
 
-            $gross = round(
-                $basic_salary - $absences_amount - $late_undertime_amount + $total_earnings,
-                2
-            );
+            // Gross = basic - absences - late/undertime + earnings
+            $grossC = $basicC - $absencesC - $lateUnderC + $earningsC;
 
-            /**
-             * COS tax computation (based on existing keys from payroll_components_settings.type)
-             * NOTE: Keep as-is to preserve current behavior/output.
-             */
-            $ewt_2prct            = $cos_taxes['percentage_tax_3%'] ?? 0;
-            $percentage_tax_3prct = $cos_taxes['tax_ewt_5%'] ?? 0;
-            $tax_ewt_5prct        = $cos_taxes['ewt_2%'] ?? 0;
+            // 2% (with threshold 10417.00 pesos)
+            $thresholdC = 10417 * 100;
+            $base2C = max(0, $grossC - $thresholdC);
 
-            $total_deductions = $ewt_2prct + $percentage_tax_3prct + $tax_ewt_5prct;
-            $net              = round($gross - $total_deductions, 2);
+            $ewt2C = $this->two_percent ? $percentOfCents($base2C, 0.02) : 0;
+
+            // 3% (no threshold) — direct on gross
+            $ewt3C = $this->three_percent ? $percentOfCents($grossC, 0.03) : 0;
+
+            // 5% (no threshold) — direct on gross
+            $ewt5C = $this->five_percent ? $percentOfCents($grossC, 0.05) : 0;
+
+            $totalDedC = $ewt2C + $ewt3C + $ewt5C;
+            $netC      = $grossC - $totalDedC;
+
+            // Convert back to pesos with 2 decimals
+            $basic_salary        = $fromCents($basicC);
+            $total_earnings      = $fromCents($earningsC);
+            $gross               = $fromCents($grossC);
+
+            $ewt_2prct            = $fromCents($ewt2C);
+            $percentage_tax_3prct = $fromCents($ewt3C);
+            $tax_ewt_5prct        = $fromCents($ewt5C);
+
+            $total_deductions     = $fromCents($totalDedC);
+            $net                  = $fromCents($netC);
 
             // Salary diagnostics (unchanged content)
             Log::info("
@@ -541,6 +556,9 @@ class ComputationService
             ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
             ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
             ->select(
+                'employee_information.two_percent',
+                'employee_information.three_percent',
+                'employee_information.five_percent',
                 'employee_personal.firstname',
                 'employee_personal.middlename',
                 'employee_personal.lastname',
@@ -565,6 +583,10 @@ class ComputationService
         $this->position        = $employee_information->position_name;
         $this->employment_type = $employee_information->employment_type_id;
         $this->user_id         = $employee_information->user_id;
+
+        $this->two_percent = $employee_information->two_percent;
+        $this->three_percent = $employee_information->three_percent;
+        $this->five_percent = $employee_information->five_percent;
     }
 
     /**

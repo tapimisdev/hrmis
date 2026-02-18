@@ -34,8 +34,7 @@ class AddOvertimeApiController extends Controller
                 ->where('date', $request->input('date'))
                 ->where('employee_no', $employee_no)
                 ->first();
-        
-
+    
         return response(['overtime' => $data, 'message' => 'show success'], 200);
     }
 

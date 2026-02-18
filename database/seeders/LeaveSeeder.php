@@ -15,19 +15,82 @@ class LeaveSeeder extends Seeder
     {
         $data = [
             [
-                'name'             => 'Sick Leave',
-                'is_cumulative'    => true,
-                'credit_to_deduct' => 1.25,
+                'name' => 'Vacation Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => true,
+                'description' => 'Sec. 51, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             ],
             [
-                'name'             => 'Vacation Leave',
-                'is_cumulative'    => true,
-                'credit_to_deduct' => 1.25,
+                'name' => 'Mandatory/Forced Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'Sec. 25, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
             ],
             [
-                'name'             => 'Privileges Leave',
-                'is_cumulative'    => true,
-                'credit_to_deduct' => 1.25,
+                'name' => 'Sick Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => true,
+                'description' => 'Sec. 43, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
+            ],
+            [
+                'name' => 'Maternity Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'R.A. No. 11210 / IRR issued by CSC, DOLE and SSS',
+            ],
+            [
+                'name' => 'Paternity Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'R.A. No. 8187 / CSC MC No. 71, s. 1998, as amended',
+            ],
+            [
+                'name' => 'Special Privilege Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'Sec. 21, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
+            ],
+            [
+                'name' => 'Solo Parent Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'RA No. 8972 / CSC MC No. 8, s. 2004',
+            ],
+            [
+                'name' => 'Study Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'Sec. 68, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
+            ],
+            [
+                'name' => '10-Day VAWC Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'RA No. 9262 / CSC MC No. 15, s. 2005',
+            ],
+            [
+                'name' => 'Rehabilitation Privilege',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'Sec. 55, Rule XVI, Omnibus Rules Implementing E.O. No. 292',
+            ],
+            [
+                'name' => 'Special Leave Benefits for Women',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'RA No. 9710 / CSC MC No. 25, s. 2010',
+            ],
+            [
+                'name' => 'Special Emergency (calamity) Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'CSC MC No. 2, s. 2012, as amended',
+            ],
+            [
+                'name' => 'Adoption Leave',
+                'is_cumulative' => true,
+                'showCreditsESS' => false,
+                'description' => 'R.A. No. 8552',
             ],
         ];
 
@@ -36,13 +99,13 @@ class LeaveSeeder extends Seeder
                 ['name' => $leave['name']], 
                 [                         
                     'is_cumulative'    => $leave['is_cumulative'],
-                    'credit_to_deduct' => $leave['credit_to_deduct'],
+                    'showCreditsESS' => $leave['showCreditsESS'],
+                    'description'    => $leave['description'],
                     'updated_at'       => now(),
                     'created_at'       => now(),
                 ]
             );
         }
-
 
     }
 }

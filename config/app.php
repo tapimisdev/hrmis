@@ -18,6 +18,7 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
     'client' => env('APP_CLIENT', 'DOST-TAPI'),
+    'allow_multi_approval' => env('ALLOW_MULTI_APPROVAL', false),
 
     /*
     |--------------------------------------------------------------------------

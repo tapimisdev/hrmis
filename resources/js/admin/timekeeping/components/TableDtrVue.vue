@@ -168,20 +168,30 @@ import TableSkeletonVue from '../../../components/TableSkeletonVue.vue';
 import axios from 'axios';
 import ModalVue from './modal/ModalVue.vue';
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
+import RecordOffsetVue from './modal/RecordOffsetVue.vue';
 import AddTimeVue from './modal/AddTimeVue.vue';
 import AddOvertimeVue from './modal/AddOvertimeVue.vue';
 import ViewOvertimeVue from './modal/ViewOvertimeVue.vue';
 import MarkAsAbsentVue from './modal/MarkAsAbsentVue.vue'
+import CancelLeaveVue from './modal/CancelLeaveVue.vue';
+import CancelOffsetVue from './modal/CancelOffsetVue.vue';
+import MarkAsSoVue from './modal/MarkAsSoVue.vue';
+import CancelSOVue from './modal/CancelSOVue.vue';
 
 export default {
-    components: { TableSkeletonVue, ModalVue, RecordLeaveVue, AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue },
+    components: { 
+      TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, 
+      AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue, 
+      MarkAsSoVue, CancelLeaveVue, CancelOffsetVue, CancelSOVue },
     props: {
-        employee_id: { type: String, required: true },
+        employee_no: { type: [String, Number], required: true },
+        employee_id: { type: [String, Number], required: true },
         month: Number,
         year: Number
     },
     data() {
         return {
+            information: [],
             logs: [],
             loading: false,
             modalType: null,
@@ -199,14 +209,21 @@ export default {
             const components = {
                 adjustment: 'AddTimeVue',
                 leave: 'RecordLeaveVue',
+                offset: 'RecordOffsetVue',
                 overtime: 'AddOvertimeVue',
+                so: 'MarkAsSoVue',
                 view_overtime: 'ViewOvertimeVue',
-                absent: 'MarkAsAbsentVue'
+                absent: 'MarkAsAbsentVue',
+                cancel_offset: 'CancelOffsetVue',
+                cancel_leave: 'CancelLeaveVue',
+                cancel_special_order: 'CancelSOVue',
             };
             return components[this.modalType] || null;
         },
         modalProps() {
+            console.log('empid: '+this.employee_no);
             return {
+                employee_no: this.employee_no,
                 employee_id: this.employee_id,
                 month: this.month,
                 year: this.year,
@@ -220,11 +237,13 @@ export default {
             this.loading = true;
             try {
                 const { data } = await axios.get(
-                    `/admin/timekeeping/daily-time-record/${this.employee_id}/show`,
+                    `/admin/timekeeping/daily-time-record/${this.employee_no}/show`,
                     { params: { month: this.month, year: this.year } }
                 );
+                this.information = data.information;
                 this.logs = data.computedData;
                 this.summary = data.summary;
+                console.log(data);
                 this.$emit('send-payload', data);
             } catch (error) {
                 console.error("Error fetching logs:", error);
@@ -245,8 +264,10 @@ export default {
             if (this.hasRemark(remarks, 'restday')) return 'row-restday';
             if (this.hasRemark(remarks, 'suspension')) return 'row-restday';
             if (this.hasRemark(remarks, 'leave')) return 'row-leave';
+            if (this.hasRemark(remarks, 'offset')) return 'row-offset';
             if (this.hasRemark(remarks, 'holiday')) return 'row-holiday';
             if (this.hasRemark(remarks, 'absent')) return 'row-absent';
+            if (this.hasRemark(remarks, 'special order')) return 'row-special-order';
             return '';
         },
         getStatusBadge(log) {
@@ -282,6 +303,13 @@ export default {
                         text: 'Leave',
                     };
 
+                case this.hasRemark(remarks, 'offset'):
+                    return {
+                        class: 'status-offset',
+                        icon: 'fa-solid fa-ghost',
+                        text: 'Offset',
+                    };
+
                 case this.hasRemark(remarks, 'ob'):
                     return {
                         class: 'status-ob',
@@ -306,22 +334,118 @@ export default {
             if (remarkLower === 'late' || remarkLower === 'undertime') return 'remark-warning';
             return '';
         },
+        
         getActions(remarks) {
-            const actions = [
-                { type: 'adjustment', icon: 'fa-solid fa-clock-rotate-left', text: 'Add/Adjust Time' },
-                { type: 'overtime', icon: 'fa-solid fa-hourglass-half', text: 'Add Overtime' },
-                { type: 'leave', icon: 'fa-solid fa-plane-departure', text: 'Record Leave' }
-            ];
-            
-            if (!this.hasRemark(remarks, 'absent') && !this.hasRemark(remarks, 'restday')) {
-                actions.push({ 
-                    type: 'absent', 
-                    icon: 'fa-solid fa-user-xmark', 
+
+            const hasLeave = this.hasRemark(remarks, 'leave');
+            const hasOffset = this.hasRemark(remarks, 'offset');
+            const hasSpecialOrder = this.hasRemark(remarks, 'special order');
+
+            const isLeaveType = this.information.employment_type_id === 1;
+            const isOffsetType = this.information.employment_type_id === 2;
+
+            /* -------------------------------------------------
+              ✅ PRIORITY: IF SPECIAL ORDER → ONLY CANCEL SO
+            --------------------------------------------------*/
+            if (hasSpecialOrder) {
+                return [
+                    {
+                        type: 'adjustment',
+                        icon: 'fa-solid fa-clock-rotate-left',
+                        text: 'Add/Adjust Time'
+                    },
+                    {
+                        type: 'cancel_special_order',
+                        icon: 'fa-solid fa-ban',
+                        text: 'Cancel Special Order',
+                        danger: true
+                    }
+                ];
+            }
+
+            const actions = [];
+
+            /* -------------------------------------------------
+              Cancel Leave / Offset
+            --------------------------------------------------*/
+            if (hasLeave && isLeaveType) {
+                return [
+                    {
+                        type: 'cancel_leave',
+                        icon: 'fa-solid fa-ban',
+                        text: 'Cancel Leave',
+                        danger: true
+                    }
+                ];
+            }
+
+            if (hasOffset) {
+                return [
+                    {
+                        type: 'cancel_offset',
+                        icon: 'fa-solid fa-ban',
+                        text: 'Cancel Offset',
+                        danger: true
+                    }
+                ];
+            }
+
+            /* -------------------------------------------------
+              Default Actions
+            --------------------------------------------------*/
+
+            actions.push(
+                {
+                    type: 'adjustment',
+                    icon: 'fa-solid fa-clock-rotate-left',
+                    text: 'Add/Adjust Time'
+                },
+                {
+                    type: 'overtime',
+                    icon: 'fa-solid fa-hourglass-half',
+                    text: 'Add Overtime'
+                },
+                {
+                    type: 'so',
+                    icon: 'fa-solid fa-car-on',
+                    text: 'Mark as SO'
+                }
+            );
+
+            if (isLeaveType) {
+                actions.push({
+                    type: 'leave',
+                    icon: 'fa-solid fa-plane-departure',
+                    text: 'Record Leave'
+                });
+
+                actions.push({
+                    type: 'offset',
+                    icon: 'fa-solid fa-ghost',
+                    text: 'Record Offset'
+                });
+            }
+
+            if (isOffsetType) {
+                actions.push({
+                    type: 'offset',
+                    icon: 'fa-solid fa-ghost',
+                    text: 'Record Offset'
+                });
+            }
+
+            if (
+                !this.hasRemark(remarks, 'absent') &&
+                !this.hasRemark(remarks, 'restday')
+            ) {
+                actions.push({
+                    type: 'absent',
+                    icon: 'fa-solid fa-user-xmark',
                     text: 'Mark Absent',
                     danger: true
                 });
             }
-            
+
             return actions;
         },
         openModal(type, index) {
@@ -346,6 +470,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+.dropdown-menu {
+  position: absolute;
+  z-index: 99999;
+}
+
 .attendance-container {
     border-radius: 0.4rem 0.4rem 0 0;
     position: static;

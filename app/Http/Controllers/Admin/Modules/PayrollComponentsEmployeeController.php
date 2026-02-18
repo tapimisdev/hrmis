@@ -199,9 +199,9 @@ class PayrollComponentsEmployeeController extends Controller
             
             // if the tax type is cos, get all cos employees
             if(
-                $payload['module_tab'] === 'ewt-2%' ||
-                $payload['module_tab'] === 'percentage-tax-3%' ||
-                $payload['module_tab'] === 'tax-ewt-5%'
+                $payload['module_tab'] === 'ewt-2' ||
+                $payload['module_tab'] === 'percentage-tax-3' ||
+                $payload['module_tab'] === 'tax-ewt-5'
                 
                 ) {
                 $employeeNos = $this->employeeService
@@ -254,9 +254,9 @@ class PayrollComponentsEmployeeController extends Controller
 
                 // if the tax type is cos, get all cos employees
                 if(
-                    $payload['module_tab'] === 'ewt-2%' ||
-                    $payload['module_tab'] === 'percentage-tax-3%' ||
-                    $payload['module_tab'] === 'tax-ewt-5%'
+                    $payload['module_tab'] === 'ewt-2' ||
+                    $payload['module_tab'] === 'percentage-tax-3' ||
+                    $payload['module_tab'] === 'tax-ewt-5'
                     
                     ) {
                     
@@ -384,30 +384,26 @@ class PayrollComponentsEmployeeController extends Controller
      */
     private function computePercentageSalary(string $employee_no, float $percentage): float
     {
-        $salary = DB::table('employee_salary')
+        $salaryRaw = DB::table('employee_salary')
             ->where('employee_no', $employee_no)
             ->orderByDesc('effectivity_date')
             ->value('amount');
 
-        // If no salary found
-        if ($salary === null) {
+        if (!$salaryRaw || $percentage <= 0) {
             return 0.0;
         }
 
-        // Force numeric
-        if (!is_numeric($salary)) {
-            Log::warning('Non-numeric salary detected', [
-                'employee_no' => $employee_no,
-                'salary' => $salary,
-            ]);
-            return 0.0;
+        $salaryClean = preg_replace('/[^0-9.\-]/', '', (string) $salaryRaw);
+
+        if (!is_numeric($salaryClean)) {
+            throw new \RuntimeException(
+                "Invalid salary format for {$employee_no}: " . var_export($salaryRaw, true)
+            );
         }
 
-        if ($percentage <= 0) {
-            return 0.0;
-        }
+        $salary = (float) $salaryClean;
 
-        return round((float)$salary * ($percentage / 100), 2);
+        return round($salary * ($percentage / 100), 2);
     }
 
 }

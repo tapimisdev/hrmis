@@ -5,6 +5,7 @@ namespace App\Http\Requests\Employee;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreObsRequest extends FormRequest
 {
@@ -38,8 +39,9 @@ class StoreObsRequest extends FormRequest
             'estimated_expense' => ['nullable', 'numeric', 'min:0'],
             'charge_to' => ['nullable', 'string', 'max:150'],
             'remarks' => ['nullable', 'string', 'max:500'],
-            'attachments' => ['required', 'array'],
-            'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:2048'],
+            
+            'attachments'   => ['required', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:8192'],
 
             // 'approvers'     => ['required', 'array', 'min:1'],
             // 'approvers.*'   => ['required', 'array', 'min:1'],
@@ -47,17 +49,27 @@ class StoreObsRequest extends FormRequest
         ];
     }
 
-    protected function withValidator($validator)
+    public function withValidator(Validator $validator)
     {
         $validator->after(function ($validator) {
-            // Validate date range vs time fields
-            if ($this->date_from && $this->date_to && $this->time_out && $this->time_in) {
-                $startDateTime = Carbon::parse($this->date_from . ' ' . $this->time_out);
-                $endDateTime = Carbon::parse($this->date_to . ' ' . $this->time_in);
 
-                if ($endDateTime->lessThan($startDateTime)) {
-                    $validator->errors()->add('time_in', "Time in must be after time out.");
+            $errors = $validator->errors();
+
+            // Normalize attachments.* → attachments
+            if (
+                $errors->has('attachments') ||
+                collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'attachments.'))
+            ) {
+                $messages = [];
+
+                foreach ($errors->keys() as $key) {
+                    if ($key === 'attachments' || str_starts_with($key, 'attachments.')) {
+                        $messages = array_merge($messages, $errors->get($key));
+                        $errors->forget($key);
+                    }
                 }
+
+                $errors->add('attachments', array_unique($messages));
             }
         });
     }

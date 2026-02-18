@@ -1,4 +1,4 @@
-<footer class="d-lg-flex d-block bg-transparent text-center text-lg-start border-top py-2 mt-5 px-5">
+<!-- <footer class="d-lg-flex d-block bg-transparent text-center text-lg-start border-top py-2 mt-5 px-5">
     <div class="text-sm">
         © 2025, made with heart by <span class="fw-bold">MIS Unit</span> for a better experience.
     </div>
@@ -11,4 +11,4 @@
             <li><a href="">DTORS</a></li>
         </ul>
     </div>
-</footer>
+</footer> -->

@@ -19,7 +19,7 @@
            <li class="nested-item">
                 <a href="{{ route('timelogs-statistics') }}"
                 class="{{ Route::is('timelogs-statistics.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-clock"></i>
+                    <i class="fa-solid fa-chart-area"></i>
                     <span>Statistics</span>
                 </a>
             </li>

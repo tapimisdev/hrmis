@@ -11,7 +11,7 @@
         
     </x-header-employee>
 
-     <div class="accordion">
+     <div class="accordion pb-5">
         <div class="accordion-item">
             <h2 class="accordion-header">
                 <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse"

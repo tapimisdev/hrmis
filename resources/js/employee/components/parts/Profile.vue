@@ -115,13 +115,15 @@ export default {
                 this.user.profile_image = data.personal?.profile ?? null;
 
                 const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    this.user.name
+                    this.user.name,
                 )}&background=4f46e5&color=fff&size=128`;
 
                 this.userAvatarUrl = defaultAvatar;
 
                 if (this.user.profile_image && this.user.employee_no) {
-                    let avatarUrl = this.user.profile_image.startsWith("/storage")
+                    let avatarUrl = this.user.profile_image.startsWith(
+                        "/storage",
+                    )
                         ? this.user.profile_image
                         : `/storage/users/${this.user.employee_no}/profile-image/${this.user.profile_image}`;
 
@@ -145,7 +147,12 @@ export default {
 
             try {
                 await axios.post("/logout");
-                window.location.href = "/login";
+
+                delete axios.defaults.headers.common["Authorization"];
+                localStorage.removeItem("auth_token");
+                sessionStorage.removeItem("auth_token");
+
+                window.location.replace("/login");
             } catch (err) {
                 console.error(err);
             } finally {

@@ -4,6 +4,7 @@ namespace App\Services\SalaryPay;
 
 use App\Enums\EmploymentTypesEnum;
 use App\Enums\FnEnum;
+use App\Enums\TableSettingsEnum;
 use App\Jobs\Admin\Payroll\PayrollRegistryReport;
 use App\Models\User;
 use App\Notifications\PayrollBatchCompleted;
@@ -20,7 +21,8 @@ use \Carbon\Carbon;
 use Throwable;
 use function PHPSTORM_META\map;
 
-class PayrollService {
+class PayrollService
+{
 
     protected $daily_time_record_service;
     private $date;
@@ -29,7 +31,7 @@ class PayrollService {
     private $eligibile;
     private $not_eligibile;
 
-    public function __construct(DailyTimeRecordService $daily_time_record_service) 
+    public function __construct(DailyTimeRecordService $daily_time_record_service)
     {
         $this->daily_time_record_service = $daily_time_record_service;
     }
@@ -37,9 +39,9 @@ class PayrollService {
     public function getPayrolls($payload)
     {
         $query = DB::table('payroll_salary as ps')
-                ->leftJoin('employment_types as et', 'ps.employment_type_id', '=', 'et.id')
-                ->select('ps.*', 'et.name as employment_name', 'et.code as employment_code');
-        
+            ->leftJoin('employment_types as et', 'ps.employment_type_id', '=', 'et.id')
+            ->select('ps.*', 'et.name as employment_name', 'et.code as employment_code');
+
         if (!empty($payload['employment_type'])) {
             $query->where('ps.employment_type_id', $payload['employment_type']);
         }
@@ -74,22 +76,23 @@ class PayrollService {
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
             ->where('eo.employment_type_id', $payload['employment_type_id'])
             ->select(
-                'ep.firstname', 
-                'ep.middlename', 
-                'ep.lastname', 
-                'ep.suffix', 
+                'ep.firstname',
+                'ep.middlename',
+                'ep.lastname',
+                'ep.suffix',
 
                 'positions.name as position',
                 'divisions.name as division',
 
                 'eo.employment_type_id',
 
-                'ei.user_id', 
-                'ei.employee_no', 
-                'ei.account_status')
+                'ei.user_id',
+                'ei.employee_no',
+                'ei.account_status'
+            )
             ->get();
-        
-        
+
+
         if ($employees->isEmpty()) {
             throw new \Exception('No employees found for this employment type.', 409);
         }
@@ -143,14 +146,14 @@ class PayrollService {
             ];
         }
 
-        if(!$this->hasWorkAndShift($employee->employee_no)) {
+        if (!$this->hasWorkAndShift($employee->employee_no)) {
             $remarks[] = [
                 'text' => 'This Employee has no work or shift schedule during this payroll date',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
             ];
         }
 
-        if(!$this->hasInformation($employee->employee_no)) {
+        if (!$this->hasInformation($employee->employee_no)) {
             $remarks[] = [
                 'text' => 'Employee record is incomplete. Please verify account, personal, organizational, and position details.',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
@@ -164,9 +167,11 @@ class PayrollService {
             ];
         }
 
-        if (!$this->hasProject($employee->employee_no) 
-            && $employee->employment_type_id == EmploymentTypesEnum::COS->value) {
-            
+        if (
+            !$this->hasProject($employee->employee_no)
+            && $employee->employment_type_id == EmploymentTypesEnum::COS->value
+        ) {
+
             $eligibleRemarks[] = [
                 'text' => 'COS employee has no assigned project during the payroll date. Please update.',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
@@ -213,7 +218,7 @@ class PayrollService {
             ->where('esw.effectivity_date', '<=', $this->date)
             ->first();
 
-        if($schedule) {
+        if ($schedule) {
             return true;
         }
 
@@ -249,30 +254,30 @@ class PayrollService {
         return !is_null($employee_salary);
     }
 
-    private function hasProject($emp_no) {
+    private function hasProject($emp_no)
+    {
 
         $date = $this->date;
 
         $projects_employee = DB::table('employee_projects')
-                ->where('employee_no', $emp_no)
-                ->whereDate('start_date', '<=', $this->date)
-                ->where(function ($query) use ($date) {
-                    $query->whereDate('end_date', '>=', $date)
-                        ->orWhereNull('end_date');
-                })
-                ->orderByDesc('start_date')
-                ->first();
+            ->where('employee_no', $emp_no)
+            ->whereDate('start_date', '<=', $this->date)
+            ->where(function ($query) use ($date) {
+                $query->whereDate('end_date', '>=', $date)
+                    ->orWhereNull('end_date');
+            })
+            ->orderByDesc('start_date')
+            ->first();
 
         Log::info("Emp: " . $emp_no);
         Log::info("BOOL: " . !is_null($projects_employee));
         Log::info("Project: " . print_r($projects_employee, true));
-        
-        if(!is_null($projects_employee)) {
+
+        if (!is_null($projects_employee)) {
             return true;
         }
 
         return false;
-
     }
 
     public function generatePayrollRegistryReport($payload, $payroll_id)
@@ -286,25 +291,25 @@ class PayrollService {
         }
 
         $batch = Bus::batch([])
-        ->then(function (Batch $batch) {
-            // $admin = \App\Models\User::role('admin')->first();
-            // if ($admin) {
-            //     $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'success'));
-            // } else {
-            //     Log::warning('Admin not found while notifying payroll batch success.');
-            // }
-        })
-        ->catch(function (Batch $batch, \Throwable $e) {
-            // $admin = \App\Models\User::role('admin')->first();
-            // if ($admin) {
-            //     $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'failed', $e));
-            // } else {
-            //     Log::error('Admin not found while notifying payroll batch failure.');
-            // }
-            // Log::error("Payroll batch failed: {$e->getMessage()}");
-        })
-        ->name("Payroll Registry Report #{$payroll_id}")
-        ->dispatch();
+            ->then(function (Batch $batch) {
+                // $admin = \App\Models\User::role('admin')->first();
+                // if ($admin) {
+                //     $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'success'));
+                // } else {
+                //     Log::warning('Admin not found while notifying payroll batch success.');
+                // }
+            })
+            ->catch(function (Batch $batch, \Throwable $e) {
+                // $admin = \App\Models\User::role('admin')->first();
+                // if ($admin) {
+                //     $admin->notify(new \App\Notifications\PayrollBatchCompleted($batch, 'failed', $e));
+                // } else {
+                //     Log::error('Admin not found while notifying payroll batch failure.');
+                // }
+                // Log::error("Payroll batch failed: {$e->getMessage()}");
+            })
+            ->name("Payroll Registry Report #{$payroll_id}")
+            ->dispatch();
 
         DB::table('payroll_salary')
             ->where('id', $payroll_id)
@@ -320,16 +325,16 @@ class PayrollService {
     public function createPayroll($payload)
     {
         $payroll_no = generateNo('SL-', 4);
-        
+
         // Insert payroll and get its ID
         $payroll_id = DB::table('payroll_salary')->insertGetId([
             'label' => $payload['label'],
             'payroll_no' => $payroll_no,
 
             'period_covered' => // month year from 1 - 15 or 16 - end of month
-                \Carbon\Carbon::parse($payload['date'])->format('F Y') . ' ' .
+            \Carbon\Carbon::parse($payload['date'])->format('F Y') . ' ' .
                 ($payload['cutoff'] === 'first_cutoff' ? '1-15' : '16-' . \Carbon\Carbon::parse($payload['date'])->endOfMonth()->format('d')),
-            
+
             'no_employee' => 0,
             'gross_amount' => 0,
             'deduction_amount' => 0,
@@ -399,7 +404,7 @@ class PayrollService {
                     // For normal (non-repeating) holidays, use full date range
                     ->where(function ($q) use ($start_date, $end_date) {
                         $q->where('is_repeating', false)
-                        ->whereBetween('date', [$start_date, $end_date]);
+                            ->whereBetween('date', [$start_date, $end_date]);
                     })
                     // For repeating holidays, match only month and day
                     ->orWhere(function ($q) use ($start_date, $end_date) {
@@ -407,17 +412,17 @@ class PayrollService {
                         $endMonthDay = date('m-d', strtotime($end_date));
 
                         $q->where('is_repeating', true)
-                        ->whereRaw("DATE_FORMAT(date, '%m-%d') BETWEEN ? AND ?", [$startMonthDay, $endMonthDay]);
+                            ->whereRaw("DATE_FORMAT(date, '%m-%d') BETWEEN ? AND ?", [$startMonthDay, $endMonthDay]);
                     });
             })
             ->where('is_active', true)
             ->get()
-            ->map(function($holiday) use ($start_date) {
+            ->map(function ($holiday) use ($start_date) {
                 $date = $holiday->is_repeating
                     ? date('Y', strtotime($start_date)) . '-' . date('m-d', strtotime($holiday->date))
                     : $holiday->date;
 
-                   return [
+                return [
                     'id' => $holiday->id,
                     'title' => ucfirst(str_replace('_', ' ', $holiday->name)),
                     'start' => $date,
@@ -460,8 +465,8 @@ class PayrollService {
                     default => '#7f8c8d',     // gray for unknown type
                 };
 
-                $desc = $suspension->description 
-                    ? $suspension->description 
+                $desc = $suspension->description
+                    ? $suspension->description
                     : ucfirst($suspension->type) . ' suspension';
 
                 return [
@@ -486,175 +491,6 @@ class PayrollService {
         return $suspensions;
     }
 
-    // public function getPayrollRegistry(object $payroll, string $payroll_id, bool $isGrouped = true) 
-    // {
-
-    //     $employment_type_id = $payroll->employment_type_id;
-
-    //      // COS
-
-    //     if($employment_type_id == EmploymentTypesEnum::COS->value) {
-    //         $payroll_date = DB::table('payroll_salary')
-    //         ->where('id', $payroll_id)
-    //         ->value('payroll_date');
-
-    //         $pse = DB::table('payroll_salary_employee as pse')
-    //             ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
-    //             ->where('payroll_salary_id', $payroll_id)
-    //             ->select('pse.*', 'ps.payroll_date')
-    //             ->get();
-    //     } 
-
-    //     if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
-    //         $payroll_date = DB::table('payroll_salary')
-    //         ->where('id', $payroll_id)
-    //         ->value('payroll_date');
-
-    //         $pse = DB::table('payroll_salary_permanent_employees as pse')
-    //             ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
-    //             ->where('payroll_salary_id', $payroll_id)
-    //             ->select('pse.*', 'ps.payroll_date')
-    //             ->get();
-    //     } 
-        
-    //     // Get all projects for this payroll date
-    //     $projects = DB::table('employee_projects as ep')
-    //         ->join('projects', 'ep.project_id', '=', 'projects.id')
-    //         ->whereDate('start_date', '<=', $payroll_date)
-    //         ->where(function ($query) use ($payroll_date) {
-    //             $query->whereDate('end_date', '>=', $payroll_date)
-    //                 ->orWhereNull('end_date');
-    //         })
-    //         ->select('projects.id', 'projects.name')
-    //         ->get()->unique('id');
-
-    //     $enriched = $pse->map(function ($d) use ($employment_type_id, $payroll_date) {
-
-    //         if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
-    //             $deductions = DB::table('payroll_salary_permanents_employee_deductions')
-    //                 ->where('pspe_id', $d->id)
-    //                 ->get();
-
-    //             $earnings = DB::table('payroll_salary_employee_earnings')
-    //                 ->where('payroll_se_id', $d->id)
-    //                 ->get();
-    //         }
-            
-    //         $project_id = DB::table('employee_projects')
-    //             ->where('employee_no', $d->employee_no)
-    //             ->whereDate('start_date', '<=', $payroll_date)
-    //             ->where(function ($query) use ($payroll_date) {
-    //                 $query->whereDate('end_date', '>=', $payroll_date)
-    //                     ->orWhereNull('end_date');
-    //             })
-    //             ->orderByDesc('start_date')
-    //             ->value('project_id');
-                
-    //         if($employment_type_id == EmploymentTypesEnum::COS->value) {
-    //             return [
-    //                 'employee_no' => $d->employee_no,
-    //                 'name' => $d->name,
-    //                 'position' => $d->position,
-    //                 'monthly_rate' => $d->monthly_rate,
-    //                 'basic_pay' => $d->basic_pay,
-    //                 'ut' => $d->ut,
-    //                 'absences' =>  $d->absences,
-    //                 'overtime' => $d->overtime,
-    //                 'holiday' => $d->holiday,
-    //                 'gross_pay' => $d->gross_pay,
-    //                 'net_pay' => $d->net_pay,
-    //                 'salary_adjustment' => $d->salary_adjustment,
-    //                 'deductions' => $deductions ?? [],
-    //                 'earnings' => $earnings ?? [],
-    //                 'project_id' => $project_id,
-    //                 'remarks' => $d->remarks ?? null,
-    //             ];
-    //         }
-
-    //         if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
-    //             return [
-    //                 'employee_no' => $d->employee_no,
-    //                 'name' => $d->name,
-    //                 'position' => $d->position,
-    //                 'monthly_rate' => $d->monthly_rate,
-    //                 'ut' => $d->ut,
-    //                 'absences' =>  $d->absences,
-    //                 'overtime' => $d->overtime,
-    //                 'holiday' => $d->holiday,
-    //                 'total_deductions' => $d->total_deductions,
-    //                 'net_pay' => $d->net_pay,
-    //                 'salary_adjustment' => $d->salary_adjustment,
-    //                 'remarks' => $d->remarks ?? null,
-    //                 'deductions' => $deductions ?? [],
-    //                 'earnings' => $earnings ?? [],
-    //             ];
-    //         }
-    //     });
-
-    //     if ($isGrouped) {
-    //         // Group employees by project
-    //         $projectGroups = [];
-
-    //         foreach ($enriched as $employee) {
-    //             $emp_project = $projects->firstWhere('id', $employee->project_id);
-
-    //             $projectId = $emp_project->id ?? 'others';
-    //             $projectName = $emp_project->name ?? 'No Projects';
-
-    //             if (!isset($projectGroups[$projectId])) {
-    //                 $projectGroups[$projectId] = [
-    //                     'name' => $projectName,
-    //                     'employees' => []
-    //                 ];
-    //             }
-
-    //             $projectGroups[$projectId]['employees'][] = [
-    //                 'employee_no' => $employee->employee_no,
-    //                 'name' => $employee->name,
-    //                 'position' => $employee->position,
-    //                 'monthly_rate' => $employee->monthly_rate,
-    //                 'salary_earned' => $employee->basic_pay,
-    //                 'ut' => $employee->ut,
-    //                 'absences' =>  $employee->absences,
-    //                 'aut' => $employee->ut + $employee->absences,
-    //                 'overtime' => $employee->overtime,
-    //                 'holiday' => $employee->holiday,
-    //                 'total_salary' => $employee->gross_pay,
-    //                 'deductions' => $employee->deductions,
-    //                 'earnings' => $employee->earnings,
-    //                 'adjustment' => $employee->salary_adjustment,
-    //                 'net_salary' => $employee->net_pay
-    //             ];
-    //         }
-
-    //         return response()->json(array_values($projectGroups));
-
-    //     } else {
-    //         // Return flat list without grouping
-    //         $flatList = $enriched->map(function ($employee) {
-
-    //             return [
-    //                 'employee_no' => $employee['employee_no'],
-    //                 'name' => $employee['name'],
-    //                 'position' => $employee['position'],
-    //                 'monthly_rate' => $employee['monthly_rate'],
-    //                 'ut' => $employee['ut'],
-    //                 'absences' =>  $employee['absences'],
-    //                 'aut' => $employee['ut'] + $employee['absences'],
-    //                 'overtime' => $employee['overtime'],
-    //                 'holiday' => $employee['holiday'],
-    //                 'total_salary' => $employee['net_pay'],
-    //                 'deductions' => $employee['deductions'],
-    //                 'earnings' => $employee['earnings'],
-    //                 'adjustment' => $employee['salary_adjustment'],
-    //                 'net_salary' => $employee['net_pay'],
-    //             ];
-    //         });
-
-    //         return response()->json($flatList);
-    //     }
-    // }
-
     public function getPayrollRegistry(object $payroll, string $payroll_id, bool $isGrouped = true)
     {
         $employment_type_id = $payroll->employment_type_id;
@@ -674,7 +510,6 @@ class PayrollService {
                 ->where('payroll_salary_id', $payroll_id)
                 ->select('pse.*', 'ps.payroll_date', 'ps.cutoff', 'ps.period_covered')
                 ->get();
-
         } else { // REGULAR
 
             $pse = DB::table('payroll_salary_permanent_employees as pse')
@@ -708,7 +543,7 @@ class PayrollService {
                 ->whereDate('ep.start_date', '<=', $payroll_date)
                 ->where(function ($q) use ($payroll_date) {
                     $q->whereDate('ep.end_date', '>=', $payroll_date)
-                    ->orWhereNull('ep.end_date');
+                        ->orWhereNull('ep.end_date');
                 })
                 ->orderByDesc('ep.start_date')
                 ->select('p.id', 'p.name')
@@ -802,7 +637,7 @@ class PayrollService {
                 'employee_no' => $d->employee_no,
                 'name'        => $d->name,
                 'position'    => $d->position,
-                'monthly_rate'=> $d->monthly_rate,
+                'monthly_rate' => $d->monthly_rate,
                 'basic_pay'   => $d->basic_pay ?? null,
                 'ut'          => $d->ut,
                 'absences'    => $d->absences,
@@ -824,7 +659,7 @@ class PayrollService {
                 'project_id'   => $project->id   ?? null,
                 'project_name' => $project->name ?? 'No Project',
                 'division_id'  => $d->division_id ?? null,
-                'division_name'=> $d->division_name ?? 'No Division',
+                'division_name' => $d->division_name ?? 'No Division',
             ];
         });
 
@@ -859,7 +694,7 @@ class PayrollService {
                 'name'         => $emp['name'],
                 'position'     => $emp['position'],
                 'monthly_rate' => $emp['monthly_rate'],
-                'salary_earned'=> $emp['basic_pay'],
+                'salary_earned' => $emp['basic_pay'],
                 'ut'           => $emp['ut'],
                 'absences'     => $emp['absences'],
                 'aut'          => $emp['ut'] + $emp['absences'],
@@ -877,18 +712,17 @@ class PayrollService {
         return response()->json(array_values($grouped));
     }
 
-
     public function payrollDetails($payroll_no)
     {
         $payroll = DB::table('payroll_salary')
-                    ->where('payroll_no', $payroll_no)
-                    ->first();
+            ->where('payroll_no', $payroll_no)
+            ->first();
         $employees = DB::table('payroll_salary_employee as pse')
-                    ->leftJoin('employee_information as ei', 'pse.employee_no', '=', 'ei.employee_no')
-                    ->leftJoin('users', 'users.id', '=', 'ei.user_id')
-                    ->where('payroll_salary_id', $payroll->id)
-                    ->select('pse.employee_no', 'pse.monthly_rate', 'pse.position', 'users.name', 'users.id as employee_id')
-                    ->get();
+            ->leftJoin('employee_information as ei', 'pse.employee_no', '=', 'ei.employee_no')
+            ->leftJoin('users', 'users.id', '=', 'ei.user_id')
+            ->where('payroll_salary_id', $payroll->id)
+            ->select('pse.employee_no', 'pse.monthly_rate', 'pse.position', 'users.name', 'users.id as employee_id')
+            ->get();
         $payroll->employees = $employees;
 
         return $payroll;
@@ -1006,9 +840,5 @@ class PayrollService {
 
         return $data;
     }
-
-
-
-
-}
     
+}

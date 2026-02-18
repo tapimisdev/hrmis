@@ -10,13 +10,15 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use App\Services\EmployeeService;
 use App\Services\GenerateService;
+use App\Exports\LeaveCreditsExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 
 class LeaveCreditController extends Controller
 {
 
-    public $employeeService;
-    public $generateService;
+    protected $employeeService;
+    protected $generateService;
 
     public function __construct(EmployeeService $employeeService, GenerateService $generateService)
     {
@@ -47,16 +49,24 @@ class LeaveCreditController extends Controller
 
                 $credits = $this->employeeService->getLeaveCredits($employee_no, $types->leave_id, false);
                 $latestCredits = $this->employeeService->getLeaveCredits($employee_no, $types->leave_id, false);
+                $leaveSettings = $this->employeeService->getLeaveSettings($types->leave_id);
+
                 $currBal = $credits->filter(function($q) use ($monthYear) {
                     return ($q->as_of ?? '') === $monthYear;
                 })->values()->pluck('balance')->first() ?? 0;
+                
+                $hasAssignedDeduct = is_null($leaveSettings->deduct_credit_id)
+                    || $types->leave_id == $leaveSettings->deduct_credit_id;
 
+                $hasDeduction = !is_null($leaveSettings->deduct_credit_id);
 
                 $data[] = [
                     'leave' => $types,
                     'credits' => $credits,
                     'latestCredits' => $latestCredits,
-                    'currentMonthBalance' => $currBal 
+                    'currentMonthBalance' => $currBal,
+                    'hasAssignedDeduct' => $hasAssignedDeduct,
+                    'hasDeduction'  => $hasDeduction
                 ];    
             } 
 
@@ -66,6 +76,16 @@ class LeaveCreditController extends Controller
 
         return view('admin.pages.hris.leave-credits', compact('employee_no', 'isExists', 'data'));
 
+    }
+
+    public function download(string $employee_no, $leave_id)
+    {
+        $filename = "leave_credits_{$employee_no}_{$leave_id}.xlsx";
+
+        return Excel::download(
+            new LeaveCreditsExport($employee_no, $leave_id),
+            $filename
+        );
     }
 
     public function fetch($employee_no, Request $request) {
@@ -113,11 +133,11 @@ class LeaveCreditController extends Controller
                 'as_of' => [
                     'required',
                     'date_format:Y-m',
-                    function ($attribute, $value, $fail) {
-                        if (Carbon::createFromFormat('Y-m', $value)->startOfMonth()->lt(now()->startOfMonth())) {
-                            $fail('The :attribute must be the current month or a future month.');
-                        }
-                    }
+                    // function ($attribute, $value, $fail) {
+                    //     if (Carbon::createFromFormat('Y-m', $value)->startOfMonth()->lt(now()->startOfMonth())) {
+                    //         $fail('The :attribute must be the current month or a future month.');
+                    //     }
+                    // }
                 ],
                 'earned'    => 'nullable|numeric',
                 'deduction' => 'nullable|numeric',
@@ -198,8 +218,12 @@ class LeaveCreditController extends Controller
     /**
      * Recalculate balances for all future credits of a specific leave type
      */
-    protected function recalculateFutureCredits(string $employee_no, int $leave_id, string $as_of, float $startingBalance)
-    {
+    protected function recalculateFutureCredits(
+        string $employee_no,
+        int $leave_id,
+        string $as_of,
+        float $startingBalance
+    ) {
         $futureCredits = DB::table('leave_credits')
             ->where('employee_no', $employee_no)
             ->where('leave_id', $leave_id)
@@ -207,10 +231,13 @@ class LeaveCreditController extends Controller
             ->orderBy('as_of')
             ->get();
 
-        $runningBalance = $startingBalance;
+        $runningBalance = round($startingBalance, 2);
 
         foreach ($futureCredits as $credit) {
-            $newBalance = $runningBalance + $credit->earned - $credit->deducted;
+            $earned   = round($credit->earned, 2);
+            $deducted = round($credit->deducted, 2);
+
+            $newBalance = round($runningBalance + $earned - $deducted, 2);
 
             DB::table('leave_credits')
                 ->where('id', $credit->id)
@@ -226,22 +253,5 @@ class LeaveCreditController extends Controller
         session()->flash('active_leave_id', $leave_id);
     }
 
-    # FOR IMPORTING
-
-    public function import_index(?string $employee_no = null) {
-
-        $credit_types = [
-            'leave',
-            'offset'
-        ];
-        $leave_types = DB::table('leaves')->get();
-
-        return view('admin.pages.hris.leave-credits.import', compact('employee_no', 'credit_types', 'leave_types'));
-    }
-
-    public function import_save(Request $request) {
-        
-    }
- 
 
 }

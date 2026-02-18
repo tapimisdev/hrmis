@@ -196,6 +196,9 @@ class EmployeeService {
                     'employee_information.account_status',
                     'employee_information.isDeleted',
                     'employee_information.toUpdatePassword',
+                    'employee_information.two_percent',
+                    'employee_information.three_percent',
+                    'employee_information.five_percent',
 
                     'employee_personal.profile',
                     'employee_personal.firstname',
@@ -286,7 +289,6 @@ class EmployeeService {
 
         if ($employment_type_id == $regular_id) {
 
-            // Subquery: get latest leave credit per leave_id
             $latestCredits = DB::table('leave_credits as lc')
                 ->select('lc.*')
                 ->where('lc.employee_no', $employee_no)
@@ -309,7 +311,6 @@ class EmployeeService {
                     'l.name',
                     'l.id as leave_id',
                     'l.is_cumulative',
-                    'l.credit_to_deduct',
                     'l.is_active',
                     DB::raw("
                         CASE WHEN EXISTS (
@@ -324,13 +325,14 @@ class EmployeeService {
                     'l.id',
                     'l.name',
                     'l.is_cumulative',
-                    'l.credit_to_deduct',
                     'l.is_active',
                     'lc.id',
                     'lc.employee_no',
                     'lc.balance',
                     'lc.as_of'
                 )
+                ->where('l.is_active', true)
+                ->where('showCreditsESS', true)
                 ->get();
 
             return [
@@ -356,16 +358,21 @@ class EmployeeService {
         return $leaveCredit;
     }
 
-
     public function getLeaveSettings(int $leave_id) {
-        return DB::table('leaves')
-            ->where('id', $leave_id)
+        return DB::table('leaves_settings')
+            ->where('leave_id', $leave_id)
             ->first();
     }
 
     public function getLeave(int $leave_id) {
         return DB::table('leave_applications')
             ->where('id', $leave_id)
+            ->first();
+    }
+
+    public function getLeaveInfo($id) {
+        return DB::table('leaves')
+            ->where('id', $id)
             ->first();
     }
 
@@ -380,7 +387,6 @@ class EmployeeService {
         }
 
         return $data->get();
-
     }
 
     public function getOffsetCreditsByMonthYear(string $employee_no, string $monthYear)
@@ -480,7 +486,6 @@ class EmployeeService {
         });
     }
     
-
     public function getAllActiveEmployee($employment_type_id)
     {
         return DB::table('employee_information as ei')
@@ -489,5 +494,23 @@ class EmployeeService {
             ->where('ei.account_status', 'active')
             ->pluck('ei.employee_no')
             ->toArray();
+    }
+
+    public function getRegularEmployees()
+    {
+        $latestOrgSub = DB::table('employee_organization as eo1')
+            ->select('employee_no', 'id')
+            ->whereRaw('id = (SELECT MAX(id) FROM employee_organization eo2 WHERE eo2.employee_no = eo1.employee_no)');
+
+        $data = DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->leftJoin('employee_organization as eo', function ($join) use ($latestOrgSub) {
+                $join->on('ei.employee_no', '=', 'eo.employee_no')
+                    ->whereIn('eo.id', $latestOrgSub->pluck('id'));
+            })
+            ->select('ei.*', 'ep.*', 'eo.*')
+            ->get();
+
+        return $data;
     }
 }

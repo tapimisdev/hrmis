@@ -185,5 +185,13 @@ return [
         'view',
         'update'
     ],
+    'correction' => [
+        'view',
+        'approval'
+    ],
+    'webtime' => [
+        'create',
+        'view'
+    ]
 
 ];

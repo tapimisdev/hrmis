@@ -339,27 +339,36 @@
                         </div>
                     </div>
 
-                   <div class="d-flex justify-content-center w-100 text-center mt-5 pb-4" style="gap: 100px;">
-                      <div>
-                        <div
-                          class="mt-3 small text-center fst-italic text-body-secondary"
-                        >
-                            I hereby certify that the above records are true and
-                            correct.
+                    <div
+                        class="d-flex justify-content-center w-100 text-center mt-5 pb-4"
+                        style="gap: 100px"
+                    >
+                        <div>
+                            <div
+                                class="mt-3 small text-center fst-italic text-body-secondary"
+                            >
+                                I hereby certify that the above records are true
+                                and correct.
+                            </div>
+                            <div class="mt-5 text-uppercase mb-1">
+                                {{ originalName }}
+                            </div>
+                            <div
+                                class="border-top pt-1 small fw-semibold"
+                                style="min-width: 220px"
+                            >
+                                EMPLOYEE'S SIGNATURE
+                            </div>
                         </div>
-                        <div class="mt-5 text-uppercase mb-1">
-                          {{ originalName }}
+                        <div style="position: relative; top: 63.5px">
+                            <div
+                                class="border-top pt-1 small fw-semibold mt-5"
+                                style="min-width: 320px"
+                            >
+                                SUPERVISOR'S SIGNATURE
+                            </div>
                         </div>
-                        <div class="border-top pt-1 small fw-semibold" style="min-width: 220px">
-                            EMPLOYEE'S SIGNATURE
-                        </div>
-                      </div>
-                    <div style="position: relative; top: 63.5px;">
-                      <div class="border-top pt-1 small fw-semibold mt-5" style="min-width: 320px">
-                          SUPERVISOR'S SIGNATURE
-                      </div>
                     </div>
-                </div>
                 </div>
             </div>
         </div>
@@ -399,9 +408,12 @@ const props = defineProps({
 
 const computedData = computed(() => props.payload?.computedData ?? []);
 const info = computed(() => props.payload?.information ?? {});
+
 const originalName = computed(() =>
-  `${props.payload?.information?.firstname ?? ''} ${props.payload?.information?.lastname ?? ''}`.trim()
-)
+    `${props.payload?.information?.firstname ?? ""} ${
+        props.payload?.information?.lastname ?? ""
+    }`.trim(),
+);
 
 /** Labels */
 const monthNames = [
@@ -494,6 +506,15 @@ function daysInMonth(year, month) {
     return new Date(year, month, 0).getDate();
 }
 
+// ✅ local date key helpers (prevents timezone shifting)
+function pad2(n) {
+    return String(n).padStart(2, "0");
+}
+function makeLocalDateKey(y, m, d) {
+    // m is 1-12
+    return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+
 /** EXACT match like parent */
 function hasRemarkExact(remarks, keyword) {
     if (!Array.isArray(remarks)) return false;
@@ -526,7 +547,7 @@ const byDay = computed(() => {
     return map;
 });
 
-/** prefer real logs */
+/** prefer real logs (but still just DISPLAY raw values) */
 function pickBestRow(rows = []) {
     const score = (r) => {
         let s = 0;
@@ -554,23 +575,15 @@ const monthRows = computed(() => {
     const rows = [];
 
     for (let dayNo = 1; dayNo <= totalDays; dayNo++) {
-
-        // 👉 Create real Date object (LOCAL time)
-        const localDate = new Date(y, m - 1, dayNo);
-
-        // 👉 Format as YYYY-MM-DD safely
-        const key = localDate.toISOString().split('T')[0];
+        // ✅ NO toISOString (timezone-safe)
+        const key = makeLocalDateKey(y, m, dayNo);
 
         const candidates = byDay.value.get(key);
         const chosen = candidates ? pickBestRow(candidates) : null;
 
         const remarks = chosen?.remarks ?? [];
-        const statusDay = hasStatus(remarks);
 
-        const breakPair = chosen?.break
-            ? String(chosen.break).split(" to ")
-            : [];
-
+        const breakPair = chosen?.break ? String(chosen.break).split(" to ") : [];
         const overtimePair = chosen?.overtime
             ? String(chosen.overtime).split(" to ")
             : [];
@@ -582,17 +595,17 @@ const monthRows = computed(() => {
             remarks,
             late_undertime: Number(chosen?.late_undertime || 0),
 
-            // status day => blank
-            morning_in: statusDay ? "" : chosen?.time_in || "",
-            morning_out: statusDay ? "" : breakPair[0] || "",
-            afternoon_in: statusDay ? "" : breakPair[1] || "",
-            afternoon_out: statusDay ? "" : chosen?.time_out || "",
-            overtime_in: statusDay ? "" : overtimePair[0] || "",
-            overtime_out: statusDay ? "" : overtimePair[1] || "",
+            // ✅ DO NOT VALIDATE / DO NOT BLANK:
+            // show whatever is stored, even if swapped/wrong
+            morning_in: chosen?.time_in || "",
+            morning_out: breakPair[0] || "",
+            afternoon_in: breakPair[1] || "",
+            afternoon_out: chosen?.time_out || "",
+            overtime_in: overtimePair[0] || "",
+            overtime_out: overtimePair[1] || "",
 
-            daily_total: statusDay
-                ? ""
-                : Number(chosen?.total_time_work) > 0
+            daily_total:
+                Number(chosen?.total_time_work) > 0
                     ? minutesToHM(chosen.total_time_work)
                     : "",
         });
@@ -648,12 +661,12 @@ function remarkBadgeClass(remark) {
     return "";
 }
 
-/** Cell coloring */
+/** Cell coloring (NO muting on status days; just display raw) */
 function cellClass(row, fieldKey) {
     if (!row?.raw) return "text-body-secondary";
     if (!row?.[fieldKey]) return "text-body-secondary";
-    if (hasStatus(row.remarks)) return "text-body-secondary";
 
+    // Optional highlight if flagged by remarks or has late/undertime
     if (
         hasRemarkExact(row.remarks, "consider absent") ||
         Number(row.late_undertime) > 0
@@ -664,6 +677,7 @@ function cellClass(row, fieldKey) {
     return "text-body";
 }
 </script>
+
 
 <style scoped>
 .dtr-card {

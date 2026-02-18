@@ -22,9 +22,15 @@ class ModulesSeeder extends Seeder
                 'type'  => 'earnings'
             ],
             [
+                'icon'  => 'fa-solid fa-vest',
+                'slug'  => 'representation-allowance',
+                'name'  => 'Representation Allowance',
+                'type'  => 'earnings'
+            ],
+            [
                 'icon'  => 'fa-solid fa-car',
-                'slug'  => 'representation-and-transportation-allowance',
-                'name'  => 'RATA',
+                'slug'  => 'transportation-allowance',
+                'name'  => 'Transportation Allowance',
                 'type'  => 'earnings'
             ],
             [

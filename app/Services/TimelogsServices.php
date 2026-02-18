@@ -473,6 +473,7 @@ class TimelogsServices {
             ->leftJoin('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
             ->where('la.user_id', $userId)
             ->whereDate('ld.date', $date)
+            ->where('ld.isActive', true)
             ->first();
         
 
@@ -486,6 +487,60 @@ class TimelogsServices {
 
         return [
             'is_leave' => $isLeave,
+            'status'   => $status
+        ];
+    }
+
+    public function checkIfOffset($date, $userId)
+    {
+        $isOffset = false;
+        $status = 'pending offset';
+
+        $offset = DB::table('offset_applications as la')
+            ->leftJoin('offset_dates as ld', 'la.id', '=', 'ld.offset_application_id')
+            ->where('la.user_id', $userId)
+            ->where('ld.isActive', true)
+            ->whereDate('ld.date', $date)
+            ->first();
+        
+
+        if ($offset) {
+            $isOffset = true;
+
+            if ($offset->status === 'approved') {
+                $status = 'offset';
+            }
+        }
+
+        return [
+            'is_offset' => $isOffset,
+            'status'   => $status
+        ];
+    }
+
+    public function checkIfSO($date, $userId)
+    {
+        $isSO = false;
+        $status = 'pending special order (SO)';
+
+        $special_order = DB::table('special_order_applications as soa')
+            ->leftJoin('special_order_dates as sod', 'soa.id', '=', 'sod.special_order_application_id')
+            ->where('soa.user_id', $userId)
+            ->where('sod.isActive', true)
+            ->whereDate('sod.date', $date)
+            ->first();
+        
+
+        if ($special_order) {
+            $isSO = true;
+
+            if ($special_order->status === 'approved') {
+                $status = 'special order';
+            }
+        }
+
+        return [
+            'is_so' => $isSO,
             'status'   => $status
         ];
     }
@@ -544,8 +599,8 @@ class TimelogsServices {
                 $approvedHours = (double) $overtime->total_hours;
 
                 // Breaks: 1 hour break for every 2 hours
-                $timelogBreaks  = floor($timelogHours / 2);
-                $approvedBreaks = floor($approvedHours / 2);
+                $timelogBreaks  = floor($timelogHours / 3);
+                $approvedBreaks = floor($approvedHours / 3);
 
                 // Payable hours after breaks
                 $payableTimelog  = max(0, $timelogHours - $timelogBreaks);
@@ -995,32 +1050,24 @@ class TimelogsServices {
 
         // ------------------- CHECK DISCREPANCIES -------------------
 
+         // if ($breakOutCarbon && $breakInCarbon && $breakInCarbon->lt($breakOutCarbon)) {
+        //     $discrepancy = true;
+        //     $remarks[] = 'Discrepancy';
+        // }
+        
         if ($timeInCarbon && $timeOutCarbon && $timeOutCarbon->lt($timeInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($breakOutCarbon && $breakInCarbon && $breakInCarbon->lt($breakOutCarbon)) {
+        } else if ($breakOutCarbon && $timeInCarbon && $breakOutCarbon->lt($timeInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($breakOutCarbon && $timeInCarbon && $breakOutCarbon->lt($timeInCarbon)) {
+        } else if ($breakInCarbon && $timeOutCarbon && $breakInCarbon->gt($timeOutCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($breakInCarbon && $timeOutCarbon && $breakInCarbon->gt($timeOutCarbon)) {
+        } else if ($otInCarbon && $breakOutCarbon && $otInCarbon->lt($breakOutCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
-        }
-
-        if ($otInCarbon && $breakOutCarbon && $otInCarbon->lt($breakOutCarbon)) {
-            $discrepancy = true;
-            $remarks[] = 'Discrepancy';
-        }
-
-        if ($otInCarbon && $otOutCarbon && $otOutCarbon->lt($otInCarbon)) {
+        } else if ($otInCarbon && $otOutCarbon && $otOutCarbon->lt($otInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
         }

@@ -2,18 +2,18 @@
     <div class="modal-body">
         <form @submit.prevent="submitLeave">
             <div class="row">
+
+                <!-- Leave Type -->
                 <div class="col-md-12">
-                    <!-- Leave Type -->
                     <div class="mb-3">
-                        <label class="form-label"
-                            >Leave Type
-                            <span class="text-danger"> *</span></label
-                        >
+                        <label class="form-label">
+                            Leave Type <span class="text-danger">*</span>
+                        </label>
+
                         <select
                             v-model="form.leave_id"
                             class="form-select"
                             :class="{ 'is-invalid': errors.leave_id }"
-                            required
                         >
                             <option value="">Select Leave</option>
                             <option
@@ -24,235 +24,241 @@
                                 {{ leave.name }}
                             </option>
                         </select>
-                        <span
-                            class="text-danger leave_id_error"
-                            v-if="errors.leave_id"
-                            >{{ errors.leave_id[0] }}</span
-                        >
+
+                        <span v-if="errors.leave_id" class="text-danger">
+                            {{ errors.leave_id[0] }}
+                        </span>
                     </div>
                 </div>
-                <div class="col-md-5">
-                    <!-- Start Date -->
+
+                <!-- Date -->
+                <div class="col-md-6">
                     <div class="mb-3">
-                        <label class="form-label"
-                            >Start Date
-                            <span class="text-danger">*</span></label
-                        >
+                        <label class="form-label">
+                            Selected Date <span class="text-danger">*</span>
+                        </label>
+
                         <input
                             type="date"
                             disabled
-                            v-model="form.start_date"
+                            v-model="form.selectedDates[0].date"
                             class="form-control"
-                            :class="{ 'is-invalid': errors.start_date }"
-                            required
                         />
-                        <span
-                            class="text-danger start_date_error"
-                            v-if="errors.start_date"
-                            >{{ errors.start_date[0] }}</span
-                        >
                     </div>
                 </div>
-                <div class="col-md-5">
-                    <!-- End Date -->
+
+                <!-- Shift -->
+                <div class="col-md-6">
                     <div class="mb-3">
-                        <label class="form-label"
-                            >End Date <span class="text-danger">*</span></label
+                        <label class="form-label">
+                            Select Shift <span class="text-danger">*</span>
+                        </label>
+
+                        <select
+                            v-model="form.selectedDates[0].shift"
+                            class="form-select"
+                            :class="{ 'is-invalid': errors['selectedDates.0.shift'] }"
                         >
-                        <input
-                            type="date"
-                            v-model="form.end_date"
-                            class="form-control"
-                            :class="{ 'is-invalid': errors.end_date }"
-                            required
-                        />
+                            <option value="">- CHOOSE -</option>
+                            <option value="morning">Morning</option>
+                            <option value="afternoon">Afternoon</option>
+                            <option value="wholeday">Whole Day</option>
+                        </select>
+
                         <span
-                            class="text-danger end_date_error"
-                            v-if="errors.end_date"
-                            >{{ errors.end_date[0] }}</span
+                            v-if="errors['selectedDates.0.shift']"
+                            class="text-danger"
                         >
+                            {{ errors['selectedDates.0.shift'][0] }}
+                        </span>
                     </div>
                 </div>
-                <div class="col-md-2">
-                    <!-- Number of Days -->
-                    <div class="mb-3">
-                        <label class="form-label"
-                            >Days <span class="text-danger">*</span></label
-                        >
-                        <input
-                            type="number"
-                            v-model.number="form.days"
-                            disabled
-                            class="form-control"
-                            :class="{ 'is-invalid': errors.days }"
-                            min="1"
-                            @input="updateEndDate"
-                            required
-                        />
-                        <span
-                            class="text-danger days_error"
-                            v-if="errors.days"
-                            >{{ errors.days[0] }}</span
-                        >
-                    </div>
-                </div>
+
+                <!-- Reason -->
                 <div class="col-md-12">
-                    <!-- Reason -->
                     <div class="mb-3">
-                        <label class="form-label"
-                            >Reason <span class="text-danger"> *</span></label
-                        >
+                        <label class="form-label">
+                            Reason <span class="text-danger">*</span>
+                        </label>
+
                         <textarea
                             v-model="form.reason"
                             class="form-control"
                             :class="{ 'is-invalid': errors.reason }"
                             rows="3"
-                            required
-                        >
-                        </textarea>
-                        <span
-                            class="text-danger reason_error"
-                            v-if="errors.reason"
-                            >{{ errors.reason[0] }}</span
-                        >
+                        ></textarea>
+
+                        <span v-if="errors.reason" class="text-danger">
+                            {{ errors.reason[0] }}
+                        </span>
                     </div>
                 </div>
+
+                <!-- Attachments -->
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Attachments <span class="text-danger">*</span>
+                        </label>
+
+                        <input
+                            type="file"
+                            class="form-control"
+                            :class="{ 'is-invalid': errors.attachments }"
+                            multiple
+                            @change="handleFileUpload"
+                        />
+
+                        <small class="text-muted">
+                            Allowed: PDF, JPG, PNG (max 5MB each)
+                        </small>
+
+                        <span v-if="errors.attachments" class="text-danger">
+                            {{ errors.attachments[0] }}
+                        </span>
+                    </div>
+                </div>
+
             </div>
         </form>
     </div>
-    <!-- Actions -->
+
+    <!-- Footer -->
     <div class="modal-footer">
-        <button @click="close" class="btn py-3 px-4 btn-danger">
-            <i class="me-2 fas fa-times"></i>
-            Close
+        <button @click="close" class="btn btn-danger px-4">
+            <i class="fas fa-times me-2"></i> Close
         </button>
 
         <button
+            class="btn btn-primary px-4"
             :disabled="loading"
             @click="submitLeave"
-            class="btn py-3 px-4 btn-primary"
         >
             <i v-if="loading" class="fas fa-spinner fa-spin me-2"></i>
-            <i v-else class="me-2 fas fa-save"></i>
-
+            <i v-else class="fas fa-save me-2"></i>
             {{ loading ? "Saving..." : "Save" }}
         </button>
     </div>
 </template>
 
 <script>
-const token = localStorage.getItem("auth_token");
 import axios from "axios";
+const token = localStorage.getItem("auth_token");
 
 export default {
     props: {
-        employee_id: { type: String, required: true },
+        employee_id: { type: [String, Number], required: true },
         month: Number,
         year: Number,
         index: Number,
     },
+
     data() {
         return {
             loading: false,
             errors: {},
-            leaveTypes: [], // fix: should be array
+            leaveTypes: [],
+            attachments: [],
+
             form: {
+                isDirectlyApproved: true,
                 user_id: this.employee_id,
                 leave_id: "",
+                selectedDates: [
+                    {
+                        date: "",
+                        shift: "",
+                    },
+                ],
                 days: 1,
-                start_date: "",
-                end_date: "",
                 reason: "",
                 status: "pending",
             },
         };
     },
+
     mounted() {
         this.loadLeaves();
-        this.getDefaultDate(); // set initial date
+        this.setDefaultDate();
     },
+
     methods: {
         async loadLeaves() {
-            this.loading = true;
             try {
-                const response = await axios.get("/api/timekeeping/leaves", {
+                const { data } = await axios.get("/api/timekeeping/leaves", {
                     headers: {
-                        Accept: "application/json",
                         Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
                     },
                 });
-                this.leaveTypes = response.data.leaves;
-            } catch (error) {
-                console.error("Error fetching leaves:", error);
+                this.leaveTypes = data.leaves || [];
+            } catch (e) {
+                console.error(e);
             }
-            this.loading = false;
         },
+
+        handleFileUpload(event) {
+            this.attachments = Array.from(event.target.files);
+        },
+
         async submitLeave() {
+            if (this.loading) return;
+
             this.loading = true;
-            this.errors = {}; // reset previous errors
+            this.errors = {};
 
             try {
-                // Prepare form data for file uploads if needed
                 const formData = new FormData();
-                for (const key in this.form) {
-                    formData.append(key, this.form[key]);
-                }
 
-                const response = await axios.post("/api/leaves", formData, {
+                Object.entries(this.form).forEach(([key, value]) => {
+                    formData.append(
+                        key,
+                        typeof value === "object" ? JSON.stringify(value) : value
+                    );
+                });
+
+                this.attachments.forEach((file, i) => {
+                    formData.append(`attachments[${i}]`, file);
+                });
+
+                const { data } = await axios.post("/api/leaves", formData, {
                     headers: {
-                        Accept: "application/json",
-                        "Content-Type": "multipart/form-data",
                         Authorization: `Bearer ${token}`,
+                        Accept: "application/json",
                     },
                 });
 
-                // Success
-                Swal.fire({
-                    title: "Success!",
-                    text: "Your leave application has been submitted.",
-                    icon: "success",
-                }).then(() => {
-                    this.$emit("success", response.data);
-                    this.close();
-                    this.resetForm();
-                });
+                Swal.fire("Success!", "Leave submitted successfully.", "success");
+
+                this.$emit("success", data);
+                this.resetForm();
+                this.close();
             } catch (error) {
                 if (error.response?.status === 422) {
-                    // Laravel validation errors
                     this.errors = error.response.data.errors;
-                    // Optional: scroll to first error
-                    const firstErrorField = Object.keys(this.errors)[0];
-                    document
-                        .getElementById(firstErrorField)
-                        ?.scrollIntoView({ behavior: "smooth" });
                 } else {
-                    Swal.fire({
-                        title: "Oops!",
-                        text:
-                            error.response?.data?.message ||
-                            "Something went wrong.",
-                        icon: "error",
-                    });
+                    Swal.fire(
+                        "Error",
+                        error.response?.data?.message || "Something went wrong",
+                        "error"
+                    );
                 }
             } finally {
                 this.loading = false;
             }
         },
+
         resetForm() {
-            this.form = {
-                user_id: this.employee_id,
-                leave_id: "",
-                start_date: "",
-                days: 1,
-                end_date: "",
-                reason: "",
-                status: "pending",
-            };
+            this.form.leave_id = "";
+            this.form.reason = "";
+            this.form.selectedDates[0].shift = "";
+            this.attachments = [];
             this.errors = {};
         },
-        getDefaultDate() {
-            const month = this.month ?? new Date().getMonth() + 1;
+
+        setDefaultDate() {
             const year = this.year ?? new Date().getFullYear();
+            const month = this.month ?? new Date().getMonth() + 1;
             const day = this.index ?? new Date().getDate();
 
             const date = new Date(year, month - 1, day);
@@ -262,43 +268,25 @@ export default {
                 String(date.getMonth() + 1).padStart(2, "0") +
                 "-" +
                 String(date.getDate()).padStart(2, "0");
-
-            this.form.start_date = formatted;
-            this.form.end_date = formatted;
+                
+            this.form.selectedDates[0].date = formatted
         },
-        computeDays() {
-            const { start_date, end_date } = this.form;
 
-            if (!start_date || !end_date) {
-                this.form.days = 1;
-                return;
-            }
-
-            const start = new Date(start_date);
-            const end = new Date(end_date);
-
-            // Compute difference in days, inclusive
-            const diffTime = end - start;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-            this.form.days = diffDays > 0 ? diffDays : 1; // minimum 1 day
-        },
         close() {
             $("#myModal").modal("hide");
         },
     },
+
     watch: {
-        index: "getDefaultDate",
-        month: "getDefaultDate",
-        year: "getDefaultDate",
-        "form.start_date": "computeDays",
-        "form.end_date": "computeDays",
+        index: "setDefaultDate",
+        month: "setDefaultDate",
+        year: "setDefaultDate",
     },
 };
 </script>
 
 <style scoped>
-span.text-danger {
-    font-size: 0.875rem;
+.text-danger {
+    font-size: 0.85rem;
 }
 </style>

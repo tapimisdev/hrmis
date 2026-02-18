@@ -31,6 +31,7 @@ class LeaveApplicationController extends Controller {
             ->leftJoin('employee_personal as p', 'la.employee_no', '=', 'p.employee_no')
             ->leftJoin('leaves as l', 'la.leave_id', '=', 'l.id')
             ->leftJoin('leave_dates as ld', 'ld.leave_application_id', '=', 'la.id')
+            ->where('ld.isActive', true)
             ->select(
                 'p.firstname',
                 'p.lastname',
@@ -125,8 +126,6 @@ class LeaveApplicationController extends Controller {
         return $results;
     }
 
-
-
     public function index() 
     {
         if (request()->ajax()) {
@@ -149,9 +148,23 @@ class LeaveApplicationController extends Controller {
         $employee_no = $data->employee_no;
         $leave_id = $data->leave_id;
         $currentMonth = Carbon::now()->format('Y-m');
-        $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
+
+        $leaveSetting = $this->employeeService->getLeaveSettings($leave_id);
+
+        $deductionLeaveId = $leaveSetting->deduct_credit_id ?? null;
+        $showBreakdown = true;
+        
+        if(is_null($deductionLeaveId)) {
+            $showBreakdown = false;
+        }
+
+        $latestCredits = $this->employeeService->getLeaveCreditsByMonthYear($employee_no, $deductionLeaveId ?? 0, $currentMonth);
+        $leaveDeductInfo = $this->employeeService->getLeaveInfo($deductionLeaveId);
+       
         $remaining_balance = (float) $latestCredits['current']?->balance ?? 0;
         $toBeDeducted = (float) $this->compute($data->dates);
+
+        $toBeDeductedFromCredits = $leaveDeductInfo;
         $new_balance = $remaining_balance - $toBeDeducted;
 
         $hasBalance = false;
@@ -163,9 +176,11 @@ class LeaveApplicationController extends Controller {
         }
 
         $computation = [
-            'remaining_balance' => number_format($remaining_balance, 2),
-            'deduction' => number_format($toBeDeducted, 2),
-            'new_balance' => number_format($new_balance, 2)
+            'showBreakdown' => $showBreakdown,
+            'remaining_balance' => number_format($remaining_balance ?? 0, 2),
+            'deduction' => number_format($toBeDeducted ?? 0, 2),
+            'new_balance' => number_format($new_balance ?? 0, 2),
+            'toBeDeductedFromCredits' => $toBeDeductedFromCredits ?? 'N/A',
         ];
 
         return view('admin.pages.services.leave.show', compact('employee_no', 'id', 'data', 'hasBalance', 'computation'));
@@ -211,6 +226,9 @@ class LeaveApplicationController extends Controller {
 
     public function approve(int $id)
     {
+
+        DB::beginTransaction();
+
         try {
 
             $existingData = DB::table('leave_applications')
@@ -220,15 +238,15 @@ class LeaveApplicationController extends Controller {
             if (!$existingData) {
                 return response()->json(['error' => 'Record not found'], 404);
             }
-            
+
+            $this->updateCredits($id);
+
             DB::table('leave_applications')
                 ->where('id', $id)
                 ->update([
                     'status' => 'approved',
                     'approver_id' => Auth::id() ?? null
                 ]);
-
-            $this->updateCredits($id);
 
             $sender = ucwords(Auth::user()->name);
             $reciever = $existingData->user_id;
@@ -242,6 +260,8 @@ class LeaveApplicationController extends Controller {
             ];
             $this->EventService->pushNotification($payload);
 
+            DB::commit();
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Leave application has been approved!',
@@ -249,6 +269,7 @@ class LeaveApplicationController extends Controller {
             ]);
 
         } catch (\Exception $e) {
+            DB::rollback();
             return response()->json([
                 'status' => 'error',
                 'message' => 'Error occurred: ' . $e->getMessage()
@@ -306,63 +327,129 @@ class LeaveApplicationController extends Controller {
         }
     }
 
-    public function updateCredits(string $id)
+    public function updateCredits(int $id)
     {
-        DB::beginTransaction();
+        // --- Step 1: Fetch leave application ---
+        $data = $this->getRawData($id)->first();
+        if (!$data) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Leave application not found: {$id}",
+            ], 404);
+        }
 
-        try {
-            // --- Step 0: Fetch leave application data ---
-            $data = $this->getRawData($id)->first();
+        $employee_no  = $data->employee_no;
+        $leave_id     = $data->leave_id;
+        $leaveName    = $data->name;
+        $currentMonth = now()->format('Y-m');
 
-            if (!$data) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Unable to find leave application ID: ' . $id,
-                ], 404);
-            }
+        // --- Step 2: Find leave deduction mapping ---
+        $leaveSetting = DB::table('leaves_settings')
+            ->where('leave_id', $leave_id)
+            ->first();
 
-            $employee_no  = $data->employee_no;
-            $leave_id     = $data->leave_id;
-            $currentMonth = Carbon::now()->format('Y-m');
 
-            // --- Step 1: Fetch latest leave credits for the current month ---
+        $deductionLeaveId = $leaveSetting->deduct_credit_id ?? null;
+
+        // --- Step 3: Get latest balance (only if deduction exists) ---
+        $remaining_balance = 0;
+
+        if ($deductionLeaveId) {
             $latestCredits = $this->employeeService
-                ->getLeaveCreditsByMonthYear($employee_no, $leave_id, $currentMonth);
+                ->getLeaveCreditsByMonthYear($employee_no, $deductionLeaveId, $currentMonth);
 
             $remaining_balance = (float) ($latestCredits['current']->balance ?? 0);
-            $toBeDeducted     = (float) $this->compute($data->dates);
-            $new_balance      = $remaining_balance - $toBeDeducted;
+        }
 
-            // --- Step 2: Group dates by month ---
-            $datesByMonth = [];
-            foreach ($data->dates as $d) {
-                $dateObj = Carbon::parse($d['date']);
-                $month   = strtoupper($dateObj->format('M')); // e.g., JAN
-                $day     = $dateObj->format('j');            // day number
+        // --- Step 4: Process dates ---
+        $datesByMonth = [];
+        $toBeDeducted = 0;
 
-                if (!isset($datesByMonth[$month])) $datesByMonth[$month] = [];
-                $datesByMonth[$month][] = $day;
+        foreach ($data->dates as $d) {
+            $dateObj = Carbon::parse($d['date']);
+            $month   = strtoupper($dateObj->format('M'));
+            $day     = $dateObj->format('j');
+            $shift   = strtolower($d['shift']);
+
+            $credit = match ($shift) {
+                'morning', 'afternoon' => 0.5,
+                'wholeday'             => 1.0,
+                default                => 0,
+            };
+
+            if ($deductionLeaveId) {
+                $toBeDeducted += $credit;
             }
 
-            // --- Step 3: Build formatted remark ---
-            // Example: "JAN 1,2,3 (3 days) | FEB 4,5 (2 days)"
-            $formattedRemark = collect($datesByMonth)
-                ->map(function ($days, $month) {
-                    $totalDays = count($days);
-                    return sprintf("%s %s (%s %s)", $month, implode(', ', $days), $totalDays, $totalDays === 1 ? 'day' : 'days');
-                })
-                ->implode(" | ");
+            $datesByMonth[$month][] = [
+                'day'    => $day,
+                'shift'  => $shift,
+                'credit' => $credit,
+            ];
+        }
 
-            // --- Step 4: Update or insert leave_credits for current month ---
+        $new_balance = $remaining_balance - $toBeDeducted;
+
+        // --- Step 5: Build remarks (append-safe) ---
+        $formattedRemark = collect($datesByMonth)
+            ->map(function ($days, $month) use ($leave_id, $leaveName, $deductionLeaveId) {
+                $dayStrings = [];
+                $totalCredit = 0;
+
+                foreach ($days as $d) {
+                    $shiftShort = match ($d['shift']) {
+                        'morning'   => 'AM',
+                        'afternoon' => 'PM',
+                        'wholeday'  => 'WD',
+                        default     => $d['shift'],
+                    };
+
+                    $dayStrings[] = "{$d['day']} ({$shiftShort})";
+                    $totalCredit += $d['credit'];
+                }
+
+                if($leave_id && is_null($deductionLeaveId)) {
+                    return sprintf(
+                        "%s %s [$leaveName]",
+                        $month,
+                        implode(', ', $dayStrings),
+                    );
+                }
+
+                if ($leave_id == $deductionLeaveId) {
+                    return sprintf(
+                        "%s %s (Eqv: %.2f)",
+                        $month,
+                        implode(', ', $dayStrings),
+                        $totalCredit
+                    );
+                }
+
+                return sprintf(
+                    "%s %s (Eqv: %.2f) [$leaveName]",
+                    $month,
+                    implode(', ', $dayStrings),
+                    $totalCredit
+                );
+            })
+            ->implode(' | ');
+
+        // --- Step 6: Apply deduction only if mapped ---
+        $effectiveLeaveId = $deductionLeaveId ?? $leave_id;
+
+        if ($leave_id && $effectiveLeaveId) {
+
             $existing = DB::table('leave_credits')
                 ->where('employee_no', $employee_no)
-                ->where('leave_id', $leave_id)
+                ->where('leave_id', $effectiveLeaveId)
                 ->where('as_of', $currentMonth)
                 ->first();
 
             if ($existing) {
                 $remarks = trim($existing->remarks ?? '');
-                if ($remarks) $remarks .= "\n"; // append new line
+                if ($remarks !== '') {
+                    $remarks .= "\n";
+                }
                 $remarks .= $formattedRemark;
 
                 DB::table('leave_credits')
@@ -376,7 +463,7 @@ class LeaveApplicationController extends Controller {
             } else {
                 DB::table('leave_credits')->insert([
                     'employee_no' => $employee_no,
-                    'leave_id'    => $leave_id,
+                    'leave_id'    => $effectiveLeaveId,
                     'as_of'       => $currentMonth,
                     'previous'    => $remaining_balance,
                     'earned'      => 0,
@@ -388,18 +475,20 @@ class LeaveApplicationController extends Controller {
                 ]);
             }
 
+            // --- Step 7: Recalculate future balances ---
             $runningBalance = $new_balance;
 
-            // --- Step 5: Recalculate future leave_credits for this leave type ---
             $futureCredits = DB::table('leave_credits')
                 ->where('employee_no', $employee_no)
-                ->where('leave_id', $leave_id)
+                ->where('leave_id', $effectiveLeaveId)
                 ->where('as_of', '>', $currentMonth)
                 ->orderBy('as_of')
                 ->get();
 
             foreach ($futureCredits as $credit) {
-                $newBalance = $runningBalance + (float) $credit->earned - (float) $credit->deducted;
+                $newBalance = $runningBalance
+                    + (float) $credit->earned
+                    - (float) $credit->deducted;
 
                 DB::table('leave_credits')
                     ->where('id', $credit->id)
@@ -411,25 +500,8 @@ class LeaveApplicationController extends Controller {
 
                 $runningBalance = $newBalance;
             }
-
-            DB::commit();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Leave credits updated and future balances adjusted.',
-            ]);
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Error updating leave credits.',
-                'error'   => $e->getMessage(),
-            ], 500);
         }
     }
-
 
     public function datatable($query)
     {
