@@ -122,6 +122,9 @@ class IndexController extends Controller
             ->editColumn('employee_no', function ($row) {
                 return $row->employee_no;
             })
+            ->editColumn('biometrics_id', function ($row) {
+                return '#'.$row->biometrics_id;
+            })
             ->editColumn('name', function ($row) {
                 return empty($row->firstname) && empty($row->lastname)
                     ? '<i class="text-muted">No Name Yet</i>'
@@ -136,6 +139,11 @@ class IndexController extends Controller
 
                 if ($row->account_status != 'archived') {
                     $div .= '
+                        <a href="' . route('daily-time-record.index', ['employee_no' => $row->employee_no]) . '" 
+                        class="btn btn-warning me-1" 
+                        title="Timelogs">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </a>
                         <a href="' . route('hris.employee.transfer', ['employee_no' => $row->employee_no]) . '" 
                         class="btn btn-secondary me-1" 
                         title="Transfer Unit">

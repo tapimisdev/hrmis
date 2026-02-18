@@ -105,10 +105,19 @@ class OffsetApplicationController extends Controller
                 $dates = [];
             }
 
+            $credit_equivalent = 0;
+
+            foreach($dates as $date) {
+                if ($date['shift'] === 'wholeday') {
+                    $credit_equivalent += 1;
+                } else {
+                    $credit_equivalent += 0.5;
+                }
+            }
+
             $data = $this->applicationService->getData('offset');
             // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
             // $approvers = $validatedData['approvers'];
-            $days = count($datesInput);
 
             $leaveName = 'Offset Leave';
 
@@ -119,7 +128,7 @@ class OffsetApplicationController extends Controller
                 'user_id'       => $user_id,
                 'name'          => $leaveName,
                 'employee_no'   => $employee_no,
-                'days'          => $days,
+                'credit_equivalent' => number_format($credit_equivalent, 2),
                 'reason'        => $validatedData['reason'],
                 'status'        =>  $isDirectlyApproved ? 'approved' : 'pending',
                 'level'         => 1,
@@ -133,6 +142,7 @@ class OffsetApplicationController extends Controller
                     'offset_application_id' => $applicationID,
                     'date' => $item['date'],
                     'shift'=> $item['shift'],
+                    'credit_equivalent' => $item['shift'] === 'wholeday' ? 1 : 0.5,
                 ]);
             }
 

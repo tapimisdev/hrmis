@@ -211,7 +211,7 @@ export default {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const a = document.createElement("a");
         a.href = url;
-        a.download = `payroll_registry_${payroll_no}.xlsx`;
+        a.download = `${payroll_no}.xlsx`;
         document.body.appendChild(a);
         a.click();
 
