@@ -9,7 +9,7 @@ concurrency:
   group: deploy-main
   cancel-in-progress: true
 
-job:
+jobs:
   deploy:
     runs-on: [self-hosted, orbit]
     
