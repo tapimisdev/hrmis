@@ -17,14 +17,44 @@ class TimelogController extends Controller
     }
 
     public function index(Request $request)
-    {        
+    {
         if (request()->ajax()) {
+
+            $latestOrg = DB::table('employee_organization as eo')
+                ->select('eo.*')
+                ->joinSub(
+                    DB::table('employee_organization')
+                        ->selectRaw('employee_no, MAX(created_at) as max_created_at')
+                        ->groupBy('employee_no'),
+                    'mx',
+                    function ($join) {
+                        $join->on('eo.employee_no', '=', 'mx.employee_no')
+                            ->on('eo.created_at', '=', 'mx.max_created_at');
+                    }
+                )
+                ->joinSub(
+                    DB::table('employee_organization')
+                        ->selectRaw('employee_no, created_at, MAX(id) as max_id')
+                        ->groupBy('employee_no', 'created_at'),
+                    'mx2',
+                    function ($join) {
+                        $join->on('eo.employee_no', '=', 'mx2.employee_no')
+                            ->on('eo.created_at', '=', 'mx2.created_at')
+                            ->on('eo.id', '=', 'mx2.max_id');
+                    }
+                );
+
             $employees = DB::table('users')
-                ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id') // spatie roles table
+                ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
                 ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+
                 ->leftJoin('employee_information', 'users.id', '=', 'employee_information.user_id')
                 ->leftJoin('employee_shift_work_schedule', 'employee_information.employee_no', '=', 'employee_shift_work_schedule.employee_no')
-                ->leftJoin('employee_organization', 'employee_information.employee_no', '=', 'employee_organization.employee_no')
+
+                ->leftJoinSub($latestOrg, 'employee_organization', function ($join) {
+                    $join->on('employee_information.employee_no', '=', 'employee_organization.employee_no');
+                })
+
                 ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
                 ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
                 ->leftJoin('work_schedule', 'employee_shift_work_schedule.work_schedule_id', '=', 'work_schedule.id')
@@ -32,6 +62,7 @@ class TimelogController extends Controller
                 ->leftJoin('divisions', 'employee_organization.division_id', '=', 'divisions.id')
                 ->leftJoin('shifts', 'employee_shift_work_schedule.shift_id', '=', 'shifts.id')
                 ->leftJoin('employment_types', 'employee_organization.employment_type_id', '=', 'employment_types.id')
+
                 ->whereIn('roles.name', ['emp_contractual', 'emp_regular'])
                 ->select(
                     'users.id',
@@ -47,7 +78,8 @@ class TimelogController extends Controller
                     'shifts.name as shift_name',
                     'employment_types.name as employment_type'
                 );
-            
+
+
             if ($request->filled('type')) {
                 $employees->where('employment_types.name', $request->type);
             }
@@ -86,32 +118,32 @@ class TimelogController extends Controller
     public function datatable($query)
     {
         return DataTables::of($query)
-        ->addIndexColumn()
-        ->addColumn('employee_no', function ($row) {
-            return $row->employee_no ?? '-';
-        })
-        ->addColumn('fullname', function ($row) {
-            return ($row->firstname . ' ' . $row->lastname) ?? '-';
-        })
-        ->addColumn('picture', function ($row) {
-            $profile = $row->profile ?? null;
+            ->addIndexColumn()
+            ->addColumn('employee_no', function ($row) {
+                return $row->employee_no ?? '-';
+            })
+            ->addColumn('fullname', function ($row) {
+                return ($row->firstname . ' ' . $row->lastname) ?? '-';
+            })
+            ->addColumn('picture', function ($row) {
+                $profile = $row->profile ?? null;
 
-            if ($profile) {
-                $profile = Storage::url('public/users/' . $row->employee_no . '/profile-image/' . $row->profile);
-            } else {
-                $profile = 'https://ui-avatars.com/api/?name='
-                    . urlencode(($row->firstname ?? '?') . ' ' . ($row->lastname ?? '?'))
-                    . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
-            }
+                if ($profile) {
+                    $profile = Storage::url('public/users/' . $row->employee_no . '/profile-image/' . $row->profile);
+                } else {
+                    $profile = 'https://ui-avatars.com/api/?name='
+                        . urlencode(($row->firstname ?? '?') . ' ' . ($row->lastname ?? '?'))
+                        . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
+                }
 
-            return '<div style="margin: auto; width: 50px; height: 50px; border:1px solid #ccc; border-radius:8px; 
+                return '<div style="margin: auto; width: 50px; height: 50px; border:1px solid #ccc; border-radius:8px; 
                                 display:flex; align-items:center; justify-content:center; overflow:hidden; background:#f9f9f9;">
                         <img src="' . $profile . '" 
                             alt="Avatar of ' . e(($row->firstname ?? '') . ' ' . ($row->lastname ?? '')) . '" 
                             style="width:100%; height:100%; object-fit:cover;">
                     </div>';
-        })
-        ->addColumn('actions', function ($row) {
+            })
+            ->addColumn('actions', function ($row) {
 
           return '<div class="text-nowrap px-3 d-flex gap-2">' .
                 '<a href="' . route('hris.employee.information', ['employee_no' => $row->employee_no]) . '" class="btn btn-dark" title="DTR">' .
