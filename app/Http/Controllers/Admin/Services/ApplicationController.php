@@ -50,7 +50,7 @@ class ApplicationController extends Controller
                         'la.user_id',
                         'la.employee_no',
                         'la.leave_id',
-                        'la.days',
+                        'la.credit_equivalent',
                         'la.reason',
                         'la.status',
                         'la.created_at',

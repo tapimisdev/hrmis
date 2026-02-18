@@ -69,8 +69,34 @@ class PayrollService
         $this->date = $payload['date'] ?? null;
         $this->cutoff = $payload['cutoff'] ?? null;
 
+        $latestOrg = DB::table('employee_organization as eo')
+            ->select('eo.*')
+            ->joinSub(
+                DB::table('employee_organization')
+                    ->selectRaw('employee_no, MAX(created_at) as max_created_at')
+                    ->groupBy('employee_no'),
+                'mx',
+                function ($join) {
+                    $join->on('eo.employee_no', '=', 'mx.employee_no')
+                        ->on('eo.created_at', '=', 'mx.max_created_at');
+                }
+            )
+            ->joinSub(
+                DB::table('employee_organization')
+                    ->selectRaw('employee_no, created_at, MAX(id) as max_id')
+                    ->groupBy('employee_no', 'created_at'),
+                'mx2',
+                function ($join) {
+                    $join->on('eo.employee_no', '=', 'mx2.employee_no')
+                        ->on('eo.created_at', '=', 'mx2.created_at')
+                        ->on('eo.id', '=', 'mx2.max_id');
+                }
+            );
+
         $employees = DB::table('employee_information as ei')
-            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
+            ->leftJoinSub($latestOrg, 'eo', function ($join) {
+                $join->on('ei.employee_no', '=', 'eo.employee_no');
+            })
             ->leftJoin('positions', 'eo.position_id', '=', 'positions.id')
             ->leftJoin('divisions', 'eo.division_id', '=', 'divisions.id')
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
@@ -510,6 +536,7 @@ class PayrollService
                 ->where('payroll_salary_id', $payroll_id)
                 ->select('pse.*', 'ps.payroll_date', 'ps.cutoff', 'ps.period_covered')
                 ->get();
+
         } else { // REGULAR
 
             $pse = DB::table('payroll_salary_permanent_employees as pse')
@@ -632,7 +659,6 @@ class PayrollService
                 }
             }
 
-
             return [
                 'employee_no' => $d->employee_no,
                 'name'        => $d->name,
@@ -674,11 +700,11 @@ class PayrollService
 
         foreach ($enriched as $emp) {
 
-            $groupId   = ($employment_type_id === EmploymentTypesEnum::COS->value)
+            $groupId   = ($employment_type_id == EmploymentTypesEnum::COS->value)
                 ? ($emp['project_id'] ?? 'others')
                 : ($emp['division_id'] ?? 'others');
 
-            $groupName = ($employment_type_id === EmploymentTypesEnum::COS->value)
+            $groupName = ($employment_type_id == EmploymentTypesEnum::COS->value)
                 ? $emp['project_name']
                 : $emp['division_name'];
 
@@ -704,8 +730,13 @@ class PayrollService
                 'deductions'   => $emp['deductions'],
                 'earnings'     => $emp['earnings'],
                 'adjustment'   => $emp['salary_adjustment'],
+                'ewt_2'       => $emp['ewt_2'] ?? null,
+                'percentage_tax_3' => $emp['percentage_tax_3'] ?? null,
+                'tax_ewt_5'   => $emp['tax_ewt_5'] ?? null,
+                'w_tax'       => $emp['w_tax'] ?? null,
                 'net_salary'   => $emp['net_pay'],
                 'cut_offs'     => $emp['cut_offs'],
+                'remarks'      => $emp['remarks'],
             ];
         }
 
@@ -840,5 +871,4 @@ class PayrollService
 
         return $data;
     }
-    
 }

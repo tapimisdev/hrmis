@@ -33,14 +33,14 @@
                         <td>
                             <ul>
                                 @foreach($data->dates as $item)
-                                    <li>{{ \Carbon\Carbon::parse($item['date'])->format('M d, Y - (l)') }}</li>
+                                    <li>{{ \Carbon\Carbon::parse($item['date'])->format('M d, Y - (l)')}} - [ {{$item['shift']}} ]</li>
                                 @endforeach
                             </ul>
                         </td>
                     </tr>
                     <tr>
-                        <th>Total Day(s):</th>
-                        <td>{{$data->days}} Day(s)</td>
+                        <th>Credit(s) Equivalent:</th>
+                        <td>{{number_format($data->credit_equivalent, 2)}}</td>
                     </tr>
                     <tr>
                         <th>Reason:</th>

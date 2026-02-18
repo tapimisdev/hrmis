@@ -56,12 +56,10 @@
             <x-table id="myTable">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th style="width: 50px">Profile Image</th>
+                    <th></th>
                     <th>Employee #</th>
                     <th>Fullname</th>
                     <th>Position</th>
-                    <th>Unit</th>
                     <th style="width: 120px">Action</th>
                 </tr>
             </thead>
@@ -89,17 +87,15 @@
                 }
             },
             "columns": [
-                { data: "DT_RowIndex", name: 'index' },
                 { data: "picture", name: 'picture' },
                 { data: "employee_no", name: 'employee_no' },
                 { data: "fullname", name: 'fullname' },
                 { data: "position_name", name: 'position_name' },
-                { data: "units_name", name: 'units_name' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
             "columnDefs": [
                 {
-                    targets: [2, 3, 4, 5],
+                    targets: [2, 3, 4],
                     className: 'min-table-width'
                 }
             ],

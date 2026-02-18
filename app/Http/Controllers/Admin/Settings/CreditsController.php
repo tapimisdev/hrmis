@@ -99,13 +99,12 @@ class CreditsController extends Controller
                 $currentMonth = Carbon::now()->startOfMonth();
 
                 $leaveTypes = [
-                    $sickLeaveId     => (float) $credit['sick_leave'],
-                    $vacationLeaveId => (float) $credit['vacation_leave'],
+                    $sickLeaveId     =>  number_format($credit['sick_leave'], 3),
+                    $vacationLeaveId =>  number_format($credit['vacation_leave'], 3),
                 ];
 
                 foreach ($leaveTypes as $leaveId => $amount) {
 
-                    // 1️⃣ Insert imported month
                     DB::table($table)->updateOrInsert(
                         [
                             'employee_no' => $employee_no,
@@ -125,7 +124,6 @@ class CreditsController extends Controller
 
                     $previousBalance = $amount;
 
-                    // 2️⃣ Carry forward if needed
                     $nextMonth = $importMonth->copy()->addMonth();
 
                     while ($nextMonth->lte($currentMonth)) {
