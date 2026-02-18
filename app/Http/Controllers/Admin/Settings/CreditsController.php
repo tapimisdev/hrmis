@@ -99,8 +99,8 @@ class CreditsController extends Controller
                 $currentMonth = Carbon::now()->startOfMonth();
 
                 $leaveTypes = [
-                    $sickLeaveId     =>  number_format($credit['sick_leave'], 2),
-                    $vacationLeaveId =>  number_format($credit['vacation_leave'], 2),
+                    $sickLeaveId     =>  number_format($credit['sick_leave'], 3),
+                    $vacationLeaveId =>  number_format($credit['vacation_leave'], 3),
                 ];
 
                 foreach ($leaveTypes as $leaveId => $amount) {

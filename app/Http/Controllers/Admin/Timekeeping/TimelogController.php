@@ -113,9 +113,12 @@ class TimelogController extends Controller
         })
         ->addColumn('actions', function ($row) {
 
-          return '<div class="text-nowrap px-3">' .
-                '<a href="' . route('daily-time-record.index', $row->employee_no) . '" class="btn btn-primary btn ms-1 my-1" title="DTR">' .
-                    '<i class="fas fa-clock me-1"></i> View DTR'  .
+          return '<div class="text-nowrap px-3 d-flex gap-2">' .
+                '<a href="' . route('hris.employee.information', ['employee_no' => $row->employee_no]) . '" class="btn btn-dark" title="DTR">' .
+                    '<i class="fa-solid fa-briefcase"></i>'  .
+                '</a>' .
+                '<a href="' . route('daily-time-record.index', $row->employee_no) . '" class="btn btn-primary" title="DTR">' .
+                    '<i class="fas fa-clock me-1"></i> '  .
                 '</a>' .
             '</div>';
             

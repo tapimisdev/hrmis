@@ -361,7 +361,7 @@ class OffsetApplicationController extends Controller {
 
                 $totalCredit = 0;
 
-                $dayStrings = collect($days)->map(function ($d) use (&$totalCredit) {
+                $dayStrings = collect($days)->map(function ($d) use (&$totalCredit, $month) {
                     $totalCredit += $d['credit'];
 
                     $shiftShort = match ($d['shift']) {
@@ -371,15 +371,15 @@ class OffsetApplicationController extends Controller {
                         default     => strtoupper($d['shift']),
                     };
 
-                    return "{$d['day']} ({$shiftShort})";
+                    return "{$month} {$d['day']} ({$shiftShort})";
                 })->implode(', ');
 
-                return sprintf("%s %s (Eqv: %.2f)", $month, $dayStrings, $totalCredit);
+                return sprintf("%s (Eqv: %.2f)", $dayStrings, $totalCredit);
 
             })
             ->implode(' | ');
 
-        $combinedRemarks = $singleRemark;
+            $combinedRemarks = $singleRemark;
 
         // --- Insert / Update current month offset_credits ---
         $existing = DB::table('offset_credits')
@@ -441,12 +441,12 @@ class OffsetApplicationController extends Controller {
             $runningBalance = $updatedBalance;
         }
 
-        return response()->json([
+        return [
             'status'           => 'success',
             'message'          => 'Offset credits updated successfully.',
             'combined_remarks' => $combinedRemarks,
             'single_remarks'   => $singleRemark,
-        ]);
+        ];
     }
 
     public function datatable($query)

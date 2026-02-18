@@ -395,7 +395,6 @@ class LeaveApplicationController extends Controller {
 
         $new_balance = $remaining_balance - $toBeDeducted;
 
-        // --- Build SINGLE remark (new one only) ---
         $singleRemark = collect($datesByMonth)
             ->map(function ($days, $month) use ($leave_id, $leaveName, $deductionLeaveId) {
 
@@ -403,6 +402,7 @@ class LeaveApplicationController extends Controller {
                 $totalCredit = 0;
 
                 foreach ($days as $d) {
+
                     $shiftShort = match ($d['shift']) {
                         'morning'   => 'AM',
                         'afternoon' => 'PM',
@@ -410,14 +410,14 @@ class LeaveApplicationController extends Controller {
                         default     => $d['shift'],
                     };
 
-                    $dayStrings[] = "{$d['day']} ({$shiftShort})";
+                    $dayStrings[] = "{$month} {$d['day']} ({$shiftShort})";
+
                     $totalCredit += $d['credit'];
                 }
 
                 if ($leave_id && is_null($deductionLeaveId)) {
                     return sprintf(
-                        "%s %s [%s]",
-                        $month,
+                        "%s [%s]",
                         implode(', ', $dayStrings),
                         $leaveName
                     );
@@ -425,16 +425,14 @@ class LeaveApplicationController extends Controller {
 
                 if ($leave_id == $deductionLeaveId) {
                     return sprintf(
-                        "%s %s (Eqv: %.2f)",
-                        $month,
+                        "%s (Eqv: %.2f)",
                         implode(', ', $dayStrings),
                         $totalCredit
                     );
                 }
 
                 return sprintf(
-                    "%s %s (Eqv: %.2f) [%s]",
-                    $month,
+                    "%s (Eqv: %.2f) [%s]",
                     implode(', ', $dayStrings),
                     $totalCredit,
                     $leaveName
@@ -495,7 +493,6 @@ class LeaveApplicationController extends Controller {
             'single_remarks'   => $singleRemark,
         ];
     }
-
 
     public function datatable($query)
     {

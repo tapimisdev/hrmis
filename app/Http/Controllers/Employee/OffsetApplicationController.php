@@ -142,6 +142,7 @@ class OffsetApplicationController extends Controller
                     'offset_application_id' => $applicationID,
                     'date' => $item['date'],
                     'shift'=> $item['shift'],
+                    'credit_equivalent' => $item['shift'] === 'wholeday' ? 1 : 0.5,
                 ]);
             }
 

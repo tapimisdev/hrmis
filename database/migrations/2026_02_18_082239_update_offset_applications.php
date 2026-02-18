@@ -23,6 +23,12 @@ return new class extends Migration
                 ->nullable()
                 ->after('levels');
         });
+
+        Schema::table('offset_dates', function(Blueprint $table) {
+            $table->string('credit_equivalent')
+                ->nullable()
+                ->after('shift');
+        });
     }
 
     /**
@@ -36,6 +42,10 @@ return new class extends Migration
             }
 
             $table->dropColumn(['credit_equivalent', 'credit_remarks']);
+        });
+
+        Schema::table('offset_dates', function(Blueprint $table) {
+            $table->dropColumn('credit_equivalent');
         });
     }
 };
