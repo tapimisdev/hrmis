@@ -49,7 +49,7 @@ jobs:
       - name: Optimize Laravel
         shell: bash
         run: |
-          docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan optimize"
+          docker exec $CONTAINER bash -lc "cd /var/www/html && php artisan optimize:clear"
 
       - name: Deploy finished
         run: echo "Deploy done!"
