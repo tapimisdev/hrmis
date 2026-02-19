@@ -575,7 +575,7 @@ class Employee extends Controller
             ->leftJoin('events_announcements_viewers as eav', 'ea.id', '=', 'eav.event_announcement_id')
             ->leftJoin('users as u', 'eav.user_id', '=', 'u.id')
             ->when($where_not, function ($q) use ($where_not) {
-                return $q->where('ea.id', '!=', $where_not);  // FIXED
+                return $q->where('ea.id', '!=', $where_not); 
             })
             ->inRandomOrder()
             ->take($count)
