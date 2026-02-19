@@ -27,6 +27,6 @@ Route::prefix('timekeeping')->group(function() {
         ->name('daily-time-record.show');
     Route::get('daily-time-record/{employee_no}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
 
-    Route::resource('web-time-access', WebTimeAccessController::class)->only('index', 'show', 'store')->names('webtime');
+    Route::resource('web-time-access', WebTimeAccessController::class)->only('index', 'show', 'store', 'destroy')->names('webtime');
 
 });

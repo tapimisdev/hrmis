@@ -30,6 +30,7 @@ class CancelLeaveApiController extends Controller
                     'ld.id as leave_date_id',
                     'ld.shift as shift',
                     'ld.credit_equivalent as date_credit_equivalent',
+                    'la.leave_id',
                     'la.employee_no as employee_no',
                     'la.credit_equivalent as credit_equivalent',
                     'la.id as leave_application_id',
@@ -95,13 +96,32 @@ class CancelLeaveApiController extends Controller
 
     private function restoreCredits($payload)
     {
+        $leave_id             = $payload->leave_id;
         $employeeNo           = $payload->employee_no;
         $dateId               = $payload->leave_date_id;
         $shift                = $payload->shift;
         $applicationId        = $payload->leave_application_id;
         $dateCreditEquivalent = (float) ($payload->date_credit_equivalent ?? 0);
 
-        // Get leave date
+        /*
+        |--------------------------------------------------------------------------
+        | 1. Resolve deduction leave_id (same logic as updateCredits)
+        |--------------------------------------------------------------------------
+        */
+        $leaveSetting = DB::table('leaves_settings')
+            ->where('leave_id', $leave_id)
+            ->first();
+
+        $deductionLeaveId = $leaveSetting->deduct_credit_id ?? null;
+
+        // IMPORTANT: Use same mapping rule as updateCredits
+        $effectiveLeaveId = $deductionLeaveId ?? $leave_id;
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. Get leave date
+        |--------------------------------------------------------------------------
+        */
         $leaveDate = DB::table('leave_dates')
             ->where('leave_application_id', $applicationId)
             ->where('id', $dateId)
@@ -111,7 +131,11 @@ class CancelLeaveApiController extends Controller
             throw new \Exception('Leave data not found.');
         }
 
-        // Determine shift suffix
+        /*
+        |--------------------------------------------------------------------------
+        | 3. Build date string to remove from remarks
+        |--------------------------------------------------------------------------
+        */
         $suffix = match ($shift) {
             'morning'   => '(AM)',
             'afternoon' => '(PM)',
@@ -119,12 +143,21 @@ class CancelLeaveApiController extends Controller
             default     => '',
         };
 
-        $toRemove = strtoupper(Carbon::parse($leaveDate->date)->format('M j')) . ' ' . $suffix;
+        $toRemove = strtoupper(
+            Carbon::parse($leaveDate->date)->format('M j')
+        ) . ' ' . $suffix;
 
-        // Fetch leave credit for employee & month
+        $asOfMonth = Carbon::parse($leaveDate->date)->format('Y-m');
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. Fetch CORRECT leave_credit record using effectiveLeaveId
+        |--------------------------------------------------------------------------
+        */
         $leaveCredit = DB::table('leave_credits')
+            ->where('leave_id', $effectiveLeaveId)
             ->where('employee_no', $employeeNo)
-            ->where('as_of', Carbon::parse($leaveDate->date)->format('Y-m'))
+            ->where('as_of', $asOfMonth)
             ->latest('id')
             ->first();
 
@@ -132,56 +165,68 @@ class CancelLeaveApiController extends Controller
             throw new \Exception('Leave credit record not found.');
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | 5. Clean remarks safely
+        |--------------------------------------------------------------------------
+        */
         $remarks = $leaveCredit->remarks ?? '';
-
-        // Split remarks into multiple lines
-        $lines = preg_split('/\r\n|\r|\n/', $remarks);
-
+        $lines   = preg_split('/\r\n|\r|\n/', $remarks);
         $newLines = [];
 
         foreach ($lines as $line) {
-            $line = trim($line);
-            if (empty($line)) continue;
 
-            // Match dates and Eqv
+            $line = trim($line);
+            if ($line === '') continue;
+
             preg_match('/^(.*)\(Eqv:\s*([0-9.]+)\)$/', $line, $matches);
 
             if (!isset($matches[1])) {
-                // Keep line as-is if it doesn't match pattern
                 $newLines[] = $line;
                 continue;
             }
 
-            $datesPart  = trim($matches[1]);
-            $currentEqv = (float) $matches[2];
-
+            $datesPart = trim($matches[1]);
             $datesArray = array_filter(array_map('trim', explode(',', $datesPart)));
 
-            // Remove the target date if it exists in this line
             if (in_array($toRemove, array_map('strtoupper', $datesArray))) {
-                $datesArray = array_filter($datesArray, fn($item) => strtoupper($item) !== strtoupper($toRemove));
 
-                // Recalculate Eqv for this line
+                $datesArray = array_filter(
+                    $datesArray,
+                    fn($item) => strtoupper($item) !== strtoupper($toRemove)
+                );
+
                 $newEqv = 0;
                 foreach ($datesArray as $item) {
-                    if (str_contains($item, '(WD)')) $newEqv += 1;
-                    elseif (str_contains($item, '(AM)') || str_contains($item, '(PM)')) $newEqv += 0.5;
+                    if (str_contains($item, '(WD)')) {
+                        $newEqv += 1;
+                    } elseif (
+                        str_contains($item, '(AM)') ||
+                        str_contains($item, '(PM)')
+                    ) {
+                        $newEqv += 0.5;
+                    }
                 }
 
-                // Add updated line if any dates remain
                 if (!empty($datesArray)) {
-                    $newLines[] = implode(', ', $datesArray) . ' (Eqv: ' . number_format($newEqv, 2) . ')';
+                    $newLines[] = implode(', ', $datesArray)
+                        . ' (Eqv: ' . number_format($newEqv, 2) . ')';
                 }
+
             } else {
-                // Line does not contain the target date, keep it as-is
                 $newLines[] = $line;
             }
         }
 
         $newRemarks = implode("\n", $newLines);
 
-        $newDeducted = max(0, $leaveCredit->deducted - $dateCreditEquivalent);
-        $newBalance  = $leaveCredit->balance + $dateCreditEquivalent;
+        /*
+        |--------------------------------------------------------------------------
+        | 6. Restore deducted credits properly
+        |--------------------------------------------------------------------------
+        */
+        $newDeducted = max(0, (float)$leaveCredit->deducted - $dateCreditEquivalent);
+        $newBalance  = (float)$leaveCredit->balance + $dateCreditEquivalent;
 
         DB::table('leave_credits')
             ->where('id', $leaveCredit->id)
@@ -194,4 +239,5 @@ class CancelLeaveApiController extends Controller
 
         return true;
     }
+
 }

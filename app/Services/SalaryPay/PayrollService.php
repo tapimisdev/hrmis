@@ -761,12 +761,10 @@ class PayrollService
 
     public function employeePayrollRates($payroll)
     {
-        // Payroll constants
-        $WORK_DAYS  = 22;
+        $WORK_DAYS = 22;
         $HOURS_DAY = 8;
         $MINS_HOUR = 60;
 
-        // Get payroll period
         $payrollPeriod = DB::table('payroll_salary')
             ->where('id', $payroll->id)
             ->value('period_covered');
@@ -789,7 +787,6 @@ class PayrollService
                 : date('t', strtotime("$month $year"))
         );
 
-        // Compute payroll data
         $employees = $payroll->employees->map(function ($employee) use (
             $start_date,
             $end_date,
@@ -798,68 +795,102 @@ class PayrollService
             $MINS_HOUR
         ) {
 
-            // 🔹 Get DTR summary
             $dtr = $this->daily_time_record_service->getDTR([
-                'user_id'    => $employee->employee_id,
-                'startDate'  => $start_date,
-                'endDate'    => $end_date,
+                'user_id'   => $employee->employee_id,
+                'startDate' => $start_date,
+                'endDate'   => $end_date,
             ]);
 
             $summary = $dtr['payroll_value'] ?? [];
 
-            // 🔹 RATES
-            $daily_rate  = round($employee->monthly_rate / $WORK_DAYS, 2);
-            $hourly_rate = round($daily_rate / $HOURS_DAY, 2);
-            $minute_rate = round($hourly_rate / $MINS_HOUR, 2);
+            /*
+            |--------------------------------------------------------------------------
+            | RATES (NO EARLY ROUNDING)
+            |--------------------------------------------------------------------------
+            */
+            $daily_rate  = $employee->monthly_rate / $WORK_DAYS;
+            $hourly_rate = $daily_rate / $HOURS_DAY;
+            $minute_rate = $hourly_rate / $MINS_HOUR;
 
-            // 🔹 ABSENCES (DAYS ONLY)
+            /*
+            |--------------------------------------------------------------------------
+            | ABSENCES
+            |--------------------------------------------------------------------------
+            */
             $absent_days   = $summary['absent'] ?? 0;
-            $absent_amount = round($absent_days * $daily_rate, 2);
+            $absent_amount = $absent_days * $daily_rate;
 
-            // 🔹 UNDERTIME (MINUTES → HOURS + MINUTES)
+            /*
+            |--------------------------------------------------------------------------
+            | UNDERTIME
+            |--------------------------------------------------------------------------
+            */
             $total_ut_minutes = $summary['late_undertime'] ?? 0;
 
+            // Split for display only
             $ut_hours   = intdiv($total_ut_minutes, $MINS_HOUR);
             $ut_minutes = $total_ut_minutes % $MINS_HOUR;
 
-            $ut_hours_amount   = round($ut_hours * $hourly_rate, 2);
-            $ut_minutes_amount = round($ut_minutes * $minute_rate, 2);
+            // Compute parts using full precision
+            $ut_hours_amount   = $ut_hours * $hourly_rate;
+            $ut_minutes_amount = $ut_minutes * $minute_rate;
 
-            // 🔹 TOTAL AUT AMOUNT
-            $total_aut_amount = round(
-                $absent_amount + $ut_hours_amount + $ut_minutes_amount,
-                2
-            );
+            // Authoritative undertime amount
+            $ut_amount = $total_ut_minutes * $minute_rate;
+
+            /*
+            |--------------------------------------------------------------------------
+            | TOTAL DEDUCTIONS (USE AUTHORITATIVE VALUES)
+            |--------------------------------------------------------------------------
+            */
+            $total_aut_amount = $absent_amount + $ut_amount;
 
             return [
                 'project_name' => 'sample',
 
-                'employee_no'  => $employee->employee_no,
-                'name'         => $employee->name,
-                'position'     => $employee->position,
+                'employee_no' => $employee->employee_no,
+                'name'        => $employee->name,
+                'position'    => $employee->position,
 
+                /*
+                |--------------------------------------------------------------------------
+                | RATES (Rounded Only For Output)
+                |--------------------------------------------------------------------------
+                */
                 'monthly_rate' => number_format($employee->monthly_rate, 2),
-                'daily_rate'   => number_format($daily_rate, 2),
-                'hourly_rate'  => number_format($hourly_rate, 2),
-                'minute_rate'  => number_format($minute_rate, 2),
+                'daily_rate'   => number_format($daily_rate, 6),
+                'hourly_rate'  => number_format($hourly_rate, 6),
+                'minute_rate'  => number_format($minute_rate, 6),
 
-                // ABSENCES
+                /*
+                |--------------------------------------------------------------------------
+                | ABSENCES
+                |--------------------------------------------------------------------------
+                */
                 'absent_days'   => $absent_days,
                 'absent_amount' => number_format($absent_amount, 2),
 
-                // UNDERTIME
+                /*
+                |--------------------------------------------------------------------------
+                | UNDERTIME (DISPLAY)
+                |--------------------------------------------------------------------------
+                */
                 'ut_hours'          => $ut_hours,
                 'ut_minutes'        => $ut_minutes,
                 'ut_hours_amount'   => number_format($ut_hours_amount, 2),
                 'ut_minutes_amount' => number_format($ut_minutes_amount, 2),
+                'ut_amount'         => number_format($ut_amount, 2),
 
-                // TOTAL
+                /*
+                |--------------------------------------------------------------------------
+                | TOTAL
+                |--------------------------------------------------------------------------
+                */
                 'total_aut_amount' => number_format($total_aut_amount, 2),
             ];
         });
 
-        // 🔹 Group by project
-        $data = $employees
+        return $employees
             ->groupBy('project_name')
             ->map(function ($emps, $project) {
                 return [
@@ -868,7 +899,6 @@ class PayrollService
                 ];
             })
             ->values();
-
-        return $data;
     }
+
 }
