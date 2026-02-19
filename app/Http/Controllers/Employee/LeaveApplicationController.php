@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Http\Controllers\Admin\Services\LeaveApplicationController as UpdateCreditsController;
 use App\Http\Requests\Employee\StoreLeaveApplication;
 use App\Enums\EmploymentTypesEnum;
 use App\Events\NotificationEvents;
@@ -195,6 +196,10 @@ class LeaveApplicationController extends Controller
             }
 
             $sender = ucwords(Auth::user()->name);
+
+            if($isDirectlyApproved) {
+                app(UpdateCreditsController::class)->updateCredits($applicationID);
+            }
 
             if(!$isDirectlyApproved) {
                 $payload = [

@@ -19,7 +19,7 @@ class StoreWebTimeAccessRequest extends FormRequest
     {
         $this->merge([
             'employee_nos' => collect($this->input('employee_nos', []))
-                ->map(fn ($v) => (int) $v)
+                ->map(fn ($v) => (string) $v)
                 ->values()
                 ->all(),
 

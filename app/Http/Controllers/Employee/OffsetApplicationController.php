@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Http\Controllers\Admin\Services\OffsetApplicationController as UpdateCreditsController;
 use App\Http\Requests\Employee\StoreOffsetApplication;
 use App\Events\NotificationEvents;
 use App\Services\EventService;
@@ -172,6 +173,10 @@ class OffsetApplicationController extends Controller
                         'file_type'            => $file->getMimeType(),
                     ]);
                 }
+            }
+
+            if($isDirectlyApproved) {
+                app(UpdateCreditsController::class)->updateCredits($applicationID);
             }
 
             if(!$isDirectlyApproved) {
