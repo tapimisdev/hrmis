@@ -441,7 +441,6 @@ class LeaveApplicationController extends Controller {
             ->implode(' | ');
 
         $effectiveLeaveId = $deductionLeaveId ?? $leave_id;
-
         $combinedRemarks = $singleRemark;
 
         if ($leave_id && $effectiveLeaveId) {

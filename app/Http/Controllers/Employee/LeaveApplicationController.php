@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Http\Controllers\Admin\Services\LeaveApplicationController as UpdateCreditsController;
 use App\Http\Requests\Employee\StoreLeaveApplication;
 use App\Enums\EmploymentTypesEnum;
 use App\Events\NotificationEvents;
@@ -22,8 +23,13 @@ class LeaveApplicationController extends Controller
 
     public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
-        $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.leave_application.apply')->only(['create', 'store']);
+        $this->middleware('permission:emp.leave_application.view|hr.leave_approval.view')
+            ->only(['index', 'create', 'show']);
+
+        $this->middleware(
+            'permission:emp.leave_application.apply|hr.leave_approval.save'
+        )->only(['store']);
+
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
     }   
@@ -190,6 +196,10 @@ class LeaveApplicationController extends Controller
             }
 
             $sender = ucwords(Auth::user()->name);
+
+            if($isDirectlyApproved) {
+                app(UpdateCreditsController::class)->updateCredits($applicationID);
+            }
 
             if(!$isDirectlyApproved) {
                 $payload = [
