@@ -18,6 +18,7 @@
 </template>
 
 <script>
+const token = localStorage.getItem("auth_token");
 import AnnouncementCard from '../../announcements/AnnouncementCard.vue';
 
 export default {
@@ -26,6 +27,7 @@ export default {
   data() {
     return {
       announcements: [],
+      token: token
     };
   },
   mounted() {
