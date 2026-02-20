@@ -28,6 +28,7 @@ class StoreRequest extends FormRequest
             'cutoff' => ['required', 'string', 'in:first_cutoff,second_cutoff'],
             'employment_type_id' => ['required', 'integer', 'exists:employment_types,id'],
             'date' => ['required', 'date'],
+            'employees' => ['required', 'array'],
 
             'approved_by' => ['required', 'array'],
             'approved_by.*' => ['array', 'min:1'],

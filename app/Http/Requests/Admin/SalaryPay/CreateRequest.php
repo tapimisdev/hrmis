@@ -25,6 +25,14 @@ class CreateRequest extends FormRequest
         return [
             'label' => 'required|string|max:50',
             'employment_type_id' => 'required|integer|exists:employment_types,id',
+            'group_id' => [
+                'required',
+                Rule::when(
+                    request('group_id') === 'custom',
+                    ['string', Rule::in(['custom'])],
+                    ['integer', Rule::exists('payroll_groups', 'id')]
+                ),
+            ],
             'cutoff' => [
                 'required',
                 'string',
