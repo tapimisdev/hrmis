@@ -93,6 +93,8 @@ class SalaryController extends Controller
     {
         $validatedData = $request->validated();
 
+        // dd($validatedData);
+
         Log::info('Creating payroll with data: ', $validatedData);
 
         try {
@@ -256,30 +258,6 @@ class SalaryController extends Controller
                     'message' => 'Invalid status transition',
                     'status'  => 'invalid_transition'
                 ], 422);
-            }
-
-            /**
-             * STRICT MONTH + CUTOFF CONSTRAINT
-             */
-            $activeStatuses = ['pending', 'approved', 'for_releasing', 'completed'];
-
-            if (in_array($newStatus, $activeStatuses, true)) {
-
-                $exists = DB::table('payroll_salary')
-                    ->whereYear('payroll_date', date('Y', strtotime($payroll->payroll_date)))
-                    ->whereMonth('payroll_date', date('m', strtotime($payroll->payroll_date)))
-                    ->where('employment_type_id', $payroll->employment_type_id)
-                    ->where('cutoff', $payroll->cutoff)
-                    ->whereIn('status', $activeStatuses)
-                    ->where('id', '!=', $id)
-                    ->exists();
-
-                if ($exists) {
-                    return response()->json([
-                        'message' => "Active payroll detected for this month and cutoff.",
-                        'status'  => 'month_cutoff_active_conflict'
-                    ], 422);
-                }
             }
 
             //  Update first

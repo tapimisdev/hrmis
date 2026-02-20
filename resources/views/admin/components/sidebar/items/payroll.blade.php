@@ -50,6 +50,13 @@
             </li>
             <hr class="mt-2 mb-2">
             <li class="nested-item">
+                <a href="{{ route('payroll.group.index') }}"
+                class="{{ request()->is('admin/payroll/groups*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-people-group"></i>
+                    <span>Group</span>
+                </a>
+            </li>
+            <li class="nested-item">
                 <a href="{{ route('registry.index') }}"
                 class="{{ request()->is('admin/payroll/import/registry*') ? 'active' : '' }}">
                     <i class="fa-solid fa-upload"></i>
