@@ -261,12 +261,6 @@ export default {
         approved: [
           {
             type: "button",
-            label: "Back to Draft",
-            icon: "fa fa-undo me-2",
-            onClick: () => this.$emit("change-status", this.payroll.id, "draft"),
-          },
-          {
-            type: "button",
             label: "For Releasing",
             icon: "fa fa-paper-plane me-2",
             onClick: () => this.$emit("change-status", this.payroll.id, "for_releasing"),
@@ -289,7 +283,15 @@ export default {
           },
         ],
 
-        cancelled: [],
+        cancelled: [
+          {
+            type: "button",
+            label: "Delete Permanent",
+            class: "text-danger",
+            icon: "fa fa-trash-can me-2",
+            onClick: () => this.$emit("cancel", this.payroll.id),
+          },
+        ],
         completed: [],
         failed: [],
       }
