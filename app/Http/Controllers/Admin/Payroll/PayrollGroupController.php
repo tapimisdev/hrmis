@@ -42,6 +42,31 @@ class PayrollGroupController extends Controller
         return view('admin.pages.payroll.payroll-group.index');
     }
 
+    public function get_groups($id)
+    {
+        $data = DB::table('payroll_groups')
+            ->where('payroll_groups.is_active', true)
+            ->where('payroll_groups.employment_type_id', $id)
+            ->leftJoin('employment_types', 'payroll_groups.employment_type_id', '=', 'employment_types.id')
+            ->leftJoin('payroll_group_employees', 'payroll_groups.id', '=', 'payroll_group_employees.payroll_group_id')
+            ->select(
+                'payroll_groups.id',
+                'payroll_groups.name',
+                'employment_types.name as employment_type_name',
+                'payroll_groups.remarks',
+                DB::raw('COUNT(payroll_group_employees.employee_no) as employee_count')
+            )
+            ->groupBy(
+                'payroll_groups.id',
+                'payroll_groups.name',
+                'employment_types.name',
+                'payroll_groups.remarks'
+            )
+            ->get();
+
+        return response()->json(['data' => $data, 'message' => 'fetch success', 'status' => 'success']);
+    }
+
     public function create()
     {
         $employmentTypes = DB::table('employment_types')
@@ -239,11 +264,12 @@ class PayrollGroupController extends Controller
                 return '<div class="d-flex">' .
 
                     // Manage Button
-                    '<button data-id="' . $row->id . '" 
+                    '<a href="' . route('payroll.group.employees.index', $row->id) . '" 
+                        data-id="' . $row->id . '" 
                         class="btn btn-primary btn ms-1 my-1 manage-button" 
                         title="Manage">
                         <i class="fas fa-cogs"></i>
-                    </button>' .
+                    </a>' .
 
                     // Edit Button
                     '<a href="' . route('payroll.group.edit', $row->id) . '" 

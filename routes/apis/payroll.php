@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\Payroll\SLAPay\SLAPayController;
 use App\Http\Controllers\Admin\Payroll\SLAPay\SLAItemController;
 
 use App\Http\Controllers\Admin\Payroll\Api\PeraRataApiController;
+use App\Http\Controllers\Admin\Payroll\PayrollGroupController;
 use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataController;
 use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataItemController;
 
@@ -25,9 +26,13 @@ Route::prefix('payroll')->group(function() {
     Route::get('/progress/{batchId}', [ReportsController::class, 'getBatchProgress']);
     Route::post('/cancel/{batchId}', [ReportsController::class, 'cancelBatch']);
 
+    Route::get('groups/{id}', [PayrollGroupController::class, 'get_groups'])->name('get.groups');
+
     # Salary Payroll
 
     Route::prefix('salary-pay')->group(function() {
+
+    
         Route::post('items/{payroll_id}/{payroll_emp_id}', [SalaryItemController::class, 'update']);
         Route::post('check-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
         Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);

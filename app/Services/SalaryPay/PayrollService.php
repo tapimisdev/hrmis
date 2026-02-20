@@ -27,9 +27,10 @@ class PayrollService
     protected $daily_time_record_service;
     private $date;
     private $cutoff;
+    private $group_id;
 
-    private $eligibile;
-    private $not_eligibile;
+    private $eligible;
+    private $not_eligible;
 
     public function __construct(DailyTimeRecordService $daily_time_record_service)
     {
@@ -68,6 +69,7 @@ class PayrollService
     {
         $this->date = $payload['date'] ?? null;
         $this->cutoff = $payload['cutoff'] ?? null;
+        $this->group_id = $payload['group_id']; // can be 'custom'
 
         $latestOrg = DB::table('employee_organization as eo')
             ->select('eo.*')
@@ -128,8 +130,15 @@ class PayrollService
         }
 
         $seperatedEmployee = [
-            'eligible' => $this->eligibile ?? [],
-            'not_eligible' => $this->not_eligibile ?? [],
+            'eligible' => collect($this->eligible ?? [])
+                ->sortBy('lastname')
+                ->values()
+                ->all(),
+
+            'not_eligible' => collect($this->not_eligible ?? [])
+                ->sortBy('lastname')
+                ->values()
+                ->all(),
         ];
 
         return $seperatedEmployee;
@@ -169,6 +178,25 @@ class PayrollService
             $remarks[] = [
                 'text' => 'This Employee is Inactive',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
+            ];
+        }
+
+        $existence = $this->checkIfExistInPayroll($employee);
+
+        if ($existence['is_exist']) {
+            $remarks[] = [
+                'text' => 'This employee is already included in Payroll No. '
+                    . $existence['payroll']->payroll_no
+                    . ' for '
+                    . Carbon::parse($existence['payroll']->payroll_date)->format('F')
+                    . ' ( '
+                    . $existence['payroll']->cutoff
+                    . ' ).',
+
+                'url' => route('salary-pay.show', [
+                    'salary_pay' => $existence['payroll']->payroll_no,
+                    'batch_id'   => $existence['payroll']->batch_id,
+                ]),
             ];
         }
 
@@ -225,10 +253,63 @@ class PayrollService
         $employee->remarks = $remarks ?: $eligibleRemarks;
 
         if (empty($remarks)) {
-            $this->eligibile[] = $employee;
+
+           $ingroup_exist = false;
+
+            if ($this->group_id !== 'custom' && !empty($this->group_id)) {
+                $ingroup_exist = DB::table('payroll_group_employees')
+                    ->where('payroll_group_id', $this->group_id)
+                    ->where('employee_no', $employee->employee_no)
+                    ->exists();
+            }
+
+            $employee->selected = $ingroup_exist;
+            $this->eligible[] = $employee;
+
         } else {
-            $this->not_eligibile[] = $employee;
+            $this->not_eligible[] = $employee;
         }
+    }
+
+    private function checkIfExistInPayroll($emp)
+    {
+        $date = Carbon::parse($this->date);
+        $year = $date->year;
+        $month = $date->month;
+
+        $isExist = false;
+
+        $payrolls = DB::table('payroll_salary')
+            ->whereYear('payroll_date', $year)
+            ->whereMonth('payroll_date', $month)
+            ->where('cutoff', $this->cutoff)
+            ->where('status', '!=', 'cancelled')
+            ->get();
+
+
+        $db_name = 'payroll_salary_permanent_employees';
+
+        if ($emp->employment_type_id == EmploymentTypesEnum::COS->value) {
+            $db_name = 'payroll_salary_employee';
+        }
+
+        foreach ($payrolls as $payroll) {
+            $exists = DB::table($db_name)
+                ->where('payroll_salary_id', $payroll->id)
+                ->where('employee_no', $emp->employee_no)
+                ->exists();
+
+            if ($exists) {
+                $isExist = true;
+                $payroll = $payroll;
+                break;
+            }
+        }
+
+        return [
+            'is_exist' => $isExist,
+            'payroll' => $payroll ?? []
+        ];
     }
 
     private function hasWorkAndShift($emp_no)
@@ -308,8 +389,7 @@ class PayrollService
 
     public function generatePayrollRegistryReport($payload, $payroll_id)
     {
-        $employees = collect($this->getEligibleEmployees($payload));
-        $eligibleEmployees = $employees->get('eligible', []);
+        $eligibleEmployees = collect($payload['employees']['eligible'])->where('selected', true);
 
         if (empty($eligibleEmployees)) {
             Log::warning("No eligible employees found for payroll ID: {$payroll_id}");
@@ -536,7 +616,6 @@ class PayrollService
                 ->where('payroll_salary_id', $payroll_id)
                 ->select('pse.*', 'ps.payroll_date', 'ps.cutoff', 'ps.period_covered')
                 ->get();
-
         } else { // REGULAR
 
             $pse = DB::table('payroll_salary_permanent_employees as pse')
@@ -900,5 +979,4 @@ class PayrollService
             })
             ->values();
     }
-
 }

@@ -87,7 +87,12 @@
                         v-if="currentStep < steps.length - 1"
                         class="btn btn-next"
                         :disabled="
-                            loading || (nextDisabled && currentStep == 1)
+                            loading ||
+                            (nextDisabled && currentStep == 1) ||
+                            (currentStep == 1 &&
+                                !form.employees.eligible.some(
+                                    (emp) => emp.selected,
+                                ))
                         "
                         @click="nextStep"
                     >
@@ -141,6 +146,7 @@ export default {
                 label: "",
                 cutoff: "",
                 employees: [],
+                group_id: "",
                 employment_type_id: "",
                 date: new Date().toISOString().split("T")[0],
                 approved_by: {},
@@ -195,7 +201,7 @@ export default {
                             Accept: "application/json",
                             Authorization: `Bearer ${this.token}`,
                         },
-                    }
+                    },
                 );
                 this.form.employees = res.data.data;
                 if (this.form.employees.eligible.length == 0) {
@@ -218,7 +224,7 @@ export default {
                         error.response?.data?.message ===
                             "No employees found for this employment type."
                             ? "info"
-                            : "error"
+                            : "error",
                     );
                 }
                 return false;
@@ -238,7 +244,7 @@ export default {
                             Accept: "application/json",
                             Authorization: `Bearer ${this.token}`,
                         },
-                    }
+                    },
                 );
                 this.form.employees = res.data.data;
                 const batch_id = res.data.batch_id;
@@ -259,7 +265,7 @@ export default {
                         error.response?.data?.message ===
                             "No employees found for this employment type."
                             ? "info"
-                            : "error"
+                            : "error",
                     );
                 }
                 return false;
@@ -306,7 +312,7 @@ export default {
     box-shadow: 0 4px 20px rgba($black, 0.08);
     height: fit-content;
     position: sticky;
-    top: 64px;
+    top: 96px;
 }
 
 .sidebar-header {

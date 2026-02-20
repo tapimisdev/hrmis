@@ -93,6 +93,8 @@ class SalaryController extends Controller
     {
         $validatedData = $request->validated();
 
+        // dd($validatedData);
+
         Log::info('Creating payroll with data: ', $validatedData);
 
         try {
