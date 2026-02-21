@@ -150,27 +150,42 @@
                             <div id="collapseOrg" class="accordion-collapse collapse show">
                                 <div class="accordion-body">
                                     <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="mb-2" for="division_id">Division <span class="text-danger">*</span></label>
-                                        <select id="division_id" name="division_id" class="form-select">
-                                            <option value=""> - CHOOSE - </option>
-                                            @foreach($divisions as $division)
-                                            <option value="{{ $division->id }}" {{ (optional($data)->division_id ?? '') == $division->id ? 'selected' : '' }}>{{ strtoupper($division->name) }}</option>
-                                            @endforeach
-                                        </select>
-                                        <div class="error-field"></div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="mb-2" for="unit_id">Unit <span class="text-danger">*</span></label>
-                                        <select id="unit_id" name="unit_id" class="form-select">
-                                            @if(optional($data)->unit_id)
-                                            <option value="{{ optional($data)->unit_id }}" selected>{{ strtoupper(optional($data)->unit_name) }}</option>
-                                            @else
-                                            <option value=""> - CHOOSE DIVISION FIRST - </option>
-                                            @endif
-                                        </select>
-                                        <div class="error-field"></div>
-                                    </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="mb-2" for="division_id">
+                                                Division 
+                                                @if(!$isExists)
+                                                    <span class="text-danger">*</span>
+                                                @endif
+                                            </label>
+                                            <select id="division_id" name="division_id" class="form-select" {{ $isExists ? 'disabled' : '' }}>
+                                                <option value=""> - CHOOSE - </option>
+                                                @foreach($divisions as $division)
+                                                <option value="{{ $division->id }}" {{ (optional($data)->division_id ?? '') == $division->id ? 'selected' : '' }}>
+                                                    {{ strtoupper($division->name) }}
+                                                </option>
+                                                @endforeach
+                                            </select>
+                                            <div class="error-field"></div>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="mb-2" for="unit_id">
+                                                Unit 
+                                                @if(!$isExists)
+                                                    <span class="text-danger">*</span>
+                                                @endif
+                                            </label>
+                                            <select id="unit_id" name="unit_id" class="form-select" {{ $isExists ? 'disabled' : '' }}>
+                                                @if(optional($data)->unit_id)
+                                                <option value="{{ optional($data)->unit_id }}" selected>
+                                                    {{ strtoupper(optional($data)->unit_name) }}
+                                                </option>
+                                                @else
+                                                <option value=""> - CHOOSE DIVISION FIRST - </option>
+                                                @endif
+                                            </select>
+                                            <div class="error-field"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -187,44 +202,74 @@
                                 <div class="accordion-body">
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
-                                            <label class="mb-2" for="employment_type_id">Employment Type <span class="text-danger">*</span></label>
-                                            <select id="employment_type_id" name="employment_type_id" class="form-select">
+                                            <label class="mb-2" for="employment_type_id">
+                                                Employment Type
+                                                @if(!$isExists)
+                                                    <span class="text-danger">*</span>
+                                                @endif
+                                            </label>
+                                            <select id="employment_type_id" name="employment_type_id" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                 <option value=""> - CHOOSE - </option>
                                                 @foreach($employment_types as $type)
-                                                    <option value="{{ $type->id }}" {{ (optional($data)->employment_type_id ?? '') == $type->id ? 'selected' : '' }}>{{ strtoupper($type->name) }}</option>
+                                                    <option value="{{ $type->id }}" {{ (optional($data)->employment_type_id ?? '') == $type->id ? 'selected' : '' }}>
+                                                        {{ strtoupper($type->name) }}
+                                                    </option>
                                                 @endforeach
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
+
                                         <div class="col-md-6 mb-3">
-                                            <label class="mb-2" for="position_id">Position <span class="text-danger">*</span></label>
-                                            <select id="position_id" name="position_id" class="form-select">
+                                            <label class="mb-2" for="position_id">
+                                                Position
+                                                @if(!$isExists)
+                                                    <span class="text-danger">*</span>
+                                                @endif
+                                            </label>
+                                            <select id="position_id" name="position_id" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                 @if(optional($data)->position_id)
-                                                    <option value="{{ optional($data)->position_id }}" selected>{{ strtoupper(optional($data)->position_name) }}</option>
+                                                    <option value="{{ optional($data)->position_id }}" selected>
+                                                        {{ strtoupper(optional($data)->position_name) }}
+                                                    </option>
                                                 @else
                                                     <option value=""> - CHOOSE - </option>
                                                 @endif
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
+
                                         <div class="col-12 col-md-6 mb-3">
-                                            <label class="mb-2" for="shift_id">Shift Schedule <span class="text-danger">*</span></label>
-                                            <select id="shift_id" name="shift_id" class="form-select">
+                                            <label class="mb-2" for="shift_id">
+                                                Shift Schedule
+                                                @if(!$isExists)
+                                                    <span class="text-danger">*</span>
+                                                @endif
+                                            </label>
+                                            <select id="shift_id" name="shift_id" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                 <option value=""> - CHOOSE - </option>
-                                                    @foreach($shifts as $shift)
-                                                    <option value="{{ $shift->id }}" {{ (optional($data)->shift_id ?? '') == $shift->id ? 'selected' : '' }}>{{ strtoupper($shift->name) }}</option>
-                                                    @endforeach
-                                                </select>
-                                            <div class="error-field"></div>
-                                        </div>
-                                        <div class="col-12 col-md-6 mb-3">
-                                            <label class="mb-2" for="schedule_id">Days Schedule <span class="text-danger">*</span></label>
-                                            <select id="schedule_id" name="schedule_id" class="form-select">
-                                                <option value=""> - CHOOSE - </option>
-                                                @foreach($schedules as $schedule)
-                                                <option value="{{ $schedule->id }}" {{ (optional($data)->work_schedule_id ?? '') == $schedule->id ? 'selected' : '' }}>{{ strtoupper($schedule->name) }}</option>
+                                                @foreach($shifts as $shift)
+                                                    <option value="{{ $shift->id }}" {{ (optional($data)->shift_id ?? '') == $shift->id ? 'selected' : '' }}>
+                                                        {{ strtoupper($shift->name) }}
+                                                    </option>
                                                 @endforeach
                                             </select>
+                                            <div class="error-field"></div>
+                                        </div>
+
+                                        <div class="col-12 col-md-6 mb-3">
+                                            <label class="mb-2" for="schedule_id">
+                                                Days Schedule
+                                                @if(!$isExists)
+                                                    <span class="text-danger">*</span>
+                                                @endif
+                                            </label>
+                                            <select id="schedule_id" name="schedule_id" class="form-select" {{ $isExists ? 'disabled' : '' }}>
+                                                <option value=""> - CHOOSE - </option>
+                                                @foreach($schedules as $schedule)
+                                                    <option value="{{ $schedule->id }}" {{ (optional($data)->work_schedule_id ?? '') == $schedule->id ? 'selected' : '' }}>
+                                                        {{ strtoupper($schedule->name) }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                             <div class="error-field"></div>
                                         </div>
@@ -246,31 +291,56 @@
                                         <div class="col-12 col-md-8 mb-3">
                                             <div class="row">
                                                 <div class="col-md-4 mb-3">
-                                                    <label class="mb-2" for="tranche_id">Tranche <span class="text-danger">*</span></label>
-                                                    <select id="tranche_id" name="tranche_id" class="form-select">
+                                                    <label class="mb-2" for="tranche_id">
+                                                        Tranche
+                                                        @if(!$isExists)
+                                                            <span class="text-danger">*</span>
+                                                        @endif
+                                                    </label>
+                                                    <select id="tranche_id" name="tranche_id" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                         <option value=""> - CHOOSE - </option>
                                                     </select>
                                                     <div class="error-field"></div>
                                                 </div>
+
                                                 <div class="col-md-4 mb-3">
-                                                    <label class="mb-2" for="step_id">Steps <span class="text-danger">*</span></label>
-                                                    <select id="step_id" name="step_id" class="form-select">
+                                                    <label class="mb-2" for="step_id">
+                                                        Steps
+                                                        @if(!$isExists)
+                                                            <span class="text-danger">*</span>
+                                                        @endif
+                                                    </label>
+                                                    <select id="step_id" name="step_id" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                         <option value=""> - CHOOSE - </option>
                                                         @foreach(range(1, 8) as $step)
-                                                            <option value="{{ $step }}" {{ (optional($data)->step ?? '') == $step ? 'selected' : '' }}>Step {{ $step }}</option>
+                                                            <option value="{{ $step }}" {{ (optional($data)->step ?? '') == $step ? 'selected' : '' }}>
+                                                                Step {{ $step }}
+                                                            </option>
                                                         @endforeach
                                                     </select>
                                                     <div class="error-field"></div>
                                                 </div>
+
                                                 <div class="col-12 col-md-4">
-                                                    <label class="mb-2" for="salary_grade">Salary Grade <span class="text-danger">*</span></label>
-                                                    <select name="salary_grade" id="salary_grade" class="form-select">
+                                                    <label class="mb-2" for="salary_grade">
+                                                        Salary Grade
+                                                        @if(!$isExists)
+                                                            <span class="text-danger">*</span>
+                                                        @endif
+                                                    </label>
+                                                    <select name="salary_grade" id="salary_grade" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                         <option value=""> - CHOOSE - </option>
                                                     </select>
                                                 </div>
+
                                                 <div class="col-md-4 mb-3">
-                                                    <label class="mb-2" for="salary_frequency">Salary Frequency <span class="text-danger">*</span></label>
-                                                    <select id="salary_frequency" name="salary_frequency" class="form-select">
+                                                    <label class="mb-2" for="salary_frequency">
+                                                        Salary Frequency
+                                                        @if(!$isExists)
+                                                            <span class="text-danger">*</span>
+                                                        @endif
+                                                    </label>
+                                                    <select id="salary_frequency" name="salary_frequency" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                         @foreach([''=> '- CHOOSE -', 'once' => 'Once A Month', 'twice' => 'Twice A Month'] as $value => $label)
                                                             <option value="{{ $value }}" {{ (optional($data)->salary_frequency ?? '') == $value ? 'selected' : '' }}>
                                                                 {{ $label }}
@@ -279,9 +349,15 @@
                                                     </select>
                                                     <div class="error-field"></div>
                                                 </div>
+
                                                 <div id="salary_cutoff_container" class="col-md-4 mb-3" style="display: none;">
-                                                    <label class="mb-2" for="salary_cutoff">Salary Every <span class="text-danger">*</span></label>
-                                                    <select id="salary_cutoff" name="salary_cutoff" class="form-select">
+                                                    <label class="mb-2" for="salary_cutoff">
+                                                        Salary Every
+                                                        @if(!$isExists)
+                                                            <span class="text-danger">*</span>
+                                                        @endif
+                                                    </label>
+                                                    <select id="salary_cutoff" name="salary_cutoff" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                         @foreach([''=> '- CHOOSE -', 'first_cutoff' => 'First Cut-Off', 'second_cutoff' => 'Second Cut-Off'] as $value => $label)
                                                             <option value="{{ $value }}" {{ (optional($data)->salary_cutoff ?? '') == $value ? 'selected' : '' }}>
                                                                 {{ $label }}
@@ -290,9 +366,15 @@
                                                     </select>
                                                     <div class="error-field"></div>
                                                 </div>
+
                                                 <div class="col-md-4 mb-3">
-                                                    <label class="mb-2" for="deduction_applied">Deduction Applied <span class="text-danger">*</span></label>
-                                                    <select id="deduction_applied" name="deduction_applied" class="form-select">
+                                                    <label class="mb-2" for="deduction_applied">
+                                                        Deduction Applied
+                                                        @if(!$isExists)
+                                                            <span class="text-danger">*</span>
+                                                        @endif
+                                                    </label>
+                                                    <select id="deduction_applied" name="deduction_applied" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                         <option value=""> - CHOOSE - </option>
                                                         <option value="first_cutoff" {{ optional($data)->deduction_applied == 'first_cutoff' ? 'selected' : '' }}>First Cut Off</option>
                                                         <option value="second_cutoff" {{ optional($data)->deduction_applied == 'second_cutoff' ? 'selected' : '' }}>Second Cut Off</option>
@@ -300,22 +382,31 @@
                                                     </select>
                                                     <div class="error-field"></div>
                                                 </div>
+
                                                 <div class="col-md-4 mb-3">
-                                                    <label class="mb-2" for="salary_method">Salary Method <span class="text-danger">*</span></label>
-                                                    <select id="salary_method" name="salary_method" class="form-select">
+                                                    <label class="mb-2" for="salary_method">
+                                                        Salary Method
+                                                        @if(!$isExists)
+                                                            <span class="text-danger">*</span>
+                                                        @endif
+                                                    </label>
+                                                    <select id="salary_method" name="salary_method" class="form-select" {{ $isExists ? 'disabled' : '' }}>
                                                         @foreach(['' => '- CHOOSE -', 'cash' => 'Cash', 'bank transfer' => 'Bank Transfer', 'paycheck' => 'Paycheck', 'e-wallet' => 'E-Wallet'] as $value => $label)
                                                             <option value="{{ $value }}" {{ (optional($data)->salary_method ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
                                                         @endforeach
                                                     </select>
                                                     <div class="error-field"></div>
                                                 </div>
+
                                                 <div class="col-md-6 mb-3">
                                                     <label class="mb-2" for="payroll_account_number">Payroll Account No.</label>
                                                     <input type="text" id="payroll_account_number" name="payroll_account_number" class="form-control"
-                                                        value="{{ optional($data)->payroll_account_no ?? '' }}">
+                                                        value="{{ optional($data)->payroll_account_no ?? '' }}"
+                                                        {{ $isExists ? 'disabled' : '' }}>
                                                 </div>
                                             </div>
                                         </div>
+
                                         <div class="col-12 col-md-4 mb-3">
                                             <div class="card shadow">
                                                 <div class="card-body">

@@ -42,7 +42,14 @@
                     </div>
                 </div>
 
-                <div class="d-flex gap-2 mt-3 mt-md-0">
+                <div class="d-flex gap-3 mt-3 mt-md-0">
+                  <a 
+                    :href="payload?.information?.employee_no 
+                      ? `/admin/hris/employee/information/${payload.information.employee_no}` 
+                      : '#'" 
+                    class="btn btn-dark">
+                      Visit Profile
+                    </a>
                     <button
                         class="btn btn-outline-secondary btn-sm"
                         @click="handlePrint"
@@ -203,15 +210,21 @@ export default {
             this.$refs.printableModal.open();
         },
         getSummaryIcon(label) {
-            const iconMap = {
-                "total hours": "fa-solid fa-clock",
-                "days present": "fa-solid fa-calendar-check",
-                "days absent": "fa-solid fa-calendar-xmark",
-                late: "fa-solid fa-stopwatch",
-                overtime: "fa-solid fa-hourglass-half",
-                leaves: "fa-solid fa-plane-departure",
-            };
-            return iconMap[label.toLowerCase()] || "fa-solid fa-chart-bar";
+            const lowerLabel = label.toLowerCase();
+            if (lowerLabel.includes("pending")) return "fa-solid fa-hourglass-start";
+            if (lowerLabel === "incomplete logs") return "fa-solid fa-ban";
+            if (lowerLabel === "total hours worked") return "fa-solid fa-business-time";
+            if (lowerLabel === "special order") return "fa-solid fa-car-on";
+            if (lowerLabel === "offsets") return "fa-solid fa-ghost";
+            if (lowerLabel === "leaves") return "fa-solid fa-plane-departure";
+            if (lowerLabel === "holiday") return "fa-solid fa-calendar-day";
+            if (lowerLabel === "suspensions") return "fa-regular fa-calendar-xmark";
+            if (lowerLabel === "absent") return "fa-regular fa-thumbs-down";
+            if (lowerLabel === "overtime") return "fa-solid fa-stopwatch";
+            if (lowerLabel === "late / undertime") return "fa-solid fa-bed";
+            if (lowerLabel === "excess") return "fa-solid fa-plus";
+
+            return "fa-solid fa-chart-bar";
         },
         emitDate() {
             this.$emit("update-date", {
