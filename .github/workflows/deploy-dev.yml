@@ -18,22 +18,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f /root/.ssh/orbit_deploy_key || (echo "Missing /root/.ssh/orbit_deploy_key" && exit 1)
-          chmod 700 /root/.ssh
-          chmod 600 /root/.ssh/orbit_deploy_key
-          if [ ! -f /root/.ssh/known_hosts ]; then
-            ssh-keyscan -H github.com > /root/.ssh/known_hosts
+
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+
+          test -f "$HOME/.ssh/orbit_deploy_key" || { echo "Missing $HOME/.ssh/orbit_deploy_key"; exit 1; }
+          chmod 600 "$HOME/.ssh/orbit_deploy_key"
+
+          if [ ! -f "$HOME/.ssh/known_hosts" ]; then
+            ssh-keyscan -H github.com > "$HOME/.ssh/known_hosts"
           else
-            grep -q "github.com" /root/.ssh/known_hosts || ssh-keyscan -H github.com >> /root/.ssh/known_hosts
+            grep -q "github.com" "$HOME/.ssh/known_hosts" || ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts"
           fi
-          chmod 644 /root/.ssh/known_hosts
-          git config --global core.sshCommand "ssh -i /root/.ssh/orbit_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/root/.ssh/known_hosts"
+          chmod 644 "$HOME/.ssh/known_hosts"
+
+          # Use deploy key for git *only for this step*
+          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/orbit_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
+          
       - name: Switch origin to SSH (workspace)
         shell: bash
         run: |
           set -euo pipefail
           git remote set-url origin git@github.com:${{ github.repository }}.git
           git fetch origin main
+          
       - name: Update live code (reset to origin/main)
         shell: bash
         run: |
@@ -45,20 +53,26 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
           git clean -fd
+          
       - name: Install PHP dependencies
         shell: bash
         run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
+        
       - name: Install Node dependencies
         shell: bash
         run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm ci"
+        
       - name: Build frontend assets
         shell: bash
         run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm run build"
+        
       - name: Run database migrations
         shell: bash
         run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan migrate --force"
+        
       - name: Optimize Laravel
         shell: bash
         run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan optimize:clear"
+        
       - name: Deploy finished
         run: echo "Deploy done on server2!"
