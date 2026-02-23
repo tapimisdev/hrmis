@@ -13,6 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+
+      - name: Debug runner identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "whoami=$(whoami)"
+          echo "HOME=$HOME"
+          pwd
         
       - name: Setup SSH for GitHub (deploy key)
         shell: bash
