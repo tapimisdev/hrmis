@@ -4,15 +4,26 @@ on:
   push:
     branches: [develop]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-orbit-testing
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: [self-hosted, orbit-testing]
     env:
       APP_DIR: /var/app/orbit
       CONTAINER: orbit
+      DEPLOY_BRANCH: develop
+
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Debug runner identity
         shell: bash
@@ -20,70 +31,97 @@ jobs:
           set -euo pipefail
           echo "whoami=$(whoami)"
           echo "HOME=$HOME"
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
           pwd
-          
-      - name: Fix Git safe directory
-        run: git config --global --add safe.directory $GITHUB_WORKSPACE
-        
-      - name: Setup SSH for GitHub (deploy key)
+
+      - name: Fix Git safe directories
         shell: bash
         run: |
           set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "${APP_DIR}"
+
+      - name: Setup SSH (deploy key) for GitHub
+        shell: bash
+        env:
+          ORBIT_DEPLOY_KEY: ${{ secrets.ORBIT_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+
+          test -n "${ORBIT_DEPLOY_KEY:-}" || { echo "Missing secret ORBIT_DEPLOY_KEY"; exit 1; }
 
           mkdir -p "$HOME/.ssh"
           chmod 700 "$HOME/.ssh"
 
-          test -f "$HOME/.ssh/orbit_deploy_key" || { echo "Missing $HOME/.ssh/orbit_deploy_key"; exit 1; }
+          # Write key
+          echo "$ORBIT_DEPLOY_KEY" > "$HOME/.ssh/orbit_deploy_key"
           chmod 600 "$HOME/.ssh/orbit_deploy_key"
 
-          if [ ! -f "$HOME/.ssh/known_hosts" ]; then
-            ssh-keyscan -H github.com > "$HOME/.ssh/known_hosts"
-          else
-            grep -q "github.com" "$HOME/.ssh/known_hosts" || ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts"
-          fi
+          # Known hosts (avoid prompt)
+          ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts"
           chmod 644 "$HOME/.ssh/known_hosts"
 
-          # Use deploy key for git *only for this step*
-          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/orbit_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts"
-          
-      - name: Switch origin to SSH (workspace)
+          # Start ssh-agent and add key (persists for later steps via env file)
+          eval "$(ssh-agent -s)"
+          ssh-add "$HOME/.ssh/orbit_deploy_key"
+
+          {
+            echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK"
+            echo "SSH_AGENT_PID=$SSH_AGENT_PID"
+          } >> "$GITHUB_ENV"
+
+          # Quick auth test (non-fatal if GitHub blocks shell; we only need git)
+          ssh -o StrictHostKeyChecking=yes -T git@github.com || true
+
+      - name: Update live code (sync to origin/develop)
         shell: bash
         run: |
           set -euo pipefail
-          git remote set-url origin git@github.com:${{ github.repository }}.git
-          git fetch origin main
-          
-      - name: Update live code (reset to origin/main)
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -d "$APP_DIR/.git" || (echo "ERROR: $APP_DIR is not a git repo (missing .git)" && exit 1)
-          git config --global --add safe.directory "$APP_DIR"
-          cd "$APP_DIR"
-          git remote set-url origin git@github.com:${{ github.repository }}.git
-          git fetch origin main
-          git reset --hard origin/main
-          git clean -fd
-          
+
+          REPO_SSH="git@github.com:${{ github.repository }}.git"
+
+          if [ ! -d "$APP_DIR/.git" ]; then
+            echo "APP_DIR not a git repo. Cloning fresh..."
+            sudo mkdir -p "$APP_DIR"
+            sudo chown -R "$(whoami)":"$(whoami)" "$APP_DIR"
+            git clone --branch "$DEPLOY_BRANCH" --depth 1 "$REPO_SSH" "$APP_DIR"
+          fi
+
+          # Ensure correct remote and hard reset to remote branch
+          git -C "$APP_DIR" remote set-url origin "$REPO_SSH"
+          git -C "$APP_DIR" fetch origin "$DEPLOY_BRANCH" --prune
+          git -C "$APP_DIR" reset --hard "origin/$DEPLOY_BRANCH"
+          git -C "$APP_DIR" clean -fd
+
       - name: Install PHP dependencies
         shell: bash
-        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
-        
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
+
       - name: Install Node dependencies
         shell: bash
-        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm ci"
-        
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm ci"
+
       - name: Build frontend assets
         shell: bash
-        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm run build"
-        
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm run build"
+
       - name: Run database migrations
         shell: bash
-        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan migrate --force"
-        
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan migrate --force"
+
       - name: Optimize Laravel
         shell: bash
-        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan optimize:clear"
-        
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan optimize:clear"
+
       - name: Deploy finished
         run: echo "Deploy done on server2!"
