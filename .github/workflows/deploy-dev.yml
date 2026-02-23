@@ -21,6 +21,9 @@ jobs:
           echo "whoami=$(whoami)"
           echo "HOME=$HOME"
           pwd
+          
+      - name: Fix Git safe directory
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
         
       - name: Setup SSH for GitHub (deploy key)
         shell: bash
