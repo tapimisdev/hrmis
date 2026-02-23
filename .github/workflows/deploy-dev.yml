@@ -10,9 +10,9 @@ concurrency:
 
 jobs:
   deploy_testing:
-    runs-on: [self-hosted, server1]
+    runs-on: [self-hosted, orbit-testing]
     env:
-      APP_DIR: /var/www/orbit
+      APP_DIR: /var/app/orbit
       CONTAINER: orbit
     steps:
       - uses: actions/checkout@v4
@@ -37,8 +37,8 @@ jobs:
         run: |
           set -euo pipefail
           git remote set-url origin git@github.com:${{ github.repository }}.git
-          git fetch origin main
-      - name: Update live code (reset to origin/main)
+          git fetch origin develop
+      - name: Update live code (reset to origin/develop)
         shell: bash
         run: |
           set -euo pipefail
@@ -46,8 +46,8 @@ jobs:
           git config --global --add safe.directory "$APP_DIR"
           cd "$APP_DIR"
           git remote set-url origin git@github.com:${{ github.repository }}.git
-          git fetch origin main
-          git reset --hard origin/main
+          git fetch origin develop
+          git reset --hard origin/develop
           git clean -fd
       - name: Install PHP dependencies
         shell: bash
