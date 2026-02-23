@@ -21,10 +21,9 @@
         <table class="table table-sm table-striped" id="myTable">
             <thead class="text-uppercase">
                 <tr>
+                    <th>ID</th>
                     <th>File No.</th>
-                    <th>Name</th>
                     <th>Dates</th>
-                    <th>Destination</th>
                     <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>
@@ -43,12 +42,11 @@
             "serverSide": true,
             "ajax": '{{ route('obs.index') }}',
             "columns": [
+                { data: "id", name: 'id', visible: false },
                 { data: "application_no", name: 'application_no' },
-                { data: "name", name: 'name' },
-                { data: "date_range", name: 'date_range' },
-                { data: "destination", name: 'destination' },
-                { data: "status", name: 'status', orderable: false, searchable: false },
-                { data: "actions", name: 'actions', orderable: false, searchable: false },
+                { data: "date", name: 'date' },
+                { data: "status", name: 'status', orderable: false },
+                { data: "actions", name: 'actions', orderable: false },
             ],
             "columnDefs": [
                 {
@@ -61,6 +59,29 @@
             ],
             "scrollX": true,
             "autoWidth": false
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const show = urlParams.get('show');
+        const id = urlParams.get('id');
+
+        let triggered = false; 
+
+        DataTable.on('draw', function() {
+            if (!triggered && show === 'true' && id) {
+                triggered = true;
+
+                DataTable.search(id).draw();
+
+                $('#myTable_filter input').val('');
+
+                DataTable.one('draw', function() {
+                    const button = $(`.show-button[data-id="${id}"]`);
+                    if (button.length) {
+                        button.trigger('click');
+                    }
+                });
+            }
         });
 
         // Cancel OBS
@@ -107,37 +128,47 @@
                 .then((response) => {
                     const data = response.data.data;
 
-                    // === Basic Details ===
-                    $('#obs-doc-id').text(data.application_no ?? '—');
-                    $('#obs-destination').text(data.destination ?? '—');
-                    $('#obs-purpose').text(data.purpose ?? '—');
-                    $('#obs-time-out').text(data.time_out ?? '—');
-                    $('#obs-time-in').text(data.time_in ?? '—');
-                    $('#obs-transport').text(data.mode_of_transport ?? '—');
-                    $('#obs-expense').text(data.estimated_expense ? `₱${parseFloat(data.estimated_expense).toFixed(2)}` : '—');
-                    $('#obs-charge-to').text(data.charge_to ?? '—');
-                    $('#obs-remarks').text(data.remarks ?? '—');
+                    $('#doc-id').text(data.application_no);
+                    $('#employee-no').text(data.employee_no ?? 'N/A');
+                    $('#employee-name').text(data.employee_name ?? 'N/A');
+                    $('#remarks').text(data.remarks ?? '—');
 
-                    // === Dates ===
-                    $('#obs-date-from').text(moment(data.date_from).format('MMMM D, YYYY'));
-                    $('#obs-date-to').text(moment(data.date_to).format('MMMM D, YYYY'));
+                     // Format and display dates
+                     if (Array.isArray(data.details) && data.details.length > 0) {
+                        const listItems = data.details.map(d => {
+                            const dayName = moment(d.date).format('dddd');
+                            const dateFormatted = moment(d.date).format('MMM DD, YYYY');
+                            const shift = d.shift ?? 'N/A';
+                            return `<li>${dateFormatted} - (${dayName}) - [ ${shift} ]</li>`;
+                        }).join('');
 
-                    // === Status Badge ===
+                        $('#selectedDates').html(`<ul class="mb-0">${listItems}</ul>`);
+                    } else {
+                        $('#selectedDates').html('<ul><li>N/A</li></ul>');
+                    }
+
+                    $('#reason').text(data.reason);
+
+                    if ((data.status ?? '').toLowerCase().trim() !== 'approved') {
+                        $('.extended').removeClass('d-none');
+                    } else {
+                        $('.extended').addClass('d-none');
+                    }
+
+                    $('#remarks').text(data.remarks);
+
                     let statusClass = 'bg-secondary';
                     if (data.status === 'pending') statusClass = 'bg-warning';
                     else if (data.status === 'approved') statusClass = 'bg-success';
                     else if (data.status === 'rejected') statusClass = 'bg-danger';
                     else if (data.status === 'cancelled') statusClass = 'bg-dark';
 
-                    $('#obs-status')
+                    $('#status')
                         .attr('class', 'badge ' + statusClass)
                         .text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
 
-                    $('#obs-created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
-                    $('#obs-approved-at').text(data.approved_at ? moment(data.approved_at).format('MMMM D, YYYY h:mm A') : '—');
-                    $('#obs-approver').text(data.approver ?? 'Not Yet Assigned');
+                    $('#created-at').text(moment(data.created_at).format('MMMM D, YYYY h:mm A'));
 
-                    // === Approval Breadcrumbs ===
                     const levelApprovals = data.level_approvals ?? {};
                     const sortedLevels = Object.keys(levelApprovals).map(Number).sort((a, b) => a - b);
                     $('#approval-breadcrumbs').empty();
@@ -231,7 +262,7 @@
                     }
 
                     // === Attachments ===
-                    $('#obs-attachments ul').empty();
+                    $('#attachments ul').empty();
                     const attachments = data.attachments;
 
                     if (attachments && attachments.length > 0) {
@@ -239,12 +270,12 @@
                             let fileUrl = `/storage/${file.file_path}`;
                             let fileName = file.file_name;
 
-                            $('#obs-attachments ul').append(
+                            $('#attachments ul').append(
                                 `<li><a download href="${fileUrl}" target="_blank" rel="noopener noreferrer">${fileName}</a></li>`
                             );
                         });
                     } else {
-                        $('#obs-attachments ul').append('<li><em>No attachments</em></li>');
+                        $('#attachments ul').append('<li><em>No attachments</em></li>');
                     }
 
                     // === Show Modal ===
@@ -259,7 +290,15 @@
                 });
         });
 
+        $(document).on('click', '.btn-close-action', function() {
+            let DataTable = $('#myTable').DataTable();
+            DataTable.search('').draw(); 
 
+            const url = new URL(window.location);
+            url.searchParams.delete('id');
+            url.searchParams.delete('show');
+            window.history.replaceState({}, document.title, url.toString());
+        });
 
     });
 </script>

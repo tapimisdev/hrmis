@@ -265,7 +265,7 @@ class LeaveApplicationController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has approved your leave application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/leaves'
+                'link' => '/employee/leaves?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 
@@ -319,7 +319,7 @@ class LeaveApplicationController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has rejected your leave application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/leaves'
+                'link' => '/employee/leaves?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 

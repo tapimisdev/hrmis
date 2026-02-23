@@ -43,6 +43,7 @@
                     <h6 class="mb-0 fw-semibold text-uppercase">
                         Notifications
                     </h6>
+                    <div class="btn btn-sm btn-dark px-3 fw-medium" v-if="unreadCount > 0" @click="markAsRead">Mark as Read</div>
                 </div>
             </li>
 
@@ -276,17 +277,28 @@ export default {
 
             return message;
         },
-        async markAsRead(id) {
-            try {
-                await axios.post(`/api/notifications/${id}/read`);
-                const n = this.notifications.find((n) => n.id === id);
-                if (n && !n.read_at) {
-                    n.read_at = new Date();
-                    this.unreadCount = Math.max(0, this.unreadCount - 1);
-                }
-            } catch (err) {
-                console.error(err);
-            }
+        async markAsRead() {
+          axios
+              .post(
+                  "/api/admin/notifications",
+                  {
+                      user_id: this.userId,
+                      isMarkAllRead: true,
+                  },
+                  {
+                      headers: {
+                          Authorization: `Bearer ${this.token}`,
+                          Accept: "application/json",
+                      },
+                  },
+              )
+              .then((response) => {
+                  this.loadNotifications();
+                  this.unreadCount = 0;
+              })
+              .catch((error) => {
+                  console.error(error);
+              });
         },
         viewMoreNotification() {
             this.currentOffset += 10; // Increment offset for next batch

@@ -90,6 +90,22 @@
         </form>
     </div>
 </div>
+<style>
+    @media (max-width: 768px) {
+        #calendar {
+            padding: 5px;
+            font-size: 0.85rem;
+        }
+
+        .fc-toolbar.fc-header-toolbar {
+            flex-direction: column; 
+        }
+
+        .fc-toolbar-chunk {
+            margin-bottom: 5px;
+        }
+    }
+</style>
 @endsection
 
 @section('scripts')

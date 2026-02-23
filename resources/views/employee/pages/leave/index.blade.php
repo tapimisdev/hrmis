@@ -20,8 +20,8 @@
             <table class="table table-sm table-striped" id="myTable">
                 <thead class="text-uppercase">
                     <tr>
+                        <th>ID</th>
                         <th>File No.</th>
-                        <th>Name</th>
                         <th>Leave Type</th>
                         <th>Dates</th>
                         <th>Status</th>
@@ -38,17 +38,17 @@
 @section('scripts')
 <script>
     $(function() {
-        let = DataTable = $('#myTable').DataTable({
+        let DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
             "ajax": '{{ route('leaves.index') }}',
             "columns": [
+                { data: "id", name: 'id', visible: false },
                 { data: "application_no", name: 'application_no' },
-                { data: "name", name: 'name' },
                 { data: "leave", name: 'leave' },
                 { data: "date", name: 'date' },
-                { data: "status", name: 'status' },
-                { data: "actions", name: 'actions', orderable: false, searchable: false },
+                { data: "status_badge", name: 'status_badge' },
+                { data: "actions", name: 'actions', orderable: false },
             ],  
             "columnDefs": [
                 {
@@ -61,6 +61,29 @@
             ],
             "scrollX": true,
             "autoWidth": false
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const show = urlParams.get('show');
+        const id = urlParams.get('id');
+
+        let triggered = false; 
+
+        DataTable.on('draw', function() {
+            if (!triggered && show === 'true' && id) {
+                triggered = true;
+
+                DataTable.search(id).draw();
+
+                $('#myTable_filter input').val('');
+
+                DataTable.one('draw', function() {
+                    const button = $(`.show-button[data-id="${id}"]`);
+                    if (button.length) {
+                        button.trigger('click');
+                    }
+                });
+            }
         });
 
         $(document).on('click', '.cancel-button', function() {
@@ -96,7 +119,6 @@
         });
 
         const myModal = $('#myModal');
-
         $(document).on('click', '.show-button', function () {
             let id = $(this).attr('data-id');
             $('.modal-title').html('Leave Application');
@@ -108,29 +130,34 @@
                     // Fill in modal fields
                     $('#doc-id').text(data.application_no);
                     $('#employee-no').text(data.employee_no ?? 'N/A');
+                    $('#employee-name').text(data.employee_name ?? 'N/A');
                     $('#leave-type').text(data.leave_name);
 
                     // Format and display dates
-                    if (Array.isArray(data.dates) && data.dates.length > 0) {
-                        const formattedDates = data.dates
-                            .map(date => moment(date).format('MMM D'))
-                            .join(', ');
-                        const year = moment(data.dates[0]).format('YYYY');
-                        $('#selectedDates').text(`${formattedDates} ${year}`);
+                     if (Array.isArray(data.details) && data.details.length > 0) {
+                        const listItems = data.details.map(d => {
+                            const dayName = moment(d.date).format('dddd');
+                            const dateFormatted = moment(d.date).format('MMM DD, YYYY');
+                            const shift = d.shift ?? 'N/A';
+                            return `<li>${dateFormatted} - (${dayName}) - [ ${shift} ]</li>`;
+                        }).join('');
+
+                        $('#selectedDates').html(`<ul class="mb-0">${listItems}</ul>`);
                     } else {
-                        $('#selectedDates').text('N/A');
+                        $('#selectedDates').html('<ul><li>N/A</li></ul>');
                     }
 
-                    $('#days').text(data.days);
+                    $('#days').text(data.credit_equivalent);
                     $('#reason').text(data.reason);
 
-                    if (data.status === 'rejected') {
+                    if ((data.status ?? '').toLowerCase().trim() !== 'approved') {
                         $('.extended').removeClass('d-none');
+                    } else {
+                        $('.extended').addClass('d-none');
                     }
 
                     $('#remarks').text(data.remarks);
 
-                    // Status badge
                     let statusClass = 'bg-secondary';
                     if (data.status === 'pending') statusClass = 'bg-warning';
                     else if (data.status === 'approved') statusClass = 'bg-success';
@@ -251,7 +278,6 @@
                         $('#attachments ul').append('<li><em>No attachments</em></li>');
                     }
 
-                    // Show modal
                     $('#myModal').modal('show');
                 })
                 .catch(error => {
@@ -263,5 +289,16 @@
                 });
             });
         });
+
+        $(document).on('click', '.btn-close-action', function() {
+            let DataTable = $('#myTable').DataTable();
+            DataTable.search('').draw(); 
+
+            const url = new URL(window.location);
+            url.searchParams.delete('id');
+            url.searchParams.delete('show');
+            window.history.replaceState({}, document.title, url.toString());
+        });
+
 </script>
 @endsection

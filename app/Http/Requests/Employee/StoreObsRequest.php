@@ -17,6 +17,15 @@ class StoreObsRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if (is_string($this->selectedDates)) {
+            $this->merge([
+                'selectedDates' => json_decode($this->selectedDates, true) ?? [],
+            ]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -25,24 +34,14 @@ class StoreObsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'destination' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'purpose' => ['required', 'string', 'max:500'],
-            'date_from' => ['required', 'date', 'after_or_equal:today'],
-            'date_to' => ['required', 'date', 'after_or_equal:date_from'],
-            'time_out' => ['nullable', 'date_format:H:i'],
-            'time_in' => ['nullable', 'date_format:H:i', 'after:time_out'],
-            'mode_of_transport' => ['required', 'string', 'max:100'],
-            'estimated_expense' => ['nullable', 'numeric', 'min:0'],
-            'charge_to' => ['nullable', 'string', 'max:150'],
-            'remarks' => ['nullable', 'string', 'max:500'],
-            
+            'user_id'       => ['nullable', 'exists:users,id'],
+            'reason'        => ['required', 'string', 'max:500'],            
+            'selectedDates' => ['required', 'array', 'min:1'],
+            'selectedDates.*.date'  => ['required', 'date'],
+            'selectedDates.*.shift' => ['required', 'in:morning,afternoon,wholeday'],
+
             'attachments'   => ['required', 'array', 'max:5'],
             'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:8192'],
-
             // 'approvers'     => ['required', 'array', 'min:1'],
             // 'approvers.*'   => ['required', 'array', 'min:1'],
             // 'approvers.*.*' => ['required', 'exists:users,id'],

@@ -42,12 +42,6 @@ class StoreAtroRequest extends FormRequest
             'start_time' => ['required', 'date_format:H:i'],
             'end_time'   => ['required', 'date_format:H:i', 'after:start_time'],
 
-            'total_hours' => [
-                'required',
-                'numeric',
-                'min:0.01',
-            ],
-
             'reason' => ['required', 'string', 'max:500'],
             'status' => ['nullable', Rule::in(['pending', 'approved'])],
 

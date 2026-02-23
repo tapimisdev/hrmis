@@ -609,7 +609,6 @@ class DailyTimeRecordService {
             'actual_presence'    => $TOTAL_ACTUAL_PRESENCE,
         ];
 
-
         return [
             'computedData' => $computedData,
             'summary'      => $summary,

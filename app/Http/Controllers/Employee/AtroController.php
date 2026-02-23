@@ -80,9 +80,11 @@ class AtroController extends Controller
 
             $employee_no = DB::table('employee_information')->where('user_id', $userId)->value('employee_no');
             $application_no = generateApplicationNo('overtime_applications', 'PSL');
+            
             // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
             // $approvers = $validatedData['approvers'];
-            $data = $this->applicationService->getData('overtime');
+
+            // $data = $this->applicationService->getData('overtime');
 
             $start_time = Carbon::parse($validatedData['start_time']);
             $end_time = Carbon::parse($validatedData['end_time']);
@@ -210,47 +212,47 @@ class AtroController extends Controller
                 return $row->employee_name;
             })
             ->addColumn('date', function ($row) {
-                    return \Carbon\Carbon::parse($row->date)->format('M d, Y');
-                })
-                ->addColumn('status', function ($row) {
-                    $status = strtolower($row->status);
+                return formatDateRanges($row->date);
+            })
+            ->addColumn('status_badge', function ($row) {
+                $status = strtolower($row->status);
 
-                    $badgeClass = match ($status) {
-                        'pending'   => 'warning',
-                        'approved'  => 'success',
-                        'rejected'  => 'dark',
-                        'cancelled' => 'danger',
-                        default     => 'info',
-                    };
+                $badgeClass = match ($status) {
+                    'pending'   => 'warning',
+                    'approved'  => 'success',
+                    'rejected'  => 'dark',
+                    'cancelled' => 'danger',
+                    default     => 'info',
+                };
 
-                    return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
-                })
-                ->addColumn('actions', function ($row) {
-                    $buttons = '
-                        <div class="d-flex">
-                            <button data-id="' . $row->id . '" 
-                                class="btn btn-primary btn-sm ms-1 show-button" 
-                                title="Show">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
+                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
+            })
+            ->addColumn('actions', function ($row) {
+                $buttons = '
+                    <div class="d-flex">
+                        <button data-id="' . $row->id . '" 
+                            class="btn btn-primary btn-sm ms-1 show-button" 
+                            title="Show">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                ';
+
+                // Only show cancel if status is pending or approved
+                if (in_array($row->status, ['pending'])) {
+                    $buttons .= '
+                        <button data-id="' . $row->id . '" 
+                            class="btn btn-danger btn-sm ms-1 cancel-button" 
+                            title="Cancel">
+                            <i class="fa-solid fa-ban"></i>
+                        </button>
                     ';
+                }
 
-                    // Only show cancel if status is pending or approved
-                    if (in_array($row->status, ['pending'])) {
-                        $buttons .= '
-                            <button data-id="' . $row->id . '" 
-                                class="btn btn-danger btn-sm ms-1 cancel-button" 
-                                title="Cancel">
-                                <i class="fa-solid fa-ban"></i>
-                            </button>
-                        ';
-                    }
+                $buttons .= '</div>';
 
-                    $buttons .= '</div>';
-
-                    return $buttons;
-                })
-                ->rawColumns(['actions', 'status', 'date'])
-                ->make(true);
+                return $buttons;
+            })
+            ->rawColumns(['actions', 'status_badge', 'date'])
+            ->make(true);
     }
 }

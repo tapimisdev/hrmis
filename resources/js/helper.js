@@ -124,3 +124,10 @@ export function loadCountries() {
 export function createWatch(getter, callback) {
 
 }
+
+export function onQueryParam(key, value, callback) {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get(key) === value && typeof callback === 'function') {
+        callback();
+    }
+}

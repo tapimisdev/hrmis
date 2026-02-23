@@ -19,8 +19,8 @@
             <table class="table table-sm table-striped" id="myTable">
                 <thead class="text-uppercase">
                     <tr>
+                        <th>ID</th>
                         <th>File No.</th>
-                        <th>Name</th>
                         <th>Date</th>
                         <th>Total Hours</th>
                         <th>Status</th>
@@ -37,18 +37,18 @@
 @section('scripts')
 
 <script>
-    $(document).ready(function() {
-        let = DataTable = $('#myTable').DataTable({
+    $(function() {
+        let DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
             "ajax": '{{ route('overtime.index') }}',
             "columns": [
+                { data: "id", name: 'id', visible: false },
                 { data: "application_no", name: 'application_no' },
-                { data: "name", name: 'name' },
                 { data: "date", name: 'date' },
                 { data: "total_hours", name: 'total_hours' },
-                { data: "status", name: 'status' },
-                { data: "actions", name: 'actions', orderable: false, searchable: false },
+                { data: "status_badge", name: 'status_badge' },
+                { data: "actions", name: 'actions', orderable: false},
             ],
             "columnDefs": [
                 {
@@ -61,6 +61,29 @@
             ],
             "scrollX": true,
             "autoWidth": false
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const show = urlParams.get('show');
+        const id = urlParams.get('id');
+
+        let triggered = false; 
+
+        DataTable.on('draw', function() {
+            if (!triggered && show === 'true' && id) {
+                triggered = true;
+
+                DataTable.search(id).draw();
+
+                $('#myTable_filter input').val('');
+
+                DataTable.one('draw', function() {
+                    const button = $(`.show-button[data-id="${id}"]`);
+                    if (button.length) {
+                        button.trigger('click');
+                    }
+                });
+            }
         });
 
         $(document).on('click', '.cancel-button', function() {
@@ -106,11 +129,21 @@
 
                     // Fill in modal fields
                     $('#doc-id').text(data.application_no);
+                    $('#employee-no').text(data.employee_no ?? 'N/A');
+                    $('#employee-name').text(data.employee_name ?? 'N/A');
                     $('#date').text(moment(data.date).format('MMMM D, YYYY'));
                     $('#start-time').text(moment(data.start_time, 'HH:mm:ss').format('h:mm A'));
                     $('#end-time').text(moment(data.end_time, 'HH:mm:ss').format('h:mm A'));
                     $('#total-hours').text(data.total_hours);
                     $('#reason').text(data.reason);
+
+                    if ((data.status ?? '').toLowerCase().trim() !== 'approved') {
+                        $('.extended').removeClass('d-none');
+                    } else {
+                        $('.extended').addClass('d-none');
+                    }
+
+                    $('#remarks').text(data.remarks);
 
                     // Status badge
                     let statusClass = 'bg-secondary';
@@ -241,6 +274,16 @@
                         icon: "error"
                     });
                 });
+        });
+
+        $(document).on('click', '.btn-close-action', function() {
+            let DataTable = $('#myTable').DataTable();
+            DataTable.search('').draw(); 
+
+            const url = new URL(window.location);
+            url.searchParams.delete('id');
+            url.searchParams.delete('show');
+            window.history.replaceState({}, document.title, url.toString());
         });
     });
 </script>

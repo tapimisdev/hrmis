@@ -203,7 +203,6 @@ class TimelogStatisticsController extends Controller
                 if (!$timeIn || (!$timeOut && $timeIn)) {
                     $absences++;
                     $absenceDates[] = $date;
-                    continue; // Skip further checks for this date (no late, undertime, discrepancy)
                 }
 
                 // Break out/in discrepancies: if break_out and break_in are missing
