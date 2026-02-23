@@ -27,7 +27,6 @@ jobs:
           echo "Public/Private IP:"
           hostname -I
           echo "=============================="
-        shell: bash
         run: |
           set -euo pipefail
           test -f /root/.ssh/orbit_deploy_key || (echo "Missing /root/.ssh/orbit_deploy_key" && exit 1)
