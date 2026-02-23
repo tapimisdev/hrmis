@@ -27,6 +27,8 @@ jobs:
           echo "Public/Private IP:"
           hostname -I
           echo "=============================="
+      - name: Setup SSH for GitHub (deploy key)
+        shell: bash
         run: |
           set -euo pipefail
           test -f /root/.ssh/orbit_deploy_key || (echo "Missing /root/.ssh/orbit_deploy_key" && exit 1)
