@@ -1,4 +1,15 @@
-deploy_server1:
+name: Deploy (Self-hosted)
+
+on:
+  push:
+    branches: [develop]
+
+concurrency:
+  group: deploy-orbit-testing
+  cancel-in-progress: true
+
+jobs:
+  deploy_testing:
     runs-on: [self-hosted, server1]
     env:
       APP_DIR: /var/www/orbit
