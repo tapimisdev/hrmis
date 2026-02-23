@@ -31,30 +31,43 @@ class PassSlipController extends Controller {
         */
         $applications = DB::table('obs_applications as oa')
             ->leftJoin('employee_personal as p', 'oa.employee_no', '=', 'p.employee_no')
+            ->leftJoin('obs_dates as od', 'od.obs_application_id', '=', 'oa.id')
             ->select(
                 'oa.id',
                 'oa.application_no',
+                'oa.name',
                 'oa.user_id',
                 'oa.employee_no',
-                'oa.date_from',
-                'oa.date_to',
-                'oa.time_out',
-                'oa.time_in',
-                'oa.destination',
-                'oa.purpose',
-                'oa.mode_of_transport',
-                'oa.estimated_expense',
-                'oa.charge_to',
+                'oa.reason',
                 'oa.status',
                 'oa.remarks',
-                'oa.approval_remarks',
-                'oa.approved_at',
+                'oa.created_at',
+                'oa.updated_at',
+                'p.firstname',
+                'p.lastname',
+                DB::raw("
+                    GROUP_CONCAT(
+                        DISTINCT CONCAT(od.date, '|', od.shift)
+                        ORDER BY od.date ASC
+                        SEPARATOR ','
+                    ) as dates
+                ")
+            )
+            ->when($id, fn ($q) => $q->where('oa.id', $id))
+            ->groupBy(
+                'oa.id',
+                'oa.application_no',
+                'oa.name',
+                'oa.user_id',
+                'oa.employee_no',
+                'oa.reason',
+                'oa.status',
+                'oa.remarks',
                 'oa.created_at',
                 'oa.updated_at',
                 'p.firstname',
                 'p.lastname'
             )
-            ->when($id, fn ($q) => $q->where('oa.id', $id))
             ->orderByDesc('oa.created_at')
             ->get();
 
@@ -82,10 +95,10 @@ class PassSlipController extends Controller {
 
         /*
         |--------------------------------------------------------------------------
-        | Approvals
+        | Approvals (Grouped per Application → per Level)
         |--------------------------------------------------------------------------
         */
-        $approvalsRaw = DB::table('obs_approvals as oa')
+        $approvals = DB::table('obs_approvals as oa')
             ->join('employee_information as ei', 'oa.user_id', '=', 'ei.user_id')
             ->join('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
             ->select(
@@ -97,31 +110,57 @@ class PassSlipController extends Controller {
                 'ep.lastname'
             )
             ->whereIn('oa.obs_applications_id', $applicationIds)
-            ->get();
+            ->get()
+            ->groupBy('obs_applications_id')
+            ->map(function ($items) {
+                return $items
+                    ->groupBy('level')
+                    ->map(fn ($lvl) => $lvl->unique('user_id')->values())
+                    ->sortKeys();
+            });
 
         /*
         |--------------------------------------------------------------------------
-        | Group approvals by level (UI display)
+        | Merge Everything
         |--------------------------------------------------------------------------
         */
-        $groupedApprovals = $approvalsRaw
-            ->groupBy('level')
-            ->map(fn ($items) => $items->unique('user_id')->values())
-            ->sortKeys()
-            ->toArray();
+        return $applications->map(function ($item) use ($attachments, $approvals) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | Merge All Data
-        |--------------------------------------------------------------------------
-        */
-        return $applications->map(function ($item) use ($attachments, $groupedApprovals) {
-            $item->attachments = $attachments->get($item->id)?->values() ?? [];
-            $item->approvals = $groupedApprovals;
+            /*
+            |----------------------------------------------------------
+            | Convert dates string → structured array
+            |----------------------------------------------------------
+            */
+            $item->dates = $item->dates
+                ? collect(explode(',', $item->dates))
+                    ->map(function ($entry) {
+                        [$date, $shift] = array_pad(explode('|', $entry), 2, null);
+
+                        return [
+                            'date'  => $date,
+                            'shift' => $shift,
+                        ];
+                    })
+                    ->values()
+                : collect();
+
+            /*
+            |----------------------------------------------------------
+            | Attachments
+            |----------------------------------------------------------
+            */
+            $item->attachments = $attachments->get($item->id)?->values() ?? collect();
+
+            /*
+            |----------------------------------------------------------
+            | Approvals per application
+            |----------------------------------------------------------
+            */
+            $item->approvals = $approvals->get($item->id) ?? collect();
+
             return $item;
         });
     }
-
 
     public function index() {
 
@@ -197,7 +236,7 @@ class PassSlipController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has approved your pass slip application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/pass-slip'
+                'link' => '/employee/pass-slip?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 
@@ -247,14 +286,14 @@ class PassSlipController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has rejected your pass slip application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/pass-slip'
+                'link' => '/employee/pass-slip?show=true&id=' . $existingData->id
             ];
             
             $this->EventService->pushNotification($payload);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'PAss slip application has been rejected!',
+                'message' => 'Pass slip application has been rejected!',
                 'redirect' => route('services.pass_slip.show', ['application' => $id])
             ]);
         } catch (\Exception $e) {
@@ -276,14 +315,6 @@ class PassSlipController extends Controller {
 
             ->addColumn('name', function ($row) {
                 return trim($row->firstname . ' ' . $row->lastname);
-            })
-
-            ->addColumn('date', function ($row) {
-                if (!$row->date_from || !$row->date_to) {
-                    return '';
-                }
-
-                return formatDateRanges($row->date_from) . ' - ' . formatDateRanges($row->date_to);
             })
 
             ->editColumn('status', function ($row) {

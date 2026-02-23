@@ -33,7 +33,7 @@ class LeaveCreditController extends Controller
 
 
         $isExists= $this->employeeService->checkIfEmployeeExists($employee_no);
-        $leaves = $this->employeeService->getLeaveTypes($employee_no);
+        $leaves = $this->employeeService->getLeaveTypes($employee_no, [true, false]);
         $data = [];
 
         if(!is_null($employee_no) && !$isExists) {
@@ -44,7 +44,7 @@ class LeaveCreditController extends Controller
 
             $leaveTypes = $leaves['data'];
             $monthYear = now()->format('Y-m'); 
-            
+
             foreach($leaveTypes as $types) {
 
                 $credits = $this->employeeService->getLeaveCredits($employee_no, $types->leave_id, false);
@@ -55,6 +55,7 @@ class LeaveCreditController extends Controller
                     return ($q->as_of ?? '') === $monthYear;
                 })->values()->pluck('balance')->first() ?? 0;
                 
+
                 $hasAssignedDeduct = is_null($leaveSettings->deduct_credit_id)
                     || $types->leave_id == $leaveSettings->deduct_credit_id;
 

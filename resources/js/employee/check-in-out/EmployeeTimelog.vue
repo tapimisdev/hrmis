@@ -181,7 +181,7 @@
                                         class="tag"
                                         :class="getRemarkClass(remark)"
                                     >
-                                        {{ remark }}
+                                        {{ formatRemarks(remark) }}
                                     </span>
                                 </div>
                             </td>
@@ -277,6 +277,52 @@ export default {
                 console.error("Error fetching logs:", error);
             }
             this.loading = false;
+        },
+        formatRemarks(remark) {
+
+            if (!remark) return '';
+
+            const value = String(remark).toLowerCase();
+            const isPending = value.includes('pending');
+
+            const formatType = (type, label = null) => {
+
+                const display = label ?? type.toUpperCase();
+
+                const hasType = value.includes(type);
+
+                if (!hasType) return null;
+
+                if (value.includes('morning')) {
+                    return isPending
+                        ? `PENDING MORNING ${display}`
+                        : `MORNING ${display}`;
+                }
+
+                if (value.includes('afternoon')) {
+                    return isPending
+                        ? `PENDING AFTERNOON ${display}`
+                        : `AFTERNOON ${display}`;
+                }
+
+                if (value.includes('wholeday')) {
+                    return isPending
+                        ? `PENDING ${display}`
+                        : display;
+                }
+
+                return isPending
+                    ? `PENDING ${display}`
+                    : display;
+            };
+
+            return (
+                formatType('leave') ||
+                formatType('offset') ||
+                formatType('special order', 'SPECIAL ORDER') ||
+                formatType('(so)', 'SPECIAL ORDER') ||
+                String(remark).toUpperCase()
+            );
         },
         hasRemark(remarks, keyword) {
             if (!Array.isArray(remarks)) return false;

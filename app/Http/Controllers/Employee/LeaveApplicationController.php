@@ -97,10 +97,6 @@ class LeaveApplicationController extends Controller
             $user_id = Auth::user()->id;
         }
 
-        $organization = DB::table('employee_organization')
-            ->where('employee_no', $employee_no)
-            ->first();
-
         DB::beginTransaction();
 
         try {
@@ -132,7 +128,7 @@ class LeaveApplicationController extends Controller
                 }
             }
 
-            $data = $this->applicationService->getData('leave');
+            // $data = $this->applicationService->getData('leave');
             // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
             // $approvers = $validatedData['approvers'];
 
@@ -281,9 +277,16 @@ class LeaveApplicationController extends Controller
                 return $row->employee_name;
             })
             ->addColumn('date', function ($row) {
-                return formatDateRanges($row->dates);
+                $dates = explode('|', $row->dates);
+                $newDate = '';
+
+                foreach($dates as $date) {
+                    $newDate .= formatDateRanges($date) . '<br>';
+                }
+
+                return $newDate;
             })
-            ->addColumn('status', function ($row) {
+            ->addColumn('status_badge', function ($row) {
                 $status = strtolower($row->status);
 
                 $badgeClass = match ($status) {
@@ -321,7 +324,7 @@ class LeaveApplicationController extends Controller
 
                 return $buttons;
             })
-            ->rawColumns(['actions', 'status', 'date'])
+            ->rawColumns(['actions', 'status_badge', 'date'])
             ->make(true);
     }
 }

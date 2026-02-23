@@ -1,11 +1,19 @@
 <!-- Modal Component -->
 <x-modal id="myModal" title="Overtime Application" size="modal-lg">
-    <div class="p-4" style="font-family: Arial, sans-serif;">
+    <div class="p-4 pt-0" style="font-family: Arial, sans-serif;">
         <div class="text-center mb-4">
-            <p class="text-muted text-uppercase fw-bold">File No: <span id="doc-id"></span></small>
+            <h4 class="text-muted text-uppercase fw-bold">Application No: <span id="doc-id"></span></h4>
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered">
+            <table class="table table-bordered text-uppercase">
+                <tr>
+                    <th width="30%">Employee No:</th>
+                    <td id="employee-no"></td>
+                </tr>
+                <tr>
+                    <th width="30%">Name:</th>
+                    <td id="employee-name"></td>
+                </tr>
                 <tr>
                     <th>Date:</th>
                     <td id="date"></td>
@@ -40,15 +48,15 @@
                     <th>Status:</th>
                     <td><span id="status" class="badge"></span></td>
                 </tr>
-                <tr class="extended d-none">
-                    <th>Remarks:</th>
-                    <td><span id="remarks"></span></td>
-                </tr>
             </table>
+            <div class="extended d-none">
+                <label for="#" class="mb-2 fw-bold" style="font-size: 12px;">REMARKS: </label>
+                <textarea class="form-control restricted" id="remarks" rows="5" readonly></textarea>
+            </div>
         </div>
-        <div class="mt-4 mb-3">
+        <!-- <div class="mt-4 mb-3">
             <small class="text-uppercase fw-bold text-muted">Your Chosen Approvers For Each Level</small>
-        </div>
+        </div> -->
         
         <div class="w-100">
             <!-- <div id="approvers-by-level" class="mb-2"></div> -->

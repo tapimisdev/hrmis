@@ -6,7 +6,9 @@ import './dark-mode';
 import axios from 'axios';
 import { post, put } from './action';
 import { 
-    confirmAction, alert, pushQuery, redirectToTab, loadCountries, createWatch
+    confirmAction, alert, pushQuery, 
+    redirectToTab, loadCountries, createWatch,
+    onQueryParam
 } from './helper';
 import lightGallery from 'lightgallery';
 import lgThumbnail from 'lightgallery/plugins/thumbnail'
@@ -39,6 +41,7 @@ window.initCalendar = initCalendar;
 window.setEvents = setEvents;
 window.confirmAction = confirmAction;
 window.generateEventsWithAvailability = generateEventsWithAvailability;
+window.onQueryParam = onQueryParam;
 
 redirectToTab();
 

@@ -279,7 +279,7 @@ class EmployeeService {
             ]);
     }
 
-    public function getLeaveTypes(string $employee_no)
+    public function getLeaveTypes(string $employee_no, array $showCreditsESS = [true])
     {
         $employment_type_id = DB::table('employee_organization')
             ->where('employee_no', $employee_no)
@@ -333,7 +333,8 @@ class EmployeeService {
                     'lc.as_of'
                 )
                 ->where('l.is_active', true)
-                ->where('showCreditsESS', true)
+                ->orderByDesc('l.is_cumulative')
+                ->whereIn('showCreditsESS', $showCreditsESS)
                 ->get();
 
             return [
@@ -499,17 +500,23 @@ class EmployeeService {
 
     public function getRegularEmployees()
     {
+
         $latestOrgSub = DB::table('employee_organization as eo1')
-            ->select('employee_no', 'id')
-            ->whereRaw('id = (SELECT MAX(id) FROM employee_organization eo2 WHERE eo2.employee_no = eo1.employee_no)');
+            ->selectRaw('MAX(eo1.id) as latest_id, eo1.employee_no')
+            ->groupBy('eo1.employee_no');
 
         $data = DB::table('employee_information as ei')
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-            ->leftJoin('employee_organization as eo', function ($join) use ($latestOrgSub) {
-                $join->on('ei.employee_no', '=', 'eo.employee_no')
-                    ->whereIn('eo.id', $latestOrgSub->pluck('id'));
+            ->leftJoinSub($latestOrgSub, 'latest_org', function ($join) {
+                $join->on('ei.employee_no', '=', 'latest_org.employee_no');
             })
-            ->select('ei.*', 'ep.*', 'eo.*')
+            ->leftJoin('employee_organization as eo', 'eo.id', '=', 'latest_org.latest_id')
+            ->where('eo.employment_type_id', EmploymentTypesEnum::REGULAR->value)
+            ->select(
+                'ei.employee_no',
+                'ei.biometrics_id', 
+                'ep.firstname', 
+                'ep.lastname')
             ->get();
 
         return $data;

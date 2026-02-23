@@ -437,7 +437,6 @@ export default {
         transform: translate(-50%, -25%) !important;
         padding: 20px 0 30px 0 !important;
         border-radius: 16px 16px 0 0 !important;
-
         h4 {
             font-size: 1rem;
             text-align: center;
@@ -456,7 +455,7 @@ export default {
     border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 9999;
+    z-index: 99;
 
     h4 {
         font-weight: 600;

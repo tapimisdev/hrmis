@@ -240,7 +240,7 @@ class OffsetApplicationController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has approved your offset application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/offset'
+                'link' => '/employee/offset?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 
@@ -291,7 +291,7 @@ class OffsetApplicationController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has rejected your offset application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/offset'
+                'link' => '/employee/offset?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 

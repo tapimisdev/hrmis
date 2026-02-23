@@ -10,7 +10,11 @@ class LeavesApiController extends Controller
 {
     public function getLeaves()
     {
-        $leaves = DB::table('leaves')->where('is_active', true)->get();
+        $leaves = DB::table('leaves')
+            ->orderByDesc('is_cumulative')
+            ->where('is_active', true)
+            ->get();
+            
         return response(['leaves' => $leaves, 'status' => 'get leaves api success']);
     }
 }

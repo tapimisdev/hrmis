@@ -135,14 +135,15 @@ class DailyTimeRecordService {
 
         // Totals
         $TOTAL_INCOMPLETE_LOGS = 0;
-        $TOTAL_PENDING_LEAVES = 0;
+        $TOTAL_PENDING_LEAVES = $TOTAL_PENDING_OFFSETS = $TOTAL_PENDING_SO = 0;
         $TOTAL_OFFSET = $TOTAL_SO = $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
         $TOTAL_OVERTIME = $TOTAL_ACTUAL_PRESENCE = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
         $DOUBLE_EXCESS = 0;
+        $HALFDAY_MINS = 240;
 
         $IS_OT_PAY_EMPLOYEE = false;
 
-        foreach ($dates as $date) {
+        foreach ($dates as $index => $date) {
             $remarks = [];
             $is_future = false;
             $empty_log = empty($date['time_in']) && empty($date['time_out']);
@@ -162,7 +163,7 @@ class DailyTimeRecordService {
             $holiday = $holidaysCache[$date['date']];
 
             if ($holiday) {
-                $remarks[] = $holiday->type . ' ' . 'holiday' ;
+                $remarks[] = $holiday->name;
                 $TOTAL_HOLIDAY++;
                 $holiday_no_work_rate = $holiday->no_work_rate;
                 $holiday_work_rate = $holiday->work_rate;
@@ -234,10 +235,16 @@ class DailyTimeRecordService {
             /** ---------------- LEAVE CHECK ---------------- **/
             $leave = $this->timelogs_services->checkIfLeave($date, $userId);
             $is_leave = $leave['is_leave'];
+            $leave_shift = $leave['shift'];
             $leave_status = $leave['status'];
 
+            if (!empty($leave_shift)) {
+                $leave_status .= '-' . $leave_shift;
+            }
+            
             if ($is_leave) {
-                $TOTAL_LEAVES++;
+                $factor = ($leave_shift === 'wholeday') ? 1 : 0.5;
+                $TOTAL_LEAVES += $factor;
                 $remarks[] = $leave_status;
             }
 
@@ -246,19 +253,31 @@ class DailyTimeRecordService {
             $offset = $this->timelogs_services->checkIfOffset($date, $userId);
             $is_offset = $offset['is_offset'];
             $offset_status = $offset['status'];
+            $offset_shift = $offset['shift'];
+
+            if (!empty($offset_shift)) {
+                $offset_status .= '-' . $offset_shift;
+            }
           
             if ($is_offset) {
-                $TOTAL_OFFSET++;
+                $factor = ($leave_shift === 'wholeday') ? 1 : 0.5;
+                $TOTAL_OFFSET += $factor;
                 $remarks[] = $offset_status;
             }
 
-            /** ----------------- OFFSET CHECK ------------- **/
+            /** ----------------- SO CHECK ------------- **/
             $so = $this->timelogs_services->checkIfSO($date, $userId);
             $is_so = $so['is_so'];
             $so_status = $so['status'];
-          
+            $so_shift = $so['shift'];
+
+            if (!empty($so_shift)) {
+                $so_status .= '-' . $so_shift;
+            }
+
             if ($is_so) {
-                $TOTAL_SO++;
+                $factor = ($so_shift === 'wholeday') ? 1 : 0.5;
+                $TOTAL_SO += $factor;
                 $remarks[] = $so_status;
             }
 
@@ -271,7 +290,7 @@ class DailyTimeRecordService {
 
                 if(!$is_future && $suspension['is_suspended'] && $suspension['type'] === 'whole_day') {
                     $remarks[] = 'Suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['type']));
-                    $TOTAL_SUSPENSION++;
+                    $TOTAL_SUSPENSION += 1;
                     $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
                     continue;
                 }
@@ -279,7 +298,7 @@ class DailyTimeRecordService {
                  // If halfday suspended
                 if(!$is_future && $suspension['is_suspended'] && $suspension['type'] === 'half_day') {
                     $remarks[] = 'Suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['shift']));
-                    $TOTAL_SUSPENSION++;
+                    $TOTAL_SUSPENSION += 0.5;
                     $computedData[] = [
                         'date'              => $date['date'],
                         'user_id'           => $userId,
@@ -311,9 +330,24 @@ class DailyTimeRecordService {
                     $TOTAL_PENDING_LEAVES++;
                     continue;
                 }
+
+                if ($offset_status === 'pending offset' && $is_offset) {
+                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $TOTAL_PENDING_OFFSETS++;
+                    continue;
+                }
+
+                if ($so_status === 'pending special order (SO)' && $is_so) {
+                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $TOTAL_PENDING_SO++;
+                    continue;
+                }
+
             } else {
                 $TOTAL_ACTUAL_PRESENCE++;
             }
+
+            \Log::info('offset_status : ' . $date['date'] . ' ->>' . $offset_status . ':' . $is_offset);
 
             /** ---------------- PARSE TIMES ---------------- **/
             $timeInCarbon      = $this->timelogs_services->parseTime($date['time_in']);
@@ -384,7 +418,7 @@ class DailyTimeRecordService {
                 continue;
             }
 
-            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday && !$is_so) {
+            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday && !$is_so && !$is_leave && !$is_offset) {
                 if($is_same_day) {
                     $remarks[] = 'incomplete log';
                     $TOTAL_INCOMPLETE_LOGS++;
@@ -427,7 +461,8 @@ class DailyTimeRecordService {
             }
 
             /** ---------------- TARDINESS & UNDERTIME ---------------- **/
-            $tar_under = $this->timelogs_services->computeTardinessAndUndertime($date, $suspension);
+            $tar_under = $this->timelogs_services->computeTardinessAndUndertime($date, $suspension, $leave, $offset, $so);
+           
             $TOTAL_UT += $tar_under['lost_minutes'];
             if ($tar_under['remark']) $remarks[] = $tar_under['remark'];
 
@@ -442,7 +477,13 @@ class DailyTimeRecordService {
                 $paid_hours = $total_time_work;
             }
 
+            \Log::info('paid ' . $date['date'] . ' = ' . $paid_hours, [
+                'tar' => $tar_under
+            ]);
+
             $TOTAL_HOURS += $paid_hours;
+
+            $total_time_work = $required_to_work_in_mins - $tar_under['lost_minutes'];
 
             /** ---------------- FINAL DATA ROW ---------------- **/
             $computedData[] = [
@@ -455,7 +496,7 @@ class DailyTimeRecordService {
                 'shift_id'          => $date['shift_id'],
                 'work_schedule_id'  => $date['work_schedule_id'],
                 'ot_mins'           => $ot_mins,
-                'total_time_work'   => $required_to_work_in_mins - $tar_under['lost_minutes'],
+                'total_time_work'   => $total_time_work,
                 'doble'             => $double,
                 'late_undertime'    => max(0, $tar_under['lost_minutes']),
                 'paid_hours'        => $paid_hours,
@@ -463,30 +504,100 @@ class DailyTimeRecordService {
             ];
         }
 
+        $FORMATTED_TOTAL_UT     = $this->formatTime($TOTAL_UT);
+        $FORMATTED_TOTAL_HOURS  = $this->formatTime($TOTAL_HOURS);
+        $FORMATTED_TOTAL_ABSENT = $this->formatPlural($TOTAL_ABSENT, 'day');
+        $FORMATTED_TOTAL_LEAVES = $this->formatPlural($TOTAL_LEAVES, 'day');
+        $FORMATTED_TOTAL_OFFSETS = $this->formatPlural($TOTAL_OFFSET, 'day');
+        $FORMATTED_TOTAL_SO      = $this->formatPlural($TOTAL_SO, 'day');
+        $FORMATTED_PENDING_LEAVES =  $this->formatPlural($TOTAL_PENDING_LEAVES, 'day');
+        $FORMATTED_PENDING_OFFSETS =  $this->formatPlural($TOTAL_PENDING_OFFSETS, 'day');
+        $FORMATTED_PENDING_SO =  $this->formatPlural($TOTAL_PENDING_SO, 'day');
+        $FORMATTED_TOTAL_HOLIDAY = $this->formatPlural($TOTAL_HOLIDAY, 'day');
+        $FORMATTED_TOTAL_OVERTIME = $this->formatTime($TOTAL_OVERTIME); 
+        $FORMATTED_SUSPENSIONS = $this->formatPlural($TOTAL_SUSPENSION, 'day');
+        
         /** ---------------- SUMMARY ---------------- **/
         $summary = [
             [
-                'label' => 'Total HRS',
-                'value' => intval($TOTAL_HOURS / 60) . ' HRS ' . ($TOTAL_HOURS % 60) . ' MINS',
+                'label' => 'Total Hours Worked',
+                'value' => $FORMATTED_TOTAL_HOURS,
                 'actual_value' => intval($TOTAL_HOURS / 60),
                 'actual_minutes' => $TOTAL_HOURS % 60,
             ],
-            ['label' => 'Incomplete Logs',  'value' => $TOTAL_INCOMPLETE_LOGS, 'actual_value' => $TOTAL_INCOMPLETE_LOGS ],
-            ['label' => 'Pending Leaves',   'value' => $TOTAL_PENDING_LEAVES, 'actual_value' => $TOTAL_PENDING_LEAVES ],
-            ['label' => 'Overtime',         'value' => $TOTAL_OVERTIME . ' MINS', 'actual_value' => $TOTAL_OVERTIME ],
-            ['label' => 'Late / Undertime', 'value' => $TOTAL_UT . ' MINS', 'actual_value' => $TOTAL_UT ],
-            ['label' => 'Absent',           'value' => $TOTAL_ABSENT . ' Days', 'actual_value' => $TOTAL_ABSENT ],
-            ['label' => 'Leaves',           'value' => $TOTAL_LEAVES . ' ' . ($TOTAL_LEAVES != 1 ? '' : ''), 'actual_value' => $TOTAL_LEAVES ],
-            ['label' => 'Offsets',          'value' => $TOTAL_OFFSET . ' ' . ($TOTAL_OFFSET != 1 ? '' : ''), 'actual_value' => $TOTAL_OFFSET ],
-            ['label' => 'Holiday',          'value' => $TOTAL_HOLIDAY . ' Day' . ($TOTAL_HOLIDAY != 1 ? 's' : ''), 'actual_value' => $TOTAL_HOLIDAY ],
-            ['label' => 'Suspensions',      'value' => $TOTAL_SUSPENSION, 'actual_value' => $TOTAL_SUSPENSION ],
-            ['label' => 'Excess',           'value' => number_format($DOUBLE_EXCESS, 2), 'actual_value' => number_format($DOUBLE_EXCESS, 2)],
+            [
+                'label' => 'Incomplete Logs',
+                'value' => $TOTAL_INCOMPLETE_LOGS,
+                'actual_value' => $TOTAL_INCOMPLETE_LOGS
+            ],
+            [
+                'label' => 'Pending Leaves',
+                'value' => $FORMATTED_PENDING_LEAVES,
+                'actual_value' => $TOTAL_PENDING_LEAVES
+            ],
+            [
+                'label' => 'Pending Offsets',
+                'value' => $FORMATTED_PENDING_LEAVES,
+                'actual_value' => $TOTAL_PENDING_OFFSETS
+            ],
+            [
+                'label' => 'Pending Special Order',
+                'value' => $FORMATTED_PENDING_SO,
+                'actual_value' => $TOTAL_PENDING_SO
+            ],
+            [
+                'label' => 'Overtime',
+                'value' => $FORMATTED_TOTAL_OVERTIME,
+                'actual_value' => $TOTAL_OVERTIME
+            ],
+            [
+                'label' => 'Late / Undertime',
+                'value' => $FORMATTED_TOTAL_UT,
+                'actual_value' => intval($TOTAL_UT / 60)
+            ],
+            [
+                'label' => 'Absent',
+                'value' => $FORMATTED_TOTAL_ABSENT,
+                'actual_value' => $TOTAL_ABSENT
+            ],
+            [
+                'label' => 'Leaves',
+                'value' => $FORMATTED_TOTAL_LEAVES,
+                'actual_value' => $TOTAL_LEAVES
+            ],
+            [
+                'label' => 'Offsets',
+                'value' => $FORMATTED_TOTAL_OFFSETS,
+                'actual_value' => $TOTAL_OFFSET
+            ],
+            [
+                'label' => 'Special Order',
+                'value' => $FORMATTED_TOTAL_SO,
+                'actual_value' => $TOTAL_SO
+            ],
+            [
+                'label' => 'Holiday',
+                'value' => $FORMATTED_TOTAL_HOLIDAY,
+                'actual_value' => $TOTAL_HOLIDAY
+            ],
+            [
+                'label' => 'Suspensions',
+                'value' => $FORMATTED_SUSPENSIONS,
+                'actual_value' => $FORMATTED_SUSPENSIONS
+            ],
+            [
+                'label' => 'Excess',
+                'value' => number_format($DOUBLE_EXCESS, 2),
+                'actual_value' => number_format($DOUBLE_EXCESS, 2)
+            ],
         ];
 
         $payroll_value = [
             'total_hours'        => intval($TOTAL_HOURS / 60),
             'incomplete_logs'    => $TOTAL_INCOMPLETE_LOGS,
             'pending_leaves'     => $TOTAL_PENDING_LEAVES,
+            'pending_offsets'    => $TOTAL_PENDING_OFFSETS,
+            'pending_so'         => $TOTAL_PENDING_SO,
             'overtime'           => $TOTAL_OVERTIME,
             'late_undertime'     => $TOTAL_UT,
             'absent'             => $TOTAL_ABSENT,
@@ -497,7 +608,6 @@ class DailyTimeRecordService {
             'excess'             => $DOUBLE_EXCESS,
             'actual_presence'    => $TOTAL_ACTUAL_PRESENCE,
         ];
-
 
         return [
             'computedData' => $computedData,
@@ -528,6 +638,32 @@ class DailyTimeRecordService {
                 ->where('ei.user_id', $user_id)
                 ->select('ei.employee_no', 'sws.shift_id', 'sws.work_schedule_id')
                 ->first();                
+    }
+
+    private function formatTime($totalMinutes) {
+        $hours   = intval($totalMinutes / 60);
+        $minutes = $totalMinutes % 60;
+        $parts = [];
+
+        if ($hours > 0) {
+            $parts[] = $hours . '' . ($hours === 1 ? 'HR' : 'HRS');
+        }
+
+        if ($minutes > 0) {
+            $parts[] = $minutes . '' . ($minutes === 1 ? 'MIN' : 'MINS');
+        }
+
+        return $parts ? implode(' ', $parts) : '0 MIN';
+    }
+
+    private function formatPlural($value, $suffix) {
+        if ($value > 1) {
+            $newValue = $value . ' ' . $suffix . 's'; 
+        } else {
+            $newValue = $value . ' ' . $suffix;   
+        }
+
+        return strtoupper($newValue);
     }
 
 }

@@ -73,6 +73,7 @@ class DailyTimeRecordController extends Controller
             ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
             ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
             ->select(
+                'employee_personal.employee_no',
                 'employee_personal.firstname',
                 'employee_personal.middlename',
                 'employee_personal.lastname',
@@ -112,12 +113,34 @@ class DailyTimeRecordController extends Controller
 
     public function employee_information_with_summary(Request $request, $employee_no)
     {
+        // Subquery: latest shift work schedule
+        $latestShift = DB::table('employee_shift_work_schedule as esws1')
+            ->select('esws1.*')
+            ->whereRaw('esws1.id = (
+                SELECT MAX(esws2.id)
+                FROM employee_shift_work_schedule esws2
+                WHERE esws2.employee_no = esws1.employee_no
+            )');
+
+        // Subquery: latest organization
+        $latestOrg = DB::table('employee_organization as eo1')
+            ->select('eo1.*')
+            ->whereRaw('eo1.id = (
+                SELECT MAX(eo2.id)
+                FROM employee_organization eo2
+                WHERE eo2.employee_no = eo1.employee_no
+            )');
+
         $employee = DB::table('users')
-            ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id') // spatie roles table
+            ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
             ->leftJoin('employee_information', 'users.id', '=', 'employee_information.user_id')
-            ->leftJoin('employee_shift_work_schedule', 'employee_information.employee_no', '=', 'employee_shift_work_schedule.employee_no')
-            ->leftJoin('employee_organization', 'employee_information.employee_no', '=', 'employee_organization.employee_no')
+            ->leftJoinSub($latestShift, 'employee_shift_work_schedule', function ($join) {
+                $join->on('employee_information.employee_no', '=', 'employee_shift_work_schedule.employee_no');
+            })
+            ->leftJoinSub($latestOrg, 'employee_organization', function ($join) {
+                $join->on('employee_information.employee_no', '=', 'employee_organization.employee_no');
+            })
             ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
             ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
             ->leftJoin('work_schedule', 'employee_shift_work_schedule.work_schedule_id', '=', 'work_schedule.id')
@@ -145,16 +168,17 @@ class DailyTimeRecordController extends Controller
         $image = $employee->profile ?? null;
 
         if ($image) {
-            $image = Storage::url('public/users/' . $employee->employee_no . '/profile-image/' . $employee->profile);
+            $image = Storage::url(
+                'public/users/' . $employee->employee_no . '/profile-image/' . $employee->profile
+            );
         } else {
             $image = 'https://ui-avatars.com/api/?name='
-                . $employee->full_name
+                . urlencode($employee->full_name)
                 . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
         }
 
         $profile = [
-            'picture' => $image 
-                ?? "https://ui-avatars.com/api/?name=" . urlencode($employee->full_name) . "&background=random&color=fff&font-size=0.5",
+            'picture' => $image,
             'name'    => $employee->full_name,
         ];
 

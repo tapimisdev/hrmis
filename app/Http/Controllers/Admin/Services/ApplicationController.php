@@ -40,7 +40,13 @@ class ApplicationController extends Controller
                     'columns' => [
                         'la.*',
                         'l.name as leave_name',
-                        DB::raw('GROUP_CONCAT(DISTINCT ld.date) as dates'),
+                        DB::raw("
+                            GROUP_CONCAT(
+                                CONCAT_WS('|', ld.date, ld.shift, ld.credit_equivalent)
+                                ORDER BY ld.date
+                                SEPARATOR '||'
+                            ) as details
+                        "),
                         DB::raw("MAX(CONCAT(ep.firstname, ' ', ep.lastname)) as employee_name"),
                     ],
                     'groupBy' => [
@@ -68,9 +74,29 @@ class ApplicationController extends Controller
                 'approval_table' => 'obs_approvals',
                 'approval_fk' => 'obs_applications_id',
                 'select_extra' => [
+                    'join' => [
+                        ['obs_dates as od', 'od.obs_application_id', '=', 'ob.id'],
+                    ],
                     'columns' => [
                         'ob.*',
-                        DB::raw("CONCAT(ep.firstname, ' ', ep.lastname) as employee_name"),
+                        DB::raw("
+                            GROUP_CONCAT(
+                                CONCAT_WS('|', od.date, od.shift)
+                                ORDER BY od.date
+                                SEPARATOR '||'
+                            ) as details
+                        "),
+                        DB::raw("MAX(CONCAT(ep.firstname, ' ', ep.lastname)) as employee_name"),
+                    ],
+                    'groupBy' => [
+                        'ob.id',
+                        'ob.name',
+                        'ob.user_id',
+                        'ob.employee_no',
+                        'ob.reason',
+                        'ob.status',
+                        'ob.created_at',
+                        'ob.updated_at',
                     ],
                 ],
             ],
@@ -105,7 +131,13 @@ class ApplicationController extends Controller
                     ],
                     'columns' => [
                         'of.*',
-                        DB::raw('GROUP_CONCAT(DISTINCT od.date) as dates'),
+                        DB::raw("
+                            GROUP_CONCAT(
+                                CONCAT_WS('|', od.date, od.shift, od.credit_equivalent)
+                                ORDER BY od.date
+                                SEPARATOR '||'
+                            ) as details
+                        "),
                         DB::raw("MAX(CONCAT(ep.firstname, ' ', ep.lastname)) as employee_name"),
                     ],
                     'groupBy' => [
@@ -235,10 +267,28 @@ class ApplicationController extends Controller
         |--------------------------------------------------------------------------
         */
         return $applications->map(function ($item) use ($cfg, $attachments, $groupedApprovals, $levelApprovals) {
-            if (isset($item->dates) && is_string($item->dates)) {
-                $item->dates = explode(',', $item->dates);
+            
+            if (!empty($item->details)) {
+
+                $item->details = collect(explode('||', $item->details))
+                    ->map(function ($row) {
+
+                        $parts = explode('|', $row);
+
+                        return [
+                            'date' => $parts[0] ?? null,
+                            'shift' => $parts[1] ?? null,
+                            'credit_equivalent' => isset($parts[2]) ? (float) $parts[2] : 0,
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
             }
 
+            $item->dates = !empty($item->details)
+                ? collect($item->details)->pluck('date')->implode('|')
+                : null;
+                
             if ($cfg['attachment_table']) {
                 $item->attachments = $attachments->get($item->id)?->values() ?? [];
             }
@@ -603,26 +653,16 @@ class ApplicationController extends Controller
         }
 
         // OBS applications (date range)
-        $obsApplications = collect();
-
         if (in_array('obs', $types)) {
-            $obsRecords = DB::table('obs_applications')
-                ->where('user_id', $user->id)
-                ->get();
-
-            foreach ($obsRecords as $obs) {
-                $period = CarbonPeriod::create($obs->date_from, $obs->date_to);
-
-                $obsApplications = $obsApplications->merge(
-                    collect($period)->map(function ($date) use ($obs) {
-                        return (object) [
-                            'title'  => 'Pass Slip',
-                            'status' => $obs->status,
-                            'date'   => $date->format('Y-m-d'),
-                        ];
-                    })
+            $queries[] = DB::table('obs_applications as a')
+                ->join('obs_dates as d', 'a.id', '=', 'd.obs_application_id')
+                ->where('d.isActive', true)
+                ->where('a.user_id', $user->id)
+                ->select(
+                    DB::raw("'pass slip' as title"),
+                    'a.status',
+                    'd.date'
                 );
-            }
         }
 
         // Holidays
@@ -655,11 +695,6 @@ class ApplicationController extends Controller
         $applications = $applicationsQuery
             ->orderBy('date')
             ->get();
-
-        // Merge OBS applications (already a collection)
-        if ($obsApplications->isNotEmpty()) {
-            $applications = $applications->merge($obsApplications)->sortBy('date')->values();
-        }
 
         return [
             'leaves'       => $leaves,
