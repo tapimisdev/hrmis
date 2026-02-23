@@ -14,10 +14,11 @@ use App\Services\EventService;
 
 class Employee extends Controller
 {
-    
+
     public $EventService;
 
-    public function __construct(EventService $EventService) {
+    public function __construct(EventService $EventService)
+    {
         $this->EventService = $EventService;
     }
 
@@ -44,21 +45,20 @@ class Employee extends Controller
                 ->addIndexColumn()
                 ->editColumn('name', fn($row) => $row->firstname . ' ' . $row->lastname)
                 ->editColumn('birthday', fn($row) => $row->birthdate ? Carbon::parse($row->birthdate)->format('F d, Y') : '')
-                ->editColumn('documents', function($row) {
-                    
-                    if(is_null($row->documents) || empty($row->documents)) {
+                ->editColumn('documents', function ($row) {
+
+                    if (is_null($row->documents) || empty($row->documents)) {
                         return 'N/A';
                     }
 
                     $file = Storage::url('public/users/' . $row->employee_no . '/pds/children/' . $row->documents);
 
-                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
-
+                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="' . $file . '">View</button>';
                 })
                 ->addColumn('actions', function ($row) {
 
                     $deleteRoute = route('hris.employee.children', [
-                        'employee_no' => $row->employee_no, 
+                        'employee_no' => $row->employee_no,
                         'id' => $row->id
                     ]);
 
@@ -66,7 +66,7 @@ class Employee extends Controller
                         <div class="d-block d-md-flex gap-2 justify-content-start">
                             <button id="btn-edit"
                                 class="btn btn-secondary btn ms-1 my-1" 
-                                data-id="'.$row->id.'"
+                                data-id="' . $row->id . '"
                                 title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                             </button>
@@ -111,21 +111,20 @@ class Employee extends Controller
                 ->editColumn('school_name', fn($row) => $row->school_name)
                 ->editColumn('course', fn($row) => $row->course)
                 ->editColumn('year_graduated', fn($row) => Carbon::parse($row->year_graduated)->format('M d, Y'))
-                ->editColumn('documents', function($row) {
-                    
-                    if(is_null($row->documents) || empty($row->documents)) {
+                ->editColumn('documents', function ($row) {
+
+                    if (is_null($row->documents) || empty($row->documents)) {
                         return 'N/A';
                     }
 
                     $file = Storage::url('public/users/' . $row->employee_no . '/pds/education/' . $row->documents);
 
-                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
-
+                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="' . $file . '">View</button>';
                 })
                 ->addColumn('actions', function ($row) {
 
                     $deleteRoute = route('hris.employee.education', [
-                        'employee_no' => $row->employee_no, 
+                        'employee_no' => $row->employee_no,
                         'id' => $row->id
                     ]);
 
@@ -133,7 +132,7 @@ class Employee extends Controller
                         <div class="d-block d-md-flex gap-2 justify-content-start">
                             <button id="btn-edit"
                                 class="btn btn-secondary btn ms-1 my-1" 
-                                data-id="'.$row->id.'"
+                                data-id="' . $row->id . '"
                                 title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                             </button>
@@ -177,21 +176,20 @@ class Employee extends Controller
                 ->editColumn('certification', fn($row) => $row->certification)
                 ->editColumn('rating', fn($row) => $row->rating)
                 ->editColumn('license_no', fn($row) => $row->license_no)
-                ->editColumn('documents', function($row) {
-                    
-                    if(is_null($row->documents) || empty($row->documents)) {
+                ->editColumn('documents', function ($row) {
+
+                    if (is_null($row->documents) || empty($row->documents)) {
                         return 'N/A';
                     }
 
                     $file = Storage::url('public/users/' . $row->employee_no . '/pds/civil-service/' . $row->documents);
 
-                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
-
+                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="' . $file . '">View</button>';
                 })
                 ->addColumn('actions', function ($row) {
 
                     $deleteRoute = route('hris.employee.civil-service', [
-                        'employee_no' => $row->employee_no, 
+                        'employee_no' => $row->employee_no,
                         'id' => $row->id
                     ]);
 
@@ -199,7 +197,7 @@ class Employee extends Controller
                         <div class="d-block d-md-flex gap-2 justify-content-start">
                             <button id="btn-edit"
                                 class="btn btn-secondary btn ms-1 my-1" 
-                                data-id="'.$row->id.'"
+                                data-id="' . $row->id . '"
                                 title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                             </button>
@@ -243,16 +241,15 @@ class Employee extends Controller
                 ->editColumn('position', fn($row) => $row->position)
                 ->editColumn('department', fn($row) => $row->department)
                 ->editColumn('employment_status', fn($row) => $row->employment_status)
-                ->editColumn('documents', function($row) {
-                    
-                    if(is_null($row->documents) || empty($row->documents)) {
+                ->editColumn('documents', function ($row) {
+
+                    if (is_null($row->documents) || empty($row->documents)) {
                         return 'N/A';
                     }
 
                     $file = Storage::url('public/users/' . $row->employee_no . '/pds/work-experience/' . $row->documents);
 
-                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
-
+                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="' . $file . '">View</button>';
                 })
                 ->addColumn('actions', function ($row) {
 
@@ -265,7 +262,7 @@ class Employee extends Controller
                         <div class="d-block d-md-flex gap-2 justify-content-start">
                             <button id="btn-edit"
                                 class="btn btn-secondary btn ms-1 my-1" 
-                                data-id="'.$row->id.'"
+                                data-id="' . $row->id . '"
                                 title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                             </button>
@@ -309,16 +306,15 @@ class Employee extends Controller
                 ->editColumn('organization', fn($row) => $row->organization)
                 ->editColumn('consumed_hours', fn($row) => $row->consumed_hours)
                 ->editColumn('position', fn($row) => $row->position)
-                ->editColumn('documents', function($row) {
-                    
-                    if(is_null($row->documents) || empty($row->documents)) {
+                ->editColumn('documents', function ($row) {
+
+                    if (is_null($row->documents) || empty($row->documents)) {
                         return 'N/A';
                     }
 
                     $file = Storage::url('public/users/' . $row->employee_no . '/pds/voluntary-works/' . $row->documents);
 
-                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
-
+                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="' . $file . '">View</button>';
                 })
                 ->addColumn('actions', function ($row) {
 
@@ -331,7 +327,7 @@ class Employee extends Controller
                         <div class="d-block d-md-flex gap-2 justify-content-start">
                             <button id="btn-edit"
                                 class="btn btn-secondary btn ms-1 my-1" 
-                                data-id="'.$row->id.'"
+                                data-id="' . $row->id . '"
                                 title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                             </button>
@@ -375,16 +371,15 @@ class Employee extends Controller
                 ->editColumn('name', fn($row) => $row->name)
                 ->editColumn('consumed_hours', fn($row) => $row->consumed_hours)
                 ->editColumn('sponsored_by', fn($row) => $row->sponsored_by)
-                ->editColumn('documents', function($row) {
-                    
-                    if(is_null($row->documents) || empty($row->documents)) {
+                ->editColumn('documents', function ($row) {
+
+                    if (is_null($row->documents) || empty($row->documents)) {
                         return 'N/A';
                     }
 
                     $file = Storage::url('public/users/' . $row->employee_no . '/pds/trainings/' . $row->documents);
 
-                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
-
+                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="' . $file . '">View</button>';
                 })
                 ->addColumn('actions', function ($row) {
 
@@ -397,7 +392,7 @@ class Employee extends Controller
                         <div class="d-block d-md-flex gap-2 justify-content-start">
                             <button id="btn-edit"
                                 class="btn btn-secondary btn ms-1 my-1" 
-                                data-id="'.$row->id.'"
+                                data-id="' . $row->id . '"
                                 title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                             </button>
@@ -441,16 +436,15 @@ class Employee extends Controller
                 ->editColumn('name', fn($row) => $row->name)
                 ->editColumn('recognition', fn($row) => $row->recognition)
                 ->editColumn('organization', fn($row) => $row->organization)
-                ->editColumn('documents', function($row) {
-                    
-                    if(is_null($row->documents) || empty($row->documents)) {
+                ->editColumn('documents', function ($row) {
+
+                    if (is_null($row->documents) || empty($row->documents)) {
                         return 'N/A';
                     }
 
                     $file = Storage::url('public/users/' . $row->employee_no . '/pds/skills/' . $row->documents);
 
-                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="'.$file.'">View</button>';
-
+                    return '<button type="button" class="open-document btn btn-primary text-center text-uppercase fw-bold" data-src="' . $file . '">View</button>';
                 })
                 ->addColumn('actions', function ($row) {
 
@@ -463,7 +457,7 @@ class Employee extends Controller
                         <div class="d-block d-md-flex gap-2 justify-content-start">
                             <button id="btn-edit"
                                 class="btn btn-secondary btn ms-1 my-1" 
-                                data-id="'.$row->id.'"
+                                data-id="' . $row->id . '"
                                 title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                             </button>
@@ -483,17 +477,19 @@ class Employee extends Controller
         return response()->json(['message' => 'Invalid request'], 400);
     }
 
-    public function generateEmployeeNo(Request $request) {
+    public function generateEmployeeNo(Request $request)
+    {
         $dateHired = $request->dateHired;
         $service = app(EmployeeService::class);
         return $service->generateEmployeeNo($dateHired);
     }
 
-    public function getAnnouncement(string $slug) {
-        
+    public function getAnnouncement(string $slug)
+    {
+
         $announcement = DB::table('events_announcements')
-                                ->where('slug', '=', $slug)
-                                ->first();
+            ->where('slug', '=', $slug)
+            ->first();
 
         if (!$announcement) {
             return redirect()->route('announcement.index');
@@ -504,40 +500,40 @@ class Employee extends Controller
             ->pluck('name');
 
         $posted_by = DB::table('events_announcements_posted_by as eapb')
-                    ->leftJoin('users as u', 'eapb.user_id', '=', 'u.id')
-                    ->where('eapb.event_announcement_id', $announcement->id)
-                    ->select('u.name')
-                    ->pluck('name');
+            ->leftJoin('users as u', 'eapb.user_id', '=', 'u.id')
+            ->where('eapb.event_announcement_id', $announcement->id)
+            ->select('u.name')
+            ->pluck('name');
 
         $seeners = DB::table('events_announcements_viewers as eav')
-                    ->leftJoin('employee_information as ei', 'eav.user_id', '=', 'ei.user_id')
-                    ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-                    ->where('eav.event_announcement_id', $announcement->id)
-                    ->select('eav.user_id', 'ei.employee_no', 'ep.profile', 'ep.firstname', 'ep.lastname')
-                    ->get()
-                    ->map(function ($d) {
-                        if($d->profile != null) {
-                            $d->profile = '/storage/users/' . $d->employee_no . '/profile-image/'. $d->profile;
-                        } else {
-                            $d->profile = "https://ui-avatars.com/api/?name=" . urlencode($d->firstname . ' ' . $d->lastname) . "&background=random&color=fff&font-size=0.5";
-                        }
-                        return $d;
-                    });
+            ->leftJoin('employee_information as ei', 'eav.user_id', '=', 'ei.user_id')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->where('eav.event_announcement_id', $announcement->id)
+            ->select('eav.user_id', 'ei.employee_no', 'ep.profile', 'ep.firstname', 'ep.lastname')
+            ->get()
+            ->map(function ($d) {
+                if ($d->profile != null) {
+                    $d->profile = '/storage/users/' . $d->employee_no . '/profile-image/' . $d->profile;
+                } else {
+                    $d->profile = "https://ui-avatars.com/api/?name=" . urlencode($d->firstname . ' ' . $d->lastname) . "&background=random&color=fff&font-size=0.5";
+                }
+                return $d;
+            });
 
         $attachments = DB::table('events_announcements_attachments')
-                        ->where('event_announcement_id', $announcement->id)
-                        ->get()
-                        ->map(function ($d) {
-                            $path = 'events/attachments/' . $d->filename;
+            ->where('event_announcement_id', $announcement->id)
+            ->get()
+            ->map(function ($d) {
+                $path = 'events/attachments/' . $d->filename;
 
-                            if (Storage::disk('public')->exists($path)) {
-                                $d->size = number_format(Storage::disk('public')->size($path) / 1024, 2) . ' KB';
-                            } else {
-                                $d->size = '0 KB'; // or 'N/A'
-                            }
+                if (Storage::disk('public')->exists($path)) {
+                    $d->size = number_format(Storage::disk('public')->size($path) / 1024, 2) . ' KB';
+                } else {
+                    $d->size = '0 KB'; // or 'N/A'
+                }
 
-                            return $d;
-                        });
+                return $d;
+            });
 
         $exists = DB::table('events_announcements_viewers')
             ->where('event_announcement_id', $announcement->id)
@@ -553,9 +549,9 @@ class Employee extends Controller
                 'viewed_at' => now()
             ]);
         }
-        
+
         $randomAnnouncements = $this->get_random_announcements(4, $announcement->id);
-            
+
         $data = [
             'announcement' => $announcement,
             'tags' => $tags,
@@ -579,7 +575,7 @@ class Employee extends Controller
             ->leftJoin('events_announcements_viewers as eav', 'ea.id', '=', 'eav.event_announcement_id')
             ->leftJoin('users as u', 'eav.user_id', '=', 'u.id')
             ->when($where_not, function ($q) use ($where_not) {
-                return $q->where('ea.id', '!=', $where_not);  // FIXED
+                return $q->where('ea.id', '!=', $where_not); 
             })
             ->inRandomOrder()
             ->take($count)
@@ -606,13 +602,32 @@ class Employee extends Controller
 
         $announcements = $query->get()->map(function ($item) {
 
-            $tags = $item->tags ? explode(',', $item->tags) : [];
+            $tags = $item->tags
+                ? array_values(array_filter(array_map('trim', explode(',', $item->tags))))
+                : [];
 
             $seeners = [];
-            if ($item->seeners) {
-                foreach (explode(',', $item->seeners) as $seener) {
-                    [$id, $name] = explode(':', $seener);
-                    $seeners[] = ['id' => (int) $id, 'name' => $name];
+
+            if (!empty($item->seeners)) {
+                foreach (explode(',', $item->seeners) as $raw) {
+
+                    $raw = trim($raw);
+                    if ($raw === '') continue;
+
+                    $parts = explode(':', $raw, 2);
+                    if (count($parts) < 2) continue;
+
+                    [$idRaw, $nameRaw] = $parts;
+
+                    $idRaw = trim($idRaw);
+                    $nameRaw = trim($nameRaw);
+
+                    if (!ctype_digit($idRaw) || $nameRaw === '') continue;
+
+                    $seeners[] = [
+                        'id' => (int) $idRaw,
+                        'name' => $nameRaw,
+                    ];
                 }
             }
 
@@ -624,10 +639,11 @@ class Employee extends Controller
                 'body' => $item->description,
                 'image' => $item->banner
                     ? asset(Storage::url('events/attachments/' . $item->banner))
-                    : asset('./img/placeholder.png'),
+                    : asset('img/placeholder.png'),
                 'seeners' => $seeners,
             ];
         });
+
 
         return $announcements;
     }
@@ -643,8 +659,5 @@ class Employee extends Controller
         $data = $this->EventService->saveReadNotification($request);
 
         return response()->json($data);
-    } 
-
-
-
+    }
 }

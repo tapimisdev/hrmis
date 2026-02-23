@@ -15,7 +15,7 @@ class AnnouncementsController extends Controller
         if ($request->wantsJson() || $request->query('json')) {
 
             $announcements = $this->get_announcements(null, 10, $request->search);
-            
+
             return response()->json([
                 'data' => $announcements,
                 'message' => 'success getting announcements',
@@ -28,8 +28,8 @@ class AnnouncementsController extends Controller
     public function show($slug)
     {
         $announcement = DB::table('events_announcements')
-                            ->where('slug', '=', $slug)
-                            ->first();
+            ->where('slug', '=', $slug)
+            ->first();
 
         if (!$announcement) {
             return redirect()->route('announcement.index');
@@ -87,8 +87,8 @@ class AnnouncementsController extends Controller
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('ea.title', 'LIKE', "%{$search}%")
-                ->orWhere('ea.description', 'LIKE', "%{$search}%")
-                ->orWhere('eat.name', 'LIKE', "%{$search}%");
+                    ->orWhere('ea.description', 'LIKE', "%{$search}%")
+                    ->orWhere('eat.name', 'LIKE', "%{$search}%");
             });
         }
 
@@ -106,15 +106,32 @@ class AnnouncementsController extends Controller
         * MAP RESULTS
         * ========================= */
         $announcements->getCollection()->transform(function ($item) {
-            $tags = $item->tags ? explode(',', $item->tags) : [];
+            $tags = $item->tags ? array_values(array_filter(array_map('trim', explode(',', $item->tags)))) : [];
 
             $seeners = [];
-            if ($item->seeners) {
-                foreach (explode(',', $item->seeners) as $seener) {
-                    [$id, $name] = explode(':', $seener);
+            if (!empty($item->seeners)) {
+                foreach (explode(',', $item->seeners) as $seenerRaw) {
+                    $seenerRaw = trim($seenerRaw);
+                    if ($seenerRaw === '') continue;
+
+                    // Split into 2 parts only: "id:name"
+                    $parts = explode(':', $seenerRaw, 2);
+
+                    // If format is invalid, skip
+                    if (count($parts) < 2) continue;
+
+                    [$idRaw, $nameRaw] = $parts;
+
+                    $idRaw = trim($idRaw);
+                    $nameRaw = trim($nameRaw);
+
+                    // Validate id + name
+                    if ($idRaw === '' || !ctype_digit($idRaw)) continue;
+                    if ($nameRaw === '') continue;
+
                     $seeners[] = [
-                        'id' => (int) $id,
-                        'name' => $name,
+                        'id' => (int) $idRaw,
+                        'name' => $nameRaw,
                     ];
                 }
             }
@@ -127,12 +144,11 @@ class AnnouncementsController extends Controller
                 'body' => $item->description,
                 'image' => $item->banner
                     ? asset(Storage::url('events/attachments/' . $item->banner))
-                    : asset('./img/placeholder.png'),
+                    : asset('img/placeholder.png'),
                 'seeners' => $seeners,
             ];
         });
 
         return $announcements;
     }
-
 }

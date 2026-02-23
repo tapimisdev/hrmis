@@ -62,6 +62,7 @@ class EmployeeService {
         return DB::table('employee_information')
             ->select(
                 'employee_information.employee_no',
+                'employee_information.biometrics_id',
                 'employee_information.date_hired_organization',
                 'employee_information.date_hired_company',
                 'employee_information.account_status',

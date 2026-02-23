@@ -27,9 +27,10 @@ class PayrollService
     protected $daily_time_record_service;
     private $date;
     private $cutoff;
+    private $group_id;
 
-    private $eligibile;
-    private $not_eligibile;
+    private $eligible;
+    private $not_eligible;
 
     public function __construct(DailyTimeRecordService $daily_time_record_service)
     {
@@ -68,9 +69,36 @@ class PayrollService
     {
         $this->date = $payload['date'] ?? null;
         $this->cutoff = $payload['cutoff'] ?? null;
+        $this->group_id = $payload['group_id']; // can be 'custom'
+
+        $latestOrg = DB::table('employee_organization as eo')
+            ->select('eo.*')
+            ->joinSub(
+                DB::table('employee_organization')
+                    ->selectRaw('employee_no, MAX(created_at) as max_created_at')
+                    ->groupBy('employee_no'),
+                'mx',
+                function ($join) {
+                    $join->on('eo.employee_no', '=', 'mx.employee_no')
+                        ->on('eo.created_at', '=', 'mx.max_created_at');
+                }
+            )
+            ->joinSub(
+                DB::table('employee_organization')
+                    ->selectRaw('employee_no, created_at, MAX(id) as max_id')
+                    ->groupBy('employee_no', 'created_at'),
+                'mx2',
+                function ($join) {
+                    $join->on('eo.employee_no', '=', 'mx2.employee_no')
+                        ->on('eo.created_at', '=', 'mx2.created_at')
+                        ->on('eo.id', '=', 'mx2.max_id');
+                }
+            );
 
         $employees = DB::table('employee_information as ei')
-            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
+            ->leftJoinSub($latestOrg, 'eo', function ($join) {
+                $join->on('ei.employee_no', '=', 'eo.employee_no');
+            })
             ->leftJoin('positions', 'eo.position_id', '=', 'positions.id')
             ->leftJoin('divisions', 'eo.division_id', '=', 'divisions.id')
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
@@ -102,8 +130,15 @@ class PayrollService
         }
 
         $seperatedEmployee = [
-            'eligible' => $this->eligibile ?? [],
-            'not_eligible' => $this->not_eligibile ?? [],
+            'eligible' => collect($this->eligible ?? [])
+                ->sortBy('lastname')
+                ->values()
+                ->all(),
+
+            'not_eligible' => collect($this->not_eligible ?? [])
+                ->sortBy('lastname')
+                ->values()
+                ->all(),
         ];
 
         return $seperatedEmployee;
@@ -143,6 +178,25 @@ class PayrollService
             $remarks[] = [
                 'text' => 'This Employee is Inactive',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
+            ];
+        }
+
+        $existence = $this->checkIfExistInPayroll($employee);
+
+        if ($existence['is_exist']) {
+            $remarks[] = [
+                'text' => 'This employee is already included in Payroll No. '
+                    . $existence['payroll']->payroll_no
+                    . ' for '
+                    . Carbon::parse($existence['payroll']->payroll_date)->format('F')
+                    . ' ( '
+                    . $existence['payroll']->cutoff
+                    . ' ).',
+
+                'url' => route('salary-pay.show', [
+                    'salary_pay' => $existence['payroll']->payroll_no,
+                    'batch_id'   => $existence['payroll']->batch_id,
+                ]),
             ];
         }
 
@@ -199,10 +253,63 @@ class PayrollService
         $employee->remarks = $remarks ?: $eligibleRemarks;
 
         if (empty($remarks)) {
-            $this->eligibile[] = $employee;
+
+           $ingroup_exist = false;
+
+            if ($this->group_id !== 'custom' && !empty($this->group_id)) {
+                $ingroup_exist = DB::table('payroll_group_employees')
+                    ->where('payroll_group_id', $this->group_id)
+                    ->where('employee_no', $employee->employee_no)
+                    ->exists();
+            }
+
+            $employee->selected = $ingroup_exist;
+            $this->eligible[] = $employee;
+
         } else {
-            $this->not_eligibile[] = $employee;
+            $this->not_eligible[] = $employee;
         }
+    }
+
+    private function checkIfExistInPayroll($emp)
+    {
+        $date = Carbon::parse($this->date);
+        $year = $date->year;
+        $month = $date->month;
+
+        $isExist = false;
+
+        $payrolls = DB::table('payroll_salary')
+            ->whereYear('payroll_date', $year)
+            ->whereMonth('payroll_date', $month)
+            ->where('cutoff', $this->cutoff)
+            ->where('status', '!=', 'cancelled')
+            ->get();
+
+
+        $db_name = 'payroll_salary_permanent_employees';
+
+        if ($emp->employment_type_id == EmploymentTypesEnum::COS->value) {
+            $db_name = 'payroll_salary_employee';
+        }
+
+        foreach ($payrolls as $payroll) {
+            $exists = DB::table($db_name)
+                ->where('payroll_salary_id', $payroll->id)
+                ->where('employee_no', $emp->employee_no)
+                ->exists();
+
+            if ($exists) {
+                $isExist = true;
+                $payroll = $payroll;
+                break;
+            }
+        }
+
+        return [
+            'is_exist' => $isExist,
+            'payroll' => $payroll ?? []
+        ];
     }
 
     private function hasWorkAndShift($emp_no)
@@ -282,8 +389,7 @@ class PayrollService
 
     public function generatePayrollRegistryReport($payload, $payroll_id)
     {
-        $employees = collect($this->getEligibleEmployees($payload));
-        $eligibleEmployees = $employees->get('eligible', []);
+        $eligibleEmployees = collect($payload['employees']['eligible'])->where('selected', true);
 
         if (empty($eligibleEmployees)) {
             Log::warning("No eligible employees found for payroll ID: {$payroll_id}");
@@ -632,7 +738,6 @@ class PayrollService
                 }
             }
 
-
             return [
                 'employee_no' => $d->employee_no,
                 'name'        => $d->name,
@@ -674,11 +779,11 @@ class PayrollService
 
         foreach ($enriched as $emp) {
 
-            $groupId   = ($employment_type_id === EmploymentTypesEnum::COS->value)
+            $groupId   = ($employment_type_id == EmploymentTypesEnum::COS->value)
                 ? ($emp['project_id'] ?? 'others')
                 : ($emp['division_id'] ?? 'others');
 
-            $groupName = ($employment_type_id === EmploymentTypesEnum::COS->value)
+            $groupName = ($employment_type_id == EmploymentTypesEnum::COS->value)
                 ? $emp['project_name']
                 : $emp['division_name'];
 
@@ -704,8 +809,13 @@ class PayrollService
                 'deductions'   => $emp['deductions'],
                 'earnings'     => $emp['earnings'],
                 'adjustment'   => $emp['salary_adjustment'],
+                'ewt_2'       => $emp['ewt_2'] ?? null,
+                'percentage_tax_3' => $emp['percentage_tax_3'] ?? null,
+                'tax_ewt_5'   => $emp['tax_ewt_5'] ?? null,
+                'w_tax'       => $emp['w_tax'] ?? null,
                 'net_salary'   => $emp['net_pay'],
                 'cut_offs'     => $emp['cut_offs'],
+                'remarks'      => $emp['remarks'],
             ];
         }
 
@@ -730,12 +840,10 @@ class PayrollService
 
     public function employeePayrollRates($payroll)
     {
-        // Payroll constants
-        $WORK_DAYS  = 22;
+        $WORK_DAYS = 22;
         $HOURS_DAY = 8;
         $MINS_HOUR = 60;
 
-        // Get payroll period
         $payrollPeriod = DB::table('payroll_salary')
             ->where('id', $payroll->id)
             ->value('period_covered');
@@ -758,7 +866,6 @@ class PayrollService
                 : date('t', strtotime("$month $year"))
         );
 
-        // Compute payroll data
         $employees = $payroll->employees->map(function ($employee) use (
             $start_date,
             $end_date,
@@ -767,68 +874,102 @@ class PayrollService
             $MINS_HOUR
         ) {
 
-            // 🔹 Get DTR summary
             $dtr = $this->daily_time_record_service->getDTR([
-                'user_id'    => $employee->employee_id,
-                'startDate'  => $start_date,
-                'endDate'    => $end_date,
+                'user_id'   => $employee->employee_id,
+                'startDate' => $start_date,
+                'endDate'   => $end_date,
             ]);
 
             $summary = $dtr['payroll_value'] ?? [];
 
-            // 🔹 RATES
-            $daily_rate  = round($employee->monthly_rate / $WORK_DAYS, 2);
-            $hourly_rate = round($daily_rate / $HOURS_DAY, 2);
-            $minute_rate = round($hourly_rate / $MINS_HOUR, 2);
+            /*
+            |--------------------------------------------------------------------------
+            | RATES (NO EARLY ROUNDING)
+            |--------------------------------------------------------------------------
+            */
+            $daily_rate  = $employee->monthly_rate / $WORK_DAYS;
+            $hourly_rate = $daily_rate / $HOURS_DAY;
+            $minute_rate = $hourly_rate / $MINS_HOUR;
 
-            // 🔹 ABSENCES (DAYS ONLY)
+            /*
+            |--------------------------------------------------------------------------
+            | ABSENCES
+            |--------------------------------------------------------------------------
+            */
             $absent_days   = $summary['absent'] ?? 0;
-            $absent_amount = round($absent_days * $daily_rate, 2);
+            $absent_amount = $absent_days * $daily_rate;
 
-            // 🔹 UNDERTIME (MINUTES → HOURS + MINUTES)
+            /*
+            |--------------------------------------------------------------------------
+            | UNDERTIME
+            |--------------------------------------------------------------------------
+            */
             $total_ut_minutes = $summary['late_undertime'] ?? 0;
 
+            // Split for display only
             $ut_hours   = intdiv($total_ut_minutes, $MINS_HOUR);
             $ut_minutes = $total_ut_minutes % $MINS_HOUR;
 
-            $ut_hours_amount   = round($ut_hours * $hourly_rate, 2);
-            $ut_minutes_amount = round($ut_minutes * $minute_rate, 2);
+            // Compute parts using full precision
+            $ut_hours_amount   = $ut_hours * $hourly_rate;
+            $ut_minutes_amount = $ut_minutes * $minute_rate;
 
-            // 🔹 TOTAL AUT AMOUNT
-            $total_aut_amount = round(
-                $absent_amount + $ut_hours_amount + $ut_minutes_amount,
-                2
-            );
+            // Authoritative undertime amount
+            $ut_amount = $total_ut_minutes * $minute_rate;
+
+            /*
+            |--------------------------------------------------------------------------
+            | TOTAL DEDUCTIONS (USE AUTHORITATIVE VALUES)
+            |--------------------------------------------------------------------------
+            */
+            $total_aut_amount = $absent_amount + $ut_amount;
 
             return [
                 'project_name' => 'sample',
 
-                'employee_no'  => $employee->employee_no,
-                'name'         => $employee->name,
-                'position'     => $employee->position,
+                'employee_no' => $employee->employee_no,
+                'name'        => $employee->name,
+                'position'    => $employee->position,
 
+                /*
+                |--------------------------------------------------------------------------
+                | RATES (Rounded Only For Output)
+                |--------------------------------------------------------------------------
+                */
                 'monthly_rate' => number_format($employee->monthly_rate, 2),
-                'daily_rate'   => number_format($daily_rate, 2),
-                'hourly_rate'  => number_format($hourly_rate, 2),
-                'minute_rate'  => number_format($minute_rate, 2),
+                'daily_rate'   => number_format($daily_rate, 6),
+                'hourly_rate'  => number_format($hourly_rate, 6),
+                'minute_rate'  => number_format($minute_rate, 6),
 
-                // ABSENCES
+                /*
+                |--------------------------------------------------------------------------
+                | ABSENCES
+                |--------------------------------------------------------------------------
+                */
                 'absent_days'   => $absent_days,
                 'absent_amount' => number_format($absent_amount, 2),
 
-                // UNDERTIME
+                /*
+                |--------------------------------------------------------------------------
+                | UNDERTIME (DISPLAY)
+                |--------------------------------------------------------------------------
+                */
                 'ut_hours'          => $ut_hours,
                 'ut_minutes'        => $ut_minutes,
                 'ut_hours_amount'   => number_format($ut_hours_amount, 2),
                 'ut_minutes_amount' => number_format($ut_minutes_amount, 2),
+                'ut_amount'         => number_format($ut_amount, 2),
 
-                // TOTAL
+                /*
+                |--------------------------------------------------------------------------
+                | TOTAL
+                |--------------------------------------------------------------------------
+                */
                 'total_aut_amount' => number_format($total_aut_amount, 2),
             ];
         });
 
-        // 🔹 Group by project
-        $data = $employees
+        return $employees
             ->groupBy('project_name')
             ->map(function ($emps, $project) {
                 return [
@@ -837,8 +978,5 @@ class PayrollService
                 ];
             })
             ->values();
-
-        return $data;
     }
-    
 }

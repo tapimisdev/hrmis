@@ -114,6 +114,12 @@
                                     {{ ruleText(item) }}
                                 </div>
                             </div>
+                            
+                            <div class="d-flex justify-content-end">
+                              <button class="btn btn-sm btn-warning" @click="remove(item.id)">
+                                <i class="fa-solid fa-ban"></i>
+                              </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -148,6 +154,46 @@ export default {
         };
     },
     methods: {
+        async remove(id) {
+          const result = await Swal.fire({
+              title: 'Are you sure?',
+              text: "This schedule will be permanently deleted.",
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#d33',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: 'Yes, delete it!'
+          });
+
+          if (!result.isConfirmed) return;
+
+          try {
+
+              const response = await axios.delete(
+                  `/admin/timekeeping/web-time-access/${id}`
+              );
+
+              await Swal.fire({
+                  icon: 'success',
+                  title: 'Deleted!',
+                  text: response.data.message,
+                  timer: 1500,
+                  showConfirmButton: true
+              });
+
+              // Remove item from UI
+              this.history = this.history.filter(item => item.id !== id);
+
+          } catch (error) {
+
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Oops...',
+                  text: error.response?.data?.message || 'Delete failed.'
+              });
+
+          }
+      },
         open(employeeNo) {
             this.employeeNo = employeeNo;
             this.history = [];

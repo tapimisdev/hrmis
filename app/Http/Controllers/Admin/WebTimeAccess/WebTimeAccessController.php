@@ -58,7 +58,6 @@ class WebTimeAccessController extends Controller
     {
         $validated = $request->validated();
 
-
         // Conditional validation
         if ($validated['type'] === 'days_of_week' && empty($validated['days_of_week'])) {
             return response()->json([
@@ -163,6 +162,33 @@ class WebTimeAccessController extends Controller
             'message' => 'Schedule history fetched successfully.',
             'data' => $data, // latest is first
         ]);
+    }
+
+    public function destroy($id)
+    {
+        try {
+
+            $deleted = DB::table('web_time_access')
+                ->where('id', $id)
+                ->delete();
+
+            if (!$deleted) {
+                return response()->json([
+                    'message' => 'Schedule not found.',
+                ], 404);
+            }
+
+            return response()->json([
+                'message' => 'Schedule deleted successfully.',
+            ], 200);
+
+        } catch (\Throwable $e) {
+
+            return response()->json([
+                'message' => 'Failed to delete schedule.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function datatable($query)

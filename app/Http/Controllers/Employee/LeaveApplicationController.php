@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Http\Controllers\Admin\Services\LeaveApplicationController as UpdateCreditsController;
 use App\Http\Requests\Employee\StoreLeaveApplication;
 use App\Enums\EmploymentTypesEnum;
 use App\Events\NotificationEvents;
@@ -22,8 +23,13 @@ class LeaveApplicationController extends Controller
 
     public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
-        $this->middleware('permission:emp.leave_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.leave_application.apply')->only(['create', 'store']);
+        $this->middleware('permission:emp.leave_application.view|hr.leave_approval.view')
+            ->only(['index', 'create', 'show']);
+
+        $this->middleware(
+            'permission:emp.leave_application.apply|hr.leave_approval.save'
+        )->only(['store']);
+
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
     }   
@@ -116,10 +122,19 @@ class LeaveApplicationController extends Controller
                 $dates = [];
             }
 
+            $credit_equivalent = 0;
+
+            foreach($dates as $date) {
+                if ($date['shift'] === 'wholeday') {
+                    $credit_equivalent += 1;
+                } else {
+                    $credit_equivalent += 0.5;
+                }
+            }
+
             $data = $this->applicationService->getData('leave');
             // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
             // $approvers = $validatedData['approvers'];
-            $days = count($datesInput);
 
             $leaveName = DB::table('leaves')
                 ->where('id', $validatedData['leave_id'])
@@ -134,7 +149,7 @@ class LeaveApplicationController extends Controller
                 'name'          => $leaveName,
                 'employee_no'   => $employee_no,
                 'leave_id'      => $validatedData['leave_id'],
-                'days'          => $days,
+                'credit_equivalent' => number_format($credit_equivalent, 2),
                 'reason'        => $validatedData['reason'],
                 'status'        =>  $isDirectlyApproved ? 'approved' : 'pending',
                 'level'         => 1,
@@ -148,6 +163,7 @@ class LeaveApplicationController extends Controller
                     'leave_application_id' => $applicationID,
                     'date' => $item['date'],
                     'shift'=> $item['shift'],
+                    'credit_equivalent' => $item['shift'] === 'wholeday' ? 1 : 0.5,
                 ]);
             }
 
@@ -180,6 +196,10 @@ class LeaveApplicationController extends Controller
             }
 
             $sender = ucwords(Auth::user()->name);
+
+            if($isDirectlyApproved) {
+                app(UpdateCreditsController::class)->updateCredits($applicationID);
+            }
 
             if(!$isDirectlyApproved) {
                 $payload = [

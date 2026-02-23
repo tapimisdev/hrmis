@@ -4,67 +4,118 @@ on:
   push:
     branches: [develop]
 
+concurrency:
+  group: deploy-orbit-testing
+  cancel-in-progress: true
+
 jobs:
   deploy:
-    runs-on: [self-hosted, 'develop']
+    runs-on: [self-hosted, orbit-testing]
+    env:
+      APP_DIR: /var/app/orbit
+      CONTAINER: orbit
+      DEPLOY_BRANCH: develop
 
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: 🧩 Pick path by branch
-        id: pick
+      - name: Debug runner identity
         shell: bash
         run: |
-          if [ "${GITHUB_REF_NAME}" = "develop" ]; then
-            echo "dir=/var/www/html/hris" >> "$GITHUB_OUTPUT"
-          else
-            echo "dir=/var/www/html/hris" >> "$GITHUB_OUTPUT"
-          fi
+          set -euo pipefail
+          echo "whoami=$(whoami)"
+          echo "HOME=$HOME"
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          pwd
 
-      - name: 🚀 Deploy locally on server
+      - name: Fix Git safe directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$APP_DIR"
+
+      - name: Setup SSH for GitHub (use existing deploy key file)
         shell: bash
         run: |
           set -euo pipefail
 
-          DIR="${{ steps.pick.outputs.dir }}"
-          echo "Deploying to: $DIR"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
 
-          cd "$DIR"
-          git fetch --all
-          git reset --hard "origin/${GITHUB_REF_NAME}"
+          # Your existing key on the server
+          test -f "$HOME/.ssh/orbit_deploy_key" || { echo "Missing $HOME/.ssh/orbit_deploy_key"; exit 1; }
+          chmod 600 "$HOME/.ssh/orbit_deploy_key"
 
-          # Backend deps
-          composer install --no-interaction --no-dev --optimize-autoloader
+          # Ensure github.com is in known_hosts (no interactive prompt)
+          touch "$HOME/.ssh/known_hosts"
+          chmod 644 "$HOME/.ssh/known_hosts"
+          grep -q "github.com" "$HOME/.ssh/known_hosts" || ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts"
 
-          # --- NVM (make node/npm available) ---
-          export NVM_DIR="$HOME/.nvm"
-          if [ -s "$NVM_DIR/nvm.sh" ]; then
-            . "$NVM_DIR/nvm.sh"
-          else
-            echo "❌ nvm.sh not found at $NVM_DIR/nvm.sh"
-            echo "If nvm is installed elsewhere, set NVM_DIR accordingly."
-            exit 1
+          # Start ssh-agent and add key (THIS is what makes it work across steps)
+          eval "$(ssh-agent -s)"
+          ssh-add "$HOME/.ssh/orbit_deploy_key"
+
+          # Persist agent env to next steps
+          {
+            echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK"
+            echo "SSH_AGENT_PID=$SSH_AGENT_PID"
+          } >> "$GITHUB_ENV"
+
+          # Optional quick auth test (git-only access is fine)
+          ssh -o StrictHostKeyChecking=yes -T git@github.com || true
+
+      - name: Update live code (sync to origin/develop)
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO_SSH="git@github.com:${{ github.repository }}.git"
+
+          # If APP_DIR isn't a repo yet, clone it
+          if [ ! -d "$APP_DIR/.git" ]; then
+            echo "APP_DIR not a git repo. Cloning..."
+            sudo mkdir -p "$APP_DIR"
+            sudo chown -R "$(whoami)":"$(whoami)" "$APP_DIR"
+            git clone --branch "$DEPLOY_BRANCH" "$REPO_SSH" "$APP_DIR"
           fi
 
-          # Use a specific Node version (recommended) OR the repo's .nvmrc if you have one
-          if [ -f ".nvmrc" ]; then
-            nvm install
-            nvm use
-          else
-            nvm install 20
-            nvm use 20
-          fi
+          # Hard sync to remote branch
+          git -C "$APP_DIR" remote set-url origin "$REPO_SSH"
+          git -C "$APP_DIR" fetch origin "$DEPLOY_BRANCH" --prune
+          git -C "$APP_DIR" reset --hard "origin/$DEPLOY_BRANCH"
+          git -C "$APP_DIR" clean -fd
 
-          node -v
-          npm -v
+      - name: Install PHP dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
 
-          # Frontend build (Vite)
-          npm ci
-          npm run build
+      - name: Install Node dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm ci"
 
-          # Laravel optimize
-          php artisan migrate --force
-          php artisan optimize:clear
+      - name: Build frontend assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm run build"
 
-          php artisan queue:restart
+      - name: Run database migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan migrate --force"
+
+      - name: Optimize Laravel
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan optimize:clear"
+
+      - name: Deploy finished
+        run: echo "Deploy done on server2!"
