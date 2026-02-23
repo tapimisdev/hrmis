@@ -19,7 +19,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "whoami=$(whoami)"
-          echo "HOME=$HOME"
+          # echo "HOME=$HOME"
           pwd
         
       - name: Setup SSH for GitHub (deploy key)
