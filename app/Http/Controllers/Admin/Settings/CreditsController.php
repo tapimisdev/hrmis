@@ -33,6 +33,7 @@ class CreditsController extends Controller
             return view('admin.pages.settings.credits.index', compact('type', 'leave_types'));
         }
 
+
         return view('admin.pages.settings.credits.index', compact('type'));
     }
 

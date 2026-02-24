@@ -105,7 +105,7 @@
                                                 <select id="shift_id" name="shift_id" class="form-select">
                                                     <option value=""> - CHOOSE - </option>
                                                         @foreach($shifts as $shift)
-                                                        <option value="{{ $shift->id }}">{{ strtoupper($shift->name) }}</option>
+                                                            <option value="{{ $shift->id }}">{{ strtoupper($shift->name) }}</option>
                                                         @endforeach
                                                     </select>
                                                 <div class="error-field"></div>
@@ -115,10 +115,14 @@
                                                 <select id="schedule_id" name="schedule_id" class="form-select">
                                                     <option value=""> - CHOOSE - </option>
                                                     @foreach($schedules as $schedule)
-                                                    <option value="{{ $schedule->id }}">{{ strtoupper($schedule->name) }}</option>
+                                                        <option value="{{ $schedule->id }}">{{ strtoupper($schedule->name) }}</option>
                                                     @endforeach
                                                 </select>
-                                                </select>
+                                                <div class="error-field"></div>
+                                            </div>
+                                            <div class="col-12 col-md-6 mb-3">
+                                                <label class="mb-2" for="employment_effectivity_date">Effectivity Date <span class="text-danger">*</span></label>
+                                                <input type="date" name="employment_effectivity_date" id="employment_effectivity_date" class="form-control">
                                                 <div class="error-field"></div>
                                             </div>
                                         </div>
@@ -198,6 +202,11 @@
                                                             <option value="paycheck">Paycheck</option>
                                                             <option value="e-wallet">E-Wallet</option>
                                                         </select>
+                                                        <div class="error-field"></div>
+                                                    </div>
+                                                    <div class="col-12 col-md-6 mb-3">
+                                                        <label class="mb-2" for="salary_effectivity_date">Effectivity Date <span class="text-danger">*</span></label>
+                                                        <input type="date" name="salary_effectivity_date" id="salary_effectivity_date" class="form-control">
                                                         <div class="error-field"></div>
                                                     </div>
                                                 </div>

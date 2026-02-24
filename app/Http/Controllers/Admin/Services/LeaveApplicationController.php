@@ -177,9 +177,9 @@ class LeaveApplicationController extends Controller {
 
         $computation = [
             'showBreakdown' => $showBreakdown,
-            'remaining_balance' => number_format($remaining_balance ?? 0, 2),
-            'deduction' => number_format($toBeDeducted ?? 0, 2),
-            'new_balance' => number_format($new_balance ?? 0, 2),
+            'remaining_balance' => number_format($remaining_balance ?? 0, 3),
+            'deduction' => number_format($toBeDeducted ?? 0, 3),
+            'new_balance' => number_format($new_balance ?? 0, 3),
             'toBeDeductedFromCredits' => $toBeDeductedFromCredits ?? 'N/A',
         ];
 

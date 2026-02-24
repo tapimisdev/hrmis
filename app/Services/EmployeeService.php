@@ -193,7 +193,6 @@ class EmployeeService {
                     'employee_information.date_hired_organization',
                     'employee_information.date_hired_company',
                     'employee_information.biometrics_id',
-                    'employee_information.salary_method',
                     'employee_information.account_status',
                     'employee_information.isDeleted',
                     'employee_information.toUpdatePassword',
@@ -233,6 +232,7 @@ class EmployeeService {
                     'salary.salary_basis',
                     'salary.amount as salary',
                     'salary.daily_rate',
+                    'salary.salary_method',
                     'salary.effectivity_date',
 
                     'shift.shift_id',

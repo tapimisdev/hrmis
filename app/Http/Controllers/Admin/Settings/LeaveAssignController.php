@@ -9,8 +9,11 @@ use Illuminate\Support\Facades\DB;
 class LeaveAssignController extends Controller
 {
     public function index() {
-        $leaves = DB::table('leaves')->get();
+        $leaves = DB::table('leaves')
+            ->orderByDesc('is_cumulative')
+            ->get();
         $assignLeave = DB::table('leaves_settings')->get();
+        
         return view('admin.pages.settings.leaves.assign', compact('leaves', 'assignLeave'));
     }
 
