@@ -12,7 +12,7 @@
         
         <!-- Header -->
         <div class="modal-header modern-header border-bottom">
-          <div class="header-content mb-3">
+          <div class="header-content mb-0">
             <div class="icon-wrapper">
               <i class="text-light" :class="headerIcon"></i>
             </div>

@@ -12,7 +12,7 @@
 
         <!-- Header -->
         <div class="modal-header modern-header border-bottom">
-          <div class="header-content mb-3 d-flex align-items-center">
+          <div class="header-content mb-0 d-flex align-items-center">
             <div class="icon-wrapper me-2">
               <i class="text-light fas fa-clock"></i>
             </div>
