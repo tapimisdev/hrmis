@@ -26,13 +26,17 @@ if (!function_exists('getSetting')) {
     }
 }
 
-if(!function_exists('getPayrollComponents')) {
+if (!function_exists('getPayrollComponents')) {
     function getPayrollComponents(string $type)
     {
-        // return Cache::remember('taxes_modules_cache', 60 * 60, function () {
-            return DB::table('payroll_components')
-                ->where('type', $type)
-                ->get();
-        // });
+        return Cache::remember(
+            'payroll_components_' . $type,
+            60 * 60,
+            function () use ($type) {
+                return DB::table('payroll_components')
+                    ->where('type', $type)
+                    ->get();
+            }
+        );
     }
 }
