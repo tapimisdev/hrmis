@@ -473,7 +473,7 @@ $(function () {
                     },
                     title: {
                         display: true,
-                        text: `Total Employees: ${totalEmployees}`
+                        text: `TOTAL EMPLOYEES: ${totalEmployees}`
                     }
                 }
             }
@@ -483,7 +483,7 @@ $(function () {
         chartInstances.pieChart = new Chart($('#pieChart'), {
             type: 'pie',
             data: {
-                labels: ['Absences', 'Lates', 'Undertimes', 'Discrepancies', 'Leaves', 'Offsets'],
+                labels: ['ABSENCES', 'LATES', 'UNDERTIMES', 'DISCREPANCIES', 'LEAVES', 'OFFSETS'],
                 datasets: [{
                     data: [
                         sum(resultData.topAbsent, 'absences'),
@@ -508,7 +508,7 @@ $(function () {
         chartInstances.doughnutChart = new Chart($('#doughnutChart'), {
             type: 'doughnut',
             data: {
-                labels: ['Lates', 'Undertimes'],
+                labels: ['LATES', 'UNDERTIMES'],
                 datasets: [{
                     data: [
                         sum(resultData.topLate, 'lates'),
@@ -531,7 +531,7 @@ $(function () {
             type: 'bar',
             data: {
                 labels: absences.labels,
-                datasets: [{ label: 'Absences', data: absences.values }]
+                datasets: [{ label: 'TOTAL ABSENCES', data: absences.values }]
             },
             options: {
                 animation: {
@@ -541,13 +541,46 @@ $(function () {
                 responsive: true,
                 plugins: {
                     tooltip: {
+                        bodySpacing: 4,
+                        padding: 10,
+                        displayColors: false,
                         callbacks: {
                             afterLabel(ctx) {
                                 const item = getItemByIndex(resultData.topAbsent, ctx.dataIndex);
                                 if (!item) return '';
+
+                                const rawDates = item.details?.absence_dates || [];
+                                if (!rawDates.length) return 'Absence Dates: None';
+
+                                const formattedLines = formatGroupedDates(rawDates);
+
+                                const tooltip = ctx.chart.tooltip;
+                                const bodyFont = tooltip.options.bodyFont;
+
+                                const canvas = ctx.chart.ctx;
+                                canvas.save();
+                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
+
+                                const linesToMeasure = ['Absence Dates:', ...formattedLines];
+
+                                let maxWidth = 0;
+                                linesToMeasure.forEach(line => {
+                                    const width = canvas.measureText(line).width;
+                                    if (width > maxWidth) maxWidth = width;
+                                });
+
+                                const dashWidth = canvas.measureText('─').width;
+                                const repeatCount = Math.floor(maxWidth / dashWidth);
+
+                                canvas.restore();
+
+                                const dynamicLine = '─'.repeat(repeatCount);
+
                                 return [
-                                    'Absence Dates: ' + formatDates(item.details.absence_dates),
-                                    'Break Out/In Dates: ' + formatDates(item.details.breakOutInDiscrepancy_dates)
+                                    '',
+                                    'DATES:',
+                                    dynamicLine,
+                                    ...formattedLines
                                 ];
                             }
                         }
@@ -563,7 +596,7 @@ $(function () {
             data: {
                 labels: undertimes.labels,
                 datasets: [{
-                    label: 'Undertimes',
+                    label: 'TOTAL UNDERTIME',
                     data: undertimes.values,
                     borderColor: '#e74a3b',
                     backgroundColor: 'rgba(231, 74, 59, 0.2)',
@@ -584,19 +617,59 @@ $(function () {
                 },
                 plugins: {
                     tooltip: {
+                        bodySpacing: 4,
+                        padding: 10,
+                        displayColors: false,
                         callbacks: {
                             afterLabel(ctx) {
                                 const item = getItemByIndex(resultData.topUndertime, ctx.dataIndex);
-                                return item
-                                    ? 'Undertime Dates: ' + formatDates(item.details.undertime_dates)
-                                    : '';
+                                if (!item) return '';
+
+                                const dates = item.details?.undertime_dates || [];
+                                if (!dates.length) return 'Undertime Dates: None';
+
+                                const chunkSize = 5;
+                                const chunks = [];
+
+                                for (let i = 0; i < dates.length; i += chunkSize) {
+                                    chunks.push(dates.slice(i, i + chunkSize).join(', '));
+                                }
+
+                                const tooltip = ctx.chart.tooltip;
+                                const bodyFont = tooltip.options.bodyFont;
+
+                                const canvas = ctx.chart.ctx;
+                                canvas.save();
+                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
+
+                                const linesToMeasure = ['Undertime Dates:', ...chunks];
+
+                                let maxWidth = 0;
+                                linesToMeasure.forEach(line => {
+                                    const width = canvas.measureText(line).width;
+                                    if (width > maxWidth) maxWidth = width;
+                                });
+
+                                const dashWidth = canvas.measureText('─').width;
+                                const repeatCount = Math.floor(maxWidth / dashWidth);
+
+                                canvas.restore();
+
+                                const dynamicLine = '─'.repeat(repeatCount);
+                                const rawDates = item.details?.undertime_dates || [];
+                                const formattedLines = formatGroupedDates(rawDates);
+                                return [
+                                    '',
+                                    'DATES:',
+                                    dynamicLine,
+                                    ...formattedLines
+                                ];
                             }
                         }
                     }
                 }
             }
         });
-
 
         // LINE – Lates (with dates)
         const lates = extract(resultData.topLate, 'lates');
@@ -605,12 +678,12 @@ $(function () {
             data: {
                 labels: lates.labels,
                 datasets: [{
-                    label: 'Lates',
+                    label: 'TOTAL LATES',
                     data: lates.values,
                     borderColor: '#4e73df',
                     backgroundColor: 'rgba(78, 115, 223, 0.2)',
-                    tension: 0.3,          // smooth curve (0 = straight lines)
-                    fill: true,            // fill area under line
+                    tension: 0.3,          
+                    fill: true,           
                     pointBackgroundColor: '#4e73df',
                     pointBorderColor: '#fff',
                     pointRadius: 4,
@@ -626,10 +699,54 @@ $(function () {
                 },
                 plugins: {
                     tooltip: {
+                        bodySpacing: 4,
+                        padding: 10,
+                        displayColors: false,
                         callbacks: {
                             afterLabel(ctx) {
                                 const item = getItemByIndex(resultData.topLate, ctx.dataIndex);
-                                return item ? 'Late Dates: ' + formatDates(item.details.late_dates) : '';
+                                if (!item) return '';
+
+                                const dates = item.details?.late_dates || [];
+                                if (!dates.length) return 'Late Dates: None';
+
+                                const chunkSize = 5;
+                                const chunks = [];
+
+                                for (let i = 0; i < dates.length; i += chunkSize) {
+                                    chunks.push(dates.slice(i, i + chunkSize).join(', '));
+                                }
+
+                                const tooltip = ctx.chart.tooltip;
+                                const bodyFont = tooltip.options.bodyFont;
+
+                                const canvas = ctx.chart.ctx;
+                                canvas.save();
+                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
+
+                                const linesToMeasure = ['Late Dates:', ...chunks];
+
+                                let maxWidth = 0;
+                                linesToMeasure.forEach(line => {
+                                    const width = canvas.measureText(line).width;
+                                    if (width > maxWidth) maxWidth = width;
+                                });
+
+                                const dashWidth = canvas.measureText('─').width;
+                                const repeatCount = Math.floor(maxWidth / dashWidth);
+
+                                canvas.restore();
+
+                                const dynamicLine = '─'.repeat(repeatCount);
+                                const rawDates = item.details?.late_dates || [];
+                                const formattedLines = formatGroupedDates(rawDates);
+                                
+                                return [
+                                    '',
+                                    'DATES:',
+                                    dynamicLine,
+                                    ...formattedLines
+                                ];
                             }
                         }
                     }
@@ -637,24 +754,59 @@ $(function () {
             }
         });
 
-
-
         // BAR – Leaves
         const leaves = extract(resultData.topLeave, 'leaves');
         chartInstances.barChartLeaves = new Chart($('#barChartLeaves'), {
             type: 'bar',
             data: {
                 labels: leaves.labels,
-                datasets: [{ label: 'Leaves', data: leaves.values }]
+                datasets: [{ label: 'TOTAL LEAVES', data: leaves.values }]
             },
             options: {
                 responsive: true,
                 plugins: {
                     tooltip: {
+                        bodySpacing: 4,
+                        padding: 10,
+                        displayColors: false,
                         callbacks: {
                             afterLabel(ctx) {
                                 const item = getItemByIndex(resultData.topLeave, ctx.dataIndex);
-                                return item ? 'Leave Dates: ' + formatDates(item.details.leave_dates) : '';
+                                if (!item) return '';
+
+                                const rawDates = item.details?.leave_dates || [];
+                                if (!rawDates.length) return 'Leave Dates: None';
+
+                                const formattedLines = formatGroupedDates(rawDates);
+
+                                const tooltip = ctx.chart.tooltip;
+                                const bodyFont = tooltip.options.bodyFont;
+
+                                const canvas = ctx.chart.ctx;
+                                canvas.save();
+                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
+
+                                const linesToMeasure = ['Leave Dates:', ...formattedLines];
+
+                                let maxWidth = 0;
+                                linesToMeasure.forEach(line => {
+                                    const width = canvas.measureText(line).width;
+                                    if (width > maxWidth) maxWidth = width;
+                                });
+
+                                const dashWidth = canvas.measureText('─').width;
+                                const repeatCount = Math.floor(maxWidth / dashWidth);
+
+                                canvas.restore();
+
+                                const dynamicLine = '─'.repeat(repeatCount);
+
+                                return [
+                                    '',
+                                    'DATES:',
+                                    dynamicLine,
+                                    ...formattedLines
+                                ];
                             }
                         }
                     }
@@ -668,16 +820,53 @@ $(function () {
             type: 'bar',
             data: {
                 labels: offsets.labels,
-                datasets: [{ label: 'Offsets', data: offsets.values }]
+                datasets: [{ label: 'TOTAL OFFSETS', data: offsets.values }]
             },
             options: {
                 responsive: true,
                 plugins: {
                     tooltip: {
+                        bodySpacing: 4,
+                        padding: 10,
+                        displayColors: false,
                         callbacks: {
                             afterLabel(ctx) {
                                 const item = getItemByIndex(resultData.topOffset, ctx.dataIndex);
-                                return item ? 'Offset Dates: ' + formatDates(item.details.offset_dates) : '';
+                                if (!item) return '';
+
+                                const rawDates = item.details?.offset_dates || [];
+                                if (!rawDates.length) return 'Offset Dates: None';
+
+                                const formattedLines = formatGroupedDates(rawDates);
+
+                                const tooltip = ctx.chart.tooltip;
+                                const bodyFont = tooltip.options.bodyFont;
+
+                                const canvas = ctx.chart.ctx;
+                                canvas.save();
+                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
+
+                                const linesToMeasure = ['Offset Dates:', ...formattedLines];
+
+                                let maxWidth = 0;
+                                linesToMeasure.forEach(line => {
+                                    const width = canvas.measureText(line).width;
+                                    if (width > maxWidth) maxWidth = width;
+                                });
+
+                                const dashWidth = canvas.measureText('─').width;
+                                const repeatCount = Math.floor(maxWidth / dashWidth);
+
+                                canvas.restore();
+
+                                const dynamicLine = '─'.repeat(repeatCount);
+
+                                return [
+                                    '',
+                                    'DATES:',
+                                    dynamicLine,
+                                    ...formattedLines
+                                ];
                             }
                         }
                     }
@@ -691,16 +880,53 @@ $(function () {
             type: 'bar',
             data: {
                 labels: breakOut.labels,
-                datasets: [{ label: 'Break Out/In', data: breakOut.values }]
+                datasets: [{ label: 'TOTAL BREAKIN/BREAKOUT DISCREPANCIES', data: breakOut.values }]
             },
             options: {
                 responsive: true,
                 plugins: {
                     tooltip: {
+                        bodySpacing: 4,
+                        padding: 10,
+                        displayColors: false,
                         callbacks: {
                             afterLabel(ctx) {
                                 const item = getItemByIndex(resultData.topBreakOutInDiscrepancies, ctx.dataIndex);
-                                return item ? 'Break Out/In Dates: ' + formatDates(item.details.breakOutInDiscrepancy_dates) : '';
+                                if (!item) return '';
+
+                                const rawDates = item.details?.breakOutInDiscrepancy_dates || [];
+                                if (!rawDates.length) return 'Break Out/In Dates: None';
+
+                                const formattedLines = formatGroupedDates(rawDates);
+
+                                const tooltip = ctx.chart.tooltip;
+                                const bodyFont = tooltip.options.bodyFont;
+
+                                const canvas = ctx.chart.ctx;
+                                canvas.save();
+                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
+
+                                const linesToMeasure = ['Break Out/In Dates:', ...formattedLines];
+
+                                let maxWidth = 0;
+                                linesToMeasure.forEach(line => {
+                                    const width = canvas.measureText(line).width;
+                                    if (width > maxWidth) maxWidth = width;
+                                });
+
+                                const dashWidth = canvas.measureText('─').width;
+                                const repeatCount = Math.floor(maxWidth / dashWidth);
+
+                                canvas.restore();
+
+                                const dynamicLine = '─'.repeat(repeatCount);
+
+                                return [
+                                    '',
+                                    'DATES:',
+                                    dynamicLine,
+                                    ...formattedLines
+                                ];
                             }
                         }
                     }
@@ -715,6 +941,31 @@ $(function () {
 
     // Load charts on page load with default monthYear
     loadCharts(defaultMonthYear);
+
+    function formatGroupedDates(dates) {
+        if (!dates || !dates.length) return [];
+
+        const grouped = {};
+
+        dates.forEach(dateStr => {
+            const date = new Date(dateStr);
+
+            const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+            const day = date.getDate();
+
+            if (!grouped[month]) {
+                grouped[month] = [];
+            }
+
+            grouped[month].push(day);
+        });
+
+        // Convert to formatted lines
+        return Object.entries(grouped).map(([month, days]) => {
+            days.sort((a, b) => a - b);
+            return `${month} ${days.join(', ')}`;
+        });
+    }
 });
 </script>
 @endsection

@@ -10,7 +10,7 @@
 
       {{-- Header --}}
       <div class="modal-header modern-header">
-        <div class="header-content border-bottom pb-2">
+        <div class="header-content border-bottom pb-3">
           <div class="icon-wrapper">
             <i class="{{ $icon }} text-light"></i>
           </div>
@@ -21,7 +21,7 @@
 
         <button
           type="button"
-          class="btn-close btn-close-white"
+          class="btn-close btn-close-white btn-close-action"
           data-bs-dismiss="modal"
           aria-label="Close"></button>
       </div>

@@ -23,7 +23,7 @@ class CancelOffsetApiController extends Controller
                 ->leftJoin('offset_dates as od', 'oa.id', '=', 'od.offset_application_id')
                 ->where('oa.employee_no', $validated['employee_no'])
                 ->where('od.date', $validated['date'])
-                ->where('oa.status', 'approved')
+                ->whereIn('oa.status', ['approved', 'pending'])  
                 ->where('od.isActive', true)
                 ->select(
                     'od.id as offset_date_id',

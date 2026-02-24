@@ -302,6 +302,10 @@ class ComputationService
             $lateUnderC      = $toCents($late_undertime_amount);
             $earningsC       = $toCents($total_earnings);
 
+            $hmo = $this->getHmo($employee_no);
+
+            $hmoC = $toCents($hmo) ?? 0;
+
             // Gross = basic - absences - late/undertime + earnings
             $grossC = $basicC - $absencesC - $lateUnderC + $earningsC;
 
@@ -317,7 +321,7 @@ class ComputationService
             // 5% (no threshold) — direct on gross
             $ewt5C = $this->five_percent ? $percentOfCents($grossC, 0.05) : 0;
 
-            $totalDedC = $ewt2C + $ewt3C + $ewt5C;
+            $totalDedC = $ewt2C + $ewt3C + $ewt5C + $hmoC;
             $netC      = $grossC - $totalDedC;
 
             // Convert back to pesos with 2 decimals
@@ -329,6 +333,7 @@ class ComputationService
             $percentage_tax_3prct = $fromCents($ewt3C);
             $tax_ewt_5prct        = $fromCents($ewt5C);
 
+            $hmo                  = $fromCents($hmoC);
             $total_deductions     = $fromCents($totalDedC);
             $net                  = $fromCents($netC);
 
@@ -354,6 +359,7 @@ class ComputationService
                 EWT 2%              : {$ewt_2prct}
                 Percentage Tax 3%   : {$percentage_tax_3prct}
                 Tax EWT 5%          : {$tax_ewt_5prct}
+                hmo                 : {$hmo}
                 Net Pay             : {$net}
                 =============================================
             ");
@@ -382,6 +388,8 @@ class ComputationService
                 'tax_ewt_5'         => $tax_ewt_5prct,
 
                 'w_tax'             => $ewt_2prct + $percentage_tax_3prct + $tax_ewt_5prct,
+
+                'hmo'               => $hmo,
 
                 'total_deductions'  => $total_deductions,
                 'total_earnings'    => $total_earnings,
@@ -568,6 +576,7 @@ class ComputationService
                 'users.id as user_id'
             )
             ->where('employee_organization.employee_no', $this->employee_no)
+            ->orderByDesc('employee_organization.effectivity_date')
             ->first();
 
         if (!$employee_information) {
@@ -809,5 +818,37 @@ class ComputationService
             'created_at'      => now(),
             'updated_at'      => now(),
         ]);
+    }
+
+    private function getHmo($employee_no)
+    {
+        [$year, $month] = array_map('intval', explode('-', $this->payroll_date));
+
+        // Skip deductions if cutoff doesn't match
+        if ($this->cutoff != $this->deduction_applied_on && $this->deduction_applied_on !== 'both') {
+            return 0;
+        }
+
+        $amount = DB::table('module_tab_employees as mte')
+            ->where('mte.module_tab_id', 13)
+            ->where('mte.employee_no', $employee_no)
+            ->where('mte.year', $year)
+            ->where('mte.month', $month)
+            ->value('amount');
+
+        // If null or empty, return 0.00
+        if (is_null($amount)) {
+            return 0.00;
+        }
+
+        // Convert to float and round to 2 decimals
+        $amount = round((float) $amount, 2);
+
+        // If applied on both cutoffs, divide by 2
+        if ($this->deduction_applied_on === 'both') {
+            return round($amount / 2, 2);
+        }
+
+        return $amount;
     }
 }

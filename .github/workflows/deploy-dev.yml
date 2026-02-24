@@ -1,70 +1,86 @@
-name: Deploy (Self-hosted)
+name: Deploy Testing (Local)
 
 on:
   push:
     branches: [develop]
 
+concurrency:
+  group: deploy-orbit-testing
+  cancel-in-progress: true
+
 jobs:
-  deploy:
-    runs-on: [self-hosted, 'develop']
-
+  deploy_testing:
+    runs-on: [self-hosted, orbit-testing]
+    env:
+      APP_DIR: /var/app/orbit
+      CONTAINER: orbit
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
 
-      - name: 🧩 Pick path by branch
-        id: pick
+      - name: Show server details
         shell: bash
         run: |
-          if [ "${GITHUB_REF_NAME}" = "develop" ]; then
-            echo "dir=/var/www/html/hris" >> "$GITHUB_OUTPUT"
-          else
-            echo "dir=/var/www/html/hris" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: 🚀 Deploy locally on server
+          echo "=============================="
+          echo "🚀 Deploy running on:"
+          echo "Hostname: $(hostname)"
+          echo "Public/Private IP:"
+          hostname -I
+          echo "=============================="
+      - name: Setup SSH for GitHub (deploy key)
         shell: bash
         run: |
           set -euo pipefail
-
-          DIR="${{ steps.pick.outputs.dir }}"
-          echo "Deploying to: $DIR"
-
-          cd "$DIR"
-          git fetch --all
-          git reset --hard "origin/${GITHUB_REF_NAME}"
-
-          # Backend deps
-          composer install --no-interaction --no-dev --optimize-autoloader
-
-          # --- NVM (make node/npm available) ---
-          export NVM_DIR="$HOME/.nvm"
-          if [ -s "$NVM_DIR/nvm.sh" ]; then
-            . "$NVM_DIR/nvm.sh"
+          test -f /root/.ssh/orbit_deploy_key || (echo "Missing /root/.ssh/orbit_deploy_key" && exit 1)
+          chmod 700 /root/.ssh
+          chmod 600 /root/.ssh/orbit_deploy_key
+          if [ ! -f /root/.ssh/known_hosts ]; then
+            ssh-keyscan -H github.com > /root/.ssh/known_hosts
           else
-            echo "❌ nvm.sh not found at $NVM_DIR/nvm.sh"
-            echo "If nvm is installed elsewhere, set NVM_DIR accordingly."
-            exit 1
+            grep -q "github.com" /root/.ssh/known_hosts || ssh-keyscan -H github.com >> /root/.ssh/known_hosts
           fi
+          chmod 644 /root/.ssh/known_hosts
+          git config --global core.sshCommand "ssh -i /root/.ssh/orbit_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/root/.ssh/known_hosts"
 
-          # Use a specific Node version (recommended) OR the repo's .nvmrc if you have one
-          if [ -f ".nvmrc" ]; then
-            nvm install
-            nvm use
-          else
-            nvm install 20
-            nvm use 20
-          fi
+      - name: Switch origin to SSH (workspace)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git remote set-url origin git@github.com:${{ github.repository }}.git
+          git fetch origin develop
 
-          node -v
-          npm -v
+      - name: Update live code (reset to origin/develop)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$APP_DIR/.git" || (echo "ERROR: $APP_DIR is not a git repo (missing .git)" && exit 1)
+          git config --global --add safe.directory "$APP_DIR"
+          cd "$APP_DIR"
+          git remote set-url origin git@github.com:${{ github.repository }}.git
+          git fetch origin develop
+          git reset --hard origin/develop
+          git clean -fd
 
-          # Frontend build (Vite)
-          npm ci
-          npm run build
+      - name: Install PHP dependencies
+        shell: bash
+        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && composer install --no-interaction --prefer-dist --optimize-autoloader"
 
-          # Laravel optimize
-          php artisan migrate --force
-          php artisan optimize:clear
+      - name: Install Node dependencies
+        shell: bash
+        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm ci"
 
-          php artisan queue:restart
+      - name: Build frontend assets
+        shell: bash
+        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm run build"
+
+      - name: Run database migrations
+        shell: bash
+        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan migrate --force"
+        
+      - name: Optimize Laravel
+        shell: bash
+        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan optimize:clear"
+
+      - name: Deploy finished
+        run: echo "Deploy done on testing server!"

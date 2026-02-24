@@ -16,7 +16,6 @@
                     <th>#</th>
                     <th>Employee No</th>
                     <th>Name</th>
-                    <th>Date(s)</th>
                     <th>Status</th>
                     <th style="width: 120px">Action</th>
                 </tr>
@@ -39,17 +38,13 @@
                 { data: "DT_RowIndex", name: 'index' },
                 { data: "employee_no", name: 'employee_no' },
                 { data: "name", name: 'name' },
-                { data: "date", name: 'date' },
                 { data: "status", name: 'status' },
                 { data: "actions", name: 'actions', orderable: false, searchable: false },
             ],
             "columnDefs": [
                 {
-                    targets: "_all",
-                    className: "min-table-width",
-                    render: function(data, type, row, meta) {
-                        return data ?? "";
-                    }
+                    targets: [1, 2, 3, 4],
+                    className: 'min-table-width'
                 }
             ],
             "scrollX": true,

@@ -71,26 +71,26 @@ class PayrollService
         $this->cutoff = $payload['cutoff'] ?? null;
         $this->group_id = $payload['group_id']; // can be 'custom'
 
-        $latestOrg = DB::table('employee_organization as eo')
+       $latestOrg = DB::table('employee_organization as eo')
             ->select('eo.*')
             ->joinSub(
                 DB::table('employee_organization')
-                    ->selectRaw('employee_no, MAX(created_at) as max_created_at')
+                    ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
                     ->groupBy('employee_no'),
                 'mx',
                 function ($join) {
                     $join->on('eo.employee_no', '=', 'mx.employee_no')
-                        ->on('eo.created_at', '=', 'mx.max_created_at');
+                        ->on('eo.effectivity_date', '=', 'mx.max_effectivity_date');
                 }
             )
             ->joinSub(
                 DB::table('employee_organization')
-                    ->selectRaw('employee_no, created_at, MAX(id) as max_id')
-                    ->groupBy('employee_no', 'created_at'),
+                    ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
+                    ->groupBy('employee_no', 'effectivity_date'),
                 'mx2',
                 function ($join) {
                     $join->on('eo.employee_no', '=', 'mx2.employee_no')
-                        ->on('eo.created_at', '=', 'mx2.created_at')
+                        ->on('eo.effectivity_date', '=', 'mx2.effectivity_date')
                         ->on('eo.id', '=', 'mx2.max_id');
                 }
             );

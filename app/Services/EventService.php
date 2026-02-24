@@ -64,9 +64,26 @@ class EventService {
 
     public function saveReadNotification($request)
     {
-        $notificationId = $request->notification_id;
         $userId = $request->user_id;
         $now = now();
+        if ($request->isMarkAllRead == true) {
+
+            DB::table('notification_reads')
+                ->where('user_id', $userId)
+                ->update([
+                    'is_read' => 1,
+                    'read_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+            return [
+                'status' => 'success',
+                'message' => 'All notifications marked as read.',
+                'read_at' => $now,
+            ];
+        }
+
+        $notificationId = $request->notification_id;
 
         DB::table('notification_reads')->updateOrInsert(
             [

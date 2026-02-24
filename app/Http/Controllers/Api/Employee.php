@@ -657,7 +657,6 @@ class Employee extends Controller
     public function saveReadNotification(Request $request)
     {
         $data = $this->EventService->saveReadNotification($request);
-
         return response()->json($data);
     }
 }

@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreObsRequest;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Http\Controllers\Admin\Services\LeaveApplicationController as UpdateCreditsController;
 use App\Services\EventService;
 use App\Events\NotificationEvents;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\User;
 use Carbon\Carbon;
 
 class ObsController extends Controller
@@ -36,7 +38,7 @@ class ObsController extends Controller
     {
         if (request()->ajax()) {
 
-            $data = $this->applicationService->getRawData('obs');
+            $data = $this->applicationService->getRawData('obs');            
             return $this->datatable($data);
         }
 
@@ -49,7 +51,7 @@ class ObsController extends Controller
     public function create()
     {
         $myId = Auth::id();
-        $data = $this->applicationService->getData('leave');
+        $data = $this->applicationService->getData(['leave', 'offset', 'obs', 'special_order']);
         $approvers = $data['approvers'];
         $approvers = $approvers->map(function ($collection) use ($myId) {
             return $collection->reject(function ($approver) use ($myId) {
@@ -68,9 +70,17 @@ class ObsController extends Controller
     public function store(StoreObsRequest $request)
     {
         $validatedData = $request->validated();
+        $isDirectlyApproved = $validatedData['isDirectlyApproved'] ?? false;
 
-        $user = Auth::user()->load('employeeInformation');
-        $employee_no = $user->toArray()['employee_information']['employee_no'];
+        if(!empty($validatedData['user_id'])) {
+            $user = User::with('employeeInformation')->findOrFail($validatedData['user_id']);
+            $employee_no = $user->employeeInformation->employee_no;
+            $user_id = $user->id;
+        } else { 
+            $user = Auth::user()->load('employeeInformation');
+            $employee_no = $user->toArray()['employee_information']['employee_no'];
+            $user_id = Auth::user()->id;
+        }
 
         DB::beginTransaction();
 
@@ -83,61 +93,46 @@ class ObsController extends Controller
             //     ], 500); 
             // }
 
-            $application_no = generateApplicationNo('obs_applications', 'PSL');
-            
+            $datesInput = $validatedData['selectedDates'];
+
+            if (is_string($datesInput)) {
+                $dates = json_decode($datesInput, true);
+            } elseif (is_array($datesInput)) {
+                $dates = $datesInput;
+            } else {
+                $dates = [];
+            }
+
+            // $data = $this->applicationService->getData(['obs']);
             // $levels = array_keys($data['approvers']->toArray() ?? []) ?? [];
             // $approvers = $validatedData['approvers'];
 
-            $data = $this->applicationService->getData(['leave', 'offset', 'obs']);
             $applications = $data['applications'] ?? [];
 
-            $dateFrom = Carbon::parse($validatedData['date_from']);
-            $dateTo = Carbon::parse($validatedData['date_to']);
+            $application_no = generateApplicationNo('obs_applications', 'PSL');
 
-            // Find the first matching application in the date range
-            $matchingApp = collect($applications)->first(function ($app) use ($dateFrom, $dateTo) {
-                $appDate = isset($app->date) ? $app->date : ($app['date'] ?? null);
+            $name = 'Pass Slip';
 
-                if (!$appDate) return false;
-
-                $appDate = Carbon::parse($appDate);
-
-                return $appDate->between($dateFrom, $dateTo);
-            });
-
-            if ($matchingApp) {
-                $title = isset($matchingApp->title) ? $matchingApp->title : ($matchingApp['title'] ?? 'application');
-
-                return response()->json([
-                    'status' => 'error',
-                    'message' => "The date of pass slip was already taken for {$title}, unable to submit application."
-                ]);
-            }
-                        
-
-            // Insert obs record
-            $obsId = DB::table('obs_applications')->insertGetId([
+            $applicationID = DB::table('obs_applications')->insertGetId([
                 'application_no'     => $application_no,
-                'user_id'            => Auth::user()->id,
+                'name'               => $name,
+                'user_id'            => $user_id,
                 'employee_no'        => $employee_no,
-                'date_from'          => $validatedData['date_from'],
-                'date_to'            => $validatedData['date_to'],
-                'time_out'           => $validatedData['time_out'] ?? null,
-                'time_in'            => $validatedData['time_in'] ?? null,
-                'destination'        => $validatedData['destination'],
-                'purpose'            => $validatedData['purpose'],
-                'mode_of_transport'  => $validatedData['mode_of_transport'] ?? null,
-                'estimated_expense'  => $validatedData['estimated_expense'] ?? 0,
-                'charge_to'          => $validatedData['charge_to'] ?? null,
-                'remarks'            => $validatedData['remarks'] ?? null,
-                'status'             => 'pending',
+                'reason'             => $validatedData['reason'],
+                'status'             =>  $isDirectlyApproved ? 'approved' : 'pending',
                 'level'              => 1,
                 // 'levels'             => json_encode($levels),
-                'created_by'         => Auth::user()->id,
-                'updated_by'         => Auth::user()->id,
                 'created_at'         => now(),
                 'updated_at'         => now(),
             ]);
+
+            foreach($dates as $item) {
+                DB::table('obs_dates')->insertGetId([
+                    'obs_application_id' => $applicationID,
+                    'date' => $item['date'],
+                    'shift'=> $item['shift'],
+                ]);
+            }
 
             // Handle multiple attachments (if any)
             if ($request->hasFile('attachments')) {
@@ -147,7 +142,7 @@ class ObsController extends Controller
                     $attachmentPath = $file->store($path, 'public');
 
                     DB::table('obs_attachments')->insert([
-                        'obs_applications_id'     => $obsId,
+                        'obs_applications_id'     => $applicationID,
                         'file_path'  => $attachmentPath,
                         'file_name'  => $file->getClientOriginalName(),
                         'file_type'  => $file->getMimeType(),
@@ -160,7 +155,7 @@ class ObsController extends Controller
             // foreach ($approvers as $level => $approverList) {
             //     foreach ($approverList as $userId) {
             //         DB::table('obs_approvals')->insertGetId([
-            //             'obs_applications_id' => $obsId,
+            //             'obs_applications_id' => $applicationID,
             //             'user_id'              => $userId,
             //             'level'                => $level,
             //             'status'               => 'pending',
@@ -169,14 +164,21 @@ class ObsController extends Controller
             // }
 
             $sender = ucwords(Auth::user()->name);
-            $payload = [
-                'type' => 'application',
-                'sender' => $sender,
-                'receiver' => 'admins',
-                'message' => '%b' . $sender . '%b filed a pass slip application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => url()->route('services.pass_slip.show', ['application' => $obsId])
-            ];
-            $this->EventService->pushNotification($payload);
+
+            if($isDirectlyApproved) {
+                app(UpdateCreditsController::class)->updateCredits($applicationID);
+            }
+
+            if(!$isDirectlyApproved) {
+                $payload = [
+                    'type' => 'application',
+                    'sender' => $sender,
+                    'receiver' => 'admins',
+                    'message' => '%b' . $sender . '%b filed a pass slip application (%bi' . strtoupper($application_no) . ') %bi',
+                    'link' => url()->route('services.pass_slip.show', ['application' => $applicationID])
+                ];
+                $this->EventService->pushNotification($payload);
+            }
 
             DB::commit();
 
@@ -242,61 +244,55 @@ class ObsController extends Controller
             ->editColumn('name', function($row) {
                 return $row->employee_name;
             })
-            ->addColumn('date_range', function ($row) {
-                    if ($row->date_from == $row->date_to) {
-                        // Single day leave
-                        return '<span class="badge rounded-pill bg-primary">'
-                                . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
-                            '</span>';
-                    } else {
-                        // Multi-day leave
-                        return '<span class="badge rounded-pill bg-primary me-1">'
-                                . \Carbon\Carbon::parse($row->date_from)->format('M d, Y') .
-                            '</span>' . 'to ' .
-                            '<span class="badge rounded-pill bg-success">'
-                                . \Carbon\Carbon::parse($row->date_to)->format('M d, Y') .
-                            '</span>';
-                    }
-                })
-                ->addColumn('status', function ($row) {
-                    $status = strtolower($row->status);
+            ->addColumn('date', function ($row) {
+                $dates = explode('|', $row->dates);
+                $newDate = '';
 
-                    $badgeClass = match ($status) {
-                        'pending'   => 'warning',
-                        'approved'  => 'success',
-                        'rejected'  => 'dark',
-                        'cancelled' => 'danger',
-                        default     => 'info',
-                    };
+                foreach($dates as $date) {
+                    $newDate .= formatDateRanges($date) . '<br>';
+                }
 
-                    return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
-                })
-                ->addColumn('actions', function ($row) {
-                    $buttons = '
-                        <div class="d-flex">
-                            <button data-id="' . $row->id . '" 
-                                class="btn btn-primary btn-sm ms-1 show-button" 
-                                title="Show">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
+                return $newDate;
+            })
+            ->addColumn('status', function ($row) {
+                $status = strtolower($row->status);
+
+                $badgeClass = match ($status) {
+                    'pending'   => 'warning',
+                    'approved'  => 'success',
+                    'rejected'  => 'dark',
+                    'cancelled' => 'danger',
+                    default     => 'info',
+                };
+
+                return '<span class="badge rounded-pill bg-' . $badgeClass . '">' . ucfirst($status) . '</span>';
+            })
+            ->addColumn('actions', function ($row) {
+                $buttons = '
+                    <div class="d-flex">
+                        <button data-id="' . $row->id . '" 
+                            class="btn btn-primary btn-sm ms-1 show-button" 
+                            title="Show">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                ';
+
+                // Only show cancel if status is pending or approved
+                if (in_array($row->status, ['pending'])) {
+                    $buttons .= '
+                        <button data-id="' . $row->id . '" 
+                            class="btn btn-danger btn-sm ms-1 cancel-button" 
+                            title="Cancel">
+                            <i class="fa-solid fa-ban"></i>
+                        </button>
                     ';
+                }
 
-                    // Only show cancel if status is pending or approved
-                    if (in_array($row->status, ['pending'])) {
-                        $buttons .= '
-                            <button data-id="' . $row->id . '" 
-                                class="btn btn-danger btn-sm ms-1 cancel-button" 
-                                title="Cancel">
-                                <i class="fa-solid fa-ban"></i>
-                            </button>
-                        ';
-                    }
+                $buttons .= '</div>';
 
-                    $buttons .= '</div>';
-
-                    return $buttons;
-                })
-                ->rawColumns(['actions', 'status', 'date_range'])
-                ->make(true);
+                return $buttons;
+            })
+            ->rawColumns(['actions', 'status', 'date'])
+            ->make(true);
     }
 }

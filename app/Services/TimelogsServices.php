@@ -487,6 +487,7 @@ class TimelogsServices {
 
         return [
             'is_leave' => $isLeave,
+            'shift'    => $leave->shift ?? '',
             'status'   => $status
         ];
     }
@@ -502,7 +503,6 @@ class TimelogsServices {
             ->where('ld.isActive', true)
             ->whereDate('ld.date', $date)
             ->first();
-        
 
         if ($offset) {
             $isOffset = true;
@@ -514,6 +514,7 @@ class TimelogsServices {
 
         return [
             'is_offset' => $isOffset,
+            'shift'    => $offset->shift ?? '',
             'status'   => $status
         ];
     }
@@ -541,10 +542,38 @@ class TimelogsServices {
 
         return [
             'is_so' => $isSO,
+            'shift'    => $special_order->shift ?? '',
             'status'   => $status
         ];
     }
 
+    public function checkIfPassSlip($date, $userId)
+    {
+        $is_pass_slip = false;
+        $status = 'pending pass slip';
+
+        $pass_slip = DB::table('obs_applications as soa')
+            ->leftJoin('obs_dates as sod', 'soa.id', '=', 'sod.obs_application_id')
+            ->where('soa.user_id', $userId)
+            ->where('sod.isActive', true)
+            ->whereDate('sod.date', $date)
+            ->first();
+        
+
+        if ($pass_slip) {
+            $is_pass_slip = true;
+
+            if ($pass_slip->status === 'approved') {
+                $status = 'pass slip';
+            }
+        }
+
+        return [
+            'is_pass_slip' => $is_pass_slip,
+            'shift'    => $pass_slip->shift ?? '',
+            'status'   => $status
+        ];
+    }
 
     /**
      * Check and compute overtime for a given user and date.
@@ -655,144 +684,174 @@ class TimelogsServices {
      *                     ]
      */
 
-    public function computeTardinessAndUndertime($date, array $suspension = null)
+    public function computeTardinessAndUndertime($date, array $suspension = null, $leave = null, $offset = null, $so = null, $pass_slip = null)
     {
         $shift = DB::table('shifts')->where('id', $date['shift_id'])->first();
         if (!$shift) return null;
 
-
         $workDate = Carbon::parse($date['date']);
-        $breakDurationMins = $shift->breaktime_hours * 60;
-        $shiftDurationHours = $shift->working_hours + $shift->breaktime_hours;
-        $requiredMinutes = $shift->working_hours * 60;
 
-        $combineWithDate = fn($time) => $time
+        $requiredMinutes      = $shift->working_hours * 60;
+        $breakDurationMins    = $shift->breaktime_hours * 60;
+        $shiftDurationHours   = $shift->working_hours + $shift->breaktime_hours;
+
+        $combine = fn($time) => $time
             ? Carbon::parse($time)->setDate($workDate->year, $workDate->month, $workDate->day)
             : null;
 
-        $credit = 0;
-
-        // --- Shift times ---
-        $shiftEarliestIn  = $combineWithDate($shift->earliest_time);
-        $shiftStart       = $combineWithDate($shift->start_time);
-        $shiftBreakOut    = $combineWithDate($shift->break_out_time);
-        $shiftBreakIn     = $combineWithDate($shift->break_in_time);
-        $shiftEnd         = $combineWithDate($shift->end_time);
+        // Shift Times
+        $shiftEarliestIn  = $combine($shift->earliest_time);
+        $shiftStart       = $combine($shift->start_time);
+        $shiftBreakOut    = $combine($shift->break_out_time);
+        $shiftBreakIn     = $combine($shift->break_in_time);
+        $shiftEnd         = $combine($shift->end_time);
         $baseStart        = $shiftStart;
 
-        // --- Logs ---
-        $logIn       = $combineWithDate($date['time_in']);
-        $logOut      = $combineWithDate($date['time_out']);
-        $logBreakOut = $combineWithDate($date['break_out']);
-        $logBreakIn  = $combineWithDate($date['break_in']);
+        // Logs
+        $logIn       = $combine($date['time_in']);
+        $logOut      = $combine($date['time_out']);
+        $logBreakOut = $combine($date['break_out']);
+        $logBreakIn  = $combine($date['break_in']);
 
         /* ===================================================
-            FLEXI HANDLING
+            FLEXI ADJUSTMENT
         =================================================== */
         if ($shift->is_flexible && $logIn) {
-            Log::info('FLEXIBLE SHIFT: Adjusting base start and shift end.');
 
-            // Flexi start base
             $baseStart = $logIn->copy();
 
-            // Adjust if earlier/later than allowed
             if ($shiftEarliestIn && $logIn->lt($shiftEarliestIn)) {
                 $baseStart = $shiftEarliestIn;
-                Log::info('Flexi: logIn earlier than earliest -> baseStart adjusted.');
             } elseif ($shiftStart && $logIn->gt($shiftStart)) {
                 $baseStart = $shiftStart;
-                Log::info('Flexi: logIn later than start -> baseStart adjusted.');
             }
 
-            // Adjust shift end accordingly
             $shiftEnd = $baseStart->copy()->addHours($shiftDurationHours);
         }
 
-
-        /* ===================================================
-            INITIALIZATION
-        =================================================== */
+        // Initialize
         $amTardiness = $amUndertime = $pmTardiness = $pmUndertime = 0;
+        $totalTardiness = $totalUndertime = $totalLostMinutes = 0;
         $actualWorkMinutes = 0;
+        $credit = 0;
         $remark = null;
 
-        $suspensionType = $suspension['type'] ?? null;
+        $suspensionType  = $suspension['type'] ?? null;
         $suspensionShift = $suspension['shift'] ?? null;
 
         /* ===================================================
-            MORNING SUSPENDED
+            HALF DAY SUSPENSION
         =================================================== */
-        if ($suspension && $suspensionType === 'half_day' && $suspensionShift === 'morning') {
-            Log::info('MORNING HALF-DAY SUSPENSION detected.');
+        if ($suspension && $suspensionType === 'half_day') {
 
-            $requiredMinutes /= 2;
-            $breakDurationMins = 0; // Ignore breaktime for halfday
-
-            if ($logIn && $logOut) {
-                $pmTardiness = $this->computeTardiness($logIn, $shiftBreakIn);
-
-                if ($logOut->gt($shiftEnd)) $logOut = $shiftEnd->copy();
-
-                $workedMinutes = $logIn->diffInMinutes($logOut);
-                $pmUndertime = $this->computeUndertime($logOut, $shiftEnd, $shiftBreakIn);
-
-                $actualWorkMinutes = min($workedMinutes, $requiredMinutes);
-            }
-
-            $totalTardiness = $pmTardiness;
-            $totalUndertime = $pmUndertime;
-            $totalLostMinutes = $pmTardiness + $pmUndertime;
-
-            $credit = $requiredMinutes;
-            $remark = 'halfday - morning suspended';
-        }
-
-        /* ===================================================
-            AFTERNOON SUSPENDED
-        =================================================== */
-        elseif ($suspension && $suspensionType === 'half_day' && $suspensionShift === 'afternoon') {
-            Log::info('AFTERNOON HALF-DAY SUSPENSION detected.');
-
-            $requiredMinutes /= 2;
+            $halfRequired = $requiredMinutes / 2;
             $breakDurationMins = 0;
+            $credit = $halfRequired;
 
             if ($logIn && $logOut) {
-                $amTardiness = $this->computeTardiness($logIn, $shiftStart);
 
-                if ($logOut->gt($shiftBreakOut)) $logOut = $shiftBreakOut->copy();
+                if ($suspensionShift === 'morning') {
+                    $pmTardiness = $this->computeTardiness($logIn, $shiftBreakIn);
+                    $pmUndertime = $this->computeUndertime($logOut, $shiftEnd, $shiftBreakIn);
 
-                $workedMinutes = $logIn->diffInMinutes($logOut);
-
-                if ($logIn->equalTo($shiftStart) && $workedMinutes < $requiredMinutes) {
-                    $amUndertime = 0;
-                } else {
-                    $amUndertime = $this->computeUndertime($logOut, $shiftBreakOut, $shiftStart);
+                    $totalTardiness = $pmTardiness;
+                    $totalUndertime = $pmUndertime;
                 }
 
-                $actualWorkMinutes = min($workedMinutes, $requiredMinutes);
+                if ($suspensionShift === 'afternoon') {
+                    $amTardiness = $this->computeTardiness($logIn, $shiftStart);
+                    $amUndertime = $this->computeUndertime($logOut, $shiftBreakOut, $shiftStart);
+
+                    $totalTardiness = $amTardiness;
+                    $totalUndertime = $amUndertime;
+                }
+
+                $worked = $logIn->diffInMinutes($logOut);
+                $actualWorkMinutes = min($worked, $halfRequired);
             }
 
-            $credit = $requiredMinutes;
-            $totalTardiness = $amTardiness;
-            $totalUndertime = $amUndertime;
-            $totalLostMinutes = $amTardiness + $amUndertime;
-            $remark = 'halfday - afternoon suspended';
+            $totalLostMinutes = $totalTardiness + $totalUndertime;
+            $remark = "{$suspensionShift} suspended";
         }
 
         /* ===================================================
-            NORMAL (NO SUSPENSION)
+            LEAVE / OFFSET / SPECIAL ORDER
+        =================================================== */
+        elseif (
+            ($leave && ($leave['is_leave'] ?? false)) ||
+            ($offset && ($offset['is_offset'] ?? false)) ||
+            ($so && ($so['is_so'] ?? false)) || 
+            ($pass_slip && ($pass_slip['is_pass_slip'] ?? false))
+        ) {
+
+            // Determine which source triggered
+            if ($leave && ($leave['is_leave'] ?? false)) {
+                $source = $leave;
+                $type   = 'leave';
+            } elseif ($offset && ($offset['is_offset'] ?? false)) {
+                $source = $offset;
+                $type   = 'offset';
+            } elseif ($so && ($so['is_so'] ?? false)) {
+                $source = $so;
+                $type   = 'special order';
+            } elseif ($pass_slip && ($pass_slip['is_pass_slip'] ?? false)) {
+                $source = $pass_slip;
+                $type   = 'pass slip';
+            }
+
+            $shiftType = $source['shift'];
+
+            $credit = ($shiftType !== 'wholeday')
+                ? $requiredMinutes / 2
+                : $requiredMinutes;
+
+            if ($logIn && $logOut) {
+
+                $isMorning   = $shiftType === 'morning';
+                $isAfternoon = $shiftType === 'afternoon';
+
+                if ($isMorning) {
+                    $totalTardiness = $this->computeTardiness($logIn, $shiftBreakIn);
+                    $totalUndertime = $this->computeUndertime($logOut, $shiftEnd, $shiftBreakIn);
+                }
+
+                if ($isAfternoon) {
+                    $totalTardiness = $this->computeTardiness($logIn, $shiftStart);
+                    $totalUndertime = $this->computeUndertime($logOut, $shiftBreakOut, $shiftStart);
+                }
+
+                $worked = $logIn->diffInMinutes($logOut) - $breakDurationMins;
+
+                $actualWorkMinutes = min($worked, $credit);
+            }
+    
+            /*
+            |-----------------------------------------------------
+            | ADD CREDIT (Leave / Offset / Special Order)
+            |-----------------------------------------------------
+            */
+            $actualWorkMinutes += $credit;
+
+            // Cap to full shift requirement
+            $actualWorkMinutes = min($actualWorkMinutes, $requiredMinutes);
+
+            $totalLostMinutes = $totalTardiness + $totalUndertime;
+
+        }
+        
+
+        /* ===================================================
+            NORMAL SHIFT
         =================================================== */
         else {
-            Log::info('NORMAL SHIFT (no suspension) processing.');
 
             if ($logIn && $logOut) {
+
                 $amTardiness = $this->computeTardiness($logIn, $shiftStart);
 
-                if ($logOut->lte($shiftBreakOut)) {
-                    $amUndertime = $this->computeUndertime($logOut, $shiftBreakOut, $baseStart);
-                } else {
-                    $amUndertime = $this->computeUndertime($logBreakOut, $shiftBreakOut, $baseStart);
-                }
+                $amUndertime = $logOut->lte($shiftBreakOut)
+                    ? $this->computeUndertime($logOut, $shiftBreakOut, $baseStart)
+                    : $this->computeUndertime($logBreakOut, $shiftBreakOut, $baseStart);
 
                 $pmTardiness = $this->computeTardiness($logBreakIn, $shiftBreakIn);
                 $pmUndertime = $this->computeUndertime($logOut, $shiftEnd, $shiftBreakIn);
@@ -801,15 +860,15 @@ class TimelogsServices {
                 $totalUndertime = $amUndertime + $pmUndertime;
                 $totalLostMinutes = $totalTardiness + $totalUndertime;
 
-                if ($shift->is_flexible && $logIn && $shiftEarliestIn && $logIn->gte($shiftEarliestIn) && $logIn->lte($shiftStart)) {
+                if ($shift->is_flexible && $shiftEarliestIn && $logIn->between($shiftEarliestIn, $shiftStart)) {
                     $amTardiness = 0;
-                    Log::info('Flexi shift in allowed window: amTardiness set to 0.');
                 }
 
-                $actualWorkMinutes = $logIn->diffInMinutes($logOut) - $breakDurationMins;
-                $actualWorkMinutes = min($actualWorkMinutes, $requiredMinutes);
-            } else {
-                $totalTardiness = $totalUndertime = $totalLostMinutes = 0;
+                $actualWorkMinutes =
+                    $logIn->diffInMinutes($logOut) - $breakDurationMins;
+
+                $actualWorkMinutes =
+                    min($actualWorkMinutes, $requiredMinutes);
             }
         }
 
@@ -819,7 +878,7 @@ class TimelogsServices {
         $totalLostHours   = floor($totalLostMinutes / 60);
         $remainingMinutes = $totalLostMinutes % 60;
 
-        $data = [
+        return [
             'am_tardiness'     => $amTardiness,
             'am_undertime'     => $amUndertime,
             'pm_tardiness'     => $pmTardiness,
@@ -830,26 +889,13 @@ class TimelogsServices {
             'lost_minutes'     => $totalLostMinutes,
             'lost_hours'       => sprintf('%02d:%02d', $totalLostHours, $remainingMinutes),
             'remark'           => $remark,
-            'required_to_work_in_mins' => $requiredMinutes + $credit,
+            'required_to_work_in_mins' => $requiredMinutes,
             'break_duration_mins' => $breakDurationMins
         ];
-
-        Log::info('Tardiness & Undertime computation result:', $data);
-
-        return $data;
     }
 
 
 
-
-
-
-
-
-
-
-
-    
     /**
      * Compute tardiness in minutes.
      *

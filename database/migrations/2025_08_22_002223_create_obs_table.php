@@ -18,15 +18,13 @@ return new class extends Migration
             $table->string('employee_no');
             $table->date('date_from');
             $table->date('date_to');
-            $table->time('time_out')->nullable();               // start time
-            $table->time('time_in')->nullable();                // end time
-            $table->string('destination');                      // place, office, city
-            $table->string('purpose', 500);                     // short purpose/subject
-            $table->string('mode_of_transport')->nullable();    // company car, taxi, etc.
+            $table->time('time_out')->nullable();         
+            $table->time('time_in')->nullable();               
+            $table->string('destination');                     
+            $table->string('purpose', 500);                
+            $table->string('mode_of_transport')->nullable();   
             $table->decimal('estimated_expense', 12, 2)->default(0);
-            $table->string('charge_to')->nullable();            // cost center / department
-
-            // Approval flow
+            $table->string('charge_to')->nullable();         
             $table->enum('status', ['pending', 'approved', 'rejected', 'cancelled'])->default('pending')->index();
             $table->longText('remarks')
                 ->nullable();
@@ -53,12 +51,11 @@ return new class extends Migration
         Schema::create('obs_attachments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('obs_applications_id');
-            $table->string('file_path'); // stored file path
-            $table->string('file_name')->nullable(); // original filename
-            $table->string('file_type')->nullable(); // mime type (jpg, pdf, etc.)
+            $table->string('file_path');
+            $table->string('file_name')->nullable();
+            $table->string('file_type')->nullable(); 
             $table->timestamps();
 
-            // Foreign key
             $table->foreign('obs_applications_id')
                 ->references('id')
                 ->on('obs_applications')

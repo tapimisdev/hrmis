@@ -22,8 +22,10 @@ class LeaveController extends Controller
      */
     public function index()
     {
-        $query = DB::table('leaves')->where('is_active', true)->get();
-        
+        $query = DB::table('leaves')
+            ->orderByDesc('is_cumulative')
+            ->where('is_active', true)->get();
+
         if (request()->ajax()) {
             return $this->datatable($query);
         }

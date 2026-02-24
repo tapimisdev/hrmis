@@ -3,7 +3,7 @@
         <div class="modal-confirm">
             <i class="fa-solid fa-triangle-exclamation icon"></i>
             <p>
-              Are you sure to cancel this employee's <strong><span class="text-uppercase">Approved</span> Special Order?</strong>
+                Are you sure you want to cancel this employee's <strong><span class="text-uppercase">Approved</span></strong> Pass Slip?
             </p>
 
             <div class="modal-confirm-footer">
@@ -60,7 +60,7 @@ export default {
             };
 
             try {
-                const res = await axios.post("/api/cancel-special-order", form, {
+                const res = await axios.post("/api/cancel-pass-slip", form, {
                     headers: {
                         Accept: "application/json",
                         Authorization: `Bearer ${token}`,
@@ -68,8 +68,8 @@ export default {
                 });
 
                 Swal.fire({
-                    title: "Special Order Cancelled",
-                    text: "The employee's special order has been successfully cancelled.",
+                    title: "Pass Slip Cancelled",
+                    text: "The employee's pass slip has been successfully cancelled.",
                     icon: "success",
                 }).then(() => {
                     this.$emit("success", res.data);

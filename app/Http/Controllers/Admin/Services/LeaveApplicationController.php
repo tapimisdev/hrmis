@@ -177,9 +177,9 @@ class LeaveApplicationController extends Controller {
 
         $computation = [
             'showBreakdown' => $showBreakdown,
-            'remaining_balance' => number_format($remaining_balance ?? 0, 2),
-            'deduction' => number_format($toBeDeducted ?? 0, 2),
-            'new_balance' => number_format($new_balance ?? 0, 2),
+            'remaining_balance' => number_format($remaining_balance ?? 0, 3),
+            'deduction' => number_format($toBeDeducted ?? 0, 3),
+            'new_balance' => number_format($new_balance ?? 0, 3),
             'toBeDeductedFromCredits' => $toBeDeductedFromCredits ?? 'N/A',
         ];
 
@@ -265,7 +265,7 @@ class LeaveApplicationController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has approved your leave application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/leaves'
+                'link' => '/employee/leaves?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 
@@ -319,7 +319,7 @@ class LeaveApplicationController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has rejected your leave application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/leaves'
+                'link' => '/employee/leaves?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 

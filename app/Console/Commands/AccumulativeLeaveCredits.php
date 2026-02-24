@@ -60,7 +60,11 @@ class AccumulativeLeaveCredits extends Command
             $employeeService = app(EmployeeService::class);
             $employees = $employeeService->getRegularEmployees();
 
-            $leaveTypes = DB::table('leaves')->where('is_active', true)->get();
+            $leaveTypes = DB::table('leaves')
+                ->where('cummulative_type', 'monthly')
+                ->where('is_active', true)
+                ->get();
+
             /** @var LeaveCreditController $controller */
             $controller = app(LeaveCreditController::class);
 

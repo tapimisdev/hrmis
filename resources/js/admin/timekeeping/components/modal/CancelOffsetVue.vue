@@ -3,7 +3,7 @@
         <div class="modal-confirm">
             <i class="fa-solid fa-triangle-exclamation icon"></i>
             <p>
-                Are you sure you want to cancel this employee's <strong><span class="text-uppercase">Approved</span></strong> Offset Application?
+                Are you sure you want to cancel this employee's <strong><span class="text-uppercase">Approved</span></strong> Offset?
                 <hr>
                 Once the cancellation is confirmed, any offset credits that were previously deducted will be refunded automatically. 
                 Please note that this action cannot be undone, and the offset records will be updated accordingly in the system.
