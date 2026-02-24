@@ -100,7 +100,9 @@ class ModuleTabEmployeeController extends Controller
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
             ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
             ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
-            ->where('eo.employment_type_id', $regular_id)
+            ->when($tab !== 'hmo' && $regular_id, function ($query) use ($regular_id) {
+                $query->where('eo.employment_type_id', $regular_id);
+            })
             ->select(
                 'ei.employee_no',
                 'ep.suffix',

@@ -101,11 +101,11 @@
     @media (max-width: 768px) {
         #calendar {
             padding: 5px;
-            font-size: 0.85rem; /* shrink fonts on small screens */
+            font-size: 0.85rem; 
         }
 
         .fc-toolbar.fc-header-toolbar {
-            flex-direction: column; /* stack buttons */
+            flex-direction: column; 
         }
 
         .fc-toolbar-chunk {
@@ -123,7 +123,6 @@
         post(url);
 
         initCalendar();
-
         const events = generateEventsWithAvailability(data);
         setEvents(events, data);
 

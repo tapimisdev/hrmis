@@ -93,8 +93,6 @@ class SalaryController extends Controller
     {
         $validatedData = $request->validated();
 
-        // dd($validatedData);
-
         Log::info('Creating payroll with data: ', $validatedData);
 
         try {
@@ -288,12 +286,6 @@ class SalaryController extends Controller
                 'status'  => 'update failed'
             ], 500);
         }
-    }
-
-
-    public function import_index()
-    {
-        dd(123);
     }
 
     public function import_save(Request $request) {}

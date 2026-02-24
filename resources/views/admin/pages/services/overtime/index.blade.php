@@ -44,11 +44,8 @@
             ],
             "columnDefs": [
                 {
-                    targets: "_all",
-                    className: "min-table-width",
-                    render: function(data, type, row, meta) {
-                        return data ?? "";
-                    }
+                    targets: [1, 2, 3, 4, 5],
+                    className: 'min-table-width'
                 }
             ],
             "scrollX": true,

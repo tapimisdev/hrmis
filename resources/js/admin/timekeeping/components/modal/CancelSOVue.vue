@@ -3,7 +3,7 @@
         <div class="modal-confirm">
             <i class="fa-solid fa-triangle-exclamation icon"></i>
             <p>
-              Are you sure to cancel this employee's <strong><span class="text-uppercase">Approved</span> Special Order Application?</strong>
+              Are you sure to cancel this employee's <strong><span class="text-uppercase">Approved</span> Special Order?</strong>
             </p>
 
             <div class="modal-confirm-footer">

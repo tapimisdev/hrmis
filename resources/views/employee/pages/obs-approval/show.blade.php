@@ -22,7 +22,7 @@
             <div class="card-body">
                 <table class="table table-bordered">
                     <tr>
-                        <th width="30%">File No:</th>
+                        <th width="30%">Application No:</th>
                         <td id="file-no">{{ $data->application_no }}</td>
                     </tr>
                     <tr>

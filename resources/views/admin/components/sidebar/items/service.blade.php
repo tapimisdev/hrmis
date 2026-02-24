@@ -38,6 +38,16 @@
             </li>
             @endcan
 
+            @can('hr.overtime_approval.view')
+            <li class="nested-item">
+                <a href="{{ route('services.overtime.index') }}"
+                    class="{{ request()->is('admin/service/overtime*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Overtime Application</span>
+                </a>
+            </li>
+            @endcan
+
             @can('hr.leave_approval.view')
             <li class="nested-item">
                 <a href="{{ route('services.leaves.index') }}"
@@ -66,16 +76,6 @@
                     <span>Pass Slip Application</span>
                 </a>
             </li> 
-            @endcan
-
-            @can('hr.overtime_approval.view')
-            <li class="nested-item">
-                <a href="{{ route('services.overtime.index') }}"
-                    class="{{ request()->is('admin/service/overtime*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-clock"></i>
-                    <span>Overtime Application</span>
-                </a>
-            </li>
             @endcan
 
         </ul>

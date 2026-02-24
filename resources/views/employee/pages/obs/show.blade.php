@@ -1,73 +1,49 @@
 <!-- Official Business Slip Show Modal -->
 <x-modal id="myModal" title="Pass Slip" size="modal-lg">
-    <div class="p-4" style="font-family: Arial, sans-serif;">
-        <div class="text-center mb-4">
-            <small class="text-muted">File No: <span id="obs-doc-id"></span></small>
+    <div class="p-4 pt-0" style="font-family: Arial, sans-serif;">
+        <div class="text-center">
+            <h4 class="text-muted text-uppercase fw-bold">Application No: <span id="doc-id"></span></h4>
         </div>
         <div id="approval-breadcrumbs">
 
         </div>
         <div class="table-responsive">
-            <table class="table table-bordered">
+            <table class="table table-bordered text-uppercase">
                 <tr>
-                    <th>Destination:</th>
-                    <td id="obs-destination"></td>
+                    <th width="30%">Employee No:</th>
+                    <td id="employee-no"></td>
                 </tr>
                 <tr>
-                    <th>Purpose:</th>
-                    <td id="obs-purpose"></td>
+                    <th width="30%">Name:</th>
+                    <td id="employee-name"></td>
                 </tr>
                 <tr>
-                    <th>Date From:</th>
-                    <td id="obs-date-from"></td>
+                    <th>Dates:</th>
+                    <td id="selectedDates"></td>
                 </tr>
                 <tr>
-                    <th>Date To:</th>
-                    <td id="obs-date-to"></td>
+                    <th>Reason:</th>
+                    <td id="reason"></td>
                 </tr>
                 <tr>
-                    <th>Time Out:</th>
-                    <td id="obs-time-out"></td>
-                </tr>
-                <tr>
-                    <th>Time In:</th>
-                    <td id="obs-time-in"></td>
-                </tr>
-                <tr>
-                    <th>Mode of Transport:</th>
-                    <td id="obs-transport"></td>
-                </tr>
-                <tr>
-                    <th>Estimated Expense:</th>
-                    <td id="obs-expense"></td>
-                </tr>
-                <tr>
-                    <th>Charge To:</th>
-                    <td id="obs-charge-to"></td>
-                </tr>
-                <tr>
-                    <th>Remarks:</th>
-                    <td id="obs-remarks"></td>
-                </tr>
-                <tr>
-                    <th>Created At:</th>
-                    <td id="obs-created-at"></td>
+                    <th>Applied At:</th>
+                    <td id="created-at"></td>
                 </tr>
                 <tr>
                     <th>Attachments:</th>
-                    <td id="obs-attachments">
+                    <td id="attachments">
                         <ul class="list-unstyled mb-0"></ul>
                     </td>
                 </tr>
                 <tr>
                     <th>Status:</th>
-                    <td><span id="obs-status" class="badge"></span></td>
-                </tr>
-                <tr class="extended d-none">
-                    <th>Remarks:</th>
-                    <td><span id="remarks"></span></td>
+                    <td><span id="status" class="badge"></span></td>
                 </tr>
             </table>
+            <div class="extended d-none">
+                <label for="#" class="mb-2 fw-bold" style="font-size: 12px;">REMARKS: </label>
+                <textarea class="form-control restricted" id="remarks" rows="5" readonly></textarea>
+            </div>
         </div>
         <div class="w-100">
             <!-- <div id="approvers-by-level" class="mb-2"></div> -->
@@ -75,7 +51,7 @@
     </div>
     <x-slot name="footer">
         <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-danger px-4 py-2" data-bs-dismiss="modal">
+            <button type="button" class="btn btn-danger px-4 py-2 btn-close-action" data-bs-dismiss="modal">
                 <i class="fa-solid fa-xmark me-1"></i> Close
             </button>
         </div>

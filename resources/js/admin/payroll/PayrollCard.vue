@@ -293,7 +293,15 @@ export default {
           },
         ],
         completed: [],
-        failed: [],
+        failed: [
+          {
+            type: "button",
+            label: "Delete Permanent",
+            class: "text-danger",
+            icon: "fa fa-trash-can me-2",
+            onClick: () => this.$emit("cancel", this.payroll.id),
+          },
+        ],
       }
 
       return items.concat(byStatus[this.statusKey] ?? [])

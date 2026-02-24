@@ -153,6 +153,7 @@ class InformationController extends Controller
         }
 
         if ($tranche_id && $step_id && $salary_grade) {
+
             $stepColumn = 'step_' . $step_id;
 
             $data = DB::table('tranche_items')
@@ -237,14 +238,12 @@ class InformationController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                // ✅ generate employee no ONLY for new
                 $service = app(EmployeeService::class);
                 $employeeNo = $service->generateEmployeeNo(
                     $request->date_hired_company ?? now()
                 );
 
             } else {
-                // ✅ existing employee → reuse employee_no
                 $employeeNo = $employee_no;
 
                 $user_id = DB::table('employee_information')
@@ -304,13 +303,9 @@ class InformationController extends Controller
                 ->where('employee_no', $employeeNo)
                 ->latest('effectivity_date')
                 ->first();
-
+                
             if (
-                !$latestOrg ||
-                $latestOrg->division_id != $request->division_id ||
-                $latestOrg->unit_id != $request->unit_id ||
-                $latestOrg->employment_type_id != $employmentTypeId ||
-                $latestOrg->position_id != $request->position_id
+                !$isExists
             ) {
                 DB::table('employee_organization')->insert([
                     'employee_no'        => $employeeNo,
@@ -329,18 +324,14 @@ class InformationController extends Controller
              * SALARY
              * -------------------------------------------------
              */
-            $latestSalary = DB::table('employee_salary')
-                ->where('employee_no', $employeeNo)
-                ->latest('effectivity_date')
-                ->first();
 
-            $salary = $this->getSalary(
-                $request->tranche_id,
-                $request->step_id,
-                $request->salary_grade
-            );
+            if (!$isExists) {
 
-            if (!$latestSalary || $latestSalary->amount != $salary->amount) {
+                $salary = $this->getSalary(
+                    $request->tranche_id,
+                    $request->step_id,
+                    $request->salary_grade
+                );
 
                 $salary_cutoff = $request->salary_frequency === 'twice'
                     ? 'both'
@@ -368,15 +359,9 @@ class InformationController extends Controller
              * SHIFT / WORK SCHEDULE
              * -------------------------------------------------
              */
-            $latestShift = DB::table('employee_shift_work_schedule')
-                ->where('employee_no', $employeeNo)
-                ->latest('effectivity_date')
-                ->first();
 
             if (
-                !$latestShift ||
-                $latestShift->shift_id != $request->shift_id ||
-                $latestShift->work_schedule_id != $request->schedule_id
+                !$isExists 
             ) {
                 DB::table('employee_shift_work_schedule')->insert([
                     'employee_no'      => $employeeNo,
@@ -432,33 +417,36 @@ class InformationController extends Controller
                 Rule::unique('employee_information', 'employee_no')
                     ->ignore($employee_no, 'employee_no')
             ],
-
             'biometrics_id' => [
                 'nullable',
                 Rule::unique('employee_information', 'biometrics_id')
                     ->ignore($employee_no, 'employee_no')
             ],
-
             'date_hired_company' => 'required|date',
             'date_hired_organization' => 'required|date',
             'status' => 'required|in:active,inactive',
-            'division_id' => 'required|exists:divisions,id',
-            'unit_id' => 'required|exists:units,id',
-            'employment_type_id' => 'required|exists:employment_types,id',
-            'position_id' => 'required_if:type,,2|nullable|exists:positions,id|required_without:type',
-            'shift_id' => 'required|exists:shifts,id',
-            'schedule_id' => 'required|exists:work_schedule,id',
-            'tranche_id' => 'required|exists:tranche,id',
-            'step_id' => 'required|between:1,8',
-            'salary_grade' => 'required|numeric',
-            'salary_frequency' => 'required|in:once,twice',
-            'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both',
-            'salary_method' => 'required|in:cash,bank transfer,paycheck,e-wallet',
-            'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
-            'payroll_account_number' => 'nullable|string|max:100',
         ];
 
+        // Only include Organization, Employment, Salary & Payroll Details if employee does not exist
         if (!$isExists) {
+            $rules = array_merge($rules, [
+                'division_id' => 'required|exists:divisions,id',
+                'unit_id' => 'required|exists:units,id',
+                'employment_type_id' => 'required|exists:employment_types,id',
+                'position_id' => 'required_if:type,,2|nullable|exists:positions,id|required_without:type',
+                'shift_id' => 'required|exists:shifts,id',
+                'schedule_id' => 'required|exists:work_schedule,id',
+                'tranche_id' => 'required|exists:tranche,id',
+                'step_id' => 'required|between:1,8',
+                'salary_grade' => 'required|numeric',
+                'salary_frequency' => 'required|in:once,twice',
+                'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both',
+                'salary_method' => 'required|in:cash,bank transfer,paycheck,e-wallet',
+                'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
+                'payroll_account_number' => 'nullable|string|max:100',
+            ]);
+
+            // Include personal info only if new employee
             $rules['firstname'] = 'required|string|max:255';
             $rules['lastname']  = 'required|string|max:255';
             $rules['middlename']  = 'nullable|string|max:255';

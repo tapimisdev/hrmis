@@ -33,35 +33,20 @@
                         <th>Employee Name:</th>
                         <td>{{ $data->firstname }} {{ $data->lastname }}</td>
                     </tr>
-
                     <tr>
-                        <th>Date Range:</th>
+                        <th>Dates:</th>
                         <td>
-                            {{ \Carbon\Carbon::parse($data->date_from)->format('M d, Y (D)') }}
-                            –
-                            {{ \Carbon\Carbon::parse($data->date_to)->format('M d, Y (D)') }}
+                            <ul>
+                                @foreach($data->dates as $item)
+                                    <li>{{ \Carbon\Carbon::parse($item['date'])->format('M d, Y - (l)')}} - [ {{$item['shift']}} ]</li>
+                                @endforeach
+                            </ul>
                         </td>
                     </tr>
-
                     <tr>
-                        <th>Time:</th>
-                        <td>
-                            {{ \Carbon\Carbon::parse($data->time_out)->format('h:i A') }}
-                            –
-                            {{ \Carbon\Carbon::parse($data->time_in)->format('h:i A') }}
-                        </td>
+                        <th>Reason:</th>
+                        <td>{{$data->reason}}</td>
                     </tr>
-
-                    <tr>
-                        <th>Destination:</th>
-                        <td>{{ $data->destination }}</td>
-                    </tr>
-
-                    <tr>
-                        <th>Purpose:</th>
-                        <td>{{ $data->purpose }}</td>
-                    </tr>
-
                     <tr>
                         <th>Status:</th>
                         <td>
