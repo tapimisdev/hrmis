@@ -477,13 +477,18 @@ class DailyTimeRecordService {
                 $paid_hours = $total_time_work;
             }
 
-            \Log::info('paid ' . $date['date'] . ' = ' . $paid_hours, [
-                'tar' => $tar_under
-            ]);
-
             $TOTAL_HOURS += $paid_hours;
 
             $total_time_work = $required_to_work_in_mins - $tar_under['lost_minutes'];
+
+            $active_shift = $leave_shift
+                ?: $offset_shift
+                ?: $so_shift
+                ?: null;
+
+            if ($active_shift && $active_shift !== 'wholeday' && is_null($date['time_in'])) {
+                $total_time_work = 240;
+            }
 
             /** ---------------- FINAL DATA ROW ---------------- **/
             $computedData[] = [

@@ -67,6 +67,7 @@ class EmployeeController extends Controller
                 'position_id' => 'required_if:type,,2|nullable|exists:positions,id|required_without:type',
                 'shift_id' => 'required|exists:shifts,id',
                 'schedule_id' => 'required|exists:work_schedule,id',
+                'employment_effectivity_date' => 'required',
                 'tranche_id' => 'required|exists:tranche,id',
                 'step_id' => 'required|between:1,8',
                 'salary_grade' => 'required|numeric',
@@ -74,6 +75,7 @@ class EmployeeController extends Controller
                 'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both',
                 'salary_method' => 'required|in:cash,bank transfer,paycheck,e-wallet',
                 'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
+                'salary_effectivity_date' => 'required'
             ];
         }
 
@@ -119,7 +121,7 @@ class EmployeeController extends Controller
                     'unit_id'            => $request->unit_id,
                     'employment_type_id' => $request->employment_type_id,
                     'position_id'        => $request->position_id,
-                    'effectivity_date'   => $now,
+                    'effectivity_date'   => $request->employment_effectivity_date,
                     'created_at'         => $now,
                     'updated_at'         => $now,
                 ]);
@@ -133,9 +135,10 @@ class EmployeeController extends Controller
                     'salary_cutoff'     => $salary_cutoff,
                     'deduction_applied' => $request->deduction_applied,
                     'salary_basis'      => $request->salary_basis ?? null,
+                    'salary_method'     => $request->salary_method,
                     'amount'            => $salary->amount,
                     'daily_rate'        => $salary->daily_rate,
-                    'effectivity_date'  => $now,
+                    'effectivity_date'  => $request->salary_effectivity_date,
                     'created_at'        => now(),
                     'updated_at'        => now(),
                 ]);
