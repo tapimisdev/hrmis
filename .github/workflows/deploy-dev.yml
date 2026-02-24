@@ -74,6 +74,10 @@ jobs:
         shell: bash
         run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && npm run build"
 
+      - name: Run database migrations
+        shell: bash
+        run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan migrate --force"
+        
       - name: Optimize Laravel
         shell: bash
         run: docker exec "$CONTAINER" bash -lc "cd /var/www/html && php artisan optimize:clear"
