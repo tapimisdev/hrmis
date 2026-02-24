@@ -313,7 +313,7 @@ export default {
         getRowClass(remarks) {
             if (this.hasRemark(remarks, 'today')) return 'highlight-today';
             if (this.hasRemark(remarks, 'restday')) return 'row-restday';
-            if (this.hasRemark(remarks, 'suspension')) return 'row-restday';
+            if (this.hasRemark(remarks, 'suspended')) return 'row-restday';
             if (this.remarks?.toLowerCase().startsWith('leave-')) {
                 return 'row-leave';
             }
@@ -368,20 +368,7 @@ export default {
                         icon: 'fa-solid fa-ghost',
                         text: 'Offset',
                     };
-                case this.hasRemark(remarks, 'pass slip-wholeday'):
-                    return {
-                        class: 'status-pass-slip',
-                        icon: 'fa-solid fa-torii-gate',
-                        text: 'Pass Slip',
-                    };
-
-                case this.hasRemark(remarks, 'special order-wholeday'):
-                    return {
-                        class: 'status-special-order',
-                        icon: 'fa-solid fa-car-on',
-                        text: 'Special Order',
-                    };
-
+      
                 case this.hasRemark(remarks, 'ob'):
                     return {
                         class: 'status-ob',

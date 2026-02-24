@@ -684,7 +684,7 @@ class TimelogsServices {
      *                     ]
      */
 
-    public function computeTardinessAndUndertime($date, array $suspension = null, $leave = null, $offset = null, $so = null)
+    public function computeTardinessAndUndertime($date, array $suspension = null, $leave = null, $offset = null, $so = null, $pass_slip = null)
     {
         $shift = DB::table('shifts')->where('id', $date['shift_id'])->first();
         if (!$shift) return null;
@@ -771,7 +771,7 @@ class TimelogsServices {
             }
 
             $totalLostMinutes = $totalTardiness + $totalUndertime;
-            $remark = "halfday - {$suspensionShift} suspended";
+            $remark = "{$suspensionShift} suspended";
         }
 
         /* ===================================================
@@ -780,7 +780,8 @@ class TimelogsServices {
         elseif (
             ($leave && ($leave['is_leave'] ?? false)) ||
             ($offset && ($offset['is_offset'] ?? false)) ||
-            ($so && ($so['is_so'] ?? false))
+            ($so && ($so['is_so'] ?? false)) || 
+            ($pass_slip && ($pass_slip['is_pass_slip'] ?? false))
         ) {
 
             // Determine which source triggered
@@ -793,6 +794,9 @@ class TimelogsServices {
             } elseif ($so && ($so['is_so'] ?? false)) {
                 $source = $so;
                 $type   = 'special order';
+            } elseif ($pass_slip && ($pass_slip['is_pass_slip'] ?? false)) {
+                $source = $pass_slip;
+                $type   = 'pass slip';
             }
 
             $shiftType = $source['shift'];

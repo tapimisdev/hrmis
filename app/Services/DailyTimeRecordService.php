@@ -440,7 +440,7 @@ class DailyTimeRecordService {
                 continue;
             }
 
-            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday && !$is_so && !$is_leave && !$is_offset) {
+            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday && !$is_so && !$is_leave && !$is_offset && !$is_pass_slip) {
                 if($is_same_day) {
                     $remarks[] = 'incomplete log';
                     $TOTAL_INCOMPLETE_LOGS++;
@@ -483,7 +483,7 @@ class DailyTimeRecordService {
             }
 
             /** ---------------- TARDINESS & UNDERTIME ---------------- **/
-            $tar_under = $this->timelogs_services->computeTardinessAndUndertime($date, $suspension, $leave, $offset, $so);
+            $tar_under = $this->timelogs_services->computeTardinessAndUndertime($date, $suspension, $leave, $offset, $so, $pass_slip);
            
             $TOTAL_UT += $tar_under['lost_minutes'];
             if ($tar_under['remark']) $remarks[] = $tar_under['remark'];
@@ -506,6 +506,7 @@ class DailyTimeRecordService {
             $active_shift = $leave_shift
                 ?: $offset_shift
                 ?: $so_shift
+                ?: $pass_slip_shift
                 ?: null;
 
             if ($active_shift && $active_shift !== 'wholeday' && is_null($date['time_in'])) {
