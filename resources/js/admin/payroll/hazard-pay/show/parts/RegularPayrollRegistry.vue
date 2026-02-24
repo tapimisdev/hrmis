@@ -30,7 +30,6 @@
             <th>% of Entitlement</th>
             <th>Hazard Pay</th>
             <th>Withholding Tax</th>
-            <th>Less: Healthcard <br /> c/o TAPIEA</th>
             <th style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
             <th style="min-width: 220px">Remarks</th>
@@ -50,7 +49,6 @@
             <td class="text-center">{{ emp.entitlement }}</td>
             <td class="text-center">{{ formatMoney(emp.hazard_pay) }}</td>
             <td class="text-center">{{ formatMoney(emp.witholding_tax) }}</td>
-            <td class="text-center">{{ formatMoney(emp.healthcard) }}</td>
 
             <td class="text-center">
               <input
@@ -82,7 +80,6 @@
             <td class="number-cell">-</td>
             <td class="number-cell">{{ formatNumber(grandTotals("hazard_pay")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("witholding_tax")) }}</td>
-            <td class="number-cell">{{ formatNumber(grandTotals("healthcard")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("adjustments")) }}</td>
             <td class="number-cell net-salary">
               <strong>{{ formatNumber(grandTotals("net_pay")) }}</strong>
@@ -121,7 +118,7 @@ export default {
       window.print();
     },
 
-    // ✅ PayrollRegistryLayout should emit @download with { key }
+    // PayrollRegistryLayout should emit @download with { key }
     // Example payload: { key: 'registry' } or { key: 'payslip' }
     async handleDownload({ key }) {
       // TODO: map keys to your backend endpoints
