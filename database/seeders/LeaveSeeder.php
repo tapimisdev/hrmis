@@ -44,7 +44,7 @@ class LeaveSeeder extends Seeder
                 'cummulative_type' => 'yearly',
                 'to_be_credited' => 5.00,
                 'showCreditsESS' => true,
-                'description' => 'R.A. No. 8552',
+                'description' => 'CSC Resolution',
             ],
             [
                 'name' => 'Special Privilege Leave',
