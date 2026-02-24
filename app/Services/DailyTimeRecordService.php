@@ -546,7 +546,8 @@ class DailyTimeRecordService {
         $FORMATTED_TOTAL_HOLIDAY = $this->formatPlural($TOTAL_HOLIDAY, 'day');
         $FORMATTED_TOTAL_OVERTIME = $this->formatTime($TOTAL_OVERTIME); 
         $FORMATTED_SUSPENSIONS = $this->formatPlural($TOTAL_SUSPENSION, 'day');
-        
+        $FORMATTED_TOTAL_ACTUAL_PRESENCE = $this->formatPlural($TOTAL_ACTUAL_PRESENCE, 'day');
+
         /** ---------------- SUMMARY ---------------- **/
         $summary = [
             [
@@ -630,6 +631,11 @@ class DailyTimeRecordService {
                 'value' => number_format($DOUBLE_EXCESS, 2),
                 'actual_value' => number_format($DOUBLE_EXCESS, 2)
             ],
+            [
+                'label' => 'Actual Presence',
+                'value' => $FORMATTED_TOTAL_ACTUAL_PRESENCE,
+                'actual_value' => $TOTAL_ACTUAL_PRESENCE
+            ]
         ];
 
         $payroll_value = [
