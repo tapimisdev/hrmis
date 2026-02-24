@@ -31,11 +31,11 @@ class RunForecastApiController extends Controller
 
             $taxation_id = $this->run_forecast_service->createTaxation($validated_data);
 
-            // dd($validated_data, $taxation_id);
-
             foreach($employee_nos as $emp_no) {
                 ForeCastEmployeeJob::dispatch($taxation_id, $emp_no, $validated_data);
             }
+
+            // dd($validated_data, $taxation_id);
 
             DB::commit();
 

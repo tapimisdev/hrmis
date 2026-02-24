@@ -118,6 +118,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('tax_computation_logs');
         Schema::dropIfExists('taxation_employee_remarks');
         Schema::dropIfExists('taxation_employee_other_deductions');
         Schema::dropIfExists('taxation_employee_other_earnings');
