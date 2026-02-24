@@ -24,7 +24,7 @@ class CancelLeaveApiController extends Controller
                 ->leftJoin('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
                 ->where('la.employee_no', $validated['employee_no'])
                 ->where('ld.date', $validated['date'])
-                ->where('la.status', 'approved')
+                ->whereIn('la.status', ['approved', 'pending'])  
                 ->where('ld.isActive', true)
                 ->select(
                     'ld.id as leave_date_id',

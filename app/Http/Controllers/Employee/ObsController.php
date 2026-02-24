@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\StoreObsRequest;
 use App\Http\Controllers\Admin\Services\ApplicationController;
+use App\Http\Controllers\Admin\Services\LeaveApplicationController as UpdateCreditsController;
 use App\Services\EventService;
 use App\Events\NotificationEvents;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\User;
 use Carbon\Carbon;
 
 class ObsController extends Controller
@@ -117,7 +119,7 @@ class ObsController extends Controller
                 'user_id'            => $user_id,
                 'employee_no'        => $employee_no,
                 'reason'             => $validatedData['reason'],
-                'status'             => 'pending',
+                'status'             =>  $isDirectlyApproved ? 'approved' : 'pending',
                 'level'              => 1,
                 // 'levels'             => json_encode($levels),
                 'created_at'         => now(),
@@ -162,14 +164,21 @@ class ObsController extends Controller
             // }
 
             $sender = ucwords(Auth::user()->name);
-            $payload = [
-                'type' => 'application',
-                'sender' => $sender,
-                'receiver' => 'admins',
-                'message' => '%b' . $sender . '%b filed a pass slip application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => url()->route('services.pass_slip.show', ['application' => $applicationID])
-            ];
-            $this->EventService->pushNotification($payload);
+
+            if($isDirectlyApproved) {
+                app(UpdateCreditsController::class)->updateCredits($applicationID);
+            }
+
+            if(!$isDirectlyApproved) {
+                $payload = [
+                    'type' => 'application',
+                    'sender' => $sender,
+                    'receiver' => 'admins',
+                    'message' => '%b' . $sender . '%b filed a pass slip application (%bi' . strtoupper($application_no) . ') %bi',
+                    'link' => url()->route('services.pass_slip.show', ['application' => $applicationID])
+                ];
+                $this->EventService->pushNotification($payload);
+            }
 
             DB::commit();
 

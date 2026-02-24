@@ -169,6 +169,7 @@ import axios from 'axios';
 import ModalVue from './modal/ModalVue.vue';
 import RecordLeaveVue from './modal/RecordLeaveVue.vue';
 import RecordOffsetVue from './modal/RecordOffsetVue.vue';
+import RecordPassSlip from './modal/RecordPassSlip.vue';
 import AddTimeVue from './modal/AddTimeVue.vue';
 import AddOvertimeVue from './modal/AddOvertimeVue.vue';
 import ViewOvertimeVue from './modal/ViewOvertimeVue.vue';
@@ -177,12 +178,13 @@ import CancelLeaveVue from './modal/CancelLeaveVue.vue';
 import CancelOffsetVue from './modal/CancelOffsetVue.vue';
 import MarkAsSoVue from './modal/MarkAsSoVue.vue';
 import CancelSOVue from './modal/CancelSOVue.vue';
+import CancelPassSlip from './modal/CancelPassSlip.vue';
 
 export default {
     components: { 
-      TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, 
+      TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, RecordPassSlip,
       AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue, 
-      MarkAsSoVue, CancelLeaveVue, CancelOffsetVue, CancelSOVue },
+      MarkAsSoVue, CancelLeaveVue, CancelOffsetVue, CancelSOVue, CancelPassSlip },
     props: {
         employee_no: { type: [String, Number], required: true },
         employee_id: { type: [String, Number], required: true },
@@ -210,6 +212,7 @@ export default {
                 adjustment: 'AddTimeVue',
                 leave: 'RecordLeaveVue',
                 offset: 'RecordOffsetVue',
+                pass_slip: 'RecordPassSlip',
                 overtime: 'AddOvertimeVue',
                 so: 'MarkAsSoVue',
                 view_overtime: 'ViewOvertimeVue',
@@ -217,6 +220,7 @@ export default {
                 cancel_offset: 'CancelOffsetVue',
                 cancel_leave: 'CancelLeaveVue',
                 cancel_special_order: 'CancelSOVue',
+                cancel_pass_slip: 'CancelPassSlip',
             };
             return components[this.modalType] || null;
         },
@@ -294,6 +298,7 @@ export default {
                 formatType('offset') ||
                 formatType('special order', 'SPECIAL ORDER') ||
                 formatType('(so)', 'SPECIAL ORDER') ||
+                formatType('pass slip') ||
                 String(remark).toUpperCase()
             );
         },
@@ -315,9 +320,13 @@ export default {
             if (this.remarks?.toLowerCase().startsWith('offset-')) {
                 return 'row-offset';
             }
+            if (this.remarks?.toLowerCase().startsWith('pass-slip-')) {
+                return 'row-pass-slip';
+            }
             if (this.hasRemark(remarks, 'holiday')) return 'row-holiday';
             if (this.hasRemark(remarks, 'absent')) return 'row-absent';
             if (this.hasRemark(remarks, 'special order')) return 'row-special-order';
+            if (this.hasRemark(remarks, 'pass slip')) return 'row-pass-slip';
             return '';
         },
         getStatusBadge(log) {
@@ -331,7 +340,7 @@ export default {
                         text: 'Rest Day',
                     };
 
-                 case this.hasRemark(remarks, 'suspension Whole day'):
+                 case this.hasRemark(remarks, 'suspension whole day'):
                     return {
                         class: 'status-restday',
                         icon: 'fa-solid fa-mug-hot',
@@ -358,6 +367,12 @@ export default {
                         class: 'status-offset',
                         icon: 'fa-solid fa-ghost',
                         text: 'Offset',
+                    };
+                case this.hasRemark(remarks, 'pass slip-wholeday'):
+                    return {
+                        class: 'status-pass-slip',
+                        icon: 'fa-solid fa-torii-gate',
+                        text: 'Pass Slip',
                     };
 
                 case this.hasRemark(remarks, 'special order-wholeday'):
@@ -395,6 +410,7 @@ export default {
             if (remarkLower.includes('leave')) return 'status-leave';
             if (remarkLower.includes('offset')) return 'status-offset';
             if (remarkLower.includes('special order')) return 'status-special-order';
+            if (remarkLower.includes('pass slip')) return 'status-pass-slip';
             if (remarkLower.includes('ob')) return 'status-ob';
             if (remarkLower.includes('rest day')) return 'status-restday';
             if (remarkLower.includes('holiday')) return 'status-holiday';
@@ -403,160 +419,134 @@ export default {
             return '';
         },
         getActions(remarks) {
-          const value = String(remarks || '').toLowerCase();
+            const value = String(remarks || '').toLowerCase();
 
-          /* ------------------ Detect Shifts ------------------ */
-          const hasLeaveMorning    = value.includes('leave-morning');
-          const hasLeaveAfternoon  = value.includes('leave-afternoon');
-          const hasLeaveWholeDay   = value.includes('leave-wholeday');
+            const employmentType = this.information.employment_type_id;
+            const isLeaveType  = employmentType === 1;
+            const isOffsetType = employmentType === 2;
 
-          const hasOffsetMorning   = value.includes('offset-morning');
-          const hasOffsetAfternoon = value.includes('offset-afternoon');
-          const hasOffsetWholeDay  = value.includes('offset-wholeday');
+            /* ------------------ Helper ------------------ */
+            const has = (keyword) => value.includes(keyword);
 
-          const hasSpecialOrderMorning   = value.includes('special order-morning');
-          const hasSpecialOrderAfternoon = value.includes('special order-afternoon');
-          const hasSpecialOrderWholeDay  = value.includes('special order-wholeday');
+            const buildAdjustmentAndCancel = (cancelType, cancelText) => ([
+                {
+                    type: 'adjustment',
+                    icon: 'fa-solid fa-clock-rotate-left',
+                    text: 'Add/Adjust Time'
+                },
+                {
+                    type: cancelType,
+                    icon: 'fa-solid fa-ban',
+                    text: cancelText,
+                    danger: true
+                }
+            ]);
 
-          const isLeaveType  = this.information.employment_type_id === 1;
-          const isOffsetType = this.information.employment_type_id === 2;
+            const buildCancelOnly = (cancelType, cancelText) => ([
+                {
+                    type: cancelType,
+                    icon: 'fa-solid fa-ban',
+                    text: cancelText,
+                    danger: true
+                }
+            ]);
 
-          /* ---------------- PRIORITY: SPECIAL ORDER ---------------- */
-          if (hasSpecialOrderMorning || hasSpecialOrderAfternoon) {
-              return [
-                  {
-                      type: 'adjustment',
-                      icon: 'fa-solid fa-clock-rotate-left',
-                      text: 'Add/Adjust Time'
-                  },
-                  {
-                      type: 'cancel_special_order',
-                      icon: 'fa-solid fa-ban',
-                      text: 'Cancel Special Order',
-                      danger: true
-                  }
-              ];
-          }
+            /* ================= PRIORITY SECTION ================= */
 
-          if (hasSpecialOrderWholeDay) {
-              return [
-                  {
-                      type: 'cancel_special_order',
-                      icon: 'fa-solid fa-ban',
-                      text: 'Cancel Special Order',
-                      danger: true
-                  }
-              ];
-          }
+            /* -------- SPECIAL ORDER -------- */
+            if (has('special order-morning') || has('special order-afternoon')) {
+                return buildAdjustmentAndCancel('cancel_special_order', 'Cancel Special Order');
+            }
 
-          /* ---------------- CANCEL LEAVE ---------------- */
-          if (isLeaveType && (hasLeaveMorning || hasLeaveAfternoon)) {
-              return [
-                  {
-                      type: 'adjustment',
-                      icon: 'fa-solid fa-clock-rotate-left',
-                      text: 'Add/Adjust Time'
-                  },
-                  {
-                      type: 'cancel_leave',
-                      icon: 'fa-solid fa-ban',
-                      text: 'Cancel Leave',
-                      danger: true
-                  }
-              ];
-          }
+            if (has('special order-wholeday')) {
+                return buildCancelOnly('cancel_special_order', 'Cancel Special Order');
+            }
 
-          if (isLeaveType && hasLeaveWholeDay) {
-              return [
-                  {
-                      type: 'cancel_leave',
-                      icon: 'fa-solid fa-ban',
-                      text: 'Cancel Leave',
-                      danger: true
-                  }
-              ];
-          }
+            /* -------- PASS SLIP (NEW) -------- */
+            if (has('pass slip-morning') || has('pass slip-afternoon')) {
+                return buildAdjustmentAndCancel('cancel_pass_slip', 'Cancel Pass Slip');
+            }
 
-          /* ---------------- CANCEL OFFSET ---------------- */
-          if (hasOffsetMorning || hasOffsetAfternoon) {
-              return [
-                  {
-                      type: 'adjustment',
-                      icon: 'fa-solid fa-clock-rotate-left',
-                      text: 'Add/Adjust Time'
-                  },
-                  {
-                      type: 'cancel_offset',
-                      icon: 'fa-solid fa-ban',
-                      text: 'Cancel Offset',
-                      danger: true
-                  }
-              ];
-          }
+            if (has('pass slip-wholeday')) {
+                return buildCancelOnly('cancel_pass_slip', 'Cancel Pass Slip');
+            }
 
-          if (hasOffsetWholeDay) {
-              return [
-                  {
-                      type: 'cancel_offset',
-                      icon: 'fa-solid fa-ban',
-                      text: 'Cancel Offset',
-                      danger: true
-                  }
-              ];
-          }
+            /* -------- LEAVE -------- */
+            if (isLeaveType && (has('leave-morning') || has('leave-afternoon'))) {
+                return buildAdjustmentAndCancel('cancel_leave', 'Cancel Leave');
+            }
 
-          /* ---------------- DEFAULT ACTIONS ---------------- */
-          const actions = [
-              {
-                  type: 'adjustment',
-                  icon: 'fa-solid fa-clock-rotate-left',
-                  text: 'Add/Adjust Time'
-              },
-              {
-                  type: 'overtime',
-                  icon: 'fa-solid fa-hourglass-half',
-                  text: 'Add Overtime'
-              },
-              {
-                  type: 'so',
-                  icon: 'fa-solid fa-car-on',
-                  text: 'Mark as SO'
-              }
-          ];
+            if (isLeaveType && has('leave-wholeday')) {
+                return buildCancelOnly('cancel_leave', 'Cancel Leave');
+            }
 
-          if (isLeaveType) {
-              actions.push(
-                  {
-                      type: 'leave',
-                      icon: 'fa-solid fa-plane-departure',
-                      text: 'Record Leave'
-                  },
-                  {
-                      type: 'offset',
-                      icon: 'fa-solid fa-ghost',
-                      text: 'Record Offset'
-                  }
-              );
-          }
+            /* -------- OFFSET -------- */
+            if (has('offset-morning') || has('offset-afternoon')) {
+                return buildAdjustmentAndCancel('cancel_offset', 'Cancel Offset');
+            }
 
-          if (isOffsetType) {
-              actions.push({
-                  type: 'offset',
-                  icon: 'fa-solid fa-ghost',
-                  text: 'Record Offset'
-              });
-          }
+            if (has('offset-wholeday')) {
+                return buildCancelOnly('cancel_offset', 'Cancel Offset');
+            }
 
-          if (!value.includes('absent') && !value.includes('restday')) {
-              actions.push({
-                  type: 'absent',
-                  icon: 'fa-solid fa-user-xmark',
-                  text: 'Mark Absent',
-                  danger: true
-              });
-          }
+            /* ================= DEFAULT ACTIONS ================= */
 
-          return actions;
+            const actions = [
+                {
+                    type: 'adjustment',
+                    icon: 'fa-solid fa-clock-rotate-left',
+                    text: 'Add/Adjust Time'
+                },
+                {
+                    type: 'overtime',
+                    icon: 'fa-solid fa-hourglass-half',
+                    text: 'Add Overtime'
+                },
+                {
+                    type: 'so',
+                    icon: 'fa-solid fa-car-on',
+                    text: 'Mark as SO'
+                },
+                {
+                    type: 'pass_slip',
+                    icon: 'fa-solid fa-torii-gate',
+                    text: 'Record Pass Slip / OBS'
+                }
+            ];
+
+            if (isLeaveType) {
+                actions.push(
+                    {
+                        type: 'leave',
+                        icon: 'fa-solid fa-plane-departure',
+                        text: 'Record Leave'
+                    },
+                    {
+                        type: 'offset',
+                        icon: 'fa-solid fa-ghost',
+                        text: 'Record Offset'
+                    }
+                );
+            }
+
+            if (isOffsetType) {
+                actions.push({
+                    type: 'offset',
+                    icon: 'fa-solid fa-ghost',
+                    text: 'Record Offset'
+                });
+            }
+
+            if (!has('absent') && !has('restday')) {
+                actions.push({
+                    type: 'absent',
+                    icon: 'fa-solid fa-user-xmark',
+                    text: 'Mark Absent',
+                    danger: true
+                });
+            }
+
+            return actions;
         },
         openModal(type, index) {
             this.modalType = type;
@@ -753,6 +743,7 @@ export default {
     .status-holiday { color: var(--bs-warning);  }
     .status-leave { color: var(--bs-info);  }
     .status-offset { color: var(--bs-info);  }
+    .status-pass-slip { color: var(--bs-info);  }
     .status-special-order { color: var(--bs-info);  }
     .status-ob { color: var(--bs-primary);  }
     .status-absent { color: var(--bs-danger);  }

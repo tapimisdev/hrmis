@@ -547,6 +547,34 @@ class TimelogsServices {
         ];
     }
 
+    public function checkIfPassSlip($date, $userId)
+    {
+        $is_pass_slip = false;
+        $status = 'pending pass slip';
+
+        $pass_slip = DB::table('obs_applications as soa')
+            ->leftJoin('obs_dates as sod', 'soa.id', '=', 'sod.obs_application_id')
+            ->where('soa.user_id', $userId)
+            ->where('sod.isActive', true)
+            ->whereDate('sod.date', $date)
+            ->first();
+        
+
+        if ($pass_slip) {
+            $is_pass_slip = true;
+
+            if ($pass_slip->status === 'approved') {
+                $status = 'pass slip';
+            }
+        }
+
+        return [
+            'is_pass_slip' => $is_pass_slip,
+            'shift'    => $pass_slip->shift ?? '',
+            'status'   => $status
+        ];
+    }
+
     /**
      * Check and compute overtime for a given user and date.
      *
