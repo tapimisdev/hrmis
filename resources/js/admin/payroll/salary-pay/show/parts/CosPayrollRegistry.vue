@@ -43,6 +43,7 @@
             <th class="p-4" style="width: 100px;">Percentage Tax <br />(3%)</th>
             <th class="p-4" style="width: 100px;">Tax <br />(EWT: 5%)</th>
             <th class="p-4" style="width: 100px;">Overall Tax</th>
+            <th class="p-4" style="width: 100px;">HMO</th>
 
             <!-- Dynamic Earnings -->
             <th
@@ -98,6 +99,7 @@
             <td class="text-center number-cell deduction">{{ formatNumber(emp.percentage_tax_3) }}</td>
             <td class="text-center number-cell deduction">{{ formatNumber(emp.tax_ewt_5) }}</td>
             <td class="text-center number-cell deduction">{{ formatNumber(emp.w_tax) }}</td>
+            <td class="text-center number-cell deduction">{{ formatNumber(emp.hmo) }}</td>
 
             <!-- Dynamic Earnings -->
             <td
@@ -154,6 +156,7 @@
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'percentage_tax_3')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'tax_ewt_5')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'w_tax')) }}</td>
+            <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'hmo')) }}</td>
 
             <td
               v-for="(earning, idx) in dynamicEarnings"
@@ -193,6 +196,7 @@
             <td class="number-cell deduction">{{ formatNumber(grandTotals('percentage_tax_3')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('tax_ewt_5')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('w_tax')) }}</td>
+            <td class="number-cell deduction">{{ formatNumber(grandTotals('hmo')) }}</td>
 
             <td
               v-for="(earning, idx) in dynamicEarnings"
