@@ -3,27 +3,18 @@
 namespace App\Services\SalaryPay;
 
 use App\Enums\EmploymentTypesEnum;
-use App\Enums\FnEnum;
-use App\Enums\TableSettingsEnum;
 use App\Jobs\Admin\Payroll\PayrollRegistryReport;
-use App\Models\User;
-use App\Notifications\PayrollBatchCompleted;
 use App\Services\DailyTimeRecordService;
 use Illuminate\Bus\Batch;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use \Carbon\Carbon;
 
 use Throwable;
-use function PHPSTORM_META\map;
 
 class PayrollService
 {
-
     protected $daily_time_record_service;
     private $date;
     private $cutoff;
@@ -71,7 +62,7 @@ class PayrollService
         $this->cutoff = $payload['cutoff'] ?? null;
         $this->group_id = $payload['group_id']; // can be 'custom'
 
-       $latestOrg = DB::table('employee_organization as eo')
+        $latestOrg = DB::table('employee_organization as eo')
             ->select('eo.*')
             ->joinSub(
                 DB::table('employee_organization')

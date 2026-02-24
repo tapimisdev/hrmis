@@ -50,14 +50,13 @@ class ComputationService {
         // Hazard payroll is previous month
         $payload = [
             'user_id'   => $this->user_id,
-            'startDate' => Carbon::parse($this->start_date)->subMonth()->format('Y-m-d'),
-            'endDate'   => Carbon::parse($this->end_date)->subMonth()->format('Y-m-d'),
+            'startDate' => Carbon::parse($this->start_date)->format('Y-m-d'),
+            'endDate'   => Carbon::parse($this->end_date)->format('Y-m-d'),
         ];
 
         $dtr = $this->daily_time_record_service->getDTR($payload);
         $total_summary_of_dtr = $dtr['payroll_value'];
         $actual_presence  = $total_summary_of_dtr['actual_presence'];
-        // $actual_presence  = 16;
 
         $entitlementPercentage = 0; 
         $less_healthcard = 0;
@@ -266,13 +265,12 @@ class ComputationService {
 
     private function getWithHoldingTax() 
     {
-
         $date = explode('-', $this->payroll_date);
         $year = (int) $date[0];
         $month = (int) $date[1];
 
         $component_table_id = DB::table('payroll_components_settings')
-            ->where('type', TableSettingsEnum::SALARY_ID->value)
+            ->where('type', TableSettingsEnum::HAZARD_PA->value)
             ->value('tax_id');
 
         $components_year_id = DB::table('payroll_components_years')
@@ -280,12 +278,12 @@ class ComputationService {
             ->where('year', $year)
             ->value('id');
 
-        $tax_table = DB::table('employee_payroll_components')
+        $tax_table_amount = DB::table('employee_payroll_components')
             ->where('tax_deduction_id', $components_year_id)
             ->where('employee_no', $this->employee_no)
             ->where('month', $month)
-            ->first();
+            ->value('amount');
 
-        return $tax_table->amount ?? 0;
+        return $tax_table_amount ?? 0;
     }
 }
