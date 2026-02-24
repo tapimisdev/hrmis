@@ -618,6 +618,7 @@ class ApplicationController extends Controller
             $queries[] = DB::table('leave_applications as a')
                 ->join('leave_dates as d', 'a.id', '=', 'd.leave_application_id')
                 ->where('d.isActive', true)
+                ->whereNotIn('a.status', ['cancelled', 'rejected'])
                 ->where('a.user_id', $user->id)
                 ->select(
                     DB::raw("'leave' as title"),
@@ -631,6 +632,7 @@ class ApplicationController extends Controller
             $queries[] = DB::table('offset_applications as a')
                 ->join('offset_dates as d', 'a.id', '=', 'd.offset_application_id')
                 ->where('d.isActive', true)
+                ->whereNotIn('a.status', ['cancelled', 'rejected'])
                 ->where('a.user_id', $user->id)
                 ->select(
                     DB::raw("'offset' as title"),
@@ -644,6 +646,7 @@ class ApplicationController extends Controller
             $queries[] = DB::table('special_order_applications as a')
                 ->join('special_order_dates as d', 'a.id', '=', 'd.special_order_application_id')
                 ->where('d.isActive', true)
+                ->whereNotIn('a.status', ['cancelled', 'rejected'])
                 ->where('a.user_id', $user->id)
                 ->select(
                     DB::raw("'special order' as title"),
@@ -657,6 +660,7 @@ class ApplicationController extends Controller
             $queries[] = DB::table('obs_applications as a')
                 ->join('obs_dates as d', 'a.id', '=', 'd.obs_application_id')
                 ->where('d.isActive', true)
+                ->whereNotIn('a.status', ['cancelled', 'rejected'])
                 ->where('a.user_id', $user->id)
                 ->select(
                     DB::raw("'pass slip' as title"),
