@@ -547,6 +547,34 @@ class TimelogsServices {
         ];
     }
 
+    public function checkIfPassSlip($date, $userId)
+    {
+        $is_pass_slip = false;
+        $status = 'pending pass slip';
+
+        $pass_slip = DB::table('obs_applications as soa')
+            ->leftJoin('obs_dates as sod', 'soa.id', '=', 'sod.obs_application_id')
+            ->where('soa.user_id', $userId)
+            ->where('sod.isActive', true)
+            ->whereDate('sod.date', $date)
+            ->first();
+        
+
+        if ($pass_slip) {
+            $is_pass_slip = true;
+
+            if ($pass_slip->status === 'approved') {
+                $status = 'pass slip';
+            }
+        }
+
+        return [
+            'is_pass_slip' => $is_pass_slip,
+            'shift'    => $pass_slip->shift ?? '',
+            'status'   => $status
+        ];
+    }
+
     /**
      * Check and compute overtime for a given user and date.
      *
@@ -656,7 +684,7 @@ class TimelogsServices {
      *                     ]
      */
 
-    public function computeTardinessAndUndertime($date, array $suspension = null, $leave = null, $offset = null, $so = null)
+    public function computeTardinessAndUndertime($date, array $suspension = null, $leave = null, $offset = null, $so = null, $pass_slip = null)
     {
         $shift = DB::table('shifts')->where('id', $date['shift_id'])->first();
         if (!$shift) return null;
@@ -743,7 +771,7 @@ class TimelogsServices {
             }
 
             $totalLostMinutes = $totalTardiness + $totalUndertime;
-            $remark = "halfday - {$suspensionShift} suspended";
+            $remark = "{$suspensionShift} suspended";
         }
 
         /* ===================================================
@@ -752,7 +780,8 @@ class TimelogsServices {
         elseif (
             ($leave && ($leave['is_leave'] ?? false)) ||
             ($offset && ($offset['is_offset'] ?? false)) ||
-            ($so && ($so['is_so'] ?? false))
+            ($so && ($so['is_so'] ?? false)) || 
+            ($pass_slip && ($pass_slip['is_pass_slip'] ?? false))
         ) {
 
             // Determine which source triggered
@@ -765,6 +794,9 @@ class TimelogsServices {
             } elseif ($so && ($so['is_so'] ?? false)) {
                 $source = $so;
                 $type   = 'special order';
+            } elseif ($pass_slip && ($pass_slip['is_pass_slip'] ?? false)) {
+                $source = $pass_slip;
+                $type   = 'pass slip';
             }
 
             $shiftType = $source['shift'];

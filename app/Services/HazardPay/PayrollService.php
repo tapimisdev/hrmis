@@ -3,23 +3,22 @@
 namespace App\Services\HazardPay;
 
 use App\Enums\EmploymentTypesEnum;
-use App\Models\User;
-use App\Notifications\PayrollBatchCompleted;
 use App\Jobs\Admin\Payroll\HazardPayReport;
+use Carbon\Carbon;
 use Illuminate\Bus\Batch;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 use Throwable;
 
 
 class PayrollService {
 
-    public $monthYear;
+    private $monthYear;
+
+    private $eligible;
+    private $not_eligible;
 
     public function getPayrolls($payload)
     {
@@ -46,34 +45,58 @@ class PayrollService {
         return $query->get();
     }
 
-
     public function getEligibleEmployees($payload)
     {
-
         $this->monthYear = $payload['month'];
 
+        $latestOrg = DB::table('employee_organization as eo')
+            ->select('eo.*')
+            ->joinSub(
+                DB::table('employee_organization')
+                    ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
+                    ->groupBy('employee_no'),
+                'mx',
+                function ($join) {
+                    $join->on('eo.employee_no', '=', 'mx.employee_no')
+                        ->on('eo.effectivity_date', '=', 'mx.max_effectivity_date');
+                }
+            )
+            ->joinSub(
+                DB::table('employee_organization')
+                    ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
+                    ->groupBy('employee_no', 'effectivity_date'),
+                'mx2',
+                function ($join) {
+                    $join->on('eo.employee_no', '=', 'mx2.employee_no')
+                        ->on('eo.effectivity_date', '=', 'mx2.effectivity_date')
+                        ->on('eo.id', '=', 'mx2.max_id');
+                }
+            );
+                
         $employees = DB::table('employee_information as ei')
-            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
+            ->leftJoinSub($latestOrg, 'eo', function ($join) {
+                $join->on('ei.employee_no', '=', 'eo.employee_no');
+            })
             ->leftJoin('positions', 'eo.position_id', '=', 'positions.id')
             ->leftJoin('divisions', 'eo.division_id', '=', 'divisions.id')
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
             ->where('eo.employment_type_id', $payload['employment_type_id'])
             ->select(
-                'ep.firstname', 
-                'ep.middlename', 
-                'ep.lastname', 
-                'ep.suffix', 
+                'ep.firstname',
+                'ep.middlename',
+                'ep.lastname',
+                'ep.suffix',
 
                 'positions.name as position',
                 'divisions.name as division',
 
                 'eo.employment_type_id',
 
-                'ei.user_id', 
-                'ei.employee_no', 
-                'ei.account_status')
+                'ei.user_id',
+                'ei.employee_no',
+                'ei.account_status'
+            )
             ->get();
-        
         
         if ($employees->isEmpty()) {
             throw new \Exception('No employees found for this employment type.', 409);
@@ -84,8 +107,8 @@ class PayrollService {
         }
 
         $seperatedEmployee = [
-            'eligible' => $this->eligibile ?? [],
-            'not_eligible' => $this->not_eligibile ?? [],
+            'eligible' => $this->eligible ?? [],
+            'not_eligible' => $this->not_eligible ?? [],
         ];
 
         return $seperatedEmployee;
@@ -100,6 +123,21 @@ class PayrollService {
             $remarks[] = [
                 'text' => 'This Employee is Inactive',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
+            ];
+        }
+
+        $existence = $this->checkIfExistInPayroll($employee);
+
+        if ($existence['is_exist']) {
+            $remarks[] = [
+                'text' => 'This employee is already included in Hazard Payroll No. '
+                    . $existence['payroll']->payroll_no
+                    . ' for '
+                    . Carbon::parse($existence['payroll']->month)->format('F'),
+                'url' => route('hazard-pay.show', [
+                    'hazard_pay' => $existence['payroll']->payroll_no,
+                    'batch_id'   => $existence['payroll']->batch_id,
+                ]),
             ];
         }
 
@@ -136,27 +174,42 @@ class PayrollService {
         $employee->remarks = $remarks ?: $eligibleRemarks;
 
         if (empty($remarks)) {
-            $this->eligibile[] = $employee;
+
+            $employee->selected = true;
+
+            $this->eligible[] = $employee;
         } else {
-            $this->not_eligibile[] = $employee;
+            $this->not_eligible[] = $employee;
         }
     }
 
-    private function getCutoff()
+    private function checkIfExistInPayroll($emp)
     {
-        [$year, $month] = explode('-', $this->monthYear);
-        $dateObj = \DateTime::createFromFormat('Y-m', "$year-$month");
+        $month = $this->monthYear;
 
-        if (!$dateObj) {
-            throw new InvalidArgumentException("Invalid monthYear format: $this->monthYear");
+        $isExist = false;
+
+        $payrolls = DB::table('payroll_hazard_pay')
+            ->where('month', $month)
+            ->where('status', '!=', 'cancelled')
+            ->get();
+
+        foreach ($payrolls as $payroll) {
+            $exists = DB::table('payroll_hazard_pay_employee')
+                ->where('payroll_hazard_pay_id', $payroll->id)
+                ->where('employee_no', $emp->employee_no)
+                ->exists();
+
+            if ($exists) {
+                $isExist = true;
+                $payroll = $payroll;
+                break;
+            }
         }
 
-        $start = "$year-$month-01";
-        $end   = $dateObj->format('Y-m-t');
-
         return [
-            'startDate' => $start,
-            'endDate'   => $end,
+            'is_exist' => $isExist,
+            'payroll' => $payroll ?? []
         ];
     }
 
@@ -272,13 +325,15 @@ class PayrollService {
 
     public function createReport($payload, $payroll_id)
     {
-        $employees = collect($this->getEligibleEmployees($payload));
-        $eligibleEmployees = $employees->get('eligible', []);
+        $eligibleEmployees = collect($payload['employees']['eligible'])->where('selected', true);
+
+        // dd($eligibleEmployees);
 
         if (empty($eligibleEmployees)) {
             Log::warning("No eligible employees found for payroll ID: {$payroll_id}");
             return null;
         }
+        
         $batch = Bus::batch([])
             ->then(function (Batch $batch) {
                 // $admin = \App\Models\User::role('admin')->first();

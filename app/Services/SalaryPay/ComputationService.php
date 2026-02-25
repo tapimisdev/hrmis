@@ -576,6 +576,7 @@ class ComputationService
                 'users.id as user_id'
             )
             ->where('employee_organization.employee_no', $this->employee_no)
+            ->orderByDesc('employee_organization.effectivity_date')
             ->first();
 
         if (!$employee_information) {

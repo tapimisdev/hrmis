@@ -3,27 +3,18 @@
 namespace App\Services\SalaryPay;
 
 use App\Enums\EmploymentTypesEnum;
-use App\Enums\FnEnum;
-use App\Enums\TableSettingsEnum;
 use App\Jobs\Admin\Payroll\PayrollRegistryReport;
-use App\Models\User;
-use App\Notifications\PayrollBatchCompleted;
 use App\Services\DailyTimeRecordService;
 use Illuminate\Bus\Batch;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use \Carbon\Carbon;
 
 use Throwable;
-use function PHPSTORM_META\map;
 
 class PayrollService
 {
-
     protected $daily_time_record_service;
     private $date;
     private $cutoff;
@@ -75,22 +66,22 @@ class PayrollService
             ->select('eo.*')
             ->joinSub(
                 DB::table('employee_organization')
-                    ->selectRaw('employee_no, MAX(created_at) as max_created_at')
+                    ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
                     ->groupBy('employee_no'),
                 'mx',
                 function ($join) {
                     $join->on('eo.employee_no', '=', 'mx.employee_no')
-                        ->on('eo.created_at', '=', 'mx.max_created_at');
+                        ->on('eo.effectivity_date', '=', 'mx.max_effectivity_date');
                 }
             )
             ->joinSub(
                 DB::table('employee_organization')
-                    ->selectRaw('employee_no, created_at, MAX(id) as max_id')
-                    ->groupBy('employee_no', 'created_at'),
+                    ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
+                    ->groupBy('employee_no', 'effectivity_date'),
                 'mx2',
                 function ($join) {
                     $join->on('eo.employee_no', '=', 'mx2.employee_no')
-                        ->on('eo.created_at', '=', 'mx2.created_at')
+                        ->on('eo.effectivity_date', '=', 'mx2.effectivity_date')
                         ->on('eo.id', '=', 'mx2.max_id');
                 }
             );

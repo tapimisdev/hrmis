@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Timekeeping\MarkAsAbsentApiController;
 use App\Http\Controllers\Api\Timekeeping\CancelLeaveApiController;
 use App\Http\Controllers\Api\Timekeeping\CancelOffsetApiController;
 use App\Http\Controllers\Api\Timekeeping\CancelSOApiController;
+use App\Http\Controllers\Api\Timekeeping\CancelPassSlipController;
 use App\Http\Controllers\Api\Timekeeping\MarkAsAbsentController;
 use App\Http\Controllers\Api\Timekeeping\MarkAsSoApiController;
 use App\Http\Controllers\Api\LeavesApiController;
@@ -28,6 +29,7 @@ Route::post('mark-as-so', [MarkAsSoApiController::class, 'mark_as_so']);
 Route::post('cancel-leave', [CancelLeaveApiController::class, 'cancel']);
 Route::post('cancel-offset', [CancelOffsetApiController::class, 'cancel']);
 Route::post('cancel-special-order', [CancelSOApiController::class, 'cancel']);
+Route::post('cancel-pass-slip', [CancelPassSlipController::class, 'cancel']);
 
 Route::get('view-correction', [CorrectionTimelogController::class, 'index']);
 Route::get('request-correction', [CorrectionTimelogController::class, 'edit']);

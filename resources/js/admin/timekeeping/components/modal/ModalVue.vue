@@ -13,7 +13,7 @@
             <div class="modal-content modern-modal">
                 <!-- Header -->
                 <div class="modal-header modern-header border-bottom">
-                    <div class="header-content mb-3">
+                    <div class="header-content mb-0">
                         <div class="icon-wrapper">
                             <i :class="headerIcon"></i>
                         </div>
@@ -60,6 +60,8 @@ export default {
                     return "Record Leave";
                 case "offset":
                     return "Record Offset";
+                case "pass_slip":
+                    return "Pass Slip";
                 case "absent":
                     return "Mark as Absent";
                 case "so":
@@ -73,7 +75,9 @@ export default {
                 case "cancel_leave":
                     return "Cancel Leave";
                 case "cancel_offset":
-                    return "Cancel Offset"
+                    return "Cancel Offset";
+                case "cancel_pass_slip":
+                    return "Cancel Pass Slip"
                 case "cancel_special_order":
                     return "Cancel Special Order"
                 default:
@@ -90,6 +94,8 @@ export default {
                     return "fa-solid fa-plane-departure";
                 case "offset":
                     return "fa-solid fa-ghost";
+                case "pass_slip":
+                    return "fa-solid fa-torii-gate";
                 case "absent":
                     return "fas fa-user-times";
                 case "so":
@@ -103,6 +109,7 @@ export default {
                 case "cancel_leave":
                 case "cancel_offset":
                 case "cancel_special_order":
+                case "cancel_pass_slip":
                     return "fas fa-cancel";
                 default:
                     return "fas fa-file-alt";
