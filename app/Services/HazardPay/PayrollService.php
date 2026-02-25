@@ -327,10 +327,13 @@ class PayrollService {
     {
         $eligibleEmployees = collect($payload['employees']['eligible'])->where('selected', true);
 
+        // dd($eligibleEmployees);
+
         if (empty($eligibleEmployees)) {
             Log::warning("No eligible employees found for payroll ID: {$payroll_id}");
             return null;
         }
+        
         $batch = Bus::batch([])
             ->then(function (Batch $batch) {
                 // $admin = \App\Models\User::role('admin')->first();
