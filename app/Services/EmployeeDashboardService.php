@@ -38,7 +38,7 @@ class EmployeeDashboardService {
             'startDate'   => $startDate->toDateTimeString(),
             'endDate'     => $endDate->toDateTimeString(),
         ]);
-
+    
         return $daily_time_record['summary'];
     }
 
@@ -66,6 +66,16 @@ class EmployeeDashboardService {
                         ->where('status', 'pending')
                         ->count();
 
+        $so_request = DB::table('special_order_applications')
+                        ->where('user_id', $user_id)
+                        ->where('status', 'pending')
+                        ->count();
+
+        $obs_request = DB::table('obs_applications')
+                ->where('user_id', $user_id)
+                ->where('status', 'pending')
+                ->count();
+
         $unviewedCount = DB::table('events_announcements as ea')
                 ->leftJoin('events_announcements_viewers as eav', function ($join) use ($user_id) {
                     $join->on('ea.id', '=', 'eav.event_announcement_id')
@@ -77,45 +87,54 @@ class EmployeeDashboardService {
         $cards = [
             [
                 'id' => 1,
-                'name' => 'Leave Request',
-                'icon' => 'fa-solid fa-calendar-days',
-                'description' => 'Apply for leave and view leave history',
+                'name' => 'Leave',
+                'icon' => 'fa-solid fa-plane-departure',
+                'description' => 'Request leave and review your leave records',
                 'pending' => $leave_request,
                 'color' => '#032985',
                 'route' => '/employee/leaves'
             ],
             [
                 'id' => 2,
-                'name' => 'Offset Request',
+                'name' => 'Offset',
                 'icon' => 'fa-solid fa-ghost',
-                'description' => 'Apply for offset and view offset history',
+                'description' => 'File an offset request and check past submissions',
                 'pending' => $offset_request,
                 'color' => '#032985',
                 'route' => '/employee/offset'
             ],
-            // [
-            //     'id' => 3,
-            //     'name' => 'Pass Slip Request',
-            //     'icon' => 'fa-solid fa-id-card',
-            //     'description' => 'Submit and monitor pass slip requests',
-            //     'pending' => $passlip_request,
-            //     'color' => '#032985',
-            //     'route' => '/employee/pass-slip'
-            // ],
+            [
+                'id' => 3,
+                'name' => 'Special Order',
+                'icon' => 'fa-solid fa-car-on',
+                'description' => 'Create and track your pass slip requests',
+                'pending' => $passlip_request,
+                'color' => '#032985',
+                'route' => ''
+            ],
             [
                 'id' => 4,
+                'name' => 'Pass Slip / OBS',
+                'icon' => 'fa-solid fa-torii-gate',
+                'description' => 'Submit and monitor overtime requests',
+                'pending' => $overtime_request,
+                'color' => '#032985',
+                'route' => '/employee/pass-slip'
+            ],
+            [
+                'id' => 5,
                 'name' => 'Overtime Request',
                 'icon' => 'fa-solid fa-hourglass-half',
-                'description' => 'Submit and track overtime applications',
+                'description' => 'Apply for overtime and view request status',
                 'pending' => $overtime_request,
                 'color' => '#032985',
                 'route' => '/employee/overtime'
             ],
             [
-                'id' => 5,
+                'id' => 6,
                 'name' => 'Announcements',
                 'icon' => 'fa-solid fa-bullhorn',
-                'description' => 'View unread company announcements',
+                'description' => 'Check the latest company updates and notices',
                 'pending' => $unviewedCount,
                 'color' => '#032985',
                 'route' => '/employee/announcements'
@@ -123,7 +142,6 @@ class EmployeeDashboardService {
         ];
 
         return $cards;
-
     }
 
     public function get_announcements($count = 4)

@@ -1,19 +1,23 @@
 <template>
     <div class="mt-3">
-        <filter-dtr-vue
-            :employee_no="employee_no"
-            :month="month"
-            :year="year"
-            :payload="payload"
-            @update-date="updateDate"
-        />
-        <table-dtr-vue
-            :employee_no="employee_no"
-            :employee_id="employee_id"
-            :month="month"
-            :year="year"
-            @send-payload="handleSummary"
-        />
+        <div class="mb-4">
+            <filter-dtr-vue
+                :employee_no="employee_no"
+                :month="month"
+                :year="year"
+                :payload="payload"
+                @update-date="updateDate"
+            />
+        </div>
+        <div>
+            <table-dtr-vue
+                :employee_no="employee_no"
+                :employee_id="employee_id"
+                :month="month"
+                :year="year"
+                @send-payload="handleSummary"
+            />
+        </div>
     </div>
 </template>
 

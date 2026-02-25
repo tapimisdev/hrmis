@@ -61,80 +61,79 @@
                     </div>
 
                     <div class="quick-stats row g-4 mt-3 mb-0 pt-0">
-                        <div class="col-md-6">
-                            <div class="stat-item d-flex gap-3">
-                                <div class="stat-icon">
-                                    <i class="fa-solid fa-clock"></i>
-                                </div>
-                                <div>
-                                    <div class="stat-value">
-                                        {{ stats.totalHours }}
-                                    </div>
-                                    <div
-                                        class="stat-label text-uppercase text-muted mt-1"
-                                        style="font-size: 12px; margin-top: 4px"
-                                    >
-                                        Total Hours
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="stat-item d-flex gap-3">
-                                <div class="stat-icon">
-                                    <i class="fa-solid fa-calendar-xmark"></i>
-                                </div>
-                                <div>
-                                    <div class="stat-value">
-                                        {{ stats.pendingLeaves }}
-                                    </div>
-                                    <div
-                                        class="stat-label text-uppercase text-muted mt-1"
-                                        style="font-size: 12px; margin-top: 4px"
-                                    >
-                                        Pending Leaves
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
+                        <!-- Total Hours -->
                         <div class="col-md-6">
                             <div class="stat-item d-flex gap-3">
                                 <div class="stat-icon">
                                     <i class="fa-solid fa-business-time"></i>
                                 </div>
                                 <div>
-                                    <div class="stat-value">
-                                        {{ stats.overtime }}
-                                    </div>
-                                    <div
-                                        class="stat-label text-uppercase text-muted mt-1"
-                                        style="font-size: 12px; margin-top: 4px"
-                                    >
-                                        Overtime | Offsets
+                                    <div class="stat-value">{{ stats.totalHours }}</div>
+                                    <div class="stat-label text-uppercase text-muted mt-1" style="font-size: 12px;">
+                                        Total Hours
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Actual Presence -->
                         <div class="col-md-6">
                             <div class="stat-item d-flex gap-3">
                                 <div class="stat-icon">
-                                    <i class="fa-solid fa-user-xmark"></i>
+                                    <i class="fa-regular fa-calendar-check"></i>
                                 </div>
                                 <div>
-                                    <div class="stat-value">
-                                        {{ stats.absent }}
+                                    <div class="stat-value">{{ stats.actual_presence }}</div>
+                                    <div class="stat-label text-uppercase text-muted mt-1" style="font-size: 12px;">
+                                        Actual Presence
                                     </div>
-                                    <div
-                                        class="stat-label text-uppercase text-muted mt-1"
-                                        style="font-size: 12px; margin-top: 4px"
-                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Absences -->
+                        <div class="col-md-6">
+                            <div class="stat-item d-flex gap-3">
+                                <div class="stat-icon">
+                                    <i class="fa-regular fa-thumbs-down"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">{{ stats.absences }}</div>
+                                    <div class="stat-label text-uppercase text-muted mt-1" style="font-size: 12px;">
                                         Absences
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Late / Undertime -->
+                        <div class="col-md-6">
+                            <div class="stat-item d-flex gap-3">
+                                <div class="stat-icon">
+                                   <i class="fa-solid fa-bed"></i>
+                                </div>
+                                <div>
+                                    <div class="stat-value">{{ stats.late_undertime }}</div>
+                                    <div class="stat-label text-uppercase text-muted mt-1" style="font-size: 12px;">
+                                        Late / Undertime
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Overtime -->
+                        <div class="col-md-6">
+                          <div class="stat-item d-flex gap-3">
+                              <div class="stat-icon">
+                                  <i class="fa-solid fa-stopwatch"></i>
+                              </div>
+                              <div>
+                                  <div class="stat-value">{{ stats.overtime }}</div>
+                                  <div class="stat-label text-uppercase text-muted mt-1" style="font-size: 12px;">
+                                      Overtime 
+                                  </div>
+                              </div>
+                          </div>
                         </div>
                     </div>
                 </div>
@@ -149,24 +148,33 @@ import axios from "axios";
 export default {
     name: "WelcomeHeader",
     props: {
-     name: {
-        type: String,
-        required: true
-      },
-      isRegular: {
-        type: Boolean, 
-        required: true
-      }
+        name: {
+            type: String,
+            required: true,
+        },
+        isRegular: {
+            type: Boolean,
+            required: true,
+        },
     },
     data() {
-        return {
-            stats: {
-                totalHours: "0 HRS",
-                pendingLeaves: 0,
-                overtime: "0 MINS",
-                absent: "0 Days",
-            },
-        };
+      return {
+          stats: {
+              totalHours: "0 HR 0 MIN",
+              overtime: "0 MIN",
+              absences: "0 DAY",
+              late_undertime: "0 MIN",
+              actual_presence: "0 MIN",
+              pendingLeaves: "0 DAY",
+              pendingOffsets: "0 DAY",
+              pendingSO: "0 DAY",
+              pendingOBS: "0 DAY",
+              leaves: "0 DAY",
+              offsets: "0 DAY",
+              special_order: "0 DAY",
+              pass_slip: "0 DAY",
+          },
+      };
     },
     computed: {
         timeOfDay() {
@@ -192,18 +200,24 @@ export default {
 
                 const statsData = response.data.data || [];
 
-                const totalHrs = statsData.find((s) => s.label === "Total HRS");
-                const pendingLeaves = statsData.find(
-                    (s) => s.label === "Pending Leaves"
-                );
-                const overtime = statsData.find((s) => s.label === "Overtime");
-                const absent = statsData.find((s) => s.label === "Absent");
+                const getStat = (label) => statsData.find((s) => s.label === label);
 
                 this.stats = {
-                    totalHours: totalHrs?.value || "0 HRS",
-                    pendingLeaves: pendingLeaves?.value || 0,
-                    overtime: overtime?.value || "0 MINS",
-                    absent: absent?.value || "0 Days",
+                  totalHours: getStat("Total Hours Worked")?.value || "0HRS 0MINS",
+                  overtime: getStat("Overtime")?.value || "0 MIN",
+                  absences: getStat("Absent")?.value || "0 DAY",
+                  late_undertime: getStat("Late / Undertime")?.value || "0 MIN",
+                  actual_presence: getStat("Actual Presence")?.value || "0 MIN",
+                  
+                  pendingLeaves: getStat("Pending Leaves")?.value || "0 DAY",
+                  pendingOffsets: getStat("Pending Offsets")?.value || "0 DAY",
+                  pendingSO: getStat("Pending Special Order")?.value || "0 DAY",
+                  pendingOBS: getStat("Pending Pass Slip")?.value || "0 DAY",
+                  
+                  leaves: getStat("Leaves")?.value || "0 DAY",
+                  offsets: getStat("Offsets")?.value || "0 DAY",
+                  special_order: getStat("Special Order")?.value || "0 DAY",
+                  pass_slip: getStat("Pass Slip")?.value || "0 DAY",
                 };
             } catch (error) {
                 console.error("Error fetching stats:", error);

@@ -8,7 +8,7 @@
         </div>
 
         <!-- Cards Section -->
-        <div class="row g-3 pt-0 mb-3">
+        <div class="row g-3 pt-0 mb-4">
             <div
                 v-for="(card, i) in cards"
                 :key="i"
@@ -19,7 +19,7 @@
         </div>
 
         <!-- Row: Birthdays + Attendance -->
-        <div class="row g-3 pt-0 mb-3">
+        <div class="row g-3 pt-0 mb-4">
             <div class="col-md-6">
                 <div class="chart-card shadow-sm border border-body-secondary">
                     <ListTableVue
@@ -43,7 +43,7 @@
         </div>
 
         <!-- Row: Workforce Charts -->
-        <div class="row g-3 pt-1">
+        <div class="row g-3 pt-1 mb-4">
             <div class="col-md-5">
                 <div class="chart-card shadow-sm border border-body-secondary">
                     <DonutVue
@@ -75,6 +75,7 @@ import DonutVue from "./charts/DonutVue.vue";
 import LineVue from "./charts/LineVue.vue";
 import TotalCardVue from "./charts/TotalCardVue.vue";
 import ListTableVue from "./charts/ListTableVue.vue";
+
 const token = localStorage.getItem("auth_token");
 
 export default {
