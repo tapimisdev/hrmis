@@ -20,7 +20,7 @@
                  <form id="form" action="{{ route('hris.employee.deductions', ['employee_no' => $employee_no]) }}" method="post">
                     @method('PUT') 
                     @csrf
-                     <div class="accordion">
+                    <div class="accordion">
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse"

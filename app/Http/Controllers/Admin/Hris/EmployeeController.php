@@ -67,7 +67,18 @@ class EmployeeController extends Controller
                 'position_id' => 'required_if:type,,2|nullable|exists:positions,id|required_without:type',
                 'shift_id' => 'required|exists:shifts,id',
                 'schedule_id' => 'required|exists:work_schedule,id',
-                'employment_effectivity_date' => 'required',
+                'employment_effectivity_date' => [
+                    'required',
+                    'date_format:Y-m',
+                    function ($attribute, $value, $fail) {
+                        $inputMonth = \Carbon\Carbon::createFromFormat('Y-m', $value)->startOfMonth();
+                        $currentMonth = now()->startOfMonth();
+
+                        if ($inputMonth->lt($currentMonth)) {
+                            $fail('* Effectivity date must be current or future month.');
+                        }
+                    },
+                ],
                 'tranche_id' => 'required|exists:tranche,id',
                 'step_id' => 'required|between:1,8',
                 'salary_grade' => 'required|numeric',
@@ -75,7 +86,18 @@ class EmployeeController extends Controller
                 'deduction_applied' => 'required|in:first_cutoff,second_cutoff,both',
                 'salary_method' => 'required|in:cash,bank transfer,paycheck,e-wallet',
                 'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
-                'salary_effectivity_date' => 'required'
+                'salary_effectivity_date' => [
+                    'required',
+                    'date_format:Y-m',
+                    function ($attribute, $value, $fail) {
+                        $inputMonth = \Carbon\Carbon::createFromFormat('Y-m', $value)->startOfMonth();
+                        $currentMonth = now()->startOfMonth();
+
+                        if ($inputMonth->lt($currentMonth)) {
+                            $fail('* Effectivity date must be current or future month.');
+                        }
+                    },
+                ],
             ];
         }
 
@@ -85,7 +107,7 @@ class EmployeeController extends Controller
                 'employees.*' => ['required', 'string', 'exists:employee_information,employee_no'],
                 'tranche_id' => ['required', 'exists:tranche,id'],
                 'step_id' => ['required', 'between:1,8'],
-                'effectivity_date' => ['required', 'date'],
+                'effectivity_date' => ['required|date_format:Y-m'],
             ];
         }
 
@@ -115,33 +137,45 @@ class EmployeeController extends Controller
                     : $request->salary_cutoff;
 
             foreach ($request->employees as $employee_no) {
-                DB::table('employee_organization')->insert([
-                    'employee_no'        => $employee_no,
-                    'division_id'        => $request->division_id,
-                    'unit_id'            => $request->unit_id,
-                    'employment_type_id' => $request->employment_type_id,
-                    'position_id'        => $request->position_id,
-                    'effectivity_date'   => $request->employment_effectivity_date,
-                    'created_at'         => $now,
-                    'updated_at'         => $now,
-                ]);
 
-                DB::table('employee_salary')->insert([
-                    'employee_no'       => $employee_no,
-                    'tranche_id'        => $request->tranche_id,
-                    'salary_grade'      => $request->salary_grade,
-                    'step'              => $request->step_id,
-                    'salary_frequency'  => $request->salary_frequency,
-                    'salary_cutoff'     => $salary_cutoff,
-                    'deduction_applied' => $request->deduction_applied,
-                    'salary_basis'      => $request->salary_basis ?? null,
-                    'salary_method'     => $request->salary_method,
-                    'amount'            => $salary->amount,
-                    'daily_rate'        => $salary->daily_rate,
-                    'effectivity_date'  => $request->salary_effectivity_date,
-                    'created_at'        => now(),
-                    'updated_at'        => now(),
-                ]);
+                $employment_effectivity_date = $request->employment_effectivity_date . '-01';
+                $salary_effectivity_date = $request->salary_effectivity_date . '-01';
+
+                DB::table('employee_organization')->updateOrInsert(
+                    [
+                        'employee_no'      => $employee_no,
+                        'effectivity_date' => $employment_effectivity_date,
+                    ],
+                    [
+                        'division_id'        => $request->division_id,
+                        'unit_id'            => $request->unit_id,
+                        'employment_type_id' => $request->employment_type_id,
+                        'position_id'        => $request->position_id,
+                        'updated_at'         => $now,
+                        'created_at'         => $now, 
+                    ]
+                );
+
+                DB::table('employee_salary')->updateOrInsert(
+                    [
+                        'employee_no'      => $employee_no,
+                        'effectivity_date' => $salary_effectivity_date,
+                    ],
+                    [
+                        'tranche_id'        => $request->tranche_id,
+                        'salary_grade'      => $request->salary_grade,
+                        'step'              => $request->step_id,
+                        'salary_frequency'  => $request->salary_frequency,
+                        'salary_cutoff'     => $salary_cutoff,
+                        'deduction_applied' => $request->deduction_applied,
+                        'salary_basis'      => $request->salary_basis ?? null,
+                        'salary_method'     => $request->salary_method,
+                        'amount'            => $salary->amount,
+                        'daily_rate'        => $salary->daily_rate,
+                        'updated_at'        => now(),
+                        'created_at'        => now(),
+                    ]
+                );
             }
 
             DB::commit();

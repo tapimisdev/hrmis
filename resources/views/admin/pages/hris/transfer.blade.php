@@ -122,7 +122,7 @@
                                             </div>
                                             <div class="col-12 col-md-6 mb-3">
                                                 <label class="mb-2" for="employment_effectivity_date">Effectivity Date <span class="text-danger">*</span></label>
-                                                <input type="date" name="employment_effectivity_date" id="employment_effectivity_date" class="form-control">
+                                                <input type="month" name="employment_effectivity_date" id="employment_effectivity_date" class="form-control">
                                                 <div class="error-field"></div>
                                             </div>
                                         </div>
@@ -206,7 +206,7 @@
                                                     </div>
                                                     <div class="col-12 col-md-6 mb-3">
                                                         <label class="mb-2" for="salary_effectivity_date">Effectivity Date <span class="text-danger">*</span></label>
-                                                        <input type="date" name="salary_effectivity_date" id="salary_effectivity_date" class="form-control">
+                                                        <input type="month" name="salary_effectivity_date" id="salary_effectivity_date" class="form-control">
                                                         <div class="error-field"></div>
                                                     </div>
                                                 </div>

@@ -141,6 +141,9 @@ class EventsController extends Controller
 
         $request->merge([
             'is_suspension' => $request->has('is_suspension') && $request->boolean('is_suspension') ? true : false,
+            'email_notif' => $request->has('email_notif') && $request->boolean('email_notif') ? true : false,
+            'push_notif' => $request->has('push_notif') && $request->boolean('push_notif') ? true : false,
+            'show_viewers' => $request->has('show_viewers') && $request->boolean('show_viewers') ? true : false,
         ]);
 
         $payload = $request->all();
@@ -156,7 +159,7 @@ class EventsController extends Controller
             'attachment_titles.*' => 'nullable|string|max:255',
             'attachment_files.*'  => 'nullable|file|max:10240',
             'email_notif'         => 'nullable|boolean',
-            'push_notification'   => 'nullable|boolean',
+            'push_notif'   => 'nullable|boolean',
             'show_viewers'        => 'nullable|boolean',
             'is_suspension'       => 'required|boolean',
         ];
@@ -195,10 +198,10 @@ class EventsController extends Controller
                 'slug'          => $slug,
                 'description'   => $request->content,
                 'posted_on'     => $request->posted_on ?? now(),
-                'email_notif'   => $request->boolean('email_notif'),
-                'push_notif'    => $request->boolean('push_notification'),
-                'show_viewers'  => $request->boolean('show_viewers'),
-                'is_suspension' => $request->boolean('is_suspension'),
+                'email_notif'   => $request->email_notif ? 1 : 0,
+                'push_notif'    => $request->push_notif ? 1 : 0,
+                'show_viewers'  => $request->show_viewers ? 1 : 0,
+                'is_suspension' => $request->is_suspension ? 1 : 0,
                 'created_at'    => now(),
                 'updated_at'    => now(),
             ]);
@@ -271,6 +274,10 @@ class EventsController extends Controller
                 ];
 
                  $this->EventService->pushNotification($payload);
+            }
+
+            if($request->has('email_notif') && $request->email_notif) {
+                # EMAIL USER
             }
 
             return response()->json([

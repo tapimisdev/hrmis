@@ -6,6 +6,7 @@
             size="modal-xl"
             headerIcon="fa-solid fa-eye text-light"
             title="Viewers"
+            v-if="announcement.show_viewers"
         >
             <div class="row container-modal mb-1">
                 <div class="col-md-4" v-for="seener in data" :key="seener.id">
@@ -33,7 +34,7 @@
         </ModalVue>
 
         <!-- Viewers Section -->
-        <div class="viewers-section">
+        <div class="viewers-section" v-if="announcement.show_viewers">
             <div
                 class="seeners"
                 @click="$refs.seeners.open()"
@@ -50,8 +51,11 @@
                         :style="{ zIndex: 3 - idx }"
                     />
                 </div>
-
-                <span class="seeners-count"> {{ data.length }}+ viewed </span>
+                <span class="seeners-count">
+                  {{ data.length > 5 
+                      ? (data.length - 5) + '+ viewed' 
+                      : data.length + ' viewed' }}
+                </span>           
             </div>
         </div>
     </div>
@@ -63,6 +67,10 @@ import ModalVue from "../../../components/ModalVue.vue";
 export default {
     components: { ModalVue },
     props: {
+        announcement : {
+            type: Array,
+            required: true,
+        },    
         data: {
             type: Array,
             required: true,

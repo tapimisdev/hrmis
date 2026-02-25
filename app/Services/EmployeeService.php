@@ -11,7 +11,7 @@ use function PHPSTORM_META\map;
 
 class EmployeeService {
 
-    // user id to employee no
+    # GET EMPLOYEE NUMBER BASED ON USER ID
     public function getEmployeeNo($user_id)
     {
         $employee = DB::table('employee_information')
@@ -22,7 +22,7 @@ class EmployeeService {
         return $employee->employee_no;
     }
 
-    // employee no. to user id
+    # GET EMPLOYEE'S USER ID BASED ON EMPLOYEE NUMBER
     public function getEmployeeUserId($employee_no)
     {
          $employee = DB::table('employee_information')
@@ -33,6 +33,7 @@ class EmployeeService {
         return $employee->user_id;
     }
 
+    # CHECK IF EMPLOYEE NUMBER EXISTS
     public function checkIfEmployeeExists(? string $employee_no = null)
     {
         if(!is_null($employee_no)) {
@@ -44,9 +45,10 @@ class EmployeeService {
         return false;
     }
 
+    # GET ALL EMPLOYEES BASED ON THE FOLLOWING
+    # STATUS | DIVISION | UNIT ID | EMPLOYMENT TYPE
     public function getEmployees(?string $status, ?string $division_id, ?string $unit_id, ?string $employment_type_id)
     {
-        // Subqueries for latest rows
         $latestOrg = DB::table('employee_organization as eo1')
             ->select('eo1.*')
             ->whereRaw('eo1.id = (select max(eo2.id) from employee_organization eo2 where eo2.employee_no = eo1.employee_no)');
@@ -132,6 +134,9 @@ class EmployeeService {
             ->get();
     }
 
+    # GET SPECIFIC EMPLOYEES DATA USING EMPLOYEE NUMBER
+    # INFORMATION | PERSONAL | FAMILY | CHILDREN | EDUCATION | WORK EXPERIENCE
+    # CIVIL SERVICE | TRAININGS | VOLUNTARY WORKS | SKILLS | ACCOUNT
     public function getEmployee(string $type, string $employee_no = null, ?int $leave_id = null)
     {
         $tables = [
@@ -257,12 +262,90 @@ class EmployeeService {
         return $query->{$config['method']}();
     }
 
-    public function getSalary(string $employee_no) {
-        return DB::table('employee_information')
-            ->where('employee_no', $employee_no)
-            ->value('salary') ?? 0;
+     # GENERATE EMPLOYEE NO BASED ON DATE HIRED FOR COS EMPLOYEES
+    public function generateEmployeeNo($dateHired)
+    {
+        return DB::transaction(function () use ($dateHired) {
+
+            $date = \Carbon\Carbon::parse($dateHired);
+            $year = $date->format('Y');
+            $semester = ($date->month <= 6) ? 1 : 2;
+
+            do {
+                $lastEmployee = DB::table('employee_information')
+                    ->whereYear('date_hired_company', $year)
+                    ->whereRaw(
+                        'CASE WHEN MONTH(date_hired_company) <= 6 THEN 1 ELSE 2 END = ?',
+                        [$semester]
+                    )
+                    ->lockForUpdate()
+                    ->orderByDesc('employee_no')
+                    ->first();
+
+                if ($lastEmployee && preg_match('/(\d{4})(\d{1})-(\d+)/', $lastEmployee->employee_no, $matches)) {
+                    $sequence = (int) $matches[3] + 1;
+                } else {
+                    $sequence = 1;
+                }
+
+                // YYYYSS-XX
+                $employeeNo = "{$year}{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
+
+            } while (
+                DB::table('employee_information')->where('employee_no', $employeeNo)->exists()
+            );
+
+            return $employeeNo;
+        });
+    }
+    
+    # GET ALL ACTIVE EMPLOYEES
+    public function getAllActiveEmployee($employment_type_id)
+    {
+        return DB::table('employee_information as ei')
+            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
+            ->where('eo.employment_type_id', $employment_type_id)
+            ->where('ei.account_status', 'active')
+            ->pluck('ei.employee_no')
+            ->toArray();
     }
 
+    # GET ONLY THE REGULAR EMPLOYEES
+    public function getRegularEmployees()
+    {
+
+        $latestOrgSub = DB::table('employee_organization as eo1')
+            ->selectRaw('MAX(eo1.id) as latest_id, eo1.employee_no')
+            ->groupBy('eo1.employee_no');
+
+        $data = DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->leftJoinSub($latestOrgSub, 'latest_org', function ($join) {
+                $join->on('ei.employee_no', '=', 'latest_org.employee_no');
+            })
+            ->leftJoin('employee_organization as eo', 'eo.id', '=', 'latest_org.latest_id')
+            ->where('eo.employment_type_id', EmploymentTypesEnum::REGULAR->value)
+            ->select(
+                'ei.employee_no',
+                'ei.biometrics_id', 
+                'ep.firstname', 
+                'ep.lastname')
+            ->get();
+
+        return $data;
+    }
+
+    # GET EMPLOYEE'S SALARY HISTORY
+    public function getSalaryHistory(string $employee_no) {
+        $data = DB::table('employee_salary')
+            ->where('employee_no', $employee_no)
+            ->orderBy('effectivity_date', 'desc')
+            ->get();
+
+        return $data;
+    }
+
+    # SET ARCHIVED OR SOFT DELETE EMPLOYEE'S ACCOUNT
     public function delete(string $employee_no) {
         return DB::table('employee_information')
             ->where('employee_no', $employee_no)
@@ -271,6 +354,7 @@ class EmployeeService {
             ]);
     }
 
+    # RESTORE ARCHIVED ACCOUNT USER
     public function restore(string $employee_no) {
         return DB::table('employee_information')
             ->where('employee_no', $employee_no)
@@ -279,6 +363,7 @@ class EmployeeService {
             ]);
     }
 
+    # GET ALL LEAVE TYPES FOR EVERY EMPLOYEE NO
     public function getLeaveTypes(string $employee_no, array $showCreditsESS = [true])
     {
         $employment_type_id = DB::table('employee_organization')
@@ -349,6 +434,8 @@ class EmployeeService {
         ];
     }
 
+    # GET EMPLOYEE'S LEAVE CREDITS 
+    # BASED ON LEAVE ID
     public function checkLeaveCredits(string $employee_no, int $leave_id)
     {
         $leaveCredit = DB::table('leave_credits')
@@ -360,24 +447,30 @@ class EmployeeService {
         return $leaveCredit;
     }
 
+    # GET LEAVE TYPE SETTINGS
+    # BASED ON LEAVE ID
     public function getLeaveSettings(int $leave_id) {
         return DB::table('leaves_settings')
             ->where('leave_id', $leave_id)
             ->first();
     }
 
+    # GET EMPLOYEE'S LEAVE APPLICATIONS 
+    # BY ID
     public function getLeave(int $leave_id) {
         return DB::table('leave_applications')
             ->where('id', $leave_id)
             ->first();
     }
 
+    # GET LEAVE TYPE INFORMATION DETAILS
     public function getLeaveInfo($id) {
         return DB::table('leaves')
             ->where('id', $id)
             ->first();
     }
 
+    # GET EMPLOYEE'S LEAVE CREDITS
     public function getOffsetCredits(string $employee_no, bool $isLatest = false) {
         
         $data = DB::table('offset_credits')
@@ -391,6 +484,7 @@ class EmployeeService {
         return $data->get();
     }
 
+    # GET EMPLOYEE'S OFFSET CREDITS BY MONTH YEAR
     public function getOffsetCreditsByMonthYear(string $employee_no, string $monthYear)
     {
         // Current month record
@@ -412,9 +506,7 @@ class EmployeeService {
         ];
     }
 
-    ###################################################################################
-    # leave
-
+    # GET EMPLOYEE'S LEAVE CREDITS
     public function getLeaveCredits(string $employee_no, int $leave_id, bool $isLatest = false) {
         
         $data = DB::table('leave_credits')
@@ -430,6 +522,7 @@ class EmployeeService {
 
     }
 
+    # GET EMPLOYEE'S LEAVE CREDITS BY MONTH YEAR
     public function getLeaveCreditsByMonthYear(string $employee_no, int $leave_id, string $monthYear)
     {
         $current = DB::table('leave_credits')
@@ -451,74 +544,4 @@ class EmployeeService {
         ];
     }
 
-    # GENERATE EMPLOYEE NO BASED ON DATE HIRED FOR COS EMPLOYEES
-    public function generateEmployeeNo($dateHired)
-    {
-        return DB::transaction(function () use ($dateHired) {
-
-            $date = \Carbon\Carbon::parse($dateHired);
-            $year = $date->format('Y');
-            $semester = ($date->month <= 6) ? 1 : 2;
-
-            do {
-                $lastEmployee = DB::table('employee_information')
-                    ->whereYear('date_hired_company', $year)
-                    ->whereRaw(
-                        'CASE WHEN MONTH(date_hired_company) <= 6 THEN 1 ELSE 2 END = ?',
-                        [$semester]
-                    )
-                    ->lockForUpdate()
-                    ->orderByDesc('employee_no')
-                    ->first();
-
-                if ($lastEmployee && preg_match('/(\d{4})(\d{1})-(\d+)/', $lastEmployee->employee_no, $matches)) {
-                    $sequence = (int) $matches[3] + 1;
-                } else {
-                    $sequence = 1;
-                }
-
-                // YYYYSS-XX
-                $employeeNo = "{$year}{$semester}-" . str_pad($sequence, 2, '0', STR_PAD_LEFT);
-
-            } while (
-                DB::table('employee_information')->where('employee_no', $employeeNo)->exists()
-            );
-
-            return $employeeNo;
-        });
-    }
-    
-    public function getAllActiveEmployee($employment_type_id)
-    {
-        return DB::table('employee_information as ei')
-            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
-            ->where('eo.employment_type_id', $employment_type_id)
-            ->where('ei.account_status', 'active')
-            ->pluck('ei.employee_no')
-            ->toArray();
-    }
-
-    public function getRegularEmployees()
-    {
-
-        $latestOrgSub = DB::table('employee_organization as eo1')
-            ->selectRaw('MAX(eo1.id) as latest_id, eo1.employee_no')
-            ->groupBy('eo1.employee_no');
-
-        $data = DB::table('employee_information as ei')
-            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-            ->leftJoinSub($latestOrgSub, 'latest_org', function ($join) {
-                $join->on('ei.employee_no', '=', 'latest_org.employee_no');
-            })
-            ->leftJoin('employee_organization as eo', 'eo.id', '=', 'latest_org.latest_id')
-            ->where('eo.employment_type_id', EmploymentTypesEnum::REGULAR->value)
-            ->select(
-                'ei.employee_no',
-                'ei.biometrics_id', 
-                'ep.firstname', 
-                'ep.lastname')
-            ->get();
-
-        return $data;
-    }
 }

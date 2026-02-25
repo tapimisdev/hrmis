@@ -27,7 +27,7 @@
                         <Attachments :data="announcementData.attachments" />
                     </div>
                     <div class="col-md-4">
-                        <Seeners :data="announcementData.seeners" />
+                        <Seeners :announcement="announcementData.announcement" :data="announcementData.seeners" />
                     </div>
                 </div>
             </div>
