@@ -8,7 +8,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 class ForeCastEmployeeJob implements ShouldQueue
 {
@@ -39,233 +38,155 @@ class ForeCastEmployeeJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(ForecastComputationService $run_forecast_computation_service): void
+    public function handle(ForecastComputationService $service): void
     {
-        $basic_pays = $run_forecast_computation_service
-            ->annualSalaryTotalByMonth($this->employee_no, (int) $this->payload['year']);
+        $year = (int) ($this->payload['year'] ?? now()->year);
 
-        $_TOTAL_ANNUAL_BASIC_PAY = (float) ($basic_pays['annual_total'] ?? 0);
+        $basicPays = $service->annualSalaryTotalByMonth($this->employee_no, $year);
 
-        // Avg monthly salary based on months covered (already computed by service)
-        $salary = (float) ($basic_pays['monthly_salary'] ?? 0);
+        $annualBasicPay = (float) ($basicPays['annual_total'] ?? 0);
+        $monthlySalary  = (float) ($basicPays['monthly_salary'] ?? 0);
 
-        // Hazard pay monthly (service already co mputed; fallback just in case)
-        $hazard_pay = (float) ($basic_pays['hazard_pay'] ?? ($salary * 0.15));
+        // Hazard pay monthly (service already computed; fallback just in case)
+        $monthlyHazardPay = (float) ($basicPays['hazard_pay'] ?? ($monthlySalary * 0.15));
+        $monthsCovered    = (int) ($basicPays['months_covered'] ?? 0);
 
-        // Init totals
-        $_TOTAL_MID_YEAR   = 0.00;
-        $_TOTAL_YEAR_END   = 0.00;
-        $_TOTAL_LONGEVITY  = 0.00;
-        $_TOTAL_HAZARD_PAY = 0.00;
+        // Totals
+        $totalMidYear        = 0.0;
+        $totalYearEnd        = 0.0;
+        $totalLongevity      = 0.0;
+        $totalHazardPay      = 0.0;
+        $totalOtherEarnings  = 0.0;
+        $totalOtherDeductions = 0.0;
 
-        $_TOTAL_GSIS       = 0.00;
-        $_TOTAL_PAGIBIG    = 0.00;
-        $_TOTAL_PHILHEALTH = 0.00;
+        // Optional payload sections (avoid undefined index issues)
+        $this->payload['assumptions']     = $this->payload['assumptions'] ?? [];
+        $this->payload['othersEarnings']  = $this->payload['othersEarnings'] ?? [];
+        $this->payload['othersDeductions'] = $this->payload['othersDeductions'] ?? [];
 
-        /**
-         * MIDYEAR
-         */
-        if (!empty($this->payload['assumptions']['midYear']) && $this->payload['assumptions']['midYear'] === true) {
-            $mid = $basic_pays['midyear'] ?? null;
-
-            if (!empty($mid) && !empty($mid['eligible'])) {
-                $_TOTAL_MID_YEAR = (float) ($mid['amount'] ?? 0);
+        // MIDYEAR
+        $mid = $basicPays['midyear'] ?? null;
+        if (($this->payload['assumptions']['midYear'] ?? false) === true) {
+            if (!empty($mid['eligible'])) {
+                $totalMidYear = (float) ($mid['amount'] ?? 0);
             } else {
-                // turn off assumption if not eligible
                 $this->payload['assumptions']['midYear'] = false;
             }
         }
 
-        /**
-         * YEAR-END (FIXED: correct key year_end)
-         */
-        if (!empty($this->payload['assumptions']['yearEnd']) && $this->payload['assumptions']['yearEnd'] === true) {
-            $ye = $basic_pays['year_end'] ?? null;
-
-            if (!empty($ye) && !empty($ye['eligible'])) {
-                $_TOTAL_YEAR_END = (float) ($ye['amount'] ?? 0);
+        // YEAR-END
+        $ye = $basicPays['year_end'] ?? null;
+        if (($this->payload['assumptions']['yearEnd'] ?? false) === true) {
+            if (!empty($ye['eligible'])) {
+                $totalYearEnd = (float) ($ye['amount'] ?? 0);
             } else {
                 $this->payload['assumptions']['yearEnd'] = false;
             }
         }
 
-        /**
-         * LONGEVITY
-         */
-        if (!empty($this->payload['assumptions']['longevity']) && $this->payload['assumptions']['longevity'] === true) {
-            $longevity = $run_forecast_computation_service->ComputeLongevity(
+        // LONGEVITY
+        if (($this->payload['assumptions']['longevity'] ?? false) === true) {
+            $longevity = $service->ComputeLongevity(
                 $this->employee_no,
-                (int) $this->payload['year'],
+                $year,
                 $this->longevityTaxId
             );
 
-            $_TOTAL_LONGEVITY = (float) ($longevity['longevity_total'] ?? 0);
+            $totalLongevity = (float) ($longevity['longevity_total'] ?? 0);
         }
 
-        /**
-         * HAZARD PAY (annual total hazard = hazard monthly * months covered)
-         */
-        if (!empty($this->payload['assumptions']['hazardPay']) && $this->payload['assumptions']['hazardPay'] === true) {
-            $monthsCovered = (int) ($basic_pays['months_covered'] ?? 0);
-            $_TOTAL_HAZARD_PAY = (float) ($hazard_pay * $monthsCovered);
+        // HAZARD PAY (annual)
+        if (($this->payload['assumptions']['hazardPay'] ?? false) === true) {
+            $totalHazardPay = $monthlyHazardPay * $monthsCovered;
         }
 
-        /**
-         * Ensure 2 decimals (important for final inserts / logs)
-         */
-        $_TOTAL_ANNUAL_BASIC_PAY = round($_TOTAL_ANNUAL_BASIC_PAY, 2);
-        $salary                 = round($salary, 2);
-        $hazard_pay             = round($hazard_pay, 2);
-
-        $_TOTAL_MID_YEAR          = round($_TOTAL_MID_YEAR, 2);
-        $_TOTAL_YEAR_END          = round($_TOTAL_YEAR_END, 2);
-        $_TOTAL_LONGEVITY         = round($_TOTAL_LONGEVITY, 2);
-        $_TOTAL_HAZARD_PAY        = round($_TOTAL_HAZARD_PAY, 2);
-
-
-        $TOTAL_BONUSES =
-            $_TOTAL_MID_YEAR +
-            $_TOTAL_YEAR_END +
-            $_TOTAL_LONGEVITY +
-            $_TOTAL_HAZARD_PAY;
-
-        if (
-            !empty($this->payload['assumptions']['lessBirRR32015'])
-            && $this->payload['assumptions']['lessBirRR32015'] === true
-        ) {
-
-            $TOTAL_BONUSES = max($TOTAL_BONUSES - 90000, 0);
+        // OTHER EARNINGS total
+        foreach ($this->payload['othersEarnings'] as $other) {
+            $totalOtherEarnings += (float) ($other['amount'] ?? 0);
         }
 
-        /**
-         * get allowables, GIS, PAGIBIG, PHILHEALTH
-         */
-        $allowables = $run_forecast_computation_service->getAllowablesDeductions($this->employee_no, $this->payload['year']);
+        // Round core amounts
+        $annualBasicPay      = round($annualBasicPay, 2);
+        $monthlySalary       = round($monthlySalary, 2);
+        $monthlyHazardPay    = round($monthlyHazardPay, 2);
 
-        $_TOTAL_GSIS = $allowables['gsis'];
-        $_TOTAL_PAGIBIG = $allowables['pagibig'];
-        $_TOTAL_PHILHEALTH = $allowables['philhealth'];
+        $totalMidYear        = round($totalMidYear, 2);
+        $totalYearEnd        = round($totalYearEnd, 2);
+        $totalLongevity      = round($totalLongevity, 2);
+        $totalHazardPay      = round($totalHazardPay, 2);
+        $totalOtherEarnings  = round($totalOtherEarnings, 2);
 
-        $TOTAL_ALLOWABLE_DEDUCTION = $_TOTAL_GSIS + $_TOTAL_PAGIBIG + $_TOTAL_PHILHEALTH;
+        $totalBonuses =
+            $totalMidYear +
+            $totalYearEnd +
+            $totalLongevity +
+            $totalHazardPay +
+            $totalOtherEarnings;
 
-        $TAXABLE_INCOME = $_TOTAL_ANNUAL_BASIC_PAY + $TOTAL_BONUSES - $TOTAL_ALLOWABLE_DEDUCTION;
+        // Less BIR RR 3-2015 (90k exemption)
+        if (($this->payload['assumptions']['lessBirRR32015'] ?? false) === true) {
+            $totalBonuses = max($totalBonuses - 90000, 0);
+        }
 
-        Log::info($TAXABLE_INCOME);
-        Log::info('----------------------------------------------');
+        // Allowables (GSIS/PAGIBIG/PHILHEALTH)
+        $allowables = $service->getAllowablesDeductions($this->employee_no, $year);
 
+        $totalGsis       = (float) ($allowables['gsis'] ?? 0);
+        $totalPagibig    = (float) ($allowables['pagibig'] ?? 0);
+        $totalPhilhealth = (float) ($allowables['philhealth'] ?? 0);
 
-        $computedAnnualTax = $run_forecast_computation_service->computeAnnualTax($this->employee_no, $TAXABLE_INCOME, $this->payload['trainLawId']);
+        // OTHER DEDUCTIONS total
+        foreach ($this->payload['othersDeductions'] as $other) {
+            $totalOtherDeductions += (float) ($other['amount'] ?? 0);
+        }
+        $totalOtherDeductions = round($totalOtherDeductions, 2);
 
-        Log::info($computedAnnualTax);
+        // Append standard deductions (so UI can show them)
+        $this->payload['othersDeductions'][] = ['name' => 'GSIS', 'amount' => round($totalGsis, 2)];
+        $this->payload['othersDeductions'][] = ['name' => 'PAGIBIG', 'amount' => round($totalPagibig, 2)];
+        $this->payload['othersDeductions'][] = ['name' => 'PHILHEALTH', 'amount' => round($totalPhilhealth, 2)];
 
-        // $this->payload['deductions']['gsis'] = $_TOTAL_GSIS;
-        // $this->payload['deductions']['philhealth'] = $_TOTAL_PAGIBIG;
-        // $this->payload['deductions']['pagibig'] = $_TOTAL_PHILHEALTH;
+        $totalAllowableDeduction =
+            ($totalGsis + $totalPagibig + $totalPhilhealth) + $totalOtherDeductions;
 
+        $taxableIncome = ($annualBasicPay + $totalBonuses) - $totalAllowableDeduction;
 
-        /**
-         * Create taxation employee row
-         */
-        $taxation_employee_id = $run_forecast_computation_service->createTaxationEmployees(
-            $this->payload,
-            $this->taxation_id,
-            $this->employee_no
+        $computedAnnualTax = $service->computeAnnualTax(
+            $this->employee_no,
+            $taxableIncome,
+            $this->payload['trainLawId'],
+            $this->payload['allocation']
         );
 
-        /**
-         * Debug logging
-         */
-        // $this->logForecastDebugBreakdown(
-        //     $taxation_employee_id,
-        //     $basic_pays,
-        //     $TOTAL_ANNUAL_BASIC_PAY,
-        //     $salary,
-        //     $hazard_pay,
-        //     $TOTAL_MID_YEAR,
-        //     $TOTAL_YEAR_END,
-        //     $TOTAL_LONGEVITY,
-        //     $TOTAL_HAZARD_PAY
-        // );
-    }
+        // Build final payload
+        $payload = $this->payload;
 
+        $payload['amounts']['annualTaxable']           = round($taxableIncome, 2);
+        $payload['amounts']['annualTax']              = (float) ($computedAnnualTax['tax'] ?? 0);
+        $payload['amounts']['monthlyTax']             = (float) ($computedAnnualTax['monthly_tax'] ?? 0);
+        $payload['amounts']['annualTotalAllowables']  = round($totalAllowableDeduction, 2);
 
-    private function logForecastDebugBreakdown(
-        $taxation_employee_id,
-        array $basic_pays,
-        float $TOTAL_ANNUAL_BASIC_PAY,
-        float $salary,
-        float $hazard_pay,
-        float $TOTAL_MID_YEAR,
-        float $TOTAL_YEAR_END,
-        float $TOTAL_LONGEVITY,
-        float $TOTAL_HAZARD_PAY
-    ): void {
-        $monthsCovered = $basic_pays['months_covered'] ?? 'N/A';
+        $payload['amounts']['annualTotal']            = round($annualBasicPay + $totalBonuses, 2);
+        $payload['amounts']['midYearBonus']           = $totalMidYear;
+        $payload['amounts']['yearEndBonus']           = $totalYearEnd;
+        $payload['amounts']['longevityPay']           = $totalLongevity;
+        $payload['amounts']['hazardPay']              = $totalHazardPay;
+        $payload['amounts']['otherEarnings']          = $totalOtherEarnings;
+        $payload['amounts']['otherDeductions']        = $totalOtherDeductions;
 
-        $midYearFlag   = !empty($this->payload['assumptions']['midYear']) ? 'TRUE' : 'FALSE';
-        $yearEndFlag   = !empty($this->payload['assumptions']['yearEnd']) ? 'TRUE' : 'FALSE';
-        $longevityFlag = !empty($this->payload['assumptions']['longevity']) ? 'TRUE' : 'FALSE';
-        $hazardFlag    = !empty($this->payload['assumptions']['hazardPay']) ? 'TRUE' : 'FALSE';
+        $payload['amounts']['portionHazardPay']       = (float) ($computedAnnualTax['allocation']['monthly']['hazard_pay'] ?? 0);
+        $payload['amounts']['portionBasicPay']        = (float) ($computedAnnualTax['allocation']['monthly']['basic_pay'] ?? 0);
+        $payload['amounts']['portionLongevityPay']    = (float) ($computedAnnualTax['allocation']['monthly']['longevity_pay'] ?? 0);
 
-        $midYearAmount = $basic_pays['midyear']['amount'] ?? 'N/A';
-        $midYearElig   = $basic_pays['midyear']['eligible'] ?? 'N/A';
+        $payload['midyear']  = $mid;
+        $payload['year_end'] = $ye;
 
-        $yearEndAmount = $basic_pays['year_end']['amount'] ?? 'N/A';
-        $yearEndElig   = $basic_pays['year_end']['eligible'] ?? 'N/A';
-
-        Log::info("
-        ================= FORECAST DEBUG BREAKDOWN =================
-
-        [IDENTIFIERS]
-        Taxation Employee ID : {$taxation_employee_id}
-        Taxation ID          : {$this->taxation_id}
-        Employee No          : {$this->employee_no}
-        Year                 : {$this->payload['year']}
-
-        ------------------------------------------------------------
-
-        [RAW BASIC PAY DATA]
-        Annual Total Basic Pay   : {$TOTAL_ANNUAL_BASIC_PAY}
-        Monthly Salary (Adjusted): {$salary}
-        Hazard Pay (Monthly)     : {$hazard_pay}
-        Months Covered           : {$monthsCovered}
-
-        ------------------------------------------------------------
-
-        [ASSUMPTIONS FLAGS]
-        MidYear     : {$midYearFlag}
-        YearEnd     : {$yearEndFlag}
-        Longevity   : {$longevityFlag}
-        HazardPay   : {$hazardFlag}
-
-        ------------------------------------------------------------
-
-        [MIDYEAR BREAKDOWN]
-        Midyear Amount      : {$midYearAmount}
-        Midyear Eligibility : {$midYearElig}
-
-        ------------------------------------------------------------
-
-        [YEAREND BREAKDOWN]
-        YearEnd Amount      : {$yearEndAmount}
-        YearEnd Eligibility : {$yearEndElig}
-
-        ------------------------------------------------------------
-
-        [LONGETIVITY RAW]
-        Longevity Tax ID : {$this->longevityTaxId}
-
-        ------------------------------------------------------------
-
-        [COMPUTED TOTALS]
-        TOTAL_MID_YEAR    : {$TOTAL_MID_YEAR}
-        TOTAL_YEAR_END    : {$TOTAL_YEAR_END}
-        TOTAL_LONGEVITY   : {$TOTAL_LONGEVITY}
-        TOTAL_HAZARD_PAY  : {$TOTAL_HAZARD_PAY}
-
-        ------------------------------------------------------------
-
-        ============================================================
-        ");
+        // Save
+        $service->createTaxationEmployees(
+            $payload,
+            $this->taxation_id,
+            $this->employee_no,
+            $computedAnnualTax ?? null
+        );
     }
 }

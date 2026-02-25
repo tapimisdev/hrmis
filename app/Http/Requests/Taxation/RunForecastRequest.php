@@ -43,7 +43,7 @@ class RunForecastRequest extends FormRequest
             // =========================
             'othersEarnings'                => ['nullable', 'array'],
             'othersEarnings.*.name'         => ['required_with:earnings.others', 'string'],
-            'othersEarnings.*.amount'       => ['required_with:earnings.others', 'numeric', 'min:0'],
+            'othersEarnings.*.amount'       => ['required_with:earnings.others', 'numeric', 'min:1'],
 
             // =========================
             // Deductions (TAB B)
@@ -55,7 +55,7 @@ class RunForecastRequest extends FormRequest
 
             'othersDeductions'              => ['nullable', 'array'],
             'othersDeductions.*.name'       => ['required_with:deductions.others', 'string'],
-            'othersDeductions.*.amount'     => ['required_with:deductions.others', 'numeric', 'min:0'],
+            'othersDeductions.*.amount'     => ['required_with:deductions.others', 'numeric', 'min:1'],
 
             // =========================
             // Allocation (TAB C)

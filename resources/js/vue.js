@@ -24,6 +24,7 @@ import ImportEmployeeVue from "./admin/hris/employee/ImportEmployeeVue.vue";
 import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
 
 import TaxationIndex from "./admin/taxation/TaxationIndex.vue";
+import TrainLawIndex from "./admin/trainlaw/TrainLawIndex.vue";
 
 import WebtimeIndex from "./admin/web-time-access/WebtimeIndex.vue";
 
@@ -73,6 +74,7 @@ const authApp = createApp({
         WebtimeIndex,
         ViewDtr,
         TaxationIndex,
+        TrainLawIndex,
 
         DashboardVue,
         DtrViewVue,

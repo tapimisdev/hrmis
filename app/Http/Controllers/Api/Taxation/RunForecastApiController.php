@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Taxation\RunForecastRequest;
 use App\Jobs\Taxation\ForeCastEmployeeJob;
 use App\Services\Taxation\RunForecastService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class RunForecastApiController extends Controller
 {
@@ -26,36 +24,21 @@ class RunForecastApiController extends Controller
 
         DB::beginTransaction();
         try {
-
             $employee_nos = $this->run_forecast_service->getAllEmployees();
-
             $taxation_id = $this->run_forecast_service->createTaxation($validated_data);
-
-            foreach($employee_nos as $emp_no) {
+            foreach ($employee_nos as $emp_no) {
                 ForeCastEmployeeJob::dispatch($taxation_id, $emp_no, $validated_data);
             }
-
-            // dd($validated_data, $taxation_id);
-
             DB::commit();
-
-            return response()->json([
-                'message' => 'success'
-            ], 200);
-
+            return response()->json(['message' => 'success'], 200);
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], $e->getStatusCode());
+            return response()->json(['message' => $e->getMessage(),], $e->getStatusCode());
         } catch (\Exception $e) {
-
             // fallback (unexpected errors)
             return response()->json([
                 'message' => 'Something went wrong.',
                 'error'   => $e->getMessage(),
             ], 500);
         }
-
-
     }
 }

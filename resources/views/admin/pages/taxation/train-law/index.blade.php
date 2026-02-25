@@ -20,8 +20,7 @@
                     <th>#</th>
                     <th>Year</th>
                     <th>Status</th>
-                    <th>Created At</th>
-                    <th>Updated At</th>
+                    <th>timestamp</th>
                     <th style="width: 140px">Action</th>
                 </tr>
             </thead>
@@ -46,8 +45,7 @@ $(function () {
             { data: "DT_RowIndex", name: 'index' },
             { data: "year", name: 'year' },
             { data: "status", name: 'status' },
-            { data: "created_at", name: 'created_at' },
-            { data: "updated_at", name: 'updated_at' },
+            { data: "timestamp", name: 'timestamp' },
             { data: "actions", name: 'actions', orderable: false, searchable: false },
         ],
         scrollX: true,
@@ -138,16 +136,29 @@ $(function () {
         });
     });
 
-    // Set Inactive (no delete)
-    $(document).on('click', '.inactive-button', function () {
+    // Toggle Active / Inactive
+    $(document).on('click', '.toggle-button', function () {
         const id = $(this).data('id');
+        const isActive = $(this).data('status') == 1;
+
+        const title = isActive
+            ? "Set this Train Law inactive?"
+            : "Set this Train Law active?";
+
+        const text = isActive
+            ? "It will be hidden from active list and computations."
+            : "It will be included again in active list and computations.";
+
+        const confirmText = isActive
+            ? "Yes, set inactive"
+            : "Yes, set active";
 
         Swal.fire({
-            title: "Set this Train Law inactive?",
-            text: "It will be hidden from active list and computations.",
+            title: title,
+            text: text,
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Yes, set inactive",
+            confirmButtonText: confirmText,
             cancelButtonText: "Cancel",
         }).then((result) => {
             if (!result.isConfirmed) return;
@@ -158,7 +169,11 @@ $(function () {
                     Swal.fire("Updated!", res.data.message, "success");
                 })
                 .catch(err => {
-                    Swal.fire("Oops!", err?.response?.data?.message ?? "Failed to set inactive.", "error");
+                    Swal.fire(
+                        "Oops!",
+                        err?.response?.data?.message ?? "Update failed.",
+                        "error"
+                    );
                 });
         });
     });
