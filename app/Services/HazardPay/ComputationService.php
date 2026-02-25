@@ -95,64 +95,6 @@ class ComputationService {
                 'remarks' => null,
             ]);
 
-        [$year, $month] = explode('-', $this->payroll_date);
-
-        $payroll = DB::table('payroll_components')
-            ->where('slug', 'hazard-pay')
-            ->leftJoin('payroll_components_years', 'payroll_components.id', '=', 'payroll_components_years.payroll_component_id')
-            ->where('payroll_components_years.year', $year)
-            ->first();
-
-        if(!is_null($payroll)) {
-            DB::table('employee_payroll_components')
-                ->updateOrInsert(
-                    [
-                        'employee_no' => $this->employee_no,
-                        'tax_deduction_id' => $payroll->id,
-                        'month' => (int) $month,
-                    ],
-                    [
-                        'amount' => $hazardPay,
-                        'updated_at' => now(),
-                    ]
-                );
-        } else {
-           // Get the payroll component ID for hazard pay
-            $componentId = DB::table('payroll_components')
-                ->where('slug', 'hazard-pay')
-                ->value('id');
-
-            // Ensure the year entry exists and get its ID
-           DB::table('payroll_components_years')->updateOrInsert(
-                [
-                    'payroll_component_id' => $componentId,
-                    'year' => $year,
-                ],
-                [
-                    'updated_at' => now(),
-                ]
-            );
-
-            // Retrieve the ID of the year entry
-            $year_id = DB::table('payroll_components_years')
-                ->where('payroll_component_id', $componentId)
-                ->where('year', (int) $year)
-                ->value('id');
-            
-            // Insert or update the employee payroll component
-            DB::table('employee_payroll_components')->updateOrInsert(
-                [
-                    'employee_no' => $this->employee_no,
-                    'tax_deduction_id' => $year_id,
-                    'month' => $month,
-                ],
-                [
-                    'amount' => $hazardPay,
-                    'updated_at' => now(),
-                ]
-            );
-        }
-
         return [
             'hazard_pay' => $hazardPay,
             'witholding_tax' => $withHoldingTax,
