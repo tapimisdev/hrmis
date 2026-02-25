@@ -71,6 +71,35 @@ class Admin extends Controller
             ->distinct('oa.employee_no')
             ->count('oa.employee_no');
 
+        $soToday = DB::table('special_order_applications as oa')
+            ->join('special_order_dates as od', 'oa.id', '=', 'od.special_order_application_id')
+            ->whereDate('od.date', $today)
+            ->where('od.isActive', true)
+            ->where('oa.status', 'approved')
+            ->distinct('oa.employee_no')
+            ->count('oa.employee_no');
+
+        $obsToday = DB::table('obs_applications as oa')
+            ->join('obs_dates as od', 'oa.id', '=', 'od.obs_application_id')
+            ->whereDate('od.date', $today)
+            ->where('od.isActive', true)
+            ->where('oa.status', 'approved')
+            ->distinct('oa.employee_no')
+            ->count('oa.employee_no');
+
+        $announcementToday = DB::table('events_announcements')
+            ->whereDate('posted_on', $today)
+            ->count();
+
+        $suspensionsToday = DB::table('suspension as s')
+            ->leftJoin('suspension_dates as sd', 'sd.suspension_id', 's.id')
+            ->whereDate('date', $today)
+            ->count();
+
+        $holidayToday = DB::table('holidays as s')
+            ->whereDate('date', $today)
+            ->count();
+
         /** -------------------------
          * Employee Counts
          * ------------------------*/
@@ -151,7 +180,7 @@ class Admin extends Controller
                     'icon' => 'fa-solid fa-user-check text-green-500',
                 ],
                 [
-                    'name' => 'On Leave Today',
+                    'name' => 'Leave',
                     'value' => array_sum($leaveToday),
                     'subValue' =>
                         ($leaveToday['vacation'] ?? 0) . ' Vacation • ' .
@@ -159,10 +188,40 @@ class Admin extends Controller
                     'icon' => 'fa-solid fa-plane-departure text-orange-500',
                 ],
                 [
-                    'name' => 'On Offset Today',
+                    'name' => 'Offset',
                     'value' => $offsetToday,
                     'subValue' => 'Today',
-                    'icon' => 'fa-solid fa-clock-rotate-left text-purple-500',
+                    'icon' => 'fa-solid fa-ghost text-purple-500',
+                ],
+                [
+                    'name' => 'Special Order',
+                    'value' => $soToday,
+                    'subValue' => 'Today',
+                    'icon' => 'fa-solid fa-car-on text-purple-500',
+                ],
+                [
+                    'name' => 'Pass Slip / OBS ',
+                    'value' => $obsToday,
+                    'subValue' => 'Today',
+                    'icon' => 'fa-solid fa-torii-gate text-purple-500',
+                ],
+                [
+                    'name' => 'Announcements',
+                    'value' => $announcementToday,
+                    'subValue' => 'Today',
+                    'icon' => 'fa-solid fa-calendar-days text-purple-500',
+                ],
+                [
+                    'name' => 'Suspensions',
+                    'value' => $suspensionsToday,
+                    'subValue' => 'Today',
+                    'icon' => 'fa-solid fa-cloud-rain text-purple-500',
+                ],
+                [
+                    'name' => 'Holidays',
+                    'value' => $holidayToday,
+                    'subValue' => 'Today',
+                    'icon' => 'fa-solid fa-calendar-day text-purple-500',
                 ],
                 [
                     'name' => 'Upcoming Birthdays',
