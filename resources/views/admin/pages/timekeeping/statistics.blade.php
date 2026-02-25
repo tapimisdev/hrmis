@@ -409,13 +409,21 @@ $(function () {
     function createBarChart(instanceKey, elementId, label, source, valueKey, dateKey) {
         const extracted = extract(source, valueKey);
 
+        const backgroundColors = extracted.values.map(() => {
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            return `rgba(${r}, ${g}, ${b}, 0.9)`; 
+        });
+
         chartInstances[instanceKey] = new Chart($(elementId), {
             type: 'bar',
             data: {
                 labels: extracted.labels,
                 datasets: [{
                     label: label,
-                    data: extracted.values
+                    data: extracted.values,
+                    backgroundColor: backgroundColors
                 }]
             },
             options: {
