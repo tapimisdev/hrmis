@@ -434,7 +434,7 @@ class TimelogsServices {
             'doble'             => $double,
             'late_undertime'    => 0,
             'paid_hours'        => 0,
-            'remarks'           => $remarks,
+            'remarks' => !empty($remarks) ? [$remarks] : '',        
         ];
     }
 

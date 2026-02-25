@@ -299,6 +299,7 @@ class DailyTimeRecordService {
 
 
             if ($empty_log) {
+                
                 if ($is_future) {
                     $computedData[] = $this->timelogs_services->insertNoData($is_leave ? $leave_status : $remarks, $userId, $date['date']);
                     continue;
@@ -368,8 +369,6 @@ class DailyTimeRecordService {
             } else {
                 $TOTAL_ACTUAL_PRESENCE++;
             }
-
-            \Log::info('offset_status : ' . $date['date'] . ' ->>' . $offset_status . ':' . $is_offset);
 
             /** ---------------- PARSE TIMES ---------------- **/
             $timeInCarbon      = $this->timelogs_services->parseTime($date['time_in']);

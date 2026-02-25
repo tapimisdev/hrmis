@@ -50,14 +50,13 @@ class ComputationService {
         // Hazard payroll is previous month
         $payload = [
             'user_id'   => $this->user_id,
-            'startDate' => Carbon::parse($this->start_date)->subMonth()->format('Y-m-d'),
-            'endDate'   => Carbon::parse($this->end_date)->subMonth()->format('Y-m-d'),
+            'startDate' => Carbon::parse($this->start_date)->format('Y-m-d'),
+            'endDate'   => Carbon::parse($this->end_date)->format('Y-m-d'),
         ];
 
         $dtr = $this->daily_time_record_service->getDTR($payload);
         $total_summary_of_dtr = $dtr['payroll_value'];
         $actual_presence  = $total_summary_of_dtr['actual_presence'];
-        // $actual_presence  = 16;
 
         $entitlementPercentage = 0; 
         $less_healthcard = 0;
@@ -95,64 +94,6 @@ class ComputationService {
                 'net_pay' => $netPay,
                 'remarks' => null,
             ]);
-
-        [$year, $month] = explode('-', $this->payroll_date);
-
-        $payroll = DB::table('payroll_components')
-            ->where('slug', 'hazard-pay')
-            ->leftJoin('payroll_components_years', 'payroll_components.id', '=', 'payroll_components_years.payroll_component_id')
-            ->where('payroll_components_years.year', $year)
-            ->first();
-
-        if(!is_null($payroll)) {
-            DB::table('employee_payroll_components')
-                ->updateOrInsert(
-                    [
-                        'employee_no' => $this->employee_no,
-                        'tax_deduction_id' => $payroll->id,
-                        'month' => (int) $month,
-                    ],
-                    [
-                        'amount' => $hazardPay,
-                        'updated_at' => now(),
-                    ]
-                );
-        } else {
-           // Get the payroll component ID for hazard pay
-            $componentId = DB::table('payroll_components')
-                ->where('slug', 'hazard-pay')
-                ->value('id');
-
-            // Ensure the year entry exists and get its ID
-           DB::table('payroll_components_years')->updateOrInsert(
-                [
-                    'payroll_component_id' => $componentId,
-                    'year' => $year,
-                ],
-                [
-                    'updated_at' => now(),
-                ]
-            );
-
-            // Retrieve the ID of the year entry
-            $year_id = DB::table('payroll_components_years')
-                ->where('payroll_component_id', $componentId)
-                ->where('year', (int) $year)
-                ->value('id');
-            
-            // Insert or update the employee payroll component
-            DB::table('employee_payroll_components')->updateOrInsert(
-                [
-                    'employee_no' => $this->employee_no,
-                    'tax_deduction_id' => $year_id,
-                    'month' => $month,
-                ],
-                [
-                    'amount' => $hazardPay,
-                    'updated_at' => now(),
-                ]
-            );
-        }
 
         return [
             'hazard_pay' => $hazardPay,
@@ -266,13 +207,12 @@ class ComputationService {
 
     private function getWithHoldingTax() 
     {
-
         $date = explode('-', $this->payroll_date);
         $year = (int) $date[0];
         $month = (int) $date[1];
 
         $component_table_id = DB::table('payroll_components_settings')
-            ->where('type', TableSettingsEnum::SALARY_ID->value)
+            ->where('type', TableSettingsEnum::HAZARD_PA->value)
             ->value('tax_id');
 
         $components_year_id = DB::table('payroll_components_years')
@@ -280,12 +220,12 @@ class ComputationService {
             ->where('year', $year)
             ->value('id');
 
-        $tax_table = DB::table('employee_payroll_components')
+        $tax_table_amount = DB::table('employee_payroll_components')
             ->where('tax_deduction_id', $components_year_id)
             ->where('employee_no', $this->employee_no)
             ->where('month', $month)
-            ->first();
+            ->value('amount');
 
-        return $tax_table->amount ?? 0;
+        return $tax_table_amount ?? 0;
     }
 }
