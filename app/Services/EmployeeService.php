@@ -22,6 +22,18 @@ class EmployeeService {
         return $employee->employee_no;
     }
 
+    # GET EMPLOYEE NUMBER BASED ON FULL NAME
+    public function getEmployeeNoBasedOnFullName(string $name): string
+    {
+        $name = trim($name);
+
+        $employee = DB::table('employee_personal')
+            ->whereRaw("CONCAT(firstname, ' ', lastname) LIKE ?", ["%{$name}%"])
+            ->first(['employee_no']);
+
+        return $employee?->employee_no ?? 'N/A';
+    }
+
     # GET EMPLOYEE'S USER ID BASED ON EMPLOYEE NUMBER
     public function getEmployeeUserId($employee_no)
     {
