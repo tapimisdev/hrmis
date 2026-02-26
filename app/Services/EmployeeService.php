@@ -23,17 +23,49 @@ class EmployeeService {
     }
 
     # GET EMPLOYEE NUMBER BASED ON FULL NAME
-    public function getEmployeeNoBasedOnFullName(string $name): string
-    {
-        $name = trim($name);
+public function getEmployeeNoBasedOnFullName(string $name): ?string
+{
+    $name = trim($name);
+    if (empty($name)) return null;
 
-        $employee = DB::table('employee_personal')
-            ->whereRaw("CONCAT(firstname, ' ', lastname) LIKE ?", ["%{$name}%"])
-            ->first(['employee_no']);
+    // Step 1: Remove single-letter middle initials with a dot (T. -> '')
+    $name = preg_replace('/\b[A-Z]\.\b/i', '', $name);
 
-        return $employee?->employee_no ?? 'N/A';
+    // Step 2: Split by comma (LASTNAME, FIRST MIDDLE)
+    $parts = explode(',', $name);
+
+    if (count($parts) === 2) {
+        $lastName = trim($parts[0]);
+        $firstMiddle = trim($parts[1]);
+    } else {
+        $lastName = '';
+        $firstMiddle = trim($parts[0]);
     }
 
+    // Step 3: Take only the first word of firstMiddle (FIRSTNAME) for simplicity
+    $firstName = explode(' ', $firstMiddle)[0] ?? '';
+
+    // Step 4: Reformat as "FirstName LastName"
+    $formattedName = trim("{$firstName} {$lastName}");
+
+    // Step 5: Split into words for flexible search
+    $searchParts = explode(' ', $formattedName);
+
+    // Step 6: Query users table
+    $employee = DB::table('users')
+        ->leftJoin('employee_information as ei', 'users.id', 'ei.user_id')
+        ->where(function($query) use ($searchParts) {
+            foreach ($searchParts as $part) {
+                $part = trim($part);
+                if ($part !== '') {
+                    $query->where('name', 'LIKE', "%{$part}%");
+                }
+            }
+        })
+        ->first(['employee_no']);
+
+    return $employee?->employee_no ?? null;
+}
     # GET EMPLOYEE'S USER ID BASED ON EMPLOYEE NUMBER
     public function getEmployeeUserId($employee_no)
     {

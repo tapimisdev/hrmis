@@ -104,7 +104,7 @@
                             </div>
                         </div>
                         <div class="d-flex justify-content-end mt-5 mb-4">
-                            <button type="submit" id="btn-submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
+                            <button type="submit" id="btn-submit"PayrollRegistryReport class="btn btn-primary px-5 py-3 text-uppercase fw-bold">
                                 Save <i class="fa-solid fa-arrow-right ms-2"></i>
                             </button>
                         </div>
