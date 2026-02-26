@@ -587,6 +587,7 @@ class Employee extends Controller
                 'ea.slug',
                 'ea.posted_on',
                 'ea.created_at',
+                'ea.show_viewers',
                 DB::raw('GROUP_CONCAT(DISTINCT eat.name) as tags'),
                 DB::raw('GROUP_CONCAT(DISTINCT CONCAT(u.id, ":", u.name)) as seeners')
             )
@@ -640,6 +641,7 @@ class Employee extends Controller
                 'image' => $item->banner
                     ? asset(Storage::url('events/attachments/' . $item->banner))
                     : asset('img/placeholder.png'),
+                'show_viewers' => $item->show_viewers,
                 'seeners' => $seeners,
             ];
         });
