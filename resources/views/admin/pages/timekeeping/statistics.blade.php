@@ -136,7 +136,7 @@
             </div>
         </div>
       <div class="row">
-        <div class="col-md-12 mb-3">
+        <div class="col-md-12 mb-5">
             <div class="card shadow">
                <div class="card-body pb-4">
                   <h6 class="fw-bold mb-3 text-uppercase mb-4">ESS Portal Statuses</h6>
@@ -277,6 +277,40 @@
                </div>
             </div>
          </div>
+         <div class="col-md-6 mb-4">
+            <div class="card shadow">
+               <div class="card-body pb-4">
+                  <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Special Order</h6>
+                  <div class="chart-skeleton">
+                     <div class="skeleton-bars">
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                        <div class="skeleton-bar"></div>
+                     </div>
+                  </div>
+                  <canvas id="barChartSO"></canvas>
+               </div>
+            </div>
+         </div>
+          <div class="col-md-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-body pb-4">
+                        <h6 class="fw-bold mb-3 text-uppercase mb-4">Top Pass Slip / OBS</h6>
+                        <div class="chart-skeleton">
+                            <div class="skeleton-bars">
+                                <div class="skeleton-bar"></div>
+                                <div class="skeleton-bar"></div>
+                                <div class="skeleton-bar"></div>
+                                <div class="skeleton-bar"></div>
+                                <div class="skeleton-bar"></div>
+                            </div>
+                        </div>
+                        <canvas id="barChartOBS"></canvas>
+                    </div>
+                </div>
+            </div>
       </div>
    </div>
 </div>
@@ -285,116 +319,206 @@
 @section('scripts')
 <script>
 $(function () {
-    // Declare chart instances to manage them globally
-    let chartInstances = {
-        pieChart: null,
-        doughnutChart: null,
-        barChartAbsences: null,
-        lineChartUndertimes: null,
-        polarAreaChartLates: null,
-        barChartLeaves: null,
-        barChartOffsets: null,
-        barChartBreakDiscrepancies: null,
-        noLoginChart: null
-    };
 
-    // Show skeletons on initial load
-    showSkeletons();
+    let chartInstances = {};
+    let currentRequest = null;
 
-    // Event listener for month/year select changes
-    $('select[name="month"], select[name="year"]').on('change', function() {
-        // Destroy existing charts first
-        Object.keys(chartInstances).forEach(key => {
-            if (chartInstances[key]) {
-                chartInstances[key].destroy();
-                chartInstances[key] = null;
-            }
+    /* =============================
+       BASIC UTILITIES
+    ============================== */
+
+    function destroyCharts() {
+        Object.values(chartInstances).forEach(chart => {
+            if (chart) chart.destroy();
+        });
+        chartInstances = {};
+    }
+
+    function showSkeletons() { $('.chart-skeleton').show(); }
+    function hideSkeletons() { $('.chart-skeleton').hide(); }
+
+    function extract(source, key) {
+        const labels = [];
+        const values = [];
+
+        $.each(source || [], function (_, item) {
+            if (!item?.employee) return;
+            labels.push(`${item.employee.lastname} (${item.employee.employee_no})`);
+            values.push(Number(item[key] ?? 0));
         });
 
-        const month = $('select[name="month"]').val();
-        const year = $('select[name="year"]').val();
-
-        if (!month || !year) return;
-
-        const formattedDate = `${year}-${month.toString().padStart(2, '0')}`;
-
-        showSkeletons();
-        loadCharts(formattedDate);
-    });
-
-    // Function to hide loading skeletons
-    function hideSkeletons() {
-        $('.chart-skeleton').hide();
+        return { labels, values };
     }
 
-    function showSkeletons() {
-        $('.chart-skeleton').show();
+    function sum(source, key) {
+        let total = 0;
+        $.each(source || [], function (_, item) {
+            total += Number(item[key] ?? 0);
+        });
+        return total;
     }
 
-    // Function to load and render charts
+    function getItemByIndex(source, index) {
+        const items = Object.values(source || {}).filter(i => i?.employee);
+        return items[index] ?? null;
+    }
+
+    function formatGroupedDates(dates) {
+        if (!dates?.length) return [];
+
+        const grouped = {};
+
+        dates.forEach(dateStr => {
+            const date = new Date(dateStr);
+            const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+            const day = date.getDate();
+
+            if (!grouped[month]) grouped[month] = [];
+            grouped[month].push(day);
+        });
+
+        return Object.entries(grouped).map(([month, days]) => {
+            days.sort((a,b)=>a-b);
+            return `${month} ${days.join(', ')}`;
+        });
+    }
+
+    function buildDateTooltip(source, dateKey) {
+        return function (ctx) {
+            const item = getItemByIndex(source, ctx.dataIndex);
+            if (!item) return '';
+
+            const rawDates = item.details?.[dateKey] || [];
+            if (!rawDates.length) return 'DATES: None';
+
+            const formattedLines = formatGroupedDates(rawDates);
+
+            return [
+                '',
+                'DATES:',
+                '────────────',
+                ...formattedLines
+            ];
+        };
+    }
+
+    /* =============================
+       CHART BUILDERS
+    ============================== */
+
+    function createBarChart(instanceKey, elementId, label, source, valueKey, dateKey) {
+        const extracted = extract(source, valueKey);
+
+        const backgroundColors = extracted.values.map(() => {
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
+            return `rgba(${r}, ${g}, ${b}, 0.9)`; 
+        });
+
+        chartInstances[instanceKey] = new Chart($(elementId), {
+            type: 'bar',
+            data: {
+                labels: extracted.labels,
+                datasets: [{
+                    label: label,
+                    data: extracted.values,
+                    backgroundColor: backgroundColors
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    tooltip: {
+                        displayColors: false,
+                        callbacks: {
+                            afterLabel: buildDateTooltip(source, dateKey)
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createLineChart(instanceKey, elementId, label, source, valueKey, dateKey, color) {
+        const extracted = extract(source, valueKey);
+
+        chartInstances[instanceKey] = new Chart($(elementId), {
+            type: 'line',
+            data: {
+                labels: extracted.labels,
+                datasets: [{
+                    label: label,
+                    data: extracted.values,
+                    borderColor: color,
+                    backgroundColor: color + '33',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } },
+                plugins: {
+                    tooltip: {
+                        displayColors: false,
+                        callbacks: {
+                            afterLabel: buildDateTooltip(source, dateKey)
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /* =============================
+       LOAD DATA
+    ============================== */
+
     function loadCharts(monthYear) {
-        // Show loading indicator
+        if (!monthYear) return;
+
+        if (currentRequest) currentRequest.abort();
+
+        destroyCharts();
+        showSkeletons();
         $('#loading').show();
 
-        $.ajax({
+        currentRequest = $.ajax({
             url: '/admin/timekeeping/statistics',
             method: 'GET',
-            data: { monthYear: monthYear },
-            success: function(response) {
-                hideSkeletons();
-                $('#loading').hide();
-                if (response.status === 'success') {
-                    const resultData = response.data;
-                    renderCharts(resultData);
-                } else {
-                    console.error('API Error:', response.message || 'Unknown error');
-                }
-            },
-            error: function(xhr, status, error) {
-                hideSkeletons();
-                $('#loading').hide();
-                console.error('AJAX Error:', error);
-            }
+            data: { monthYear },
+            dataType: 'json'
         });
+
+        currentRequest
+            .done(function (response) {
+                if (response?.status !== 'success') {
+                    console.error(response?.message || 'Invalid API');
+                    return;
+                }
+
+                renderCharts(response.data);
+            })
+            .always(function () {
+                hideSkeletons();
+                $('#loading').hide();
+                currentRequest = null;
+            });
     }
 
-    // Function to render all charts with the fetched data
+    /* =============================
+       RENDER CHARTS
+    ============================== */
+
     function renderCharts(resultData) {
-        // Helper functions
-        function extract(source, key) {
-            let labels = [];
-            let values = [];
 
-            $.each(source || [], function (_, item) {
-                if (!item?.employee) return;
-                labels.push([item.employee.lastname, '('+item.employee.employee_no+')']);
-                values.push(Number(item[key] ?? 0));
-            });
+        /* ========= ESS PORTAL STATUS ========= */
 
-            return { labels, values };
-        }
-
-        function sum(source, key) {
-            let total = 0;
-            $.each(source || [], function (_, item) {
-                total += Number(item[key] ?? 0);
-            });
-            return total;
-        }
-
-        function getItemByIndex(source, index) {
-            const items = Object.values(source || {}).filter(i => i?.employee);
-            return items[index] ?? null;
-        }
-
-        function formatDates(dates) {
-            return dates?.length ? dates.join(', ') : 'None';
-        }
-
-        
-        // PIE – ESS Portal Access Status
         const accessed = resultData.loginAccessed ?? {};
         const notAccessed = resultData.loginNotAccessed ?? {};
+
+        console.log(resultData);
 
         const accessedCount = Number(accessed.count ?? 0);
         const notAccessedCount = Number(notAccessed.count ?? 0);
@@ -403,18 +527,18 @@ $(function () {
         chartInstances.noLoginChart = new Chart($('#noLoginChart'), {
             type: 'pie',
             data: {
-                labels: ['Accessed', 'Not Accessed'],
+                labels: ['ACCESSED', 'NOT ACCESSED'],
                 datasets: [{
                     data: [accessedCount, notAccessedCount]
                 }]
             },
             options: {
                 responsive: true,
-                animation: {
-                    duration: 1200,
-                    easing: 'easeOutQuart'
-                },
                 plugins: {
+                    title: {
+                        display: true,
+                        text: `EMPLOYEES: ${totalEmployees}`
+                    },
                     tooltip: {
                         enabled: false,
                         external: function(context) {
@@ -424,87 +548,80 @@ $(function () {
                             if (!tooltipEl) {
                                 tooltipEl = document.createElement('div');
                                 tooltipEl.id = 'chartjs-tooltip';
-                                tooltipEl.innerHTML = '<div class="tooltip-content"></div>';
+                                tooltipEl.innerHTML = '<div class="tooltip-body"></div>';
                                 document.body.appendChild(tooltipEl);
 
-                                // Prevent disappearing when hovering tooltip
+                                // Optional base styling
+                                tooltipEl.style.borderRadius = '8px';
+                                tooltipEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                                tooltipEl.style.padding = '10px';
+                                tooltipEl.style.width = '300px';
+                                tooltipEl.style.fontSize = '12px';
+                                tooltipEl.style.zIndex = '9999';
+
+                                // Prevent hide when hovering tooltip
                                 tooltipEl.addEventListener('mouseenter', function () {
-                                    tooltipEl.setAttribute('data-hover', 'true');
+                                    tooltipEl.dataset.hovering = "true";
                                 });
 
                                 tooltipEl.addEventListener('mouseleave', function () {
-                                    tooltipEl.setAttribute('data-hover', 'false');
+                                    tooltipEl.dataset.hovering = "false";
                                     tooltipEl.style.opacity = 0;
                                 });
                             }
 
                             const tooltipModel = context.tooltip;
 
-                            // If not visible AND not hovering tooltip, hide it
-                            if (tooltipModel.opacity === 0) {
-                                if (tooltipEl.getAttribute('data-hover') !== 'true') {
-                                    tooltipEl.style.opacity = 0;
-                                }
+                            if (tooltipModel.opacity === 0 && tooltipEl.dataset.hovering !== "true") {
+                                tooltipEl.style.opacity = 0;
                                 return;
                             }
 
-                            const index = tooltipModel.dataPoints[0].dataIndex;
-                            const employees = index === 0
-                                ? accessed.details
-                                : notAccessed.details;
+                            if (!tooltipModel.dataPoints) return;
 
-                            const body = employees?.map(emp =>
-                                `<div>${emp.lastname}, ${emp.firstname} (${emp.employee_no})</div>`
-                            ).join('') ?? 'No data';
+                            const label = tooltipModel.dataPoints[0].label;
+                            const value = tooltipModel.dataPoints[0].raw;
 
-                            tooltipEl.querySelector('.tooltip-content').innerHTML = `
-                                <strong>${tooltipModel.title}</strong>
-                                <div class="tooltip-scroll">${body}</div>
+                            let employees = [];
+
+                            if (label === 'ACCESSED') {
+                                employees = resultData.loginAccessed.details || [];
+                            } else {
+                                employees = resultData.loginNotAccessed.details || [];
+                            }
+
+                            const total = accessedCount + notAccessedCount;
+                            const percentage = total > 0
+                                ? ((value / total) * 100).toFixed(2)
+                                : 0;
+
+                            const employeeList = employees.map(emp =>
+                                `<div>${emp.firstname} (${emp.employee_no})</div>`
+                            ).join('');
+
+                            tooltipEl.querySelector('.tooltip-body').innerHTML = `
+                                <strong>${label}: ${value} (${percentage}%)</strong>
+                                <hr style="margin:6px 0;">
+                                <div class="scroll-area" style="max-height:300px; overflow-y:auto; overflow-x:hidden;">
+                                    ${employeeList}
+                                </div>
                             `;
 
-                            const canvasRect = context.chart.canvas.getBoundingClientRect();
+                            const position = context.chart.canvas.getBoundingClientRect();
 
                             tooltipEl.style.opacity = 1;
                             tooltipEl.style.position = 'absolute';
-                            tooltipEl.style.left = canvasRect.left + window.pageXOffset + tooltipModel.caretX + 'px';
-                            tooltipEl.style.top = canvasRect.top + window.pageYOffset + tooltipModel.caretY + 'px';
-                            tooltipEl.style.zIndex = 9999;
+                            tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+                            tooltipEl.style.top = position.top + '10px';
+                            tooltipEl.style.pointerEvents = 'auto';
                         }
-                    },
-                    title: {
-                        display: true,
-                        text: `TOTAL EMPLOYEES: ${totalEmployees}`
                     }
                 }
             }
         });
-            
-        // PIE – Overall Distribution
-        chartInstances.pieChart = new Chart($('#pieChart'), {
-            type: 'pie',
-            data: {
-                labels: ['ABSENCES', 'LATES', 'UNDERTIMES', 'DISCREPANCIES', 'LEAVES', 'OFFSETS'],
-                datasets: [{
-                    data: [
-                        sum(resultData.topAbsent, 'absences'),
-                        sum(resultData.topLate, 'lates'),
-                        sum(resultData.topUndertime, 'undertimes'),
-                        sum(resultData.topBreakOutInDiscrepancies, 'breakOutInDiscrepancies'),
-                        sum(resultData.topLeave, 'leaves'),
-                        sum(resultData.topOffset, 'offsets')
-                    ]
-                }]
-            },
-            options: { 
-                responsive: true,
-                animation: {
-                    duration: 1200,         
-                    easing: 'easeOutQuart'   
-                }
-            }
-        });
 
-        // DOUGHNUT – Lates vs Undertimes
+        /* ========= LATE VS UNDERTIME ========= */
+
         chartInstances.doughnutChart = new Chart($('#doughnutChart'), {
             type: 'doughnut',
             data: {
@@ -516,456 +633,79 @@ $(function () {
                     ]
                 }]
             },
-            options: { 
-                responsive: true,
-                animation: {
-                    duration: 1200,         
-                    easing: 'easeOutQuart'   
-                }
-            }
+            options: { responsive: true }
         });
 
-        // BAR – Absences (with details)
-        const absences = extract(resultData.topAbsent, 'absences');
-        chartInstances.barChartAbsences = new Chart($('#barChartAbsences'), {
-            type: 'bar',
+        /* ========= OVERALL DISTRIBUTION ========= */
+
+        chartInstances.pieChart = new Chart($('#pieChart'), {
+            type: 'pie',
             data: {
-                labels: absences.labels,
-                datasets: [{ label: 'TOTAL ABSENCES', data: absences.values }]
-            },
-            options: {
-                animation: {
-                    duration: 1200,         
-                    easing: 'easeOutQuart'   
-                },
-                responsive: true,
-                plugins: {
-                    tooltip: {
-                        bodySpacing: 4,
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            afterLabel(ctx) {
-                                const item = getItemByIndex(resultData.topAbsent, ctx.dataIndex);
-                                if (!item) return '';
-
-                                const rawDates = item.details?.absence_dates || [];
-                                if (!rawDates.length) return 'Absence Dates: None';
-
-                                const formattedLines = formatGroupedDates(rawDates);
-
-                                const tooltip = ctx.chart.tooltip;
-                                const bodyFont = tooltip.options.bodyFont;
-
-                                const canvas = ctx.chart.ctx;
-                                canvas.save();
-                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
-
-                                const linesToMeasure = ['Absence Dates:', ...formattedLines];
-
-                                let maxWidth = 0;
-                                linesToMeasure.forEach(line => {
-                                    const width = canvas.measureText(line).width;
-                                    if (width > maxWidth) maxWidth = width;
-                                });
-
-                                const dashWidth = canvas.measureText('─').width;
-                                const repeatCount = Math.floor(maxWidth / dashWidth);
-
-                                canvas.restore();
-
-                                const dynamicLine = '─'.repeat(repeatCount);
-
-                                return [
-                                    '',
-                                    'DATES:',
-                                    dynamicLine,
-                                    ...formattedLines
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // LINE – Undertimes (with dates)
-        const undertimes = extract(resultData.topUndertime, 'undertimes');
-        chartInstances.lineChartUndertimes = new Chart($('#lineChartUndertimes'), {
-            type: 'line',
-            data: {
-                labels: undertimes.labels,
+                labels: ['ABSENCES','LATES','UNDERTIMES','DISCREPANCIES','LEAVES','OFFSETS'],
                 datasets: [{
-                    label: 'TOTAL UNDERTIME',
-                    data: undertimes.values,
-                    borderColor: '#e74a3b',
-                    backgroundColor: 'rgba(231, 74, 59, 0.2)',
-                    tension: 0.3,
-                    fill: true,
-                    pointBackgroundColor: '#e74a3b',
-                    pointBorderColor: '#fff',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    data: [
+                        sum(resultData.topAbsent, 'absences'),
+                        sum(resultData.topLate, 'lates'),
+                        sum(resultData.topUndertime, 'undertimes'),
+                        sum(resultData.topBreakOutInDiscrepancies, 'breakOutInDiscrepancies'),
+                        sum(resultData.topLeave, 'leaves'),
+                        sum(resultData.topOffset, 'offsets')
+                    ]
                 }]
             },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        bodySpacing: 4,
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            afterLabel(ctx) {
-                                const item = getItemByIndex(resultData.topUndertime, ctx.dataIndex);
-                                if (!item) return '';
-
-                                const dates = item.details?.undertime_dates || [];
-                                if (!dates.length) return 'Undertime Dates: None';
-
-                                const chunkSize = 5;
-                                const chunks = [];
-
-                                for (let i = 0; i < dates.length; i += chunkSize) {
-                                    chunks.push(dates.slice(i, i + chunkSize).join(', '));
-                                }
-
-                                const tooltip = ctx.chart.tooltip;
-                                const bodyFont = tooltip.options.bodyFont;
-
-                                const canvas = ctx.chart.ctx;
-                                canvas.save();
-                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
-
-                                const linesToMeasure = ['Undertime Dates:', ...chunks];
-
-                                let maxWidth = 0;
-                                linesToMeasure.forEach(line => {
-                                    const width = canvas.measureText(line).width;
-                                    if (width > maxWidth) maxWidth = width;
-                                });
-
-                                const dashWidth = canvas.measureText('─').width;
-                                const repeatCount = Math.floor(maxWidth / dashWidth);
-
-                                canvas.restore();
-
-                                const dynamicLine = '─'.repeat(repeatCount);
-                                const rawDates = item.details?.undertime_dates || [];
-                                const formattedLines = formatGroupedDates(rawDates);
-                                return [
-                                    '',
-                                    'DATES:',
-                                    dynamicLine,
-                                    ...formattedLines
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
+            options: { responsive: true }
         });
 
-        // LINE – Lates (with dates)
-        const lates = extract(resultData.topLate, 'lates');
-        chartInstances.lineChartLates = new Chart($('#polarAreaChartLates'), {
-            type: 'line',
-            data: {
-                labels: lates.labels,
-                datasets: [{
-                    label: 'TOTAL LATES',
-                    data: lates.values,
-                    borderColor: '#4e73df',
-                    backgroundColor: 'rgba(78, 115, 223, 0.2)',
-                    tension: 0.3,          
-                    fill: true,           
-                    pointBackgroundColor: '#4e73df',
-                    pointBorderColor: '#fff',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        bodySpacing: 4,
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            afterLabel(ctx) {
-                                const item = getItemByIndex(resultData.topLate, ctx.dataIndex);
-                                if (!item) return '';
+        /* ========= METRIC CHARTS ========= */
 
-                                const dates = item.details?.late_dates || [];
-                                if (!dates.length) return 'Late Dates: None';
+        createBarChart('barChartAbsences','#barChartAbsences','ABSENCES',
+            resultData.topAbsent,'absences','absence_dates');
 
-                                const chunkSize = 5;
-                                const chunks = [];
+        createLineChart('lineChartUndertimes','#lineChartUndertimes','UNDERTIME',
+            resultData.topUndertime,'undertimes','undertime_dates','#e74a3b');
 
-                                for (let i = 0; i < dates.length; i += chunkSize) {
-                                    chunks.push(dates.slice(i, i + chunkSize).join(', '));
-                                }
+        createLineChart('lineChartLates','#polarAreaChartLates','LATES',
+            resultData.topLate,'lates','late_dates','#4e73df');
 
-                                const tooltip = ctx.chart.tooltip;
-                                const bodyFont = tooltip.options.bodyFont;
+        createBarChart('barChartLeaves','#barChartLeaves','LEAVES',
+            resultData.topLeave,'leaves','leave_dates');
 
-                                const canvas = ctx.chart.ctx;
-                                canvas.save();
-                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
+        createBarChart('barChartOffsets','#barChartOffsets','OFFSETS',
+            resultData.topOffset,'offsets','offset_dates');
 
-                                const linesToMeasure = ['Late Dates:', ...chunks];
+        createBarChart('barChartSO','#barChartSO','SPECIAL ORDER',
+            resultData.topSO,'special_order','special_order_dates');
 
-                                let maxWidth = 0;
-                                linesToMeasure.forEach(line => {
-                                    const width = canvas.measureText(line).width;
-                                    if (width > maxWidth) maxWidth = width;
-                                });
+        createBarChart('barChartOBS','#barChartOBS','PASS SLIP / OBS',
+            resultData.topOBS,'obs','obs_dates');
 
-                                const dashWidth = canvas.measureText('─').width;
-                                const repeatCount = Math.floor(maxWidth / dashWidth);
-
-                                canvas.restore();
-
-                                const dynamicLine = '─'.repeat(repeatCount);
-                                const rawDates = item.details?.late_dates || [];
-                                const formattedLines = formatGroupedDates(rawDates);
-                                
-                                return [
-                                    '',
-                                    'DATES:',
-                                    dynamicLine,
-                                    ...formattedLines
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // BAR – Leaves
-        const leaves = extract(resultData.topLeave, 'leaves');
-        chartInstances.barChartLeaves = new Chart($('#barChartLeaves'), {
-            type: 'bar',
-            data: {
-                labels: leaves.labels,
-                datasets: [{ label: 'TOTAL LEAVES', data: leaves.values }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    tooltip: {
-                        bodySpacing: 4,
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            afterLabel(ctx) {
-                                const item = getItemByIndex(resultData.topLeave, ctx.dataIndex);
-                                if (!item) return '';
-
-                                const rawDates = item.details?.leave_dates || [];
-                                if (!rawDates.length) return 'Leave Dates: None';
-
-                                const formattedLines = formatGroupedDates(rawDates);
-
-                                const tooltip = ctx.chart.tooltip;
-                                const bodyFont = tooltip.options.bodyFont;
-
-                                const canvas = ctx.chart.ctx;
-                                canvas.save();
-                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
-
-                                const linesToMeasure = ['Leave Dates:', ...formattedLines];
-
-                                let maxWidth = 0;
-                                linesToMeasure.forEach(line => {
-                                    const width = canvas.measureText(line).width;
-                                    if (width > maxWidth) maxWidth = width;
-                                });
-
-                                const dashWidth = canvas.measureText('─').width;
-                                const repeatCount = Math.floor(maxWidth / dashWidth);
-
-                                canvas.restore();
-
-                                const dynamicLine = '─'.repeat(repeatCount);
-
-                                return [
-                                    '',
-                                    'DATES:',
-                                    dynamicLine,
-                                    ...formattedLines
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // BAR – Offsets
-        const offsets = extract(resultData.topOffset, 'offsets');
-        chartInstances.barChartOffsets = new Chart($('#barChartOffsets'), {
-            type: 'bar',
-            data: {
-                labels: offsets.labels,
-                datasets: [{ label: 'TOTAL OFFSETS', data: offsets.values }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    tooltip: {
-                        bodySpacing: 4,
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            afterLabel(ctx) {
-                                const item = getItemByIndex(resultData.topOffset, ctx.dataIndex);
-                                if (!item) return '';
-
-                                const rawDates = item.details?.offset_dates || [];
-                                if (!rawDates.length) return 'Offset Dates: None';
-
-                                const formattedLines = formatGroupedDates(rawDates);
-
-                                const tooltip = ctx.chart.tooltip;
-                                const bodyFont = tooltip.options.bodyFont;
-
-                                const canvas = ctx.chart.ctx;
-                                canvas.save();
-                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
-
-                                const linesToMeasure = ['Offset Dates:', ...formattedLines];
-
-                                let maxWidth = 0;
-                                linesToMeasure.forEach(line => {
-                                    const width = canvas.measureText(line).width;
-                                    if (width > maxWidth) maxWidth = width;
-                                });
-
-                                const dashWidth = canvas.measureText('─').width;
-                                const repeatCount = Math.floor(maxWidth / dashWidth);
-
-                                canvas.restore();
-
-                                const dynamicLine = '─'.repeat(repeatCount);
-
-                                return [
-                                    '',
-                                    'DATES:',
-                                    dynamicLine,
-                                    ...formattedLines
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // BAR – Break Out/In Discrepancies
-        const breakOut = extract(resultData.topBreakOutInDiscrepancies, 'breakOutInDiscrepancies');
-        chartInstances.barChartBreakDiscrepancies = new Chart($('#barChartBreakDiscrepancies'), {
-            type: 'bar',
-            data: {
-                labels: breakOut.labels,
-                datasets: [{ label: 'TOTAL BREAKIN/BREAKOUT DISCREPANCIES', data: breakOut.values }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    tooltip: {
-                        bodySpacing: 4,
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            afterLabel(ctx) {
-                                const item = getItemByIndex(resultData.topBreakOutInDiscrepancies, ctx.dataIndex);
-                                if (!item) return '';
-
-                                const rawDates = item.details?.breakOutInDiscrepancy_dates || [];
-                                if (!rawDates.length) return 'Break Out/In Dates: None';
-
-                                const formattedLines = formatGroupedDates(rawDates);
-
-                                const tooltip = ctx.chart.tooltip;
-                                const bodyFont = tooltip.options.bodyFont;
-
-                                const canvas = ctx.chart.ctx;
-                                canvas.save();
-                                canvas.font = `${bodyFont.size}px ${bodyFont.family}`;
-
-                                const linesToMeasure = ['Break Out/In Dates:', ...formattedLines];
-
-                                let maxWidth = 0;
-                                linesToMeasure.forEach(line => {
-                                    const width = canvas.measureText(line).width;
-                                    if (width > maxWidth) maxWidth = width;
-                                });
-
-                                const dashWidth = canvas.measureText('─').width;
-                                const repeatCount = Math.floor(maxWidth / dashWidth);
-
-                                canvas.restore();
-
-                                const dynamicLine = '─'.repeat(repeatCount);
-
-                                return [
-                                    '',
-                                    'DATES:',
-                                    dynamicLine,
-                                    ...formattedLines
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        createBarChart('barChartBreakDiscrepancies','#barChartBreakDiscrepancies',
+            'BREAKIN/BREAKOUT DISCREPANCIES',
+            resultData.topBreakOutInDiscrepancies,
+            'breakOutInDiscrepancies',
+            'breakOutInDiscrepancy_dates');
     }
 
-    // Get current month/year as default
-    const currentDate = new Date();
-    const defaultMonthYear = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+    /* =============================
+       EVENTS
+    ============================== */
 
-    // Load charts on page load with default monthYear
+    $('select[name="month"], select[name="year"]').on('change', function () {
+        const month = $('select[name="month"]').val();
+        const year = $('select[name="year"]').val();
+        if (!month || !year) return;
+
+        loadCharts(`${year}-${month.padStart(2,'0')}`);
+    });
+
+    /* =============================
+       INITIAL LOAD
+    ============================== */
+
+    const now = new Date();
+    const defaultMonthYear = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
     loadCharts(defaultMonthYear);
 
-    function formatGroupedDates(dates) {
-        if (!dates || !dates.length) return [];
-
-        const grouped = {};
-
-        dates.forEach(dateStr => {
-            const date = new Date(dateStr);
-
-            const month = date.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-            const day = date.getDate();
-
-            if (!grouped[month]) {
-                grouped[month] = [];
-            }
-
-            grouped[month].push(day);
-        });
-
-        // Convert to formatted lines
-        return Object.entries(grouped).map(([month, days]) => {
-            days.sort((a, b) => a - b);
-            return `${month} ${days.join(', ')}`;
-        });
-    }
 });
 </script>
 @endsection

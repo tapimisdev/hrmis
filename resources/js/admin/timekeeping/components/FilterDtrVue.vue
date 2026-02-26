@@ -215,6 +215,7 @@ export default {
             if (lowerLabel === "incomplete logs") return "fa-solid fa-ban";
             if (lowerLabel === "total hours worked") return "fa-solid fa-business-time";
             if (lowerLabel === "special order") return "fa-solid fa-car-on";
+            if (lowerLabel === "pass slip") return "fa-solid fa-torii-gate";
             if (lowerLabel === "offsets") return "fa-solid fa-ghost";
             if (lowerLabel === "leaves") return "fa-solid fa-plane-departure";
             if (lowerLabel === "holiday") return "fa-solid fa-calendar-day";
@@ -223,6 +224,7 @@ export default {
             if (lowerLabel === "overtime") return "fa-solid fa-stopwatch";
             if (lowerLabel === "late / undertime") return "fa-solid fa-bed";
             if (lowerLabel === "excess") return "fa-solid fa-plus";
+            if (lowerLabel === "actual presence") return "fa-regular fa-calendar-check";
 
             return "fa-solid fa-chart-bar";
         },

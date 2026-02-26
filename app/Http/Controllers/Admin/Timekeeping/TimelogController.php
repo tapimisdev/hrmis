@@ -150,7 +150,7 @@ class TimelogController extends Controller
                     '<i class="fa-solid fa-briefcase"></i>'  .
                 '</a>' .
                 '<a href="' . route('daily-time-record.index', $row->employee_no) . '" class="btn btn-primary" title="DTR">' .
-                    '<i class="fas fa-clock me-1"></i> '  .
+                    '<i class="fas fa-clock"></i> '  .
                 '</a>' .
             '</div>';
             

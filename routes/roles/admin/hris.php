@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\Hris\LeaveCreditController;
 use App\Http\Controllers\Admin\Hris\OffsetCreditsController;
 use App\Http\Controllers\Admin\Hris\EarningsController as HrisEarningsController;
 use App\Http\Controllers\Admin\Hris\DeductionsController as HrisDeductionsController;
+use App\Http\Controllers\Admin\Hris\SalaryHistoryController;
 use App\Http\Controllers\Admin\Hris\ImportEmployeeController;
 
 Route::prefix('hris')->group(function() {
@@ -154,5 +155,8 @@ Route::prefix('hris')->group(function() {
     //     ->name('hris.employee.deductions');
     // Route::post('employee/deductions/{employee_no}', [HrisDeductionsController::class, 'save'])
     //     ->name('hris.employee.deductions');
+
+    Route::get('employee/salary-history/{employee_no}', [SalaryHistoryController::class, 'index'])
+        ->name('hris.employee.salary-history');
 
 });
