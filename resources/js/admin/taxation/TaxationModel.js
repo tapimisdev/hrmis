@@ -93,6 +93,14 @@ export function TaxationSettingModel(data = {}) {
             amount_annual_tax: toMoney(row.amount_annual_tax),
             amount_monthly_tax: toMoney(row.amount_monthly_tax),
 
+            amount_annual_total_allowables: toMoney(
+                row.amount_annual_total_allowables,
+            ),
+
+            amount_other_earnings_non_taxable: toMoney(
+                row.amount_other_earnings_non_taxable,
+            ),
+
             amount_other_earnings_taxable: toMoney(
                 row.amount_other_earnings_taxable,
             ),

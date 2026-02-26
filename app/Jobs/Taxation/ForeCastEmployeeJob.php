@@ -161,12 +161,9 @@ class ForeCastEmployeeJob implements ShouldQueue
         // -----------------------------
         // Get Non Taxable allowances // PERA RATA
         // -----------------------------
-        $payload['othersEarnings'][] = array_merge(
+        $payload['othersEarnings'] = array_merge(
             $payload['othersEarnings'] ?? [],
-            $service->getNonTaxableAllowance(
-                $this->employee_no,
-                $year
-            )    
+            $service->getNonTaxableAllowance($this->employee_no, $year)
         );
 
         // -----------------------------
@@ -185,6 +182,8 @@ class ForeCastEmployeeJob implements ShouldQueue
                 $otherEarningsTaxable += $amount;
             }
         }
+
+        // dd($payload['othersEarnings'], $otherEarningsNonTaxable);
 
         // Round totals
         $midYearBonus            = round($midYearBonus, 2);

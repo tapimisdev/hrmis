@@ -40,6 +40,8 @@ class TaxationSettingsService
             ["label" => "Year-End Bonus", "type" => "earnings", "note" => "Taxable", "ok" => (bool) $taxation->year_end],
             ["label" => "Longevity Pay",  "type" => "earnings", "note" => "Taxable", "ok" => (bool) $taxation->longevity],
             ["label" => "Hazard Pay",     "type" => "earnings", "note" => "Taxable", "ok" => (bool) $taxation->hazard_pay],
+            ["label" => "Pera",           "type" => "earnings", "note" => "Non-Taxable", "ok" => false],
+            ["label" => "RATA",           "type" => "earnings", "note" => "Non-Taxable", "ok" => false],
         ];
 
         foreach ($taxation->settings->other_earnings as $earning) {
@@ -60,9 +62,9 @@ class TaxationSettingsService
         }
 
         // Standard Allowables
-        $mapping[] = ["label" => "- GSIS",       "type" => "allowables", "note" => "Allowable", "ok" => true];
-        $mapping[] = ["label" => "- PhilHealth", "type" => "allowables", "note" => "Allowable", "ok" => true];
-        $mapping[] = ["label" => "- Pag-IBIG",   "type" => "allowables", "note" => "Allowable", "ok" => true];
+        $mapping[] = ["label" => "GSIS",       "type" => "allowables", "note" => "Allowable", "ok" => true];
+        $mapping[] = ["label" => "PhilHealth", "type" => "allowables", "note" => "Allowable", "ok" => true];
+        $mapping[] = ["label" => "Pag-IBIG",   "type" => "allowables", "note" => "Allowable", "ok" => true];
 
         foreach ($taxation->settings->other_allowables as $allowable) {
             $mapping[] = [

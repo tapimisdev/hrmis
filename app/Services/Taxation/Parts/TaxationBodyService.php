@@ -58,6 +58,8 @@ class TaxationBodyService
                 'te.amount_annual_tax',
                 'te.amount_monthly_tax',
 
+                'te.amount_other_earnings_non_taxable',
+                'te.amount_annual_total_allowables',
                 'te.amount_other_earnings_taxable',
                 'te.amount_other_deductions',
                 'te.amount_gross',

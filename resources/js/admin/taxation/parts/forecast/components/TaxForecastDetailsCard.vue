@@ -79,22 +79,44 @@
                     <div class="kv">
                         <div class="rowx">
                             <div class="key">Other Earnings (Taxable)</div>
-                            <div class="val">{{ money(row?.amount_other_earnings_taxable) }}</div>
+                            <div class="val">
+                                {{ money(row?.amount_other_earnings_taxable) }}
+                            </div>
+                        </div>
+
+                        <div class="rowx">
+                            <div class="key">Other Earnings (Non Taxable)</div>
+                            <div class="val">
+                                {{ money(row?.amount_other_earnings_non_taxable) }}
+                            </div>
                         </div>
 
                         <div class="rowx">
                             <div class="key">Other Deductions</div>
-                            <div class="val">{{ money(row?.amount_other_deductions) }}</div>
+                            <div class="val">
+                                {{ money(row?.amount_other_deductions) }}
+                            </div>
+                        </div>
+
+                        <div class="rowx">
+                            <div class="key">Annual Allowables</div>
+                            <div class="val strong">
+                                {{ money(row?.amount_annual_total_allowables) }}
+                            </div>
                         </div>
 
                         <div class="rowx">
                             <div class="key">Annual Taxable Income</div>
-                            <div class="val strong">{{ money(row?.amount_annual_taxable) }}</div>
+                            <div class="val strong">
+                                {{ money(row?.amount_annual_taxable) }}
+                            </div>
                         </div>
 
                         <div class="rowx">
                             <div class="key">Gross Income</div>
-                            <div class="val strong">{{ money(row?.amount_gross) }}</div>
+                            <div class="val strong">
+                                {{ money(row?.amount_gross) }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -107,25 +129,37 @@
                         <div class="prow">
                             <div class="pname">
                                 Hazard Pay
-                                <span class="pct">{{ pct(row?.portion_hazard_pay) }}</span>
+                                <span class="pct">{{
+                                    pct(row?.portion_hazard_pay)
+                                }}</span>
                             </div>
-                            <div class="pamt">{{ money(row?.amount_portion_hazard_pay) }}</div>
+                            <div class="pamt">
+                                {{ money(row?.amount_portion_hazard_pay) }}
+                            </div>
                         </div>
 
                         <div class="prow">
                             <div class="pname">
                                 Basic Pay
-                                <span class="pct">{{ pct(row?.portion_basic_pay) }}</span>
+                                <span class="pct">{{
+                                    pct(row?.portion_basic_pay)
+                                }}</span>
                             </div>
-                            <div class="pamt">{{ money(row?.amount_portion_basic_pay) }}</div>
+                            <div class="pamt">
+                                {{ money(row?.amount_portion_basic_pay) }}
+                            </div>
                         </div>
 
                         <div class="prow">
                             <div class="pname">
                                 Longevity
-                                <span class="pct">{{ pct(row?.portion_longevity_pay) }}</span>
+                                <span class="pct">{{
+                                    pct(row?.portion_longevity_pay)
+                                }}</span>
                             </div>
-                            <div class="pamt">{{ money(row?.amount_portion_longevity_pay) }}</div>
+                            <div class="pamt">
+                                {{ money(row?.amount_portion_longevity_pay) }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -135,13 +169,14 @@
             <div class="classic-box remarks">
                 <div class="box-title">Remarks</div>
 
-                <ul v-if="row?.remarks && row.remarks.length" class="remark-list">
+                <ul
+                    v-if="row?.remarks && row.remarks.length"
+                    class="remark-list"
+                >
                     <li v-for="(r, idx) in row.remarks" :key="idx">{{ r }}</li>
                 </ul>
 
-                <div v-else class="empty-note">
-                    No remarks.
-                </div>
+                <div v-else class="empty-note">No remarks.</div>
             </div>
         </div>
     </div>
@@ -183,10 +218,7 @@ export default {
     justify-content: space-between;
     gap: 12px;
     padding: 10px 12px;
-    background: linear-gradient(
-        var(--bs-tertiary-bg),
-        var(--bs-body-bg)
-    );
+    background: linear-gradient(var(--bs-tertiary-bg), var(--bs-body-bg));
     border-bottom: 1px solid var(--bs-border-color);
 }
 
@@ -238,10 +270,7 @@ export default {
 /* BUTTONS */
 .classic-btn {
     border: 1px solid var(--bs-border-color);
-    background: linear-gradient(
-        var(--bs-body-bg),
-        var(--bs-tertiary-bg)
-    );
+    background: linear-gradient(var(--bs-body-bg), var(--bs-tertiary-bg));
     color: var(--bs-body-color);
     font-size: 12px;
     padding: 6px 10px;
@@ -297,10 +326,7 @@ export default {
     padding: 7px 9px;
     font-size: 12px;
     font-weight: 700;
-    background: linear-gradient(
-        var(--bs-body-bg),
-        var(--bs-tertiary-bg)
-    );
+    background: linear-gradient(var(--bs-body-bg), var(--bs-tertiary-bg));
     border-bottom: 1px solid var(--bs-border-color);
 }
 

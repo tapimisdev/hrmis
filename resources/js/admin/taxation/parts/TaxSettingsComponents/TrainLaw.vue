@@ -1,5 +1,5 @@
 <template>
-    <div class="card shadow-sm h-100">
+    <div class="card shadow-sm">
         <div
             class="card-header d-flex align-items-center justify-content-between"
         >
