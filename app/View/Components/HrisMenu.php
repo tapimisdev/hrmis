@@ -158,6 +158,11 @@ class HrisMenu extends Component
                 'active' => '',
                 'submenus' => $modules,
             ],
+            [
+                'name' => 'XIV. Salary History',
+                'route' => route('hris.employee.salary-history', ['employee_no' => $this->employee_no]),
+                'active' => $this->active == 'salary-history' ? 'active' : '',
+            ],
         ];
 
     }

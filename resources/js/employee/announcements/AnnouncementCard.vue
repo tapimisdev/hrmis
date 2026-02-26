@@ -33,7 +33,7 @@
                     {{ stripTags(announcement.body) }}
                 </p>
 
-                <div class="card-footer">
+                <div class="card-footer" v-if="announcement.show_viewers">
                     <div class="seeners">
                         <div class="seeners-avatars">
                             <img
