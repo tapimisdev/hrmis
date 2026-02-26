@@ -24,9 +24,14 @@ class ObsController extends Controller
     public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
 
-        $this->middleware('permission:emp.pass_slip_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.pass_slip_application.apply')->only(['create', 'store']);
-    
+        $this->middleware('permission:emp.pass_slip_application.view|hr.pass_slip_approval.view')
+            ->only(['index', 'create', 'show']);
+
+        $this->middleware(
+            'permission:emp.pass_slip_application.apply|hr.pass_slip_approval.save'
+        )->only(['store']);
+
+
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
     }
