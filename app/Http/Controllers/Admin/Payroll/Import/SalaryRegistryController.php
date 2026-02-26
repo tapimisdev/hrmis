@@ -74,6 +74,7 @@ class SalaryRegistryController extends Controller
             'period_covered' => $period_covered,
             'type' => 'Salary Payroll',
             'employment_type' => $employment_type,
+            'date' => $request->date,
             'data' => $parsedData
         ];
 

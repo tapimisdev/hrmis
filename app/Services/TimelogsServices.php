@@ -189,15 +189,11 @@ class TimelogsServices {
                     break;
 
                 case \App\Enums\FnEnum::TimeOut->value:
-                    if (!$validLogs['out']) {
-                        $validLogs['out'] = $log;
-                    }
+                    $validLogs['out'] = $log;
                     break;
 
                 case \App\Enums\FnEnum::BreakOut->value:
-                    if (!$validLogs['break_out']) {
-                        $validLogs['break_out'] = $log;
-                    }
+                    $validLogs['break_out'] = $log;
                     break;
 
                 case \App\Enums\FnEnum::BreakIn->value:
@@ -213,9 +209,7 @@ class TimelogsServices {
                     break;
 
                 case \App\Enums\FnEnum::OvertimeOut->value:
-                    if (!$validLogs['overtime_out']) {
-                        $validLogs['overtime_out'] = $log;
-                    }
+                    $validLogs['overtime_out'] = $log;
                     break;
             }
         }
