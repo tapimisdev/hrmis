@@ -50,13 +50,13 @@ class PayrollRegistryReport implements ShouldQueue
         $processedData = $employee_service->processEmployeeSalary($employeeNo, $this->payroll_id);
 
         DB::table('payroll_salary')
-        ->where('id', $this->payroll_id)
-        ->update([
-            'no_employee'      => DB::raw('no_employee + 1'),
-            'gross_amount'     => DB::raw("gross_amount + {$processedData['gross_amount']}"),
-            'deduction_amount' => DB::raw("deduction_amount + {$processedData['deduction_amount']}"),
-            'netpay_amount'    => DB::raw("netpay_amount + {$processedData['net_pay_amount']}")
-        ]);
+            ->where('id', $this->payroll_id)
+            ->update([
+                'no_employee'      => DB::raw('no_employee + 1'),
+                'gross_amount'     => DB::raw("gross_amount + {$processedData['gross_amount']}"),
+                'deduction_amount' => DB::raw("deduction_amount + {$processedData['deduction_amount']}"),
+                'netpay_amount'    => DB::raw("netpay_amount + {$processedData['net_pay_amount']}")
+            ]);
 
         Log::info("Completed payroll registry generation for Payroll ID: {$this->payroll_id}");
     }
