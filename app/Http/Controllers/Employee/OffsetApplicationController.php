@@ -22,8 +22,13 @@ class OffsetApplicationController extends Controller
 
     public function __construct(ApplicationController $applicationService, EventService $EventService)
     {
-        $this->middleware('permission:emp.offset_application.view')->only(['index', 'create', 'show']);
-        $this->middleware('permission:emp.offset_application.apply')->only(['create', 'store']);
+        $this->middleware('permission:emp.offset_application.view|hr.offset_approval.view')
+            ->only(['index', 'create', 'show']);
+
+        $this->middleware(
+            'permission:emp.offset_application.apply|hr.offset_approval.save'
+        )->only(['store']);
+
         $this->applicationService = $applicationService;
         $this->EventService = $EventService;
     }

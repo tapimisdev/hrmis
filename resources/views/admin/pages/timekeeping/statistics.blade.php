@@ -518,6 +518,8 @@ $(function () {
         const accessed = resultData.loginAccessed ?? {};
         const notAccessed = resultData.loginNotAccessed ?? {};
 
+        console.log(resultData);
+
         const accessedCount = Number(accessed.count ?? 0);
         const notAccessedCount = Number(notAccessed.count ?? 0);
         const totalEmployees = accessedCount + notAccessedCount;
@@ -525,7 +527,7 @@ $(function () {
         chartInstances.noLoginChart = new Chart($('#noLoginChart'), {
             type: 'pie',
             data: {
-                labels: ['Accessed', 'Not Accessed'],
+                labels: ['ACCESSED', 'NOT ACCESSED'],
                 datasets: [{
                     data: [accessedCount, notAccessedCount]
                 }]
@@ -536,6 +538,83 @@ $(function () {
                     title: {
                         display: true,
                         text: `EMPLOYEES: ${totalEmployees}`
+                    },
+                    tooltip: {
+                        enabled: false,
+                        external: function(context) {
+
+                            let tooltipEl = document.getElementById('chartjs-tooltip');
+
+                            if (!tooltipEl) {
+                                tooltipEl = document.createElement('div');
+                                tooltipEl.id = 'chartjs-tooltip';
+                                tooltipEl.innerHTML = '<div class="tooltip-body"></div>';
+                                document.body.appendChild(tooltipEl);
+
+                                // Optional base styling
+                                tooltipEl.style.borderRadius = '8px';
+                                tooltipEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                                tooltipEl.style.padding = '10px';
+                                tooltipEl.style.width = '300px';
+                                tooltipEl.style.fontSize = '12px';
+                                tooltipEl.style.zIndex = '9999';
+
+                                // Prevent hide when hovering tooltip
+                                tooltipEl.addEventListener('mouseenter', function () {
+                                    tooltipEl.dataset.hovering = "true";
+                                });
+
+                                tooltipEl.addEventListener('mouseleave', function () {
+                                    tooltipEl.dataset.hovering = "false";
+                                    tooltipEl.style.opacity = 0;
+                                });
+                            }
+
+                            const tooltipModel = context.tooltip;
+
+                            if (tooltipModel.opacity === 0 && tooltipEl.dataset.hovering !== "true") {
+                                tooltipEl.style.opacity = 0;
+                                return;
+                            }
+
+                            if (!tooltipModel.dataPoints) return;
+
+                            const label = tooltipModel.dataPoints[0].label;
+                            const value = tooltipModel.dataPoints[0].raw;
+
+                            let employees = [];
+
+                            if (label === 'ACCESSED') {
+                                employees = resultData.loginAccessed.details || [];
+                            } else {
+                                employees = resultData.loginNotAccessed.details || [];
+                            }
+
+                            const total = accessedCount + notAccessedCount;
+                            const percentage = total > 0
+                                ? ((value / total) * 100).toFixed(2)
+                                : 0;
+
+                            const employeeList = employees.map(emp =>
+                                `<div>${emp.firstname} (${emp.employee_no})</div>`
+                            ).join('');
+
+                            tooltipEl.querySelector('.tooltip-body').innerHTML = `
+                                <strong>${label}: ${value} (${percentage}%)</strong>
+                                <hr style="margin:6px 0;">
+                                <div class="scroll-area" style="max-height:300px; overflow-y:auto; overflow-x:hidden;">
+                                    ${employeeList}
+                                </div>
+                            `;
+
+                            const position = context.chart.canvas.getBoundingClientRect();
+
+                            tooltipEl.style.opacity = 1;
+                            tooltipEl.style.position = 'absolute';
+                            tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 'px';
+                            tooltipEl.style.top = position.top + '10px';
+                            tooltipEl.style.pointerEvents = 'auto';
+                        }
                     }
                 }
             }
