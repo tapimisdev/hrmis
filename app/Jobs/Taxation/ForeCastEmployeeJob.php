@@ -19,6 +19,8 @@ class ForeCastEmployeeJob implements ShouldQueue
 
     private int $hazardTaxId, $salaryTaxId, $longevityTaxId, $trainLawId;
 
+    private $peraTableId, $transportationAllowanceId, $representationAllowanceId;
+
     /**
      * Create a new job instance.
      */
@@ -41,7 +43,7 @@ class ForeCastEmployeeJob implements ShouldQueue
     public function handle(ForecastComputationService $service): void
     {
         $year = (int) ($this->payload['year'] ?? now()->year);
-
+        
         // -----------------------------
         // Normalize payload structure
         // -----------------------------
@@ -155,6 +157,17 @@ class ForeCastEmployeeJob implements ShouldQueue
                 $addRemark("Hazard Pay was enabled but cannot be computed (months covered or monthly hazard pay is zero).");
             }
         }
+        
+        // -----------------------------
+        // Get Non Taxable allowances // PERA RATA
+        // -----------------------------
+        $payload['othersEarnings'][] = array_merge(
+            $payload['othersEarnings'] ?? [],
+            $service->getNonTaxableAllowance(
+                $this->employee_no,
+                $year
+            )    
+        );
 
         // -----------------------------
         // Other earnings (split taxable/non-taxable)

@@ -678,14 +678,6 @@ class ForecastComputationService
                 ->sum('amount'); // numeric value
         }
 
-        // // Safe logging
-        // Log::info('Longevity computation', [
-        //     'employee_no'        => $employee_no,
-        //     'year'               => $year,
-        //     'longevity_total'    => $longevityTotal,
-        //     'avg_monthly' => round(((double) $longevityTotal / 12), 2),
-        // ]);
-
         return [
             'employee_no'        => $employee_no,
             'year'               => $year,
@@ -989,5 +981,51 @@ class ForecastComputationService
             'start_date' => $employee->date_hired_organization,
             'end_date'   => $employee->date_resigned, // can be null
         ];
+    }
+
+    public function getNonTaxableAllowance($employee_no, $year): array
+    {
+        $allowances = [
+            'pera' => TableSettingsEnum::PERA->value,
+            'representation_allowance' => TableSettingsEnum::REPRESENTATION_ALLOWANCE->value,
+            'transportation_allowance' => TableSettingsEnum::TRANSPORTATION_ALLOWANCE->value,
+        ];
+
+        $results = [];
+
+        foreach ($allowances as $name => $type) {
+            $results[] = [
+                'name' => ucfirst(str_replace('_', ' ', $name)),
+                'tax_type' => 'non_taxable',
+                'amount' => $this->getComponentAmount($type, $employee_no, $year),
+            ];
+        }
+
+        return $results;
+    }
+
+    private function getComponentAmount($type, $employee_no, $year): float
+    {
+        $componentId = DB::table('payroll_components_settings')
+            ->where('type', $type)
+            ->value('table_id');
+
+        if (!$componentId) {
+            return 0.00;
+        }
+
+        $componentYearId = DB::table('payroll_components_years')
+            ->where('payroll_component_id', $componentId)
+            ->where('year', $year)
+            ->value('id');
+
+        if (!$componentYearId) {
+            return 0.00;
+        }
+
+        return (float) DB::table('employee_payroll_components')
+            ->where('tax_deduction_id', $componentYearId)
+            ->where('employee_no', $employee_no)
+            ->sum('amount');
     }
 }
