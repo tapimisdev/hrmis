@@ -1,0 +1,110 @@
+<?php
+
+namespace App\Services\Taxation\Parts;
+
+use Illuminate\Database\ConnectionInterface;
+
+class TaxationBodyService
+{
+    public function __construct(
+        private readonly ConnectionInterface $db
+    ) {}
+
+    public function getEmployees(int $id): ?object
+    {
+        $employees = $this->db->table('taxation_employees as te')
+
+            ->leftJoin('employee_personal as ep', 'te.employee_no', '=', 'ep.employee_no')
+
+            // Join max effectivity date per employee
+            ->leftJoin(
+                $this->db->raw("
+                    (
+                        SELECT employee_no, MAX(effectivity_date) AS max_effectivity_date
+                        FROM employee_organization
+                        GROUP BY employee_no
+                    ) AS eomax
+                "),
+                'te.employee_no',
+                '=',
+                'eomax.employee_no'
+            )
+
+            // Join the actual latest record
+            ->leftJoin('employee_organization as eo', function ($join) {
+                $join->on('te.employee_no', '=', 'eo.employee_no')
+                    ->on('eo.effectivity_date', '=', 'eomax.max_effectivity_date');
+            })
+            ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
+            ->leftJoin('positions as p', 'eo.position_id', '=', 'p.id')
+            ->leftJoin('units as u', 'eo.unit_id', '=', 'u.id')
+            ->select(
+                'te.employee_no',
+
+                $this->db->raw("
+                    CONCAT(
+                        UPPER(ep.lastname), ', ',
+                        ep.firstname,
+                        IF(ep.middlename IS NOT NULL AND ep.middlename != '', CONCAT(' ', LEFT(ep.middlename, 1), '.'), ''),
+                        IF(ep.suffix IS NOT NULL AND ep.suffix != '', CONCAT(' ', ep.suffix), '')
+                    ) as full_name
+                "),
+
+                'd.code as division',
+                'p.name as position',
+                'u.code as unit',
+
+                'te.amount_annual_taxable',
+                'te.amount_annual_tax',
+                'te.amount_monthly_tax',
+
+                'te.amount_other_earnings_taxable',
+                'te.amount_other_deductions',
+                'te.amount_gross',
+
+                'te.portion_hazard_pay',
+                'te.portion_basic_pay',
+                'te.portion_longevity_pay',
+
+                'te.amount_portion_hazard_pay',
+                'te.amount_portion_basic_pay',
+                'te.amount_portion_longevity_pay',
+
+                'remarks'
+
+            )
+            ->where('te.taxation_id', $id)
+            ->get()
+            ->map(function ($employee) {
+
+                // Money fields
+                $moneyFields = [
+                    'amount_annual_taxable',
+                    'amount_annual_tax',
+                    'amount_monthly_tax',
+                    'amount_other_earnings_taxable',
+                    'amount_other_deductions',
+                    'amount_gross',
+                    'amount_portion_hazard_pay',
+                    'amount_portion_basic_pay',
+                    'amount_portion_longevity_pay',
+                ];
+
+                foreach ($moneyFields as $field) {
+                    $employee->{$field} = '₱ ' . number_format((float) $employee->{$field}, 2);
+                }
+
+                // Decode remarks JSON safely
+                $employee->remarks = $employee->remarks
+                    ? json_decode($employee->remarks, true) ?? []
+                    : [];
+
+                return $employee;
+            });
+        if ($employees->isEmpty()) {
+            return null;
+        }
+
+        return $employees;
+    }
+}

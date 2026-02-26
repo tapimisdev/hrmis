@@ -12,9 +12,9 @@
             No items added.
         </div>
 
-        <div v-for="(row, idx) in rows" :key="idx" class="row g-2 mb-2">
+        <div v-for="(row, idx) in rows" :key="idx" class="row g-2 mb-3">
             <!-- NAME -->
-            <div class="col-7">
+            <div :class="enableTaxType ? 'col-10' : 'col-7'">
                 <input
                     type="text"
                     class="form-control form-control-sm"
@@ -22,10 +22,7 @@
                     placeholder="Name"
                     v-model.trim="row.name"
                 />
-                <div
-                    v-if="hasFieldError(idx, 'name')"
-                    class="invalid-feedback"
-                >
+                <div v-if="hasFieldError(idx, 'name')" class="invalid-feedback">
                     {{ fieldError(idx, "name") }}
                 </div>
             </div>
@@ -41,16 +38,31 @@
                     step="0.01"
                     v-model.number="row.amount"
                 />
-                <div
-                    v-if="hasFieldError(idx, 'amount')"
-                    class="invalid-feedback"
-                >
+                <div v-if="hasFieldError(idx, 'amount')" class="invalid-feedback">
                     {{ fieldError(idx, "amount") }}
                 </div>
             </div>
 
+            <!-- TAX TYPE (ONLY FOR EARNINGS) -->
+            <div v-if="enableTaxType" class="col-6">
+                <select
+                    class="form-select form-select-sm"
+                    :class="{ 'is-invalid': hasFieldError(idx, 'tax_type') }"
+                    v-model="row.tax_type"
+                >
+                    <option disabled value="">Tax type</option>
+                    <option value="taxable">Taxable</option>
+                    <option value="non_taxable">Non-taxable</option>
+                    <option value="exempt">Exempt</option>
+                </select>
+
+                <div v-if="hasFieldError(idx, 'tax_type')" class="invalid-feedback">
+                    {{ fieldError(idx, "tax_type") }}
+                </div>
+            </div>
+
             <!-- REMOVE -->
-            <div class="col-1 d-flex align-items-center justify-content-end">
+            <div class="col-1 d-flex align-items-center justify-content-start">
                 <button
                     type="button"
                     class="btn btn-sm btn-link text-danger p-0"
@@ -62,7 +74,7 @@
             </div>
         </div>
 
-        <!-- OPTIONAL: show base-level errors like "others_deductions must be array" -->
+        <!-- OPTIONAL: base-level errors -->
         <small v-if="baseError" class="text-danger d-block mt-2">
             {{ baseError }}
         </small>
@@ -75,31 +87,15 @@ export default {
     props: {
         modelValue: { type: Array, required: true },
         title: { type: String, required: true },
-
-        /**
-         * Laravel 422 errors object:
-         * {
-         *   "others_deductions.0.name": ["The name field is required."]
-         * }
-         */
         errors: { type: Object, default: () => ({}) },
-
-        /**
-         * Base key for this rows group (match backend keys)
-         * Examples:
-         *  - "others_deductions"
-         *  - "others_earnings"
-         *  - "earnings.others"
-         *  - "deductions.others"
-         */
         errorKey: { type: String, required: true },
 
-        /**
-         * Default row structure (optional)
-         */
+        // sendYearToParentNEW: enable tax_type select ONLY for earnings
+        enableTaxType: { type: Boolean, default: false },
+
         defaultRow: {
             type: Object,
-            default: () => ({ name: "", amount: 0 }),
+            default: () => ({ name: "", amount: 0, tax_type: "" }),
         },
     },
     emits: ["update:modelValue"],
@@ -114,7 +110,6 @@ export default {
             },
         },
 
-        // Base-level errors like: "others_deductions": ["Must be an array"]
         baseError() {
             const val = this.errors?.[this.errorKey];
             return Array.isArray(val) ? val[0] : val || null;
@@ -123,7 +118,18 @@ export default {
 
     methods: {
         add() {
-            this.rows = [...this.rows, { ...this.defaultRow }];
+            // sendYearToParentonly include tax_type when enabled
+            const row = { ...this.defaultRow };
+
+            if (!this.enableTaxType) {
+                delete row.tax_type;
+            } else {
+                // default value if you want it pre-selected:
+                // row.tax_type = row.tax_type || 'taxable'
+                row.tax_type = row.tax_type ?? "";
+            }
+
+            this.rows = [...this.rows, row];
         },
 
         remove(idx) {
@@ -132,7 +138,6 @@ export default {
             this.rows = copy;
         },
 
-        // "others_deductions.0.amount" -> first message
         fieldError(idx, field) {
             const key = `${this.errorKey}.${idx}.${field}`;
             const val = this.errors?.[key];
@@ -150,7 +155,6 @@ export default {
 </script>
 
 <style scoped>
-/* Keep bootstrap invalid feedback visible under small inputs */
 .invalid-feedback {
     display: block;
     font-size: 11px;

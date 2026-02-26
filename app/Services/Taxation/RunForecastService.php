@@ -70,6 +70,7 @@ class RunForecastService
             ->map(fn($r) => [
                 'taxation_id' => $taxationId,
                 'name'        => trim($r['name']),
+                'tax_type'    => trim($r['tax_type'] ?? ''),
                 'amount'      => (int) ($r['amount'] ?? 0),
                 'created_at'  => now(),
                 'updated_at'  => now(),

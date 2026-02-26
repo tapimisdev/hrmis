@@ -55,7 +55,7 @@
 
             <!-- Division Filter -->
             <select
-                class="form-select form-select-sm w-auto"
+                class="form-select form-select-sm" style="max-width: 300px;"
                 :value="selectedDivision"
                 @change="$emit('update:selectedDivision', $event.target.value)"
             >
@@ -67,7 +67,7 @@
 
             <!-- Unit Filter -->
             <select
-                class="form-select form-select-sm w-auto"
+                class="form-select form-select-sm" style="max-width: 300px;"
                 :value="selectedUnit"
                 @change="$emit('update:selectedUnit', $event.target.value)"
                 :disabled="units.length === 0"
@@ -79,11 +79,6 @@
                     {{ u }}
                 </option>
             </select>
-
-            <!-- Result count -->
-            <div class="ms-auto small text-muted">
-                Showing <b>{{ filteredCount }}</b> of {{ totalCount }}
-            </div>
         </div>
     </div>
 </template>

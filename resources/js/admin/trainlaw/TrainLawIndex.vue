@@ -29,7 +29,9 @@
                                 <th style="min-width: 170px">Income From</th>
                                 <th style="min-width: 170px">
                                     Income To
-                                    <span class="text-secondary">(blank = Above)</span>
+                                    <span class="text-secondary"
+                                        >(blank = Above)</span
+                                    >
                                 </th>
                                 <th style="min-width: 150px">Fixed Tax</th>
                                 <th style="min-width: 120px">Rate %</th>
@@ -54,7 +56,10 @@
                                         step="0.01"
                                         :class="inputClass(i, 'income_from')"
                                     />
-                                    <div v-if="fieldError(i, 'income_from')" class="small text-danger mt-1">
+                                    <div
+                                        v-if="fieldError(i, 'income_from')"
+                                        class="small text-danger mt-1"
+                                    >
                                         {{ fieldError(i, "income_from") }}
                                     </div>
                                 </td>
@@ -68,7 +73,10 @@
                                         placeholder="Optional"
                                         :class="inputClass(i, 'income_to')"
                                     />
-                                    <div v-if="fieldError(i, 'income_to')" class="small text-danger mt-1">
+                                    <div
+                                        v-if="fieldError(i, 'income_to')"
+                                        class="small text-danger mt-1"
+                                    >
                                         {{ fieldError(i, "income_to") }}
                                     </div>
                                 </td>
@@ -81,7 +89,10 @@
                                         step="0.01"
                                         :class="inputClass(i, 'fixed_tax')"
                                     />
-                                    <div v-if="fieldError(i, 'fixed_tax')" class="small text-danger mt-1">
+                                    <div
+                                        v-if="fieldError(i, 'fixed_tax')"
+                                        class="small text-danger mt-1"
+                                    >
                                         {{ fieldError(i, "fixed_tax") }}
                                     </div>
                                 </td>
@@ -94,7 +105,10 @@
                                         step="0.01"
                                         :class="inputClass(i, 'tax_rate')"
                                     />
-                                    <div v-if="fieldError(i, 'tax_rate')" class="small text-danger mt-1">
+                                    <div
+                                        v-if="fieldError(i, 'tax_rate')"
+                                        class="small text-danger mt-1"
+                                    >
                                         {{ fieldError(i, "tax_rate") }}
                                     </div>
                                 </td>
@@ -107,7 +121,10 @@
                                         step="0.01"
                                         :class="inputClass(i, 'excess_over')"
                                     />
-                                    <div v-if="fieldError(i, 'excess_over')" class="small text-danger mt-1">
+                                    <div
+                                        v-if="fieldError(i, 'excess_over')"
+                                        class="small text-danger mt-1"
+                                    >
                                         {{ fieldError(i, "excess_over") }}
                                     </div>
                                 </td>
@@ -127,7 +144,10 @@
                             </tr>
 
                             <tr v-if="rows.length === 0">
-                                <td colspan="7" class="text-center text-muted py-4 small">
+                                <td
+                                    colspan="7"
+                                    class="text-center text-muted py-4 small"
+                                >
                                     No items yet.
                                 </td>
                             </tr>
@@ -156,9 +176,11 @@
                 </div>
 
                 <div class="small text-muted mt-2 px-1">
-                    Tip: Leave <strong>Income To</strong> blank for the last bracket (Above). 
-                    Each next bracket should start at <strong>.01 higher</strong> than the previous 
-                    <strong>Income To</strong> value (e.g., 250,000.00 → 250,000.01) to avoid overlapping ranges.
+                    Tip: Leave <strong>Income To</strong> blank for the last
+                    bracket (Above). Each next bracket should start at
+                    <strong>.01 higher</strong> than the previous
+                    <strong>Income To</strong> value (e.g., 250,000.00 →
+                    250,000.01) to avoid overlapping ranges.
                 </div>
             </div>
         </div>
@@ -239,7 +261,8 @@ export default {
                 id: row.id ?? null,
 
                 // send numeric or null
-                income_from: row.income_from === "" ? null : Number(row.income_from),
+                income_from:
+                    row.income_from === "" ? null : Number(row.income_from),
                 income_to:
                     row.income_to === "" || row.income_to === null
                         ? null
@@ -247,7 +270,8 @@ export default {
 
                 fixed_tax: row.fixed_tax === "" ? 0 : Number(row.fixed_tax),
                 tax_rate: row.tax_rate === "" ? 0 : Number(row.tax_rate),
-                excess_over: row.excess_over === "" ? 0 : Number(row.excess_over),
+                excess_over:
+                    row.excess_over === "" ? 0 : Number(row.excess_over),
             };
         },
 
@@ -259,17 +283,64 @@ export default {
                 rows: this.rows.map((r) => this.normalizeRow(r)),
             };
 
-            axios
-                .post(`/admin/taxation/train-law/${this.trainLawId}/items`, payload)
-                .then((res) => {
-                    const returned = res.data?.data || [];
-                    if (Array.isArray(returned)) {
-                        this.setRowsFromItems(returned);
-                    }
-                })
-                .catch((err) => {
-                    if (err.response?.status === 422) {
-                        this.errors = err.response.data.errors || {};
+            Swal.fire({
+                title: "Are you sure you want to save these TRAIN Law changes?",
+                html: `
+                    <div class="text-center">
+                        <p class="mb-2">
+                            Please review all entered values carefully.
+                        </p>
+                        <p class="mb-2 text-danger fw-semibold">
+                            ⚠️ These changes will directly affect tax computations.
+                        </p>
+                        <p class="mb-0">
+                            Incorrect income brackets, tax rates, or fixed tax amounts may result in inaccurate withholding tax calculations.
+                        </p>
+                    </div>
+                `,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, Save Changes",
+                cancelButtonText: "Review Again",
+                confirmButtonColor: "#198754", // Bootstrap success
+                cancelButtonColor: "#6c757d",
+            })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        axios
+                            .post(
+                                `/admin/taxation/train-law/${this.trainLawId}/items`,
+                                payload,
+                            )
+                            .then((res) => {
+                                const returned = res.data?.data || [];
+                                if (Array.isArray(returned)) {
+                                    this.setRowsFromItems(returned);
+                                }
+                            })
+                            .catch((err) => {
+                                if (err.response?.status === 422) {
+                                    this.errors =
+                                        err.response.data.errors || {};
+                                }
+                            });
+
+                        Swal.fire({
+                            title: "TRAIN Law Configuration Updated",
+                            html: `
+                                <div class="text-start text-center">
+                                    <p class="mb-2">
+                                        The tax brackets and rates were saved successfully.
+                                    </p>
+                                    <p class="mb-0 fw-semibold text-success">
+                                        ⚠ Payroll and withholding tax calculations will now reflect these changes.
+                                    </p>
+                                </div>
+                            `,
+                            icon: "success",
+                            confirmButtonText: "Understood",
+                            confirmButtonColor: "#198754",
+                        });
                     }
                 })
                 .finally(() => {

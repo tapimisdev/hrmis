@@ -3,7 +3,7 @@
         <h6 class="mb-3">Tab B — Forecasting Assumptions</h6>
 
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-md-12 col-lg-6">
                 <div class="border rounded p-3">
                     <div class="fw-bold mb-2">Earnings Included</div>
 
@@ -41,12 +41,13 @@
                 </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-12 col-lg-6">
                 <DynamicRows
                     title="Others (Earnings)"
                     v-model="proxy.othersEarnings"
                     :errors="errors"
                     error-key="othersEarnings"
+                    :enableTaxType="true"
                 />
             </div>
 

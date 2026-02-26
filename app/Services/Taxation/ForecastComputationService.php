@@ -38,7 +38,7 @@ class ForecastComputationService
             'portion_basic_pay'     => (int) data_get($payload, 'allocation.basicPayPct', 0),
             'portion_longevity_pay' => (int) data_get($payload, 'allocation.longevityPct', 0),
 
-            'amount_annual_total'   => (float) data_get($payload, 'amounts.annualTotal', 0),
+            'amount_gross'          => (float) data_get($payload, 'amounts.gross', 0),
             'amount_annual_total_allowables' => (float) data_get($payload, 'amounts.annualTotalAllowables', 0),
 
             'amount_annual_taxable' => (float) data_get($payload, 'amounts.annualTaxable', 0),
@@ -51,13 +51,16 @@ class ForecastComputationService
             'amount_longevity_pay'  => (float) data_get($payload, 'amounts.longevityPay', 0),
             'amount_hazard_pay'     => (float) data_get($payload, 'amounts.hazardPay', 0),
 
-            'amount_other_earnings' => (float) data_get($payload, 'amounts.otherEarnings', 0),
+            'amount_other_earnings_taxable'     => (float) data_get($payload, 'amounts.otherEarningsTaxable', 0),
+            'amount_other_earnings_non_taxable' => (float) data_get($payload, 'amounts.otherEarningsNonTaxable', 0),
+            
             'amount_other_deductions' => (float) data_get($payload, 'amounts.otherDeductions', 0),
 
             'amount_portion_hazard_pay' => (float) data_get($payload, 'amounts.portionHazardPay', 0),
             'amount_portion_basic_pay' => (float) data_get($payload, 'amounts.portionBasicPay', 0),
             'amount_portion_longevity_pay' => (float) data_get($payload, 'amounts.portionLongevityPay', 0),
 
+            'remarks'          => json_encode($payload['remarks'] ?? []),
             'raw_payload'          => json_encode($payload),
             'is_active'             => true,
             'created_at'            => now(),
@@ -70,6 +73,7 @@ class ForecastComputationService
             ->map(fn($r) => [
                 'taxation_employee_id' => $taxationEmployeeId,
                 'name'                 => trim($r['name']),
+                'tax_type'             => trim($r['tax_type'] ?? ''),
                 'amount'               => (int) ($r['amount'] ?? 0),
                 'created_at'           => now(),
                 'updated_at'           => now(),

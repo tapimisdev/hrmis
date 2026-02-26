@@ -22,6 +22,7 @@ return new class extends Migration
                 ->constrained('payroll_components');
             $table->foreignId('train_law_id')
                 ->constrained('train_law');
+                    
             $table->boolean('mid_year');
             $table->boolean('year_end');
             $table->boolean('longevity');
@@ -37,7 +38,10 @@ return new class extends Migration
             $table->unsignedTinyInteger('portion_longevity_pay');
 
             $table->boolean('is_active');
+            
             $table->timestamps();
+
+            $table->index(['year', 'is_active']);
         });
 
         Schema::create('taxation_other_earnings', function (Blueprint $table) {
@@ -49,6 +53,9 @@ return new class extends Migration
 
             $table->string('name');
             $table->decimal('amount', 15, 2);
+
+            $table->enum('tax_type', ['taxable', 'non_taxable', 'exempt'])
+                ->default('taxable');
 
             $table->timestamps();
         });

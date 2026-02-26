@@ -1,180 +1,232 @@
 <template>
-  <TwoColLayout>
-    <!-- LEFT SIDE -->
-    <template #left>
-      <TaxForecastFilters
-        :search="search"
-        :selected-division="selectedDivision"
-        :selected-unit="selectedUnit"
-        :divisions="divisions"
-        :units="units"
-        :filtered-count="filteredRows.length"
-        :total-count="rows.length"
-        :has-active-filters="hasActiveFilters"
-        @update:search="search = $event"
-        @update:selectedDivision="selectedDivision = $event"
-        @update:selectedUnit="selectedUnit = $event"
-        @pull-reconcile="pullFromPayrollAndReconcile"
-        @clear="clearFilters"
-      />
+    <TwoColLayout>
+        <template #top>
+            <TaxForecastFilters
+                :search="search"
+                :selected-division="selectedDivision"
+                :selected-unit="selectedUnit"
+                :divisions="divisions"
+                :units="units"
+                :filtered-count="filteredRows.length"
+                :total-count="body.length"
+                :has-active-filters="hasActiveFilters"
+                @update:search="search = $event"
+                @update:selectedDivision="selectedDivision = $event"
+                @update:selectedUnit="selectedUnit = $event"
+                @pull-reconcile="pullFromPayrollAndReconcile"
+                @clear="clearFilters"
+            />
+        </template>
 
-      <TaxForecastTable
-        :rows="filteredRows"
-        @view="viewRow"
-        @edit="editRow"
-        @recompute="recomputeRow"
-        @delete="deleteRow"
-      />
-    </template>
+        <!-- LEFT SIDE -->
+        <template #left>
+            <div v-if="filteredRows.length">
+                <TaxForecastTable
+                    :rows="filteredRows"
+                    @view="viewRow"
+                    @edit="editRow"
+                    @recompute="recomputeRow"
+                    @delete="deleteRow"
+                />
+            </div>
 
-    <!-- RIGHT SIDE -->
-    <template #right>
-      <TaxTemplate :is_open="showCard">
-        <template #header>Card Title</template>
-        Card content here...
-      </TaxTemplate>
-    </template>
-  </TwoColLayout>
+            <EmptyState v-else />
+        </template>
+
+        <!-- RIGHT SIDE -->
+        <template #right>
+            <transition
+                enter-active-class="slideInRight"
+                leave-active-class="fadeOut"
+                mode="out-in"
+            >
+                <component
+                    v-if="selectedAction"
+                    :key="selectedActionId"
+                    :is="selectedAction.component"
+                    :row="activeRow"
+                    @close="setAction('empty')"
+                />
+            </transition>
+        </template>
+    </TwoColLayout>
 </template>
-
 
 <script>
 import TwoColLayout from "../../components/TwoColLayout .vue";
 import TaxForecastTable from "./TaxForecastTable.vue";
 import TaxForecastFilters from "./TaxForecastFilters.vue";
-import TaxTemplate from "./../../components/TaxTemplate.vue";
+import EmptyState from "./components/EmptyState.vue";
+
+import ActionEmptyState from "./actions/ActionEmptyState.vue";
+import ViewBreakdown from "./actions/ViewBreakdown.vue";
+import EditInputs from "./actions/EditInputs.vue";
+// If you have these, import them. If not, remove edit/recompute handlers or point them to breakdown.
+// import EditForecast from "./actions/EditForecast.vue";
+// import RecomputeForecast from "./actions/RecomputeForecast.vue";
 
 export default {
-  name: "IndexForecast",
-  components: { TwoColLayout, TaxForecastTable, TaxForecastFilters, TaxTemplate },
+    name: "IndexForecast",
+    components: {
+        TwoColLayout,
+        TaxForecastTable,
+        TaxForecastFilters,
+        EmptyState,
+        ActionEmptyState,
+        ViewBreakdown,
+        EditInputs,
+        // RecomputeForecast,
+    },
+    props: {
+        body: { type: Array, required: true },
+    },
+    data() {
+        return {
+            search: "",
+            selectedDivision: "",
+            selectedUnit: "",
 
-  data() {
-    return {
-      // UI state
-      activePeriod: "Q1",
-      search: "",
-      selectedDivision: "",
-      selectedUnit: "",
-      showCard: false,
+            // RIGHT PANEL STATE
+            activeRow: null,
+            selectedActionId: "empty",
 
-      // tabs
-      periods: [
-        { key: "Q1", label: "Q1", sub: "Jan–Mar" },
-        { key: "Q2", label: "Q2", sub: "Apr–Jun" },
-        { key: "Q3", label: "Q3", sub: "Jul–Sep" },
-        { key: "NOV", label: "November True-Up" },
-        { key: "FINISH", label: "Finish" },
-      ],
+            actions: [
+                {
+                    id: "empty",
+                    name: "No Employee Selected",
+                    component: ActionEmptyState,
+                },
+                {
+                    id: "breakdown",
+                    name: "View Breakdown",
+                    component: ViewBreakdown,
+                },
 
-      // data
-      rows: [
-        {
-          employee_no: "EMP-001",
-          name: "Kemuel Joshua Mariano",
-          division: "Finance Division",
-          unit: "Payroll Unit",
-          forecasted_annual_taxable: "₱ 520,000.00",
-          forecasted_annual_tax: "₱ 45,000.00",
-          forecasted_monthly_tax: "₱ 3,750.00",
+                {
+                    id: "edit",
+                    name: "Edit Inputs",
+                    component: EditInputs,
+                },
+
+                // If you have separate components:
+                // { id: "edit", name: "Edit Forecast", component: EditForecast },
+                // { id: "recompute", name: "Recompute", component: RecomputeForecast },
+            ],
+        };
+    },
+
+    computed: {
+        hasActiveFilters() {
+            return (
+                this.search.trim() !== "" ||
+                this.selectedDivision !== "" ||
+                this.selectedUnit !== ""
+            );
         },
-        {
-          employee_no: "EMP-002",
-          name: "John Doe",
-          division: "HR Division",
-          unit: "Compensation Unit",
-          forecasted_annual_taxable: "₱ 430,000.00",
-          forecasted_annual_tax: "₱ 32,000.00",
-          forecasted_monthly_tax: "₱ 2,666.67",
+
+        divisions() {
+            const set = new Set(this.body.map((r) => r.division).filter(Boolean));
+            return Array.from(set).sort();
         },
-        {
-          employee_no: "EMP-003",
-          name: "Maria Elonor Romakeet",
-          division: "Finance Division",
-          unit: "Accounting Unit",
-          forecasted_annual_taxable: "₱ 610,000.00",
-          forecasted_annual_tax: "₱ 55,000.00",
-          forecasted_monthly_tax: "₱ 4,583.33",
+
+        units() {
+            const base = this.selectedDivision
+                ? this.body.filter((r) => r.division === this.selectedDivision)
+                : this.body;
+
+            const set = new Set(base.map((r) => r.unit).filter(Boolean));
+            return Array.from(set).sort();
         },
-      ],
-    };
-  },
 
-  computed: {
-    hasActiveFilters() {
-      return (
-        this.search.trim() !== "" ||
-        this.selectedDivision !== "" ||
-        this.selectedUnit !== ""
-      );
+        filteredRows() {
+            const s = this.search.trim().toLowerCase();
+
+            return this.body.filter((r) => {
+                const matchSearch =
+                    !s ||
+                    String(r.employee_no || "").toLowerCase().includes(s) ||
+                    String(r.full_name || "").toLowerCase().includes(s);
+
+                const matchDivision =
+                    !this.selectedDivision || r.division === this.selectedDivision;
+
+                const matchUnit = !this.selectedUnit || r.unit === this.selectedUnit;
+
+                return matchSearch && matchDivision && matchUnit;
+            });
+        },
+
+        selectedAction() {
+            return this.actions.find((a) => a.id === this.selectedActionId) || null;
+        },
     },
 
-    divisions() {
-      const set = new Set(this.rows.map((r) => r.division).filter(Boolean));
-      return Array.from(set).sort();
+    watch: {
+        selectedDivision() {
+            this.selectedUnit = "";
+        },
     },
 
-    units() {
-      const base = this.selectedDivision
-        ? this.rows.filter((r) => r.division === this.selectedDivision)
-        : this.rows;
+    methods: {
+        setAction(id, row = null) {
+            this.selectedActionId = id;
+            this.activeRow = row;
+        },
 
-      const set = new Set(base.map((r) => r.unit).filter(Boolean));
-      return Array.from(set).sort();
+        clearFilters() {
+            this.search = "";
+            this.selectedDivision = "";
+            this.selectedUnit = "";
+        },
+
+        pullFromPayrollAndReconcile() {
+            console.log("PULL FROM PAYROLL & RECONCILE");
+        },
+
+        viewRow(row) {
+            this.setAction("breakdown", row);
+        },
+
+        editRow(row) {
+            this.setAction("edit", row);
+        },
+
+        recomputeRow(row) {
+            this.setAction("breakdown", row);
+        },
+
+        deleteRow(row) {
+            this.setAction("empty", null);
+        },
     },
-
-    filteredRows() {
-      const s = this.search.trim().toLowerCase();
-
-      return this.rows.filter((r) => {
-        const matchSearch =
-          !s || String(r.employee_no || "").toLowerCase().includes(s);
-
-        const matchDivision =
-          !this.selectedDivision || r.division === this.selectedDivision;
-
-        const matchUnit = !this.selectedUnit || r.unit === this.selectedUnit;
-
-        // NOTE: if later you want period-based filtering, add it here using activePeriod
-        return matchSearch && matchDivision && matchUnit;
-      });
-    },
-  },
-
-  watch: {
-    selectedDivision() {
-      this.selectedUnit = "";
-    },
-  },
-
-  methods: {
-    clearFilters() {
-      this.search = "";
-      this.selectedDivision = "";
-      this.selectedUnit = "";
-    },
-
-    pullFromPayrollAndReconcile() {
-      // placeholder
-      console.log("PULL FROM PAYROLL & RECONCILE for period:", this.activePeriod);
-    },
-
-    viewRow(row) {
-      this.showCard = !this.showCard;
-      // optional: store selected row if needed
-      // this.selectedRow = row;
-    },
-
-    editRow(row) {
-      console.log("EDIT", row);
-    },
-
-    recomputeRow(row) {
-      console.log("RECOMPUTE", row);
-    },
-
-    deleteRow(row) {
-      console.log("DELETE", row);
-    },
-  },
 };
 </script>
+
+<!-- IMPORTANT: keep this NOT scoped so transition classes apply -->
+<style>
+/* ENTER: slide from right */
+.slideInRight {
+    animation: slideInRight 0.2s ease both;
+}
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* LEAVE: fade out */
+.fadeOut {
+    animation: fadeOut 0.1s ease both;
+}
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+</style>

@@ -118,7 +118,7 @@ const token = localStorage.getItem("auth_token");
 export default {
     name: "RunForecastModal",
     props: {
-        selectedYear: String
+        selectedYear: Number
     },
     components: {
         ModalVue,
@@ -191,6 +191,7 @@ export default {
 
     methods: {
         handleOpenaddModal() {
+            console.log("Opening Run Forecast Modal");
             this.resetState();
             this.$refs.addModal.open();
             this.fetchAllDropdowns();
@@ -249,6 +250,7 @@ export default {
                     // frontend style
                     "othersEarnings",
                     "othersEarnings.*.name",
+                    "othersEarnings.*.tax_type",
                     "othersEarnings.*.amount",
 
                     // backend style (common)

@@ -1,22 +1,40 @@
 <template>
     <div class="row mt-2 g-3 border-bottom pb-3">
-        <div class="col-md-3" v-for="card in cards" :key="card.title">
-            <div class="fb-card">
 
-                <div class="fb-content">
-                    <div class="fb-title">
-                        {{ card.title }}
+        <!-- Cards -->
+        <template v-if="cards && cards.length">
+            <div class="col-md-3" v-for="card in cards" :key="card.title">
+                <div class="fb-card">
+
+                    <div class="fb-content">
+                        <div class="fb-title">
+                            {{ card.title }}
+                        </div>
+
+                        <div class="fb-value">
+                            {{ card.value }}
+                        </div>
                     </div>
 
-                    <div class="fb-value">
-                        {{ card.value }}
-                    </div>
+                    <i :class="card.icon + ' fb-icon'"></i>
+
                 </div>
+            </div>
+        </template>
 
-                <i :class="card.icon + ' fb-icon'"></i>
-
+        <!-- Empty State -->
+        <div v-else class="col-12">
+            <div class="fb-empty">
+                <i class="fa-solid fa-chart-column fb-empty-icon"></i>
+                <div class="fb-empty-title">
+                    No Taxation Summary Available
+                </div>
+                <div class="fb-empty-text">
+                    There are no employees or forecast data for this year.
+                </div>
             </div>
         </div>
+
     </div>
 </template>
 
@@ -29,25 +47,24 @@ export default {
             default: () => [
                 {
                     title: 'Employee Included',
-                    value: '79',
+                    value: '0',
                     icon: 'fa-solid fa-users'
                 },
                 {
-                    title: 'Total Tax Forecast',
-                    value: '₱ 1,250,000.00',
-                    icon: 'fa-solid fa-chart-line'
+                    title: 'Total Gross Income',
+                    value: '₱ 0.00',
+                    icon: 'fa-solid fa-money-bill-trend-up'
                 },
                 {
-                    title: 'Total Projected Tax Due',
-                    value: '245',
-                    icon: 'fa-solid fa-file-lines'
+                    title: 'Total Taxable Income',
+                    value: '₱ 0.00',
+                    icon: 'fa-solid fa-receipt'
                 },
                 {
-                    title: 'Variance vs Withheld YTD',
-                    value: '₱ +85,000.00',
-                    icon: 'fa-solid fa-scale-balanced'
+                    title: 'Total Annual Tax',
+                    value: '₱ 0.00',
+                    icon: 'fa-solid fa-landmark'
                 }
-
             ]
         }
     }
@@ -106,5 +123,31 @@ export default {
     opacity: 0.08;
 
     z-index: 1;
+}
+
+.fb-empty {
+    text-align: center;
+    padding: 40px 20px;
+    border: 1px dashed var(--bs-border-color);
+    border-radius: 6px;
+    background: var(--bs-body-bg);
+
+    .fb-empty-icon {
+        font-size: 3rem;
+        color: var(--bs-secondary-color);
+        opacity: 0.6;
+        margin-bottom: 12px;
+    }
+
+    .fb-empty-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 6px;
+    }
+
+    .fb-empty-text {
+        font-size: 0.9rem;
+        color: var(--bs-secondary-color);
+    }
 }
 </style>

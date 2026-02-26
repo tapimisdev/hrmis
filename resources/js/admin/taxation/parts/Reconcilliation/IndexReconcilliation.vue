@@ -32,10 +32,10 @@
 
     <!-- RIGHT SIDE -->
     <template #right>
-      <TaxTemplate :is_open="showCard">
+      <!-- <TaxTemplate :is_open="showCard">
         <template #header>Card Title</template>
         Card content here...
-      </TaxTemplate>
+      </TaxTemplate> -->
     </template>
   </TwoColLayout>
 </template>
@@ -44,7 +44,7 @@
 import TwoColLayout from "../../components/TwoColLayout .vue";
 import TaxReconcilliationTable from "./TaxReconcilliationTable.vue";
 import TaxReconcilliationFilters from "./TaxReconcilliationFilters.vue";
-import TaxTemplate from "./../../components/TaxTemplate.vue";
+// import TaxTemplate from "./../../components/TaxTemplate.vue";
 
 export default {
   name: "IndexReconcilliation",
@@ -52,7 +52,7 @@ export default {
     TwoColLayout,
     TaxReconcilliationTable,
     TaxReconcilliationFilters,
-    TaxTemplate,
+    // TaxTemplate,
   },
 
   data() {

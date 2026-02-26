@@ -28,7 +28,11 @@
         </div>
 
         <!-- CONTENT -->
-        <IndexForecast v-if="activeTab === 'forecast'" />
+        <IndexForecast 
+            v-if="activeTab === 'forecast'" 
+            :body="body"
+            />
+            
         <IndexReconciliation v-if="activeTab === 'reconcile'" />
 
     </div>
@@ -42,6 +46,12 @@ export default {
     components: {
         IndexForecast,
         IndexReconciliation
+    },
+    props: {
+        body: {
+            type: Array,
+            required: true
+        }
     },
     data() {
         return {

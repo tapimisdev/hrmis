@@ -35,7 +35,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('portion_basic_pay');
             $table->unsignedTinyInteger('portion_longevity_pay');
 
-            $table->decimal('amount_annual_total', 15, 2)->default(0);
+            $table->decimal('amount_gross', 15, 2)->default(0);
             $table->decimal('amount_annual_total_allowables', 15, 2)->default(0);
 
             $table->decimal('amount_annual_taxable', 15, 2)->default(0);
@@ -51,7 +51,9 @@ return new class extends Migration
             $table->decimal('amount_longevity_pay', 15, 2)->default(0);
             $table->decimal('amount_hazard_pay', 15, 2)->default(0);
 
-            $table->decimal('amount_other_earnings', 15, 2)->default(0);
+            $table->decimal('amount_other_earnings_taxable', 15, 2)->default(0);
+            $table->decimal('amount_other_earnings_non_taxable', 15, 2)->default(0);
+            
             $table->decimal('amount_other_deductions', 15, 2)->default(0);
 
             $table->json('remarks')->nullable();
@@ -71,6 +73,9 @@ return new class extends Migration
 
             $table->string('name');
             $table->decimal('amount', 15, 2);
+
+            $table->enum('tax_type', ['taxable', 'non_taxable', 'exempt'])
+                ->default('taxable');
 
             $table->timestamps();
         });
@@ -121,7 +126,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            // Optional indexing
+            // indexing
             $table->index(['employee_no', 'type']);
         });
 
@@ -153,12 +158,12 @@ return new class extends Migration
             // Metadata / notes
             $table->string('remarks', 255)->nullable();
 
-            // Optional: store the entire raw payload for auditing/debugging
+            // store the entire raw payload for auditing/debugging
             $table->json('raw_payload')->nullable();
 
             $table->timestamps();
 
-            // If you often query by employee + time
+            // indexing
             $table->index(['employee_no', 'created_at']);
         });
     }

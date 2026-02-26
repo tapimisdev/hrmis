@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Taxation;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class RunForecastRequest extends FormRequest
@@ -43,6 +44,11 @@ class RunForecastRequest extends FormRequest
             // =========================
             'othersEarnings'                => ['nullable', 'array'],
             'othersEarnings.*.name'         => ['required_with:earnings.others', 'string'],
+            'othersEarnings.*.tax_type' => [
+                'required_with:earnings.others',
+                'string',
+                Rule::in(['taxable', 'non_taxable', 'exempt']),
+            ],
             'othersEarnings.*.amount'       => ['required_with:earnings.others', 'numeric', 'min:1'],
 
             // =========================
@@ -86,5 +92,13 @@ class RunForecastRequest extends FormRequest
                 );
             }
         });
+    }
+
+    public function messages(): array
+    {
+        return [
+            'othersEarnings.*.tax_type.required' =>
+                'This is required',
+        ];
     }
 }
