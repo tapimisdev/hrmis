@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
 
 use function PHPUnit\Framework\returnArgument;
 
@@ -31,8 +32,8 @@ class CorrectionTimelogController extends Controller
         $this->employee_service = $employee_service;
         $this->EventService = $EventService;
 
-        // $this->middleware('permission:emp.correction.view')->only('index');
-        // $this->middleware('permission:emp.correction.apply')->only(['store']);
+        $this->middleware('permission:emp.correction.view')->only('index');
+        $this->middleware('permission:emp.correction.apply')->only(['store']);
 
     }
 
@@ -46,20 +47,82 @@ class CorrectionTimelogController extends Controller
         $user_id = Auth::id();
         $employee_no = $this->employee_service->getEmployeeNo($user_id);
 
-        $corrections = DB::table('timelog_corrections')
-            ->whereMonth('date', $request->input('month'))
-            ->whereYear('date', $request->input('year'))
-            ->where('employee_no', $employee_no)
-            ->get()
-            ->map(function ($row) {
-                $row->attachment = Storage::url($row->attachment);
+        $query = DB::table('timelog_corrections')
+            ->whereMonth('date', $request->month)
+            ->whereYear('date', $request->year)
+            ->where('employee_no', $employee_no);
 
-                return $row;
-            });
+        return DataTables::of($query)
 
-        return response()->json([
-            'data' => $corrections
-        ]);
+            ->editColumn('date', function ($row) {
+                return $row->date
+                    ? \Carbon\Carbon::parse($row->date)->format('m/d/Y')
+                    : '-';
+            })
+
+            ->editColumn('time_in', function ($row) {
+                return $row->time_in
+                    ? \Carbon\Carbon::parse($row->time_in)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('break_out', function ($row) {
+                return $row->break_out
+                    ? \Carbon\Carbon::parse($row->break_out)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('break_in', function ($row) {
+                return $row->break_in
+                    ? \Carbon\Carbon::parse($row->break_in)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('time_out', function ($row) {
+                return $row->time_out
+                    ? \Carbon\Carbon::parse($row->time_out)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('overtime_in', function ($row) {
+                return $row->overtime_in
+                    ? \Carbon\Carbon::parse($row->overtime_in)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('overtime_out', function ($row) {
+                return $row->overtime_out
+                    ? \Carbon\Carbon::parse($row->overtime_out)->format('h:i A')
+                    : '-';
+            })
+
+            ->addColumn('attachment', function ($row) {
+                if (!$row->attachment) {
+                    return '-';
+                }
+
+                $url = Storage::url($row->attachment);
+
+                return '<a href="'.$url.'" target="_blank" class="btn btn-sm btn-link">View</a>';
+            })
+
+            ->editColumn('status', function ($row) {
+                if ($row->status === 'pending') {
+                    return '<span class="badge bg-warning text-dark">Pending</span>';
+                }
+                if ($row->status === 'approved') {
+                    return '<span class="badge bg-success">Approved</span>';
+                }
+                if ($row->status === 'rejected') {
+                    return '<span class="badge bg-danger">Rejected</span>';
+                }
+
+                return $row->status;
+            })
+
+            ->rawColumns(['status', 'attachment'])
+
+            ->make(true);
     }
 
     public function edit(Request $request) {
@@ -86,9 +149,10 @@ class CorrectionTimelogController extends Controller
     }
 
     public function store(CorrectionRequest $request) 
-    {
-        $validatedData = $request->validated();
+    {   
 
+        $validatedData = $request->validated();
+        $isDirectlyApproved = $validatedData['isDirectlyApproved'] ?? false;
         $employee_no = auth()->user()->employee_no(); 
 
         DB::beginTransaction();
@@ -117,7 +181,13 @@ class CorrectionTimelogController extends Controller
 
             $application_no = $this->generate_reference_no();
 
-            $data = DB::table('timelog_corrections')->insert([
+            $concern = (match ($validatedData['concern']) {
+                'OO' => 'system_out_of_order',
+                'F'=> 'failure_to_entry',
+                'IE' => 'incorrect_entry'
+            });
+
+            $applicationId = DB::table('timelog_corrections')->insertGetID([
                 'reference_no'      => $application_no,
                 'employee_no'       => $employee_no,
                 'date'              => $validatedData['date'],
@@ -131,25 +201,28 @@ class CorrectionTimelogController extends Controller
                 'work_schedule_id'  => $schedule_and_Schift->work_schedule_id,
                 'attachment'        => $attachmentPath,
                 'remarks'           => $validatedData['remarks'] ?? null,
+                'concern'           => $concern,
                 'created_at'        => now(),
                 'updated_at'        => now(),
             ]);
 
-            $sender = ucwords(Auth::user()->name);
-            $payload = [
-                'type' => 'application',
-                'sender' => $sender,
-                'receiver' => 'admins',
-                'message' => '%b' . $sender . '%b filed a timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/admin/timekeeping/timelogs-correction'
-            ];
-            $this->EventService->pushNotification($payload);
+            if(!$isDirectlyApproved) {
+                $sender = ucwords(Auth::user()->name);
+                $payload = [
+                    'type' => 'application',
+                    'sender' => $sender,
+                    'receiver' => 'admins',
+                    'message' => '%b' . $sender . '%b filed a correction timelog (%bi' . strtoupper($application_no) . ') %bi',
+                    'link' => '/admin/timekeeping/timelogs-correction?id=' . $applicationId
+                ];
+                $this->EventService->pushNotification($payload);
+
+            }
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'data' => $data,
                 'message' => 'Correction Requested!',
             ]);
 

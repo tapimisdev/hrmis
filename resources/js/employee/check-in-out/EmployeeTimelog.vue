@@ -1,7 +1,7 @@
 <template>
     <div class="attendance-container">
         <CorrectionLog ref="correctionModal" />
-        <CorrectionList ref="correctionListModal" />
+        <CorrectionList ref="correctionListModal" @clearSearchable="clearSearchable"/>
 
         <PrintableDtrView ref="printableModal">
             <ViewDtr
@@ -38,7 +38,11 @@
                         {{ year }}
                     </option>
                 </select>
-                <button class="btn btn-primary" @click="openPrintables" title="Print View">
+                <button
+                    class="btn btn-primary"
+                    @click="openPrintables"
+                    title="Print View"
+                >
                     <i class="fa-solid fa-print"></i>
                 </button>
             </div>
@@ -232,6 +236,7 @@ export default {
             summary: [],
             selectedMonth: this.month || currentDate.getMonth() + 1,
             selectedYear: this.year || currentYear,
+            searchable: '',
             months: [
                 "January",
                 "February",
@@ -271,7 +276,6 @@ export default {
                 this.logs = response.data.computedData;
                 this.summary = response.data.summary;
                 this.dtr_all = response.data;
-                console.log(response.data);
                 this.$emit("send-summary", response.data.summary);
             } catch (error) {
                 console.error("Error fetching logs:", error);
@@ -279,48 +283,42 @@ export default {
             this.loading = false;
         },
         formatRemarks(remark) {
-
-            if (!remark) return '';
+            if (!remark) return "";
 
             const value = String(remark).toLowerCase();
-            const isPending = value.includes('pending');
+            const isPending = value.includes("pending");
 
             const formatType = (type, label = null) => {
-
                 const display = label ?? type.toUpperCase();
 
                 const hasType = value.includes(type);
 
                 if (!hasType) return null;
 
-                if (value.includes('morning')) {
+                if (value.includes("morning")) {
                     return isPending
                         ? `PENDING MORNING ${display}`
                         : `MORNING ${display}`;
                 }
 
-                if (value.includes('afternoon')) {
+                if (value.includes("afternoon")) {
                     return isPending
                         ? `PENDING AFTERNOON ${display}`
                         : `AFTERNOON ${display}`;
                 }
 
-                if (value.includes('wholeday')) {
-                    return isPending
-                        ? `PENDING ${display}`
-                        : display;
+                if (value.includes("wholeday")) {
+                    return isPending ? `PENDING ${display}` : display;
                 }
 
-                return isPending
-                    ? `PENDING ${display}`
-                    : display;
+                return isPending ? `PENDING ${display}` : display;
             };
 
             return (
-                formatType('leave') ||
-                formatType('offset') ||
-                formatType('special order', 'SPECIAL ORDER') ||
-                formatType('(so)', 'SPECIAL ORDER') ||
+                formatType("leave") ||
+                formatType("offset") ||
+                formatType("special order", "SPECIAL ORDER") ||
+                formatType("(so)", "SPECIAL ORDER") ||
                 String(remark).toUpperCase()
             );
         },
@@ -379,18 +377,22 @@ export default {
         },
         getFilteredRemarks(remarks) {
             if (!Array.isArray(remarks)) return [];
+
+            const excluded = [
+                "restday",
+                "holiday",
+                "leave",
+                "ob",
+                "absent",
+                "today",
+                "overtime",
+                "pending overtime",
+            ];
+
             return remarks.filter(
                 (r) =>
-                    ![
-                        "restday",
-                        "holiday",
-                        "leave",
-                        "ob",
-                        "absent",
-                        "today",
-                        "overtime",
-                        "pending overtime",
-                    ].includes(r.toLowerCase()),
+                    typeof r === "string" &&
+                    !excluded.includes(r.toLowerCase().trim()),
             );
         },
         getRemarkClass(remark) {
@@ -414,7 +416,6 @@ export default {
             return date.toLocaleDateString("en-US", { weekday: "short" });
         },
         openModal(day) {
-            // Use passed props (month, year, index) to set date
             const month = this.selectedMonth ?? new Date().getMonth() + 1;
             const year = this.selectedYear ?? new Date().getFullYear();
             const selectedDay = day ?? new Date().getDate();
@@ -433,36 +434,37 @@ export default {
             this.$refs.correctionListModal.open(
                 this.selectedMonth,
                 this.selectedYear,
+                this.searchable
             );
         },
+        clearSearchable() {
+          this.searchable = '';
+        },
         downloadDTR() {
-             // Build request parameters
+            // Build request parameters
             const params = {
                 month: this.selectedMonth,
-                year: this.selectedYear
+                year: this.selectedYear,
             };
 
             axios({
-                url: '/api/employee/timelogs/download',
-                method: 'GET',          
-                responseType: 'blob',   
+                url: "/api/employee/timelogs/download",
+                method: "GET",
+                responseType: "blob",
                 params: params,
                 headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                    Authorization: `Bearer ${token}`,
+                },
             })
-            .then((response) => {
-            })
-            .catch((error) => {
-                console.error('Error downloading DTR:', error);
-                alert('Failed to download DTR. Please try again.');
-            });
+                .then((response) => {})
+                .catch((error) => {
+                    console.error("Error downloading DTR:", error);
+                    alert("Failed to download DTR. Please try again.");
+                });
         },
-
         openPrintables() {
             this.$refs.printableModal.open();
-        }
-        
+        },
     },
     watch: {
         month(newVal) {
@@ -474,7 +476,17 @@ export default {
         employeeNumber: "loadTimelogs",
     },
     mounted() {
-        this.loadTimelogs();
+      this.loadTimelogs().then(() => {
+          const params = new URLSearchParams(window.location.search);
+
+          const shouldOpen = params.get("view-corrections") === "true";
+          const referenceNo = params.get("reference-no"); 
+
+          this.searchable = referenceNo;
+          if (shouldOpen) {
+              this.openCorretionList(); 
+          }
+      });
     },
 };
 </script>

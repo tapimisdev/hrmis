@@ -178,9 +178,13 @@ class SalaryService
         DB::table('payroll_salary')->where('id', $payroll_id)
             ->update(['batch_id' => $batch->id]);
 
-        return response()->json([
+        return [
             'status' => 'success',
-            'message' => 'Importing Started!'
-        ]);
+            'message' => 'Importing Started!',
+            'redirect' => route('salary-pay.show', [
+                'salary_pay' => $payroll_no,
+                'batch_id' => $batch->id
+            ])
+        ];
     }
 }

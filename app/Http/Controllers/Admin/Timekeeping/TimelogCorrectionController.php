@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Yajra\DataTables\DataTables;
 
@@ -29,30 +30,25 @@ class TimelogCorrectionController extends Controller
     public function index()
     {
         if(request()->ajax()) {
-            // Start query
             $query = DB::table('timelog_corrections as tc')
                 ->select('tc.*', 'ep.firstname', 'ep.middlename', 'ep.lastname')
                 ->leftJoin('employee_personal as ep', 'tc.employee_no', '=', 'ep.employee_no');
 
-            // Filter by month
-            $month = request()->get('month', date('n')); // default current month
+            $month = request()->get('month', date('n'));
             if($month) {
                 $query->whereMonth('tc.date', $month);
             }
 
-            // Filter by year
-            $year = request()->get('year', date('Y')); // default current year
+            $year = request()->get('year', date('Y')); 
             if($year) {
                 $query->whereYear('tc.date', $year);
             }
 
-            // Filter by status
             $status = request()->get('status');
             if($status) {
                 $query->where('tc.status', $status);
             }
 
-            // Order by status ascending
             $query->orderBy('tc.created_at', 'desc');
 
             $data = $query->get();
@@ -78,7 +74,6 @@ class TimelogCorrectionController extends Controller
 
     public function approve($id)
     {
-        
         $correction = DB::table('timelog_corrections')
             ->where('id', $id)
             ->first();
@@ -144,12 +139,11 @@ class TimelogCorrectionController extends Controller
 
             // Update the status to approved
             DB::table('timelog_corrections')
-            ->where('id', $id)
-            ->update([
-                'status' => 'approved',
-                'updated_at' => now()
-            ]);
-
+                ->where('id', $id)
+                ->update([
+                    'status' => 'approved',
+                    'updated_at' => now()
+                ]);
 
             $sender = ucwords(Auth::user()->name);
             $reciever = $user_id;
@@ -159,7 +153,7 @@ class TimelogCorrectionController extends Controller
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has approved your timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/check-in-out'
+                'link' => '/employee/check-in-out?view-corrections=true&reference-no=' . $application_no
             ];
             $this->EventService->pushNotification($payload);
 
@@ -181,9 +175,8 @@ class TimelogCorrectionController extends Controller
 
     }
 
-    public function reject($id)
+    public function reject($id, Request $request)
     {
-        
         $correction = DB::table('timelog_corrections')
             ->where('id', $id)
             ->first();
@@ -196,11 +189,11 @@ class TimelogCorrectionController extends Controller
             throw new NotFoundHttpException('This timelog correction has already been processed and cannot be processed again.');
         }
 
-         // Update the status to approved
         DB::table('timelog_corrections')
             ->where('id', $id)
             ->update([
                 'status' => 'rejected',
+                'action_remarks' =>  $request->remarks ?? '',
                 'updated_at' => now()
             ]);
 
@@ -216,7 +209,7 @@ class TimelogCorrectionController extends Controller
             'sender' => $sender,
             'receiver' => $reciever,
             'message' => '%b' . $sender . '%b has rejected your timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
-            'link' => '/employee/check-in-out'
+            'link' => '/employee/check-in-out?view-corrections=true&reference-no=' . $application_no
         ];
         $this->EventService->pushNotification($payload);
 
@@ -252,14 +245,14 @@ class TimelogCorrectionController extends Controller
             })
             ->addColumn('actions', function ($row) {
                 return '
-                <div class="d-block d-md-flex gap-2 justify-content-start">
-                    <button data-id="' . $row->id . '" 
-                        class="btn btn-primary btn ms-1 my-1 show-button" 
-                        title="View">
-                        <i class="fa-solid fa-eye"></i>
-                    </button>
-                </div>
-                ';
+                    <div class="d-block d-md-flex gap-2 justify-content-start">
+                        <button data-id="' . $row->id . '" 
+                            class="btn btn-primary btn ms-1 my-1 show-button" 
+                            title="View">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    ';
             })
             ->rawColumns(['actions', 'name', 'status', 'date', 'applied_at'])
             ->make(true);

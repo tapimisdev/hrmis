@@ -1,7 +1,9 @@
 <div class="sidebar boder bg-body-secondary border-right">
     <!-- Logo Section -->
     <div class="sidebar-title">
-        <img src="{{ asset('img/dost-tapi.png') }}" alt="Orbit">
+        <!-- <img src="{{ asset('img/dost-tapi.png') }}" alt="Orbit"> -->
+
+        <h5 class="mb-0 fw-bold">ADMIN PORTAL</h5>
     </div>
 
     <!-- Navigation List -->
