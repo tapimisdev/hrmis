@@ -9,10 +9,10 @@
             <!-- Tabs for Timelog / Remarks & Attachment -->
             <ul class="nav nav-tabs" id="tcrTab" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="timelog-tab" data-bs-toggle="tab" data-bs-target="#timelog-tab-pane" type="button" role="tab">Timelog</button>
+                    <button class="nav-link text-uppercase fw-bold active" id="timelog-tab" data-bs-toggle="tab" data-bs-target="#timelog-tab-pane" type="button" role="tab">Timelog</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="remarks-tab" data-bs-toggle="tab" data-bs-target="#remarks-tab-pane" type="button" role="tab">Remarks & Attachment</button>
+                    <button class="nav-link text-uppercase fw-bold" id="remarks-tab" data-bs-toggle="tab" data-bs-target="#remarks-tab-pane" type="button" role="tab">Explanation & Attachment</button>
                 </li>
             </ul>
 
@@ -80,34 +80,85 @@
 
                     <!-- Overtime In/Out -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Overtime In</label>
                             <input type="time" name="overtime_in" id="overtime-in" class="form-control" disabled>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Overtime Out</label>
                             <input type="time" name="overtime_out" id="overtime-out" class="form-control" disabled>
                         </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-bold text-uppercase" style="font-size: 11px">
+                                Concern Type
+                                <span class="text-danger fw-bold text-uppercase" style="font-size: 10px">*</span>
+                            </label>
+
+                            <div class="d-flex gap-4 @error('concern') is-invalid @enderror">
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="radio"
+                                        id="system_out_of_order"
+                                        name="concern"
+                                        value="OO"
+                                        disabled
+                                    />
+                                    <label class="form-check-label" style="opacity: 1 !important" for="concern_oo">
+                                        OO - System Out of Order
+                                    </label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="radio"
+                                        id="failure_to_entry"
+                                        name="concern"
+                                        value="F"
+                                        disabled
+                                    />
+                                    <label class="form-check-label" style="opacity: 1 !important" for="concern_f">
+                                        F - Failure to perform actions
+                                    </label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input
+                                        class="form-check-input"
+                                        type="radio"
+                                        id="incorrect_entry"
+                                        name="concern"
+                                        value="IE"
+                                        disabled
+                                    />
+                                    <label class="form-check-label" style="opacity: 1 !important" for="concern_ie">
+                                        IE - Incorrect Entry
+                                    </label>
+                                </div>
+                            </div>
+
+                            @error('concern')
+                                <span class="text-danger fw-bold text-uppercase" style="font-size: 10px">
+                                    {{ $message }}
+                                </span>
+                            @enderror
+                        </div>
                     </div>
+
                 </div>
 
-                <!-- Remarks & Attachment (view-only) -->
                 <div class="tab-pane fade" id="remarks-tab-pane" role="tabpanel">
-                    <!-- Remarks -->
                     <div class="mb-3">
-                        <label class="form-label">Remarks</label>
+                        <label class="form-label">Explanation</label>
                         <p id="remarks" style="white-space: pre-wrap; padding: 0.5rem; border-radius: 5px;"></p>
                     </div>
 
-                    <!-- Attachment -->
                     <div class="mb-3">
-                        <!-- PDF -->
                         <iframe id="attachment-pdf" src="" style="width: 100%; height: 400px;" frameborder="0" class="d-none"></iframe>
 
-                        <!-- Image -->
                         <img id="attachment-img" src="" alt="Attachment" class="img-fluid d-none mb-3" />
 
-                        <!-- Fallback link -->
                         <a href="#" id="attachment-link" target="_blank" class="d-none">View Attachment</a>
                     </div>
                 </div>
@@ -117,7 +168,7 @@
 
     </div>
 
-    <x-slot name="footer">
+    <x-slot name="footer" id="actions">
         <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-primary px-4 py-2 approve-button">
                 <i class="me-2 fas fa-check"></i> Approved

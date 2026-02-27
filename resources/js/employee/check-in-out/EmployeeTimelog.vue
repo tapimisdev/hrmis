@@ -38,7 +38,11 @@
                         {{ year }}
                     </option>
                 </select>
-                <button class="btn btn-primary" @click="openPrintables" title="Print View">
+                <button
+                    class="btn btn-primary"
+                    @click="openPrintables"
+                    title="Print View"
+                >
                     <i class="fa-solid fa-print"></i>
                 </button>
             </div>
@@ -279,48 +283,42 @@ export default {
             this.loading = false;
         },
         formatRemarks(remark) {
-
-            if (!remark) return '';
+            if (!remark) return "";
 
             const value = String(remark).toLowerCase();
-            const isPending = value.includes('pending');
+            const isPending = value.includes("pending");
 
             const formatType = (type, label = null) => {
-
                 const display = label ?? type.toUpperCase();
 
                 const hasType = value.includes(type);
 
                 if (!hasType) return null;
 
-                if (value.includes('morning')) {
+                if (value.includes("morning")) {
                     return isPending
                         ? `PENDING MORNING ${display}`
                         : `MORNING ${display}`;
                 }
 
-                if (value.includes('afternoon')) {
+                if (value.includes("afternoon")) {
                     return isPending
                         ? `PENDING AFTERNOON ${display}`
                         : `AFTERNOON ${display}`;
                 }
 
-                if (value.includes('wholeday')) {
-                    return isPending
-                        ? `PENDING ${display}`
-                        : display;
+                if (value.includes("wholeday")) {
+                    return isPending ? `PENDING ${display}` : display;
                 }
 
-                return isPending
-                    ? `PENDING ${display}`
-                    : display;
+                return isPending ? `PENDING ${display}` : display;
             };
 
             return (
-                formatType('leave') ||
-                formatType('offset') ||
-                formatType('special order', 'SPECIAL ORDER') ||
-                formatType('(so)', 'SPECIAL ORDER') ||
+                formatType("leave") ||
+                formatType("offset") ||
+                formatType("special order", "SPECIAL ORDER") ||
+                formatType("(so)", "SPECIAL ORDER") ||
                 String(remark).toUpperCase()
             );
         },
@@ -379,18 +377,22 @@ export default {
         },
         getFilteredRemarks(remarks) {
             if (!Array.isArray(remarks)) return [];
+
+            const excluded = [
+                "restday",
+                "holiday",
+                "leave",
+                "ob",
+                "absent",
+                "today",
+                "overtime",
+                "pending overtime",
+            ];
+
             return remarks.filter(
                 (r) =>
-                    ![
-                        "restday",
-                        "holiday",
-                        "leave",
-                        "ob",
-                        "absent",
-                        "today",
-                        "overtime",
-                        "pending overtime",
-                    ].includes(r.toLowerCase()),
+                    typeof r === "string" &&
+                    !excluded.includes(r.toLowerCase().trim()),
             );
         },
         getRemarkClass(remark) {
@@ -436,33 +438,31 @@ export default {
             );
         },
         downloadDTR() {
-             // Build request parameters
+            // Build request parameters
             const params = {
                 month: this.selectedMonth,
-                year: this.selectedYear
+                year: this.selectedYear,
             };
 
             axios({
-                url: '/api/employee/timelogs/download',
-                method: 'GET',          
-                responseType: 'blob',   
+                url: "/api/employee/timelogs/download",
+                method: "GET",
+                responseType: "blob",
                 params: params,
                 headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                    Authorization: `Bearer ${token}`,
+                },
             })
-            .then((response) => {
-            })
-            .catch((error) => {
-                console.error('Error downloading DTR:', error);
-                alert('Failed to download DTR. Please try again.');
-            });
+                .then((response) => {})
+                .catch((error) => {
+                    console.error("Error downloading DTR:", error);
+                    alert("Failed to download DTR. Please try again.");
+                });
         },
 
         openPrintables() {
             this.$refs.printableModal.open();
-        }
-        
+        },
     },
     watch: {
         month(newVal) {
@@ -474,7 +474,13 @@ export default {
         employeeNumber: "loadTimelogs",
     },
     mounted() {
-        this.loadTimelogs();
+        this.loadTimelogs().then(() => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("view-corrections") === "true") {
+                console.log("Opening correction list automatically");
+                this.openCorretionList();
+            }
+        });
     },
 };
 </script>

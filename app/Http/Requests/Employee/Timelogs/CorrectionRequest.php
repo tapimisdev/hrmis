@@ -22,9 +22,8 @@ class CorrectionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'isDirectlyApproved' => ['nullable'],
             'date' => ['required', 'date'],
-
-            // Times must be in proper format
             'time_in' => ['required', 'date_format:H:i:s'],
             'break_out' => [
                 'nullable',
@@ -32,25 +31,23 @@ class CorrectionRequest extends FormRequest
                 'date_format:H:i:s',
                 'after:time_in',
             ],
-
             'break_in' => [
                 'nullable',
                 'required_with:break_out',
                 'date_format:H:i:s',
                 'after:break_out',
             ],
-
             'time_out' => ['required', 'date_format:H:i:s', 'after:time_in'],
-
             'overtime_in' => ['nullable', 'date_format:H:i:s', 'after:break_out'],
             'overtime_out' => [
-                'required_with:overtime_in',   // only required if overtime_in is present
+                'required_with:overtime_in',   
                 'nullable',
                 'date_format:H:i:s',
                 'after:overtime_in'
             ],
-            'attachment' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'], // max 10MB
-            'remarks' => ['required', 'string', 'max:1000'], // max 1000 chars
+            'attachment' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:10240'], 
+            'concern' => ['required', 'in:OO,F,IE'],
+            'remarks' => ['required', 'string', 'max:1000'],
         ];
     }
 }
