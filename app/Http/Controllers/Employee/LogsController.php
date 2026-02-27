@@ -40,6 +40,8 @@ class LogsController extends Controller
                 return isset($log['remarks']) &&
                     is_array($log['remarks']) &&
                     collect($log['remarks'])->contains(function ($remark) {
+                        if (!is_string($remark)) return false;
+
                         return Str::contains(
                             strtolower($remark),
                             ['incomplete log', 'considered absent']
@@ -47,7 +49,9 @@ class LogsController extends Controller
                     });
             })
             ->map(function ($log) {
-                $remarks = collect($log['remarks'])->map(fn ($r) => strtolower($r));
+                $remarks = collect($log['remarks'])
+                    ->filter(fn($r) => is_string($r)) // only keep strings
+                    ->map(fn ($r) => strtolower($r));
 
                 if ($remarks->contains(fn ($r) => Str::contains($r, 'considered absent'))) {
                     $log['remarks'] = ['need corrections'];
