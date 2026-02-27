@@ -200,7 +200,7 @@ class OvertimeController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has approved your overtime application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/overtime?show=true&id=' . $existingData->application_no
+                'link' => '/employee/overtime?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 
@@ -250,7 +250,7 @@ class OvertimeController extends Controller {
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has rejected your overtime application (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/overtime?show=true&id=' . $existingData->application_no
+                'link' => '/employee/overtime?show=true&id=' . $existingData->id
             ];
             $this->EventService->pushNotification($payload);
 

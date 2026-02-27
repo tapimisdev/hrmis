@@ -153,7 +153,7 @@ class TimelogCorrectionController extends Controller
                 'sender' => $sender,
                 'receiver' => $reciever,
                 'message' => '%b' . $sender . '%b has approved your timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/employee/check-in-out?view-corrections=true'
+                'link' => '/employee/check-in-out?view-corrections=true&reference-no=' . $application_no
             ];
             $this->EventService->pushNotification($payload);
 
@@ -209,7 +209,7 @@ class TimelogCorrectionController extends Controller
             'sender' => $sender,
             'receiver' => $reciever,
             'message' => '%b' . $sender . '%b has rejected your timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
-            'link' => '/employee/check-in-out?view-corrections=true'
+            'link' => '/employee/check-in-out?view-corrections=true&reference-no=' . $application_no
         ];
         $this->EventService->pushNotification($payload);
 

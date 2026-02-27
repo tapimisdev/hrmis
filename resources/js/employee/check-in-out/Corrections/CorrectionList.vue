@@ -34,11 +34,12 @@
                     <div v-else>
                         <div class="table-responsive">
                             <table
-                                class="table table-striped table-bordered table-hover"
+                                id="correctionRequestsTable"
+                                class="table table-striped table-bordered table-hover w-100"
                             >
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>#</th>
+                                        <th>ID</th>
                                         <th>Reference No.</th>
                                         <th>Date</th>
                                         <th>Time In</th>
@@ -52,84 +53,13 @@
                                         <th>Remarks</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr
-                                        v-for="(request, index) in requests"
-                                        :key="index"
-                                    >
-                                        <td>{{ index + 1 }}</td>
-                                        <td>{{ request.reference_no }}</td>
-                                        <td>{{ formatDate(request.date) }}</td>
-                                        <td>
-                                            {{ formatTime(request.time_in) }}
-                                        </td>
-                                        <td>
-                                            {{ formatTime(request.break_out) }}
-                                        </td>
-                                        <td>
-                                            {{ formatTime(request.break_in) }}
-                                        </td>
-                                        <td>
-                                            {{ formatTime(request.time_out) }}
-                                        </td>
-                                        <td>
-                                            {{
-                                                formatTime(request.overtime_in)
-                                            }}
-                                        </td>
-                                        <td>
-                                            {{
-                                                formatTime(request.overtime_out)
-                                            }}
-                                        </td>
-                                        <td class="text-center">
-                                            <span
-                                                :class="{
-                                                    'badge bg-warning text-dark':
-                                                        request.status ===
-                                                        'pending',
-                                                    'badge bg-success':
-                                                        request.status ===
-                                                        'approved',
-                                                    'badge bg-danger':
-                                                        request.status ===
-                                                        'rejected',
-                                                }"
-                                            >
-                                                {{ request.status }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <a
-                                                v-if="request.attachment"
-                                                :href="request.attachment"
-                                                target="_blank"
-                                                class="btn btn-link"
-                                            >
-                                                View
-                                            </a>
-                                            <span v-else>-</span>
-                                        </td>
-                                        <td style="width: 300px">
-                                            {{ request.action_remarks || "-" }}
-                                        </td>
-                                    </tr>
-                                    <tr v-if="requests.length === 0">
-                                        <td
-                                            colspan="12"
-                                            class="text-center text-muted text-uppercase"
-                                        >
-                                            No correction requests found.
-                                        </td>
-                                    </tr>
-                                </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button
-                        style="font-size: 12px;"
+                        style="font-size: 12px"
                         class="btn py-2 px-4 btn-danger text-uppercase fw-medium"
                         data-bs-dismiss="modal"
                         @click="closeModal"
@@ -143,79 +73,118 @@
 </template>
 
 <script>
-import axios from "axios";
-
 export default {
     name: "CorrectionList",
+
     data() {
         return {
-            loading: false,
-            requests: [],
             month: null,
             year: null,
+            searchable: null,
+            dataTable: null,
         };
     },
+
     methods: {
-        open(month, year) {
+        open(month, year, searchable) {
             this.month = month;
             this.year = year;
+            this.searchable = searchable;
 
-            this.loadRequests();
             $("#correctionModal").modal("show");
-        },
-        async loadRequests() {
-          this.loading = true;
-          try {
-              const token = localStorage.getItem("auth_token");
 
-              const res = await axios.get("/api/view-correction", {
-                  headers: {
-                      Authorization: `Bearer ${token}`,
-                  },
-                  params: {
-                      month: this.month,
-                      year: this.year,
-                  },
-              });
+            this.$nextTick(() => {
+                this.initDataTable();
+            });
+        },
 
-              this.requests = res.data.data || [];
+        initDataTable() {
+            const vm = this;
 
-              // Initialize DataTable after Vue renders
-              this.$nextTick(() => {
-                  if ($.fn.dataTable.isDataTable('#correctionRequestsTable')) {
-                      $('#correctionRequestsTable').DataTable().destroy();
-                  }
-                  $('#correctionRequestsTable').DataTable({
-                      pageLength: 10,
-                      lengthMenu: [5, 10, 25, 50],
-                      order: [[2, 'desc']], // Default sorting by Date column
-                  });
-              });
-          } catch (error) {
-              console.error("Failed to load correction requests:", error);
-          } finally {
-              this.loading = false;
-          }
-      },
-        formatDate(datetime) {
-            return datetime ? new Date(datetime).toLocaleDateString() : "-";
+            if ($.fn.DataTable.isDataTable("#correctionRequestsTable")) {
+                $("#correctionRequestsTable").DataTable().destroy();
+            }
+
+            this.dataTable = $("#correctionRequestsTable").DataTable({
+                processing: true,
+                serverSide: true,
+                order: [[0, "desc"]],
+                scrollX: true,
+                autoWidth: false,
+
+                ajax: {
+                    url: "/api/view-correction",
+                    type: "GET",
+                    headers: {
+                        Authorization:
+                            "Bearer " + localStorage.getItem("auth_token"),
+                    },
+                    data(d) {
+                        d.month = vm.month;
+                        d.year = vm.year;
+
+                        // ✅ If searchable is set, pass it to server
+                        if (vm.searchable && vm.searchable.trim() !== "") {
+                            d.searchable = vm.searchable.trim();
+                        }
+                    },
+                },
+
+                columns: [
+                    { data: "id", name: "id", visible: false },
+                    { data: "reference_no", name: "reference_no" },
+                    { data: "date", name: "date" },
+                    { data: "time_in", name: "time_in" },
+                    { data: "break_out", name: "break_out" },
+                    { data: "break_in", name: "break_in" },
+                    { data: "time_out", name: "time_out" },
+                    { data: "overtime_in", name: "overtime_in" },
+                    { data: "overtime_out", name: "overtime_out" },
+                    { data: "status", name: "status" },
+                    {
+                        data: "attachment",
+                        name: "attachment",
+                        orderable: false,
+                        searchable: false,
+                    },
+                    { data: "action_remarks", name: "action_remarks" },
+                ],
+
+                columnDefs: [
+                    {
+                        targets: [1, 11],
+                        className: "min-table-width",
+                    },
+                    {
+                        targets: [3, 4, 5, 6, 7, 8],
+                        width: "200px",
+                    },
+                ],
+            });
+
+            if (vm.searchable && vm.searchable.trim() !== "") {
+                this.dataTable.search(vm.searchable.trim()).draw();
+            }
+
+            $("#correctionModal").on("shown.bs.modal", () => {
+                this.dataTable.columns.adjust();
+            });
         },
-        formatTime(datetime) {
-            return datetime
-                ? new Date(datetime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                  })
-                : "-";
-        },
-        storageUrl(path) {
-            return path ? `${process.env.MIX_APP_URL}/storage/${path}` : "#";
-        },
+
         closeModal() {
+            if (this.dataTable) {
+                this.dataTable.destroy();
+                this.dataTable = null;
+            }
+
             const url = new URL(window.location.href);
-            console.log(url);
+
             url.searchParams.delete("view-corrections");
+            url.searchParams.delete("reference-no");
+
             window.history.replaceState({}, document.title, url.toString());
+            $("#correctionModal").modal("hide");
+            this.$emit("clearSearchable");
         },
     },
 };

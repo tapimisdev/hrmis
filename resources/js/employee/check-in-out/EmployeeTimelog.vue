@@ -1,7 +1,7 @@
 <template>
     <div class="attendance-container">
         <CorrectionLog ref="correctionModal" />
-        <CorrectionList ref="correctionListModal" />
+        <CorrectionList ref="correctionListModal" @clearSearchable="clearSearchable"/>
 
         <PrintableDtrView ref="printableModal">
             <ViewDtr
@@ -236,6 +236,7 @@ export default {
             summary: [],
             selectedMonth: this.month || currentDate.getMonth() + 1,
             selectedYear: this.year || currentYear,
+            searchable: '',
             months: [
                 "January",
                 "February",
@@ -275,7 +276,6 @@ export default {
                 this.logs = response.data.computedData;
                 this.summary = response.data.summary;
                 this.dtr_all = response.data;
-                console.log(response.data);
                 this.$emit("send-summary", response.data.summary);
             } catch (error) {
                 console.error("Error fetching logs:", error);
@@ -416,7 +416,6 @@ export default {
             return date.toLocaleDateString("en-US", { weekday: "short" });
         },
         openModal(day) {
-            // Use passed props (month, year, index) to set date
             const month = this.selectedMonth ?? new Date().getMonth() + 1;
             const year = this.selectedYear ?? new Date().getFullYear();
             const selectedDay = day ?? new Date().getDate();
@@ -435,7 +434,11 @@ export default {
             this.$refs.correctionListModal.open(
                 this.selectedMonth,
                 this.selectedYear,
+                this.searchable
             );
+        },
+        clearSearchable() {
+          this.searchable = '';
         },
         downloadDTR() {
             // Build request parameters
@@ -459,7 +462,6 @@ export default {
                     alert("Failed to download DTR. Please try again.");
                 });
         },
-
         openPrintables() {
             this.$refs.printableModal.open();
         },
@@ -474,13 +476,17 @@ export default {
         employeeNumber: "loadTimelogs",
     },
     mounted() {
-        this.loadTimelogs().then(() => {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get("view-corrections") === "true") {
-                console.log("Opening correction list automatically");
-                this.openCorretionList();
-            }
-        });
+      this.loadTimelogs().then(() => {
+          const params = new URLSearchParams(window.location.search);
+
+          const shouldOpen = params.get("view-corrections") === "true";
+          const referenceNo = params.get("reference-no"); 
+
+          this.searchable = referenceNo;
+          if (shouldOpen) {
+              this.openCorretionList(); 
+          }
+      });
     },
 };
 </script>
