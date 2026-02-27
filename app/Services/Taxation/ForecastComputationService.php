@@ -16,6 +16,7 @@ class ForecastComputationService
         string $employeeNo,
         array $computedAnnualTaxableAmounts
     ): int {
+        
         $taxationEmployeeId = DB::table('taxation_employees')->insertGetId([
             'taxation_id'           => $taxationId,
             'year'                  => data_get($payload, 'year'),
@@ -26,6 +27,7 @@ class ForecastComputationService
             'year_end'              => (bool) data_get($payload, 'assumptions.yearEnd', false),
             'longevity'             => (bool) data_get($payload, 'assumptions.longevity', false),
             'hazard_pay'            => (bool) data_get($payload, 'assumptions.hazardPay', false),
+
             'less_bir_rr3_2015'     => (bool) data_get($payload, 'assumptions.lessBirRR32015', false),
 
             // allowable deductions
@@ -38,30 +40,33 @@ class ForecastComputationService
             'portion_basic_pay'     => (int) data_get($payload, 'allocation.basicPayPct', 0),
             'portion_longevity_pay' => (int) data_get($payload, 'allocation.longevityPct', 0),
 
+            'amount_basic_salary'   => (float) data_get($payload, 'amounts.amount_basic_salary', 0),
+            'months_covered'        => (float) data_get($payload, 'months_covered', 0),
+            'amount_anual_total_basic_salary'   => (float) data_get($payload, 'amounts.amount_anual_total_basic_salary', 0),
+            
+            'amount_mid_year_bonus' => (float) data_get($payload, 'amounts.midYearBonus', 0),
+            'amount_year_end_bonus' => (float) data_get($payload, 'amounts.yearEndBonus', 0),
+            'amount_longevity_pay'  => (float) data_get($payload, 'amounts.longevityPay', 0),
+            'amount_hazard_pay'     => (float) data_get($payload, 'amounts.hazardPay', 0),
+            
+            'amount_other_earnings_taxable'     => (float) data_get($payload, 'amounts.otherEarningsTaxable', 0),
+            'amount_other_earnings_non_taxable' => (float) data_get($payload, 'amounts.otherEarningsNonTaxable', 0),
+
             'amount_gross'          => (float) data_get($payload, 'amounts.gross', 0),
+
+            'amount_other_deductions' => (float) data_get($payload, 'amounts.otherDeductions', 0),
             'amount_annual_total_allowables' => (float) data_get($payload, 'amounts.annualTotalAllowables', 0),
 
             'amount_annual_taxable' => (float) data_get($payload, 'amounts.annualTaxable', 0),
             'amount_annual_tax'     => (float) data_get($payload, 'amounts.annualTax', 0),
             'amount_monthly_tax'    => (float) data_get($payload, 'amounts.monthlyTax', 0),
 
-
-            'amount_mid_year_bonus' => (float) data_get($payload, 'amounts.midYearBonus', 0),
-            'amount_year_end_bonus' => (float) data_get($payload, 'amounts.yearEndBonus', 0),
-            'amount_longevity_pay'  => (float) data_get($payload, 'amounts.longevityPay', 0),
-            'amount_hazard_pay'     => (float) data_get($payload, 'amounts.hazardPay', 0),
-
-            'amount_other_earnings_taxable'     => (float) data_get($payload, 'amounts.otherEarningsTaxable', 0),
-            'amount_other_earnings_non_taxable' => (float) data_get($payload, 'amounts.otherEarningsNonTaxable', 0),
-            
-            'amount_other_deductions' => (float) data_get($payload, 'amounts.otherDeductions', 0),
-
             'amount_portion_hazard_pay' => (float) data_get($payload, 'amounts.portionHazardPay', 0),
             'amount_portion_basic_pay' => (float) data_get($payload, 'amounts.portionBasicPay', 0),
             'amount_portion_longevity_pay' => (float) data_get($payload, 'amounts.portionLongevityPay', 0),
 
             'remarks'          => json_encode($payload['remarks'] ?? []),
-            'raw_payload'          => json_encode($payload),
+            'raw_payload'           => json_encode($payload),
             'is_active'             => true,
             'created_at'            => now(),
             'updated_at'            => now(),
@@ -100,7 +105,7 @@ class ForecastComputationService
             DB::table('taxation_employee_other_deductions')->insert($deductions);
         }
 
-        if(!empty($payload['midyear'])) {
+        if (!empty($payload['midyear'])) {
             if (data_get($payload, 'assumptions.midYear') === true) {
                 DB::table('taxation_employee_bonus')->insert([
                     'taxation_employee_id' => $taxationEmployeeId,
@@ -122,7 +127,7 @@ class ForecastComputationService
             }
         }
 
-        if(!empty($payload['year_end'])) {
+        if (!empty($payload['year_end'])) {
             if (data_get($payload, 'assumptions.yearEnd') === true) {
                 DB::table('taxation_employee_bonus')->insert([
                     'taxation_employee_id' => $taxationEmployeeId,
@@ -147,8 +152,8 @@ class ForecastComputationService
         DB::table('tax_computation_logs')->insert([
             'taxation_employee_id' => $taxationEmployeeId,
             'employee_no'          => $employeeNo,
-            
-            'annual_income'        => (float) data_get($computedAnnualTaxableAmounts, 'annual_income', 0), 
+
+            'annual_income'        => (float) data_get($computedAnnualTaxableAmounts, 'annual_income', 0),
             'fixed_tax'            => (float) data_get($computedAnnualTaxableAmounts, 'fixed_tax', 0),
             'tax_rate'             => (float) data_get($computedAnnualTaxableAmounts, 'tax_rate', 0),
             'excess_over'          => (float) data_get($computedAnnualTaxableAmounts, 'excess_over', 0),
@@ -166,13 +171,36 @@ class ForecastComputationService
             'updated_at'           => now(),
         ]);
 
+        // dd($payload['computations']);
+        foreach ($payload['computations'] as $computation) {
+
+            // Guard: skip anything not an array computation object
+            if (!is_array($computation)) {
+                continue;
+            }
+
+            // Guard: must have a key
+            if (!isset($computation['key'])) {
+                continue;
+            }
+
+            DB::table('taxation_employee_computations')->insert([
+                'taxation_employee_id' => $taxationEmployeeId,
+                'type'                 => $computation['key'], // safe now
+                'raw_computation'      => json_encode($computation, JSON_UNESCAPED_UNICODE),
+                'amount'               => (float) ($computation['result_raw']
+                                        ?? str_replace(',', '', (string) ($computation['result'] ?? 0))),
+            ]);
+        }
+
         return $taxationEmployeeId;
     }
 
     public function annualSalaryTotalByMonth(
-    string $employeeNo,
-    int $year = 2026,
+        string $employeeNo,
+        int $year = 2026,
     ): array {
+
         // ----------------------------
         // 1) Response skeleton (SAME FORMAT ALWAYS)
         // ----------------------------
@@ -180,6 +208,7 @@ class ForecastComputationService
             return [
                 'employee_no'           => $employeeNo,
                 'year'                  => $year,
+                'months'                => [],
                 'period_start'          => null,
                 'period_end'            => null,
 
@@ -219,6 +248,9 @@ class ForecastComputationService
                     'reason'                => null,
                 ],
 
+                // computation breakdown for UI accordions
+                'computations'          => [],
+
                 'remarks'               => '',
             ];
         };
@@ -246,6 +278,19 @@ class ForecastComputationService
             $res['remarks'] = 'No date hired company.';
             $res['midyear']['reason'] = 'No date hired company.';
             $res['year_end']['reason'] = 'No date hired company.';
+
+            // computations still returned (empty)
+            $res['computations'] = [
+                [
+                    'key' => 'basic_pay_annual',
+                    'label' => 'Basic Pay (Annual Total)',
+                    'formula' => 'latest_monthly_salary × months_covered',
+                    'inputs' => [],
+                    'steps' => [],
+                    'result' => 0.0,
+                ],
+            ];
+
             return $res;
         }
 
@@ -265,6 +310,29 @@ class ForecastComputationService
             $res['remarks'] = 'No computable period.';
             $res['midyear']['reason'] = 'No computable period.';
             $res['year_end']['reason'] = 'No computable period.';
+
+            $res['computations'] = [
+                [
+                    'key' => 'period',
+                    'label' => 'Employment Period (Clamped)',
+                    'formula' => 'clamp employment dates to the year window',
+                    'inputs' => [
+                        'raw_start' => $rawStart,
+                        'raw_end' => $rawEnd,
+                        'year_start' => $yearStart->toDateString(),
+                        'year_end' => $yearEnd->toDateString(),
+                    ],
+                    'steps' => [
+                        ['label' => 'Parsed start', 'value' => Carbon::parse($rawStart)->toDateString()],
+                        ['label' => 'Parsed end (or year end if null)', 'value' => $rawEnd ? Carbon::parse($rawEnd)->toDateString() : $yearEnd->toDateString()],
+                        ['label' => 'Clamped start', 'value' => $res['period_start']],
+                        ['label' => 'Clamped end', 'value' => $res['period_end']],
+                        ['label' => 'Validation', 'value' => 'end < start → no computable period'],
+                    ],
+                    'result' => null,
+                ],
+            ];
+
             return $res;
         }
 
@@ -277,6 +345,17 @@ class ForecastComputationService
 
         $res['months_covered'] = (int) max(0, $monthsCovered);
 
+        // build month labels for UI
+        $monthList = [];
+        $cursor = $start->copy()->startOfMonth();
+        $endMonth = $end->copy()->startOfMonth();
+        while ($cursor->lte($endMonth)) {
+            $monthList[] = $cursor->format('Y-m');
+            $cursor->addMonth();
+        }
+
+        $res['months'] = $monthList;
+
         // ----------------------------
         // 5) Latest salary as-of period_end
         // ----------------------------
@@ -288,15 +367,96 @@ class ForecastComputationService
 
         $latestMonthlySalary = (float) str_replace(',', '', (string) ($latestSalaryRow->amount ?? 0));
 
-        $res['monthly_salary']        = (float) round($latestMonthlySalary, 2);
+        $res['monthly_salary']        = (float) round($latestMonthlySalary, 4);
         $res['salary_effective_date'] = $latestSalaryRow->effectivity_date ?? null;
 
         // Annual total now uses latest salary * months covered
         $annualTotal = $latestMonthlySalary * $res['months_covered'];
-        $res['annual_total'] = (float) round($annualTotal, 2);
+        $res['annual_total'] = (float) round($annualTotal, 4);
+
+        $monthlyBreakdown = array_map(function ($m) use ($res) {
+            return [
+                'month'  => $m,
+                'amount' => (float) $res['monthly_salary'],
+            ];
+        }, $res['months']);
+
+        $res['computations'] = [
+            [
+                'key'     => 'basic_salary',
+                'label'   => 'Basic Salary (Annualized)',
+                'formula' => 'Monthly Salary × Months Covered',
+                'months'  => $monthlyBreakdown,
+                'inputs'  => [
+                    'monthly_salary'   => $res['monthly_salary'],
+                    'months_covered'   => $res['months_covered'],
+                    'effective_date'   => $res['salary_effective_date'],
+                ],
+                'steps'   => [
+                    [
+                        'label' => 'Latest Monthly Salary',
+                        'value' => number_format($res['monthly_salary'], 4)
+                    ],
+                    [
+                        'label' => 'Months Covered',
+                        'value' => $res['months_covered']
+                    ],
+                    [
+                        'label' => 'Multiplication',
+                        'value' => number_format($res['monthly_salary'], 4)
+                            . ' × '
+                            . $res['months_covered']
+                    ],
+                ],
+                'result'  => number_format($res['annual_total'], 4),
+                'result_raw'  => $res['annual_total'],
+                'meta'    => [
+                    'type' => 'basic_salary'
+                ]
+            ]
+        ];
 
         // Hazard pay uses latest monthly salary (15%)
-        $res['hazard_pay'] = (float) round($latestMonthlySalary * 0.15, 2);
+        $monthlyHazardAmount = (float) round($latestMonthlySalary * 0.15, 4);
+        $res['hazard_pay'] = $monthlyHazardAmount;
+
+        $hazardMonthlyBreakdown = array_map(function ($m) use ($monthlyHazardAmount) {
+            return [
+                'month'  => $m,
+                'amount' => $monthlyHazardAmount,
+            ];
+        }, $res['months']);
+
+        $res['computations'][] = [
+            'key'     => 'hazard_pay',
+            'label'   => 'Hazard Pay',
+            'formula' => 'Monthly Salary × 15%',
+            'months'  => $hazardMonthlyBreakdown,
+            'inputs'  => [
+                'monthly_salary' => $res['monthly_salary'],
+                'rate'           => 0.15,
+                'rate_percent'   => 15,
+            ],
+            'steps'   => [
+                [
+                    'label' => 'Latest Monthly Salary',
+                    'value' => number_format($res['monthly_salary'], 4)
+                ],
+                [
+                    'label' => 'Hazard Rate',
+                    'value' => '15%'
+                ],
+                [
+                    'label' => 'Multiplication',
+                    'value' => number_format($res['monthly_salary'], 4) . ' × 15%'
+                ],
+            ],
+            'result'  => number_format($res['hazard_pay'], 4),
+            'result_raw' => $res['hazard_pay'],
+            'meta'    => [
+                'type' => 'hazard_pay'
+            ]
+        ];
 
         // ----------------------------
         // 6) MIDYEAR
@@ -324,7 +484,7 @@ class ForecastComputationService
 
         $res['midyear'] = [
             'as_of'                 => $midyearAsOf->toDateString(),
-            'basic_salary_as_of'    => (float) round($midyearBasicSalary, 2),
+            'basic_salary_as_of'    => (float) round($midyearBasicSalary, 4),
             'salary_effective_date' => $midyearSalaryRow->effectivity_date ?? null,
 
             'eligible'              => (bool) ($midyearEligibility['eligible'] ?? false),
@@ -332,8 +492,59 @@ class ForecastComputationService
             'service_start'         => $midyearEligibility['service_start'] ?? null,
             'service_end'           => $midyearEligibility['service_end'] ?? null,
 
-            'amount'                => (float) round(($midyearComputation['amount'] ?? 0), 2),
+            'amount'                => (float) round(($midyearComputation['amount'] ?? 0), 4),
             'reason'                => $midyearComputation['reason'] ?? null,
+        ];
+
+        $res['computations'][] = [
+            'key'     => 'mid_year',
+            'label'   => 'Midyear Bonus',
+            'formula' => $midyearComputation['formula'] ?? 'Based on midyear basic salary and months of service',
+            'inputs'  => [
+                'as_of_date'            => $midyearAsOf->toDateString(),
+                'basic_salary_as_of'    => (float) round($midyearBasicSalary, 4),
+
+                // Eligibility inputs
+                'eligible'              => (bool) ($midyearEligibility['eligible'] ?? false),
+                'months_of_service'     => (int) ($midyearEligibility['months_of_service'] ?? 0),
+                'eligibility_reason'    => $midyearEligibility['reason'] ?? null,
+            ],
+            'steps' => array_values(array_filter([
+                [
+                    'label' => 'Salary reference date (as of)',
+                    'value' => $midyearAsOf->toDateString(),
+                ],
+                [
+                    'label' => 'Midyear basic salary used',
+                    'value' => number_format((float) $midyearBasicSalary, 2),
+                ],
+                [
+                    'label' => 'Months of service (eligibility basis)',
+                    'value' => (int) ($midyearEligibility['months_of_service'] ?? 0),
+                ],
+                [
+                    'label' => 'Eligibility',
+                    'value' => ($midyearEligibility['eligible'] ?? false) ? 'Eligible' : 'Not eligible',
+                ],
+                // If your computeMidYearBonusAmount provides steps, include them
+                !empty($midyearComputation['steps']) ? [
+                    'label' => 'Computation steps',
+                    'value' => $midyearComputation['steps'], // can be array; UI can render nested
+                ] : null,
+
+                // If not eligible, show reason clearly
+                !($midyearEligibility['eligible'] ?? false) ? [
+                    'label' => 'Reason',
+                    'value' => $midyearEligibility['reason'] ?? 'Not eligible.',
+                ] : null,
+            ])),
+            'result_raw' => (float) round((float) ($midyearComputation['amount'] ?? 0), 4),
+            'result'     => number_format((float) ($midyearComputation['amount'] ?? 0), 2),
+
+            'meta' => [
+                'type' => 'mid_year',
+                'salary_effective_date_used' => $midyearSalaryRow->effectivity_date ?? null,
+            ],
         ];
 
         // ----------------------------
@@ -362,7 +573,7 @@ class ForecastComputationService
 
         $res['year_end'] = [
             'as_of'                 => $yearEndAsOf->toDateString(),
-            'basic_salary_as_of'    => (float) round($yearEndBasicSalary, 2),
+            'basic_salary_as_of'    => (float) round($yearEndBasicSalary, 4),
             'salary_effective_date' => $yearEndSalaryRow->effectivity_date ?? null,
 
             'eligible'              => (bool) ($yearEndEligibility['eligible'] ?? false),
@@ -370,10 +581,77 @@ class ForecastComputationService
             'service_start'         => $yearEndEligibility['service_start'] ?? null,
             'service_end'           => $yearEndEligibility['service_end'] ?? null,
 
-            'amount'                => (float) round(($yearEndComputation['amount'] ?? 0), 2),
+            'amount'                => (float) round(($yearEndComputation['amount'] ?? 0), 4),
             'reason'                => $yearEndComputation['reason'] ?? null,
         ];
 
+        $res['computations'][] = [
+            'key'     => 'year_end',
+            'label'   => 'Year-End Bonus',
+            'formula' => $yearEndComputation['formula'] ?? 'Based on year-end basic salary and months of service',
+            'inputs'  => [
+                // Salary reference
+                'as_of_date'            => $yearEndAsOf->toDateString(),
+                'basic_salary_as_of'    => (float) round($yearEndBasicSalary, 4),
+                'salary_effective_date' => $yearEndSalaryRow->effectivity_date ?? null,
+
+                // Eligibility details
+                'eligible'          => (bool) ($yearEndEligibility['eligible'] ?? false),
+                'months_of_service' => (int) ($yearEndEligibility['months_of_service'] ?? 0),
+                'service_start'     => $yearEndEligibility['service_start'] ?? null,
+                'service_end'       => $yearEndEligibility['service_end'] ?? null,
+                'eligibility_reason'=> $yearEndEligibility['reason'] ?? null,
+            ],
+            'steps' => array_values(array_filter([
+                [
+                    'label' => 'Salary reference date (as of)',
+                    'value' => $yearEndAsOf->toDateString(),
+                ],
+                [
+                    'label' => 'Year-end basic salary used',
+                    'value' => number_format((float) $yearEndBasicSalary, 2),
+                ],
+                [
+                    'label' => 'Salary effective date used',
+                    'value' => $yearEndSalaryRow->effectivity_date ?? null,
+                ],
+                [
+                    'label' => 'Service period considered',
+                    'value' => trim(
+                        ($yearEndEligibility['service_start'] ?? '')
+                        . ' → '
+                        . ($yearEndEligibility['service_end'] ?? '')
+                    ) ?: null,
+                ],
+                [
+                    'label' => 'Months of service (eligibility basis)',
+                    'value' => (int) ($yearEndEligibility['months_of_service'] ?? 0),
+                ],
+                [
+                    'label' => 'Eligibility',
+                    'value' => ($yearEndEligibility['eligible'] ?? false) ? 'Eligible' : 'Not eligible',
+                ],
+
+                // If computeYearEndBonusAmount provides steps, keep it (nested) or you can merge later
+                !empty($yearEndComputation['steps']) ? [
+                    'label' => 'Computation steps',
+                    'value' => $yearEndComputation['steps'],
+                ] : null,
+
+                // Not eligible? show reason clearly
+                !($yearEndEligibility['eligible'] ?? false) ? [
+                    'label' => 'Reason',
+                    'value' => $yearEndEligibility['reason'] ?? 'Not eligible.',
+                ] : null,
+            ])),
+            'result_raw' => (float) round((float) ($yearEndComputation['amount'] ?? 0), 4),
+            'result'     => number_format((float) ($yearEndComputation['amount'] ?? 0), 2),
+
+            'meta' => [
+                'type' => 'year_end',
+            ],
+        ];
+        
         return $res;
     }
 
@@ -592,7 +870,7 @@ class ForecastComputationService
             ];
         }
 
-        $amount = round($basicSalaryAsOfOct31, 2);
+        $amount = round($basicSalaryAsOfOct31, 4);
 
         return [
             'eligible' => true,
@@ -636,7 +914,7 @@ class ForecastComputationService
         }
 
         // Mid-Year Bonus: 1 month basic pay
-        $amount = round($monthlyBasicSalary, 2);
+        $amount = round($monthlyBasicSalary, 4);
 
         return [
             'eligible' => true,
@@ -650,44 +928,34 @@ class ForecastComputationService
 
     public function ComputeLongevity(
         $employee_no,
-        $year = 2026,
-        $longevity_tax_id
+        $year = 2026
     ): array {
 
-        // Get longevity component for the given year
-        $longevityComponentId = DB::table('payroll_components_years')
-            ->where('payroll_component_id', $longevity_tax_id)
-            ->where('year', $year)
-            ->value('id'); // returns scalar, not stdClass
+        $longevity = TableSettingsEnum::LONGETIVITY->value;
 
-        // Guard: component not found
-        if (!$longevityComponentId) {
-            Log::warning('Longevity component year not found', [
-                'payroll_component_id' => $longevity_tax_id,
-                'year' => $year,
-                'employee_no' => $employee_no,
-            ]);
+        $longevityData = $this->getComponentAmount($longevity, $employee_no, $year);
 
-            $longevityTotal = 0;
-        } else {
-
-            // Compute longevity total for employee
-            $longevityTotal = DB::table('employee_payroll_components')
-                ->where('tax_deduction_id', $longevityComponentId)
-                ->where('employee_no', $employee_no)
-                ->sum('amount'); // numeric value
-        }
+        $longevityTotal = $longevityData['total'];
 
         return [
             'employee_no'        => $employee_no,
             'year'               => $year,
             'longevity_total'    => $longevityTotal,
-            'avg_monthly' => round(((float) $longevityTotal / 12), 2),
+            'avg_monthly' => round(((float) $longevityTotal / 12), 4),
+            'computations' => [$longevityData['computation']]
         ];
     }
 
-    public function getAllowablesDeductions($employee_no, $year): array
+    public function getAllowablesDeductions($employee_no, $year, $months_covered = 12): array
     {
+        $months_covered = max(1, (int) $months_covered);
+
+        $monthsMap = [
+            1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+            5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+        ];
+
         // IDs (string values) coming from your enum
         $gisId        = TableSettingsEnum::GSIS->value;
         $pagibigId    = TableSettingsEnum::PAGIBIG->value;
@@ -703,31 +971,151 @@ class ForecastComputationService
             ->whereIn('module_tab_id', $moduleIds)
             ->get();
 
-        // Group by module_tab_id
+        // Helper: init a 12-month structure
+        $initMonthly = function () use ($monthsMap) {
+            $out = [];
+            foreach ($monthsMap as $m => $label) {
+                $out[$m] = [
+                    'month'  => $m,
+                    'label'  => $label,
+                    'amount' => 0.0,
+                ];
+            }
+            return $out;
+        };
+
+        // Group by module
         $grouped = $rows->groupBy('module_tab_id');
 
-        // GSIS total (normal sum)
-        $gisTotal = (float) ($grouped->get($gisId, collect())->sum('amount') ?? 0.0);
+        // ----------------------------
+        // GSIS (normal sum per month)
+        // ----------------------------
+        $gsisMonthly = $initMonthly();
+        foreach (($grouped->get($gisId, collect()) ?? collect())->groupBy('month') as $m => $items) {
+            $m = (int) $m;
+            if ($m >= 1 && $m <= 12) {
+                $gsisMonthly[$m]['amount'] = (float) round((float) $items->sum('amount'), 4);
+            }
+        }
+        $gsisTotal = (float) round(array_sum(array_column($gsisMonthly, 'amount')), 4);
 
-        // PHILHEALTH total (normal sum)
-        $philhealthTotal = (float) ($grouped->get($philhealthId, collect())->sum('amount') ?? 0.0);
+        // ----------------------------
+        // PhilHealth (normal sum per month)
+        // ----------------------------
+        $philMonthly = $initMonthly();
+        foreach (($grouped->get($philhealthId, collect()) ?? collect())->groupBy('month') as $m => $items) {
+            $m = (int) $m;
+            if ($m >= 1 && $m <= 12) {
+                $philMonthly[$m]['amount'] = (float) round((float) $items->sum('amount'), 4);
+            }
+        }
+        $philhealthTotal = (float) round(array_sum(array_column($philMonthly, 'amount')), 4);
 
-        // PAGIBIG total (cap ₱200 per month)
-        $pagibigRows = $grouped->get($pagibigId, collect());
+        // ----------------------------
+        // Pag-IBIG (cap ₱200 per month)
+        // ----------------------------
+        $pagibigMonthly = $initMonthly();
+        foreach (($grouped->get($pagibigId, collect()) ?? collect())->groupBy('month') as $m => $items) {
+            $m = (int) $m;
+            if ($m >= 1 && $m <= 12) {
+                $rawMonthly = (float) $items->sum('amount');
+                $capped     = min($rawMonthly, 200.00);
+                $pagibigMonthly[$m]['amount'] = (float) round((float) $capped, 4);
+            }
+        }
+        $pagibigTotal = (float) round(array_sum(array_column($pagibigMonthly, 'amount')), 4);
 
-        $pagibigTotal = (float) $pagibigRows
-            ->groupBy('month')
-            ->map(function ($items) {
-                $monthlyTotal = (float) $items->sum('amount');   // sum all entries for that month
-                return min($monthlyTotal, 200.00);               // cap to 200 per month
-            })
-            ->sum();
+        // For UI steps: month lists
+        $toMonthSteps = function (array $monthly) {
+            $steps = [];
+            foreach ($monthly as $m) {
+                $steps[] = [
+                    'label' => $m['label'],
+                    'value' => number_format((float) $m['amount'], 2),
+                ];
+            }
+            return $steps;
+        };
 
-        // Return totals (2 decimals)
+        // Build computation payload (single combined "allowables")
+        $computation = [
+            'key'     => 'allowables_deductions',
+            'label'   => 'Allowable Deductions (GSIS / Pag-IBIG / PhilHealth)',
+            'formula' => 'GSIS = SUM(months), PhilHealth = SUM(months), Pag-IBIG = SUM(min(month_total, 200))',
+            'inputs'  => [
+                'employee_no'    => $employee_no,
+                'year'           => (int) $year,
+                'months_covered' => $months_covered,
+                'modules' => [
+                    'gsis' => [
+                        'module_tab_id' => $gisId,
+                        'monthly'       => array_values($gsisMonthly),
+                        'total'         => $gsisTotal,
+                    ],
+                    'pagibig' => [
+                        'module_tab_id' => $pagibigId,
+                        'cap_per_month' => 200.00,
+                        'monthly'       => array_values($pagibigMonthly),
+                        'total'         => $pagibigTotal,
+                    ],
+                    'philhealth' => [
+                        'module_tab_id' => $philhealthId,
+                        'monthly'       => array_values($philMonthly),
+                        'total'         => $philhealthTotal,
+                    ],
+                ],
+            ],
+            'steps' => [
+                [
+                    'label' => 'GSIS monthly (Jan–Dec)',
+                    'value' => $toMonthSteps($gsisMonthly),
+                ],
+                [
+                    'label' => 'GSIS total',
+                    'value' => number_format((float) $gsisTotal, 2),
+                ],
+                [
+                    'label' => 'PhilHealth monthly (Jan–Dec)',
+                    'value' => $toMonthSteps($philMonthly),
+                ],
+                [
+                    'label' => 'PhilHealth total',
+                    'value' => number_format((float) $philhealthTotal, 2),
+                ],
+                [
+                    'label' => 'Pag-IBIG monthly (capped at ₱200 per month)',
+                    'value' => $toMonthSteps($pagibigMonthly),
+                ],
+                [
+                    'label' => 'Pag-IBIG total (sum of capped months)',
+                    'value' => number_format((float) $pagibigTotal, 2),
+                ],
+                [
+                    'label' => 'Total allowables',
+                    'value' => number_format((float) ($gsisTotal + $pagibigTotal + $philhealthTotal), 2),
+                ],
+            ],
+            'result_raw' => (float) round((float) ($gsisTotal + $pagibigTotal + $philhealthTotal), 4),
+            'result'     => number_format((float) ($gsisTotal + $pagibigTotal + $philhealthTotal), 2),
+            'meta' => [
+                'type' => 'allowables',
+            ],
+        ];
+
         return [
-            'gsis'       => round($gisTotal, 2),
-            'pagibig'    => round($pagibigTotal, 2),
-            'philhealth' => round($philhealthTotal, 2),
+            'gsis'       => (float) round($gsisTotal, 4),
+            'pagibig'    => (float) round($pagibigTotal, 4),
+            'philhealth' => (float) round($philhealthTotal, 4),
+
+            // optional for UI
+            'monthly' => [
+                'gsis'       => array_values($gsisMonthly),
+                'pagibig'    => array_values($pagibigMonthly),
+                'philhealth' => array_values($philMonthly),
+            ],
+
+            // merge into $res['computations'][]
+            'computations' => $computation,
         ];
     }
 
@@ -790,18 +1178,18 @@ class ForecastComputationService
         // Helper: reconciles rounded components to match total exactly
         $reconcile = function (array $parts, float $expectedTotal, string $adjustKey = 'hazard_pay'): array {
             // parts keys: hazard_pay, basic_pay, longevity_pay
-            $sum = round(array_sum($parts), 2);
-            $diff = round($expectedTotal - $sum, 2);
+            $sum = round(array_sum($parts), 4);
+            $diff = round($expectedTotal - $sum, 4);
 
             if ($diff != 0.00) {
                 if (!array_key_exists($adjustKey, $parts)) {
                     $adjustKey = array_key_first($parts); // fallback
                 }
-                $parts[$adjustKey] = round($parts[$adjustKey] + $diff, 2);
+                $parts[$adjustKey] = round($parts[$adjustKey] + $diff, 4);
             }
 
             // recompute total after adjustment
-            $sumAfter = round(array_sum($parts), 2);
+            $sumAfter = round(array_sum($parts), 4);
 
             return [
                 'parts' => $parts,
@@ -815,12 +1203,12 @@ class ForecastComputationService
         // ----------------------------
         // 2) Read allocations (percent)
         // ----------------------------
-        $hazardPct    = round((float) ($allocations['hazardPayPct'] ?? 0), 2);
-        $basicPct     = round((float) ($allocations['basicPayPct'] ?? 0), 2);
-        $longevityPct = round((float) ($allocations['longevityPct'] ?? 0), 2);
+        $hazardPct    = round((float) ($allocations['hazardPayPct'] ?? 0), 4);
+        $basicPct     = round((float) ($allocations['basicPayPct'] ?? 0), 4);
+        $longevityPct = round((float) ($allocations['longevityPct'] ?? 0), 4);
 
-        $totalPct = round($hazardPct + $basicPct + $longevityPct, 2);
-        $unallocatedPct = round(max(0, 100 - $totalPct), 2);
+        $totalPct = round($hazardPct + $basicPct + $longevityPct, 4);
+        $unallocatedPct = round(max(0, 100 - $totalPct), 4);
 
         $res['allocation']['pct'] = [
             'hazard_pay'    => $hazardPct,
@@ -833,7 +1221,7 @@ class ForecastComputationService
         // ----------------------------
         // 3) Normalize annual taxable
         // ----------------------------
-        $annual_taxable = round((float) $annual_taxable, 2);
+        $annual_taxable = round((float) $annual_taxable, 4);
         $res['annual_income'] = $annual_taxable;
 
         if ($annual_taxable <= 0) {
@@ -881,16 +1269,16 @@ class ForecastComputationService
         // ----------------------------
         // 6) Compute tax
         // ----------------------------
-        $fixedTax   = round((float) $selectedBracket->fixed_tax, 2);
-        $taxRate    = round((float) $selectedBracket->tax_rate, 2);
-        $excessOver = round((float) $selectedBracket->excess_over, 2);
+        $fixedTax   = round((float) $selectedBracket->fixed_tax, 4);
+        $taxRate    = round((float) $selectedBracket->tax_rate, 4);
+        $excessOver = round((float) $selectedBracket->excess_over, 4);
 
-        $excess = round(max(0, $annual_taxable - $excessOver), 2);
+        $excess = round(max(0, $annual_taxable - $excessOver), 4);
 
         $computedTax = $fixedTax + ($excess * ($taxRate / 100));
-        $computedTax = round($computedTax, 2);
+        $computedTax = round($computedTax, 4);
 
-        $monthlyTax = round($computedTax / 12, 2);
+        $monthlyTax = round($computedTax / 12, 4);
 
         // ----------------------------
         // 7) Allocation amounts with reconciliation
@@ -898,29 +1286,29 @@ class ForecastComputationService
 
         // Annual parts (rounded)
         $annualParts = [
-            'hazard_pay'    => round($computedTax * ($hazardPct / 100), 2),
-            'basic_pay'     => round($computedTax * ($basicPct / 100), 2),
-            'longevity_pay' => round($computedTax * ($longevityPct / 100), 2),
+            'hazard_pay'    => round($computedTax * ($hazardPct / 100), 4),
+            'basic_pay'     => round($computedTax * ($basicPct / 100), 4),
+            'longevity_pay' => round($computedTax * ($longevityPct / 100), 4),
         ];
 
         // Reconcile annual to match tax exactly
         $annualRecon = $reconcile($annualParts, $computedTax, 'hazard_pay');
         $annualParts = $annualRecon['parts'];
         $annualTotal = $annualRecon['total'];
-        $annualUnallocated = round(max(0, $computedTax - $annualTotal), 2); // should be 0.00
+        $annualUnallocated = round(max(0, $computedTax - $annualTotal), 4); // should be 0.00
 
         // Monthly parts (rounded from annual parts / 12)
         $monthlyParts = [
-            'hazard_pay'    => round($annualParts['hazard_pay'] / 12, 2),
-            'basic_pay'     => round($annualParts['basic_pay'] / 12, 2),
-            'longevity_pay' => round($annualParts['longevity_pay'] / 12, 2),
+            'hazard_pay'    => round($annualParts['hazard_pay'] / 12, 4),
+            'basic_pay'     => round($annualParts['basic_pay'] / 12, 4),
+            'longevity_pay' => round($annualParts['longevity_pay'] / 12, 4),
         ];
 
         // Reconcile monthly to match monthly_tax exactly
         $monthlyRecon = $reconcile($monthlyParts, $monthlyTax, 'hazard_pay');
         $monthlyParts = $monthlyRecon['parts'];
         $monthlyTotal = $monthlyRecon['total'];
-        $monthlyUnallocated = round(max(0, $monthlyTax - $monthlyTotal), 2); // should be 0.00
+        $monthlyUnallocated = round(max(0, $monthlyTax - $monthlyTotal), 4); // should be 0.00
 
         // ----------------------------
         // 8) Fill response
@@ -994,38 +1382,190 @@ class ForecastComputationService
         $results = [];
 
         foreach ($allowances as $name => $type) {
+
+            $data = $this->getComponentAmount($type, $employee_no, $year);
+            
             $results[] = [
                 'name' => ucfirst(str_replace('_', ' ', $name)),
                 'tax_type' => 'non_taxable',
-                'amount' => $this->getComponentAmount($type, $employee_no, $year),
+                'amount' => $data['total'],
+                'computations' => [$data['computation']]
             ];
         }
 
         return $results;
     }
 
-    private function getComponentAmount($type, $employee_no, $year): float
+    private function getComponentAmount($type, $employee_no, $year, $months_covered = 12): array
     {
+        $months_covered = max(1, (int) $months_covered);
+
+        $monthsMap = [
+            1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+            5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+        ];
+
+        // Get component ID from settings
         $componentId = DB::table('payroll_components_settings')
             ->where('type', $type)
             ->value('table_id');
 
         if (!$componentId) {
-            return 0.00;
+            return [
+                'total' => 0.00,
+                'monthly' => array_values(array_map(fn($label) => ['label' => $label, 'amount' => 0.0], $monthsMap)),
+                'avg_monthly' => 0.00,
+                'computation' => [
+                    'key'   => $type,
+                    'label' => ucfirst(str_replace('_', ' ', $type)),
+                    'formula' => 'Component not found in payroll_components_settings',
+                    'inputs' => [
+                        'type' => $type,
+                        'year' => (int) $year,
+                        'months_covered' => $months_covered,
+                    ],
+                    'steps' => [
+                        ['label' => 'Lookup payroll_components_settings', 'value' => 'No component found'],
+                    ],
+                    'result_raw' => 0.00,
+                    'result'     => number_format(0, 2),
+                    'meta' => [
+                        'type' => $type,
+                        'is_missing' => true,
+                    ],
+                ],
+            ];
         }
 
+        // Get component year ID
         $componentYearId = DB::table('payroll_components_years')
             ->where('payroll_component_id', $componentId)
             ->where('year', $year)
             ->value('id');
 
         if (!$componentYearId) {
-            return 0.00;
+            return [
+                'total' => 0.00,
+                'monthly' => array_values(array_map(fn($label) => ['label' => $label, 'amount' => 0.0], $monthsMap)),
+                'avg_monthly' => 0.00,
+                'computation' => [
+                    'key'   => $type,
+                    'label' => ucfirst(str_replace('_', ' ', $type)),
+                    'formula' => 'Component year not configured',
+                    'inputs' => [
+                        'component_id' => $componentId,
+                        'year'         => (int) $year,
+                        'months_covered' => $months_covered,
+                    ],
+                    'steps' => [
+                        ['label' => 'Lookup payroll_components_years', 'value' => "No configuration found for year {$year}"],
+                    ],
+                    'result_raw' => 0.00,
+                    'result'     => number_format(0, 2),
+                    'meta' => [
+                        'type' => $type,
+                        'is_missing' => true,
+                    ],
+                ],
+            ];
         }
 
-        return (float) DB::table('employee_payroll_components')
+        // Monthly breakdown using month column (1..12)
+        $rows = DB::table('employee_payroll_components')
+            ->selectRaw('month, SUM(amount) as total')
             ->where('tax_deduction_id', $componentYearId)
             ->where('employee_no', $employee_no)
-            ->sum('amount');
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // init months with 0
+        $monthly = [];
+        foreach ($monthsMap as $m => $label) {
+            $monthly[$m] = [
+                'month'  => $m,
+                'label'  => $label,
+                'amount' => 0.0,
+            ];
+        }
+
+        // fill
+        foreach ($rows as $r) {
+            $m = (int) ($r->month ?? 0);
+            if ($m >= 1 && $m <= 12) {
+                $monthly[$m]['amount'] = (float) round((float) ($r->total ?? 0), 4);
+            }
+        }
+
+        // total = sum of monthly
+        $total = 0.0;
+        foreach ($monthly as $m) {
+            $total += (float) $m['amount'];
+        }
+        $total = (float) round($total, 4);
+
+        // avg based on months_covered (employment months)
+        $avgMonthly = (float) round($total / $months_covered, 4);
+
+        // steps for UI
+        $monthSteps = [];
+        foreach ($monthly as $m) {
+            $monthSteps[] = [
+                'label' => $m['label'],
+                'value' => number_format((float) $m['amount'], 2),
+            ];
+        }
+
+        // Build computation payload
+        $computation = [
+            'key'     => $type,
+            'label'   => ucfirst(str_replace('_', ' ', $type)),
+            'formula' => 'SUM(amount) per month; Total = SUM(months); Avg = Total ÷ Months Covered',
+            'inputs'  => [
+                'employee_no'           => $employee_no,
+                'year'                  => (int) $year,
+                'component_type'        => $type,
+                'payroll_component_id'  => $componentId,
+                'component_year_id'     => $componentYearId,
+                'months_covered'        => $months_covered,
+                'monthly'               => array_values($monthly), // raw monthly amounts
+            ],
+            'steps' => [
+                [
+                    'label' => 'Lookup component (settings)',
+                    'value' => "Found payroll_component_id = {$componentId}",
+                ],
+                [
+                    'label' => 'Lookup component year',
+                    'value' => "Found payroll_components_years.id = {$componentYearId}",
+                ],
+                [
+                    'label' => 'Monthly breakdown (Jan–Dec)',
+                    'value' => $monthSteps, // nested list
+                ],
+                [
+                    'label' => 'Total (sum of months)',
+                    'value' => number_format((float) $total, 2),
+                ],
+                [
+                    'label' => 'Average monthly (Total ÷ Months Covered)',
+                    'value' => number_format((float) $total, 2) . ' ÷ ' . $months_covered,
+                ],
+            ],
+            'result_raw' => (float) $total,                 // main result = total
+            'result'     => number_format((float) $total, 2),
+            'meta' => [
+                'type'            => $type,
+                'avg_monthly_raw' => (float) $avgMonthly,
+            ],
+        ];
+
+        return [
+            'total'       => (float) $total,
+            'monthly'     => array_values($monthly),
+            'avg_monthly' => (float) $avgMonthly,
+            'computation' => $computation,
+        ];
     }
 }

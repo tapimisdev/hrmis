@@ -52,7 +52,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('name');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 15, 4);
 
             $table->enum('tax_type', ['taxable', 'non_taxable', 'exempt'])
                 ->default('taxable');
@@ -68,7 +68,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('name');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 15, 4);
 
             $table->timestamps();
         });

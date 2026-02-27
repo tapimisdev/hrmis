@@ -39,6 +39,7 @@ class TaxationBodyService
             ->leftJoin('positions as p', 'eo.position_id', '=', 'p.id')
             ->leftJoin('units as u', 'eo.unit_id', '=', 'u.id')
             ->select(
+                'te.id',
                 'te.employee_no',
 
                 $this->db->raw("
@@ -54,15 +55,24 @@ class TaxationBodyService
                 'p.name as position',
                 'u.code as unit',
 
+                'te.amount_basic_salary',
+                'te.months_covered',
+                'te.amount_anual_total_basic_salary',
+                
+                'te.amount_mid_year_bonus',
+                'te.amount_year_end_bonus',
+                'te.amount_longevity_pay',
+                'te.amount_hazard_pay',
+                'te.amount_other_earnings_taxable',
+                'te.amount_other_earnings_non_taxable',
+                'te.amount_other_deductions',
+                'te.amount_annual_total_allowables',
+
+                'te.amount_gross',
+
                 'te.amount_annual_taxable',
                 'te.amount_annual_tax',
                 'te.amount_monthly_tax',
-
-                'te.amount_other_earnings_non_taxable',
-                'te.amount_annual_total_allowables',
-                'te.amount_other_earnings_taxable',
-                'te.amount_other_deductions',
-                'te.amount_gross',
 
                 'te.portion_hazard_pay',
                 'te.portion_basic_pay',
@@ -76,33 +86,33 @@ class TaxationBodyService
 
             )
             ->where('te.taxation_id', $id)
-            ->get()
-            ->map(function ($employee) {
+            ->get();
+            // ->map(function ($employee) {
 
-                // Money fields
-                $moneyFields = [
-                    'amount_annual_taxable',
-                    'amount_annual_tax',
-                    'amount_monthly_tax',
-                    'amount_other_earnings_taxable',
-                    'amount_other_deductions',
-                    'amount_gross',
-                    'amount_portion_hazard_pay',
-                    'amount_portion_basic_pay',
-                    'amount_portion_longevity_pay',
-                ];
+            //     // Money fields
+            //     $moneyFields = [
+            //         'amount_annual_taxable',
+            //         'amount_annual_tax',
+            //         'amount_monthly_tax',
+            //         'amount_other_earnings_taxable',
+            //         'amount_other_deductions',
+            //         'amount_gross',
+            //         'amount_portion_hazard_pay',
+            //         'amount_portion_basic_pay',
+            //         'amount_portion_longevity_pay',
+            //     ];
 
-                foreach ($moneyFields as $field) {
-                    $employee->{$field} = '₱ ' . number_format((float) $employee->{$field}, 2);
-                }
+            //     foreach ($moneyFields as $field) {
+            //         $employee->{$field} = '₱ ' . number_format((float) $employee->{$field}, 2);
+            //     }
 
-                // Decode remarks JSON safely
-                $employee->remarks = $employee->remarks
-                    ? json_decode($employee->remarks, true) ?? []
-                    : [];
+            //     // Decode remarks JSON safely
+            //     $employee->remarks = $employee->remarks
+            //         ? json_decode($employee->remarks, true) ?? []
+            //         : [];
 
-                return $employee;
-            });
+            //     return $employee;
+            // });
         if ($employees->isEmpty()) {
             return null;
         }

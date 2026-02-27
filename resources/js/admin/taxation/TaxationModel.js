@@ -82,30 +82,43 @@ export function TaxationSettingModel(data = {}) {
             return [];
         };
 
+        // raw numeric helper for computation inputs (does NOT affect existing outputs)
+        const toRawNumber = (v) => {
+            if (v === null || v === undefined || v === "") return 0;
+            if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+            const n = Number(String(v).replace(/[^0-9.-]/g, ""));
+            return Number.isNaN(n) ? 0 : n;
+        };
+
         return items.map((row = {}) => ({
+            id: row.id ?? "",
             employee_no: row.employee_no ?? "",
+
             full_name: row.full_name ?? "",
             division: row.division ?? "",
             position: row.position ?? "",
             unit: row.unit ?? "",
 
+            less_bir_rr3_2015: toBool(data?.less_bir_rr3_2015),
+
+            amount_basic_salary: toMoney(row.amount_basic_salary),
+            months_covered: row.months_covered,
+            amount_anual_total_basic_salary: toMoney(row.amount_anual_total_basic_salary),
+
+            amount_mid_year_bonus: toMoney(row.amount_mid_year_bonus),
+            amount_year_end_bonus: toMoney(row.amount_year_end_bonus),
+            amount_longevity_pay: toMoney(row.amount_longevity_pay),
+            amount_hazard_pay: toMoney(row.amount_hazard_pay),
+            amount_other_earnings_taxable: toMoney(row.amount_other_earnings_taxable),
+            amount_other_earnings_non_taxable: toMoney(row.amount_other_earnings_non_taxable),
+            amount_other_deductions: toMoney(row.amount_other_deductions),
+            amount_annual_total_allowables: toMoney(row.amount_annual_total_allowables),
+
+            amount_gross: toMoney(row.amount_gross),
+
             amount_annual_taxable: toMoney(row.amount_annual_taxable),
             amount_annual_tax: toMoney(row.amount_annual_tax),
             amount_monthly_tax: toMoney(row.amount_monthly_tax),
-
-            amount_annual_total_allowables: toMoney(
-                row.amount_annual_total_allowables,
-            ),
-
-            amount_other_earnings_non_taxable: toMoney(
-                row.amount_other_earnings_non_taxable,
-            ),
-
-            amount_other_earnings_taxable: toMoney(
-                row.amount_other_earnings_taxable,
-            ),
-            amount_other_deductions: toMoney(row.amount_other_deductions),
-            amount_gross: toMoney(row.amount_gross),
 
             portion_hazard_pay: toPercent(row.portion_hazard_pay),
             portion_basic_pay: toPercent(row.portion_basic_pay),
@@ -116,7 +129,7 @@ export function TaxationSettingModel(data = {}) {
             amount_portion_longevity_pay: toMoney(
                 row.amount_portion_longevity_pay,
             ),
-
+            
             // always an array for bullet rendering
             remarks: toRemarksArray(row.remarks),
         }));

@@ -35,32 +35,53 @@ return new class extends Migration
             $table->unsignedTinyInteger('portion_basic_pay');
             $table->unsignedTinyInteger('portion_longevity_pay');
 
-            $table->decimal('amount_gross', 15, 2)->default(0);
-            $table->decimal('amount_annual_total_allowables', 15, 2)->default(0);
+            $table->decimal('amount_basic_salary', 15, 4)->default(0);
+            $table->integer('months_covered')->default(0);
+            $table->decimal('amount_anual_total_basic_salary', 15, 4)->default(0);
 
-            $table->decimal('amount_annual_taxable', 15, 2)->default(0);
-            $table->decimal('amount_annual_tax', 15, 2)->default(0);
-            $table->decimal('amount_monthly_tax', 15, 2)->default(0);
+            $table->decimal('amount_mid_year_bonus', 15, 4)->default(0);
+            $table->decimal('amount_year_end_bonus', 15, 4)->default(0);
+            $table->decimal('amount_longevity_pay', 15, 4)->default(0);
+            $table->decimal('amount_hazard_pay', 15, 4)->default(0);
 
-            $table->decimal('amount_portion_hazard_pay', 15, 2)->default(0);
-            $table->decimal('amount_portion_basic_pay', 15, 2)->default(0);
-            $table->decimal('amount_portion_longevity_pay', 15, 2)->default(0);
-
-            $table->decimal('amount_mid_year_bonus', 15, 2)->default(0);
-            $table->decimal('amount_year_end_bonus', 15, 2)->default(0);
-            $table->decimal('amount_longevity_pay', 15, 2)->default(0);
-            $table->decimal('amount_hazard_pay', 15, 2)->default(0);
-
-            $table->decimal('amount_other_earnings_taxable', 15, 2)->default(0);
-            $table->decimal('amount_other_earnings_non_taxable', 15, 2)->default(0);
+            $table->decimal('amount_other_earnings_taxable', 15, 4)->default(0);
+            $table->decimal('amount_other_earnings_non_taxable', 15, 4)->default(0);
             
-            $table->decimal('amount_other_deductions', 15, 2)->default(0);
+            $table->decimal('amount_gross', 15, 4)->default(0);
+
+            $table->decimal('amount_other_deductions', 15, 4)->default(0);
+            $table->decimal('amount_annual_total_allowables', 15, 4)->default(0);
+
+            $table->decimal('amount_annual_taxable', 15, 4)->default(0);
+            $table->decimal('amount_annual_tax', 15, 4)->default(0);
+            $table->decimal('amount_monthly_tax', 15, 4)->default(0);
+            
+            $table->decimal('amount_portion_hazard_pay', 15, 4)->default(0);
+            $table->decimal('amount_portion_basic_pay', 15, 4)->default(0);
+            $table->decimal('amount_portion_longevity_pay', 15, 4)->default(0);
 
             $table->json('remarks')->nullable();
 
             $table->json('raw_payload')->nullable();
-
+            
             $table->boolean('is_active');
+            $table->timestamps();
+        });
+
+        Schema::create('taxation_employee_computations', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('taxation_employee_id')
+                ->constrained('taxation_employees')
+                ->cascadeOnDelete();
+
+            $table->string('type', 50)->index();
+            $table->json('raw_computation')->nullable();
+
+            $table->decimal('amount', 15, 4)->default(0);
+
+            $table->unique(['taxation_employee_id', 'type']);
+
             $table->timestamps();
         });
 
@@ -72,7 +93,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('name');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 15, 4);
 
             $table->enum('tax_type', ['taxable', 'non_taxable', 'exempt'])
                 ->default('taxable');
@@ -88,7 +109,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('name');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 15, 4);
 
             $table->timestamps();
         });
@@ -108,7 +129,7 @@ return new class extends Migration
             $table->date('as_of');
 
             // Salary Details
-            $table->decimal('basic_salary_as_of', 15, 2);
+            $table->decimal('basic_salary_as_of', 15, 4);
             $table->date('salary_effective_date');
 
             // Eligibility
@@ -120,7 +141,7 @@ return new class extends Migration
             $table->date('service_end');
 
             // Computation Result
-            $table->decimal('amount', 15, 2)->default(0);
+            $table->decimal('amount', 15, 4)->default(0);
 
             $table->text('reason')->nullable();
 
@@ -141,19 +162,19 @@ return new class extends Migration
             $table->string('employee_no', 50)->index();
 
             // Core amounts (use DECIMAL for money accuracy)
-            $table->decimal('annual_income', 15, 2)->default(0);
-            $table->decimal('fixed_tax', 15, 2)->default(0);
-            $table->decimal('tax_rate', 6, 2)->default(0); // e.g., 20.00
-            $table->decimal('excess_over', 15, 2)->default(0);
-            $table->decimal('excess_amount', 15, 2)->default(0);
-            $table->decimal('tax', 15, 2)->default(0);
+            $table->decimal('annual_income', 15, 4)->default(0);
+            $table->decimal('fixed_tax', 15, 4)->default(0);
+            $table->decimal('tax_rate', 6, 4)->default(0); // e.g., 20.00
+            $table->decimal('excess_over', 15, 4)->default(0);
+            $table->decimal('excess_amount', 15, 4)->default(0);
+            $table->decimal('tax', 15, 4)->default(0);
 
-            $table->decimal('monthly_tax', 15, 2)->default(0);
+            $table->decimal('monthly_tax', 15, 4)->default(0);
 
 
             // Bracket range (stored as decimals, not strings)
-            $table->decimal('bracket_from', 15, 2)->nullable();
-            $table->decimal('bracket_to', 15, 2)->nullable();
+            $table->decimal('bracket_from', 15, 4)->nullable();
+            $table->decimal('bracket_to', 15, 4)->nullable();
 
             // Metadata / notes
             $table->string('remarks', 255)->nullable();
@@ -166,6 +187,7 @@ return new class extends Migration
             // indexing
             $table->index(['employee_no', 'created_at']);
         });
+        
     }
 
     /**
@@ -177,6 +199,7 @@ return new class extends Migration
         Schema::dropIfExists('taxation_employee_bonus');
         Schema::dropIfExists('taxation_employee_other_deductions');
         Schema::dropIfExists('taxation_employee_other_earnings');
+        Schema::dropIfExists('taxation_employee_computations');
         Schema::dropIfExists('taxation_employees');
     }
 };

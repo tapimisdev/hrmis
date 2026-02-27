@@ -50,11 +50,11 @@
                 <select
                     class="form-select form-select-sm"
                     v-model="proxy.longevityTaxId"
-                    :disabled="loading.salary"
+                    :disabled="loading.longevity"
                 >
                     <option value="">-- Select --</option>
                     <option
-                        v-for="i in options.salaryTax"
+                        v-for="i in options.longevityTax"
                         :key="i.id"
                         :value="i.id"
                     >

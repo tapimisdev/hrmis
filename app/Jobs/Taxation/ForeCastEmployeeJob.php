@@ -43,7 +43,7 @@ class ForeCastEmployeeJob implements ShouldQueue
     public function handle(ForecastComputationService $service): void
     {
         $year = (int) ($this->payload['year'] ?? now()->year);
-        
+
         // -----------------------------
         // Normalize payload structure
         // -----------------------------
@@ -83,14 +83,14 @@ class ForeCastEmployeeJob implements ShouldQueue
         // -----------------------------
         $basicPays = $service->annualSalaryTotalByMonth($this->employee_no, $year);
 
-        if($basicPays['remarks'] ?? null) {
+        if ($basicPays['remarks'] ?? null) {
             $addRemark("Basic Pay: " . ($basicPays['remarks'] ?? ''));
         }
 
-        $annualBasicPay    = round((float) ($basicPays['annual_total'] ?? 0), 2);
-        $monthlySalary     = round((float) ($basicPays['monthly_salary'] ?? 0), 2);
+        $annualBasicPay    = round((float) ($basicPays['annual_total'] ?? 0), 4);
+        $monthlySalary     = round((float) ($basicPays['monthly_salary'] ?? 0), 4);
         $monthsCovered     = (int) ($basicPays['months_covered'] ?? 0);
-        $monthlyHazardPay  = round((float) ($basicPays['hazard_pay'] ?? ($monthlySalary * 0.15)), 2);
+        $monthlyHazardPay  = round((float) ($basicPays['hazard_pay'] ?? ($monthlySalary * 0.15)), 4);
 
         $mid = $basicPays['midyear'] ?? null;
         $ye  = $basicPays['year_end'] ?? null;
@@ -110,7 +110,7 @@ class ForeCastEmployeeJob implements ShouldQueue
 
                 $addRemark(
                     "Mid-Year Bonus was enabled but employee is not eligible. {$reason}" .
-                    ($asOf ? " (as of {$asOf})." : '')
+                        ($asOf ? " (as of {$asOf})." : '')
                 );
             }
         }
@@ -127,22 +127,23 @@ class ForeCastEmployeeJob implements ShouldQueue
 
                 $addRemark(
                     "Year-End Bonus was enabled but employee is not eligible. {$reason}" .
-                    ($asOf ? " (as of {$asOf})." : '')
+                        ($asOf ? " (as of {$asOf})." : '')
                 );
             }
         }
 
         $longevityPay = 0.0;
         if ($assume('longevity')) {
+            
             $longevity = $service->ComputeLongevity(
                 $this->employee_no,
-                $year,
-                $this->longevityTaxId
+                $year
             );
+
 
             $longevityPay = (float) ($longevity['longevity_total'] ?? 0);
 
-            if (round($longevityPay, 2) <= 0) {
+            if (round($longevityPay, 4) <= 0) {
                 $reason = (string) ($longevity['reason'] ?? 'Computed longevity pay is 0.');
                 $addRemark("Longevity Pay was enabled but resulted to 0. {$reason}");
             }
@@ -157,7 +158,7 @@ class ForeCastEmployeeJob implements ShouldQueue
                 $addRemark("Hazard Pay was enabled but cannot be computed (months covered or monthly hazard pay is zero).");
             }
         }
-        
+
         // -----------------------------
         // Get Non Taxable allowances // PERA RATA
         // -----------------------------
@@ -183,15 +184,13 @@ class ForeCastEmployeeJob implements ShouldQueue
             }
         }
 
-        // dd($payload['othersEarnings'], $otherEarningsNonTaxable);
-
         // Round totals
-        $midYearBonus            = round($midYearBonus, 2);
-        $yearEndBonus            = round($yearEndBonus, 2);
-        $longevityPay            = round($longevityPay, 2);
-        $hazardPayAnnual         = round($hazardPayAnnual, 2);
-        $otherEarningsTaxable    = round($otherEarningsTaxable, 2);
-        $otherEarningsNonTaxable = round($otherEarningsNonTaxable, 2);
+        $midYearBonus            = round($midYearBonus, 4);
+        $yearEndBonus            = round($yearEndBonus, 4);
+        $longevityPay            = round($longevityPay, 4);
+        $hazardPayAnnual         = round($hazardPayAnnual, 4);
+        $otherEarningsTaxable    = round($otherEarningsTaxable, 4);
+        $otherEarningsNonTaxable = round($otherEarningsNonTaxable, 4);
 
         // sendYearToParent This is the amount that may be affected by RR 3-2015
         $taxableBonusesAndEarnings =
@@ -206,7 +205,7 @@ class ForeCastEmployeeJob implements ShouldQueue
             $before = $taxableBonusesAndEarnings;
             $taxableBonusesAndEarnings = max($taxableBonusesAndEarnings - 90000, 0);
 
-            $used = round($before - $taxableBonusesAndEarnings, 2);
+            $used = round($before - $taxableBonusesAndEarnings, 4);
             if ($used > 0) {
                 $addRemark("BIR RR 3-2015 (₱90,000) exemption applied. Exempted amount: ₱" . number_format($used, 2) . ".");
             }
@@ -224,13 +223,13 @@ class ForeCastEmployeeJob implements ShouldQueue
         $otherDeductions = $sumAmounts($payload['othersDeductions']);
 
         // Append standard deductions (so UI can show them)
-        $payload['othersDeductions'][] = ['name' => 'GSIS', 'amount' => round($totalGsis, 2)];
-        $payload['othersDeductions'][] = ['name' => 'PAGIBIG', 'amount' => round($totalPagibig, 2)];
-        $payload['othersDeductions'][] = ['name' => 'PHILHEALTH', 'amount' => round($totalPhilhealth, 2)];
+        $payload['othersDeductions'][] = ['name' => 'GSIS', 'amount' => round($totalGsis, 4)];
+        $payload['othersDeductions'][] = ['name' => 'PAGIBIG', 'amount' => round($totalPagibig, 4)];
+        $payload['othersDeductions'][] = ['name' => 'PHILHEALTH', 'amount' => round($totalPhilhealth, 4)];
 
         $totalAllowableDeduction = round(
             ($totalGsis + $totalPagibig + $totalPhilhealth) + $otherDeductions,
-            2
+            4
         );
 
         // -----------------------------
@@ -238,7 +237,7 @@ class ForeCastEmployeeJob implements ShouldQueue
         // -----------------------------
         $taxableIncome = round(
             ($annualBasicPay - $totalAllowableDeduction) + $taxableBonusesAndEarnings,
-            2
+            4
         );
 
         if ($taxableIncome < 0) {
@@ -253,9 +252,17 @@ class ForeCastEmployeeJob implements ShouldQueue
             $payload['allocation']
         );
 
+        $gross = round(
+            $annualBasicPay +
+                $midYearBonus +
+                $yearEndBonus +
+                $longevityPay +
+                $hazardPayAnnual +
+                $otherEarningsTaxable +
+                $otherEarningsNonTaxable,
+            4
+        );
 
-        $gross = round($annualBasicPay + $midYearBonus + $yearEndBonus + $longevityPay + $hazardPayAnnual + $otherEarningsTaxable + $otherEarningsNonTaxable, 2);
-        
         // -----------------------------
         // Build final payload (saved)
         // -----------------------------
@@ -265,25 +272,36 @@ class ForeCastEmployeeJob implements ShouldQueue
         $payload['amounts']['annualTotalAllowables'] = $totalAllowableDeduction;
 
         // Totals (for reporting)
-        $payload['amounts']['gross']                      = $gross;
-        $payload['amounts']['midYearBonus']               = $midYearBonus;
-        $payload['amounts']['yearEndBonus']               = $yearEndBonus;
-        $payload['amounts']['longevityPay']               = $longevityPay;
-        $payload['amounts']['hazardPay']                  = $hazardPayAnnual;
+        $payload['amounts']['gross']                 = $gross;
+        $payload['amounts']['midYearBonus']          = $midYearBonus;
+        $payload['amounts']['yearEndBonus']          = $yearEndBonus;
+        $payload['amounts']['longevityPay']          = $longevityPay;
+        $payload['amounts']['hazardPay']             = $hazardPayAnnual;
 
-        $payload['amounts']['otherEarningsTaxable']       = $otherEarningsTaxable;
-        $payload['amounts']['otherEarningsNonTaxable']    = $otherEarningsNonTaxable;
+        $payload['amounts']['otherEarningsTaxable']  = $otherEarningsTaxable;
+        $payload['amounts']['otherEarningsNonTaxable'] = $otherEarningsNonTaxable;
 
-        $payload['amounts']['otherDeductions']            = round($otherDeductions, 2);
+        $payload['amounts']['otherDeductions']       = round($otherDeductions, 4);
 
         // Allocation (monthly portions)
         $payload['amounts']['portionHazardPay']    = (float) ($computedAnnualTax['allocation']['monthly']['hazard_pay'] ?? 0);
         $payload['amounts']['portionBasicPay']     = (float) ($computedAnnualTax['allocation']['monthly']['basic_pay'] ?? 0);
         $payload['amounts']['portionLongevityPay'] = (float) ($computedAnnualTax['allocation']['monthly']['longevity_pay'] ?? 0);
 
+        $payload['amounts']['amount_basic_salary'] = $basicPays['monthly_salary'];
+        $payload['months_covered'] = $basicPays['months_covered'];
+        $payload['amounts']['amount_anual_total_basic_salary'] = $annualBasicPay;
+
         // Keep computed eligibility info
         $payload['midyear']  = $mid;
         $payload['year_end'] = $ye;
+
+        $payload['computations'] = array_merge(
+            $payload['computations'] ?? [],
+            $basicPays['computations'] ?? [],
+            $longevity['computations'] ?? [],
+            $allowables['computations'] ?? []
+        );
 
         // Save
         $service->createTaxationEmployees(
