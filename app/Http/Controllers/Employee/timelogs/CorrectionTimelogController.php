@@ -149,7 +149,7 @@ class CorrectionTimelogController extends Controller
                     'type' => 'application',
                     'sender' => $sender,
                     'receiver' => 'admins',
-                    'message' => '%b' . $sender . '%b filed an offset application (%bi' . strtoupper($application_no) . ') %bi',
+                    'message' => '%b' . $sender . '%b filed a correction timelog (%bi' . strtoupper($application_no) . ') %bi',
                     'link' => '/admin/timekeeping/timelogs-correction?id=' . $applicationId
                 ];
                 $this->EventService->pushNotification($payload);
