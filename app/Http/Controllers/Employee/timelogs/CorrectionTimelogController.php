@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
 
 use function PHPUnit\Framework\returnArgument;
 
@@ -46,20 +47,82 @@ class CorrectionTimelogController extends Controller
         $user_id = Auth::id();
         $employee_no = $this->employee_service->getEmployeeNo($user_id);
 
-        $corrections = DB::table('timelog_corrections')
-            ->whereMonth('date', $request->input('month'))
-            ->whereYear('date', $request->input('year'))
-            ->where('employee_no', $employee_no)
-            ->get()
-            ->map(function ($row) {
-                $row->attachment = Storage::url($row->attachment);
+        $query = DB::table('timelog_corrections')
+            ->whereMonth('date', $request->month)
+            ->whereYear('date', $request->year)
+            ->where('employee_no', $employee_no);
 
-                return $row;
-            });
+        return DataTables::of($query)
 
-        return response()->json([
-            'data' => $corrections
-        ]);
+            ->editColumn('date', function ($row) {
+                return $row->date
+                    ? \Carbon\Carbon::parse($row->date)->format('m/d/Y')
+                    : '-';
+            })
+
+            ->editColumn('time_in', function ($row) {
+                return $row->time_in
+                    ? \Carbon\Carbon::parse($row->time_in)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('break_out', function ($row) {
+                return $row->break_out
+                    ? \Carbon\Carbon::parse($row->break_out)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('break_in', function ($row) {
+                return $row->break_in
+                    ? \Carbon\Carbon::parse($row->break_in)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('time_out', function ($row) {
+                return $row->time_out
+                    ? \Carbon\Carbon::parse($row->time_out)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('overtime_in', function ($row) {
+                return $row->overtime_in
+                    ? \Carbon\Carbon::parse($row->overtime_in)->format('h:i A')
+                    : '-';
+            })
+
+            ->editColumn('overtime_out', function ($row) {
+                return $row->overtime_out
+                    ? \Carbon\Carbon::parse($row->overtime_out)->format('h:i A')
+                    : '-';
+            })
+
+            ->addColumn('attachment', function ($row) {
+                if (!$row->attachment) {
+                    return '-';
+                }
+
+                $url = Storage::url($row->attachment);
+
+                return '<a href="'.$url.'" target="_blank" class="btn btn-sm btn-link">View</a>';
+            })
+
+            ->editColumn('status', function ($row) {
+                if ($row->status === 'pending') {
+                    return '<span class="badge bg-warning text-dark">Pending</span>';
+                }
+                if ($row->status === 'approved') {
+                    return '<span class="badge bg-success">Approved</span>';
+                }
+                if ($row->status === 'rejected') {
+                    return '<span class="badge bg-danger">Rejected</span>';
+                }
+
+                return $row->status;
+            })
+
+            ->rawColumns(['status', 'attachment'])
+
+            ->make(true);
     }
 
     public function edit(Request $request) {
