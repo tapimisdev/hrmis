@@ -23,7 +23,7 @@
                     </ul>
                 </div>
                 <div class="card-body py-5 px-4">
-                    <form id="form" enctype="multipart/form-data" action="{{route('registry.store')}}" method="post">
+                    <form id="form" enctype="multipart/form-data" action="{{route('registry.salary.store')}}" method="post">
                         @method('POST')
                         @csrf
                         <div class="row">
@@ -77,12 +77,18 @@
 @section('scripts')
 <script>
 $(function() {
+
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     const $form = $('#form');
-    let parsedData = null; // store parsed data from first submit
+    let parsedData = null;
 
-    // First submit: parse file
+    /*
+    |--------------------------------------------------------------------------
+    | FIRST SUBMIT (PARSE)
+    |--------------------------------------------------------------------------
+    */
     function parseForm() {
+
         const formData = new FormData($form[0]);
         const url = $form.attr('action');
 
@@ -101,46 +107,42 @@ $(function() {
             contentType: false,
             beforeSend: function() {
                 $btn.prop('disabled', true).html(
-                    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Parsing...'
+                    '<span class="spinner-border spinner-border-sm me-2"></span>Parsing...'
                 );
             },
             success: function(response) {
-                $btn.prop('disabled', false).html(originalBtnHtml);
-                $form.hide(); // hide form
 
-                if(response && response.data && response.data.length) {
-                    parsedData = response; // save parsed data
-                    displayParsedInfo(parsedData); // show label, period, type
+                $btn.prop('disabled', false).html(originalBtnHtml);
+                $form.hide();
+
+                if (response && response.data && response.data.length) {
+
+                    parsedData = response;
+
+                    displayParsedInfo(parsedData);
                     createDynamicTable(parsedData.data);
 
-                    // Add Import and Go Back buttons
                     const buttonsHtml = `
                         <div class="mt-3 d-flex justify-content-end gap-3">
                             <button id="go-back-btn" class="btn btn-danger px-5 py-3 text-uppercase fw-bold">Go Back</button>
                             <button id="next-import-btn" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">Import</button>
                         </div>`;
-                    $('#dynamic-table').after(buttonsHtml);
 
-                    // Click to import
-                    $('#next-import-btn').on('click', function() {
-                        importParsedData();
-                    });
+                    $('.action-btn').after(buttonsHtml);
 
-                    // Click to go back
-                    $('#go-back-btn').on('click', function() {
-                        $('#dynamic-table, #parsed-info, #next-import-btn, #go-back-btn').remove();
-                        $form.show();
-                    });
                 } else {
                     alert('No data returned.');
                 }
             },
             error: function(xhr) {
+
                 $btn.prop('disabled', false).html(originalBtnHtml);
+
                 if(xhr.status === 422 && xhr.responseJSON.errors) {
                     const errors = xhr.responseJSON.errors;
                     for (const key in errors) {
-                        $(`[name="${key}"]`).next('.error-field').html('<span class="text-danger">' + errors[key][0] + '</span>');
+                        $(`[name="${key}"]`).next('.error-field')
+                            .html('<span class="text-danger">' + errors[key][0] + '</span>');
                     }
                 } else {
                     alert('An error occurred while parsing.');
@@ -149,13 +151,31 @@ $(function() {
         });
     }
 
-    // Second submit: import parsed data
+    /*
+    |--------------------------------------------------------------------------
+    | SECOND SUBMIT (IMPORT)
+    |--------------------------------------------------------------------------
+    */
     function importParsedData() {
-        if(!parsedData) return alert('No data to import.');
+
+        if (!parsedData) return alert('No data to import.');
 
         const url = $form.attr('action');
         const $btn = $('#next-import-btn');
         const originalBtnHtml = $btn.html();
+
+        const updatedData = [];
+        const headers = Object.keys(parsedData.data[0]);
+
+        $('#dynamic-table tbody tr').each(function () {
+            const rowData = {};
+            $(this).find('td input').each(function (index) {
+                rowData[headers[index]] = $(this).val();
+            });
+            updatedData.push(rowData);
+        });
+
+        parsedData.data = updatedData;
 
         $.ajax({
             url: url,
@@ -163,30 +183,53 @@ $(function() {
             headers: { 'X-CSRF-TOKEN': csrfToken },
             data: JSON.stringify({ isImport: true, data: parsedData }),
             contentType: 'application/json',
-            beforeSend: function() {
+            beforeSend: function () {
                 $btn.prop('disabled', true).html(
-                    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Importing...'
+                    '<span class="spinner-border spinner-border-sm me-2"></span>Importing...'
                 );
             },
-            success: function(response) {
+            success: function (response) {
+                console.log(response);
                 $btn.prop('disabled', false).html(originalBtnHtml);
-                alert(response.message || 'Import successful!');
+
+                Swal.fire({
+                    title: 'Import Successful!',
+                    text: 'Do you want to open this payroll registry?',
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, open it',
+                    cancelButtonText: 'No'
+                }).then((result) => {
+        
+                    if (result.isConfirmed) {
+                        window.open(response.redirect, '_blank', 'noopener,noreferrer');
+                    } 
+
+                    clearFields();
+                    resetUI()
+
+                });
             },
-            error: function(xhr) {
+            error: function () {
                 $btn.prop('disabled', false).html(originalBtnHtml);
                 alert('An error occurred while importing.');
             }
         });
     }
 
-    // Bind initial form submit
-    $form.on('submit', function(e) {
-        e.preventDefault();
-        parseForm();
-    });
+    /*
+    |--------------------------------------------------------------------------
+    | UI HELPERS
+    |--------------------------------------------------------------------------
+    */
 
-    // Display label, period, type above table
+    function resetUI() {
+        $('#dynamic-table, #parsed-info, #next-import-btn, #go-back-btn').remove();
+        $form.show();
+    }
+
     function displayParsedInfo(parsed) {
+
         const infoHtml = `
             <div id="parsed-info" class="mb-3 text-uppercase">
                 <strong>Label:</strong> ${parsed.label} <br>
@@ -195,31 +238,80 @@ $(function() {
                 <strong>Payroll Type:</strong> ${parsed.type}
             </div>
         `;
+
         $form.closest('.card-body').append(infoHtml);
     }
 
-    // Create table from parsed data
     function createDynamicTable(data) {
-        let table = '<table id="dynamic-table" class="table table-bordered mt-2"><thead><tr>';
 
-        // Headers from first row
+        let table = `
+            <div class="table-responsive" style="height: 600px;">
+                <table id="dynamic-table" class="table table-bordered mt-2" >
+                <thead><tr>`;
+
         const headers = Object.keys(data[0]);
+
         headers.forEach(header => {
             table += '<th>' + header + '</th>';
         });
+
         table += '</tr></thead><tbody>';
 
         data.forEach(row => {
+
             table += '<tr>';
+
             headers.forEach(header => {
-                table += '<td>' + (row[header] ?? '') + '</td>';
+
+                if (header == 'Name' || header == 'Position') {
+                    table += '<td style="width:300px;">' +
+                                '<input type="text" class="form-control" ' +
+                                'style="width:300px;"' +
+                                'value="' + (row[header] ?? '0') + '">' +
+                            '</td>';
+                } else {
+                    table += '<td>' +
+                                '<input type="text" class="form-control" ' +
+                                'style="width:200px;"' +
+                                'value="' + (row[header] ?? '0') + '">' +
+                            '</td>';
+                }
+
             });
+                
             table += '</tr>';
         });
 
-        table += '</tbody></table>';
+        table += '</tbody></table></div><div class="action-btn"></div>';
+
         $form.closest('.card-body').append(table);
     }
+
+    function clearFields() {
+        $('#form').find('input[type="text"], input[type="number"], input[type="email"], textarea').val('');
+        $('#form').find('input[type="checkbox"], input[type="radio"]').prop('checked', false);
+        $('#form').find('select').prop('selectedIndex', 0);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | EVENTS
+    |--------------------------------------------------------------------------
+    */
+
+    $form.on('submit', function(e) {
+        e.preventDefault();
+        parseForm();
+    });
+
+    $(document).on('click', '#next-import-btn', function() {
+        importParsedData();
+    });
+
+    $(document).on('click', '#go-back-btn', function() {
+        resetUI();
+    });
+
 });
 </script>
 @endsection

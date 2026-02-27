@@ -31,8 +31,8 @@ class CorrectionTimelogController extends Controller
         $this->employee_service = $employee_service;
         $this->EventService = $EventService;
 
-        // $this->middleware('permission:emp.correction.view')->only('index');
-        // $this->middleware('permission:emp.correction.apply')->only(['store']);
+        $this->middleware('permission:emp.correction.view')->only('index');
+        $this->middleware('permission:emp.correction.apply')->only(['store']);
 
     }
 
@@ -86,9 +86,10 @@ class CorrectionTimelogController extends Controller
     }
 
     public function store(CorrectionRequest $request) 
-    {
-        $validatedData = $request->validated();
+    {   
 
+        $validatedData = $request->validated();
+        $isDirectlyApproved = $validatedData['isDirectlyApproved'] ?? false;
         $employee_no = auth()->user()->employee_no(); 
 
         DB::beginTransaction();
@@ -117,7 +118,13 @@ class CorrectionTimelogController extends Controller
 
             $application_no = $this->generate_reference_no();
 
-            $data = DB::table('timelog_corrections')->insert([
+            $concern = (match ($validatedData['concern']) {
+                'OO' => 'system_out_of_order',
+                'F'=> 'failure_to_entry',
+                'IE' => 'incorrect_entry'
+            });
+
+            $applicationId = DB::table('timelog_corrections')->insertGetID([
                 'reference_no'      => $application_no,
                 'employee_no'       => $employee_no,
                 'date'              => $validatedData['date'],
@@ -131,25 +138,28 @@ class CorrectionTimelogController extends Controller
                 'work_schedule_id'  => $schedule_and_Schift->work_schedule_id,
                 'attachment'        => $attachmentPath,
                 'remarks'           => $validatedData['remarks'] ?? null,
+                'concern'           => $concern,
                 'created_at'        => now(),
                 'updated_at'        => now(),
             ]);
 
-            $sender = ucwords(Auth::user()->name);
-            $payload = [
-                'type' => 'application',
-                'sender' => $sender,
-                'receiver' => 'admins',
-                'message' => '%b' . $sender . '%b filed a timelog correction request (%bi' . strtoupper($application_no) . ') %bi',
-                'link' => '/admin/timekeeping/timelogs-correction'
-            ];
-            $this->EventService->pushNotification($payload);
+            if(!$isDirectlyApproved) {
+                $sender = ucwords(Auth::user()->name);
+                $payload = [
+                    'type' => 'application',
+                    'sender' => $sender,
+                    'receiver' => 'admins',
+                    'message' => '%b' . $sender . '%b filed an offset application (%bi' . strtoupper($application_no) . ') %bi',
+                    'link' => '/admin/timekeeping/timelogs-correction?id=' . $applicationId
+                ];
+                $this->EventService->pushNotification($payload);
+
+            }
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'data' => $data,
                 'message' => 'Correction Requested!',
             ]);
 

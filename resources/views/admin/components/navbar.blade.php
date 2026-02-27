@@ -1,11 +1,12 @@
 <nav class="navbar admin-nav navbar-expand-md bg-body-secondary navbar-light border-bottom  sticky-top">
     <div class="container-fluid d-flex justify-content-md-between">
         <div class="dropdown">
-            <a class="nav-link text-capitalize d-flex align-items-center gap-3" style="font-size: 14px;" href="" role="button">
+            <!-- <a class="nav-link text-capitalize d-flex align-items-center gap-3" style="font-size: 14px;" href="" role="button">
                 <img class="mini-logo" src="{{ asset('img/dost-logo.png') }}" alt="">
 
                 {{ config('app.client') }}
-            </a>
+            </a> -->
+            <img src="{{ asset('img/logo-horizontal.png') }}" alt="DOST Logo" style="width: 30%" class="d-none d-md-block" id="header-con">
         </div>
         
         <ul class="py-2 navbar-nav ms-auto d-flex justify-content-between gap-4 align-items-center">
