@@ -193,23 +193,30 @@ class ForeCastEmployeeJob implements ShouldQueue
         $otherEarningsNonTaxable = round($otherEarningsNonTaxable, 4);
 
         // sendYearToParent This is the amount that may be affected by RR 3-2015
-        $taxableBonusesAndEarnings =
+        $benefitsEligibleFor90k =
             $midYearBonus +
             $yearEndBonus +
             $longevityPay +
             $hazardPayAnnual +
             $otherEarningsTaxable;
 
-        // Less BIR RR 3-2015 (90k exemption) applies to bonuses/benefits portion (your design)
-        if ($assume('lessBirRR32015')) {
-            $before = $taxableBonusesAndEarnings;
-            $taxableBonusesAndEarnings = max($taxableBonusesAndEarnings - 90000, 0);
+        $taxableBonusesExcess = 0;
 
-            $used = round($before - $taxableBonusesAndEarnings, 4);
-            if ($used > 0) {
-                $addRemark("BIR RR 3-2015 (₱90,000) exemption applied. Exempted amount: ₱" . number_format($used, 2) . ".");
-            }
+        if ($assume('lessBirRR32015')) {
+            $before = $benefitsEligibleFor90k;
+
+            $taxableBonusesExcess = max($benefitsEligibleFor90k - 90000, 0);
+            $exempt = $before - $taxableBonusesExcess;
+
+            $addRemark("BIR RR 3-2015 (₱90,000) exemption applied. Exempted amount: ₱" . number_format($exempt, 2) . ".");
+        } else {
+            // If you’re not applying the exemption rule, then the whole bucket is taxable (depends on your business rules)
+            $taxableBonusesExcess = $benefitsEligibleFor90k;
         }
+
+        // taxable bucket should be:
+        $taxableBonusesAndEarnings =
+            $taxableBonusesExcess;
 
         // -----------------------------
         // Deductions
@@ -231,6 +238,7 @@ class ForeCastEmployeeJob implements ShouldQueue
             ($totalGsis + $totalPagibig + $totalPhilhealth) + $otherDeductions,
             4
         );
+
 
         // -----------------------------
         // Taxable income + tax

@@ -58,11 +58,14 @@ class TaxationBodyService
                 'te.amount_basic_salary',
                 'te.months_covered',
                 'te.amount_anual_total_basic_salary',
+
+                'te.less_bir_rr3_2015',
                 
                 'te.amount_mid_year_bonus',
                 'te.amount_year_end_bonus',
                 'te.amount_longevity_pay',
                 'te.amount_hazard_pay',
+
                 'te.amount_other_earnings_taxable',
                 'te.amount_other_earnings_non_taxable',
                 'te.amount_other_deductions',
@@ -86,33 +89,58 @@ class TaxationBodyService
 
             )
             ->where('te.taxation_id', $id)
-            ->get();
-            // ->map(function ($employee) {
+            ->get()
+            ->map(function ($employee) {
 
-            //     // Money fields
-            //     $moneyFields = [
-            //         'amount_annual_taxable',
-            //         'amount_annual_tax',
-            //         'amount_monthly_tax',
-            //         'amount_other_earnings_taxable',
-            //         'amount_other_deductions',
-            //         'amount_gross',
-            //         'amount_portion_hazard_pay',
-            //         'amount_portion_basic_pay',
-            //         'amount_portion_longevity_pay',
-            //     ];
+                $employee->amount_less =
+                    $employee->amount_other_earnings_non_taxable
+                    + $employee->amount_annual_total_allowables;
 
-            //     foreach ($moneyFields as $field) {
-            //         $employee->{$field} = '₱ ' . number_format((float) $employee->{$field}, 2);
-            //     }
+                if ($employee->less_bir_rr3_2015) {
 
-            //     // Decode remarks JSON safely
-            //     $employee->remarks = $employee->remarks
-            //         ? json_decode($employee->remarks, true) ?? []
-            //         : [];
+                    $totalBenefits =
+                        $employee->amount_mid_year_bonus
+                        + $employee->amount_year_end_bonus
+                        + $employee->amount_longevity_pay
+                        + $employee->amount_hazard_pay
+                        + $employee->amount_other_earnings_taxable;
 
-            //     return $employee;
-            // });
+                    $cap = 90000;
+
+                    $exempt = min($totalBenefits, $cap);                 // non-taxable part
+                    $taxableExcess = max($totalBenefits - $cap, 0);      // taxable part
+
+                    // IMPORTANT:
+                    // Ensure your "non-taxable" less includes ONLY the exempt part
+                    // and NOT the full benefits amount.
+                    $employee->amount_less = $employee->amount_less + $exempt;
+
+                    // Optional: store split for reporting/audit
+                    $employee->amount_total_bonuses = $totalBenefits;
+                    $employee->amount_bonuses_exempt = $exempt;
+                    $employee->amount_bonuses_taxable = $taxableExcess;
+                }
+
+                $employee->tax_computation = $this->db->table('tax_computation_logs')
+                    ->select(
+                        'bracket_from',
+                        'bracket_to',
+                        'annual_income',
+                        'fixed_tax',
+                        'tax_rate',
+                        'excess_over',
+                        'excess_amount',
+                        'tax',
+                        'monthly_tax',
+                        'remarks',
+                        )
+                    ->where('taxation_employee_id', $employee->id)
+                    ->orderByDesc('id')
+                    ->first();
+
+                // Money fields
+                return $employee;
+            });
         if ($employees->isEmpty()) {
             return null;
         }

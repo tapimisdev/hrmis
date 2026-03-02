@@ -16,7 +16,7 @@ class ForecastComputationService
         string $employeeNo,
         array $computedAnnualTaxableAmounts
     ): int {
-        
+
         $taxationEmployeeId = DB::table('taxation_employees')->insertGetId([
             'taxation_id'           => $taxationId,
             'year'                  => data_get($payload, 'year'),
@@ -160,8 +160,8 @@ class ForecastComputationService
             'excess_amount'        => (float) data_get($computedAnnualTaxableAmounts, 'excess_amount', 0),
             'tax'                  => (float) data_get($computedAnnualTaxableAmounts, 'tax', 0),
             'monthly_tax'          => (float) data_get($computedAnnualTaxableAmounts, 'monthly_tax', 0),
-            'bracket_from'         => (float) data_get($computedAnnualTaxableAmounts, 'bracket.bracket.from', 0),
-            'bracket_to'           => (float) data_get($computedAnnualTaxableAmounts, 'bracket.bracket.to', 0),
+            'bracket_from'         => (float) data_get($computedAnnualTaxableAmounts, 'bracket.from', 0),
+            'bracket_to'           => (float) data_get($computedAnnualTaxableAmounts, 'bracket.to', 0),
 
             'remarks'              => data_get($computedAnnualTaxableAmounts, 'remarks', ''),
 

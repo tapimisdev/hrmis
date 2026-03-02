@@ -116,6 +116,11 @@ export function TaxationSettingModel(data = {}) {
 
             amount_gross: toMoney(row.amount_gross),
 
+            amount_less : toMoney(row.amount_less),
+            amount_total_bonuses : toMoney(row.amount_total_bonuses),
+            amount_bonuses_exempt : toMoney(row.amount_bonuses_exempt),
+            amount_bonuses_taxable : toMoney(row.amount_bonuses_taxable),
+
             amount_annual_taxable: toMoney(row.amount_annual_taxable),
             amount_annual_tax: toMoney(row.amount_annual_tax),
             amount_monthly_tax: toMoney(row.amount_monthly_tax),
@@ -126,9 +131,20 @@ export function TaxationSettingModel(data = {}) {
 
             amount_portion_hazard_pay: toMoney(row.amount_portion_hazard_pay),
             amount_portion_basic_pay: toMoney(row.amount_portion_basic_pay),
-            amount_portion_longevity_pay: toMoney(
-                row.amount_portion_longevity_pay,
-            ),
+            amount_portion_longevity_pay: toMoney(row.amount_portion_longevity_pay),
+
+            tax_computation: {
+                bracket_from: toMoney(row.tax_computation.bracket_from),
+                bracket_to: toMoney(row.tax_computation.bracket_to),
+                annual_income: toMoney(row.tax_computation.annual_income),
+                fixed_tax: toMoney(row.tax_computation.fixed_tax),
+                tax_rate: toNumber(row.tax_computation.tax_rate),
+                excess_over: toMoney(row.tax_computation.excess_over),
+                excess_amount: toMoney(row.tax_computation.excess_amount),
+                tax: toMoney(row.tax_computation.tax),
+                monthly_tax: toMoney(row.tax_computation.monthly_tax),
+                remarks: row.tax_computation.remarks,
+            },
             
             // always an array for bullet rendering
             remarks: toRemarksArray(row.remarks),

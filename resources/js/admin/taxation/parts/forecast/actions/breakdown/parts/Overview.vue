@@ -118,6 +118,12 @@
                             <div
                                 class="d-flex justify-content-between small old-row"
                             >
+                                <span class="text-muted">Longevity</span>
+                                <span class="fw-semibold">{{ row.amount_longevity_pay }}</span>
+                            </div>
+                            <div
+                                class="d-flex justify-content-between small old-row"
+                            >
                                 <span class="text-muted"
                                     >Other Earnings (Non-taxable)</span
                                 >
@@ -130,7 +136,7 @@
                                 <span class="text-muted"
                                     >Other Earnings (Taxable)</span
                                 >
-                                <span class="fw-semibold">{{ row.amount_other_earnings_non_taxable }}</span>
+                                <span class="fw-semibold">{{ row.amount_other_earnings_taxable }}</span>
                             </div>
 
                             <div class="old-total small mt-2">
@@ -171,7 +177,7 @@
                                 >
                             </div>
                             <span class="fw-bold small text-danger"
-                                >- ₱ 353,732.16</span
+                                > {{ row.amount_less }}</span
                             >
                         </div>
                     </button>
@@ -188,7 +194,7 @@
                         >
                             <span class="text-muted">Non-taxable earnings</span>
                             <span class="fw-semibold text-danger"
-                                >- ₱ 48,000.00</span
+                                >- {{ row.amount_other_earnings_non_taxable }}</span
                             >
                         </div>
 
@@ -199,25 +205,26 @@
                                 >Total Allowables (GSIS + PHIC + PAGIBIG)</span
                             >
                             <span class="fw-semibold text-danger"
-                                >- ₱ 215,732.16</span
+                                >- {{ row.amount_annual_total_allowables }}</span
                             >
                         </div>
 
                         <div
+                            v-if="row.less_bir_rr3_2015"
                             class="old-row small d-flex justify-content-between"
                         >
                             <span class="text-muted"
-                                >BIR RR 3-2015 exemption</span
+                                >BIR RR 3-2015 exemption (₱ 90,000 Cap)</span
                             >
                             <span class="fw-semibold text-danger"
-                                >- ₱ 90,000.00</span
+                                >- {{ row.amount_bonuses_exempt }}</span
                             >
                         </div>
 
                         <div class="old-total small mt-2">
                             <span class="text-muted">Annual Taxable</span>
                             <span class="fw-bold text-primary"
-                                >₱ 2,376,349.44</span
+                                >{{ row.amount_annual_taxable }}</span
                             >
                         </div>
 
@@ -252,7 +259,7 @@
                                     >TRAIN Law Breakdown</span
                                 >
                             </div>
-                            <span class="fw-bold small">₱ 515,404.83</span>
+                            <span class="fw-bold small">{{ row.amount_annual_tax }}</span>
                         </div>
                     </button>
                 </h2>
@@ -268,7 +275,7 @@
                         >
                             <span class="text-muted">Bracket</span>
                             <span class="fw-semibold"
-                                >₱ 2,000,000 – ₱ 8,000,000</span
+                                >{{ row.tax_computation.bracket_from }} – {{ row.tax_computation.bracket_to }}</span
                             >
                         </div>
 
@@ -276,35 +283,35 @@
                             class="old-row small d-flex justify-content-between"
                         >
                             <span class="text-muted">Base tax</span>
-                            <span class="fw-semibold">₱ 402,500.00</span>
+                            <span class="fw-semibold">{{ row.tax_computation.fixed_tax }}</span>
                         </div>
 
                         <div
                             class="old-row small d-flex justify-content-between"
                         >
                             <span class="text-muted"
-                                >Excess over ₱ 2,000,000</span
+                                >Excess over {{ row.tax_computation.excess_over }}</span
                             >
-                            <span class="fw-semibold">₱ 376,349.44</span>
+                            <span class="fw-semibold">{{ row.tax_computation.excess_amount }}</span>
                         </div>
 
                         <div
                             class="old-row small d-flex justify-content-between"
                         >
                             <span class="text-muted">Rate on excess</span>
-                            <span class="fw-semibold">30%</span>
+                            <span class="fw-semibold">{{ row.tax_computation.tax_rate }}%</span>
                         </div>
 
                         <div
                             class="old-row small d-flex justify-content-between"
                         >
                             <span class="text-muted">Tax on excess</span>
-                            <span class="fw-semibold">₱ 112,904.83</span>
+                            <span class="fw-semibold">{{ row.tax_computation.tax }}</span>
                         </div>
 
                         <div class="old-total small mt-2">
                             <span class="text-muted">Annual Tax</span>
-                            <span class="fw-bold">₱ 515,404.83</span>
+                            <span class="fw-bold">{{ row.amount_annual_tax }}</span>
                         </div>
 
                         <div class="old-tip mt-2 small text-muted">
@@ -316,6 +323,11 @@
                             <i class="fa-solid fa-circle-info me-2"></i>
                             Monthly tax =
                             <span class="fw-semibold">Annual Tax ÷ 12</span>
+                        </div>
+
+                        <div class="old-total small mt-2">
+                            <span class="text-muted">Remarks</span>
+                            <span class="fw-bold">{{ row.tax_computation.remarks }}</span>
                         </div>
                     </div>
                 </div>
@@ -344,7 +356,7 @@
                                 >
                             </div>
                             <span class="fw-bold small text-primary"
-                                >₱ 42,950.40</span
+                                >{{ row.amount_monthly_tax }}</span
                             >
                         </div>
                     </button>
@@ -360,18 +372,18 @@
                             class="old-row small d-flex justify-content-between"
                         >
                             <span class="text-muted">Annual Tax</span>
-                            <span class="fw-semibold">₱ 515,404.83</span>
+                            <span class="fw-semibold">{{ row.amount_annual_tax }}</span>
                         </div>
                         <div
                             class="old-row small d-flex justify-content-between"
                         >
-                            <span class="text-muted">÷ 12 months</span>
-                            <span class="fw-semibold">12</span>
+                            <span class="text-muted">÷ months</span>
+                            <span class="fw-semibold">{{ row.months_covered }}</span>
                         </div>
                         <div class="old-total small mt-2">
                             <span class="text-muted">Monthly Tax</span>
                             <span class="fw-bold text-primary"
-                                >₱ 42,950.40</span
+                                >{{ row.amount_monthly_tax }}</span
                             >
                         </div>
                     </div>
