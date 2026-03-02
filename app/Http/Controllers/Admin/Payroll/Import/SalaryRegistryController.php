@@ -74,6 +74,7 @@ class SalaryRegistryController extends Controller
             'period_covered' => $period_covered,
             'type' => 'Salary Payroll',
             'employment_type' => $employment_type,
+            'date' => $request->date,
             'data' => $parsedData
         ];
 
@@ -109,13 +110,11 @@ class SalaryRegistryController extends Controller
      */
     private function importPayroll(int $employment_type, array $data)
     {
-        $employment_type === 1
+        $response = $employment_type === 1
             ? $this->salaryService->importRegular($data)
             : $this->salaryService->importCOS($data);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'imported successfully.'
-        ]);
+        
+        return $response;
+        
     }
 }

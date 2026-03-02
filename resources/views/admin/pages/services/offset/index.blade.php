@@ -13,7 +13,7 @@
         <x-table id="myTable">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th>ID</th>
                     <th>Employee No</th>
                     <th>Name</th>
                     <th>Status</th>
@@ -33,9 +33,10 @@
         let = DataTable = $('#myTable').DataTable({
             "processing": true,
             "serverSide": true,
+            "order": [[0, 'desc']],
             "ajax": '{{ route('services.offset.index') }}',
             "columns": [
-                { data: "DT_RowIndex", name: 'index' },
+                { data: "id", name: 'id', visible: false },
                 { data: "employee_no", name: 'employee_no' },
                 { data: "name", name: 'name' },
                 { data: "status", name: 'status' },

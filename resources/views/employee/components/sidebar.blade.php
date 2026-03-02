@@ -6,10 +6,12 @@
         <header class="sidebar-header">
             <div class="sidebar-brand">
                 <div class="brand-body">
-                    <button id="imgSwitchBtn" class="p-0 border-0 btn btn-transparent">
+                    <!-- <button id="imgSwitchBtn" class="p-0 border-0 btn btn-transparent">
                         <img src="{{ asset('img/dost-tapi.png') }}" alt="TAPI Logo">
-                    </button>
-                    <h5>HRIS</h5>
+                    </button> -->
+                    <div class="text-center">
+                        <h5 style="letter-spacing: 1px">HRIS PORTAL</h5>
+                    </div>
                 </div>
 
                 <button id="switchMenuBtn" class="sidebar-toggle-btn">

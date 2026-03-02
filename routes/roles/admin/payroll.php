@@ -19,7 +19,7 @@ Route::prefix('payroll')->group(function() {
     Route::get('import/salary', [SalaryRegistryController::class, 'index'])
         ->name('registry.salary.index');
     Route::post('import/salary', [SalaryRegistryController::class, 'store'])
-        ->name('registry.store');
+        ->name('registry.salary.store');
 
     # SALARY PAYROLL
     Route::resource('salary-pay', SalaryController::class)->only('index', 'create', 'show', 'store', 'destroy');
