@@ -446,7 +446,7 @@ export default {
                 if (error.response?.status === 422) {
                     this.errors = error.response.data.errors || {};
 
-                    // ✅ go to the first tab that has errors
+                    // go to the first tab that has errors
                     this.goToFirstErrorTab();
 
                     // If still not moving, it means your error keys are totally different.

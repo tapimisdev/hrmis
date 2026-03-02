@@ -3,6 +3,7 @@
 namespace App\Jobs\Taxation;
 
 use App\Services\Taxation\ForecastComputationService;
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -11,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 
 class ForeCastEmployeeJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
     private $taxation_id;
     private $employee_no;
@@ -42,6 +43,11 @@ class ForeCastEmployeeJob implements ShouldQueue
      */
     public function handle(ForecastComputationService $service): void
     {
+        // sleep(10);
+        if ($this->batch()?->cancelled()) {
+            return;
+        }
+        
         $year = (int) ($this->payload['year'] ?? now()->year);
 
         // -----------------------------

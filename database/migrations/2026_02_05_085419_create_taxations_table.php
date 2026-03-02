@@ -37,6 +37,9 @@ return new class extends Migration
             $table->unsignedTinyInteger('portion_basic_pay');
             $table->unsignedTinyInteger('portion_longevity_pay');
 
+            $table->string('status')->default('processing');
+            $table->string('batch_id')->nullable();
+
             $table->boolean('is_active');
             
             $table->timestamps();

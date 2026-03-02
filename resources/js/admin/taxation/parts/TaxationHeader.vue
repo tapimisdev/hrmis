@@ -19,6 +19,7 @@
                 <RunForecastModal
                     ref="foreCastModal"
                     :selectedYear="selectedYear"
+                    @forecast-ran="$emit('taxation-data-updated')"
                 />
                 <button
                     class="fb-btn fb-primary"

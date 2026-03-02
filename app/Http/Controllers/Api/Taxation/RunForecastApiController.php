@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Taxation\RunForecastRequest;
 use App\Jobs\Taxation\ForeCastEmployeeJob;
 use App\Services\Taxation\RunForecastService;
+use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class RunForecastApiController extends Controller
 {
@@ -25,10 +28,29 @@ class RunForecastApiController extends Controller
         DB::beginTransaction();
         try {
             $employee_nos = $this->run_forecast_service->getAllEmployees();
-            $taxation_id = $this->run_forecast_service->createTaxation($validated_data);
-            foreach ($employee_nos as $emp_no) {
-                ForeCastEmployeeJob::dispatch($taxation_id, $emp_no, $validated_data);
-            }
+            $taxation_id  = $this->run_forecast_service->createTaxation($validated_data);
+
+            // Build jobs
+            $jobs = collect($employee_nos)
+                ->map(fn($emp_no) => new ForeCastEmployeeJob($taxation_id, $emp_no, $validated_data))
+                ->values()
+                ->all();
+
+            // Dispatch as a batch (still within transaction so we can store batch id safely)
+            $batch = Bus::batch($jobs)
+                ->name("Forecast Taxation #{$taxation_id}")
+                ->then(function (Batch $batch) use ($taxation_id) {
+                    // all jobs completed successfully
+                    DB::table('taxations')->where('id', $taxation_id)->update(['status' => 'completed']);
+                })
+                ->catch(function (Batch $batch, Throwable $e) use ($taxation_id) {
+                    DB::table('taxations')->where('id', $taxation_id)->update(['status' => 'failed']);
+                })
+                ->dispatch();
+
+            // save batch id in taxation row
+            DB::table('taxations')->where('id', $taxation_id)->update(['batch_id' => $batch->id]);
+
             DB::commit();
             return response()->json(['message' => 'success'], 200);
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {

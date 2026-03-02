@@ -17,8 +17,8 @@ class RunForecastRequest extends FormRequest
     {
         return [
             
-            // 'year' => ['required', 'numeric', 'unique:taxations,year'],
-            'year' => ['required', 'numeric'],
+            'year' => ['required', 'numeric', 'unique:taxations,year'],
+            // 'year' => ['required', 'numeric'],
 
             // =========================
             // Tax settings (TAB A)
