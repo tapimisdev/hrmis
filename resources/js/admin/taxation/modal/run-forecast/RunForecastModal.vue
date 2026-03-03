@@ -177,8 +177,8 @@ export default {
                 othersDeductions: [],
 
                 allocation: {
-                    hazardPayPct: 65,
-                    basicPayPct: 20,
+                    basicPayPct: 65,
+                    hazardPayPct: 20,
                     longevityPct: 15,
                 },
             },
@@ -448,10 +448,6 @@ export default {
 
                     // go to the first tab that has errors
                     this.goToFirstErrorTab();
-
-                    // If still not moving, it means your error keys are totally different.
-                    // Quick debug (remove after):
-                    // console.log("Validation errors keys:", Object.keys(this.errors));
                 } else {
                     Swal.fire(
                         "Error",
@@ -476,11 +472,11 @@ export default {
 
             this.form.assumptions = {
                 basicPay: true,
-                midYear: false,
-                yearEnd: false,
-                longevity: false,
-                hazardPay: false,
-                lessBirRR32015: false,
+                midYear: true,
+                yearEnd: true,
+                longevity: true,
+                hazardPay: true,
+                lessBirRR32015: true,
             };
 
             this.form.othersEarnings = [];
@@ -492,9 +488,9 @@ export default {
             };
 
             this.form.allocation = {
-                hazardPayPct: 65,
-                basicPayPct: 20,
-                longevityPct: 15,
+                basicPayPct: 80,
+                hazardPayPct: 20,
+                longevityPct: 0,
             };
         },
     },

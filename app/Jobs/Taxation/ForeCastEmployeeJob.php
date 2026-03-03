@@ -43,7 +43,6 @@ class ForeCastEmployeeJob implements ShouldQueue
      */
     public function handle(ForecastComputationService $service): void
     {
-        // sleep(10);
         if ($this->batch()?->cancelled()) {
             return;
         }

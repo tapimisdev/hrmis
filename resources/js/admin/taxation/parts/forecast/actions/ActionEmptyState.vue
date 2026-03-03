@@ -3,7 +3,7 @@
         <template #header> No Employee Selected </template>
 
         <div
-            class="empty-state text-center d-flex flex-column align-items-center justify-content-center"
+            class="empty-state text-center d-flex flex-column align-items-center justify-content-center p-4"
         >
             <div
                 class="empty-icon d-flex align-items-center justify-content-center mb-3"

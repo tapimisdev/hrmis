@@ -1,7 +1,12 @@
 <template>
     <div class="border rounded p-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="fw-bold">{{ title }}</div>
+            
+            <div class="fw-bold mb-2 d-flex align-items-center">
+                <slot name="title">
+                    {{ title }}
+                </slot>
+            </div>
 
             <button type="button" class="fb-btn fb-primary" @click="add">
                 <i class="fa-solid fa-plus"></i>

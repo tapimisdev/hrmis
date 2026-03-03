@@ -9,7 +9,7 @@
                     class="fb-btn fb-secondary"
                     @click="resetDefault"
                 >
-                    Reset (65/20/15)
+                    Reset (80/20/0)
                 </button>
                 <button
                     type="button"
@@ -28,25 +28,6 @@
 
         <div class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">Hazard Pay (%)</label>
-                <div class="input-group input-group-sm">
-                    <input
-                        type="number"
-                        class="form-control"
-                        min="0"
-                        max="100"
-                        step="1"
-                        :value="local.hazardPayPct"
-                        @input="update('hazardPayPct', $event.target.value)"
-                    />
-                    <span class="input-group-text">%</span>
-                </div>
-                <small v-if="errors?.hazardPayPct" class="text-danger">{{
-                    errors.hazardPayPct[0]
-                }}</small>
-            </div>
-
-            <div class="col-md-4">
                 <label class="form-label">Basic Pay (%)</label>
                 <div class="input-group input-group-sm">
                     <input
@@ -62,6 +43,25 @@
                 </div>
                 <small v-if="errors?.basicPayPct" class="text-danger">{{
                     errors.basicPayPct[0]
+                }}</small>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label">Hazard Pay (%)</label>
+                <div class="input-group input-group-sm">
+                    <input
+                        type="number"
+                        class="form-control"
+                        min="0"
+                        max="100"
+                        step="1"
+                        :value="local.hazardPayPct"
+                        @input="update('hazardPayPct', $event.target.value)"
+                    />
+                    <span class="input-group-text">%</span>
+                </div>
+                <small v-if="errors?.hazardPayPct" class="text-danger">{{
+                    errors.hazardPayPct[0]
                 }}</small>
             </div>
 
@@ -150,9 +150,9 @@ export default {
         resetDefault() {
             this.$emit("update:modelValue", {
                 ...this.modelValue,
-                hazardPayPct: 65,
-                basicPayPct: 20,
-                longevityPct: 15,
+                hazardPayPct: 20,
+                basicPayPct: 80,
+                longevityPct: 0,
             });
         },
 

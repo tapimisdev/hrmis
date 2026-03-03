@@ -7,6 +7,7 @@ use App\Services\Taxation\Parts\TaxationBodyService;
 use App\Services\Taxation\Parts\TaxationSettingsService;
 use App\Services\Taxation\Parts\TaxationCardsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TaxationController extends Controller
 {
@@ -26,11 +27,72 @@ class TaxationController extends Controller
 
         $taxation = $this->taxationSettingsService->getActiveTaxationWithSettings((int) $year);
 
-        if($taxation) {
+        // dd($taxation);
+
+
+        if ($taxation) {
+
+            // if($taxation->status === 'processing') {
+            //     return response()->json([]);
+            // }
+
             $taxation->cards = $this->taxationCardsService->getTaxationEmployeesTotalCards($taxation->id ?? 0) ?? [];
             $taxation->body = $this->taxationBodyService->getEmployees($taxation->id) ?? [];
         }
 
+        // dd($taxation);
+
         return response()->json($taxation);
+    }
+
+    public function status(Request $request)
+    {
+        $batchId = $request->query('batch_id');
+
+        if (!$batchId) {
+            return response()->json([
+                'message' => 'Batch ID is required.'
+            ], 400);
+        }
+
+        $jobBatch = DB::table('job_batches')
+            ->where('id', $batchId)
+            ->first();
+
+        if (!$jobBatch) {
+            return response()->json([
+                'message' => 'Batch not found.',
+                'processed_percentage' => 0,
+                'pending_percentage'   => 0,
+                'is_finished'          => false,
+            ], 404);
+        }
+
+        if ($jobBatch->total_jobs == 0) {
+            return response()->json([
+                'processed_percentage' => 0,
+                'pending_percentage'   => 0,
+                'is_finished'          => false,
+            ]);
+        }
+
+        $processed = $jobBatch->total_jobs - $jobBatch->pending_jobs;
+
+        $processedPercentage = (int) round(
+            ($processed / $jobBatch->total_jobs) * 100
+        );
+
+        $pendingPercentage = 100 - $processedPercentage;
+
+        $isFinished = $processedPercentage >= 100;
+
+        return response()->json([
+            'total_jobs'           => $jobBatch->total_jobs,
+            'pending_jobs'         => $jobBatch->pending_jobs,
+            'failed_jobs'          => $jobBatch->failed_jobs,
+            'processed_percentage' => $processedPercentage,
+            'pending_percentage'   => $pendingPercentage,
+            'is_finished'          => $isFinished,
+        ]);
     }
 }

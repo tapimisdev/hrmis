@@ -40,10 +40,10 @@
         <div class="fw-bold mb-2">Monthly Tax Portion Allocation</div>
         <ul class="mb-0">
             <li>
-                Hazard Pay: <b>{{ form.allocation.hazardPayPct }}%</b>
+                Basic Pay: <b>{{ form.allocation.basicPayPct }}%</b>
             </li>
             <li>
-                Basic Pay: <b>{{ form.allocation.basicPayPct }}%</b>
+                Hazard Pay: <b>{{ form.allocation.hazardPayPct }}%</b>
             </li>
             <li>
                 Longevity: <b>{{ form.allocation.longevityPct }}%</b>

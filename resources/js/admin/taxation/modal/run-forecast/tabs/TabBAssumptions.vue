@@ -34,26 +34,43 @@
                             id="lessBirRR32015"
                             v-model="proxy.assumptions.lessBirRR32015"
                         />
-                        <label class="form-check-label" for="lessBirRR32015"
-                            >Less BIR RR3-2015</label
+                        <label
+                            class="form-check-label d-flex justify-content-between align-items-center"
+                            for="lessBirRR32015"
                         >
+                            <span>Less BIR RR 3-2015</span>
+
+                            <AppTooltip
+                                text="Applies the ₱90,000 tax exemption for bonuses and benefits under BIR RR 3-2015. This reduces the taxable portion of bonuses."
+                            />
+                        </label>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-12 col-lg-6">
                 <DynamicRows
-                    title="Others (Earnings)"
                     v-model="proxy.othersEarnings"
                     :errors="errors"
                     error-key="othersEarnings"
                     :enableTaxType="true"
-                />
+                >
+                    <template #title>
+                        <span>Others (Earnings)</span>
+
+                        <AppTooltip
+                            class="ms-2"
+                            text="Includes additional taxable or non-taxable earnings such as bonuses, allowances, or other compensation not listed above."
+                        />
+                    </template>
+                </DynamicRows>
             </div>
 
             <div class="col-12">
                 <div class="border rounded p-3">
-                    <div class="fw-bold mb-2">Allowable Deductions</div>
+                    <div class="fw-bold mb-2 d-flex align-items-center">
+                        <span>Allowable Deductions</span>
+                    </div>
 
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -105,15 +122,26 @@
                     <hr class="my-3" />
 
                     <DynamicRows
-                        title="Others (Allowable Deductions)"
                         v-model="proxy.othersDeductions"
                         :errors="errors"
-                        error-key="othersDeductions"
-                    />
+                        error-key="othersDeductions">
 
-                    <small v-if="errors?.othersDeductions" class="text-danger">{{
-                        errors.othersDeductions
-                    }}</small>
+                        <template #title>
+                            <span>Others (Allowable Deductions)</span>
+
+                            <AppTooltip
+                                class="ms-2"
+                                text="Includes other allowable deductions not listed above, such as approved employee deductions or BIR-recognized adjustments that reduce taxable income."
+                            />
+                        </template>
+                
+                    </DynamicRows>
+
+                    <small
+                        v-if="errors?.othersDeductions"
+                        class="text-danger"
+                        >{{ errors.othersDeductions }}</small
+                    >
                 </div>
             </div>
         </div>
@@ -122,10 +150,11 @@
 
 <script>
 import DynamicRows from "./partials/DynamicRows.vue";
+import AppTooltip from "../../../../../components/AppTooltip.vue";
 
 export default {
     name: "TabBAssumptions",
-    components: { DynamicRows },
+    components: { DynamicRows, AppTooltip },
     props: {
         modelValue: { type: Object, required: true },
         errors: { type: Object, default: () => ({}) },
@@ -136,8 +165,16 @@ export default {
         return {
             earningChecks: [
                 { key: "basicPay", label: "Basic Pay", disabled: true },
-                { key: "midYear", label: "Mid Year (same as monthly salary)", disabled: false },
-                { key: "yearEnd", label: "Year End (same as monthly salary)", disabled: false },
+                {
+                    key: "midYear",
+                    label: "Mid Year (same as monthly salary)",
+                    disabled: false,
+                },
+                {
+                    key: "yearEnd",
+                    label: "Year End (same as monthly salary)",
+                    disabled: false,
+                },
                 { key: "longevity", label: "Longevity", disabled: false },
                 { key: "hazardPay", label: "Hazard Pay", disabled: false },
             ],

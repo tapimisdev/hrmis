@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('taxation')->group(function() {
 
     Route::resource('/', TaxationController::class)->names('taxation');
+    Route::get('/status', [TaxationController::class, 'status']);
 
     Route::resource('train-law', TrainLawController::class)->names('taxation.train-law');
     Route::patch('train-law/{id}/inactive', [TrainLawController::class, 'setInactive'])->name('train-law.inactive');

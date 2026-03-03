@@ -25,6 +25,6 @@ export default {
 .card-c {
   border-radius: 2px !important;
   position: sticky;
-  top: 80px;
+  top: 110px;
 }
 </style>

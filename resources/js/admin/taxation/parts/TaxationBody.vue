@@ -14,6 +14,7 @@
 
                 <button
                     class="fb-tab"
+                    :disabled="disable_recon"
                     :class="{ active: activeTab === 'reconcile' }"
                     @click="activeTab = 'reconcile'"
                 >
@@ -51,6 +52,10 @@ export default {
         body: {
             type: Array,
             required: true
+        },
+        disable_recon: {
+            type: Boolean,
+            default: true
         }
     },
     data() {
@@ -60,3 +65,14 @@ export default {
     }
 };
 </script>
+
+<style lang="scss" scoped>
+.fb-tab {
+    &:disabled {
+        background-color: var(--bs-secondary-bg);
+        color: var(--bs-secondary-color);
+        opacity: 0.7;
+        pointer-events: none;
+    }
+}
+</style>
