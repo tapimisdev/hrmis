@@ -60,6 +60,7 @@
         <tbody>
         </tbody>
     </x-table>
+    {{$view_id}}
 </div>
 @endsection
 
@@ -74,6 +75,7 @@
             ajax: {
                 url: '{{ route('timelogs-correction.index') }}',
                 data: function(d) {
+                    d.view_id = {{$view_id}}
                     d.month = $('#filter-month').val(); 
                     d.year = $('#filter-year').val();  
                     d.status = $('#filter-status').val(); 

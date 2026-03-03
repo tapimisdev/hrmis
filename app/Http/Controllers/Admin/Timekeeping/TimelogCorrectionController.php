@@ -27,25 +27,40 @@ class TimelogCorrectionController extends Controller
         $this->middleware('permission:hr.correction.approval')->only(['edit', 'store']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        if(request()->ajax()) {
+        $view_id = $request->input('view_id', null);
+
+        if ($request->ajax()) {
+
             $query = DB::table('timelog_corrections as tc')
                 ->select('tc.*', 'ep.firstname', 'ep.middlename', 'ep.lastname')
                 ->leftJoin('employee_personal as ep', 'tc.employee_no', '=', 'ep.employee_no');
 
-            $month = request()->get('month', date('n'));
-            if($month) {
-                $query->whereMonth('tc.date', $month);
+            $month = null;
+            $year = null;
+
+            if ($view_id) {
+                $record = $query->where('tc.id', $view_id)->first();
+                
+                if ($record) {
+                    $month = date('n', strtotime($record->date));
+                    $year  = date('Y', strtotime($record->date));
+                }
+
+                $query = DB::table('timelog_corrections as tc')
+                    ->select('tc.*', 'ep.firstname', 'ep.middlename', 'ep.lastname')
+                    ->leftJoin('employee_personal as ep', 'tc.employee_no', '=', 'ep.employee_no');
             }
 
-            $year = request()->get('year', date('Y')); 
-            if($year) {
-                $query->whereYear('tc.date', $year);
-            }
+            $month = $month ?? $request->input('month', date('n'));
+            $year  = $year ?? $request->input('year', date('Y'));
 
-            $status = request()->get('status');
-            if($status) {
+            $query->whereMonth('tc.date', $month)
+                ->whereYear('tc.date', $year);
+
+            $status = $request->input('status');
+            if ($status) {
                 $query->where('tc.status', $status);
             }
 
@@ -56,7 +71,7 @@ class TimelogCorrectionController extends Controller
             return $this->datatable($data);
         }
 
-        return view('admin.pages.timekeeping.timelog-correction.index');
+        return view('admin.pages.timekeeping.timelog-correction.index', compact('view_id'));
     }
 
     public function edit($id)

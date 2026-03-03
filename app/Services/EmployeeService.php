@@ -23,49 +23,49 @@ class EmployeeService {
     }
 
     # GET EMPLOYEE NUMBER BASED ON FULL NAME
-public function getEmployeeNoBasedOnFullName(string $name): ?string
-{
-    $name = trim($name);
-    if (empty($name)) return null;
+    public function getEmployeeNoBasedOnFullName(string $name): ?string
+    {
+        $name = trim($name);
+        if (empty($name)) return null;
 
-    // Step 1: Remove single-letter middle initials with a dot (T. -> '')
-    $name = preg_replace('/\b[A-Z]\.\b/i', '', $name);
+        // Step 1: Remove single-letter middle initials with a dot (T. -> '')
+        $name = preg_replace('/\b[A-Z]\.\b/i', '', $name);
 
-    // Step 2: Split by comma (LASTNAME, FIRST MIDDLE)
-    $parts = explode(',', $name);
+        // Step 2: Split by comma (LASTNAME, FIRST MIDDLE)
+        $parts = explode(',', $name);
 
-    if (count($parts) === 2) {
-        $lastName = trim($parts[0]);
-        $firstMiddle = trim($parts[1]);
-    } else {
-        $lastName = '';
-        $firstMiddle = trim($parts[0]);
-    }
+        if (count($parts) === 2) {
+            $lastName = trim($parts[0]);
+            $firstMiddle = trim($parts[1]);
+        } else {
+            $lastName = '';
+            $firstMiddle = trim($parts[0]);
+        }
 
-    // Step 3: Take only the first word of firstMiddle (FIRSTNAME) for simplicity
-    $firstName = explode(' ', $firstMiddle)[0] ?? '';
+        // Step 3: Take only the first word of firstMiddle (FIRSTNAME) for simplicity
+        $firstName = explode(' ', $firstMiddle)[0] ?? '';
 
-    // Step 4: Reformat as "FirstName LastName"
-    $formattedName = trim("{$firstName} {$lastName}");
+        // Step 4: Reformat as "FirstName LastName"
+        $formattedName = trim("{$firstName} {$lastName}");
 
-    // Step 5: Split into words for flexible search
-    $searchParts = explode(' ', $formattedName);
+        // Step 5: Split into words for flexible search
+        $searchParts = explode(' ', $formattedName);
 
-    // Step 6: Query users table
-    $employee = DB::table('users')
-        ->leftJoin('employee_information as ei', 'users.id', 'ei.user_id')
-        ->where(function($query) use ($searchParts) {
-            foreach ($searchParts as $part) {
-                $part = trim($part);
-                if ($part !== '') {
-                    $query->where('name', 'LIKE', "%{$part}%");
+        // Step 6: Query users table
+        $employee = DB::table('users')
+            ->leftJoin('employee_information as ei', 'users.id', 'ei.user_id')
+            ->where(function($query) use ($searchParts) {
+                foreach ($searchParts as $part) {
+                    $part = trim($part);
+                    if ($part !== '') {
+                        $query->where('name', 'LIKE', "%{$part}%");
+                    }
                 }
-            }
-        })
-        ->first(['employee_no']);
+            })
+            ->first(['employee_no']);
 
-    return $employee?->employee_no ?? null;
-}
+        return $employee?->employee_no ?? null;
+    }
     # GET EMPLOYEE'S USER ID BASED ON EMPLOYEE NUMBER
     public function getEmployeeUserId($employee_no)
     {
@@ -227,12 +227,20 @@ public function getEmployeeNoBasedOnFullName(string $name): ?string
 
             $latestOrg = DB::table('employee_organization as eo1')
                 ->select('eo1.*')
-                ->whereRaw('eo1.id = (select max(eo2.id) from employee_organization eo2 where eo2.employee_no = eo1.employee_no)');
+                ->whereRaw('eo1.effectivity_date = (
+                    SELECT MAX(eo2.effectivity_date)
+                    FROM employee_organization eo2
+                    WHERE eo2.employee_no = eo1.employee_no
+                )');
 
             $latestSalary = DB::table('employee_salary as es1')
                 ->select('es1.*')
-                ->whereRaw('es1.id = (select max(es2.id) from employee_salary es2 where es2.employee_no = es1.employee_no)');
-
+                ->whereRaw('es1.effectivity_date = (
+                    SELECT MAX(es2.effectivity_date)
+                    FROM employee_salary es2
+                    WHERE es2.employee_no = es1.employee_no
+                )');
+                
             $latestShift = DB::table('employee_shift_work_schedule as sw1')
                 ->select('sw1.*')
                 ->whereRaw('sw1.id = (select max(sw2.id) from employee_shift_work_schedule sw2 where sw2.employee_no = sw1.employee_no)');
