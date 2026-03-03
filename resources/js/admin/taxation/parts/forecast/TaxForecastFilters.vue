@@ -1,29 +1,8 @@
 <template>
     <div>
         <!-- HEADER ACTION BAR -->
-        <div
-            class="d-flex justify-content-between align-items-center border-bottom mb-3"
-        >
+        <div class="d-flex justify-content-between align-items-center border-bottom mb-3 pb-3">
             <div class="fw-semibold">Employee Tax Forecast</div>
-
-            <div class="d-flex gap-2 mb-3">
-                <button
-                    class="fb-btn fb-secondary"
-                    type="button"
-                    @click="$emit('recompute-all')"
-                >
-                    <i class="fa-solid fa-arrows-rotate me-1"></i>
-                    Recompute (All)
-                </button>
-                <button
-                    class="fb-btn fb-primary"
-                    type="button"
-                    @click="$emit('edit-inputs-all')"
-                >
-                    <i class="fa-solid fa-arrows-rotate me-1"></i>
-                    Edit Inputs
-                </button>
-            </div>
         </div>
 
         <!-- FILTER BAR -->
@@ -34,31 +13,18 @@
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
 
-                <input
-                    :value="search"
-                    @input="$emit('update:search', $event.target.value)"
-                    type="text"
-                    class="form-control"
-                    placeholder="Search employee no..."
-                />
+                <input :value="search" @input="$emit('update:search', $event.target.value)" type="text"
+                    class="form-control" placeholder="Search employee no..." />
 
-                <button
-                    class="btn btn-outline-secondary"
-                    type="button"
-                    @click="$emit('clear')"
-                    :disabled="!hasActiveFilters"
-                    title="Clear"
-                >
+                <button class="btn btn-outline-secondary" type="button" @click="$emit('clear')"
+                    :disabled="!hasActiveFilters" title="Clear">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <!-- Division Filter -->
-            <select
-                class="form-select form-select-sm" style="max-width: 300px;"
-                :value="selectedDivision"
-                @change="$emit('update:selectedDivision', $event.target.value)"
-            >
+            <select class="form-select form-select-sm" style="max-width: 300px;" :value="selectedDivision"
+                @change="$emit('update:selectedDivision', $event.target.value)">
                 <option value="">All Divisions</option>
                 <option v-for="d in divisions" :key="d" :value="d">
                     {{ d }}
@@ -66,12 +32,8 @@
             </select>
 
             <!-- Unit Filter -->
-            <select
-                class="form-select form-select-sm" style="max-width: 300px;"
-                :value="selectedUnit"
-                @change="$emit('update:selectedUnit', $event.target.value)"
-                :disabled="units.length === 0"
-            >
+            <select class="form-select form-select-sm" style="max-width: 300px;" :value="selectedUnit"
+                @change="$emit('update:selectedUnit', $event.target.value)" :disabled="units.length === 0">
                 <option value="">
                     {{ units.length ? "All Units" : "No units" }}
                 </option>

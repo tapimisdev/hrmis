@@ -22,6 +22,14 @@
                     @forecast-ran="$emit('taxation-data-updated')"
                 />
                 <button
+                    class="fb-btn bg-danger"
+                    v-if="!show_button"
+                >
+                    <i class="fa-solid fa-trash me-1"></i>
+                    Delete Permanently
+                </button>
+
+                <button
                     class="fb-btn fb-primary"
                     v-if="show_button"
                     @click="$refs.foreCastModal.handleOpenaddModal()"
