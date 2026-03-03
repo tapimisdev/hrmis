@@ -44,6 +44,7 @@ class InformationController extends Controller
         }
 
         $data = $employee_no && $isExists ? $this->employeeService->getEmployee('information', $employee_no) : [];
+
         return view('admin.pages.hris.information', compact('divisions', 'employment_types', 'shifts', 'schedules', 'isExists', 'employee_no', 'data'));
     }
 
@@ -258,6 +259,7 @@ class InformationController extends Controller
              * EMPLOYEE INFORMATION
              * -------------------------------------------------
              */
+
             DB::table('employee_information')->updateOrInsert(
                 ['employee_no' => $employeeNo],
                 [
@@ -266,13 +268,12 @@ class InformationController extends Controller
                     'date_hired_organization' => $request->date_hired_organization ?? null,
                     'date_resigned'           => $request->date_resigned ?? null,
                     'account_status'          => $request->status ?? null,
-                    'salary_method'           => $request->salary_method ?? null,
                     'payroll_account_no'      => $request->payroll_account_number ?? null,
                     'user_id'                 => $user_id,
                     'toUpdatePassword'        => $toChangePassword,
-                    'two_percent'             => $request->has_two_percent ? 1 : 0,
-                    'three_percent'           => $request->has_three_percent ? 1 : 0,
-                    'five_percent'            => $request->has_five_percent ? 1 : 0,
+                    'two_percent'             => $request->has_two_percent == 'yes' ? 1 : 0,
+                    'three_percent'           => $request->has_three_percent == 'yes' ? 1 : 0,
+                    'five_percent'            => $request->has_five_percent == 'yes' ? 1 : 0,
                     'updated_at'              => now(),
                     'created_at'              => $isExists ? DB::raw('created_at') : now(),
                 ]

@@ -50,7 +50,7 @@ class AccumulativeLeaveCredits extends Command
      */
     public function handle(): void
     {
-        $monthYear = now()->addMonth()->format('Y-m');
+        $monthYear = now()->format('Y-m');
 
         $this->appendLog("Starting leave credits update for {$monthYear}.");
         $this->info("Starting leave credits update for {$monthYear}...");

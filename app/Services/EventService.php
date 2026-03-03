@@ -66,15 +66,26 @@ class EventService {
     {
         $userId = $request->user_id;
         $now = now();
+
         if ($request->isMarkAllRead == true) {
 
-            DB::table('notification_reads')
-                ->where('user_id', $userId)
-                ->update([
-                    'is_read' => 1,
-                    'read_at' => $now,
-                    'updated_at' => $now,
-                ]);
+            $notificationIds = DB::table('notifications')
+                ->pluck('id')
+                ->toArray();
+
+            foreach ($notificationIds as $notificationId) {
+                DB::table('notification_reads')->updateOrInsert(
+                    [
+                        'notification_id' => $notificationId,
+                        'user_id' => $userId,
+                    ],
+                    [
+                        'is_read' => 1,
+                        'read_at' => $now,
+                        'updated_at' => $now,
+                    ]
+                );
+            }
 
             return [
                 'status' => 'success',
