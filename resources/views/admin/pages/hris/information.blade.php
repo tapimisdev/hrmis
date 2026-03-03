@@ -459,7 +459,7 @@
                                                 <label class="mb-2" for="has_two_percent">2% Tax</label>
                                                 <select id="has_two_percent" name="has_two_percent" class="form-select">
                                                     <option value=""> - CHOOSE - </option>
-                                                    <option value="no" {{ optional($data)->two_percent ? 'selected' : '' }}>No</option>
+                                                    <option value="no" {{ optional($data)->two_percent ? '' : 'selected' }}>No</option>
                                                     <option value="yes" {{ optional($data)->two_percent ? 'selected' : '' }}>Yes</option>
                                                 </select>
                                                 <div class="error-field"></div>
@@ -469,7 +469,7 @@
                                                 <label class="mb-2" for="has_three_percent">3% Tax</label>
                                                 <select id="has_three_percent" name="has_three_percent" class="form-select">
                                                     <option value=""> - CHOOSE - </option>
-                                                    <option value="no" {{ optional($data)->three_percent ? 'selected' : '' }}>No</option>
+                                                    <option value="no" {{ optional($data)->three_percent ? '' : 'selected' }}>No</option>
                                                     <option value="yes" {{ optional($data)->three_percent ? 'selected' : '' }}>Yes</option>
                                                 </select>
                                                 <div class="error-field"></div>
@@ -479,7 +479,7 @@
                                                 <label class="mb-2" for="has_five_percent">5% Tax</label>
                                                 <select id="has_five_percent" name="has_five_percent" class="form-select">
                                                     <option value=""> - CHOOSE - </option>
-                                                    <option value="no" {{ optional($data)->five_percent ? 'selected' : '' }}>No</option>
+                                                    <option value="no"  {{ optional($data)->five_percent ? '' : 'selected' }}>No</option>
                                                     <option value="yes" {{ optional($data)->five_percent ? 'selected' : '' }}>Yes</option>
                                                 </select>
                                                 <div class="error-field"></div>

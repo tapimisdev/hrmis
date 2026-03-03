@@ -288,6 +288,7 @@ class TimelogStatisticsController extends Controller
             $monthYear = $request->monthYear;
 
             $data = $this->getTimelogStats($monthYear);
+            
             $result = [
                 'topAbsent' => $this->findTop($data, 'absences'),
                 'topUndertime' => $this->findTop($data, 'undertimes'),

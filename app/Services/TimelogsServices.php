@@ -125,8 +125,10 @@ class TimelogsServices {
                 'time_out'  => $valid['out']->date_time ?? null,
                 'overtime_in'  => $valid['overtime_in']->date_time ?? null,
                 'overtime_out'  => $valid['overtime_out']->date_time ?? null,
-                'shift_id'  => $valid['out']->shift_id ?? null,
-                'work_schedule_id'  => $valid['out']->work_schedule_id ?? null,
+                // 'shift_id'  => $valid['out']->shift_id ?? null,
+                // 'work_schedule_id'  => $valid['out']->work_schedule_id ?? null,
+                'shift_id'  => $valid['shift_id'] ?? null,
+                'work_schedule_id'  => $valid['work_schedule_id'] ?? null,
             ];
         }
 
