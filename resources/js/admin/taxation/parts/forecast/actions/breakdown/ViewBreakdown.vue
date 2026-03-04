@@ -10,8 +10,9 @@
             </div>
         </template>
 
-        <div class="wrapper p-2">
-            <DynamicTabs :tabs="tabs" :active-index="0" />
+        <div class="wrapper py-3">
+            <BreakdownSkeleton v-if="is_loading"/>
+            <DynamicTabs v-else :tabs="tabs" :active-index="0" />
         </div>
     </TaxTemplate>
 </template>
@@ -20,11 +21,23 @@
 import axios from "axios";
 import TaxTemplate from "./../components/TaxTemplate.vue";
 import DynamicTabs from "./components/DynamicTabs.vue";
+import BreakdownSkeleton from "./components/BreakdownSkeleton.vue";
 import Overview from "./parts/Overview.vue";
+import SalaryView from "./parts/SalaryView.vue";
+import LongevityView from "./parts/LongevityView.vue";
+import BonusView from "./parts/BonusView.vue";
+import AllowablesView from "./parts/AllowablesView.vue";
+import OtherEarningsView from "./parts/OtherEarningsView.vue";
 
 export default {
     name: "ViewBreakDown",
-    components: { TaxTemplate, DynamicTabs },
+    components: { 
+        TaxTemplate, 
+        DynamicTabs,
+        SalaryView,
+        BreakdownSkeleton,
+        OtherEarningsView
+    },
     props: {
         row: { type: Object, required: true },
     },
@@ -32,6 +45,7 @@ export default {
         return {
             token: localStorage.getItem("auth_token"),
             breakdown: null, // store API response here
+            is_loading: false
         };
     },
 
@@ -47,6 +61,63 @@ export default {
                         breakdown: this.breakdown,
                     },
                 },
+                {
+                    id: "salary",
+                    name: "Basic salary",
+                    component: SalaryView,
+                    props: {
+                        data: this.breakdown.basic_salary,
+                    },
+                },
+                {
+                    id: "longevity",
+                    name: "Longevity",
+                    component: LongevityView,
+                    props: {
+                        data: this.breakdown.longetivity_pay,
+                    },
+                },
+                {
+                    id: "hazard",
+                    name: "Hazard pay",
+                    component: SalaryView,
+                    props: {
+                        data: this.breakdown.hazard_pay,
+                    },
+                },
+                {
+                    id: "mid_year",
+                    name: "Mid year",
+                    component: BonusView,
+                    props: {
+                        data: this.breakdown.mid_year,
+                    },
+                },
+                {
+                    id: "year_end",
+                    name: "Year end",
+                    component: BonusView,
+                    props: {
+                        data: this.breakdown.year_end,
+                    },
+                },
+                {
+                    id: "allowables",
+                    name: "Allowables",
+                    component: AllowablesView,
+                    props: {
+                        data: this.breakdown.allowables_deductions,
+                    },
+                },
+                {
+                    id: "other_earnings",
+                    name: "Other Earnings",
+                    component: OtherEarningsView,
+                    props: {
+                        data: this.breakdown.other_earnings,
+                    },
+                },
+                
             ];
         },
     },
@@ -54,9 +125,10 @@ export default {
     methods: {
         fetchBreakDown() {
             if (!this.row?.id) return;
-
+            this.breakdown = null;
+            this.is_loading = true;
             axios
-                .get(`/api/tax/breakdown/${this.row.id}`, {
+                .get(`/admin/taxation/breakdowns/${this.row.id}`, {
                     headers: { Authorization: `Bearer ${this.token}` },
                 })
                 .then((response) => {
@@ -65,6 +137,8 @@ export default {
                 .catch((err) => {
                     console.error(err);
                     this.breakdown = null;
+                }).finally(() => {
+                    this.is_loading = false;
                 });
         },
     },

@@ -95,4 +95,19 @@ class TaxationController extends Controller
             'is_finished'          => $isFinished,
         ]);
     }
+
+    public function breakdowns($taxation_employee_id)
+    {
+
+        $computations = DB::table('taxation_employee_computations')
+            ->where('taxation_employee_id', $taxation_employee_id)
+            ->get()
+            ->keyBy('type') // This sets the key to the value of the 'type' column
+            ->map(function ($item) {
+                $item->raw_computation = json_decode($item->raw_computation, true);
+                return $item;
+            });
+
+        return response()->json($computations);
+    }
 }

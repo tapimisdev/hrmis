@@ -1,6 +1,6 @@
 <template>
     <!-- Tabs Nav -->
-    <ul class="nav nav-tabs custom-tabs small" role="tablist">
+    <ul class="nav nav-pills small" role="tablist">
         <li
             v-for="(tab, i) in tabs"
             :key="tab.id"
@@ -23,7 +23,7 @@
     </ul>
 
     <!-- Tabs Content -->
-    <div class="tab-content pt-3">
+    <div class="tab-content p-2">
         <div
             v-for="(tab, i) in tabs"
             :key="tab.id + '-pane'"

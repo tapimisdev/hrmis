@@ -171,7 +171,6 @@ class ForecastComputationService
             'updated_at'           => now(),
         ]);
 
-        // dd($payload['computations']);
         foreach ($payload['computations'] as $computation) {
 
             // Guard: skip anything not an array computation object
@@ -433,6 +432,8 @@ class ForecastComputationService
             'formula' => 'Monthly Salary × 15%',
             'months'  => $hazardMonthlyBreakdown,
             'inputs'  => [
+                'months_covered'   => $res['months_covered'],
+                'effective_date'   => $res['salary_effective_date'],
                 'monthly_salary' => $res['monthly_salary'],
                 'rate'           => 0.15,
                 'rate_percent'   => 15,
