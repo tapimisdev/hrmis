@@ -17,7 +17,13 @@ class RunForecastRequest extends FormRequest
     {
         return [
             
-            'year' => ['required', 'numeric', 'unique:taxations,year'],
+            'year' => [
+                'required',
+                'numeric',
+                Rule::unique('taxations', 'year')->where(function ($query) {
+                    return $query->where('is_active', 1);
+                }),
+            ],
             // 'year' => ['required', 'numeric'],
 
             // =========================

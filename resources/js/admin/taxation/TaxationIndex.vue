@@ -2,6 +2,7 @@
     <div class="container-fluid" style="padding: 16px 18px">
         <TaxationHeader
             :show_button="show_run_button"
+            @delete="handleDelete"
             @taxation-data-updated="fetchTaxation"
         />
         <!-- show skeleton while processing -->
@@ -57,6 +58,7 @@ export default {
             finalized: false,
 
             show_run_button: false,
+            taxation_id: null,
             is_loading: false,
 
             batch_data: [],
@@ -79,8 +81,10 @@ export default {
 
                     if (data.id != null) {
                         this.show_run_button = false;
+                        this.taxation_id = data.id;
                     } else {
                         this.show_run_button = true;
+                        this.taxation_id = null;
                     }
 
                     if (data.status === "processing") {
@@ -169,6 +173,51 @@ export default {
                 clearInterval(this.statusPollId);
                 this.statusPollId = null;
             }
+        },
+
+        async handleDelete() {
+            Swal.fire({
+                title: "Delete Taxation",
+                text: "This action cannot be undone. To confirm, type DELETE below.",
+                icon: "warning",
+                input: "text",
+                inputPlaceholder: "Type DELETE to confirm",
+                showCancelButton: true,
+                confirmButtonText: "Delete",
+                confirmButtonColor: "#dc3545",
+                cancelButtonText: "Cancel",
+                inputValidator: (value) => {
+                    if (!value) {
+                        return "You must type DELETE to confirm";
+                    }
+                    if (value !== "DELETE") {
+                        return "Confirmation text must be DELETE";
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+
+                    axios.delete(`/admin/taxation/${this.taxation_id}/delete`, {
+                        headers: { Authorization: `Bearer ${this.token}` },
+                    }).then(() => {
+                        Swal.fire({
+                            title: "Deleted!",
+                            text: "The records have been deleted.",
+                            icon: "success"
+                        });
+                        this.fetchFinalTaxation();
+                 }).catch((err) => {
+                    console.log(err.response?.data?.message);
+
+                    Swal.fire({
+                        title: "Error",
+                        text: err.response?.data?.message || "Something went wrong while deleting.",
+                        icon: "error"
+                    });
+                });
+
+                }
+            });
         },
     },
 

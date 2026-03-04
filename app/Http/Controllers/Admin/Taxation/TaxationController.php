@@ -110,4 +110,25 @@ class TaxationController extends Controller
 
         return response()->json($computations);
     }
+
+    public function destroy($taxation_id)
+    {
+        $updated = DB::table('taxations')
+            ->where('id', $taxation_id)
+            ->where('is_active', 1)
+            ->update([
+                'is_active' => 0,
+                'updated_at' => now()
+            ]);
+
+        if (!$updated) {
+            return response()->json([
+                'message' => 'Record not found or already deleted.'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Record deleted successfully.'
+        ]);
+    }
 }

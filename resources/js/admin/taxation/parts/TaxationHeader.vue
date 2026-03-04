@@ -16,24 +16,14 @@
 
             <!-- RIGHT -->
             <div class="fb-buttons">
-                <RunForecastModal
-                    ref="foreCastModal"
-                    :selectedYear="selectedYear"
-                    @forecast-ran="$emit('taxation-data-updated')"
-                />
-                <button
-                    class="fb-btn bg-danger"
-                    v-if="!show_button"
-                >
+                <RunForecastModal ref="foreCastModal" :selectedYear="selectedYear"
+                    @forecast-ran="$emit('taxation-data-updated')" />
+                <button class="fb-btn bg-danger" v-if="!show_button" @click="$emit('delete')">
                     <i class="fa-solid fa-trash me-1"></i>
                     Delete Permanently
                 </button>
 
-                <button
-                    class="fb-btn fb-primary"
-                    v-if="show_button"
-                    @click="$refs.foreCastModal.handleOpenaddModal()"
-                >
+                <button class="fb-btn fb-primary" v-if="show_button" @click="$refs.foreCastModal.handleOpenaddModal()">
                     <i class="fa-solid fa-calculator me-1"></i>
                     Run Forecast
                 </button>
@@ -65,11 +55,16 @@ export default {
             type: Boolean,
             default: true,
         },
+        taxation_id: {
+            type: Number,
+            default: null
+        }
     },
     data() {
         const currentYear = new Date().getFullYear();
-
+        const token = localStorage.getItem("auth_token");
         return {
+            token,
             selectedYear: currentYear,
             years: [
                 currentYear + 2,
