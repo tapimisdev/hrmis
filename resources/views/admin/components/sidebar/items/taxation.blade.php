@@ -19,7 +19,6 @@
         <ul class="nested-list">
 
             {{-- TRAIN LAW --}}
-            <!-- @can('hr.tax_train_law.view') -->
             <li class="nested-item">
                 <a href="{{ route('taxation.train-law.index') }}"
                     class="{{ request()->is('admin/taxation/train-law*') ? 'active' : '' }}">
@@ -35,7 +34,6 @@
                     <span>Taxation</span>
                 </a>
             </li>
-            <!-- @endcan -->
         </ul>
     </div>
 </li>
