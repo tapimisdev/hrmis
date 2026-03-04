@@ -71,25 +71,25 @@
                                 <span class="text-muted">Annual Basic Salary</span>
                                 <span class="fw-semibold">{{ row.amount_anual_total_basic_salary }}</span>
                             </div>
-                            <div class="d-flex justify-content-between small old-row">
+                            <div v-if="row.hazard_pay" class="d-flex justify-content-between small old-row">
                                 <span class="text-muted">Hazard Pay (Annual)</span>
                                 <span class="fw-semibold">{{ row.amount_hazard_pay }}</span>
                             </div>
-                            <div class="d-flex justify-content-between small old-row">
+                            <div v-if="row.mid_year" class="d-flex justify-content-between small old-row">
                                 <span class="text-muted">Mid-Year Bonus</span>
                                 <span class="fw-semibold">{{ row.amount_mid_year_bonus }}</span>
                             </div>
-                            <div class="d-flex justify-content-between small old-row">
+                            <div v-if="row.year_end" class="d-flex justify-content-between small old-row">
                                 <span class="text-muted">Year-End Bonus</span>
                                 <span class="fw-semibold">{{ row.amount_year_end_bonus }}</span>
                             </div>
-                            <div class="d-flex justify-content-between small old-row">
+                            <div v-if="row.longevity" class="d-flex justify-content-between small old-row">
                                 <span class="text-muted">Longevity</span>
                                 <span class="fw-semibold">{{ row.amount_longevity_pay }}</span>
                             </div>
                             <div class="d-flex justify-content-between small old-row">
                                 <span class="text-muted">Other Earnings (Non-taxable)</span>
-                                <span class="fw-semibold">{{ row.amount_other_earnings_taxable }}</span>
+                                <span class="fw-semibold">{{ row.amount_other_earnings_non_taxable }}</span>
                             </div>
                             <div class="d-flex justify-content-between small old-row">
                                 <span class="text-muted">Other Earnings (Taxable)</span>
@@ -138,7 +138,7 @@
                     <div class="accordion-body px-0 pt-2">
                         <div class="old-row small d-flex justify-content-between">
                             <span class="text-muted">Non-taxable earnings</span>
-                            <span class="fw-semibold text-danger">- {{ row.amount_other_earnings_non_taxable }}</span>
+                            <span class="fw-semibold text-danger">- {{ row.amount_other_earnings_non_taxable }} asdasd</span>
                         </div>
 
                         <div class="old-row small d-flex justify-content-between">

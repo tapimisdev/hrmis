@@ -55,6 +55,11 @@ class TaxationBodyService
                 'p.name as position',
                 'u.code as unit',
 
+                'te.mid_year',
+                'te.year_end',
+                'te.longevity',
+                'te.hazard_pay',
+
                 'te.amount_basic_salary',
                 'te.months_covered',
                 'te.amount_anual_total_basic_salary',

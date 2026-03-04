@@ -57,8 +57,7 @@ export default {
                     name: "Overview",
                     component: Overview,
                     props: {
-                        row: this.row,
-                        breakdown: this.breakdown,
+                        row: this.row
                     },
                 },
                 {
@@ -72,6 +71,7 @@ export default {
                 {
                     id: "longevity",
                     name: "Longevity",
+                    is_show: this.row.longevity,
                     component: LongevityView,
                     props: {
                         data: this.breakdown.longetivity_pay,
@@ -80,6 +80,7 @@ export default {
                 {
                     id: "hazard",
                     name: "Hazard pay",
+                    is_show: this.row.hazard_pay,
                     component: SalaryView,
                     props: {
                         data: this.breakdown.hazard_pay,
@@ -88,6 +89,7 @@ export default {
                 {
                     id: "mid_year",
                     name: "Mid year",
+                    is_show: this.row.mid_year,
                     component: BonusView,
                     props: {
                         data: this.breakdown.mid_year,
@@ -96,6 +98,7 @@ export default {
                 {
                     id: "year_end",
                     name: "Year end",
+                    is_show: this.row.year_end,
                     component: BonusView,
                     props: {
                         data: this.breakdown.year_end,

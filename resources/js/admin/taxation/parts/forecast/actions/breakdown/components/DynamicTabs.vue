@@ -1,8 +1,8 @@
 <template>
     <!-- Tabs Nav -->
-    <ul class="nav nav-pills small" role="tablist">
+    <ul class="nav nav-pills small mb-2 px-2" role="tablist">
         <li
-            v-for="(tab, i) in tabs"
+            v-for="(tab, i) in visibleTabs"
             :key="tab.id"
             class="nav-item"
             role="presentation"
@@ -25,7 +25,7 @@
     <!-- Tabs Content -->
     <div class="tab-content p-2">
         <div
-            v-for="(tab, i) in tabs"
+            v-for="(tab, i) in visibleTabs"
             :key="tab.id + '-pane'"
             class="tab-pane fade"
             :class="{ show: i === activeIndex, active: i === activeIndex }"
@@ -52,5 +52,10 @@ export default {
             default: 0,
         },
     },
+    computed: {
+        visibleTabs() {
+            return this.tabs.filter(tab => tab.is_show !== false);
+        }
+    }
 };
 </script>

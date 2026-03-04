@@ -99,6 +99,11 @@ export function TaxationSettingModel(data = {}) {
             position: row.position ?? "",
             unit: row.unit ?? "",
 
+            mid_year: toBool(row.mid_year),
+            year_end: toBool(row.year_end),
+            longevity: toBool(row.longevity),
+            hazard_pay: toBool(row.hazard_pay),
+
             less_bir_rr3_2015: toBool(data?.less_bir_rr3_2015),
 
             amount_basic_salary: toMoney(row.amount_basic_salary),
