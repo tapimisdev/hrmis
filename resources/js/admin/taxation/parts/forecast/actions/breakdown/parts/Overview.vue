@@ -138,7 +138,7 @@
                     <div class="accordion-body px-0 pt-2">
                         <div class="old-row small d-flex justify-content-between">
                             <span class="text-muted">Non-taxable earnings</span>
-                            <span class="fw-semibold text-danger">- {{ row.amount_other_earnings_non_taxable }} asdasd</span>
+                            <span class="fw-semibold text-danger">- {{ row.amount_other_earnings_non_taxable }}</span>
                         </div>
 
                         <div class="old-row small d-flex justify-content-between">
