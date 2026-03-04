@@ -157,6 +157,9 @@ export default {
     selectedDivision() {
       this.selectedUnit = "";
     },
+    body() {
+      this.deleteRow();
+    }
   },
 
   methods: {
@@ -181,13 +184,14 @@ export default {
 
     editRow(row) {
       this.setAction("edit", row);
+      console.log(row);
     },
 
     recomputeRow(row) {
       this.setAction("breakdown", row);
     },
 
-    deleteRow(row) {
+    deleteRow() {
       this.setAction("empty", null);
     },
   },

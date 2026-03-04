@@ -319,8 +319,6 @@ class ForeCastEmployeeJob implements ShouldQueue
             $allowablesComputations ?? []
         );
 
-        // dd($payload['computations']);
-
         // Save
         $service->createTaxationEmployees(
             $payload,

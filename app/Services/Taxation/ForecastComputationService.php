@@ -173,6 +173,8 @@ class ForecastComputationService
 
         foreach ($payload['computations'] as $computation) {
 
+            
+
             // Guard: skip anything not an array computation object
             if (!is_array($computation)) {
                 continue;
@@ -191,6 +193,8 @@ class ForecastComputationService
                                         ?? str_replace(',', '', (string) ($computation['result'] ?? 0))),
             ]);
         }
+
+        // dd($payload['computations']);
 
         return $taxationEmployeeId;
     }

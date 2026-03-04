@@ -6,7 +6,10 @@
             @taxation-data-updated="fetchTaxation"
         />
         <!-- show skeleton while processing -->
-        <TaxationSkeleton v-if="is_processing || is_loading" :batch_data="batch_data" />
+        <TaxationSkeleton
+            v-if="is_processing || is_loading"
+            :batch_data="batch_data"
+        />
         <LoadingAccordion
             v-if="is_processing"
             class="accordion"
@@ -15,7 +18,10 @@
 
         <template v-else>
             <TaxationCard :cards="taxationData.cards" />
-            <TaxationBody :body="taxationData.body" :disable_recon="show_run_button" />
+            <TaxationBody
+                :body="taxationData.body"
+                :disable_recon="show_run_button"
+            />
             <TaxSettings :settings="taxationData.settings" />
         </template>
     </div>
@@ -176,48 +182,106 @@ export default {
         },
 
         async handleDelete() {
-            Swal.fire({
+            // Optional guard: block deleting while processing to avoid weird states
+            if (this.is_processing) {
+                Swal.fire({
+                    title: "Still Processing",
+                    text: "You can’t delete while the taxation is processing. Please wait for it to finish.",
+                    icon: "info",
+                });
+                return;
+            }
+
+            if (!this.taxation_id) {
+                Swal.fire({
+                    title: "No Taxation Selected",
+                    text: "There is no saved taxation record to delete for this year.",
+                    icon: "info",
+                });
+                return;
+            }
+
+            const res = await Swal.fire({
                 title: "Delete Taxation",
-                text: "This action cannot be undone. To confirm, type DELETE below.",
+                html: `
+            <div class="text-start">
+                <div>This action cannot be undone.</div>
+                <div class="mt-2">To confirm, type <b>DELETE</b> below.</div>
+            </div>
+        `,
                 icon: "warning",
                 input: "text",
                 inputPlaceholder: "Type DELETE to confirm",
+                inputAttributes: { autocapitalize: "off" },
                 showCancelButton: true,
                 confirmButtonText: "Delete",
-                confirmButtonColor: "#dc3545",
                 cancelButtonText: "Cancel",
-                inputValidator: (value) => {
-                    if (!value) {
-                        return "You must type DELETE to confirm";
+                confirmButtonColor: "#dc3545",
+                reverseButtons: true,
+                preConfirm: (value) => {
+                    const v = String(value || "")
+                        .trim()
+                        .toUpperCase();
+                    if (v !== "DELETE") {
+                        Swal.showValidationMessage(
+                            "Confirmation text must be DELETE",
+                        );
+                        return false;
                     }
-                    if (value !== "DELETE") {
-                        return "Confirmation text must be DELETE";
-                    }
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
+                    return true;
+                },
+            });
 
-                    axios.delete(`/admin/taxation/${this.taxation_id}/delete`, {
-                        headers: { Authorization: `Bearer ${this.token}` },
-                    }).then(() => {
-                        Swal.fire({
-                            title: "Deleted!",
-                            text: "The records have been deleted.",
-                            icon: "success"
-                        });
-                        this.fetchFinalTaxation();
-                 }).catch((err) => {
-                    console.log(err.response?.data?.message);
+            if (!res.isConfirmed) return;
 
-                    Swal.fire({
-                        title: "Error",
-                        text: err.response?.data?.message || "Something went wrong while deleting.",
-                        icon: "error"
-                    });
+            // UI lock + reset anything that could conflict
+            this.is_loading = true;
+            this.resetProcessingState(); // stop polling + clear batch/progress
+            // (optional) also clear view instantly so user feels it changed
+            this.taxationData = TaxationSettingModel();
+            this.show_run_button = true;
+
+            try {
+                await axios.delete(
+                    `/admin/taxation/${this.taxation_id}/delete`,
+                );
+
+                Swal.fire({
+                    title: "Deleted!",
+                    text: "The records have been deleted.",
+                    icon: "success",
                 });
 
+                // clear the current id because it no longer exists
+                this.taxation_id = null;
+
+                // refresh based on selected year (this will set show_run_button properly)
+                if (this.selectedYear) {
+                    this.fetchTaxation(this.selectedYear);
+                } else {
+                    // fallback: keep blank state
+                    this.is_loading = false;
                 }
-            });
+            } catch (err) {
+                const msg =
+                    err?.response?.data?.message ||
+                    "Something went wrong while deleting.";
+
+                Swal.fire({
+                    title: "Error",
+                    text: msg,
+                    icon: "error",
+                });
+                this.is_loading = false;
+            }
+        },
+        resetProcessingState() {
+            this.stopStatusPolling();
+            this.finalized = false;
+            this.is_processing = false;
+            this.batch_id = null;
+            this.progress = 0;
+            this.batch_data = [];
         },
     },
 
