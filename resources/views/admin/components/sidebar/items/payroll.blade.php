@@ -57,7 +57,7 @@
                 </a>
             </li>
             <li class="nested-item">
-                <a href="{{ route('registry.salary.index', ['employment_type' => 1]) }}"
+                <a href="{{ route('registry.salary.index') }}"
                 class="{{ request()->is('admin/payroll/import/registry*') ? 'active' : '' }}">
                     <i class="fa-solid fa-upload"></i>
                     <span>Import Registry</span>

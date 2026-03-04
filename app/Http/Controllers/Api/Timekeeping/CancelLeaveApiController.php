@@ -114,6 +114,7 @@ class CancelLeaveApiController extends Controller
             ->where('id', $dateId)
             ->first();
 
+
         if (!$leaveDate) {
             throw new \Exception('Leave data not found.');
         }

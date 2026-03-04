@@ -95,7 +95,7 @@ export default {
 
             const printCss = `
         <style>
-          @page { size: A4 landscape; margin: 6mm; }
+          @page { size: A4 landscape; margin: 4mm 6mm 0mm 6mm; }
 
           html, body {
             margin: 0 !important;
@@ -132,7 +132,7 @@ export default {
           .dtr-table td, .dtr-table th { font-size: 0.70rem !important; }
           .top-info-table td, .top-info-table th { font-size: 0.72rem !important; }
 
-          #print-root { display: block; }
+          #print-root { display: block; font-size: 12px;}
         </style>
       `;
 

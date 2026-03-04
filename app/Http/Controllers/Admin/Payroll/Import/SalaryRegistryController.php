@@ -25,11 +25,11 @@ class SalaryRegistryController extends Controller
         $employment_types = DB::table('employment_types')->get();
 
         $options = [
-            'salary payroll',
-            'hazard payroll',
-            'sla payroll',
-            'pera & rata payroll',
-            'longevity payroll'
+            'salary payroll' => route('registry.salary.index'),
+            'hazard payroll' => '',
+            'sla payroll' => '',
+            'pera & rata payroll' => '',
+            'longevity payroll' => ''
         ];
 
         $active = 'salary payroll';
