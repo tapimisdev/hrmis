@@ -465,7 +465,7 @@
                                                 <div class="error-field"></div>
                                             </div>
 
-                                            <div class="col-12 col-md-4 mb-3">
+                                           <div class="col-12 col-md-4 mb-3">
                                                 <label class="mb-2" for="has_three_percent">3% Tax</label>
                                                 <select id="has_three_percent" name="has_three_percent" class="form-select">
                                                     <option value=""> - CHOOSE - </option>
