@@ -10,13 +10,13 @@
             <div class="card">
                 <div class="card-header p-0">
                     <ul class="nav nav-tabs">
-                        @foreach($options as $option)
+                        @foreach($options as $key => $link)
                         <li class="nav-item">
                             <a 
-                                class="{{ $option == $active ? 'active' : '' }} text-uppercase fw-bold nav-link {{ request('option') == str_replace(' ', '_', $option) ? 'active' : '' }}" 
-                                href=""
+                                class="{{ $key == $active ? 'active' : '' }} text-uppercase fw-bold nav-link {{ request('option') == str_replace(' ', '_', $key) ? 'active' : '' }}" 
+                                href="{{$link}}"
                             >
-                                {{ $option }}
+                                {{ $key }}
                             </a>
                         </li>
                     @endforeach

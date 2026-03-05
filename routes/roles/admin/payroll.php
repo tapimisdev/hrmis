@@ -16,9 +16,9 @@ Route::prefix('payroll')->group(function() {
     Route::resource('groups/{id}/employees', PayrollGroupEmployeesController::class)->names('payroll.group.employees');
 
     # IMPORTING 
-    Route::get('import/salary', [SalaryRegistryController::class, 'index'])
+    Route::get('import/salary-pay', [SalaryRegistryController::class, 'index'])
         ->name('registry.salary.index');
-    Route::post('import/salary', [SalaryRegistryController::class, 'store'])
+    Route::post('import/salary-pay', [SalaryRegistryController::class, 'store'])
         ->name('registry.salary.store');
 
     # SALARY PAYROLL

@@ -338,19 +338,12 @@
                             </div>
                         </div>
                     </div>
-
                     <div
-                        class="d-flex justify-content-center w-100 text-center mt-5 pb-4"
-                        style="gap: 100px"
-                    >
-                        <div>
-                            <div
-                                class="mt-3 small text-center fst-italic text-body-secondary"
-                            >
-                                I hereby certify that the above records are true
-                                and correct.
-                            </div>
-                            <div class="mt-5 text-uppercase mb-1">
+                        class="d-flex justify-content-center w-100 text-center mt-0"
+                        style="gap: 100px;"
+                      >
+                        <div style="width: 320px">
+                            <div class="mt-2 text-uppercase mb-1">
                                 {{ originalName }}
                             </div>
                             <div
@@ -360,15 +353,20 @@
                                 EMPLOYEE'S SIGNATURE
                             </div>
                         </div>
-                        <div style="position: relative; top: 63.5px">
+                        <div style="width: 320px; position: relative; top: 15px">
                             <div
-                                class="border-top pt-1 small fw-semibold mt-5"
-                                style="min-width: 320px"
+                                class="border-top pt-1 small fw-semibold mt-3"
                             >
                                 SUPERVISOR'S SIGNATURE
                             </div>
                         </div>
                     </div>
+                    <div
+                          class="mt-4 small text-center fst-italic text-body-secondary"
+                      >
+                          I hereby certify that the above records are true
+                          and correct.
+                      </div>
                 </div>
             </div>
         </div>

@@ -123,7 +123,6 @@ export default {
                         d.month = vm.month;
                         d.year = vm.year;
 
-                        // ✅ If searchable is set, pass it to server
                         if (vm.searchable && vm.searchable.trim() !== "") {
                             d.searchable = vm.searchable.trim();
                         }

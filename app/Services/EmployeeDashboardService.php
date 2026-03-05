@@ -182,8 +182,13 @@ class EmployeeDashboardService {
             $seeners = [];
             if ($item->seeners) {
                 foreach (explode(',', $item->seeners) as $seener) {
-                    [$id, $name] = explode(':', $seener);
-                    $seeners[] = ['id' => (int) $id, 'name' => $name];
+                    $parts = explode(':', $seener);
+                    if (count($parts) === 2) {
+                        [$id, $name] = $parts;
+                        $seeners[] = ['id' => (int) $id, 'name' => $name];
+                    } else {
+                        $seeners[] = ['id' => 0, 'name' => $parts[0]];
+                    }
                 }
             }
 

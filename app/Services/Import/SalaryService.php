@@ -110,7 +110,68 @@ class SalaryService
 
     public function cleanRegular($filePath): array
     {
+        $spreadsheet = IOFactory::load($filePath);
+        $sheet = $spreadsheet->getActiveSheet();
+        $highestRow = $sheet->getHighestDataRow();
+        $highestColumn = 'S'; 
 
+        $data = [];
+
+        for ($row = 7; $row <= $highestRow; $row++) {
+            $rowData = $sheet->rangeToArray("A{$row}:S{$row}", null, true, false)[0];
+            $data[] = $rowData;
+        }
+
+        $columns = [
+            "Rate/Month",
+            "Salary Grade",
+            "GSIS",
+            "Withholding Tax",
+            "PAG-IBIG",
+            "PHIL-HEALTH",
+            "Pag-ibig MP2 (Savings)",
+            "Pag-ibig Calamity Loan",
+            "Pag-ibig MPL",
+            "GSIS Financial Assistance Loan",
+            "GSIS MPL",
+            "GSIS Policy Loan",
+            "GSIS Emer. Loan",
+            "GSIS MPL LITE",
+            "Landbank",
+            "Total Deductions",
+            "Net Pay",
+            "Net Salary 15th",
+            "Net Salary 31st"
+        ];
+
+        $cleaned = array_map(function ($row) use ($columns) {
+            return array_combine($columns, $row);
+        }, $data);
+
+        // Remove rows with TOTAL
+        $cleaned = array_filter($cleaned, function ($row) {
+            return stripos((string)$row['Rate/Month'], 'TOTAL') === false;
+        });
+
+        // Remove rows after Grand Total
+        $grandTotalIndex = null;
+        foreach ($cleaned as $i => $row) {
+            if (stripos((string)$row['Rate/Month'], 'Grand Total') !== false) {
+                $grandTotalIndex = $i;
+                break;
+            }
+        }
+
+        if (!is_null($grandTotalIndex)) {
+            $cleaned = array_slice($cleaned, 0, $grandTotalIndex);
+        }
+
+        // Remove rows with missing key fields
+        $cleaned = array_filter($cleaned, function ($row) {
+            return !empty($row['Rate/Month']) && !empty($row['Salary Grade']);
+        });
+
+        return array_values($cleaned); // reset keys
     }
 
     public function importCOS(array $data)
