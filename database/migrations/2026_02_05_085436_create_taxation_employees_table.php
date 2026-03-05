@@ -43,11 +43,14 @@ return new class extends Migration
             $table->decimal('amount_year_end_bonus', 15, 4)->default(0);
             $table->decimal('amount_longevity_pay', 15, 4)->default(0);
             $table->decimal('amount_hazard_pay', 15, 4)->default(0);
+            $table->decimal('amount_total_bonuses', 15, 4)->default(0);
 
             $table->decimal('amount_other_earnings_taxable', 15, 4)->default(0);
             $table->decimal('amount_other_earnings_non_taxable', 15, 4)->default(0);
             
             $table->decimal('amount_gross', 15, 4)->default(0);
+
+            $table->decimal('amount_bonuses_exempt', 15, 4)->default(0);
 
             $table->decimal('amount_other_deductions', 15, 4)->default(0);
             $table->decimal('amount_annual_total_allowables', 15, 4)->default(0);

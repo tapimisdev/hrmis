@@ -76,6 +76,9 @@ class TaxationBodyService
                 'te.amount_other_deductions',
                 'te.amount_annual_total_allowables',
 
+                'te.amount_total_bonuses',
+                'te.amount_bonuses_exempt',
+
                 'te.amount_gross',
 
                 'te.amount_annual_taxable',
@@ -97,34 +100,10 @@ class TaxationBodyService
             ->get()
             ->map(function ($employee) {
 
-                $employee->amount_less =
+            $employee->amount_less =
                     $employee->amount_other_earnings_non_taxable
-                    + $employee->amount_annual_total_allowables;
-
-                if ($employee->less_bir_rr3_2015) {
-
-                    $totalBenefits =
-                        $employee->amount_mid_year_bonus
-                        + $employee->amount_year_end_bonus
-                        + $employee->amount_longevity_pay
-                        + $employee->amount_hazard_pay
-                        + $employee->amount_other_earnings_taxable;
-
-                    $cap = 90000;
-
-                    $exempt = min($totalBenefits, $cap);                 // non-taxable part
-                    $taxableExcess = max($totalBenefits - $cap, 0);      // taxable part
-
-                    // IMPORTANT:
-                    // Ensure your "non-taxable" less includes ONLY the exempt part
-                    // and NOT the full benefits amount.
-                    $employee->amount_less = $employee->amount_less + $exempt;
-
-                    // Optional: store split for reporting/audit
-                    $employee->amount_total_bonuses = $totalBenefits;
-                    $employee->amount_bonuses_exempt = $exempt;
-                    $employee->amount_bonuses_taxable = $taxableExcess;
-                }
+                    + $employee->amount_annual_total_allowables
+                    + $employee->amount_bonuses_exempt;
 
                 $employee->tax_computation = $this->db->table('tax_computation_logs')
                     ->select(

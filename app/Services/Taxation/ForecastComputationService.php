@@ -54,6 +54,9 @@ class ForecastComputationService
 
             'amount_gross'          => (float) data_get($payload, 'amounts.gross', 0),
 
+            'amount_total_bonuses'     => (float) data_get($payload, 'amounts.amount_total_bonuses', 0),
+            'amount_bonuses_exempt'     => (float) data_get($payload, 'amounts.amount_bonuses_exempt', 0),
+
             'amount_other_deductions' => (float) data_get($payload, 'amounts.otherDeductions', 0),
             'amount_annual_total_allowables' => (float) data_get($payload, 'amounts.annualTotalAllowables', 0),
 

@@ -193,12 +193,11 @@ class ForeCastEmployeeJob implements ShouldQueue
         $benefitsEligibleFor90k =
             $midYearBonus +
             $yearEndBonus +
-            $longevityPay +
-            $hazardPayAnnual +
             $otherEarningsTaxable;
 
         $taxableBonusesExcess = 0;
 
+        $exempt = 0.0;
         if ($assume('lessBirRR32015')) {
             $before = $benefitsEligibleFor90k;
 
@@ -213,6 +212,8 @@ class ForeCastEmployeeJob implements ShouldQueue
 
         // taxable bucket should be:
         $taxableBonusesAndEarnings =
+            $longevityPay +
+            $hazardPayAnnual +
             $taxableBonusesExcess;
 
         // -----------------------------
@@ -282,7 +283,7 @@ class ForeCastEmployeeJob implements ShouldQueue
         // -----------------------------
         // Build final payload (saved)
         // -----------------------------
-        $payload['amounts']['annualTaxable']          = $taxableIncome;
+        $payload['amounts']['annualTaxable']         = $taxableIncome;
         $payload['amounts']['annualTax']             = (float) ($computedAnnualTax['tax'] ?? 0);
         $payload['amounts']['monthlyTax']            = (float) ($computedAnnualTax['monthly_tax'] ?? 0);
         $payload['amounts']['annualTotalAllowables'] = $totalAllowableDeduction;
@@ -293,6 +294,9 @@ class ForeCastEmployeeJob implements ShouldQueue
         $payload['amounts']['yearEndBonus']          = $yearEndBonus;
         $payload['amounts']['longevityPay']          = $longevityPay;
         $payload['amounts']['hazardPay']             = $hazardPayAnnual;
+
+        $payload['amounts']['amount_total_bonuses']  = round($exempt, 4);
+        $payload['amounts']['amount_bonuses_exempt'] = round($benefitsEligibleFor90k, 4);
 
         $payload['amounts']['otherEarningsTaxable']  = $otherEarningsTaxable;
         $payload['amounts']['otherEarningsNonTaxable'] = $otherEarningsNonTaxable;
