@@ -302,7 +302,11 @@ class ComputationService
             $lateUnderC      = $toCents($late_undertime_amount);
             $earningsC       = $toCents($total_earnings);
 
-            $hmo = $this->getHmo($employee_no);
+            if($this->cutoff === 'second_cutoff') {
+                $hmo = $this->getHmo($employee_no);
+            } else {
+                $hmo = 0;
+            }
 
             $hmoC = $toCents($hmo) ?? 0;
 
