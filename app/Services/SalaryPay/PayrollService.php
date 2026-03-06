@@ -343,7 +343,7 @@ class PayrollService
 
     private function hasSalary($emp_no)
     {
-        $employee_salary = DB::table('employee_salary')
+        $employee_salary = DB::tabpayrollDetailsle('employee_salary')
             ->where('employee_no', $emp_no)
             ->whereDate('effectivity_date', '<=', $this->date)
             ->orderByDesc('effectivity_date')
@@ -712,7 +712,6 @@ class PayrollService
                             ];
                         }
 
-                        $net_pay = $firstAmount + $d->net_pay;
                     } else {
                         // Normal case: first cutoff
                         [, $currentEnd] = explode('-', $currentPeriod);
@@ -724,7 +723,6 @@ class PayrollService
                             'amount' => (float) ($d->net_pay ?? 0),
                         ];
 
-                        $net_pay = (float) ($d->net_pay ?? 0);
                     }
                 }
             }
@@ -741,7 +739,7 @@ class PayrollService
                 'holiday'     => $d->holiday,
                 'gross_pay'   => $d->gross_pay ?? null,
                 'total_deductions' => $d->total_deductions ?? null,
-                'net_pay'     => $net_pay ?? 0,
+                'net_pay'     => $d->net_pay ?? 0,
                 'salary_adjustment' => $d->salary_adjustment,
                 'remarks'     => $d->remarks ?? null,
                 'deductions'  => $deductions,
@@ -751,7 +749,7 @@ class PayrollService
                 'tax_ewt_5'   => $d->tax_ewt_5 ?? null,
                 'w_tax'       => $d->w_tax ?? null,
                 'cut_offs'    => $cut_offs,
-
+                'hmo'         => $d->hmo ?? null,
                 'project_id'   => $project->id   ?? null,
                 'project_name' => $project->name ?? 'No Project',
                 'division_id'  => $d->division_id ?? null,
@@ -804,6 +802,7 @@ class PayrollService
                 'percentage_tax_3' => $emp['percentage_tax_3'] ?? null,
                 'tax_ewt_5'   => $emp['tax_ewt_5'] ?? null,
                 'w_tax'       => $emp['w_tax'] ?? null,
+                'hmo'         => $emp['hmo'] ?? null,
                 'net_salary'   => $emp['net_pay'],
                 'cut_offs'     => $emp['cut_offs'],
                 'remarks'      => $emp['remarks'],

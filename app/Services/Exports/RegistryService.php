@@ -106,13 +106,13 @@ class RegistryService
         ========================================================= */
         $salaryFields = [
             'monthly_rate', 'salary_earned', 'aut', 'overtime', 'holiday',
-            'total_salary', 'ewt_2', 'percentage_tax_3', 'tax_ewt_5', 'w_tax',
-            'adjustments', 'net_salary', 'remarks',
+            'total_salary', 'ewt_2', 'percentage_tax_3', 'tax_ewt_5', 'w_tax', 
+            'hmo', 'adjustments', 'net_salary', 'remarks',
         ];
 
         $totalSalaryCol = 'H';
-        $netSalaryCol   = 'N';
-        $deductionCols  = ['E', 'I', 'J', 'K', 'L'];
+        $netSalaryCol   = 'O';
+        $deductionCols  = ['E', 'I', 'J', 'K', 'L', 'M'];
 
         /* =========================================================
         | 5. WRITE DATA (insert without overwriting existing rows)
@@ -121,11 +121,13 @@ class RegistryService
         $employeeCounter  = 1;
         $projectTotalRows = [];
 
+        // dd($this->registry);
+
         foreach ($this->registry as $project) {
 
             /* Insert Project Header */
             $sheet->insertNewRowBefore($startRow, 1); // push down rows
-            $sheet->mergeCells("A{$startRow}:O{$startRow}");
+            $sheet->mergeCells("A{$startRow}:P{$startRow}");
             $sheet->setCellValue("A{$startRow}", strtoupper($project['name']));
             $applyStyle("A{$startRow}:O{$startRow}", [
                 'font' => ['name' => 'Arial', 'bold' => true, 'italic' => true, 'size' => 12],
@@ -177,10 +179,9 @@ class RegistryService
                 $applyStyle("E{$currentRow}", ['fill' => $fill['deduction']]);
                 $applyStyle("F{$currentRow}:G{$currentRow}", ['fill' => $fill['white']]);
                 $applyStyle("H{$currentRow}", ['fill' => $fill['salary']]);
-                $applyStyle("I{$currentRow}:L{$currentRow}", ['fill' => $fill['deduction']]);
-                $applyStyle("M{$currentRow}", ['fill' => $fill['white']]);
-                $applyStyle("N{$currentRow}", ['fill' => $fill['net']]);
-                $applyStyle("O{$currentRow}", ['fill' => $fill['white']]);
+                $applyStyle("I{$currentRow}:M{$currentRow}", ['fill' => $fill['deduction']]);
+                $applyStyle("N{$currentRow}", ['fill' => $fill['white']]);
+                $applyStyle("O{$currentRow}", ['fill' => $fill['net']]);
                 $applyStyle("A{$currentRow}:O{$currentRow}", $borderAll);
 
                 $currentRow++;
@@ -192,7 +193,7 @@ class RegistryService
             $sheet->mergeCells("A{$currentRow}:B{$currentRow}");
             $sheet->setCellValue("A{$currentRow}", "TOTAL: " . strtoupper($project['name']));
 
-            foreach (range('C', 'N') as $col) {
+            foreach (range('C', 'O') as $col) {
                 $sheet->setCellValue("{$col}{$currentRow}", "=SUM({$col}{$employeeStartRow}:{$col}" . ($currentRow - 1) . ")");
             }
 
@@ -204,13 +205,13 @@ class RegistryService
                 ],
             ]);
             $applyStyle("H{$currentRow}", ['fill' => $fill['salary']]);
-            $applyStyle("N{$currentRow}", ['fill' => $fill['net']]);
+            $applyStyle("N{$currentRow}", ['fill' => $fill['white']]);
             foreach ($deductionCols as $dCol) {
                 $applyStyle("{$dCol}{$currentRow}", ['fill' => $fill['deduction']]);
             }
             $applyStyle("C{$currentRow}:D{$currentRow}", ['fill' => $fill['white']]);
-            $applyStyle("M{$currentRow}", ['fill' => $fill['white']]);
-            $applyStyle("O{$currentRow}", ['fill' => $fill['white']]);
+            $applyStyle("M{$currentRow}", ['fill' => $fill['deduction']]);
+            $applyStyle("O{$currentRow}", ['fill' => $fill['net']]);
             $applyStyle("A{$currentRow}:O{$currentRow}", $borderAll);
 
             $startRow = $currentRow + 1; 
@@ -222,7 +223,7 @@ class RegistryService
             $sheet->mergeCells("A{$startRow}:B{$startRow}");
             $sheet->setCellValue("A{$startRow}", "GRAND TOTAL:");
 
-            foreach (range('C', 'N') as $col) {
+            foreach (range('C', 'O') as $col) {
                 $formula = collect($projectTotalRows)->map(fn ($r) => "{$col}{$r}")->implode('+');
                 $sheet->setCellValue("{$col}{$startRow}", "={$formula}");
             }
@@ -235,13 +236,13 @@ class RegistryService
                 ],
             ]);
             $applyStyle("H{$startRow}", ['fill' => $fill['salary']]);
-            $applyStyle("N{$startRow}", ['fill' => $fill['net']]);
+            $applyStyle("N{$startRow}", ['fill' => $fill['white']]);
             foreach ($deductionCols as $dCol) {
                 $applyStyle("{$dCol}{$startRow}", ['fill' => $fill['deduction']]);
             }
             $applyStyle("C{$startRow}:D{$startRow}", ['fill' => $fill['white']]);
-            $applyStyle("M{$startRow}", ['fill' => $fill['white']]);
-            $applyStyle("O{$startRow}", ['fill' => $fill['white']]);
+            $applyStyle("M{$startRow}", ['fill' => $fill['deduction']]);
+            $applyStyle("O{$startRow}", ['fill' => $fill['net']]);
             $applyStyle("A{$startRow}:O{$startRow}", $borderAll);
         }
 

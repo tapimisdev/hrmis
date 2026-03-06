@@ -1,6 +1,7 @@
 <?php
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Admin\Services\CreditsController;
 use App\Http\Controllers\Admin\Services\EventsController;
 use App\Http\Controllers\Admin\Services\SuspensionController;
 use App\Http\Controllers\Admin\Services\LeaveApplicationController as AdminLeaveApplicationController;
@@ -10,6 +11,10 @@ use App\Http\Controllers\Admin\Services\OvertimeController as AdminOvertimeContr
 
 # SERVICES
 Route::prefix('service')->group(function() {
+
+    # CREDITS 
+    route::get('credits', [CreditsController::class, 'index'])
+        ->name('services.credits');
 
     # EVENTS AND ANNOUNCEMENTS
     route::resource('events', EventsController::class)->names('services.events');
