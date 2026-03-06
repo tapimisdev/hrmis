@@ -37,20 +37,20 @@ class CancelPassSlipController extends Controller
                 ]);
             }
 
-            // 🔹 Count active dates BEFORE cancelling
+            //  Count active dates BEFORE cancelling
             $totalDates = DB::table('obs_dates')
                 ->where('obs_application_id', $data->obs_application_id)
                 ->where('isActive', true)
                 ->count();
 
-            // 🔹 Cancel this specific offset date
+            //  Cancel this specific offset date
             DB::table('obs_dates')
                 ->where('id', $data->offset_date_id)
                 ->update([
                     'isActive' => false,
                 ]);
 
-            // 🔹 If this was the last active date, cancel the entire application
+            //  If this was the last active date, cancel the entire application
             if ($totalDates == 1) {
                 DB::table('obs_applications')
                     ->where('id', $data->obs_application_id)

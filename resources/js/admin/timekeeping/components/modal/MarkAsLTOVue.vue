@@ -23,20 +23,20 @@
                 <div class="col-12 col-md-8">
                     <FormSkeletonVue v-if="initial_loading" :rows="1" :columns="1" />
                     <div v-else class="mb-3">
-                        <label class="form-label">Special Order No. <span class="text-danger">*</span></label>
+                        <label class="form-label">Local Travel No. <span class="text-danger">*</span></label>
                         <input
                             type="text"
-                            v-model="form.so_no"
+                            v-model="form.lto_no"
                             class="form-control"
-                            :class="{ 'is-invalid': errors.so_no }"
+                            :class="{ 'is-invalid': errors.lto_no }"
                             required
                         />
-                        <span class="text-danger" v-if="errors.so_no">{{ errors.so_no[0] }}</span>
+                        <span class="text-danger" v-if="errors.lto_no">{{ errors.lto_no[0] }}</span>
                     </div>
                 </div>
 
                 <!-- Shift -->
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-6">
                     <FormSkeletonVue v-if="initial_loading" :rows="1" :columns="1" />
                     <div v-else class="mb-3">
                         <label class="form-label">Shift <span class="text-danger">*</span></label>
@@ -51,31 +51,12 @@
                             <option value="afternoon">Afternoon</option>
                             <option value="wholeday" selected>Whole Day</option>
                         </select>
-                        <span class="text-danger" v-if="errors.shift">{{ errors.within_metro_manila[0] }}</span>
-                    </div>
-                </div>
-
-                <!-- Within Metro Manila -->
-                <div class="col-12 col-md-4">
-                    <FormSkeletonVue v-if="initial_loading" :rows="1" :columns="1" />
-                    <div v-else class="mb-3">
-                        <label class="form-label">Within Metro Manila? <span class="text-danger">*</span></label>
-                        <select
-                            v-model="form.within_metro_manila"
-                            class="form-select"
-                            :class="{ 'is-invalid': errors.within_metro_manila }"
-                            required
-                        >
-                            <option value=""> - CHOOSE - </option>
-                            <option value="yes">Yes</option>
-                            <option value="no">No</option>
-                        </select>
-                        <span class="text-danger" v-if="errors.within_metro_manila">{{ errors.within_metro_manila[0] }}</span>
+                        <span class="text-danger" v-if="errors.shift">{{ errors.is_hazardous[0] }}</span>
                     </div>
                 </div>
 
                 <!-- Is Hazardous -->
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-6">
                     <FormSkeletonVue v-if="initial_loading" :rows="1" :columns="1" />
                     <div v-else class="mb-3">
                         <label class="form-label">Is Hazardous? <span class="text-danger">*</span></label>
@@ -161,10 +142,9 @@ export default {
                 user_id: this.employee_no,
                 date: "",
                 shift: "wholeday",
-                so_no: "",
+                lto_no: "",
                 remarks: "",
-                within_metro_manila: "",
-                is_hazardous: ""
+                is_hazardous: "",
             },
         };
     },
@@ -209,14 +189,14 @@ export default {
                     formData.append(`attachments[${i}]`, file);
                 });
 
-                const { data } = await axios.post("/api/mark-as-so", formData, {
+                const { data } = await axios.post("/api/mark-as-lto", formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                         Accept: "application/json",
                     },
                 });
 
-                Swal.fire("Success!", "Special Order submitted successfully.", "success");
+                Swal.fire("Success!", "Local travel order submitted successfully.", "success");
 
                 this.$emit("success", data);
                 this.resetForm();
@@ -236,7 +216,7 @@ export default {
             }
         },
         resetForm() {
-            this.form = "";
+            this.form.is_hazardous = "";
             this.attachments = [];
             this.errors = {};
         },
