@@ -19,6 +19,41 @@
       Period: <strong>{{ period_covered }}</strong>
     </template>
 
+    <template #filters>
+      <div class="payroll-filter-bar">
+        <input
+          v-model.trim="searchTerm"
+          type="text"
+          class="payroll-filter-input"
+          placeholder="Search name or employee number"
+        />
+
+        <select v-model="selectedProject" class="payroll-filter-select">
+          <option value="">All projects</option>
+          <option v-for="project in projectOptions" :key="project" :value="project">
+            {{ project }}
+          </option>
+        </select>
+
+        <select v-model="selectedPosition" class="payroll-filter-select">
+          <option value="">All positions</option>
+          <option v-for="position in positionOptions" :key="position" :value="position">
+            {{ position }}
+          </option>
+        </select>
+
+        <select v-model="remarksFilter" class="payroll-filter-select">
+          <option value="all">All remarks</option>
+          <option value="with">With remarks</option>
+          <option value="without">Without remarks</option>
+        </select>
+
+        <div class="payroll-filter-meta">
+          Showing {{ filteredEmployeeCount }} of {{ totalEmployeeCount }}
+        </div>
+      </div>
+    </template>
+
     <!-- Table slot -->
     <template #table>
       <table class="excel-table">
@@ -46,7 +81,7 @@
         </thead>
 
         <!-- Projects -->
-        <tbody v-for="(project, pIndex) in projects" :key="pIndex">
+        <tbody v-for="(project, pIndex) in filteredProjects" :key="pIndex">
           <tr class="project-header">
             <td colspan="100" class="project-cell">{{ project.name }}</td>
           </tr>
@@ -103,15 +138,6 @@
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'w_tax')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'hmo')) }}</td>
 
-            <td v-for="(earning, idx) in dynamicEarnings" :key="'earning-total-' + idx" class="number-cell earning">
-              {{ formatNumber(projectTotals(project, 'earnings', earning)) }}
-            </td>
-
-            <td v-for="(deduction, idx) in dynamicDeductions" :key="'deduction-total-' + idx"
-              class="number-cell deduction">
-              {{ formatNumber(projectTotals(project, 'deductions', deduction)) }}
-            </td>
-
             <td class="number-cell">{{ formatNumber(projectTotals(project, 'adjustment')) }}</td>
             <td class="number-cell net-salary">
               <strong>{{ formatNumber(projectTotals(project, 'net_salary')) }}</strong>
@@ -120,6 +146,13 @@
           </tr>
         </tbody>
 
+        <tbody v-if="!filteredProjects.length">
+          <tr>
+            <td colspan="16" class="text-center py-3">
+              No employees found for the selected filters.
+            </td>
+          </tr>
+        </tbody>
         <!-- Grand Total Row -->
         <tfoot>
           <tr class="grand-total text-center">
@@ -135,15 +168,6 @@
             <td class="number-cell deduction">{{ formatNumber(grandTotals('tax_ewt_5')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('w_tax')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('hmo')) }}</td>
-
-            <td v-for="(earning, idx) in dynamicEarnings" :key="'earning-grand-' + idx" class="number-cell earning">
-              {{ formatNumber(grandTotals('earnings', earning)) }}
-            </td>
-
-            <td v-for="(deduction, idx) in dynamicDeductions" :key="'deduction-grand-' + idx"
-              class="number-cell deduction">
-              {{ formatNumber(grandTotals('deductions', deduction)) }}
-            </td>
 
             <td class="number-cell">{{ formatNumber(grandTotals('adjustment')) }}</td>
             <td class="number-cell net-salary">
@@ -176,7 +200,60 @@ export default {
     return {
       token,
       loading: false,
+      searchTerm: "",
+      selectedProject: "",
+      selectedPosition: "",
+      remarksFilter: "all",
     };
+  },
+  computed: {
+    totalEmployeeCount() {
+      return this.projects.reduce((count, project) => count + project.employees.length, 0);
+    },
+    filteredEmployeeCount() {
+      return this.filteredProjects.reduce((count, project) => count + project.employees.length, 0);
+    },
+    projectOptions() {
+      return this.projects
+        .map((project) => project.name)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+    },
+    positionOptions() {
+      const positions = new Set();
+      this.projects.forEach((project) => {
+        project.employees.forEach((emp) => {
+          if (emp.position) {
+            positions.add(emp.position);
+          }
+        });
+      });
+      return Array.from(positions).sort((a, b) => a.localeCompare(b));
+    },
+    filteredProjects() {
+      const keyword = this.searchTerm.toLowerCase();
+      return this.projects
+        .filter((project) => !this.selectedProject || project.name === this.selectedProject)
+        .map((project) => {
+          const employees = project.employees.filter((emp) => {
+            const matchesSearch =
+              !keyword ||
+              String(emp.name || "").toLowerCase().includes(keyword) ||
+              String(emp.employee_no || "").toLowerCase().includes(keyword);
+            const matchesPosition = !this.selectedPosition || emp.position === this.selectedPosition;
+            const hasRemarks = Boolean(String(emp.remarks || "").trim());
+            const matchesRemarks =
+              this.remarksFilter === "all" ||
+              (this.remarksFilter === "with" && hasRemarks) ||
+              (this.remarksFilter === "without" && !hasRemarks);
+
+            return matchesSearch && matchesPosition && matchesRemarks;
+          });
+
+          return { ...project, employees };
+        })
+        .filter((project) => project.employees.length > 0);
+    },
   },
   methods: {
     handlePrint() {
@@ -198,7 +275,7 @@ export default {
       return total;
     },
     grandTotals(field, subfield = null) {
-      return this.projects.reduce(
+      return this.filteredProjects.reduce(
         (total, project) => total + this.projectTotals(project, field, subfield),
         0
       );

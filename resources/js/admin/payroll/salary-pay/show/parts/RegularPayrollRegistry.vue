@@ -18,6 +18,34 @@
       Period: <strong>{{ period_covered }}</strong>
     </template>
 
+    <template #filters>
+      <div class="payroll-filter-bar">
+        <input
+          v-model.trim="searchTerm"
+          type="text"
+          class="payroll-filter-input"
+          placeholder="Search name or employee number"
+        />
+
+        <select v-model="selectedPosition" class="payroll-filter-select">
+          <option value="">All positions</option>
+          <option v-for="position in positionOptions" :key="position" :value="position">
+            {{ position }}
+          </option>
+        </select>
+
+        <select v-model="remarksFilter" class="payroll-filter-select">
+          <option value="all">All remarks</option>
+          <option value="with">With remarks</option>
+          <option value="without">Without remarks</option>
+        </select>
+
+        <div class="payroll-filter-meta">
+          Showing {{ filteredEmployees.length }} of {{ employees.length }}
+        </div>
+      </div>
+    </template>
+
     <!-- Table slot -->
     <template #table>
       <table class="excel-table">
@@ -64,7 +92,7 @@
         </thead>
 
         <tbody>
-          <tr class="data-row" v-for="(emp, index) in employees" :key="index">
+          <tr class="data-row" v-for="(emp, index) in filteredEmployees" :key="index">
             <td
               class="text-center"
               style="min-width: 100px; width: 100%; max-width: 300px; text-align: center;"
@@ -131,6 +159,11 @@
               ></textarea>
             </td>
           </tr>
+          <tr v-if="!filteredEmployees.length">
+            <td :colspan="11 + dynamicDeductions.length" class="text-center py-3">
+              No employees found for the selected filters.
+            </td>
+          </tr>
         </tbody>
 
         <tfoot>
@@ -182,12 +215,41 @@ export default {
     return {
       token,
       loading: false,
+      searchTerm: "",
+      selectedPosition: "",
+      remarksFilter: "all",
     };
   },
   computed: {
+    positionOptions() {
+      const positions = new Set();
+      this.employees.forEach((emp) => {
+        if (emp.position) {
+          positions.add(emp.position);
+        }
+      });
+      return Array.from(positions).sort((a, b) => a.localeCompare(b));
+    },
+    filteredEmployees() {
+      const keyword = this.searchTerm.toLowerCase();
+      return this.employees.filter((emp) => {
+        const matchesSearch =
+          !keyword ||
+          String(emp.name || "").toLowerCase().includes(keyword) ||
+          String(emp.employee_no || "").toLowerCase().includes(keyword);
+        const matchesPosition = !this.selectedPosition || emp.position === this.selectedPosition;
+        const hasRemarks = Boolean(String(emp.remarks || "").trim());
+        const matchesRemarks =
+          this.remarksFilter === "all" ||
+          (this.remarksFilter === "with" && hasRemarks) ||
+          (this.remarksFilter === "without" && !hasRemarks);
+
+        return matchesSearch && matchesPosition && matchesRemarks;
+      });
+    },
     dynamicDeductions() {
       const names = new Set();
-      this.employees.forEach((p) =>
+      this.filteredEmployees.forEach((p) =>
         p.deductions?.forEach((d) => names.add(d.deduction_type))
       );
       return Array.from(names);
@@ -208,7 +270,7 @@ export default {
       return deduction ? Number(deduction.amount) : 0;
     },
     grandTotals(field, subfield = null) {
-      return this.employees.reduce((total, emp) => {
+      return this.filteredEmployees.reduce((total, emp) => {
         if (field === "deductions" && subfield) {
           const found = emp.deductions?.find((d) => d.deduction_type === subfield);
           return total + (found ? Number(found.amount) : 0);

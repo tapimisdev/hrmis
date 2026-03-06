@@ -65,6 +65,10 @@
         </div>
       </div>
 
+      <div v-if="$slots.filters" class="sheet-filters">
+        <slot name="filters"></slot>
+      </div>
+
       <!-- Table Slot Only -->
       <div class="excel-table-wrapper table-responsive">
         <slot name="table"></slot>
@@ -374,6 +378,45 @@ export default {
   font-size: 12px;
 }
 
+.sheet-filters {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line-color);
+  background: var(--panel-bg);
+}
+
+.sheet-filters :deep(.payroll-filter-bar) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.sheet-filters :deep(.payroll-filter-input),
+.sheet-filters :deep(.payroll-filter-select) {
+  border: 1px solid var(--line-color);
+  background: var(--header-bg);
+  color: var(--bs-body-color, #111827);
+  border-radius: 8px;
+  font-size: 12px;
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.sheet-filters :deep(.payroll-filter-input) {
+  min-width: 260px;
+}
+
+.sheet-filters :deep(.payroll-filter-select) {
+  min-width: 170px;
+}
+
+.sheet-filters :deep(.payroll-filter-meta) {
+  margin-left: auto;
+  color: var(--muted-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .excel-table-wrapper {
   padding: 0;
   max-height: calc(100vh - 280px);
@@ -559,6 +602,20 @@ export default {
   .sheet-info {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .sheet-filters {
+    padding: 10px;
+  }
+
+  .sheet-filters :deep(.payroll-filter-input),
+  .sheet-filters :deep(.payroll-filter-select) {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .sheet-filters :deep(.payroll-filter-meta) {
+    margin-left: 0;
   }
 }
 
