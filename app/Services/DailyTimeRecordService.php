@@ -135,8 +135,8 @@ class DailyTimeRecordService {
 
         // Totals
         $TOTAL_INCOMPLETE_LOGS = 0;
-        $TOTAL_PENDING_LEAVES = $TOTAL_PENDING_OFFSETS = $TOTAL_PENDING_PASS_SLIP = $TOTAL_PENDING_SO = 0;
-        $TOTAL_OFFSET = $TOTAL_PASS_SLIP = $TOTAL_SO = $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
+        $TOTAL_PENDING_LEAVES = $TOTAL_PENDING_OFFSETS = $TOTAL_PENDING_PASS_SLIP = $TOTAL_PENDING_SO = $TOTAL_PENDING_LTO = 0;
+        $TOTAL_OFFSET = $TOTAL_PASS_SLIP = $TOTAL_SO = $TOTAL_LTO = $TOTAL_LEAVES = $TOTAL_OBS = $TOTAL_UT = $TOTAL_HOURS = 0;
         $TOTAL_OVERTIME = $TOTAL_ACTUAL_PRESENCE = $TOTAL_ABSENT = $TOTAL_HOLIDAY = $TOTAL_SUSPENSION = 0;
         $DOUBLE_EXCESS = 0;
         $HALFDAY_MINS = 240;
@@ -281,6 +281,22 @@ class DailyTimeRecordService {
                 $remarks[] = $so_status;
             }
 
+            /** ----------------- LTO CHECK ------------- **/
+            $lto = $this->timelogs_services->checkIfLTO($date, $userId);
+            $is_lto = $lto['is_lto'];
+            $lto_status = $lto['status'];
+            $lto_shift = $lto['shift'];
+
+            if (!empty($lto_shift)) {
+                $lto_status .= '-' . $lto_shift;
+            }
+
+            if ($is_lto) {
+                $factor = ($lto_shift === 'wholeday') ? 1 : 0.5;
+                $TOTAL_LTO += $factor;
+                $remarks[] = $lto_status;
+            }
+
             /** ----------------- PASS SLIP CHECK ------------- **/
             $pass_slip = $this->timelogs_services->checkIfPassSlip($date, $userId);
             $is_pass_slip = $pass_slip['is_pass_slip'];
@@ -335,7 +351,7 @@ class DailyTimeRecordService {
                     continue;
                 }
 
-                if (!$is_future && !$is_leave && !$is_restday && !$is_offset && !$is_so && !$is_pass_slip) {
+                if (!$is_future && !$is_leave && !$is_restday && !$is_offset && !$is_so && !$is_lto && !$is_pass_slip) {
                     $remarks[] = 'absent';
                     $TOTAL_ABSENT++;
                     $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
@@ -357,6 +373,12 @@ class DailyTimeRecordService {
                 if ($so_status === 'pending special order (SO)' && $is_so) {
                     $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
                     $TOTAL_PENDING_SO++;
+                    continue;
+                }
+
+                if ($lto_status === 'pending local travel order (LTO)' && $is_lto) {
+                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $TOTAL_PENDING_LTO++;
                     continue;
                 }
 
@@ -439,7 +461,7 @@ class DailyTimeRecordService {
                 continue;
             }
 
-            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday && !$is_so && !$is_leave && !$is_offset && !$is_pass_slip) {
+            if ((!$timeInCarbon || !$timeOutCarbon) && !$is_restday && !$is_so && !$is_lto && !$is_leave && !$is_offset && !$is_pass_slip) {
                 if($is_same_day) {
                     $remarks[] = 'incomplete log';
                     $TOTAL_INCOMPLETE_LOGS++;
@@ -506,6 +528,7 @@ class DailyTimeRecordService {
                 ?: $offset_shift
                 ?: $so_shift
                 ?: $pass_slip_shift
+                ?: $lto_shift
                 ?: null;
 
             if ($active_shift && $active_shift !== 'wholeday' && is_null($date['time_in'])) {
@@ -537,10 +560,12 @@ class DailyTimeRecordService {
         $FORMATTED_TOTAL_LEAVES = $this->formatPlural($TOTAL_LEAVES, 'day');
         $FORMATTED_TOTAL_OFFSETS = $this->formatPlural($TOTAL_OFFSET, 'day');
         $FORMATTED_TOTAL_SO      = $this->formatPlural($TOTAL_SO, 'day');
+        $FORMATTED_TOTAL_LTO      = $this->formatPlural($TOTAL_LTO, 'day');
         $FORMATTED_TOTAL_PASS_SLIP = $this->formatPlural($TOTAL_PASS_SLIP, 'day');
         $FORMATTED_PENDING_LEAVES =  $this->formatPlural($TOTAL_PENDING_LEAVES, 'day');
         $FORMATTED_PENDING_OFFSETS =  $this->formatPlural($TOTAL_PENDING_OFFSETS, 'day');
         $FORMATTED_PENDING_SO =  $this->formatPlural($TOTAL_PENDING_SO, 'day');
+        $FORMATTED_PENDING_LTO =  $this->formatPlural($TOTAL_PENDING_LTO, 'day');
         $FORMATTED_PENDING_PASS_SLIP =  $this->formatPlural($TOTAL_PENDING_PASS_SLIP, 'day');
         $FORMATTED_TOTAL_HOLIDAY = $this->formatPlural($TOTAL_HOLIDAY, 'day');
         $FORMATTED_TOTAL_OVERTIME = $this->formatTime($TOTAL_OVERTIME); 
@@ -576,6 +601,11 @@ class DailyTimeRecordService {
                 'actual_value' => $TOTAL_PENDING_SO
             ],
             [
+                'label' => 'Pending Local Travel Order',
+                'value' => $FORMATTED_PENDING_LTO,
+                'actual_value' => $TOTAL_PENDING_LTO
+            ],
+            [
                 'label' => 'Pending Pass Slip',
                 'value' => $FORMATTED_PENDING_PASS_SLIP,
                 'actual_value' => $TOTAL_PENDING_SO
@@ -609,6 +639,11 @@ class DailyTimeRecordService {
                 'label' => 'Special Order',
                 'value' => $FORMATTED_TOTAL_SO,
                 'actual_value' => $TOTAL_SO
+            ],
+            [
+                'label' => 'Local Travel Order',
+                'value' => $FORMATTED_TOTAL_LTO,
+                'actual_value' => $TOTAL_LTO
             ],
             [
                 'label' => 'Pass Slip',
@@ -649,6 +684,8 @@ class DailyTimeRecordService {
             'absent'             => $TOTAL_ABSENT,
             'leaves'             => $TOTAL_LEAVES,
             'offset'             => $TOTAL_OFFSET,
+            'so'                 => $TOTAL_SO,
+            'lto'                => $TOTAL_LTO,
             'pass_slip'          => $TOTAL_PASS_SLIP,
             'holiday'            => $TOTAL_HOLIDAY,
             'suspensions'        => $TOTAL_SUSPENSION,
