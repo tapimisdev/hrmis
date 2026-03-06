@@ -179,12 +179,16 @@ import CancelOffsetVue from './modal/CancelOffsetVue.vue';
 import MarkAsSoVue from './modal/MarkAsSoVue.vue';
 import CancelSOVue from './modal/CancelSOVue.vue';
 import CancelPassSlip from './modal/CancelPassSlip.vue';
+import MarkAsLTOVue from './modal/MarkAsLTOVue.vue';
+import CancelLTO from './modal/CancelLTO.vue';
 
 export default {
     components: { 
       TableSkeletonVue, ModalVue, RecordLeaveVue, RecordOffsetVue, RecordPassSlip,
-      AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue, 
-      MarkAsSoVue, CancelLeaveVue, CancelOffsetVue, CancelSOVue, CancelPassSlip },
+      AddTimeVue, AddOvertimeVue, ViewOvertimeVue, MarkAsAbsentVue, MarkAsLTOVue,
+      MarkAsSoVue, CancelLeaveVue, CancelOffsetVue, CancelSOVue, CancelPassSlip,
+      CancelLTO
+    },
     props: {
         employee_no: { type: [String, Number], required: true },
         employee_id: { type: [String, Number], required: true },
@@ -215,12 +219,14 @@ export default {
                 pass_slip: 'RecordPassSlip',
                 overtime: 'AddOvertimeVue',
                 so: 'MarkAsSoVue',
+                lto: 'MarkAsLTOVue',
                 view_overtime: 'ViewOvertimeVue',
                 absent: 'MarkAsAbsentVue',
                 cancel_offset: 'CancelOffsetVue',
                 cancel_leave: 'CancelLeaveVue',
                 cancel_special_order: 'CancelSOVue',
                 cancel_pass_slip: 'CancelPassSlip',
+                cancel_lto: 'CancelLTO',
             };
             return components[this.modalType] || null;
         },
@@ -299,6 +305,7 @@ export default {
                 formatType('special order', 'SPECIAL ORDER') ||
                 formatType('(so)', 'SPECIAL ORDER') ||
                 formatType('pass slip') ||
+                formatType('lto', 'LOCAL TRAVEL ORDER') ||
                 String(remark).toUpperCase()
             );
         },
@@ -323,9 +330,11 @@ export default {
             if (this.remarks?.toLowerCase().startsWith('pass-slip-')) {
                 return 'row-pass-slip';
             }
+
             if (this.hasRemark(remarks, 'holiday')) return 'row-holiday';
             if (this.hasRemark(remarks, 'absent')) return 'row-absent';
             if (this.hasRemark(remarks, 'special order')) return 'row-special-order';
+            if (this.hasRemark(remarks, 'lto')) return 'row-lto';
             if (this.hasRemark(remarks, 'pass slip')) return 'row-pass-slip';
             return '';
         },
@@ -333,7 +342,7 @@ export default {
             const { remarks } = log;
 
             switch (true) {
-                case this.hasRemark(remarks, 'restday'):
+                  case this.hasRemark(remarks, 'restday'):
                     return {
                         class: 'status-restday',
                         icon: 'fa-solid fa-mug-hot',
@@ -368,7 +377,7 @@ export default {
                         icon: 'fa-solid fa-ghost',
                         text: 'Offset',
                     };
-      
+
                 case this.hasRemark(remarks, 'ob'):
                     return {
                         class: 'status-ob',
@@ -397,6 +406,7 @@ export default {
             if (remarkLower.includes('leave')) return 'status-leave';
             if (remarkLower.includes('offset')) return 'status-offset';
             if (remarkLower.includes('special order')) return 'status-special-order';
+            if (remarkLower.includes('lto')) return 'status-lto';
             if (remarkLower.includes('pass slip')) return 'status-pass-slip';
             if (remarkLower.includes('ob')) return 'status-ob';
             if (remarkLower.includes('rest day')) return 'status-restday';
@@ -440,13 +450,22 @@ export default {
 
             /* ================= PRIORITY SECTION ================= */
 
+             /* -------- LOCAL TRAVEL ORDER -------- */
+            if (has('lto-morning') || has('lto-afternoon')) {
+                return buildAdjustmentAndCancel('cancel_lto', 'Cancel LTO');
+            }
+
+            if (has('lto-wholeday')) {
+                return buildCancelOnly('cancel_lto', 'Cancel LTO');
+            }
+
             /* -------- SPECIAL ORDER -------- */
             if (has('special order-morning') || has('special order-afternoon')) {
-                return buildAdjustmentAndCancel('cancel_special_order', 'Cancel Special Order');
+                return buildAdjustmentAndCancel('cancel_special_order', 'Cancel SO');
             }
 
             if (has('special order-wholeday')) {
-                return buildCancelOnly('cancel_special_order', 'Cancel Special Order');
+                return buildCancelOnly('cancel_special_order', 'Cancel SO');
             }
 
             /* -------- PASS SLIP (NEW) -------- */
@@ -493,6 +512,11 @@ export default {
                     type: 'so',
                     icon: 'fa-solid fa-car-on',
                     text: 'Mark as SO'
+                },
+                {
+                    type: 'lto',
+                    icon: 'fa-solid fa-person-walking-luggage',
+                    text: 'Mark as LTO'
                 },
                 {
                     type: 'pass_slip',
@@ -732,6 +756,7 @@ export default {
     .status-offset { color: var(--bs-info);  }
     .status-pass-slip { color: var(--bs-info);  }
     .status-special-order { color: var(--bs-info);  }
+    .status-lto { color: var(--bs-info);  }
     .status-ob { color: var(--bs-primary);  }
     .status-absent { color: var(--bs-danger);  }
     
