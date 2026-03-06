@@ -199,50 +199,19 @@ export default {
 </script>
 
 <style scoped>
-/* ✅ only table styles; layout owns toolbar/sheet/theme/status colors */
-
 .excel-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.excel-table th,
-.excel-table td {
-  border: 1px solid var(--bs-border-color, #d0d0d0);
-  padding: 2px 8px;
-  font-size: 11px;
-}
-
-.header-labels th {
-  text-align: center;
-  font-weight: 700;
-  color: var(--status-color);
-  background: var(--bs-table-bg, white);
-}
-
-[data-bs-theme="dark"] .header-labels th {
-  background: var(--bs-body-bg);
+  min-width: 100%;
 }
 
 .data-row .name-cell .employee-name {
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .data-row .name-cell .employee-position {
-  font-style: italic;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .grand-total {
-  border-top: 2px solid rgba(var(--bs-dark-rgb), 1);
-  font-weight: bolder;
-  height: 60px;
-  background-color: var(--status-color);
-  color: var(--status-bg);
-}
-
-[data-bs-theme="dark"] .grand-total {
-  background-color: var(--status-color);
-  color: white;
+  font-weight: 700;
 }
 </style>

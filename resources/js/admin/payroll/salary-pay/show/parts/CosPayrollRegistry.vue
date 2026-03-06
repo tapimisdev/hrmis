@@ -1,15 +1,9 @@
 <template>
-  <PayrollRegistryLayout
-    :status="status"
-    :payroll_no="payroll_no"
-    :loading="loading"
-    :downloads="[
-      { key: 'registry', label: 'Payroll Registry' },
-      { key: 'aut', label: 'Absences & Leaves' },
-      { key: 'payslip', label: 'Payslip' },
-    ]"
-    @print="handlePrint"
-  >
+  <PayrollRegistryLayout :status="status" :payroll_no="payroll_no" :loading="loading" :downloads="[
+    { key: 'registry', label: 'Payroll Registry (xlxs)' },
+    { key: 'aut', label: 'Absences & Leaves (xlxs)' },
+    { key: 'payslip', label: 'Payslip (xlxs)' },
+  ]" @print="handlePrint">
     <!-- Header slots -->
     <template #sheet-type></template>
 
@@ -45,24 +39,6 @@
             <th class="p-4" style="width: 100px;">Overall Tax</th>
             <th class="p-4" style="width: 100px;">HMO</th>
 
-            <!-- Dynamic Earnings -->
-            <th
-              v-for="(earning, eIndex) in dynamicEarnings"
-              :key="'earning-' + eIndex"
-              class="earning"
-            >
-              {{ earning }}
-            </th>
-
-            <!-- Dynamic Deductions -->
-            <th
-              v-for="(deduction, dIndex) in dynamicDeductions"
-              :key="'deduction-' + dIndex"
-              class="deduction"
-            >
-              {{ deduction }}
-            </th>
-
             <th style="width: 150px;">Adjustment</th>
             <th class="net-salary">Net <br />Salary</th>
             <th>Remarks</th>
@@ -76,11 +52,7 @@
           </tr>
 
           <!-- Employee Rows -->
-          <tr
-            v-for="(emp, eIndex) in project.employees"
-            :key="eIndex"
-            class="data-row"
-          >
+          <tr v-for="(emp, eIndex) in project.employees" :key="eIndex" class="data-row">
             <td class="text-center">{{ emp.employee_no }}</td>
 
             <td class="text-center name-cell">
@@ -101,32 +73,9 @@
             <td class="text-center number-cell deduction">{{ formatNumber(emp.w_tax) }}</td>
             <td class="text-center number-cell deduction">{{ formatNumber(emp.hmo) }}</td>
 
-            <!-- Dynamic Earnings -->
-            <td
-              v-for="(earning, idx) in dynamicEarnings"
-              :key="'earning-' + idx"
-              class="text-center number-cell earning"
-            >
-              {{ formatNumber(getEarningAmount(emp, earning)) }}
-            </td>
-
-            <!-- Dynamic Deductions -->
-            <td
-              v-for="(deduction, idx) in dynamicDeductions"
-              :key="'deduction-' + idx"
-              class="text-center number-cell deduction"
-            >
-              {{ formatNumber(getDeductionAmount(emp, deduction)) }}
-            </td>
-
             <td class="text-center">
-              <input
-                type="number"
-                v-model="emp.adjustment"
-                @change="adjustRow(emp)"
-                class="text-center form-control"
-                style="width: 100px;"
-              />
+              <input type="number" v-model="emp.adjustment" @change="adjustRow(emp)"
+                class="text-center bg-body-secondary form-control" style="width: 100px;" />
             </td>
 
             <td class="text-center number-cell net-salary">
@@ -134,12 +83,8 @@
             </td>
 
             <td class="text-center">
-              <textarea
-                style="width: 250px;"
-                class="text-center form-control my-3"
-                v-model="emp.remarks"
-                @change="adjustRow(emp)"
-              ></textarea>
+              <textarea style="width: 250px;" class="text-center bg-body-secondary form-control my-3"
+                v-model="emp.remarks" @change="adjustRow(emp)"></textarea>
             </td>
           </tr>
 
@@ -158,19 +103,12 @@
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'w_tax')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'hmo')) }}</td>
 
-            <td
-              v-for="(earning, idx) in dynamicEarnings"
-              :key="'earning-total-' + idx"
-              class="number-cell earning"
-            >
+            <td v-for="(earning, idx) in dynamicEarnings" :key="'earning-total-' + idx" class="number-cell earning">
               {{ formatNumber(projectTotals(project, 'earnings', earning)) }}
             </td>
 
-            <td
-              v-for="(deduction, idx) in dynamicDeductions"
-              :key="'deduction-total-' + idx"
-              class="number-cell deduction"
-            >
+            <td v-for="(deduction, idx) in dynamicDeductions" :key="'deduction-total-' + idx"
+              class="number-cell deduction">
               {{ formatNumber(projectTotals(project, 'deductions', deduction)) }}
             </td>
 
@@ -198,19 +136,12 @@
             <td class="number-cell deduction">{{ formatNumber(grandTotals('w_tax')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('hmo')) }}</td>
 
-            <td
-              v-for="(earning, idx) in dynamicEarnings"
-              :key="'earning-grand-' + idx"
-              class="number-cell earning"
-            >
+            <td v-for="(earning, idx) in dynamicEarnings" :key="'earning-grand-' + idx" class="number-cell earning">
               {{ formatNumber(grandTotals('earnings', earning)) }}
             </td>
 
-            <td
-              v-for="(deduction, idx) in dynamicDeductions"
-              :key="'deduction-grand-' + idx"
-              class="number-cell deduction"
-            >
+            <td v-for="(deduction, idx) in dynamicDeductions" :key="'deduction-grand-' + idx"
+              class="number-cell deduction">
               {{ formatNumber(grandTotals('deductions', deduction)) }}
             </td>
 
@@ -247,26 +178,6 @@ export default {
       loading: false,
     };
   },
-  computed: {
-    dynamicDeductions() {
-      const names = new Set();
-      this.projects.forEach((p) =>
-        p.employees.forEach((e) =>
-          e.deductions?.forEach((d) => names.add(d.deduction_type))
-        )
-      );
-      return Array.from(names);
-    },
-    dynamicEarnings() {
-      const names = new Set();
-      this.projects.forEach((p) =>
-        p.employees.forEach((e) =>
-          e.earnings?.forEach((er) => names.add(er.name))
-        )
-      );
-      return Array.from(names);
-    },
-  },
   methods: {
     handlePrint() {
       window.print();
@@ -277,21 +188,11 @@ export default {
         ? num.toLocaleString(undefined, { minimumFractionDigits: 2 })
         : "-";
     },
-    getDeductionAmount(emp, type) {
-      const deduction = emp.deductions?.find((d) => d.deduction_type === type);
-      return deduction ? Number(deduction.amount) : 0;
-    },
-    getEarningAmount(emp, type) {
-      const earning = emp.earnings?.find((e) => e.name === type);
-      return earning ? Number(earning.amount) : 0;
-    },
     projectTotals(project, field, subfield = null) {
       let total = 0;
 
       project.employees.forEach((emp) => {
-        if (field === "earnings") total += this.getEarningAmount(emp, subfield);
-        else if (field === "deductions") total += this.getDeductionAmount(emp, subfield);
-        else total += Number(emp[field]) || 0;
+        total += Number(emp[field]) || 0;
       });
 
       return total;
@@ -322,101 +223,47 @@ export default {
 </script>
 
 <style scoped>
-
 .excel-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.excel-table th,
-.excel-table td {
-  border: 1px solid var(--bs-border-color, #d0d0d0);
-  padding: 2px 8px;
-  font-size: 11px;
-}
-
-.header-labels th {
-  text-align: center;
-  font-weight: 700;
-  color: var(--status-color);
-  background: var(--bs-table-bg, white);
-}
-
-[data-bs-theme="dark"] .header-labels th {
-  background: var(--bs-body-bg);
+  min-width: 100%;
 }
 
 .earning {
-  background-color: rgba(var(--bs-success-rgb), 0.1);
-  max-width: 76px;
-  word-wrap: break-word;
+  max-width: 96px;
+  overflow-wrap: anywhere;
   white-space: normal;
-}
-
-[data-bs-theme="dark"] .earning {
-  background-color: rgba(var(--bs-success-rgb), 0.2);
 }
 
 .deduction {
-  background-color: rgba(var(--bs-danger-rgb), 0.1);
-  max-width: 76px;
-  word-wrap: break-word;
+  max-width: 96px;
+  overflow-wrap: anywhere;
   white-space: normal;
 }
 
-[data-bs-theme="dark"] .deduction {
-  background-color: rgba(var(--bs-danger-rgb), 0.2);
-}
-
 .net-salary {
-  background-color: rgba(var(--bs-primary-rgb), 0.1);
-  font-weight: bold;
-}
-
-[data-bs-theme="dark"] .net-salary {
-  background-color: rgba(var(--bs-primary-rgb), 0.2);
+  font-weight: 700;
 }
 
 .project-header .project-cell {
   padding: 8px 12px;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
   text-align: center;
-  color: var(--bs-body-color);
 }
 
 .data-row .name-cell .employee-name {
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .data-row .name-cell .employee-position {
-  font-style: italic;
-  font-size: 8px;
-}
-
-.project-total {
-  background-color: rgba(var(--bs-warning-rgb), 0.2);
-}
-
-[data-bs-theme="dark"] .project-total {
-  background-color: rgba(var(--bs-warning-rgb), 0.15);
+  font-size: 10px;
 }
 
 .project-total td {
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .grand-total {
-  border-top: 2px solid rgba(var(--bs-dark-rgb), 1);
-  font-weight: bolder;
-  height: 60px;
-  background-color: var(--status-color);
-  color: var(--status-bg);
-}
-
-[data-bs-theme="dark"] .grand-total {
-  background-color: var(--status-color);
-  color: white;
+  font-weight: 700;
 }
 </style>
