@@ -29,10 +29,11 @@ class TimelogCorrectionController extends Controller
 
     public function index(Request $request)
     {
-        $view_id = $request->input('view_id', null);
+
+        $view_id = $request->view_id ?? null;
 
         if ($request->ajax()) {
-
+            $view_id = $request->input('view_id');
             $query = DB::table('timelog_corrections as tc')
                 ->select('tc.*', 'ep.firstname', 'ep.middlename', 'ep.lastname')
                 ->leftJoin('employee_personal as ep', 'tc.employee_no', '=', 'ep.employee_no');
@@ -42,7 +43,7 @@ class TimelogCorrectionController extends Controller
 
             if ($view_id) {
                 $record = $query->where('tc.id', $view_id)->first();
-                
+
                 if ($record) {
                     $month = date('n', strtotime($record->date));
                     $year  = date('Y', strtotime($record->date));

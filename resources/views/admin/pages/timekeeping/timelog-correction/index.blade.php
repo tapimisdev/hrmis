@@ -10,6 +10,7 @@
     <x-header title="Timelog Correction Request" subtitle="Manage shift scheduling in this module">
 
     </x-header>
+    {{$view_id}}
 
     <div class="row mb-3">
         <div class="col-md-3">
@@ -49,18 +50,15 @@
             <tr>
                 <th>ID</th>
                 <th>Reference No</th>
-                <th>Employee No</th>
                 <th>Name</th>
                 <th>Date</th>
-                <th>status</th>
-                <th>Applied at</th>
+                <th>Status</th>
                 <th style="width: 120px">Action</th>
             </tr>
         </thead>
         <tbody>
         </tbody>
     </x-table>
-    {{$view_id}}
 </div>
 @endsection
 
@@ -84,11 +82,9 @@
             columns: [
                 { data: "id", name: 'id', visible: false },
                 { data: "reference_no", name: 'reference_no' },
-                { data: "employee_no", name: 'employee_no' },
                 { data: "name", name: 'name' },
                 { data: "date", name: 'date' },
                 { data: "status", name: 'status' },
-                { data: "applied_at", name: 'applied_at' },
                 {
                     data: "actions",
                     name: 'actions',
@@ -98,7 +94,7 @@
             ],
             columnDefs: [
                 {
-                    targets: [1,2,3,4,5,6,7],
+                    targets: [1,2,3,4,5],
                     className: 'min-table-width'
                 }
             ],
@@ -254,14 +250,17 @@
             });
         }
 
-        $(document).on('click', '.btn-close-action', function() {
+        $(document).on('click', '.btn-close-action', function () {
             let DataTable = $('#myTable').DataTable();
-            DataTable.search('').draw(); 
 
             const url = new URL(window.location);
-            url.searchParams.delete('id');
-            url.searchParams.delete('show');
-            window.history.replaceState({}, document.title, url.toString());
+            const hasId = url.searchParams.has('id');
+
+            if (hasId) {
+                DataTable.search('').draw();
+                url.searchParams.delete('id');
+                window.history.replaceState({}, document.title, url.toString());
+            }
         });
     });
 </script>
