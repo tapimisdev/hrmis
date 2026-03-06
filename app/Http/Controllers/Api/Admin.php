@@ -205,7 +205,7 @@ class Admin extends Controller
                     'icon' => 'fa-solid fa-car-on text-purple-500',
                 ],
                 [
-                    'name' => 'Local Traver Order',
+                    'name' => 'Local Travel Order',
                     'value' => $ltoToday,
                     'subValue' => 'Today',
                     'icon' => 'fa-solid fa-person-walking-luggage text-purple-500',
