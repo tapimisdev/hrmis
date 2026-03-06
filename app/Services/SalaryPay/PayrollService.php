@@ -343,7 +343,7 @@ class PayrollService
 
     private function hasSalary($emp_no)
     {
-        $employee_salary = DB::tabpayrollDetailsle('employee_salary')
+        $employee_salary = DB::table('employee_salary')
             ->where('employee_no', $emp_no)
             ->whereDate('effectivity_date', '<=', $this->date)
             ->orderByDesc('effectivity_date')
