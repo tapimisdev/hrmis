@@ -294,6 +294,9 @@ export default {
   padding: 8px 16px;
   color: white;
   transition: background 0.3s ease;
+  position: sticky;
+  top: 0;
+  z-index: 120;
 }
 
 .toolbar-left {
@@ -380,6 +383,57 @@ export default {
 
 .excel-table-wrapper {
   padding: 0;
+  max-height: calc(100vh - 300px);
+  overflow: auto;
+}
+
+.excel-table-wrapper :deep(.excel-table) {
+  min-width: 100%;
+}
+
+.excel-table-wrapper :deep(.header-labels th) {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+}
+
+.excel-table-wrapper :deep(.header-labels th:nth-child(1)) {
+  left: 0;
+  z-index: 35;
+  min-width: 90px;
+}
+
+.excel-table-wrapper :deep(.header-labels th:nth-child(2)) {
+  left: 90px;
+  z-index: 34;
+  min-width: 220px;
+}
+
+.excel-table-wrapper :deep(.data-row > td:nth-child(1)) {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background: var(--bs-body-bg, #fff);
+  min-width: 90px;
+}
+
+.excel-table-wrapper :deep(.data-row > td:nth-child(2)) {
+  position: sticky;
+  left: 90px;
+  z-index: 19;
+  background: var(--bs-body-bg, #fff);
+  min-width: 220px;
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.data-row > td:nth-child(1)),
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.data-row > td:nth-child(2)) {
+  background: var(--bs-body-bg, #212529);
+}
+
+@media (max-width: 992px) {
+  .excel-table-wrapper {
+    max-height: calc(100vh - 250px);
+  }
 }
 
 .sheet-footer {
