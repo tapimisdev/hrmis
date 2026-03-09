@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Timekeeping;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class CancelSOApiController extends Controller
 {
@@ -56,6 +57,7 @@ class CancelSOApiController extends Controller
                     ->where('id', $data->special_order_application_id)
                     ->update([
                         'status' => 'cancelled',
+                        'cancelled_by' => Auth::id()
                     ]);
             }
 

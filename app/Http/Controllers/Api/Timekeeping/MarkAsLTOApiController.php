@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Timekeeping;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class MarkAsLTOApiController extends Controller
 {
@@ -41,6 +42,7 @@ class MarkAsLTOApiController extends Controller
             'lto_no'         => $validated['lto_no'],
             'isHazardous'   => $validated['is_hazardous'] == 'yes' ? true : false,
             'status'        => 'approved',
+            'actioned_by'   => Auth::id(),
             'remarks'       => $validated['remarks'],
             'created_at'    => now(),
             'updated_at'    => now(),
