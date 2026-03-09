@@ -5,13 +5,10 @@
 @endsection
 
 @section('content')
-    <!-- <div class="container-fluid">
-        <dtr-view-vue :employee_id="{{ json_encode($employee_no) }}" ></dtr-view-vue>
-    </div> -->
-
      <dtr-view-vue 
         :employee_no="{{ json_encode($employee_no) }}"
-        :employee_id="{{ json_encode($employee_id) }}">
+        :employee_id="{{ json_encode($employee_id) }}"
+        :supervisor="{{ json_encode($supervisor) }}">
     </dtr-view-vue>
 @endsection
 

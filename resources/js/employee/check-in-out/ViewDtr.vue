@@ -339,7 +339,7 @@
                         </div>
                     </div>
                     <div
-                        class="d-flex justify-content-center w-100 text-center mt-0"
+                        class="d-flex justify-content-center w-100 text-center mt-0 pb-4"
                         style="gap: 100px;"
                       >
                         <div style="width: 320px">
@@ -352,21 +352,24 @@
                             >
                                 EMPLOYEE'S SIGNATURE
                             </div>
-                        </div>
-                        <div style="width: 320px; position: relative; top: 15px">
                             <div
-                                class="border-top pt-1 small fw-semibold mt-3"
+                              class="mt-4 small text-center fst-italic text-body-secondary"
+                              >
+                                  I hereby certify that the above records are true
+                                  and correct.
+                            </div>
+                        </div>
+                        <div style="width: 320px; position: relative">
+                            <div class="mt-2 text-uppercase mb-1">
+                                {{ supervisor }}
+                            </div>
+                            <div
+                                class="border-top pt-1 small fw-semibold"
                             >
                                 SUPERVISOR'S SIGNATURE
                             </div>
                         </div>
                     </div>
-                    <div
-                          class="mt-4 small text-center fst-italic text-body-secondary"
-                      >
-                          I hereby certify that the above records are true
-                          and correct.
-                      </div>
                 </div>
             </div>
         </div>
@@ -388,7 +391,7 @@ const props = defineProps({
     },
     month: { type: Number, required: true },
     year: { type: Number, required: true },
-
+    supervisor: { type: String, required: true },
     // Optional: overrides (still supported)
     form: {
         type: Object,
