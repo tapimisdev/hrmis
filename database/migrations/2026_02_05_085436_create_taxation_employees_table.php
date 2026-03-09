@@ -94,7 +94,7 @@ return new class extends Migration
             $table->foreignId('taxation_employee_id')
                 ->constrained('taxation_employees')
                 ->cascadeOnDelete();
-
+            $table->boolean('is_default')->default(false);
             $table->string('name');
             $table->decimal('amount', 15, 4);
 
@@ -111,6 +111,7 @@ return new class extends Migration
                 ->constrained('taxation_employees')
                 ->cascadeOnDelete();
 
+            $table->boolean('is_default')->default(false);
             $table->string('name');
             $table->decimal('amount', 15, 4);
 

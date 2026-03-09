@@ -1,5 +1,5 @@
 <template>
-    <div class="own-table-wrapper">
+    <div class="own-table-wrapper table-responsive">
         <table class="table own-table mb-0 align-middle">
             <thead>
                 <!-- TOP HEADER (row 1) -->
@@ -95,7 +95,7 @@ export default {
         return {
             openKey: null,
             currentPage: 1,
-            perPage: 10,
+            perPage: 20,
         };
     },
     computed: {

@@ -4,9 +4,8 @@ namespace App\Http\Requests\Taxation;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Validator;
 
-class RunForecastRequest extends FormRequest
+class UpdateForecastRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,23 +15,6 @@ class RunForecastRequest extends FormRequest
     public function rules(): array
     {
         return [
-            
-            'year' => [
-                'required',
-                'numeric',
-                Rule::unique('taxations', 'year')->where(function ($query) {
-                    return $query->where('is_active', 1);
-                }),
-            ],
-
-            // =========================
-            // Tax settings (TAB A)
-            // =========================
-            'hazardTaxId'     => ['required', 'integer', 'exists:payroll_components,id'],
-            'salaryTaxId'     => ['required', 'integer', 'exists:payroll_components,id'],
-            'longevityTaxId'  => ['required', 'integer', 'exists:payroll_components,id'],
-            'trainLawId'      => ['required', 'integer', 'exists:train_law,id'],
-
             // =========================
             // Assumptions (TAB B)
             // =========================
@@ -42,22 +24,23 @@ class RunForecastRequest extends FormRequest
             'assumptions.yearEnd'           => ['required', 'boolean'],
             'assumptions.longevity'         => ['required', 'boolean'],
             'assumptions.hazardPay'         => ['required', 'boolean'],
-            'assumptions.lessBirRR32015'  => ['required', 'boolean'],
+            'assumptions.lessBirRR32015'    => ['required', 'boolean'],
 
             // =========================
-            // Earnings (TAB B)
+            // Earnings
             // =========================
             'othersEarnings'                => ['nullable', 'array'],
+            'othersEarnings.*.id' => ['nullable', 'exists:taxation_employee_other_earnings,id'],
             'othersEarnings.*.name'         => ['required_with:earnings.others', 'string'],
-            'othersEarnings.*.tax_type' => [
+            'othersEarnings.*.tax_type'     => [
                 'required_with:earnings.others',
                 'string',
-                Rule::in(['taxable', 'non_taxable', 'exempt']),
+                Rule::in(['taxable', 'non_taxable']),
             ],
             'othersEarnings.*.amount'       => ['required_with:earnings.others', 'numeric', 'min:1'],
 
             // =========================
-            // Deductions (TAB B)
+            // Deductions
             // =========================
             'deductions'                    => ['required', 'array'],
             'deductions.gsis'               => ['required', 'boolean'],
@@ -65,45 +48,44 @@ class RunForecastRequest extends FormRequest
             'deductions.pagibig'            => ['required', 'boolean'],
 
             'othersDeductions'              => ['nullable', 'array'],
+            'othersDeductions.*.id' => [
+                'nullable',
+                'exists:taxation_employee_other_deductions,id'
+            ],
             'othersDeductions.*.name'       => ['required_with:deductions.others', 'string'],
             'othersDeductions.*.amount'     => ['required_with:deductions.others', 'numeric', 'min:1'],
 
             // =========================
             // Allocation (TAB C)
             // =========================
-            'allocation'                     => ['required', 'array'],
+            'allocation'                   => ['required', 'array'],
             'allocation.hazardPayPct'      => ['required', 'numeric', 'min:0', 'max:100'],
             'allocation.basicPayPct'       => ['required', 'numeric', 'min:0', 'max:100'],
-            'allocation.longevityPct'       => ['required', 'numeric', 'min:0', 'max:100'],
+            'allocation.longevityPct'      => ['required', 'numeric', 'min:0', 'max:100'],
         ];
     }
 
-    public function withValidator($validator)
-    {
-        /** @var \Illuminate\Validation\Validator $validator */
-        $validator->after(function (Validator $validator) {
-            if (!$this->filled('allocation')) {
-                return;
-            }
-
-            $allocation = (array) $this->input('allocation', []);
-            $total = collect($allocation)->sum();
-
-            // Float-safe comparison
-            if (abs(((float) $total) - 100.0) > 0.0001) {
-                $validator->errors()->add(
-                    'allocation',
-                    'Allocation percentages must total exactly 100%.'
-                );
-            }
-        });
-    }
-
-    public function messages(): array
+    /**
+     * Additional validation after rules
+     */
+    public function after(): array
     {
         return [
-            'othersEarnings.*.tax_type.required' =>
-                'This is required',
+            function ($validator) {
+
+                $hazard = $this->input('allocation.hazardPayPct', 0);
+                $basic = $this->input('allocation.basicPayPct', 0);
+                $long = $this->input('allocation.longevityPct', 0);
+
+                $total = $hazard + $basic + $long;
+
+                if ($total != 100) {
+                    $validator->errors()->add(
+                        'allocation',
+                        'Hazard Pay, Basic Pay, and Longevity must total exactly 100%.'
+                    );
+                }
+            }
         ];
     }
 }

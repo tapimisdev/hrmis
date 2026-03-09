@@ -5,12 +5,12 @@
         </div>
 
         <!-- TABLE SIDE -->
-        <div class="col-md-8">
+        <div class="col-sm-6 col-md-8">
             <slot name="left"></slot>
         </div>
 
         <!-- RIGHT SIDE -->
-        <div class="col-md-4">
+        <div class="col-sm-6 col-md-4">
             <slot name="right"></slot>
         </div>
     </div>

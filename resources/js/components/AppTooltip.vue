@@ -1,19 +1,10 @@
 <template>
-  <span
-    class="app-tooltip"
-    :class="[`pos-${position}`]"
-    tabindex="0"
-    :aria-describedby="tooltipId"
-  >
+  <span class="app-tooltip" :class="[`pos-${position}`]" tabindex="0" :aria-describedby="tooltipId">
     <slot>
       <span class="tip-icon" aria-hidden="true">?</span>
     </slot>
 
-    <span
-      class="tooltip-content"
-      role="tooltip"
-      :id="tooltipId"
-    >
+    <span class="tooltip-content" role="tooltip" :id="tooltipId">
       {{ text }}
     </span>
   </span>
@@ -24,7 +15,11 @@ export default {
   name: "AppTooltip",
   props: {
     text: { type: String, required: true },
-    position: { type: String, default: "top" },
+    position: {
+      type: String,
+      default: "top",
+      validator: v => ["top", "right", "bottom", "left"].includes(v)
+    }
   },
   computed: {
     tooltipId() {
@@ -58,10 +53,8 @@ export default {
     text-align: left;
 
     /* INFO THEME */
-    background: linear-gradient(
-      var(--bs-info),
-      color-mix(in srgb, var(--bs-info) 75%, black)
-    );
+    background: linear-gradient(var(--bs-info),
+        color-mix(in srgb, var(--bs-info) 75%, black));
 
     color: var(--bs-white);
     border: 1px solid color-mix(in srgb, var(--bs-info) 60%, black);
@@ -105,10 +98,12 @@ export default {
     bottom: calc(100% + 8px);
     transform: translateX(-50%) translateY(4px);
   }
+
   &.pos-top:hover .tooltip-content,
   &.pos-top:focus-visible .tooltip-content {
     transform: translateX(-50%) translateY(0);
   }
+
   &.pos-top .tooltip-content::after {
     left: 50%;
     bottom: -5px;
@@ -121,10 +116,12 @@ export default {
     top: 50%;
     transform: translateY(-50%) translateX(-4px);
   }
+
   &.pos-right:hover .tooltip-content,
   &.pos-right:focus-visible .tooltip-content {
     transform: translateY(-50%) translateX(0);
   }
+
   &.pos-right .tooltip-content::after {
     left: -5px;
     top: 50%;
@@ -137,14 +134,34 @@ export default {
     top: calc(100% + 8px);
     transform: translateX(-50%) translateY(-4px);
   }
+
   &.pos-bottom:hover .tooltip-content,
   &.pos-bottom:focus-visible .tooltip-content {
     transform: translateX(-50%) translateY(0);
   }
+
   &.pos-bottom .tooltip-content::after {
     left: 50%;
     top: -5px;
     transform: translateX(-50%) rotate(45deg);
+  }
+
+  /* LEFT */
+  &.pos-left .tooltip-content {
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%) translateX(4px);
+  }
+
+  &.pos-left:hover .tooltip-content,
+  &.pos-left:focus-visible .tooltip-content {
+    transform: translateY(-50%) translateX(0);
+  }
+
+  &.pos-left .tooltip-content::after {
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%) rotate(225deg);
   }
 }
 

@@ -92,6 +92,8 @@ export function TaxationSettingModel(data = {}) {
 
         return items.map((row = {}) => ({
             id: row.id ?? "",
+            year: row.year ?? "",
+            avatar: row.avatar ?? "",
             employee_no: row.employee_no ?? "",
 
             full_name: row.full_name ?? "",

@@ -11,7 +11,8 @@
         </template>
 
         <div class="wrapper py-3">
-            <BreakdownSkeleton v-if="is_loading"/>
+            <BasicInformation :row="row" />
+            <BreakdownSkeleton v-if="is_loading" />
             <DynamicTabs v-else :tabs="tabs" :active-index="0" />
         </div>
     </TaxTemplate>
@@ -20,6 +21,7 @@
 <script>
 import axios from "axios";
 import TaxTemplate from "./../components/TaxTemplate.vue";
+import BasicInformation from "../components/BasicInformation.vue";
 import DynamicTabs from "./components/DynamicTabs.vue";
 import BreakdownSkeleton from "./components/BreakdownSkeleton.vue";
 import Overview from "./parts/Overview.vue";
@@ -33,6 +35,7 @@ export default {
     name: "ViewBreakDown",
     components: { 
         TaxTemplate, 
+        BasicInformation,
         DynamicTabs,
         SalaryView,
         BreakdownSkeleton,
@@ -160,6 +163,29 @@ export default {
 <style scoped>
 .wrapper {
     background: var(--bs-body-bg);
+}
+
+.breakdown-identity-card {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+    background: var(--bs-body-bg);
+    box-shadow: none;
+}
+
+.breakdown-name {
+    font-size: 0.95rem;
+    line-height: 1.1;
+}
+
+.breakdown-sub {
+    line-height: 1.15;
+}
+
+.breakdown-pill {
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    padding: 0.28rem 0.5rem;
+    border-radius: 999px;
 }
 
 /* old FB style tabs */

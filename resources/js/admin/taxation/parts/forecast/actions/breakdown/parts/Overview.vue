@@ -3,26 +3,6 @@
         :section-title="'Computation Overview'"
         :result-class="'text-primary'"
     >
-        <template #identity>
-            <div>
-                <div class="fw-semibold text-body old-name">{{ row.full_name }}</div>
-                <div class="small text-muted old-sub">{{ row.position }}</div>
-                <div class="small text-muted old-sub">
-                    {{ row.division }}
-                    <span v-if="row.unit && row.unit !== row.division">
-                        ( {{ row.unit }} )
-                    </span>
-                </div>
-            </div>
-        </template>
-
-        <template #badge>
-            <span class="badge old-pill bg-primary-subtle text-primary border border-primary-subtle">
-                ACTIVE
-            </span>
-            <div class="small text-muted mt-1">Forecast</div>
-        </template>
-
         <template #headline-left>
             <div>
                 <div class="small text-muted">Monthly Tax</div>

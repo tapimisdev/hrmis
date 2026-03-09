@@ -18,6 +18,13 @@
         </div>
 
         <div v-for="(row, idx) in rows" :key="idx" class="row g-2 mb-3">
+
+            <input
+                type="hidden"
+                class="form-control form-control-sm"
+                v-model.trim="row.id"
+            />
+
             <!-- NAME -->
             <div :class="enableTaxType ? 'col-10' : 'col-7'">
                 <input
@@ -95,7 +102,6 @@ export default {
         errors: { type: Object, default: () => ({}) },
         errorKey: { type: String, required: true },
 
-        // sendYearToParentNEW: enable tax_type select ONLY for earnings
         enableTaxType: { type: Boolean, default: false },
 
         defaultRow: {

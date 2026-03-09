@@ -228,9 +228,9 @@ class ForeCastEmployeeJob implements ShouldQueue
         $otherDeductions = $sumAmounts($payload['othersDeductions']);
 
         // Append standard deductions (so UI can show them)
-        $payload['othersDeductions'][] = ['name' => 'GSIS', 'amount' => round($totalGsis, 4)];
-        $payload['othersDeductions'][] = ['name' => 'PAGIBIG', 'amount' => round($totalPagibig, 4)];
-        $payload['othersDeductions'][] = ['name' => 'PHILHEALTH', 'amount' => round($totalPhilhealth, 4)];
+        $payload['othersDeductions'][] = ['is_default' => true, 'name' => 'GSIS', 'amount' => round($totalGsis, 4)];
+        $payload['othersDeductions'][] = ['is_default' => true, 'name' => 'PAGIBIG', 'amount' => round($totalPagibig, 4)];
+        $payload['othersDeductions'][] = ['is_default' => true, 'name' => 'PHILHEALTH', 'amount' => round($totalPhilhealth, 4)];
 
         $totalAllowableDeduction = round(
             ($totalGsis + $totalPagibig + $totalPhilhealth) + $otherDeductions,

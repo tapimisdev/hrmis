@@ -1,5 +1,5 @@
 <template>
-    <div class="tax-skeleton">
+    <div class="tax-skeleton p-3">
         <!-- Tabs -->
         <div class="tax-tabs">
             <div class="sk-tab active"></div>

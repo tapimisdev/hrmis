@@ -80,6 +80,7 @@ class ForecastComputationService
             ->filter(fn($r) => filled(data_get($r, 'name')))
             ->map(fn($r) => [
                 'taxation_employee_id' => $taxationEmployeeId,
+                'is_default'           => $r['is_default'] ?? false,
                 'name'                 => trim($r['name']),
                 'tax_type'             => trim($r['tax_type'] ?? ''),
                 'amount'               => (int) ($r['amount'] ?? 0),
@@ -97,13 +98,14 @@ class ForecastComputationService
             ->filter(fn($r) => filled(data_get($r, 'name')))
             ->map(fn($r) => [
                 'taxation_employee_id' => $taxationEmployeeId,
+                'is_default'           => $r['is_default'] ?? false,
                 'name'                 => trim($r['name']),
                 'amount'               => (int) ($r['amount'] ?? 0),
                 'created_at'           => now(),
                 'updated_at'           => now(),
             ])
             ->all();
-
+        
         if (!empty($deductions)) {
             DB::table('taxation_employee_other_deductions')->insert($deductions);
         }
@@ -1394,6 +1396,7 @@ class ForecastComputationService
             $data = $this->getComponentAmount($type, $employee_no, $year);
             
             $results[] = [
+                'is_default' => true,
                 'name' => ucfirst(str_replace('_', ' ', $name)),
                 'tax_type' => 'non_taxable',
                 'amount' => $data['total'],

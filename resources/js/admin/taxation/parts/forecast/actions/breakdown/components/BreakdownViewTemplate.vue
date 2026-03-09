@@ -1,38 +1,5 @@
 <template>
-    <div class="card-simple p-3 mb-2 old-social-card">
-        <div class="d-flex justify-content-between align-items-start gap-2">
-            <slot name="identity">
-                <div>
-                    <div class="fw-semibold text-body old-name">
-                        {{ safeText(normalizedComputation.label) }}
-                    </div>
-
-                    <div class="small text-muted old-sub">
-                        Key:
-                        <span class="fw-semibold">{{ safeText(normalizedComputation.key) }}</span>
-                    </div>
-
-                    <div class="small text-muted old-sub">
-                        Type:
-                        <span class="fw-semibold">
-                            {{ safeText(normalizedComputation.meta && normalizedComputation.meta.type) }}
-                        </span>
-                    </div>
-                </div>
-            </slot>
-
-            <div class="text-end">
-                <slot name="badge">
-                    <span class="badge old-pill" :class="badgeClass">
-                        {{ badgeTextValue }}
-                    </span>
-                    <div class="small text-muted mt-1">{{ badgeCaption }}</div>
-                </slot>
-            </div>
-        </div>
-
-        <hr class="my-3 old-divider" />
-
+    <div class="card-simple px-3 mb-2 old-social-card">
         <div class="d-flex justify-content-between align-items-end gap-3">
             <slot name="headline-left">
                 <div>
@@ -129,8 +96,6 @@ export default {
 
 <style scoped>
 .old-social-card {
-    border: 1px solid var(--bs-border-color);
-    border-radius: 0.25rem;
     background: var(--bs-body-bg);
     box-shadow: none;
 }

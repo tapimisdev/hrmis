@@ -24,11 +24,6 @@
 import TaxTemplate from './components/TaxTemplate.vue';
 export default {
     name: 'EmptyState',
-    components: { TaxTemplate },
-    data() {
-        return {
-
-        }
-    }
+    components: { TaxTemplate }
 }
 </script>

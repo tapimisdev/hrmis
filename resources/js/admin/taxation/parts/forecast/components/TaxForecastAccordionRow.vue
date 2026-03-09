@@ -15,17 +15,30 @@
 
         <!-- Identity -->
         <td class="name-cell" style="width: 30%">
-            <div class="emp-block">
-                <div class="emp-top">
-                    <span class="emp-name">{{ row?.full_name ?? "—" }}</span>
-
-                    <span v-if="row?.employee_no" class="emp-no">
-                        {{ row.employee_no }}
-                    </span>
+            <div class="emp-wrap">
+                <div class="emp-avatar">
+                    <img
+                        v-if="row?.avatar"
+                        :src="row.avatar"
+                        alt="Avatar"
+                    />
+                    <div v-else class="emp-avatar-fallback">
+                        {{ initials }}
+                    </div>
                 </div>
 
-                <div class="emp-sub">
-                    <span class="emp-pos">{{ row?.position ?? "—" }}</span>
+                <div class="emp-block">
+                    <div class="emp-top">
+                        <span class="emp-name">{{ row?.full_name ?? "—" }}</span>
+
+                        <span v-if="row?.employee_no" class="emp-no">
+                            {{ row.employee_no }}
+                        </span>
+                    </div>
+
+                    <div class="emp-sub">
+                        <span class="emp-pos">{{ row?.position ?? "—" }}</span>
+                    </div>
                 </div>
             </div>
         </td>
@@ -39,7 +52,7 @@
             <div class="cell-main">{{ row?.unit ?? "—" }}</div>
         </td>
 
-        <!-- Money (right aligned) -->
+        <!-- Money -->
         <td class="td-money">
             {{ row?.amount_annual_taxable ?? "—" }}
         </td>
@@ -62,6 +75,17 @@ export default {
         index: { type: Number, required: true },
         open: { type: Boolean, default: false },
     },
+    computed: {
+        initials() {
+            const name = this.row?.full_name || "";
+            return name
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part.charAt(0).toUpperCase())
+                .join("") || "—";
+        },
+    },
     methods: {
         emitToggle() {
             this.$emit("toggle", { row: this.row, index: this.index });
@@ -71,10 +95,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-/* Row */
+
+/* ===============================
+   Accordion Row
+================================ */
 .own-accordion-row {
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color .15s ease;
+
+    td {
+        vertical-align: middle;
+        padding: 10px;
+    }
 
     &:hover {
         background-color: var(--bs-light-bg-subtle);
@@ -85,95 +117,149 @@ export default {
         box-shadow: inset 3px 0 0 var(--bs-primary);
     }
 
-    td {
-        vertical-align: middle;
-        padding: 10px 10px;
+    /* Money column highlight on hover/open */
+    &:hover .td-money,
+    &.is-open .td-money {
+        color: var(--bs-body-color);
     }
 }
 
-/* Chevron rail */
+
+/* ===============================
+   Chevron
+================================ */
 .td-chev {
     width: 34px;
-    padding-left: 6px;
-    padding-right: 6px;
+    padding: 0 6px;
     color: var(--bs-secondary-color);
-}
 
-.chev {
-    display: inline-block;
-    font-size: 12px;
-    transition: transform 0.18s ease;
-    transform-origin: 50% 50%;
+    .chev {
+        display: inline-block;
+        font-size: 12px;
+        transition: transform .18s ease;
+        transform-origin: center;
 
-    &.rotate {
-        transform: rotate(90deg);
+        &.rotate {
+            transform: rotate(90deg);
+        }
     }
 }
 
-/* Identity */
+
+/* ===============================
+   Employee Identity
+================================ */
 .name-cell {
     padding-left: 8px;
+
+    .emp-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    /* Avatar */
+    .emp-avatar {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--bs-tertiary-bg);
+        border: 1px solid var(--bs-border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        &-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--bs-secondary-color);
+            background: var(--bs-light-bg-subtle);
+        }
+    }
+
+    /* Text Block */
+    .emp-block {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .emp-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .emp-name {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--bs-body-color);
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+    }
+
+    .emp-sub {
+        display: flex;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .emp-pos {
+        font-size: 11px;
+        color: var(--bs-secondary-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Employee number pill */
+    .emp-no {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .3px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--bs-border-color);
+        background: var(--bs-tertiary-bg);
+        color: var(--bs-secondary-color);
+        line-height: 1.2;
+        flex: 0 0 auto;
+    }
 }
 
-.emp-block {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
+
+/* ===============================
+   Table Cells
+================================ */
+.td-muted {
+    .cell-main {
+        font-size: 12px;
+        color: var(--bs-body-color);
+    }
 }
 
-.emp-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.emp-name {
-    font-weight: 700;
-    font-size: 12px;
-    color: var(--bs-body-color);
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.emp-sub {
-    display: flex;
-    gap: 6px;
-    min-width: 0;
-}
-
-.emp-pos {
-    font-size: 11px;
-    color: var(--bs-secondary-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Employee number pill */
-.emp-no {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--bs-border-color);
-    background: var(--bs-tertiary-bg);
-    color: var(--bs-secondary-color);
-    line-height: 1.2;
-    flex: 0 0 auto;
-}
-
-/* Muted org cells */
-.td-muted .cell-main {
-    font-size: 12px;
-    color: var(--bs-body-color);
-}
-
-/* Money cells */
 .td-money {
     text-align: right;
     font-size: 12px;
@@ -182,9 +268,4 @@ export default {
     color: var(--bs-body-color);
 }
 
-/* Optional: make money columns slightly tinted on hover/open */
-.own-accordion-row:hover .td-money,
-.own-accordion-row.is-open .td-money {
-    color: var(--bs-body-color);
-}
 </style>

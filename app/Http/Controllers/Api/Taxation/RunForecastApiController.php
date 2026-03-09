@@ -13,7 +13,6 @@ use Throwable;
 
 class RunForecastApiController extends Controller
 {
-
     protected $run_forecast_service;
 
     public function __construct(RunForecastService $run_forecast_service)

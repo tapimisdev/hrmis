@@ -3,6 +3,7 @@
 namespace App\Services\Taxation\Parts;
 
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Support\Facades\Storage;
 
 class TaxationBodyService
 {
@@ -40,7 +41,11 @@ class TaxationBodyService
             ->leftJoin('units as u', 'eo.unit_id', '=', 'u.id')
             ->select(
                 'te.id',
+                'te.year',
                 'te.employee_no',
+                'ep.profile',
+                'ep.lastname',
+                'ep.firstname',
 
                 $this->db->raw("
                     CONCAT(
@@ -100,6 +105,17 @@ class TaxationBodyService
             ->get()
             ->map(function ($employee) {
 
+            $profile = $employee->profile ?? null;
+
+            if ($profile) {
+                $profile = Storage::url('public/users/' . $employee->employee_no . '/profile-image/' . $employee->profile);
+            } else {
+                $profile = 'https://ui-avatars.com/api/?name='
+                    . urlencode(($employee->firstname ?? '?') . ' ' . ($employee->lastname ?? '?'))
+                    . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
+            }
+                
+            $employee->avatar = $profile;
             $employee->amount_less =
                     $employee->amount_other_earnings_non_taxable
                     + $employee->amount_annual_total_allowables

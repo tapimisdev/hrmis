@@ -62,143 +62,152 @@ import EmptyState from "./components/EmptyState.vue";
 
 import ActionEmptyState from "./actions/ActionEmptyState.vue";
 import ViewBreakdown from "./actions/breakdown/ViewBreakdown.vue";
-import EditInputs from "./actions/EditInputs.vue";
+import EditInputs from "./actions/edit-inputs/EditInputs.vue";
 
 export default {
-  name: "IndexForecast",
-  components: {
-    TwoColLayout,
-    TaxForecastTable,
-    TaxForecastFilters,
-    EmptyState,
-    ActionEmptyState,
-    ViewBreakdown,
-    EditInputs,
-  },
-  props: {
-    body: { type: Array, required: true },
-  },
-  data() {
-    return {
-      search: "",
-      selectedDivision: "",
-      selectedUnit: "",
+    name: "IndexForecast",
+    components: {
+        TwoColLayout,
+        TaxForecastTable,
+        TaxForecastFilters,
+        EmptyState,
+        ActionEmptyState,
+        ViewBreakdown,
+        EditInputs,
+    },
+    props: {
+        body: { type: Array, required: true },
+    },
+    data() {
+        return {
+            search: "",
+            selectedDivision: "",
+            selectedUnit: "",
 
-      activeRow: null,
-      selectedActionId: "empty",
+            activeRow: null,
+            selectedActionId: "empty",
 
-      actions: [
-        {
-          id: "empty",
-          name: "No Employee Selected",
-          component: markRaw(ActionEmptyState),
+            actions: [
+                {
+                    id: "empty",
+                    name: "No Employee Selected",
+                    component: markRaw(ActionEmptyState),
+                },
+                {
+                    id: "breakdown",
+                    name: "View Breakdown",
+                    component: markRaw(ViewBreakdown),
+                },
+                {
+                    id: "edit",
+                    name: "Edit Inputs",
+                    component: markRaw(EditInputs),
+                },
+            ],
+        };
+    },
+
+    computed: {
+        hasActiveFilters() {
+            return (
+                this.search.trim() !== "" ||
+                this.selectedDivision !== "" ||
+                this.selectedUnit !== ""
+            );
         },
-        {
-          id: "breakdown",
-          name: "View Breakdown",
-          component: markRaw(ViewBreakdown),
+
+        divisions() {
+            const set = new Set(
+                this.body.map((r) => r.division).filter(Boolean),
+            );
+            return Array.from(set).sort();
         },
-        {
-          id: "edit",
-          name: "Edit Inputs",
-          component: markRaw(EditInputs),
+
+        units() {
+            const base = this.selectedDivision
+                ? this.body.filter((r) => r.division === this.selectedDivision)
+                : this.body;
+
+            const set = new Set(base.map((r) => r.unit).filter(Boolean));
+            return Array.from(set).sort();
         },
-      ],
-    };
-  },
 
-  computed: {
-    hasActiveFilters() {
-      return (
-        this.search.trim() !== "" ||
-        this.selectedDivision !== "" ||
-        this.selectedUnit !== ""
-      );
+        filteredRows() {
+            const s = this.search.trim().toLowerCase();
+
+            return this.body.filter((r) => {
+                const matchSearch =
+                    !s ||
+                    String(r.employee_no || "")
+                        .toLowerCase()
+                        .includes(s) ||
+                    String(r.full_name || "")
+                        .toLowerCase()
+                        .includes(s);
+
+                const matchDivision =
+                    !this.selectedDivision ||
+                    r.division === this.selectedDivision;
+
+                const matchUnit =
+                    !this.selectedUnit || r.unit === this.selectedUnit;
+
+                return matchSearch && matchDivision && matchUnit;
+            });
+        },
+
+        selectedAction() {
+            return (
+                this.actions.find((a) => a.id === this.selectedActionId) || null
+            );
+        },
     },
 
-    divisions() {
-      const set = new Set(this.body.map((r) => r.division).filter(Boolean));
-      return Array.from(set).sort();
+    watch: {
+        selectedDivision() {
+            this.selectedUnit = "";
+        },
+        body() {
+            this.deleteRow();
+        },
     },
 
-    units() {
-      const base = this.selectedDivision
-        ? this.body.filter((r) => r.division === this.selectedDivision)
-        : this.body;
+    methods: {
+        setAction(id, row = null) {
+            this.selectedActionId = id;
+            this.activeRow = row;
+        },
 
-      const set = new Set(base.map((r) => r.unit).filter(Boolean));
-      return Array.from(set).sort();
+        clearFilters() {
+            this.search = "";
+            this.selectedDivision = "";
+            this.selectedUnit = "";
+        },
+
+        pullFromPayrollAndReconcile() {
+            console.log("PULL FROM PAYROLL & RECONCILE");
+        },
+
+        viewRow(row) {
+            this.setAction("breakdown", row);
+        },
+
+        editRow(row) {
+            this.setAction("edit", row);
+            console.log(row);
+        },
+
+        recomputeRow(row) {
+            this.setAction("breakdown", row);
+        },
+
+        deleteRow() {
+            this.setAction("empty", null);
+        },
     },
-
-    filteredRows() {
-      const s = this.search.trim().toLowerCase();
-
-      return this.body.filter((r) => {
-        const matchSearch =
-          !s ||
-          String(r.employee_no || "").toLowerCase().includes(s) ||
-          String(r.full_name || "").toLowerCase().includes(s);
-
-        const matchDivision =
-          !this.selectedDivision || r.division === this.selectedDivision;
-
-        const matchUnit = !this.selectedUnit || r.unit === this.selectedUnit;
-
-        return matchSearch && matchDivision && matchUnit;
-      });
-    },
-
-    selectedAction() {
-      return this.actions.find((a) => a.id === this.selectedActionId) || null;
-    },
-  },
-
-  watch: {
-    selectedDivision() {
-      this.selectedUnit = "";
-    },
-    body() {
-      this.deleteRow();
-    }
-  },
-
-  methods: {
-    setAction(id, row = null) {
-      this.selectedActionId = id;
-      this.activeRow = row;
-    },
-
-    clearFilters() {
-      this.search = "";
-      this.selectedDivision = "";
-      this.selectedUnit = "";
-    },
-
-    pullFromPayrollAndReconcile() {
-      console.log("PULL FROM PAYROLL & RECONCILE");
-    },
-
-    viewRow(row) {
-      this.setAction("breakdown", row);
-    },
-
-    editRow(row) {
-      this.setAction("edit", row);
-      console.log(row);
-    },
-
-    recomputeRow(row) {
-      this.setAction("breakdown", row);
-    },
-
-    deleteRow() {
-      this.setAction("empty", null);
-    },
-  },
 };
 </script>
 
-<!-- IMPORTANT: keep this NOT scoped so transition classes apply -->
 <style>
 /* ENTER: slide from right */
 .slideInRight {
