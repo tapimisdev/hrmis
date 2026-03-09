@@ -69,7 +69,7 @@ class EmployeeController extends Controller
                 'schedule_id' => 'required|exists:work_schedule,id',
                 'employment_effectivity_date' => [
                     'required',
-                    'date_format:Y-m',
+                    'date'
                 ],
                 'tranche_id' => 'required|exists:tranche,id',
                 'step_id' => 'required|between:1,8',
@@ -80,7 +80,7 @@ class EmployeeController extends Controller
                 'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
                 'salary_effectivity_date' => [
                     'required',
-                    'date_format:Y-m',
+                    'date'
                 ],
             ];
         }
@@ -108,8 +108,6 @@ class EmployeeController extends Controller
 
         try {
 
-            $now = Carbon::now()->toDateString();
-
             $salary = $this->getSalary(
                 $request->tranche_id,
                 $request->step_id,
@@ -133,8 +131,8 @@ class EmployeeController extends Controller
                         'unit_id'            => $request->unit_id,
                         'employment_type_id' => $request->employment_type_id,
                         'position_id'        => $request->position_id,
-                        'updated_at'         => $now,
-                        'created_at'         => $now, 
+                        'updated_at'         => now(),
+                        'created_at'         => now(), 
                     ]
                 );
 
@@ -152,8 +150,8 @@ class EmployeeController extends Controller
                         'salary_method'     => $request->salary_method,
                         'amount'            => $salary->amount,
                         'daily_rate'        => $salary->daily_rate,
-                        'updated_at'        => $now,
-                        'created_at'        => $now,
+                        'updated_at'        => now(),
+                        'created_at'        => now(),
                     ]
                 );
             }

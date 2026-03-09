@@ -52,6 +52,10 @@ class DailyTimeRecordController extends Controller
             ->where('employee_no', $employee_no)
             ->value('user_id');
 
+        if(is_null($employee_id)) {
+            return redirect()->route('timelogs.index');
+        }
+
         return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no', 'employee_id'));
     }
 
