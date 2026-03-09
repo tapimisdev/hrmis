@@ -10,6 +10,7 @@ use App\Services\TimelogsServices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class AddTimeApiController extends Controller
 {
@@ -97,6 +98,7 @@ class AddTimeApiController extends Controller
                     'shift_id'         => $validatedData['shift'],
                     'work_schedule_id' => $validatedData['weeklyschedule'],
                     'fn'               => $entry['fn']->value,
+                    'actioned_by'      => Auth::id(),
                     'created_at'       => now(),
                     'updated_at'       => now(),
                 ]);

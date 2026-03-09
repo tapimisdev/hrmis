@@ -10,6 +10,7 @@ use App\Services\TimelogsServices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AddOvertimeApiController extends Controller
 {
@@ -44,7 +45,11 @@ class AddOvertimeApiController extends Controller
 
         $employee_no = $validatedData['user_id'];
         $user_id = $this->employee_service->getEmployeeUserId($employee_no);
+        $start = Carbon::parse($validatedData['start_time']);
+        $end = Carbon::parse($validatedData['end_time']);
         
+        $totalHours = $start->diffInMinutes($end) / 60;
+
         DB::beginTransaction();
         try {
             $atro = DB::table('overtime_applications')
@@ -55,10 +60,10 @@ class AddOvertimeApiController extends Controller
                         'date' => $validatedData['date'],
                         'start_time' => $validatedData['start_time'],
                         'end_time' => $validatedData['end_time'],
-                        'total_hours' => $validatedData['total_hours'],
+                        'total_hours' => $totalHours,
                         'reason' => $validatedData['reason'],
                         'status' => 'approved',
-                        'approver_id' => Auth::id(),
+                        'actioned_by' => Auth::id(),
                         'approved_at' => now(),
                         'level' => null,
                         'levels' => null,
