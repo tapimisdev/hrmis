@@ -18,6 +18,14 @@
             id="services">
         <ul class="nested-list">
 
+            <li class="nested-item">
+                <a href="{{ route('services.credits') }}"
+                    class="{{ request()->is('admin/service/credits*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Credits</span>
+                </a>
+            </li>
+
             @can('hr.events_and_announcements.view')
             <li class="nested-item">
                 <a href="{{ route('services.events.index') }}"

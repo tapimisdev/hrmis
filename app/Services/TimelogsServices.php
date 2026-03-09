@@ -543,6 +543,34 @@ class TimelogsServices {
         ];
     }
 
+    public function checkIfLTO($date, $userId)
+    {
+        $isLTO = false;
+        $status = 'pending local travel order (LTO)';
+
+        $lto = DB::table('lto_applications as soa')
+            ->leftJoin('lto_dates as sod', 'soa.id', '=', 'sod.lto_application_id')
+            ->where('soa.user_id', $userId)
+            ->where('sod.isActive', true)
+            ->whereDate('sod.date', $date)
+            ->first();
+        
+
+        if ($lto) {
+            $isLTO = true;
+
+            if ($lto->status === 'approved') {
+                $status = 'lto';
+            }
+        }
+
+        return [
+            'is_lto' => $isLTO,
+            'shift'    => $lto->shift ?? '',
+            'status'   => $status
+        ];
+    }
+
     public function checkIfPassSlip($date, $userId)
     {
         $is_pass_slip = false;

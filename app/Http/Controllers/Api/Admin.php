@@ -60,9 +60,6 @@ class Admin extends Controller
             ->pluck('total', 'name')
             ->toArray();
 
-        /** -------------------------
-         * Offset Today
-         * ------------------------*/
         $offsetToday = DB::table('offset_applications as oa')
             ->join('offset_dates as od', 'oa.id', '=', 'od.offset_application_id')
             ->whereDate('od.date', $today)
@@ -73,6 +70,14 @@ class Admin extends Controller
 
         $soToday = DB::table('special_order_applications as oa')
             ->join('special_order_dates as od', 'oa.id', '=', 'od.special_order_application_id')
+            ->whereDate('od.date', $today)
+            ->where('od.isActive', true)
+            ->where('oa.status', 'approved')
+            ->distinct('oa.employee_no')
+            ->count('oa.employee_no');
+
+        $ltoToday = DB::table('lto_applications as oa')
+            ->join('lto_dates as od', 'oa.id', '=', 'od.lto_application_id')
             ->whereDate('od.date', $today)
             ->where('od.isActive', true)
             ->where('oa.status', 'approved')
@@ -198,6 +203,12 @@ class Admin extends Controller
                     'value' => $soToday,
                     'subValue' => 'Today',
                     'icon' => 'fa-solid fa-car-on text-purple-500',
+                ],
+                [
+                    'name' => 'Local Travel Order',
+                    'value' => $ltoToday,
+                    'subValue' => 'Today',
+                    'icon' => 'fa-solid fa-person-walking-luggage text-purple-500',
                 ],
                 [
                     'name' => 'Pass Slip / OBS ',

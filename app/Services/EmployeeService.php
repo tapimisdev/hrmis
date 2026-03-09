@@ -499,6 +499,18 @@ class EmployeeService {
         return $leaveCredit;
     }
 
+    # GET EMPLOYEE'S LEAVE CREDITS 
+    # BASED ON LEAVE ID
+    public function checkOffsetCredits(string $employee_no)
+    {
+        $leaveCredit = DB::table('offset_credits')
+            ->where('employee_no', $employee_no)
+            ->latest('as_of')
+            ->first();
+
+        return $leaveCredit;
+    }
+
     # GET LEAVE TYPE SETTINGS
     # BASED ON LEAVE ID
     public function getLeaveSettings(int $leave_id) {

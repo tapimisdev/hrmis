@@ -3,7 +3,7 @@
             const btn = $('#switchMenuBtn');
             const icon = btn.find('i');
 
-            // 🔹 Restore saved mode from localStorage
+            //  Restore saved mode from localStorage
             let savedMode = localStorage.getItem('menuMode') || 'collapse';
 
             if (savedMode === 'dropdown') {
@@ -14,7 +14,7 @@
                 icon.removeClass('rotate');
             }
 
-            // 🔹 On click — toggle and save
+            //  On click — toggle and save
             btn.on('click', function () {
                 icon.toggleClass('rotate');
                 $('.dropdown-menu').removeClass('show');
@@ -29,7 +29,7 @@
                 }
             });
 
-            // 🔹 Define collapse mode
+            //  Define collapse mode
             function switchToCollapse() {
                 items.removeClass('dropdown-mode').addClass('collapse-mode');
                 items.each(function (index) {
@@ -57,7 +57,7 @@
                 });
             }
 
-            // 🔹 Define dropdown mode
+            //  Define dropdown mode
             function switchToDropdown() {
                 items.removeClass('collapse-mode').addClass('dropdown-mode');
                 items.each(function () {

@@ -1,38 +1,25 @@
 <template>
-  <div
-    class="payroll-registry-container"
-    :class="status"
-    :data-bs-theme="theme"
-  >
+  <div class="payroll-registry-container" :class="status" :data-bs-theme="theme">
     <!-- Toolbar -->
     <div class="excel-toolbar">
-      <div class="status-badge">
-        <i :class="['fa-solid', statusConfig.icon]"></i>
-        {{ statusConfig.label }}
+      <div class="toolbar-meta">
+        <div class="toolbar-title">{{ payroll_no }} Payroll</div>
+        <div class="status-badge">
+          <i :class="['fa-solid', statusConfig.icon]"></i>
+          {{ statusConfig.label }}
+        </div>
       </div>
 
       <div class="toolbar-left d-flex gap-2">
-        <button class="toolbar-btn" @click="$emit('print')">
-          <i class="fa-solid fa-print"></i> Print
-        </button>
-
         <div class="dropdown">
-          <button
-            class="toolbar-btn left dropdown-toggle"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            <i class="fa-solid fa-download"></i> Downloads
+          <button class="toolbar-btn left dropdown-toggle" type="button" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            <i class="fa-solid fa-download"></i> Export
           </button>
 
           <ul class="dropdown-menu dropdown-menu-end">
             <li v-for="item in downloads" :key="item.key">
-              <a
-                class="dropdown-item"
-                href="javascript:void(0)"
-                @click="downloadPayroll(item.key, payroll_no)"
-              >
+              <a class="dropdown-item" href="javascript:void(0)" @click="downloadPayroll(item.key, payroll_no)">
                 {{ item.label }}
               </a>
             </li>
@@ -43,12 +30,7 @@
 
     <!-- Sheet -->
     <div class="excel-sheet">
-      <LoaderVue
-        :visible="loading"
-        :hasBackground="true"
-        status="uploading"
-        message="Uploading, please wait..."
-      />
+      <LoaderVue :visible="loading" :hasBackground="true" status="uploading" message="Uploading, please wait..." />
 
       <!-- Header -->
       <div class="sheet-header">
@@ -81,6 +63,10 @@
             Period: <strong>1–15 September 2025</strong>
           </slot>
         </div>
+      </div>
+
+      <div v-if="$slots.filters" class="sheet-filters">
+        <slot name="filters"></slot>
       </div>
 
       <!-- Table Slot Only -->
@@ -262,127 +248,378 @@ export default {
 
 <style scoped>
 .payroll-registry-container {
-  --status-color: #ccc;
-  --status-bg: #f9f9f9;
-
-  --bs-success-rgb: 25, 135, 84;
-  --bs-danger-rgb: 220, 53, 69;
-  --bs-primary-rgb: 13, 110, 253;
-  --bs-warning-rgb: 255, 193, 7;
-  --bs-dark-rgb: 33, 37, 41;
+  --status-color: #6b7280;
+  --status-bg: #f3f4f6;
+  --panel-bg: #ffffff;
+  --line-color: #e5e7eb;
+  --header-bg: #f8fafc;
+  --muted-text: #6b7280;
 
   background: var(--status-bg);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
   transition: all 0.3s ease;
-  padding-bottom: 24px;
+  padding: 16px;
   color: var(--bs-body-color);
 }
 
-/* Dark mode adjustments */
 [data-bs-theme="dark"] .payroll-registry-container {
-  --status-bg: #1a1d20;
+  --status-bg: #12161d;
+  --panel-bg: #1b222c;
+  --line-color: #2f3b4c;
+  --header-bg: #1f2b37;
+  --muted-text: #9ca3af;
   background: var(--bs-secondary-bg, #212529);
 }
 
-/* Toolbar */
 .excel-toolbar {
-  background: var(--status-color);
+  background: var(--panel-bg);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-  color: white;
-  transition: background 0.3s ease;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-color);
+  border-radius: 10px;
+  margin-bottom: 14px;
 }
 
-.toolbar-left {
+.toolbar-meta {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.toolbar-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--bs-body-color, #111827);
+  white-space: nowrap;
 }
 
 .toolbar-btn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 3px;
-  font-size: 13px;
+  background: var(--header-bg);
+  border: 1px solid var(--line-color);
+  color: var(--bs-body-color, #111827);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.6);
 }
 
 .toolbar-btn i {
-  margin-right: 6px;
+  margin-right: 5px;
 }
 
 .status-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: white;
+  gap: 6px;
+  background: var(--status-bg);
   color: var(--status-color);
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 13px;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
   font-weight: 600;
 }
 
-/* Sheet */
 .excel-sheet {
-  background: var(--bs-body-bg, white);
-  margin: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--bs-border-color, #d0d0d0);
+  background: var(--panel-bg);
+  margin: 0;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--line-color);
+  border-radius: 12px;
+  overflow: hidden;
   position: relative;
 }
 
 [data-bs-theme="dark"] .excel-sheet {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
 }
 
 .sheet-header {
-  padding: 24px 24px 8px 24px;
+  padding: 18px 20px 8px;
   text-align: center;
-  border-bottom: 2px solid var(--bs-border-color, #e0e0e0);
+  border-bottom: 1px solid var(--line-color);
+  background: var(--header-bg);
 }
 
 .sheet-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  color: var(--bs-body-color, #333);
-  margin: 0 0 8px 0;
+  color: var(--bs-body-color, #111827);
+  margin: 0 0 4px 0;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
 }
 
 .sheet-subtitle {
-  font-size: 12px;
-  color: var(--bs-secondary-color, #666);
+  font-size: 11px;
+  color: var(--muted-text);
+  margin-bottom: 0;
 }
 
 .sheet-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  background: var(--bs-secondary-bg, #f9f9f9);
-  border-bottom: 1px solid var(--bs-border-color, #e0e0e0);
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--line-color);
+  font-size: 12px;
 }
 
-[data-bs-theme="dark"] .sheet-info {
-  background: rgba(255, 255, 255, 0.05);
+.sheet-filters {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--line-color);
+  background: var(--panel-bg);
+}
+
+.sheet-filters :deep(.payroll-filter-bar) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.sheet-filters :deep(.payroll-filter-input),
+.sheet-filters :deep(.payroll-filter-select) {
+  border: 1px solid var(--line-color);
+  background: var(--header-bg);
+  color: var(--bs-body-color, #111827);
+  border-radius: 8px;
+  font-size: 12px;
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.sheet-filters :deep(.payroll-filter-input) {
+  min-width: 260px;
+}
+
+.sheet-filters :deep(.payroll-filter-select) {
+  min-width: 170px;
+}
+
+.sheet-filters :deep(.payroll-filter-meta) {
+  margin-left: auto;
+  color: var(--muted-text);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .excel-table-wrapper {
   padding: 0;
+  max-height: calc(100vh - 280px);
+  overflow: auto;
+}
+
+.excel-table-wrapper :deep(.excel-table) {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+.excel-table-wrapper :deep(.excel-table th),
+.excel-table-wrapper :deep(.excel-table td) {
+  border-right: 1px solid var(--line-color);
+  border-bottom: 1px solid var(--line-color);
+  padding: 8px 10px;
+  vertical-align: middle;
+  background: var(--panel-bg);
+}
+
+.excel-table-wrapper :deep(.excel-table th:first-child),
+.excel-table-wrapper :deep(.excel-table td:first-child) {
+  border-left: 1px solid var(--line-color);
+}
+
+.excel-table-wrapper :deep(.header-labels th) {
+  background: var(--header-bg);
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  position: sticky;
+  top: 0;
+  z-index: 25;
+}
+
+.excel-table-wrapper :deep(.data-row:nth-child(even) td) {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.excel-table-wrapper :deep(.header-labels th:nth-child(1)) {
+  left: 0;
+  z-index: 35;
+  min-width: 90px;
+}
+
+.excel-table-wrapper :deep(.header-labels th:nth-child(2)) {
+  left: 90px;
+  z-index: 34;
+  min-width: 220px;
+}
+
+.excel-table-wrapper :deep(.data-row > td:nth-child(1)) {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background: var(--panel-bg);
+  min-width: 90px;
+}
+
+.excel-table-wrapper :deep(.data-row > td:nth-child(2)) {
+  position: sticky;
+  left: 90px;
+  z-index: 19;
+  background: var(--panel-bg);
+  min-width: 220px;
+}
+
+.excel-table-wrapper :deep(.excel-table .earning) {
+  background: #edf9f0 !important;
+}
+
+.excel-table-wrapper :deep(.excel-table .deduction) {
+  background: #fff1f1 !important;
+}
+
+.excel-table-wrapper :deep(.excel-table .net-salary) {
+  background: #eef2ff !important;
+  font-weight: 700;
+}
+
+.excel-table-wrapper :deep(.excel-table .grand-total td) {
+  background: #f3f4f6 !important;
+  color: var(--bs-body-color, #111827) !important;
+  font-weight: 700;
+}
+
+.excel-table-wrapper :deep(.excel-table .project-total td) {
+  background: #f4f6f8 !important;
+  font-weight: 700;
+}
+
+.excel-table-wrapper :deep(.excel-table .project-header .project-cell) {
+  background: #e9edf2 !important;
+  color: #334155;
+  font-weight: 700;
+}
+
+.excel-table-wrapper :deep(.excel-table .employee-name) {
+  font-weight: 700;
+}
+
+.excel-table-wrapper :deep(.excel-table .employee-position) {
+  color: var(--muted-text);
+  font-size: 10px;
+}
+
+.excel-table-wrapper :deep(.excel-table input.form-control),
+.excel-table-wrapper :deep(.excel-table textarea.form-control) {
+  border: 1px solid var(--line-color) !important;
+  background: #fff;
+  border-radius: 8px;
+  font-size: 12px;
+  box-shadow: none;
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .header-labels th) {
+  color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.data-row:nth-child(even) td) {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.data-row > td:nth-child(1)),
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.data-row > td:nth-child(2)) {
+  background: var(--panel-bg);
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .earning) {
+  background: rgba(16, 185, 129, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .deduction) {
+  background: rgba(248, 113, 113, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .net-salary) {
+  background: rgb(39, 40, 92) !important;
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .grand-total td) {
+  background: rgba(148, 163, 184, 0.16) !important;
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .project-total td) {
+  background: rgba(148, 163, 184, 0.14) !important;
+}
+
+[data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .project-header .project-cell) {
+  background: rgba(148, 163, 184, 0.2) !important;
+  color: #cccccc;
+}
+
+@media (max-width: 992px) {
+  .payroll-registry-container {
+    padding: 10px;
+  }
+
+  .excel-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toolbar-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .toolbar-left {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .excel-table-wrapper {
+    max-height: calc(100vh - 300px);
+  }
+
+  .sheet-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sheet-filters {
+    padding: 10px;
+  }
+
+  .sheet-filters :deep(.payroll-filter-input),
+  .sheet-filters :deep(.payroll-filter-select) {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .sheet-filters :deep(.payroll-filter-meta) {
+    margin-left: 0;
+  }
 }
 
 .sheet-footer {
-  padding: 16px 24px;
+  padding: 16px 20px;
 }
 </style>

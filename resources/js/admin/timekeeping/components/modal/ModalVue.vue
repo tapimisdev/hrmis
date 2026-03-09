@@ -66,6 +66,8 @@ export default {
                     return "Mark as Absent";
                 case "so":
                     return "Mark as SO";
+                case "lto":
+                    return "Mark as LTO";
                 case "overtime":
                     return "Add Overtime";
                 case "restday":
@@ -79,7 +81,9 @@ export default {
                 case "cancel_pass_slip":
                     return "Cancel Pass Slip"
                 case "cancel_special_order":
-                    return "Cancel Special Order"
+                    return "Cancel SO";
+                case "cancel_lto":
+                    return "Cancel LTO"
                 default:
                     return "Modal";
             }
@@ -110,6 +114,7 @@ export default {
                 case "cancel_offset":
                 case "cancel_special_order":
                 case "cancel_pass_slip":
+                case "cancel_lto":
                     return "fas fa-cancel";
                 default:
                     return "fas fa-file-alt";

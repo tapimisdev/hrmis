@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class CancelSOApiController extends Controller
+class CancelLTOController extends Controller
 {
 
     public function cancel(Request $request)
@@ -18,15 +18,15 @@ class CancelSOApiController extends Controller
 
         return DB::transaction(function () use ($validated) {
 
-            $data = DB::table('special_order_applications as oa')
-                ->leftJoin('special_order_dates as od', 'oa.id', '=', 'od.special_order_application_id')
+            $data = DB::table('lto_applications as oa')
+                ->leftJoin('lto_dates as od', 'oa.id', '=', 'od.lto_application_id')
                 ->where('oa.employee_no', $validated['employee_no'])
                 ->where('od.date', $validated['date'])
                 ->whereIn('oa.status', ['approved', 'pending'])  
                 ->where('od.isActive', true)
                 ->select(
                     'od.id as offset_date_id',
-                    'oa.id as special_order_application_id'
+                    'oa.id as lto_application_id'
                 )
                 ->first();
 
@@ -38,13 +38,13 @@ class CancelSOApiController extends Controller
             }
 
             //  Count active dates BEFORE cancelling
-            $totalDates = DB::table('special_order_dates')
-                ->where('special_order_application_id', $data->special_order_application_id)
+            $totalDates = DB::table('lto_dates')
+                ->where('lto_application_id', $data->lto_application_id)
                 ->where('isActive', true)
                 ->count();
 
             //  Cancel this specific offset date
-            DB::table('special_order_dates')
+            DB::table('lto_dates')
                 ->where('id', $data->offset_date_id)
                 ->update([
                     'isActive' => false,
@@ -52,8 +52,8 @@ class CancelSOApiController extends Controller
 
             //  If this was the last active date, cancel the entire application
             if ($totalDates == 1) {
-                DB::table('special_order_applications')
-                    ->where('id', $data->special_order_application_id)
+                DB::table('lto_applications')
+                    ->where('id', $data->lto_application_id)
                     ->update([
                         'status' => 'cancelled',
                     ]);
@@ -62,8 +62,8 @@ class CancelSOApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => $totalDates == 1
-                    ? 'Special Order cancelled completely.'
-                    : 'Special Order date cancelled successfully.',
+                    ? 'Local travel order cancelled completely.'
+                    : 'Local travel order date cancelled successfully.',
                 'remaining_active_dates' => $totalDates - 1,
             ]);
         });

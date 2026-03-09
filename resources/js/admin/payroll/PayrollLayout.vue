@@ -1,176 +1,179 @@
 <template>
-    <div>
-        <!-- ACTIVE -->
-        <section class="mb-4">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <h6 class="text-muted fw-semibold mb-0">Active Payrolls</h6>
-            </div>
+  <div>
+    <PayrollSection
+      title="Active Payrolls"
+      :payrolls="activePayrolls"
+      :url="url"
+      column-class="col-12 col-md-6"
+      empty-message="No active payroll for this date yet."
+      :show-empty-state="true"
+      @change-status="handleChangeStatus"
+      @cancel="confirmDelete"
+    >
+      <template #card="{ payroll, url }">
+        <slot name="payroll-card" :payroll="payroll" :url="url" :is-active="true">
+          <PayrollCard
+            :url="url"
+            :payroll="payroll"
+            @change-status="handleChangeStatus"
+            @cancel="confirmDelete"
+          />
+        </slot>
+      </template>
+    </PayrollSection>
 
-            <div class="row g-3">
-                <template v-if="activePayrolls.length">
-                    <div v-for="item in activePayrolls" :key="item.id" class="col-12 col-md-6">
-                        <PayrollCard :url="url" :payroll="item" @change-status="handleChangeStatus"
-                            @cancel="confirmDelete" />
-                    </div>
-                </template>
-
-                <template v-else>
-                    <div class="col-12">
-                        <div class="alert alert-info mb-0" role="alert" style="max-width: 420px">
-                            No active payroll for this date yet.
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </section>
-
-        <!-- INACTIVE -->
-        <section v-if="inactivePayrolls.length" class="mb-4">
-            <h6 class="text-muted fw-semibold mb-2">Others</h6>
-
-            <div class="row g-3">
-                <div v-for="item in inactivePayrolls" :key="item.id" class="col-12 col-md-4">
-                    <PayrollCard :url="url" :payroll="item" @change-status="handleChangeStatus"
-                        @cancel="confirmDelete" />
-                </div>
-            </div>
-        </section>
-    </div>
+    <PayrollSection
+      title="Others"
+      :payrolls="inactivePayrolls"
+      :url="url"
+      column-class="col-12 col-md-4"
+      :show-section="inactivePayrolls.length > 0"
+      @change-status="handleChangeStatus"
+      @cancel="confirmDelete"
+    >
+      <template #card="{ payroll, url }">
+        <slot name="payroll-card" :payroll="payroll" :url="url" :is-active="false">
+          <PayrollCard
+            :url="url"
+            :payroll="payroll"
+            @change-status="handleChangeStatus"
+            @cancel="confirmDelete"
+          />
+        </slot>
+      </template>
+    </PayrollSection>
+  </div>
 </template>
 
 <script>
-import PayrollCard from "./PayrollCard.vue"
+import PayrollCard from "./PayrollCard.vue";
+import PayrollSection from "./PayrollSection.vue";
 
-const INACTIVE_STATUSES = new Set(["draft", "cancelled"])
+const INACTIVE_STATUSES = new Set(["draft", "cancelled"]);
 
 export default {
-    name: "PayrollList",
-    components: { PayrollCard },
+  name: "PayrollList",
+  components: { PayrollCard, PayrollSection },
 
-    props: {
-        payrolls: { type: Array, required: true },
-        loading: { type: Boolean, required: true },
-        url: { type: String, required: true },
+  props: {
+    payrolls: { type: Array, required: true },
+    loading: { type: Boolean, required: true },
+    url: { type: String, required: true },
+  },
+
+  computed: {
+    activePayrolls() {
+      return this.payrolls.filter((p) => !INACTIVE_STATUSES.has(p.status));
+    },
+    inactivePayrolls() {
+      return this.payrolls.filter((p) => INACTIVE_STATUSES.has(p.status));
+    },
+  },
+
+  methods: {
+    confirmDelete(id) {
+      Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      }).then((result) => {
+        if (result.isConfirmed) this.deletePayroll(id);
+      });
     },
 
-    computed: {
-        activePayrolls() {
-            return this.payrolls.filter(p => !INACTIVE_STATUSES.has(p.status))
-        },
-        inactivePayrolls() {
-            return this.payrolls.filter(p => INACTIVE_STATUSES.has(p.status))
-        },
-    },
+    deletePayroll(id) {
+      const token = localStorage.getItem("auth_token");
 
-    methods: {
-        confirmDelete(id) {
+      axios
+        .delete(`/api/payroll/${this.url}/${id}/delete`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then(({ data }) => {
+          if (data?.status === "success") {
             Swal.fire({
-                title: "Are you sure?",
-                text: "You won't be able to revert this!",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, delete it!",
-            }).then((result) => {
-                if (result.isConfirmed) this.deletePayroll(id)
-            })
-        },
-
-        deletePayroll(id) {
-            const token = localStorage.getItem("auth_token")
-
-            axios
-                .delete(`/api/payroll/${this.url}/${id}/delete`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
-                .then(({ data }) => {
-                    if (data?.status === "success") {
-                        Swal.fire({
-                            title: "Deleted!",
-                            text: "Payroll has been successfully deleted!",
-                            icon: "success",
-                        })
-                        this.$emit("deleted")
-                    }
-                })
-                .catch((error) => {
-                    Swal.fire({
-                        title: "Oops!",
-                        text: error?.response?.data?.message || "Something went wrong.",
-                        icon: "error",
-                    })
-                })
-        },
-
-        // NEW: same pattern as delete
-        confirmChangeStatus(id, nextStatus) {
-            const labelMap = {
-                draft: "Draft",
-                pending: "Pending",
-                pending_approval: "Pending",
-                approved: "Approved",
-                for_releasing: "For Releasing",
-                cancelled: "Cancelled",
-                complete: "Complete",
-                completed: "Complete",
-            }
-
-            Swal.fire({
-                title: "Change payroll status?",
-                html: `Set status to <b>${labelMap[nextStatus] || nextStatus}</b>?`,
-                icon: "question",
-                showCancelButton: true,
-                confirmButtonColor: "#198754", // bootstrap success
-                cancelButtonColor: "#6c757d",  // bootstrap secondary
-                confirmButtonText: "Yes, change it!",
-            }).then((result) => {
-                if (result.isConfirmed) this.changePayrollStatus(id, nextStatus)
-            })
-        },
-
-        changePayrollStatus(id, nextStatus) {
-            const token = localStorage.getItem("auth_token")
-
-            axios
-                // adjust endpoint/method to your backend
-                .patch(
-                    `/api/payroll/${this.url}/${id}/status`,
-                    { status: nextStatus },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                )
-                .then(({ data }) => {
-                    if (data?.status === "success") {
-                        Swal.fire({
-                            title: "Updated!",
-                            text: "Payroll status has been updated successfully.",
-                            icon: "success",
-                        })
-
-                        // emit so parent/page can refresh list or update item
-                        this.$emit("status-changed")
-                    } else {
-                        Swal.fire({
-                            title: "Oops!",
-                            text: data?.message || "Unable to update status.",
-                            icon: "error",
-                        })
-                    }
-                })
-                .catch((error) => {
-                    Swal.fire({
-                        title: "Oops!",
-                        text: error?.response?.data?.message || "Something went wrong.",
-                        icon: "error",
-                    })
-                })
-        },
-
-        // this is what your PayrollCard already emits
-        handleChangeStatus(id, nextStatus) {
-            // Just forward to confirm step
-            this.confirmChangeStatus(id, nextStatus)
-        },
+              title: "Deleted!",
+              text: "Payroll has been successfully deleted!",
+              icon: "success",
+            });
+            this.$emit("deleted");
+          }
+        })
+        .catch((error) => {
+          Swal.fire({
+            title: "Oops!",
+            text: error?.response?.data?.message || "Something went wrong.",
+            icon: "error",
+          });
+        });
     },
-}
+
+    confirmChangeStatus(id, nextStatus) {
+      const labelMap = {
+        draft: "Draft",
+        pending: "Pending",
+        pending_approval: "Pending",
+        approved: "Approved",
+        for_releasing: "For Releasing",
+        cancelled: "Cancelled",
+        complete: "Complete",
+        completed: "Complete",
+      };
+
+      Swal.fire({
+        title: "Change payroll status?",
+        html: `Set status to <b>${labelMap[nextStatus] || nextStatus}</b>?`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#198754",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Yes, change it!",
+      }).then((result) => {
+        if (result.isConfirmed) this.changePayrollStatus(id, nextStatus);
+      });
+    },
+
+    changePayrollStatus(id, nextStatus) {
+      const token = localStorage.getItem("auth_token");
+
+      axios
+        .patch(
+          `/api/payroll/${this.url}/${id}/status`,
+          { status: nextStatus },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        .then(({ data }) => {
+          if (data?.status === "success") {
+            Swal.fire({
+              title: "Updated!",
+              text: "Payroll status has been updated successfully.",
+              icon: "success",
+            });
+
+            this.$emit("status-changed");
+          } else {
+            Swal.fire({
+              title: "Oops!",
+              text: data?.message || "Unable to update status.",
+              icon: "error",
+            });
+          }
+        })
+        .catch((error) => {
+          Swal.fire({
+            title: "Oops!",
+            text: error?.response?.data?.message || "Something went wrong.",
+            icon: "error",
+          });
+        });
+    },
+
+    handleChangeStatus(id, nextStatus) {
+      this.confirmChangeStatus(id, nextStatus);
+    },
+  },
+};
 </script>

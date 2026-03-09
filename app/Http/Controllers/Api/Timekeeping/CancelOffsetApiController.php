@@ -56,7 +56,7 @@ class CancelOffsetApiController extends Controller
                     'isActive' => false,
                 ]);
 
-            // 🔹 If this was the last active date, cancel the entire application
+            //  If this was the last active date, cancel the entire application
             if ($totalDates == 1) {
                 DB::table('offset_applications')
                     ->where('id', $data->offset_application_id)
