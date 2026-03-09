@@ -2,6 +2,7 @@
     <tr
         class="own-accordion-row"
         :class="{ 'is-open': open }"
+        :data-tax-row-key="rowKey || null"
         role="button"
         tabindex="0"
         @click="emitToggle"
@@ -74,6 +75,7 @@ export default {
         row: { type: Object, required: true },
         index: { type: Number, required: true },
         open: { type: Boolean, default: false },
+        rowKey: { type: String, default: "" },
     },
     computed: {
         initials() {

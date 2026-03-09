@@ -25,6 +25,7 @@
                     :rows="filteredRows"
                     :is-recomputing="is_recomputing"
                     :recomputing-key="recomputing_key"
+                    :focus-row-key="pending_focus_row_key"
                     @view="viewRow"
                     @edit="editRow"
                     @recompute="recomputeRow"
@@ -93,6 +94,7 @@ export default {
             selectedActionId: "empty",
             is_recomputing: false,
             recomputing_key: null,
+            pending_focus_row_key: null,
 
             actions: [
                 {
@@ -196,6 +198,18 @@ export default {
             }
 
             this.activeRow = matched;
+            const activeUiKey = this.getRowUiKey(matched);
+            if (
+                this.pending_focus_row_key &&
+                activeUiKey &&
+                this.pending_focus_row_key === activeUiKey
+            ) {
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        this.pending_focus_row_key = null;
+                    }, 350);
+                });
+            }
         },
     },
 
@@ -254,6 +268,17 @@ export default {
 
             return null;
         },
+        toRowUiKey(value) {
+            if (value === null || value === undefined || value === "") return null;
+            const raw = String(value).trim();
+            if (!raw) return null;
+            if (raw.startsWith("emp-") || raw.startsWith("id-") || raw.startsWith("fallback-")) {
+                return raw;
+            }
+            if (raw.startsWith("emp:")) return `emp-${raw.slice(4)}`;
+            if (/^\d+$/.test(raw)) return `id-${raw}`;
+            return raw;
+        },
         setAction(id, row = null) {
             this.selectedActionId = id;
             this.activeRow = row;
@@ -301,9 +326,11 @@ export default {
                 });
 
                 this.setAction("breakdown", row);
+                this.pending_focus_row_key = this.getRowUiKey(row);
                 this.$emit("refresh-forecast", {
                     source: "recompute",
                     employee_key: this.getEmployeeStableKey(row),
+                    row_ui_key: this.getRowUiKey(row),
                     action: "breakdown",
                 });
             } catch (error) {
@@ -322,6 +349,12 @@ export default {
         handleRefreshForecast(payload = {}) {
             if (payload?.action && this.activeRow) {
                 this.setAction(payload.action, this.activeRow);
+            }
+            const incomingFocusKey = this.toRowUiKey(
+                payload?.row_ui_key ?? payload?.employee_key ?? null,
+            );
+            if (incomingFocusKey) {
+                this.pending_focus_row_key = incomingFocusKey;
             }
             this.$emit("refresh-forecast", payload);
         },

@@ -42,6 +42,7 @@
                 >
                     <TaxForecastAccordionRow
                         :row="row"
+                        :row-key="getRowKey(row) || ''"
                         :index="rowIndexOffset + i"
                         :open="isOpen(row)"
                         @toggle="({ row, index }) => toggleRow(row, index)"
@@ -93,6 +94,7 @@ export default {
         rows: { type: Array, required: true },
         isRecomputing: { type: Boolean, default: false },
         recomputingKey: { type: [String, Number], default: null },
+        focusRowKey: { type: [String, Number], default: null },
     },
     data() {
         return {
@@ -144,14 +146,19 @@ export default {
         rows: {
             handler() {
                 if (this.currentPage > this.totalPages) this.currentPage = 1;
-                if (!this.openKey) return;
+                if (this.openKey) {
+                    const stillExists = (this.rows || []).some(
+                        (row) => this.getRowKey(row) === this.openKey,
+                    );
+                    if (!stillExists) this.openKey = null;
+                }
 
-                const stillExists = (this.rows || []).some(
-                    (row) => this.getRowKey(row) === this.openKey,
-                );
-                if (!stillExists) this.openKey = null;
+                this.focusSelectedRow();
             },
             deep: false,
+        },
+        focusRowKey() {
+            this.focusSelectedRow();
         },
     },
     methods: {
@@ -181,6 +188,33 @@ export default {
         isRowRecomputing(row) {
             if (!this.isRecomputing || !this.recomputingKey) return false;
             return this.getRowKey(row) === this.recomputingKey;
+        },
+        focusSelectedRow() {
+            const key = this.focusRowKey;
+            if (!key) return;
+
+            const index = (this.rows || []).findIndex(
+                (row) => this.getRowKey(row) === key,
+            );
+            if (index < 0) return;
+
+            const targetPage = Math.floor(index / this.perPage) + 1;
+            if (targetPage !== this.currentPage) {
+                this.currentPage = targetPage;
+            }
+
+            this.$nextTick(() => {
+                const candidates = this.$el?.querySelectorAll("[data-tax-row-key]") || [];
+                const rowEl = Array.from(candidates).find(
+                    (el) => el?.dataset?.taxRowKey === String(key),
+                );
+                if (!rowEl) return;
+
+                rowEl.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+            });
         },
         isOpen(row) {
             const key = this.getRowKey(row);

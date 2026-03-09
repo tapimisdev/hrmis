@@ -115,7 +115,32 @@ export default {
         },
         handleForecastRefresh() {
             const yearToRefresh = this.selectedYear || new Date().getFullYear();
-            this.fetchTaxation(yearToRefresh);
+
+            axios
+                .get("/admin/taxation", { params: { year: yearToRefresh } })
+                .then((response) => {
+                    const data = response.data || {};
+
+                    if (data.id != null) {
+                        this.show_run_button = false;
+                        this.taxation_id = data.id;
+                    } else {
+                        this.show_run_button = true;
+                        this.taxation_id = null;
+                    }
+
+                    if (data.status === "processing") {
+                        this.batch_id = data.batch_id || null;
+                        this.is_processing = !!this.batch_id;
+                        return;
+                    }
+
+                    this.is_processing = false;
+                    this.taxationData = TaxationSettingModel(data);
+                })
+                .catch((error) => {
+                    console.error("Error refreshing forecast data:", error);
+                });
         },
 
         fetchBatchStatus() {

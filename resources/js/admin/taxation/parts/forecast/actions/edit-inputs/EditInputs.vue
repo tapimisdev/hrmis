@@ -291,6 +291,13 @@ export default {
                         this.row?.employee_no !== null
                             ? `emp:${String(this.row.employee_no).trim()}`
                             : this.row?.id,
+                    row_ui_key:
+                        this.row?.employee_no !== undefined &&
+                        this.row?.employee_no !== null
+                            ? `emp-${String(this.row.employee_no).trim()}`
+                            : this.row?.id !== undefined && this.row?.id !== null
+                                ? `id-${String(this.row.id).trim()}`
+                                : null,
                     action: "breakdown",
                 });
             } catch (error) {
