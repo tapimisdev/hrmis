@@ -43,6 +43,7 @@
                     <TaxForecastAccordionRow
                         :row="row"
                         :row-key="getRowKey(row) || ''"
+                        :selected="isSelectedRow(row)"
                         :index="rowIndexOffset + i"
                         :open="isOpen(row)"
                         @toggle="({ row, index }) => toggleRow(row, index)"
@@ -95,6 +96,7 @@ export default {
         isRecomputing: { type: Boolean, default: false },
         recomputingKey: { type: [String, Number], default: null },
         focusRowKey: { type: [String, Number], default: null },
+        selectedRowKey: { type: [String, Number], default: null },
     },
     data() {
         return {
@@ -188,6 +190,10 @@ export default {
         isRowRecomputing(row) {
             if (!this.isRecomputing || !this.recomputingKey) return false;
             return this.getRowKey(row) === this.recomputingKey;
+        },
+        isSelectedRow(row) {
+            if (!this.selectedRowKey) return false;
+            return this.getRowKey(row) === this.selectedRowKey;
         },
         focusSelectedRow() {
             const key = this.focusRowKey;

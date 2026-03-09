@@ -1,7 +1,7 @@
 <template>
     <tr
         class="own-accordion-row"
-        :class="{ 'is-open': open }"
+        :class="{ 'is-open': open, 'is-selected': selected }"
         :data-tax-row-key="rowKey || null"
         role="button"
         tabindex="0"
@@ -76,6 +76,7 @@ export default {
         index: { type: Number, required: true },
         open: { type: Boolean, default: false },
         rowKey: { type: String, default: "" },
+        selected: { type: Boolean, default: false },
     },
     computed: {
         initials() {
@@ -117,6 +118,14 @@ export default {
     &.is-open {
         background-color: var(--bs-light-bg-subtle);
         box-shadow: inset 3px 0 0 var(--bs-primary);
+    }
+
+    &.is-selected {
+        box-shadow: inset 4px 0 0 var(--bs-primary);
+    }
+
+    &.is-selected td {
+        background-color: var(--bs-primary-bg-subtle);
     }
 
     /* Money column highlight on hover/open */

@@ -26,6 +26,7 @@
                     :is-recomputing="is_recomputing"
                     :recomputing-key="recomputing_key"
                     :focus-row-key="pending_focus_row_key"
+                    :selected-row-key="selected_row_key"
                     @view="viewRow"
                     @edit="editRow"
                     @recompute="recomputeRow"
@@ -172,6 +173,9 @@ export default {
             return (
                 this.actions.find((a) => a.id === this.selectedActionId) || null
             );
+        },
+        selected_row_key() {
+            return this.getRowUiKey(this.activeRow);
         },
     },
 
