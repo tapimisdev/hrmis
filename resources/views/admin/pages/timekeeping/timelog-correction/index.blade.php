@@ -10,7 +10,6 @@
     <x-header title="Timelog Correction Request" subtitle="Manage shift scheduling in this module">
 
     </x-header>
-    {{$view_id}}
 
     <div class="row mb-3">
         <div class="col-md-3">
@@ -23,6 +22,7 @@
                 @endforeach
             </select>
         </div>
+
         <div class="col-md-3">
             <label for="filter-year" class="form-label">Year</label>
             <select id="filter-year" class="form-select">
@@ -43,7 +43,6 @@
             </select>
         </div>
     </div>
-
 
     <x-table id="myTable">
         <thead>
@@ -73,10 +72,14 @@
             ajax: {
                 url: '{{ route('timelogs-correction.index') }}',
                 data: function(d) {
-                    d.view_id = {{$view_id}}
-                    d.month = $('#filter-month').val(); 
-                    d.year = $('#filter-year').val();  
-                    d.status = $('#filter-status').val(); 
+
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const viewID = urlParams.get('id');
+
+                    d.view_id = viewID; 
+                    d.month = $('#filter-month').val();
+                    d.year = $('#filter-year').val();
+                    d.status = $('#filter-status').val();
                 }
             },
             columns: [
@@ -105,23 +108,21 @@
         const urlParams = new URLSearchParams(window.location.search);
         const targetID = urlParams.get('id');
 
-        let triggered = false; 
+        let triggered = false;
 
-        DataTable.on('draw', function() {
+        DataTable.on('draw', function () {
+
             if (!triggered && targetID) {
-                triggered = true;
 
-                DataTable.search(targetID).draw();
+                const button = $(`.show-button[data-id="${targetID}"]`);
 
-                $('#myTable_filter input').val('');
+                if (button.length) {
+                    triggered = true;
+                    button.trigger('click');
+                }
 
-                DataTable.one('draw', function() {
-                    const button = $(`.show-button[data-id="${targetID}"]`);
-                    if (button.length) {
-                        button.trigger('click');
-                    }
-                });
             }
+
         });
 
         const tcrModal = $('#tcrModal');
