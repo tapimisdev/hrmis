@@ -8,6 +8,7 @@
                 :payload="dtr_all"
                 :month="selectedMonth"
                 :year="selectedYear"
+                :supervisor="supervisor"
             />
         </PrintableDtrView>
 
@@ -224,6 +225,7 @@ export default {
         employeeNumber: { type: String, required: true },
         month: { type: Number, default: null },
         year: { type: Number, default: null },
+        supervisor: { type: String, required: true }
     },
     data() {
         const currentDate = new Date();

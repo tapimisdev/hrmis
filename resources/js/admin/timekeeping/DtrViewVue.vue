@@ -5,6 +5,7 @@
                 :employee_no="employee_no"
                 :month="month"
                 :year="year"
+                :supervisor="supervisor"
                 :payload="payload"
                 @update-date="updateDate"
             />
@@ -37,6 +38,10 @@ export default {
             type: [String, Number],
             required: true,
         },
+        supervisor: {
+            type: String,
+            required: true
+        }
     },
 
     data() {
