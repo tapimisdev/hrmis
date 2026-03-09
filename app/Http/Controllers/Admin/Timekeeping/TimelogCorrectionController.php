@@ -42,7 +42,6 @@ class TimelogCorrectionController extends Controller
             $month = null;
             $year  = null;
 
-            // If viewing specific record, get its month/year
             if ($view_id) {
 
                 $record = DB::table('timelog_corrections')
@@ -55,7 +54,6 @@ class TimelogCorrectionController extends Controller
                 }
             }
 
-            // fallback to filters or current date
             $month = $month ?? $request->input('month', date('n'));
             $year  = $year ?? $request->input('year', date('Y'));
 
@@ -79,14 +77,22 @@ class TimelogCorrectionController extends Controller
     public function edit($id)
     {
         $correction = DB::table('timelog_corrections as tc')
-                        ->leftJoin('employee_personal as ep', 'tc.employee_no', '=', 'ep.employee_no')
-                        ->select('tc.*', 'ep.firstname', 'ep.middlename', 'ep.lastname')
-                        ->where('tc.id', $id)
-                        ->first();
+            ->leftJoin('employee_personal as ep', 'tc.employee_no', '=', 'ep.employee_no')
+            ->select('tc.*', 'ep.firstname', 'ep.middlename', 'ep.lastname')
+            ->where('tc.id', $id)
+            ->first();
+
+        if (!$correction) {
+            return response()->json(['message' => 'Record not found'], 404);
+        }
 
         $correction->attachment = asset('storage/' . $correction->attachment);
 
-        return response()->Json($correction);
+        $date = Carbon::parse($correction->date);
+        $correction->month = $date->format('n'); 
+        $correction->year = $date->format('Y'); 
+
+        return response()->json($correction);
     }
 
     public function approve($id)

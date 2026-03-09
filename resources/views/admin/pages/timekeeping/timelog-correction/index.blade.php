@@ -142,6 +142,8 @@
                 .then(response => {
                     const data = response.data;
 
+                    $('#filter-month').val(data.month);
+                    $('#filter-year').val(data.year);
                     $('#correction-id').val(data.id);
 
                     $('#reference_no').val(data.reference_no);
