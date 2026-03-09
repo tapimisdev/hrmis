@@ -29,40 +29,41 @@ class TimelogCorrectionController extends Controller
 
     public function index(Request $request)
     {
-
-        $view_id = $request->view_id ?? null;
+        $view_id = $request->id ?? null;
 
         if ($request->ajax()) {
+
             $view_id = $request->input('view_id');
+
             $query = DB::table('timelog_corrections as tc')
                 ->select('tc.*', 'ep.firstname', 'ep.middlename', 'ep.lastname')
                 ->leftJoin('employee_personal as ep', 'tc.employee_no', '=', 'ep.employee_no');
 
             $month = null;
-            $year = null;
+            $year  = null;
 
+            // If viewing specific record, get its month/year
             if ($view_id) {
-                $record = $query->where('tc.id', $view_id)->first();
+
+                $record = DB::table('timelog_corrections')
+                    ->where('id', $view_id)
+                    ->first();
 
                 if ($record) {
                     $month = date('n', strtotime($record->date));
                     $year  = date('Y', strtotime($record->date));
                 }
-
-                $query = DB::table('timelog_corrections as tc')
-                    ->select('tc.*', 'ep.firstname', 'ep.middlename', 'ep.lastname')
-                    ->leftJoin('employee_personal as ep', 'tc.employee_no', '=', 'ep.employee_no');
             }
 
+            // fallback to filters or current date
             $month = $month ?? $request->input('month', date('n'));
             $year  = $year ?? $request->input('year', date('Y'));
 
             $query->whereMonth('tc.date', $month)
                 ->whereYear('tc.date', $year);
 
-            $status = $request->input('status');
-            if ($status) {
-                $query->where('tc.status', $status);
+            if ($request->filled('status')) {
+                $query->where('tc.status', $request->status);
             }
 
             $query->orderBy('tc.created_at', 'desc');
