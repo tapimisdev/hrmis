@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Timekeeping;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class CancelLeaveApiController extends Controller
@@ -64,6 +65,7 @@ class CancelLeaveApiController extends Controller
                     ->where('id', $data->leave_application_id)
                     ->update([
                         'status' => 'cancelled',
+                        'cancelled_by' => Auth::id()
                     ]);
             }
 

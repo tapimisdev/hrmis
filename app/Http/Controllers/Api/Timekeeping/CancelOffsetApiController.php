@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Timekeeping;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class CancelOffsetApiController extends Controller
@@ -62,6 +63,7 @@ class CancelOffsetApiController extends Controller
                     ->where('id', $data->offset_application_id)
                     ->update([
                         'status' => 'cancelled',
+                        'cancelled_by' => Auth::id()
                     ]);
             }
 

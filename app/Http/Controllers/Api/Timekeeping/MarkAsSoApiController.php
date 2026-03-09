@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Timekeeping;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class MarkAsSoApiController extends Controller
 {
@@ -43,6 +44,7 @@ class MarkAsSoApiController extends Controller
             'within_metro_manila' => $validated['within_metro_manila'] == 'yes' ? true : false,
             'isHazardous' => $validated['is_hazardous'] == 'yes' ? true : false,
             'status'        => 'approved',
+            'actioned_by'   => Auth::id(),
             'remarks'       => $validated['remarks'],
             'created_at'    => now(),
             'updated_at'    => now(),

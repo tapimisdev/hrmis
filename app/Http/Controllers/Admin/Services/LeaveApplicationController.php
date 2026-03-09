@@ -254,7 +254,7 @@ class LeaveApplicationController extends Controller {
                 ->update([
                     'status' => 'approved',
                     'credit_remarks' => $updateCredits['single_remarks'] ?? null,
-                    'approver_id' => Auth::id() ?? null
+                    'actioned_by' => Auth::id() ?? null
                 ]);
 
             $sender = ucwords(Auth::user()->name);
@@ -302,6 +302,7 @@ class LeaveApplicationController extends Controller {
                 ->where('id', $id)
                 ->update([
                     'status' => 'rejected',
+                    'actioned_by' => Auth::id() ?? null,
                     'remarks' => $payload['remarks'] ?? null
                 ]);
 
