@@ -33,8 +33,10 @@ class CheckInOutController extends Controller
     public function index()
     {
         $user_id = auth()->user()->id;
-
+    
         $employee_no = $this->employeeService->getEmployeeNo($user_id);
+        $employee = $this->employeeService->getEmployee('information', $employee_no);
+        $supervisor = $employee->division_supervisor ?? '';
 
         $is_allowed = $this->canUseWebTimeToday($employee_no)['allowed'];
 
@@ -44,7 +46,7 @@ class CheckInOutController extends Controller
             return $this->datatable($query);
         }
 
-        return view('employee.pages.timelogs.checkin-out.index', compact(['employee_no', 'is_allowed']));
+        return view('employee.pages.timelogs.checkin-out.index', compact(['employee_no', 'is_allowed', 'supervisor']));
     }
 
     public function create()

@@ -11,7 +11,7 @@
 
     </x-header-employee>
     
-    <index-vue :is-allowed="@json($is_allowed)" :employee-number='@json($employee_no)' />
+    <index-vue :is-allowed="@json($is_allowed)" :employee-number='@json($employee_no)' :supervisor='@json($supervisor)' />
     
 </div>
 @endsection

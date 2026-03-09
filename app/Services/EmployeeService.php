@@ -126,6 +126,7 @@ class EmployeeService {
                 'divisions.id as division_id',
                 'divisions.code as division_code',
                 'divisions.name as division_name',
+                'divisions.supervisor as division_supervisor',
 
                 // Unit
                 'units.id as unit_id',
@@ -267,6 +268,7 @@ class EmployeeService {
                     'divisions.id as division_id',
                     'divisions.code as division_code',
                     'divisions.name as division_name',
+                    'divisions.supervisor as division_supervisor',
 
                     'units.id as unit_id',
                     'units.code as unit_code',

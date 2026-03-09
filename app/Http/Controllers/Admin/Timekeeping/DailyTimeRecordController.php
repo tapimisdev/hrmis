@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Timekeeping;
 
 use App\Http\Controllers\Controller;
 use App\Services\DailyTimeRecordService;
+use App\Services\EmployeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,15 +18,20 @@ class DailyTimeRecordController extends Controller
      * @var DailyTimeRecordService
      */
     protected $daily_time_record_service;
+    protected $employeeService;
 
     /**
      * Inject the DailyTimeRecordService dependency.
      *
      * @param DailyTimeRecordService $daily_time_record_service
      */
-    public function __construct(DailyTimeRecordService $daily_time_record_service)
+    public function __construct(
+        DailyTimeRecordService $daily_time_record_service,
+        EmployeeService $employeeService
+    )
     {
         $this->daily_time_record_service = $daily_time_record_service;
+        $this->employeeService = $employeeService;
 
         $this->middleware(function ($request, $next) {
             if (
@@ -52,11 +58,16 @@ class DailyTimeRecordController extends Controller
             ->where('employee_no', $employee_no)
             ->value('user_id');
 
+
+
         if(is_null($employee_id)) {
             return redirect()->route('timelogs.index');
         }
 
-        return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no', 'employee_id'));
+        $employee = $this->employeeService->getEmployee('information', $employee_no);
+        $supervisor = $employee->division_supervisor ?? '';
+
+        return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no', 'employee_id', 'supervisor'));
     }
 
     /**
