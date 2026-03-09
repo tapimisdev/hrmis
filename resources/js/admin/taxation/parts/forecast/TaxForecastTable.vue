@@ -38,23 +38,24 @@
                 <template
                     v-else
                     v-for="(row, i) in pagedRows"
-                    :key="getRowKey(row, rowIndexOffset + i)"
+                    :key="getRowKey(row)"
                 >
                     <TaxForecastAccordionRow
                         :row="row"
                         :index="rowIndexOffset + i"
-                        :open="isOpen(row, rowIndexOffset + i)"
+                        :open="isOpen(row)"
                         @toggle="({ row, index }) => toggleRow(row, index)"
                     />
 
                     <!-- EXPANDED ROW -->
                     <tr
-                        v-show="isOpen(row, rowIndexOffset + i)"
+                        v-show="isOpen(row)"
                         class="own-accordion-details"
                     >
                         <td colspan="7">
                             <TaxForecastDetailsCard
                                 :row="row"
+                                :is-recomputing="isRowRecomputing(row)"
                                 @view="viewRow(row)"
                                 @edit="editRow(row)"
                                 @recompute="recomputeRow(row)"
@@ -90,6 +91,8 @@ export default {
     },
     props: {
         rows: { type: Array, required: true },
+        isRecomputing: { type: Boolean, default: false },
+        recomputingKey: { type: [String, Number], default: null },
     },
     data() {
         return {
@@ -137,11 +140,16 @@ export default {
         },
     },
     watch: {
-        // If rows change (filter/search), keep page valid and close open accordion
+        // Keep current page valid and preserve expanded row if it still exists.
         rows: {
             handler() {
                 if (this.currentPage > this.totalPages) this.currentPage = 1;
-                this.openKey = null;
+                if (!this.openKey) return;
+
+                const stillExists = (this.rows || []).some(
+                    (row) => this.getRowKey(row) === this.openKey,
+                );
+                if (!stillExists) this.openKey = null;
             },
             deep: false,
         },
@@ -155,15 +163,33 @@ export default {
             this.openKey = null; // close expanded row on page change
         },
 
-        getRowKey(row, i) {
+        getRowKey(row) {
             const emp = (row?.employee_no ?? "").toString().trim();
-            return emp ? `emp-${emp}-${i}` : `idx-${i}`;
+            if (emp) return `emp-${emp}`;
+
+            const id = row?.id;
+            if (id !== null && id !== undefined && String(id).trim() !== "") {
+                return `id-${String(id).trim()}`;
+            }
+
+            const fullName = String(row?.full_name ?? "").trim().toLowerCase();
+            const division = String(row?.division ?? "").trim().toLowerCase();
+            const unit = String(row?.unit ?? "").trim().toLowerCase();
+            const fallback = [fullName, division, unit].filter(Boolean).join("|");
+            return fallback ? `fallback-${fallback}` : null;
         },
-        isOpen(row, i) {
-            return this.openKey === this.getRowKey(row, i);
+        isRowRecomputing(row) {
+            if (!this.isRecomputing || !this.recomputingKey) return false;
+            return this.getRowKey(row) === this.recomputingKey;
+        },
+        isOpen(row) {
+            const key = this.getRowKey(row);
+            if (!key) return false;
+            return this.openKey === key;
         },
         toggleRow(row, i) {
-            const key = this.getRowKey(row, i);
+            const key = this.getRowKey(row);
+            if (!key) return;
             this.openKey = this.openKey === key ? null : key;
         },
         recomputeRow(row) {

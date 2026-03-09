@@ -120,9 +120,17 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="fb-btn fb-primary" @click="save">
-                            <i class="fa-solid fa-floppy-disk me-2"></i>
-                            Save & Recompute
+                        <button
+                            type="button"
+                            class="fb-btn fb-primary"
+                            :disabled="is_saving"
+                            @click="save"
+                        >
+                            <i
+                                class="fa-solid me-2"
+                                :class="is_saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'"
+                            ></i>
+                            {{ is_saving ? "Saving..." : "Save & Recompute" }}
                         </button>
                     </div>
                 </div>
@@ -180,6 +188,7 @@ export default {
         return {
             token: localStorage.getItem("auth_token"),
             is_loading: false,
+            is_saving: false,
             form: defaultForm(),
             errors: {},
             earningChecks: [
@@ -250,23 +259,52 @@ export default {
 
         // Submit only; backend returns 422 if invalid
         async save() {
+            if (!this.row?.id || this.is_saving) return;
+
             this.is_saving = true;
             this.errors = {};
-            this.form.year = this.row.year;
+            const payload = {
+                ...this.form,
+                year: this.row.year,
+            };
             try {
-                const res = await axios.post(`/admin/taxation/save/${this.row.id}`, this.form);
+                const res = await axios.post(
+                    `/admin/taxation/save/${this.row.id}`,
+                    payload,
+                    {
+                        headers: { Authorization: `Bearer ${this.token}` },
+                    },
+                );
+
+                await Swal.fire({
+                    title: "Saved",
+                    text:
+                        res?.data?.message ||
+                        "Changes were saved and recomputation has started.",
+                    icon: "success",
+                });
+
+                this.$emit("refresh-forecast", {
+                    source: "save",
+                    employee_key:
+                        this.row?.employee_no !== undefined &&
+                        this.row?.employee_no !== null
+                            ? `emp:${String(this.row.employee_no).trim()}`
+                            : this.row?.id,
+                    action: "breakdown",
+                });
             } catch (error) {
                 if (error.response?.status === 422) {
                     this.errors = error.response.data.errors || {};
                 } else {
-                    Swal.fire(
+                    await Swal.fire(
                         "Error",
                         error.response?.data?.message || String(error),
-                        "error"
+                        "error",
                     );
                 }
             } finally {
-                this.is_saving = true;
+                this.is_saving = false;
             }
         },
     },

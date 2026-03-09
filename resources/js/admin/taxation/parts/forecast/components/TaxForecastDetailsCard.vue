@@ -17,12 +17,7 @@
 
                 <button class="classic-btn" @click="$emit('edit', row)">
                     <i class="fa-solid fa-pen-to-square me-1"></i>
-                    Edit
-                </button>
-
-                <button class="classic-btn" @click="$emit('recompute', row)">
-                    <i class="fa-solid fa-rotate me-1"></i>
-                    Recompute
+                    Edit Inputs
                 </button>
             </div>
         </div>
@@ -86,7 +81,10 @@
 
 <script>
 export default {
-    props: { row: { type: Object, required: true } },
+    props: {
+        row: { type: Object, required: true },
+        isRecomputing: { type: Boolean, default: false },
+    },
     methods: {
         money(val) {
             if (val === null || val === undefined || val === "") return "—";
@@ -150,6 +148,10 @@ export default {
 }
 .classic-btn:hover {
     background: var(--bs-tertiary-bg);
+}
+.classic-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 /* Body layout */

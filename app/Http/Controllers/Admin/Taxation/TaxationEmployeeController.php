@@ -151,6 +151,4 @@ class TaxationEmployeeController extends Controller
 
         return response()->json($computations);
     }
-
-    public function recompute($id) {}
 }

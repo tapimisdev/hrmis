@@ -21,6 +21,7 @@
             <TaxationBody
                 :body="taxationData.body"
                 :disable_recon="show_run_button"
+                @refresh-forecast="handleForecastRefresh"
             />
             <TaxSettings :settings="taxationData.settings" />
         </template>
@@ -111,6 +112,10 @@ export default {
                 .finally(() => {
                     this.is_loading = false;
                 });
+        },
+        handleForecastRefresh() {
+            const yearToRefresh = this.selectedYear || new Date().getFullYear();
+            this.fetchTaxation(yearToRefresh);
         },
 
         fetchBatchStatus() {

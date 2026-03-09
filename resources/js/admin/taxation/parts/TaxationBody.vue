@@ -32,6 +32,7 @@
         <IndexForecast 
             v-if="activeTab === 'forecast'" 
             :body="body"
+            @refresh-forecast="$emit('refresh-forecast', $event)"
             />
             
         <IndexReconciliation v-if="activeTab === 'reconcile'" />
