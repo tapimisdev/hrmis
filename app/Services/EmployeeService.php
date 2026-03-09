@@ -120,7 +120,7 @@ class EmployeeService {
 
                 // Organization details
                 'org.id as organization_id',
-                'org.effectivity_date',
+                'org.created_at',
 
                 // Division
                 'divisions.id as division_id',
@@ -227,16 +227,16 @@ class EmployeeService {
 
             $latestOrg = DB::table('employee_organization as eo1')
                 ->select('eo1.*')
-                ->whereRaw('eo1.effectivity_date = (
-                    SELECT MAX(eo2.effectivity_date)
+                ->whereRaw('eo1.created_at = (
+                    SELECT MAX(eo2.created_at)
                     FROM employee_organization eo2
                     WHERE eo2.employee_no = eo1.employee_no
                 )');
 
             $latestSalary = DB::table('employee_salary as es1')
                 ->select('es1.*')
-                ->whereRaw('es1.effectivity_date = (
-                    SELECT MAX(es2.effectivity_date)
+                ->whereRaw('es1.created_at = (
+                    SELECT MAX(es2.created_at)
                     FROM employee_salary es2
                     WHERE es2.employee_no = es1.employee_no
                 )');
@@ -262,7 +262,7 @@ class EmployeeService {
                     'employee_personal.lastname',
 
                     'org.id as organization_id',
-                    'org.effectivity_date',
+                    'org.created_at',
 
                     'divisions.id as division_id',
                     'divisions.code as division_code',
@@ -290,7 +290,7 @@ class EmployeeService {
                     'salary.amount as salary',
                     'salary.daily_rate',
                     'salary.salary_method',
-                    'salary.effectivity_date',
+                    'salary.created_at',
 
                     'shift.shift_id',
                     'shift.work_schedule_id'
@@ -391,7 +391,7 @@ class EmployeeService {
     public function getSalaryHistory(string $employee_no) {
         $data = DB::table('employee_salary')
             ->where('employee_no', $employee_no)
-            ->orderBy('effectivity_date', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return $data;

@@ -69,15 +69,7 @@ class EmployeeController extends Controller
                 'schedule_id' => 'required|exists:work_schedule,id',
                 'employment_effectivity_date' => [
                     'required',
-                    'date_format:Y-m',
-                    function ($attribute, $value, $fail) {
-                        $inputMonth = \Carbon\Carbon::createFromFormat('Y-m', $value)->startOfMonth();
-                        $currentMonth = now()->startOfMonth();
-
-                        if ($inputMonth->lt($currentMonth)) {
-                            $fail('* Effectivity date must be current or future month.');
-                        }
-                    },
+                    'date'
                 ],
                 'tranche_id' => 'required|exists:tranche,id',
                 'step_id' => 'required|between:1,8',
@@ -88,15 +80,7 @@ class EmployeeController extends Controller
                 'salary_cutoff' => 'required_if:salary_frequency,once|nullable|in:first_cutoff,second_cutoff',
                 'salary_effectivity_date' => [
                     'required',
-                    'date_format:Y-m',
-                    function ($attribute, $value, $fail) {
-                        $inputMonth = \Carbon\Carbon::createFromFormat('Y-m', $value)->startOfMonth();
-                        $currentMonth = now()->startOfMonth();
-
-                        if ($inputMonth->lt($currentMonth)) {
-                            $fail('* Effectivity date must be current or future month.');
-                        }
-                    },
+                    'date'
                 ],
             ];
         }
@@ -124,8 +108,6 @@ class EmployeeController extends Controller
 
         try {
 
-            $now = Carbon::now()->toDateString();
-
             $salary = $this->getSalary(
                 $request->tranche_id,
                 $request->step_id,
@@ -141,27 +123,23 @@ class EmployeeController extends Controller
                 $employment_effectivity_date = $request->employment_effectivity_date . '-01';
                 $salary_effectivity_date = $request->salary_effectivity_date . '-01';
 
-                DB::table('employee_organization')->updateOrInsert(
+                DB::table('employee_organization')->insert(
                     [
                         'employee_no'      => $employee_no,
                         'effectivity_date' => $employment_effectivity_date,
-                    ],
-                    [
                         'division_id'        => $request->division_id,
                         'unit_id'            => $request->unit_id,
                         'employment_type_id' => $request->employment_type_id,
                         'position_id'        => $request->position_id,
-                        'updated_at'         => $now,
-                        'created_at'         => $now, 
+                        'updated_at'         => now(),
+                        'created_at'         => now(), 
                     ]
                 );
 
-                DB::table('employee_salary')->updateOrInsert(
+                DB::table('employee_salary')->insert(
                     [
                         'employee_no'      => $employee_no,
                         'effectivity_date' => $salary_effectivity_date,
-                    ],
-                    [
                         'tranche_id'        => $request->tranche_id,
                         'salary_grade'      => $request->salary_grade,
                         'step'              => $request->step_id,
