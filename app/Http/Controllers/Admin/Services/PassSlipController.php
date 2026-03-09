@@ -225,7 +225,7 @@ class PassSlipController extends Controller {
                 ->where('id', $id)
                 ->update([
                     'status' => 'approved',
-                    'approver_id' => Auth::id() ?? null
+                    'actioned_by' => Auth::id() ?? null
                 ]);
 
             $sender = ucwords(Auth::user()->name);
@@ -269,7 +269,8 @@ class PassSlipController extends Controller {
                 ->where('id', $id)
                 ->update([
                     'status' => 'rejected',
-                    'remarks' => $payload['remarks'] ?? null // Prevents undefined index error
+                    'actioned_by' => Auth::id() ?? null,
+                    'remarks' => $payload['remarks'] ?? null 
                 ]);
 
             DB::table('obs_approvals')

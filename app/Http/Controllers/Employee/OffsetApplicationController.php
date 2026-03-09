@@ -133,6 +133,7 @@ class OffsetApplicationController extends Controller
                 'credit_equivalent' => number_format($credit_equivalent, 2),
                 'reason'        => $validatedData['reason'],
                 'status'        =>  $isDirectlyApproved ? 'approved' : 'pending',
+                'actioned_by'   => $isDirectlyApproved ? Auth::id() : null,
                 'level'         => 1,
                 // 'levels'        => json_encode($levels),
                 'created_at'    => now(),
