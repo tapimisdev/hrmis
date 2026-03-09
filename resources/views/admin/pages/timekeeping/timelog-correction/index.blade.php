@@ -141,6 +141,7 @@
             axios.get(`/admin/timekeeping/timelogs-correction/${id}/edit`)
                 .then(response => {
                     const data = response.data;
+                    console.log(data);
 
                     $('#filter-month').val(data.month);
                     $('#filter-year').val(data.year);
@@ -184,6 +185,18 @@
                     if(data.status != 'pending') {
                         $('#tcrModal .modal-footer').remove();
                     }
+
+                    
+                    $('#action-remarks').html(
+                        data.status === 'rejected'
+                            ? `<div class="alert alert-danger">
+                                    <div class="text-uppercase mb-2 fw-bold">Rejected</div>
+                                    <div class="fst-italic fs-5">
+                                        ${data.action_remarks?.trim() ? `“${data.action_remarks.trim()}”` : 'N/A'}
+                                    </div>
+                            </div>`
+                            : ''
+                    );
 
                 })
                 .catch(error => {

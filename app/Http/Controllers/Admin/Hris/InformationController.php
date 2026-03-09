@@ -302,7 +302,7 @@ class InformationController extends Controller
              */
             $latestOrg = DB::table('employee_organization')
                 ->where('employee_no', $employeeNo)
-                ->latest('effectivity_date')
+                ->latest('created_at')
                 ->first();
                 
             if (

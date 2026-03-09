@@ -146,6 +146,11 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-12" id="action-remarks">
+
+                        </div>
+                    </div>
                 </div>
 
                 <div class="tab-pane fade" id="remarks-tab-pane" role="tabpanel">
