@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\Modules\StoreModuleTabEmployeeRequest;
 use App\Http\Requests\Admin\Modules\StorePhilhealthRequest;
 use App\Services\Contributions\PhilhealthService;
 use App\Services\EmployeeService;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,11 +18,13 @@ class ModuleTabEmployeeController extends Controller
 {
     protected $employeeService;
     protected $philhealthService;
+    protected $salaryEmployeeService;
 
-    public function __construct(EmployeeService $employeeService, PhilhealthService $philhealthService)
+    public function __construct(EmployeeService $employeeService, PhilhealthService $philhealthService, SalaryEmloyeeService $salaryEmployeeService)
     {
         $this->philhealthService = $philhealthService;
         $this->employeeService = $employeeService;
+        $this->salaryEmployeeService = $salaryEmployeeService;
     }
 
     /**
