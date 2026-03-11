@@ -28,8 +28,11 @@ class CheckInOutRequest extends FormRequest
         return [
             'type' => [
                 'nullable',
-                Rule::in(FnEnum::cases()), // works with enum cases
-            ]
+                Rule::in(FnEnum::cases()),
+            ],
+            'accomplishment' => [
+                'required_if:type,1',
+            ],
         ];
     }
 

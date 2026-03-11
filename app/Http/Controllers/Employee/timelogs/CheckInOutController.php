@@ -11,8 +11,13 @@ use App\Services\TimelogsServices;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Yajra\DataTables\Facades\DataTables;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -21,7 +26,10 @@ class CheckInOutController extends Controller
     protected $timelogsServices;
     protected $employeeService;
 
-    public function __construct(TimelogsServices $timelogsServices, EmployeeService $employeeService)
+    public function __construct(
+        TimelogsServices $timelogsServices, 
+        EmployeeService $employeeService
+    )
     {
         $this->timelogsServices = $timelogsServices;
         $this->employeeService = $employeeService;
@@ -39,6 +47,7 @@ class CheckInOutController extends Controller
         $supervisor = $employee->division_supervisor ?? '';
 
         $is_allowed = $this->canUseWebTimeToday($employee_no)['allowed'];
+        $isRequiredAR = $this->canUseWebTimeToday($employee_no)['isRequiredAR'];
 
         $query = $this->timelogsServices->getTimeLogs($user_id);
 
@@ -46,7 +55,7 @@ class CheckInOutController extends Controller
             return $this->datatable($query);
         }
 
-        return view('employee.pages.timelogs.checkin-out.index', compact(['employee_no', 'is_allowed', 'supervisor']));
+        return view('employee.pages.timelogs.checkin-out.index', compact(['employee_no', 'is_allowed', 'isRequiredAR', 'supervisor']));
     }
 
     public function create()
@@ -65,6 +74,8 @@ class CheckInOutController extends Controller
     {
         $validatedData = $request->validated();
         $fn = $validatedData['type'] ?? null;
+        $rawAR = $validatedData['accomplishment'] ?? null;
+        $accomplishment = $this->cleanAR($rawAR);
 
         $validatedData['user_id'] = auth()->user()->id;
         $validatedData['employee_no'] = auth()->user()->employee_no();
@@ -120,8 +131,7 @@ class CheckInOutController extends Controller
 
         try {
 
-            // Insert time log
-            $timelog = DB::table('timelogs')->insert([
+            $timelog = DB::table('timelogs')->insertGetId([
                 'user_id'           => $validatedData['user_id'],
                 'employee_no'       => $validatedData['employee_no'],
                 'date_time'         => $now,
@@ -133,12 +143,13 @@ class CheckInOutController extends Controller
             ]);
 
             $time = $now->format('h:i:s A');
+            $this->generateDAR($validatedData['employee_no'], $timelog, $accomplishment);
 
             DB::commit();
 
             return response()->json([
                 'message' => 'Your time log was recorded successfully.',
-                'reaason' => $isAllowedToUseWebAccess['reason'],
+                'reason' => $isAllowedToUseWebAccess['reason'],
                 'data'    => $timelog,
                 'time'    => $time,
             ], 201);
@@ -231,15 +242,16 @@ class CheckInOutController extends Controller
                 'allowed' => false,
                 'reason'  => 'No active Web Time access rule found.',
                 'matched_rule_id' => null,
+                'isRequiredAR' => false
             ];
         }
 
         if ((int) $rule->always === 1) {
-            // dd((int) $rule->always === 1);
             return [
                 'allowed' => true,
                 'reason'  => 'Allowed: always access.',
                 'matched_rule_id' => $rule->id,
+                'isRequiredAR' => $rule->isRequiredAccomplishment
             ];
         }
 
@@ -257,11 +269,9 @@ class CheckInOutController extends Controller
                 'allowed' => true,
                 'reason'  => "Allowed: today's date ($today) is in specific_dates.",
                 'matched_rule_id' => $rule->id,
+                'isRequiredAR' => $rule->isRequiredAccomplishment
             ];
         }
-
-        // dd($rule);
-
 
         // 3) DAYS OF WEEK
         if (in_array($dow, $daysOfWeek, true)) {
@@ -269,14 +279,151 @@ class CheckInOutController extends Controller
                 'allowed' => true,
                 'reason'  => "Allowed: today ($dow) is in days_of_week.",
                 'matched_rule_id' => $rule->id,
+                'isRequiredAR' => $rule->isRequiredAccomplishment
             ];
         }
-
 
         return [
             'allowed' => false,
             'reason'  => 'Web Time is not allowed for you today based on your assigned schedule. Please use the biometric fingerprint scanner.',
             'matched_rule_id' => $rule->id,
+            'isRequiredAR' => false
         ];
+    }
+
+    private function cleanAR($content)
+    {
+        $dom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML($content);
+        libxml_clear_errors();
+
+        // Get all rows
+        $rows = $dom->getElementsByTagName('tr');
+
+        $cleanData = [];
+        $headers = [];
+
+        foreach ($rows as $rowIndex => $row) {
+            $cells = $row->getElementsByTagName('td');
+
+            if ($cells->length === 0) continue;
+
+            $rowData = [];
+
+            if ($rowIndex === 0) {
+                foreach ($cells as $cell) {
+                    $text = html_entity_decode($cell->textContent);
+                    $text = str_replace("\xC2\xA0", '', $text); // remove non-breaking spaces
+                    $text = preg_replace('/[ \t]+$/m', '', $text); // trim trailing spaces but keep newlines
+                    $headers[] = trim($text); // headers can stay trimmed
+                }
+                continue;
+            }
+
+            foreach ($cells as $cellIndex => $cell) {
+                $text = html_entity_decode($cell->textContent);
+                $text = str_replace("\xC2\xA0", '', $text); // remove non-breaking spaces
+                $text = preg_replace('/[ \t]+$/m', '', $text); // trim trailing spaces but keep newlines
+                $text = str_replace(["\r\n", "\r"], "\n", $text); // normalize newlines
+
+                $key = $headers[$cellIndex] ?? 'column_' . $cellIndex;
+                $rowData[$key] = $text;
+            }
+
+            $cleanData[] = $rowData;
+        }
+
+        return $cleanData;
+    }
+
+    private function generateDAR($employee_no, $timelog, $accomplishments) {
+        $employee = $this->employeeService->getEmployee('information', $employee_no);
+        $now = Carbon::now()->format('F d, Y');
+        $todayNumeric = Carbon::now()->format('Y-m-d'); // for filename
+        $fullname = $employee->firstname . ' ' . $employee->lastname;
+        $division_name = $employee->division_name ?? 'N/A';
+
+        // Load template
+        $templatePath = public_path('templates/daily-accomplishment-report.xlsx');
+        $spreadsheet = IOFactory::load($templatePath);
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Fill header info
+        $sheet->setCellValue('B3', strtoupper($now));
+        $sheet->setCellValue('B4', strtoupper($fullname));
+        $sheet->setCellValue('B5', strtoupper($division_name));
+
+        $startRow = 9;
+        $noCounter = 1; 
+
+        foreach ($accomplishments as $index => $item) {
+            $isEmpty = empty(trim($item['Accomplishment / Activity'] ?? ''))
+                    && empty(trim($item['Details'] ?? ''))
+                    && empty(trim($item['Status / Remarks'] ?? ''))
+                    && empty(trim($item['MOV (Means of Verification)'] ?? ''));
+
+            if ($isEmpty) {
+                continue;
+            }
+
+            $row = $startRow + $index;
+
+            if ($index === 0) {
+                $templateRowStyle = $sheet->getStyle($row);
+                $templateRowHeight = $sheet->getRowDimension($row)->getRowHeight();
+            } else {
+                $prevRow = $row - 1;
+                $sheet->insertNewRowBefore($row, 1);
+                $sheet->duplicateStyle($sheet->getStyle($prevRow), $row);
+                $sheet->getRowDimension($row)->setRowHeight($sheet->getRowDimension($prevRow)->getRowHeight());
+            }
+
+            $sheet->setCellValue('A' . $row, $item['No.'] ?? $noCounter++);
+            $sheet->setCellValue('B' . $row, str_replace(["\r\n","\r","\n"], "\n", $item['Accomplishment / Activity'] ?? ''));
+            $sheet->setCellValue('C' . $row, str_replace(["\r\n","\r","\n"], "\n", $item['Details'] ?? ''));
+            $sheet->setCellValue('D' . $row, str_replace(["\r\n","\r","\n"], "\n", $item['Status / Remarks'] ?? ''));
+            $sheet->setCellValue('E' . $row, str_replace(["\r\n","\r","\n"], "\n", $item['MOV (Means of Verification)'] ?? ''));
+
+            // Enable wrap text for these cells so new lines are visible
+            foreach (range('A','E') as $col) {
+                $sheet->getStyle($col . $row)->getAlignment()->setWrapText(true);
+            }
+
+            $highestColumn = $sheet->getHighestColumn();
+            if (ord($highestColumn) > ord('E')) {
+                $sheet->getStyle('F' . $row . ':' . $highestColumn . $row)
+                    ->getBorders()->getAllBorders()
+                    ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_NONE);
+            }
+        }
+
+        $path = 'users/' . $employee_no . '/daily-accomplishment-reports/';
+        $baseFilename = 'dar-' . $todayNumeric;
+        $extension = '.xlsx';
+        $filename = $baseFilename . $extension;
+
+        $counter = 1;
+        while (Storage::disk('public')->exists($path . $filename)) {
+            $filename = $baseFilename . '-' . $counter . $extension;
+            $counter++;
+        }
+
+        $fullPath = $path . $filename;
+
+        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        Storage::disk('public')->put($fullPath, '');
+        $writer->save(storage_path('app/public/' . $fullPath));
+
+        DB::table('accomplishment_reports')
+            ->insert([
+                'timelog_id' => $timelog,
+                'employee_no' => $employee_no,
+                'file' => $fullPath,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+        return;
     }
 }

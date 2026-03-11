@@ -1,11 +1,11 @@
 @extends('admin.layouts.app')
 
 @section('styles')
-
 @endsection
 
 @section('content')
- <div class="container-fluid">
+<div class="container-fluid">
+
     <x-header title="Shift Schedule" subtitle="Manage shift schedule in this module">
         <x-button-link 
             :href="route('shift.index')" 
@@ -14,10 +14,12 @@
             variant="danger"
         />
     </x-header>
-    <form id="form" action="{{ route('shift.store') }}" id="myForm" method="post">
+
+    <form id="form" action="{{ route('shift.store') }}" method="POST">
         @csrf
-        @method('POST')
+
         <div class="card shadow p-3">
+
             <div class="card-header bg-transparent">
                 <h4 class="m-0 mb-1 pt-3 text-uppercase fw-medium">
                     Create Shift
@@ -25,13 +27,16 @@
             </div>
 
             <div class="card-body">
+
                 <div class="row my-3">
-                    <div class="col-12 col-md-6 mb-3">
+
+                    <div class="col-12 col-md-5 mb-3" id="shift_name_container">
                         <label class="mb-2" for="name">Shift Name <span class="text-danger">*</span></label>
                         <input type="text" id="name" name="name" class="form-control">
                         <div class="error-field"></div>
                     </div>
-                    <div class="col-12 col-md-6 mb-3">
+
+                    <div class="col-12 col-md-4 mb-3" id="flexible_container">
                         <label class="mb-2" for="is_flexible">Flexible</label>
                         <select id="is_flexible" name="is_flexible" class="form-select">
                             <option value="0" selected>No</option>
@@ -39,12 +44,21 @@
                         </select>
                         <div class="error-field"></div>
                     </div>
+
+                    <div class="col-12 col-md-3 mb-3" id="grace_period_container">
+                        <label class="mb-2" for="grace_period">Grace Period (in minutes)</label>
+                        <input type="text" name="grace_period" id="grace_period" class="form-control">
+                        <div class="error-field"></div>
+                    </div>
+
                 </div>
 
+
                 <div class="row my-3">
+
                     <div class="col-12 col-md-3 mb-3 d-none" id="earliest_time_container">
                         <label class="mb-2" for="earliest_time">Earliest Time <span class="text-danger">*</span></label>
-                        <input type="time" id="earliest_time" name="earliest_time" class="form-control">
+                        <input type="time" id="earliest_time" name="earliest_time" class="form-control" disabled>
                         <div class="error-field"></div>
                     </div>
 
@@ -54,7 +68,7 @@
                         <div class="error-field"></div>
                     </div>
 
-                    <div class="col-12 col-md-3" id="end_time_container">
+                    <div class="col-12 col-md-3 mb-3" id="end_time_container">
                         <label class="mb-2" for="end_time">End Time <span class="text-danger">*</span></label>
                         <input type="time" id="end_time" name="end_time" class="form-control">
                         <div class="error-field"></div>
@@ -63,20 +77,22 @@
                     <div class="col-12 col-md-3 mb-3">
                         <label class="mb-2" for="working_hours">Working Hours</label>
                         <input type="number" step="0.01" min="0" id="working_hours" 
-                            name="working_hours" class="form-control"
-                            value="{{ $shift->working_hours ?? '' }}">
+                               name="working_hours" class="form-control">
                         <div class="error-field"></div>
                     </div>
 
                     <div class="col-12 col-md-3 mb-3">
                         <label class="mb-2" for="minimum_overtime_hours">Minimum Overtime Hours</label>
-                        <input type="number" step="0.01" min="0" id="minimum_overtime_hours" name="minimum_overtime_hours"
-                            class="form-control">
+                        <input type="number" step="0.01" min="0" id="minimum_overtime_hours"
+                               name="minimum_overtime_hours" class="form-control">
                         <div class="error-field"></div>
                     </div>
+
                 </div>
 
+
                 <div class="row my-3">
+
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="break_out_time">Break Out Time</label>
                         <input type="time" id="break_out_time" name="break_out_time" class="form-control">
@@ -86,31 +102,36 @@
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="break_in_time">Break In Time</label>
                         <input type="time" id="break_in_time" name="break_in_time" class="form-control">
-                       <div class="error-field"></div>
+                        <div class="error-field"></div>
                     </div>
+
                 </div>
 
-                
+
                 <div class="row my-3">
+
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="is_break_required">Break Required</label>
                         <select id="is_break_required" name="is_break_required" class="form-select">
                             <option value="1" selected>Yes</option>
                             <option value="0">No</option>
                         </select>
-                       <div class="error-field"></div>
+                        <div class="error-field"></div>
                     </div>
+
                     <div class="col-12 col-md-6 mb-3">
                         <label class="mb-2" for="is_night_shift">Night Shift</label>
                         <select id="is_night_shift" name="is_night_shift" class="form-select">
                             <option value="0" selected>No</option>
                             <option value="1">Yes</option>
                         </select>
-                       <div class="error-field"></div>
+                        <div class="error-field"></div>
                     </div>
+
                 </div>
 
             </div>
+
 
             <div class="card-footer border-top bg-transparent border-0 pt-4 d-flex justify-content-end">
                 <button type="submit" id="submit-button"
@@ -118,39 +139,75 @@
                     Save
                 </button>
             </div>
+
         </div>
     </form>
 
- </div>
+</div>
 @endsection
+
 
 @section('scripts')
 <script>
-    $(function() {
 
-        $("#is_flexible").on("change", function(){
-            let selected = $(this).val();
+$(function () {
 
-           if (selected == 1) {
-                $("#earliest_time_container").removeClass("d-none");
-                $("#earliest_time").prop("disabled", false);
+    function toggleFlexible() {
 
-                $("#end_time").val('').prop("disabled", true);
-                $("#end_time_container").addClass("d-none");
-            } else {
-                $("#end_time_container").removeClass("d-none");
-                $("#end_time").prop("disabled", false);
+        let selected = $("#is_flexible").val();
 
-                $("#earliest_time").val('').prop("disabled", true);
-                $("#earliest_time_container").addClass("d-none");
-            }
+        if (selected == 1) {
+
+            $("#grace_period_container").addClass("d-none");
+            $("#grace_period").val('');
+
+            $("#shift_name_container")
+                .removeClass("col-md-5")
+                .addClass("col-md-6");
+
+            $("#flexible_container")
+                .removeClass("col-md-4")
+                .addClass("col-md-6");
 
 
-        });
+            $("#earliest_time_container").removeClass("d-none");
+            $("#earliest_time").prop("disabled", false);
 
-        const url = $('#form').attr('action');
-        post(url);
-        
-    });
+            $("#end_time").val('').prop("disabled", true);
+            $("#end_time_container").addClass("d-none");
+
+        } else {
+
+            $("#grace_period_container").removeClass("d-none");
+
+            $("#shift_name_container")
+                .removeClass("col-md-6")
+                .addClass("col-md-5");
+
+            $("#flexible_container")
+                .removeClass("col-md-6")
+                .addClass("col-md-4");
+
+
+            $("#end_time_container").removeClass("d-none");
+            $("#end_time").prop("disabled", false);
+
+            $("#earliest_time").val('').prop("disabled", true);
+            $("#earliest_time_container").addClass("d-none");
+
+        }
+
+    }
+
+    $("#is_flexible").on("change", toggleFlexible);
+
+    toggleFlexible();
+
+
+    const url = $('#form').attr('action');
+    post(url);
+
+});
+
 </script>
 @endsection
