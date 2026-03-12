@@ -4,7 +4,7 @@
             <div>
               <p class="mb-0 text-center fw-medium" style="letter-spacing: 2px;">{{ currentTime }}</p>
             </div>
-            <h5 :class="{ '': !todayTimeIn }" class="fw-bold mt-1">
+            <h5 :class="{ '': !todayTimeIn }" class="fw-bold mt-1 text-center">
                 {{ todayTimeIn ? workedHours : "NO TIME IN YET" }}
             </h5>
         </div>
