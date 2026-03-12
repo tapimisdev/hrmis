@@ -7,6 +7,7 @@ use App\Enums\LeaveEnum;
 use App\Enums\PayrollStatusEnum;
 use App\Enums\TableSettingsEnum;
 use App\Services\DailyTimeRecordService;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +28,7 @@ class ComputationService
      * @var DailyTimeRecordService
      */
     protected $daily_time_record_service;
+    protected $salaryEmployeeService;
 
     /** @var string|int */
     protected $employee_no;
@@ -139,9 +141,10 @@ class ComputationService
     /**
      * Inject required dependencies.
      */
-    public function __construct(DailyTimeRecordService $daily_time_record_service)
+    public function __construct(DailyTimeRecordService $daily_time_record_service, SalaryEmloyeeService $salaryEmployeeService)
     {
         $this->daily_time_record_service = $daily_time_record_service;
+        $this->salaryEmployeeService = $salaryEmployeeService;
     }
 
     /**
@@ -562,10 +565,10 @@ class ComputationService
      */
     private function getEmployeeInformation()
     {
-        $employee_information = DB::table('employee_organization')
-            ->leftJoin('employee_information', 'employee_organization.employee_no', '=', 'employee_information.employee_no')
+        $employee_information = $this->salaryEmployeeService->activeOrg($this->employee_no)
+            ->leftJoin('employee_information', 'eo1.employee_no', '=', 'employee_information.employee_no')
             ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
-            ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
+            ->leftJoin('positions', 'eo1.position_id', '=', 'positions.id')
             ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
             ->select(
                 'employee_information.two_percent',
@@ -575,12 +578,10 @@ class ComputationService
                 'employee_personal.middlename',
                 'employee_personal.lastname',
                 'employee_personal.suffix',
-                'employee_organization.employment_type_id',
+                'eo1.employment_type_id',
                 'positions.name as position_name',
                 'users.id as user_id'
             )
-            ->where('employee_organization.employee_no', $this->employee_no)
-            ->orderByDesc('employee_organization.effectivity_date')
             ->first();
 
         if (!$employee_information) {
@@ -615,10 +616,8 @@ class ComputationService
     {
         Log::info("Fetching salary details for employee number: {$this->employee_no} as of payroll date: {$this->payroll_date}");
 
-        $employee_salary = DB::table('employee_salary')
-            ->where('employee_no', $this->employee_no)
-            ->whereDate('effectivity_date', '<=', $this->payroll_date)
-            ->orderByDesc('effectivity_date')
+        $employee_salary = $this->salaryEmployeeService
+            ->activeSalary($this->employee_no, $this->payroll_date)
             ->first();
 
         if (!$employee_salary) {
@@ -674,16 +673,15 @@ class ComputationService
      */
     private function getShiftAndWorkScheduleIds()
     {
-        $schedule = DB::table('employee_shift_work_schedule as esw')
-            ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
-            ->select(
-                'esw.shift_id',
-                'esw.work_schedule_id',
-                's.working_hours'
-            )
-            ->where('esw.employee_no', $this->employee_no)
-            ->where('esw.effectivity_date', '<=', $this->payroll_date)
-            ->first();
+        $schedule = $this->salaryEmployeeService
+                    ->activeShift($this->employee_no, $this->payroll_date)
+                    ->leftJoin('shifts as s', 'sw1.shift_id', '=', 's.id')
+                    ->select(
+                        'sw1.shift_id',
+                        'sw1.work_schedule_id',
+                        's.working_hours',
+                    )
+                    ->first();
 
         if (!$schedule) {
             throw new \Exception('Please ask your HR to set your Shift and Work Schedule.');

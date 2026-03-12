@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Services\SalaryEmloyeeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -105,30 +107,13 @@ class User extends Authenticatable
         return $this->hasMany(EventAnnouncementViewer::class);
     }
 
-    // public function getNameAttribute()
-    // {
-    //     $employee = DB::table('users as u')
-    //         ->leftJoin('employee_information as ei', 'ei.user_id', '=', 'u.id')
-    //         ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-    //         ->where('u.id', $this->id)
-    //         ->select('ep.firstname', 'ep.lastname')
-    //         ->first();
-
-    //     if ($employee) {
-    //         return $employee->firstname . ' ' . $employee->lastname;
-    //     }
-
-    //     return 'No Name';
-    // }
-
     public function getShiftAndWorkSchedule()
     {
+        $salaryEmployeeService = new SalaryEmloyeeService();
+
         $employee_no = DB::table('employee_information')->where('user_id', $this->id)->value('employee_no');
 
-        $schedule = DB::table('employee_shift_work_schedule')
-            ->where('employee_no', $employee_no)
-            ->where('effectivity_date', '<=', now())
-            ->first();
+        $schedule = $salaryEmployeeService->activeShift($employee_no)->first();
 
         if (!$schedule) {
             throw new \Exception('Please ask your HR to set your Shift and Work Schedule.');

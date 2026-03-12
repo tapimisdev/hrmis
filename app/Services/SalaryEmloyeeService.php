@@ -5,36 +5,53 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class SalaryEmloyeeService {
-
-    public function activeOrg()
+class SalaryEmloyeeService
+{
+    public function activeOrg($employee_no = null, $endDate = null)
     {
         return DB::table('employee_organization as eo1')
-                ->select('eo1.*')
-                ->whereRaw('eo1.created_at = (
-                    SELECT MAX(eo2.created_at)
-                    FROM employee_organization eo2
-                    WHERE eo2.employee_no = eo1.employee_no
-                )');
+            ->where(
+                'eo1.id',
+                DB::table('employee_organization as eo2')
+                    ->select('eo2.id')
+                    ->whereColumn('eo2.employee_no', 'eo1.employee_no')
+                    ->when($endDate, fn($q) => $q->where('eo2.created_at', '<=', $endDate))
+                    ->orderByDesc('eo2.created_at')
+                    ->orderByDesc('eo2.id')
+                    ->limit(1)
+            )
+            ->when($employee_no, fn($q) => $q->where('eo1.employee_no', $employee_no));
     }
 
-    public function activeSalary()
+    public function activeSalary($employee_no = null, $endDate = null)
     {
         return DB::table('employee_salary as es1')
-                ->select('es1.*')
-                ->whereRaw('es1.created_at = (
-                    SELECT MAX(es2.created_at)
-                    FROM employee_salary es2
-                    WHERE es2.employee_no = es1.employee_no
-                )');
+            ->where(
+                'es1.id',
+                DB::table('employee_salary as es2')
+                    ->select('es2.id')
+                    ->whereColumn('es2.employee_no', 'es1.employee_no')
+                    ->when($endDate, fn($q) => $q->where('es2.created_at', '<=', $endDate))
+                    ->orderByDesc('es2.created_at')
+                    ->orderByDesc('es2.id')
+                    ->limit(1)
+            )
+            ->when($employee_no, fn($q) => $q->where('es1.employee_no', $employee_no));
     }
 
-    public function activeShift()
+    public function activeShift($employee_no = null, $endDate = null)
     {
         return DB::table('employee_shift_work_schedule as sw1')
-                ->select('sw1.*')
-                ->whereRaw('sw1.id = 
-                        (select max(sw2.id) from employee_shift_work_schedule sw2 
-                        where sw2.employee_no = sw1.employee_no)');
+            ->where(
+                'sw1.id',
+                DB::table('employee_shift_work_schedule as sw2')
+                    ->select('sw2.id')
+                    ->whereColumn('sw2.employee_no', 'sw1.employee_no')
+                    ->when($endDate, fn($q) => $q->where('sw2.created_at', '<=', $endDate))
+                    ->orderByDesc('sw2.created_at')
+                    ->orderByDesc('sw2.id')
+                    ->limit(1)
+            )
+            ->when($employee_no, fn($q) => $q->where('sw1.employee_no', $employee_no));
     }
 }

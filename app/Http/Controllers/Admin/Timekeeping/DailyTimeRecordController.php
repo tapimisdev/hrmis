@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Timekeeping;
 use App\Http\Controllers\Controller;
 use App\Services\DailyTimeRecordService;
 use App\Services\EmployeeService;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class DailyTimeRecordController extends Controller
      */
     protected $daily_time_record_service;
     protected $employeeService;
+    protected $salaryEmloyeeService;
 
     /**
      * Inject the DailyTimeRecordService dependency.
@@ -27,11 +29,13 @@ class DailyTimeRecordController extends Controller
      */
     public function __construct(
         DailyTimeRecordService $daily_time_record_service,
-        EmployeeService $employeeService
+        EmployeeService $employeeService,
+        SalaryEmloyeeService $salaryEmloyeeService
     )
     {
         $this->daily_time_record_service = $daily_time_record_service;
         $this->employeeService = $employeeService;
+        $this->salaryEmloyeeService = $salaryEmloyeeService;
 
         $this->middleware(function ($request, $next) {
             if (
@@ -129,22 +133,10 @@ class DailyTimeRecordController extends Controller
     public function employee_information_with_summary(Request $request, $employee_no)
     {
         // Subquery: latest shift work schedule
-        $latestShift = DB::table('employee_shift_work_schedule as esws1')
-            ->select('esws1.*')
-            ->whereRaw('esws1.id = (
-                SELECT MAX(esws2.id)
-                FROM employee_shift_work_schedule esws2
-                WHERE esws2.employee_no = esws1.employee_no
-            )');
+        $latestShift = $this->salaryEmloyeeService->activeShift();
 
         // Subquery: latest organization
-        $latestOrg = DB::table('employee_organization as eo1')
-            ->select('eo1.*')
-            ->whereRaw('eo1.id = (
-                SELECT MAX(eo2.id)
-                FROM employee_organization eo2
-                WHERE eo2.employee_no = eo1.employee_no
-            )');
+        $latestOrg = $this->salaryEmloyeeService->activeOrg();
 
         $employee = DB::table('users')
             ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
