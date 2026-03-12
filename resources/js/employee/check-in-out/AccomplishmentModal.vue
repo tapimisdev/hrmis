@@ -15,7 +15,7 @@
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <p class="mt-2">Loading editor...</p>
+                        <p class="mt-2 py-5">Loading editor...</p>
                     </div>
                     <textarea id="tinyEditor"></textarea>
                     <div v-if="error" class="text-danger mt-2">
