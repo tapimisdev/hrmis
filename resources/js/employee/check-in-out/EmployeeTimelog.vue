@@ -466,7 +466,6 @@ export default {
                         confirmButtonText:
                             status === "success" ? "Download" : "Got it",
                     }).then((result) => {
-                        // Only trigger download if user clicked confirm and status is success
                         if (
                             status === "success" &&
                             result.isConfirmed &&
@@ -474,7 +473,7 @@ export default {
                         ) {
                             const link = document.createElement("a");
                             link.href = file;
-                            link.download = ""; // optional: set file name if you want
+                            link.download = ""; 
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
