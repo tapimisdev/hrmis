@@ -21,12 +21,23 @@ class RoleRedirectMiddleware
             return $next($request);
         }
 
-        $user = Auth::user();
+        $user = Auth::user()->load('employeeInformation');
+
+        if ($user->employeeInformation && $user->employeeInformation->account_status !== 'active') {
+
+            Auth::logout();
+
+            return redirect('/login')
+                ->withErrors([
+                    'email' => 'Sorry, your employee account is inactive.'
+                ])
+                ->withInput($request->only('email'));
+        }
 
         $isEmployee = $user->roles->contains(function ($role) {
             return str_starts_with($role->name, 'emp_');
         });
-        
+
         if ($isEmployee && $request->is('admin/*')) {
             return redirect()->to('/employee/dashboard');
         }
@@ -36,6 +47,5 @@ class RoleRedirectMiddleware
         }
 
         return $next($request);
-        
     }
 }
