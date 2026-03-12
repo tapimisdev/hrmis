@@ -24,11 +24,12 @@
                   </h1>
               </div>
 
-              <div class="d-md-flex justify-content-center justify-content-md-start gap-3 px-3 d-lg-flex-wrap month-year-button">
+              <div class="d-lg-flex justify-content-center justify-content-md-start gap-3 px-3 d-lg-flex-wrap month-year-button">
 
                   <!-- Clock In -->
                   <button
-                      class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold"
+                      class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold w-100 my-2"
+                      style="white-space: nowrap !important;"
                       @click="setTime(0)"
                       v-if="!isTimeInDisabled"
                       :disabled="!props.isAllowed || buttonLoading === 'timeIn'"
@@ -40,7 +41,8 @@
 
                   <!-- Break Out -->
                   <button
-                      class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold"
+                      class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold w-100 my-2"
+                      style="white-space: nowrap !important;"
                       @click="setTime(2)"
                       v-if="!isBreakOutDisabled"
                       :disabled="!props.isAllowed || buttonLoading === 'breakOut'"
@@ -52,7 +54,8 @@
 
                   <!-- Break In -->
                   <button
-                      class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold"
+                      class="btn btn-primary text-uppercase fw-bold py-3 px-4 fw-semibold w-100 my-2"
+                      style="white-space: nowrap !important;"
                       @click="setTime(3)"
                       v-if="!isBreakInDisabled"
                       :disabled="!props.isAllowed || buttonLoading === 'breakIn'"
@@ -64,7 +67,8 @@
 
                   <!-- Clock Out -->
                   <button
-                      class="btn btn-danger text-uppercase fw-bold py-3 px-4 fw-semibold"
+                      class="btn btn-danger text-uppercase fw-bold py-3 px-4 fw-semibold w-100 my-2"
+                      style="white-space: nowrap !important;"
                       @click="setTime(1)"
                       :disabled="!props.isAllowed || isTimeOutDisabled || buttonLoading === 'timeOut'"
                   >
@@ -75,7 +79,8 @@
 
                   <!-- OT In -->
                   <button
-                      class="btn btn-dark text-uppercase fw-bold py-3 px-4 fw-semibold"
+                      class="btn btn-dark text-uppercase fw-bold py-3 px-4 fw-semibold w-100 my-2"
+                      style="white-space: nowrap !important;"
                       @click="setTime(4)"
                       v-if="!isOvertimeInDisabled"
                       :disabled="!props.isAllowed || buttonLoading === 'overtimeIn'"
@@ -275,7 +280,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.month {
-    color: #dc3545;
-}
+    .month {
+        color: #dc3545;
+    }
+    @media (max-width: 767.98px) {
+      .month-year {
+        margin-bottom: 20px;
+      }
+    }
 </style>
