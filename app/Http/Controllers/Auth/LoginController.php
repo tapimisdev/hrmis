@@ -37,6 +37,19 @@ class LoginController extends Controller
 
     protected function authenticated(Request $request, $user)
     {
+
+        $user = $user->load('employeeInformation');
+
+        if (!$user->employeeInformation || $user->employeeInformation->account_status !== 'active') {
+            auth()->logout();
+
+            return redirect('/login')
+                ->withErrors([
+                    'email' => 'Sorry, your account is currently inactive.'
+                ])
+                ->withInput($request->only('email'));
+        }
+
         $token = $user->createToken('app-token')->plainTextToken;
 
         session([
