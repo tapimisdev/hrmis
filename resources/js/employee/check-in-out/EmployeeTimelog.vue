@@ -43,11 +43,11 @@
                     </option>
                 </select>
                 <button
-                    class="btn btn-primary"
+                    class="btn btn-primary open-printables text-uppercase fw-semibold"
                     @click="openPrintables"
                     title="Print View"
                 >
-                    <i class="fa-solid fa-print"></i>
+                    <i class="fa-solid fa-print me-1"></i> Print
                 </button>
             </div>
         </div>
@@ -573,7 +573,12 @@ export default {
             }
         }
 
+        .open-printables {
+          margin: 10px 0 10px 0;
+        }
+
         td {
+            white-space: nowrap;
             padding: 5px;
         }
     }
