@@ -32,6 +32,8 @@ class StoreWebTimeAccessRequest extends FormRequest
                 ->map(fn ($d) => trim((string) $d))
                 ->values()
                 ->all(),
+
+            'is_required_accomplishment' => $this->input('is_required_accomplishment') ? 'yes' : 'no'
         ]);
     }
 
@@ -59,6 +61,7 @@ class StoreWebTimeAccessRequest extends FormRequest
                 Rule::requiredIf($this->type === 'specific_dates'),
                 'date_format:Y-m-d',
             ],
+            'is_required_accomplishment' => ['required', 'in:yes,no']
         ];
     }
 

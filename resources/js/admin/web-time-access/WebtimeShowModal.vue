@@ -40,10 +40,10 @@
                     <!-- Error -->
                     <div
                         v-if="errorMessage"
-                        class="alert alert-danger d-flex align-items-start gap-2"
+                        class="alert alert-danger d-flex justify-content-center align-items-start gap-2 text-uppercase text-center"
                     >
                         <i class="fas fa-triangle-exclamation mt-1"></i>
-                        <div class="small">{{ errorMessage }}</div>
+                        <div>{{ errorMessage }}</div>
                     </div>
 
                     <!-- Loading -->
@@ -55,12 +55,6 @@
                         <span>Loading history...</span>
                     </div>
 
-                    <!-- Empty -->
-                    <div v-else-if="!history.length" class="empty-state">
-                        <i class="fas fa-inbox me-1"></i>
-                        No schedule history found.
-                    </div>
-
                     <!-- List -->
                     <div v-else class="list-group">
                         <div
@@ -69,53 +63,55 @@
                             class="list-group-item history-item"
                         >
                             <div
-                                class="d-flex justify-content-between align-items-start gap-2"
+                                class="mt-3 d-flex justify-content-between align-items-start gap-2"
                             >
-                                <div
-                                    class="d-flex align-items-center gap-2 flex-wrap"
-                                >
-                                    <span
-                                        class="badge"
-                                        :class="badgeClass(item.type)"
-                                    >
-                                        <i
-                                            :class="typeIcon(item.type)"
-                                            class="me-1"
-                                        ></i>
-                                        {{ typeLabel(item.type) }}
-                                    </span>
+                                <div style="font-size: 15px">
+                                    <div class="d-flex gap-2">
+                                      <span
+                                          class="badge"
+                                          :class="badgeClass(item.type)"
+                                      >
+                                          <i
+                                              :class="typeIcon(item.type)"
+                                              class="me-1"
+                                          ></i>
+                                          {{ typeLabel(item.type) }}
+                                      </span>
 
-                                    <span class="text-muted small">
+                                      <span class="small badge bg-success" v-if="item.isRequiredAccomplishment">
+                                          <i class="fa-solid fa-newspaper me-1"></i> Required Accomplishment Report
+                                      </span>
+
+                                      <span
+                                          v-if="idx === 0"
+                                          class="badge bg-success"
+                                      >
+                                          <i class="fas fa-star me-1"></i> Active
+                                      </span>
+                                    </div>
+                                    <div class="text-muted small mt-2">
                                         Effectivity:
                                         <span class="fw-semibold">{{
                                             item.effectivity_date || "—"
                                         }}</span>
-                                    </span>
-
-                                    <span class="text-muted small">
+                                    </div>
+                                    <div class="text-muted small">
                                         Saved:
                                         <span class="fw-semibold">{{
                                             formatDateTime(item.created_at)
                                         }}</span>
-                                    </span>
-
-                                    <span
-                                        v-if="idx === 0"
-                                        class="badge bg-success"
-                                    >
-                                        <i class="fas fa-star me-1"></i> Active
-                                    </span>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="mt-2 small">
+                            <hr class="mt-3">
+                            <div class="mt-3 small" style="font-size: 12px;">
                                 <div class="fw-semibold">Rule</div>
                                 <div class="text-muted">
                                     {{ ruleText(item) }}
                                 </div>
                             </div>
                             
-                            <div class="d-flex justify-content-end">
+                            <div class="d-flex justify-content-end mb-2">
                               <button class="btn btn-sm btn-warning" @click="remove(item.id)">
                                 <i class="fa-solid fa-ban"></i>
                               </button>
@@ -223,7 +219,7 @@ export default {
             } catch (err) {
                 if (err.response?.status === 404) {
                     this.history = [];
-                    this.errorMessage = "No history found for this employee.";
+                    this.errorMessage = "No scheduled found for this employee.";
                 } else if (!err.response) {
                     this.errorMessage = "Network error. Please try again.";
                 } else {

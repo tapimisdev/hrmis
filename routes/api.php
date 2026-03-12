@@ -16,7 +16,6 @@ use App\Http\Controllers\Api\ForceUpdatePassword;
 |
 */
 
-
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', function (Request $request) {
