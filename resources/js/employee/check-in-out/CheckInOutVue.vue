@@ -200,7 +200,7 @@ function confirmSubmit(type, accomplishment = null) {
         showCancelButton: true,
         confirmButtonText: "Save"
     }).then((result) => {
-
+        
         if (result.isConfirmed) {
 
             buttonLoading.value = buttonNames[type];

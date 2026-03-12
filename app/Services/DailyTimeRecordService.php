@@ -46,9 +46,7 @@ class DailyTimeRecordService {
         $period = CarbonPeriod::create($startDate, $endDate);
 
         $timelogs = $this->timelogs_services->getTimeLogsWithPeriod($userId, $startDate, $endDate);
-
         $mapPeriodToTimelogs = $this->mapPeriodToTimelogs($period, $timelogs);
-                
         return $this->compute($mapPeriodToTimelogs, $userId);
     }
 
@@ -551,6 +549,7 @@ class DailyTimeRecordService {
                 'late_undertime'    => max(0, $tar_under['lost_minutes']),
                 'paid_hours'        => $paid_hours,
                 'remarks'           => $remarks,
+                'accomplishments'   => $date['accomplishment'] ?? null
             ];
         }
 

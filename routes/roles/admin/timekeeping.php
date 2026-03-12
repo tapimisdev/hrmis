@@ -26,6 +26,7 @@ Route::prefix('timekeeping')->group(function() {
     Route::get('daily-time-record/{employee_no}/show', [DailyTimeRecordController::class, 'show'])
         ->name('daily-time-record.show');
     Route::get('daily-time-record/{employee_no}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
+    Route::get('accomplishment-report', [DailyTimeRecordController::class, 'downloadDAR']);
 
     Route::resource('web-time-access', WebTimeAccessController::class)->only('index', 'show', 'store', 'destroy')->names('webtime');
 
