@@ -77,6 +77,7 @@ class WebTimeAccessController extends Controller
 
         // Normalize
         $type = $validated['type'];
+        $isRequiredAccomplishment = $validated['is_required_accomplishment'] == 'yes' ? true : false;
 
         $always = $type === 'always';
 
@@ -98,6 +99,7 @@ class WebTimeAccessController extends Controller
                     'always'           => $always,
                     'days_of_week'     => $daysOfWeek,
                     'specific_dates'   => $specificDates,
+                    'isRequiredAccomplishment' => $isRequiredAccomplishment,
                     'effectivity_date' => now(),
                     'updated_at'       => now(),
                 ];
@@ -148,19 +150,33 @@ class WebTimeAccessController extends Controller
             if (!empty($row->always)) $type = 'always';
 
             return [
-                'id'              => $row->id,
-                'employee_no'     => $row->employee_no,
-                'type'            => $type,
-                'days_of_week'    => $row->days_of_week ? json_decode($row->days_of_week, true) : [],
-                'specific_dates'  => $row->specific_dates ? json_decode($row->specific_dates, true) : [],
-                'effectivity_date'=> $row->effectivity_date,
-                'created_at'      => $row->created_at,
+                'id'               => $row->id,
+                'employee_no'      => $row->employee_no,
+                'type'             => $type,
+
+                'days_of_week' => $row->days_of_week
+                    ? json_decode($row->days_of_week, true)
+                    : [],
+
+                'specific_dates' => $row->specific_dates
+                    ? collect(json_decode($row->specific_dates, true))
+                        ->map(fn ($date) => Carbon::parse($date)->format('F j, Y'))
+                        ->values()
+                        ->all()
+                    : [],
+
+                'effectivity_date' => $row->effectivity_date
+                    ? Carbon::parse($row->effectivity_date)->format('F j, Y')
+                    : null,
+
+                'isRequiredAccomplishment' => $row->isRequiredAccomplishment,
+                'created_at'       => $row->created_at,
             ];
         });
 
         return response()->json([
             'message' => 'Schedule history fetched successfully.',
-            'data' => $data, // latest is first
+            'data' => $data, 
         ]);
     }
 

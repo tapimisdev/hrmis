@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class DailyTimeRecordController extends Controller
 {
@@ -57,8 +58,6 @@ class DailyTimeRecordController extends Controller
         $employee_id = DB::table('employee_information')
             ->where('employee_no', $employee_no)
             ->value('user_id');
-
-
 
         if(is_null($employee_id)) {
             return redirect()->route('timelogs.index');
@@ -208,6 +207,61 @@ class DailyTimeRecordController extends Controller
             'profile'   => $profile,
             'infoCards' => $infoCards
         ], 200);
+    }
+
+    public function downloadDAR(Request $request)
+    {
+
+        $user = Auth::user();
+        $roles = $user->getRoleNames()->toArray() ?? [];
+        $user_id = $request->user_id;
+
+        $isEmpRole = collect($roles)->contains(function ($role) {
+            return str_contains($role, 'emp_');
+        });
+
+        if($isEmpRole) {
+            $employee_no = $user->employee_no?? null;
+        } else {
+            $employee_no = $this->employeeService->getEmployeeNo($user_id) ?? null;
+            $employee = $this->employeeService->getEmployee('information', $employee_no) ?? null;
+        }
+
+
+        if(is_null($employee_no)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are no longer allowed to proceess action'
+            ]);
+        }
+
+        $file_path = $request->path;
+
+        preg_match('#/users/([^/]+)#', $file_path, $matches);
+        
+        $folderName = $matches[1] ?? null;
+
+        if ($folderName !== $employee_no) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not allowed to download the Daily Accomplishment Report of employee no. `'.$employee_no.'`'
+            ]);
+        }
+
+        $storage_path = ltrim($file_path, '/storage/');
+
+        if (!Storage::disk('public')->exists($storage_path)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sorry, we\'re unable to find this file. Please contact HR / Administrator. Thank you.'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            "message" => "Your file is ready for download",
+            'file' => $file_path 
+        ]);
     }
 
 }
