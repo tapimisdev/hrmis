@@ -39,15 +39,22 @@ class LoginController extends Controller
     {
 
         $user = $user->load('employeeInformation');
+        $roles = $user->getRoleNames();
 
-        if (!$user->employeeInformation || $user->employeeInformation->account_status !== 'active') {
-            auth()->logout();
+        $isEmployee = $roles->contains(function ($role) {
+            return str_starts_with($role, 'emp_');
+        });
 
-            return redirect('/login')
-                ->withErrors([
-                    'email' => 'Sorry, your account is currently inactive.'
-                ])
-                ->withInput($request->only('email'));
+        if($isEmployee) {
+            if (!$user->employeeInformation || $user->employeeInformation->account_status !== 'active') {
+                auth()->logout();
+
+                return redirect('/login')
+                    ->withErrors([
+                        'email' => 'Sorry, your account is currently inactive.'
+                    ])
+                    ->withInput($request->only('email'));
+            }
         }
 
         $token = $user->createToken('app-token')->plainTextToken;
