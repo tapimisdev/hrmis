@@ -41,6 +41,13 @@ class TrailsController extends Controller
             ->addColumn('user', function ($trail) {
                 return $trail->name ?? 'System';
             })
+            ->editColumn('payload', function($trail) {
+                return 
+                '<pre style="max-width:400px;white-space:pre-wrap;">'
+                . json_encode($trail->payload, JSON_PRETTY_PRINT)
+                . '</pre>';
+            })
+            ->rawColumns(['payload'])
             ->make(true);
     }
 }

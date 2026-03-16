@@ -19,6 +19,7 @@
                         <th>Actioned By Name</th>
                         <th>Method</th>
                         <th>Controller</th>
+                        <th>Payload</th>
                         <th>Description</th>
                         <th>Created At</th>
                     </tr>
@@ -42,6 +43,7 @@ $(function() {
             { data: 'actioned_by_name', name: 'actioned_by_name' },
             { data: 'method', name: 'method' },
             { data: 'controller', name: 'controller' },
+            { data: 'payload', name: 'payload' },
             { data: 'description', name: 'description' },
             { data: 'created_at', name: 'created_at' },
         ],
