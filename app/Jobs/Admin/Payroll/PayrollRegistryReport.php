@@ -18,14 +18,17 @@ class PayrollRegistryReport implements ShouldQueue
 
     public $employee;
     public int|string $payroll_id;
-
+    public int $userId;
+    public string $name;
     /**
      * Create a new job instance.
      */
-    public function __construct($employee, $payroll_id)
+    public function __construct($employee, $payroll_id, $userId, $name)
     {
         $this->employee = $employee;
         $this->payroll_id = $payroll_id;
+        $this->userId = $userId;
+        $this->name = $name;
     }
 
     /**
@@ -63,13 +66,13 @@ class PayrollRegistryReport implements ShouldQueue
 
     public function failed(\Throwable $exception)
     {
-        // This is called automatically if the job fails
+
         Log::error("Job failed: " . $exception->getMessage());
 
         DB::table('payroll_salary')
-        ->where('id', $this->payroll_id)
-        ->update([
-            'status'      => 'failed',
-        ]);
+            ->where('id', $this->payroll_id)
+            ->update([
+                'status'      => 'failed',
+            ]);
     }
 }

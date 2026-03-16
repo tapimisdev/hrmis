@@ -96,6 +96,7 @@ class SalaryController extends Controller
         Log::info('Creating payroll with data: ', $validatedData);
 
         try {
+            
             // Wrap only the critical DB operation in a transaction
             $payroll = DB::transaction(function () use ($validatedData) {
                 return $this->payroll_service->createPayroll($validatedData);
@@ -113,6 +114,7 @@ class SalaryController extends Controller
                 'payroll_id' => $payroll_id,
                 'payroll_no' => $payroll_no
             ], 201);
+
         } catch (\Throwable $e) {
             Log::error('Payroll creation failed: ' . $e->getMessage(), ['exception' => $e]);
             return response()->json([
