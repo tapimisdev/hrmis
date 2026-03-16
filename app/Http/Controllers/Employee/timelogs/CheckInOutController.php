@@ -45,7 +45,7 @@ class CheckInOutController extends Controller
     
         $employee_no = $this->employeeService->getEmployeeNo($user_id);
         $employee = $this->employeeService->getEmployee('information', $employee_no);
-        $supervisor = $employee->division_supervisor ?? '';
+        $supervisor = $employee->units_supervisor ?? '';
 
         $is_allowed = $this->canUseWebTimeToday($employee_no)['allowed'];
         $isRequiredAR = $this->canUseWebTimeToday($employee_no)['isRequiredAR'];
@@ -302,7 +302,7 @@ class CheckInOutController extends Controller
 
     //     $fullname = $employee->firstname . ' ' . $employee->lastname;
     //     $division_name = $employee->division_name ?? 'N/A';
-    //     $division_supervisor = $employee->division_supervisor ?? '';
+    //     $units_supervisor = $employee->units_supervisor ?? '';
 
     //     $templatePath = public_path('templates/daily-accomplishment-report.xlsx');
     //     $spreadsheet = IOFactory::load($templatePath);
@@ -378,7 +378,7 @@ class CheckInOutController extends Controller
 
     //     $supervisorRow = 13 + $insertedRows;
 
-    //     $sheet->setCellValue('D' . $supervisorRow, strtoupper($division_supervisor));
+    //     $sheet->setCellValue('D' . $supervisorRow, strtoupper($units_supervisor));
 
     //     // Ensure merge still exists
     //     $sheet->mergeCells('D' . $supervisorRow . ':E' . $supervisorRow);
@@ -421,7 +421,7 @@ class CheckInOutController extends Controller
 
         $fullname = strtoupper($employee->firstname . ' ' . $employee->lastname);
         $division_name = strtoupper($employee->division_name ?? 'N/A');
-        $division_supervisor = strtoupper($employee->division_supervisor ?? '');
+        $units_supervisor = strtoupper($employee->units_supervisor ?? '');
         $date = Carbon::now()->format('F d, Y');
         $todayNumeric = Carbon::now()->format('Y-m-d');
 
@@ -471,7 +471,7 @@ class CheckInOutController extends Controller
 
         // // Division Chief name (centered inside block)
         // $pdf->SetX($rightMargin - $blockWidth); // move cursor to the start of the block
-        // $pdf->Cell($blockWidth, 5, $division_supervisor, 0, 1, 'C');
+        // $pdf->Cell($blockWidth, 5, $units_supervisor, 0, 1, 'C');
 
         // // Draw underline (same block width)
         // $yLine = $pdf->GetY() + 2;
