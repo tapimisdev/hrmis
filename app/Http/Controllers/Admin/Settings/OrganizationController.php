@@ -175,6 +175,7 @@ class OrganizationController extends Controller
                 'code' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'division_id' => 'required|exists:divisions,id',
+                'supervisor' => 'required|string'
             ]); 
 
             DB::beginTransaction();
@@ -185,6 +186,7 @@ class OrganizationController extends Controller
                     'code' => $request->code,
                     'description' => $request->description,
                     'division_id' => $request->division_id,
+                    'supervisor' => $request->supervisor,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -295,6 +297,7 @@ class OrganizationController extends Controller
                 'code' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'division_id' => 'required|exists:divisions,id',
+                'supervisor' => 'required|string'
             ]);
 
             DB::beginTransaction();
@@ -307,6 +310,7 @@ class OrganizationController extends Controller
                         'code' => $request->code,
                         'description' => $request->description,
                         'division_id' => $request->division_id,
+                        'supervisor' => $request->supervisor,
                         'updated_at' => now(),
                     ]);
 
