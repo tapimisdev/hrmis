@@ -24,9 +24,12 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // Grant all permissions to super_admin
         Gate::before(function ($user, $ability) {
             return $user->hasRole('super_admin') ? true : null;
+        });
+
+        Gate::define('view-audit-trails', function ($user) {
+            return $user->hasRole('super_admin'); 
         });
     }
 }
