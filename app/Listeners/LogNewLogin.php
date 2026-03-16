@@ -39,13 +39,16 @@ class LogNewLogin
             $employeeTypes = array_map(fn($case) => $case->value, EmploymentTypesEnum::cases());
             $employmentValue = $user->employment_type_id?->value ?? $user->employment_type_id;
             $link = in_array($employmentValue, $employeeTypes) ? '/employee/profile' : '';
-            $this->eventService->pushNotification([
-                'type'     => 'system',
-                'sender'   => null,
+            
+            $payload = [
+                'type' => 'system',
+                'sender' => $user->id,
                 'receiver' => $user->id,
                 'message'  => '%b[SYSTEM]%b: A new login was made.',
                 'link'     => $link,
-            ]);
+            ];
+            
+            $this->eventService->pushNotification($payload);
         }
     }
 }

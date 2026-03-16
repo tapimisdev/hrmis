@@ -130,7 +130,7 @@ class EventService {
                 'link'    => $link
             ]));
         } catch (\Exception $e) {
-            throw "Error: " . $e->getMessage();
+            throw new \Exception("Error pushing notification: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
