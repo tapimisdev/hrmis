@@ -64,7 +64,7 @@ class DailyTimeRecordController extends Controller
         }
 
         $employee = $this->employeeService->getEmployee('information', $employee_no);
-        $supervisor = $employee->division_supervisor ?? '';
+        $supervisor = $employee->units_supervisor ?? '';
 
         return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no', 'employee_id', 'supervisor'));
     }
