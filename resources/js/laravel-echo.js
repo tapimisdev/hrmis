@@ -8,8 +8,8 @@ window.Echo = new Echo({
   key: import.meta.env.VITE_REVERB_APP_KEY,
 
   wsHost: window.location.hostname,
-  wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8081),
-  wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8081),
+  wsPort: 443,
+  wssPort: 443,
 
   forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
   enabledTransports: ['ws', 'wss'],
