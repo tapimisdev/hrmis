@@ -29,9 +29,9 @@ class EventServiceProvider extends ServiceProvider
         JobFailed::class => [
             \App\Listeners\AuditJobFailed::class,
         ],
-        \Illuminate\Auth\Events\Login::class => [
-            \App\Listeners\LogNewLogin::class,
-        ],
+        // \Illuminate\Auth\Events\Login::class => [
+        //     \App\Listeners\LogNewLogin::class,
+        // ],
     ];
 
     /**
