@@ -46,24 +46,25 @@
                 <p class="mb-0">No users online</p>
             </li>
 
-            <!-- Users -->
             <li v-for="user in onlineUsers" :key="user.id">
                 <div class="dropdown-item py-2 px-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <img
-                            v-if="user.profile"
-                            :src="user.profile"
-                            class="rounded-circle"
-                            style="object-fit: cover"
-                        />
-                        <div
-                            v-else
-                            class="rounded-circle bg-success d-flex align-items-center justify-content-center"
-                            style="color: white"
-                        >
-                            {{ user.name.charAt(0).toUpperCase() }}
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="user-list">
+                            <img
+                                v-if="user.profile"
+                                :src="user.profile"
+                                class="rounded-circle"
+                                style="object-fit: cover"
+                            />
+                            <div
+                                v-else
+                                class="rounded-circle bg-success d-flex align-items-center justify-content-center"
+                                style="color: white"
+                            >
+                                {{ user.name.charAt(0).toUpperCase() }}
+                            </div>
+                            <div class="overlay-online"></div>
                         </div>
-
                         <div class="flex-grow-1 mt-1">
                             <div class="fw-semibold">{{ user.name }}</div>
                             <small
@@ -144,19 +145,25 @@ img {
     height: 45px;
     border-radius: 50%;
     position: relative;
-    z-index: -1;
-    overflow: visible;
-    &::after {
-        content: "";
-        position: absolute;
-        width: 12px;
-        height: 12px;
-        bottom: 2px;
-        right: -2px;
-        background-color: green;
-        border-radius: 50%;
-        z-index: 99;
-    }
+    overflow: hidden;
+}
+
+.user-list {
+    cursor: pointer;
+    position: relative;
+}
+
+.user-list .overlay-online {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    bottom: 2px;
+    right: -2px;
+    background-color: green;
+    border-radius: 50%;
+    z-index: 999;
+    border: 2px solid white;
 }
 
 .dropdown-menu {
