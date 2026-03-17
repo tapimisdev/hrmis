@@ -19,7 +19,7 @@ class EmployeeService {
                 ->select('id', 'employee_no')
                 ->first();
 
-        return $employee->employee_no;
+        return $employee->employee_no ?? null;
     }
 
     # GET EMPLOYEE NUMBER BASED ON FULL NAME
