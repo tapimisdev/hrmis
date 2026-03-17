@@ -20,19 +20,23 @@ class CheckInOutRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
             'type' => [
                 'nullable',
-                Rule::in(FnEnum::cases()), // works with enum cases
-            ]
+                Rule::in(array_column(FnEnum::cases(), 'value')),
+            ],
+            'accomplishment' => [
+                Rule::requiredIf(fn () => $this->requiresAccomplishment()),
+            ],
         ];
     }
 
+    /**
+     * Custom messages for validation errors.
+     */
     public function messages(): array
     {
         return [
@@ -41,7 +45,61 @@ class CheckInOutRequest extends FormRequest
             'date_time.required' => 'The time log entry needs a date and time.',
             'date_time.date'     => 'The date and time must be a valid datetime format.',
             'date_time.after_or_equal' => 'The date and time cannot be in the past.',
-            'date_time.before_or_equal' => 'The date and time cannot be in the future.'
+            'date_time.before_or_equal' => 'The date and time cannot be in the future.',
         ];
+    }
+
+    /**
+     * Determine if accomplishment is required based on type and Web Time access.
+     */
+    private function requiresAccomplishment(): bool
+    {
+        // Must be type 1
+        if ($this->input('type') != 1) {
+            return false;
+        }
+
+        // Get employee number
+        $employeeNo = $this->user()->employee_information->employee_no ?? null;
+        if (!$employeeNo) {
+            return false;
+        }
+
+        // Get latest Web Time access rule
+        $rule = DB::table('web_time_access')
+            ->where('employee_no', $employeeNo)
+            ->where('effectivity_date', '<=', now())
+            ->orderByDesc('effectivity_date')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$rule) {
+            return false;
+        }
+
+        $now   = Carbon::now();
+        $today = $now->toDateString();
+        $dow   = $now->format('D');
+
+        // Always access
+        if ((int)$rule->always === 1) {
+            return (bool)$rule->isRequiredAccomplishment;
+        }
+
+        // Check specific dates
+        $specificDates = json_decode($rule->specific_dates ?? '[]', true);
+        $specificDates = is_array($specificDates) ? $specificDates : [];
+        if (in_array($today, $specificDates, true)) {
+            return (bool)$rule->isRequiredAccomplishment;
+        }
+
+        // Check days of week
+        $daysOfWeek = json_decode($rule->days_of_week ?? '[]', true);
+        $daysOfWeek = is_array($daysOfWeek) ? $daysOfWeek : [];
+        if (in_array($dow, $daysOfWeek, true)) {
+            return (bool)$rule->isRequiredAccomplishment;
+        }
+
+        return false;
     }
 }

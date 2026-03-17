@@ -10,6 +10,7 @@ use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use \Carbon\Carbon;
 
 use Throwable;
@@ -406,8 +407,10 @@ class PayrollService
             ->where('id', $payroll_id)
             ->update(['batch_id' => $batch->id]);
 
+        $user = Auth::user();
+
         foreach ($eligibleEmployees as $employee) {
-            $batch->add(new PayrollRegistryReport($employee, $payroll_id));
+            $batch->add(new PayrollRegistryReport($employee, $payroll_id, $user->id, $user->name));
         }
 
         return $batch->id;

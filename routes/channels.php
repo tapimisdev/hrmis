@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Admin\Channels\OnlineUsersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,4 +26,8 @@ Broadcast::channel('refresh', function () {
 
 Broadcast::channel('user.notifications.{userId}', function ($user, $userId) {
     return (int) $user->id === (int) $userId;
+});
+
+Broadcast::channel('online-users', function ($user) {
+    return app(OnlineUsersController::class)->getProfile($user);
 });

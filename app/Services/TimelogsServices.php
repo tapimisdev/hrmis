@@ -8,7 +8,7 @@ use Database\Seeders\HolidaySeeder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Storage;
 use function PHPUnit\Framework\isEmpty;
 use function PHPUnit\Framework\throwException;
 
@@ -65,10 +65,19 @@ class TimelogsServices {
 
     private function fetchLogs($userId, $startDate = null, $endDate = null)
     {
+        // $query = DB::table('timelogs')
+        //     ->where('is_active', true)
+        //     ->where('user_id', $userId)
+        //     ->orderBy('date_time', 'asc');
+
         $query = DB::table('timelogs')
-            ->where('is_active', true)
-            ->where('user_id', $userId)
-            ->orderBy('date_time', 'asc');
+            ->leftJoin('accomplishment_reports as ar', function ($join) {
+                $join->on('timelogs.id', '=', 'ar.timelog_id')
+                    ->on('timelogs.employee_no', '=', 'ar.employee_no');
+            })
+            ->where('timelogs.is_active', true)
+            ->where('timelogs.user_id', $userId)
+            ->orderBy('timelogs.date_time', 'asc');
 
         // Apply date range filter if both dates are provided
         if ($startDate && $endDate) {
@@ -116,7 +125,6 @@ class TimelogsServices {
 
         foreach ($timelogs as $date => $logs) {
             $valid = $this->getValidLogs($logs);
-
             $result[] = [
                 'date'      => $date,
                 'time_in'   => $valid['in']->date_time ?? null,
@@ -129,6 +137,7 @@ class TimelogsServices {
                 // 'work_schedule_id'  => $valid['out']->work_schedule_id ?? null,
                 'shift_id'  => $valid['shift_id'] ?? null,
                 'work_schedule_id'  => $valid['work_schedule_id'] ?? null,
+                'accomplishment' => $valid['accomplishment'] ?? null
             ];
         }
 
@@ -172,7 +181,10 @@ class TimelogsServices {
             'overtime_in'     => null,
             'overtime_out'    => null,
             'shift_id'        => $logs->first()->shift_id ?? null,
-            'work_schedule_id'=> $logs->first()->work_schedule_id ?? null,
+            'work_schedule_id' => $logs->first()->work_schedule_id ?? null,
+            'accomplishment' => $logs->whereNotNull('file')->last()
+                ? Storage::url($logs->whereNotNull('file')->last()->file)
+                : null,
         ];
 
         if ($logs->isEmpty()) {

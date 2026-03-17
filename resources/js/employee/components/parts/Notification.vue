@@ -365,6 +365,11 @@ export default {
 
 <style lang="scss" scoped>
 
+@media (max-width: 767.98px) {
+  .dropdown-menu {
+    min-width: 320px !important;
+  }
+}
 .dropdown-menu {
     max-height: 500px;
     overflow-y: auto;

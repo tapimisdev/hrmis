@@ -22,7 +22,7 @@ class EmployeeService {
                 ->select('id', 'employee_no')
                 ->first();
 
-        return $employee->employee_no;
+        return $employee->employee_no ?? null;
     }
 
     # GET EMPLOYEE NUMBER BASED ON FULL NAME
@@ -121,12 +121,12 @@ class EmployeeService {
                 'divisions.id as division_id',
                 'divisions.code as division_code',
                 'divisions.name as division_name',
-                'divisions.supervisor as division_supervisor',
 
                 // Unit
                 'units.id as unit_id',
                 'units.code as unit_code',
                 'units.name as unit_name',
+                'units.supervisor as units_supervisor',
 
                 // Position
                 'positions.id as position_id',
@@ -247,11 +247,11 @@ class EmployeeService {
                     'divisions.id as division_id',
                     'divisions.code as division_code',
                     'divisions.name as division_name',
-                    'divisions.supervisor as division_supervisor',
 
                     'units.id as unit_id',
                     'units.code as unit_code',
                     'units.name as unit_name',
+                    'units.supervisor as units_supervisor',
 
                     'positions.id as position_id',
                     'positions.code as position_code',

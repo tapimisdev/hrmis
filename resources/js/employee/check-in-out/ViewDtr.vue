@@ -361,7 +361,7 @@
                         </div>
                         <div style="width: 320px; position: relative">
                             <div class="mt-2 text-uppercase mb-1">
-                                {{ supervisor }}
+                                {{ supervisor || '‎ ‎' }}
                             </div>
                             <div
                                 class="border-top pt-1 small fw-semibold"

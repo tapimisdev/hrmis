@@ -58,6 +58,10 @@ class User extends Authenticatable
             ->where('user_id', $this->id)
             ->value('employee_no');
     }
+    
+    public function getEmployeeNoAttribute() {
+        return $this->employeeInformation->employee_no ?? null;
+    }
 
     public function employment_type_id()
     {
