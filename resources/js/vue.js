@@ -113,6 +113,11 @@ const authApp = createApp({
 
         if (!token) return;
 
+        window.Echo.join('online-users')
+            .here(() => {})
+            .joining(() => {})
+            .leaving(() => {});
+
         axios
             .get("/api/force-update-password", {
                 headers: {
