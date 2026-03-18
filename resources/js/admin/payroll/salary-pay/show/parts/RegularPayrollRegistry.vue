@@ -112,6 +112,7 @@
                         >
                             Remarks
                         </th>
+                        <th>actions</th>
                     </tr>
                 </thead>
 
@@ -192,6 +193,16 @@
                                 @change="adjustRow(emp)"
                             ></textarea>
                         </td>
+                        <td class="text-center">
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm"
+                                @click="$emit('delete', emp)"
+                                title="Delete"
+                            >
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
                     </tr>
 
                     <tr v-if="!filteredEmployees.length">
@@ -249,6 +260,7 @@
                             }}</strong>
                         </td>
                         <td></td>
+                        <td></td>
                     </tr>
                 </tfoot>
             </table>
@@ -289,7 +301,7 @@ export default {
             searchTerm: "",
             selectedPosition: "",
             remarksFilter: "all",
-            baseColumnCount: 12, // Emp#, Name, Monthly, SG, AUT, Overtime, Holiday, Total Deduction, Adjustment, Net Salary, Remarks + colspan setup
+            baseColumnCount: 13, // Emp#, Name, Monthly, SG, AUT, Overtime, Holiday, Total Deduction, Adjustment, Net Salary, Remarks + colspan setup
         };
     },
     computed: {
