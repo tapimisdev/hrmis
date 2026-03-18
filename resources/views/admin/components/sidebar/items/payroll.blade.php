@@ -57,6 +57,22 @@
                 </a>
             </li>
 
+            <li class="nested-item">
+                <a href="{{ route('government-bonuses.index') }}"
+                    class="{{ request()->is('admin/payroll/government-bonuses*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-landmark"></i>
+                    <span>Government Bonuses</span>
+                </a>
+            </li>
+
+            <li class="nested-item">
+                <a href="{{ route('government-bonus-types.index') }}"
+                    class="{{ request()->is('admin/payroll/government-bonus-types*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Government Bonus Rules</span>
+                </a>
+            </li>
+
             <hr class="mt-2 mb-2">
 
             <li class="nested-item">
