@@ -3,10 +3,7 @@
 namespace App\Services\SalaryPay;
 
 use App\Enums\EmploymentTypesEnum;
-use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class GetEmployeeService {
     
@@ -193,7 +190,7 @@ class GetEmployeeService {
 
             $this->employees = $pse;
         }
-        
+
     }
 
 }

@@ -6,6 +6,7 @@ use App\Services\DailyTimeRecordService;
 use App\Enums\EmploymentTypesEnum;
 use App\Enums\PayrollStatusEnum;
 use App\Enums\TableSettingsEnum;
+use App\Services\SalaryEmloyeeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -13,6 +14,7 @@ use Carbon\Carbon;
 class ComputationService {
 
     protected $daily_time_record_service;
+    protected $salaryEmployeeService;
 
     protected $employee_no;
     protected $payroll_id;
@@ -32,9 +34,10 @@ class ComputationService {
     protected $start_date;
     protected $end_date;
 
-    public function __construct(DailyTimeRecordService $daily_time_record_service) 
+    public function __construct(DailyTimeRecordService $daily_time_record_service, SalaryEmloyeeService $salaryEmployeeService) 
     {
         $this->daily_time_record_service = $daily_time_record_service;
+        $this->salaryEmployeeService = $salaryEmployeeService;
     }
 
     public function process($employee_no, $payroll_id) 
@@ -124,23 +127,19 @@ class ComputationService {
         $year = substr($this->payroll_date, 0, 4);
         $month = substr($this->payroll_date, 5, 2);
 
-        $schedule = DB::table('employee_shift_work_schedule as esw')
-            ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
-            ->select(
-                'esw.id',
-                'esw.shift_id',
-                'esw.work_schedule_id',
-                'esw.effectivity_date',
-                's.working_hours',
-            )
-            ->where('esw.employee_no', $this->employee_no)
-            ->where(function ($query) use ($year, $month) {
-                $cutoffDate = Carbon::create($year, $month, 1)->endOfMonth();
-                $query->whereDate('esw.effectivity_date', '<=', $cutoffDate);
-            })
-            ->orderByDesc('esw.effectivity_date')
-            ->first();
+        $cutoffDate = Carbon::create($year, $month, 1)->endOfMonth();
 
+        $schedule = $this->salaryEmployeeService
+                        ->activeShift($this->employee_no, $cutoffDate)
+                        ->leftJoin('shifts as s', 'sw1.shift_id', '=', 's.id')
+                        ->select(
+                            'sw1.id',
+                            'sw1.shift_id',
+                            'sw1.work_schedule_id',
+                            'sw1.effectivity_date',
+                            's.working_hours',
+                        )
+                        ->first();
         if (!$schedule) {
             throw new \Exception('Please ask your HR to set your Shift and Work Schedule.');
         }
@@ -156,18 +155,14 @@ class ComputationService {
 
         $cutoff = $this->payroll_date . '-31';
 
-        $employee_salary = DB::table('employee_salary')
-            ->where('employee_no', $this->employee_no)
-            ->where('effectivity_date', '<=', $cutoff)
-            ->orderByDesc('effectivity_date')
-            ->first();
+        $activeSalary = $this->salaryEmployeeService->activeSalary($this->employee_no, $cutoff)->first('amount');
 
-        if (!$employee_salary) {
+        if (!$activeSalary) {
             throw new \Exception("Employee salary not found for employee number: {$this->employee_no}");
         }
 
         $this->salary_amount = filter_var(
-            $employee_salary->amount,
+            $activeSalary->amount,
             FILTER_SANITIZE_NUMBER_FLOAT,
             FILTER_FLAG_ALLOW_FRACTION
         );
@@ -175,22 +170,21 @@ class ComputationService {
 
     private function getEmployeeInformation()
     {
-        $employee_information = DB::table('employee_organization')
-                ->leftJoin('employee_information', 'employee_organization.employee_no', '=', 'employee_information.employee_no')
-                ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
-                ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
-                ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
-                ->select(
-                    'employee_personal.firstname',
-                    'employee_personal.middlename',
-                    'employee_personal.lastname',
-                    'employee_personal.suffix',
-                    'employee_organization.employment_type_id',
-                    'positions.name as position_name',
-                    'users.id as user_id'
-                )
-                ->where('employee_organization.employee_no', $this->employee_no)
-                ->first();
+        $employee_information = $this->salaryEmployeeService->activeOrg($this->employee_no)
+            ->leftJoin('employee_information', 'eo1.employee_no', '=', 'employee_information.employee_no')
+            ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->leftJoin('positions', 'eo1.position_id', '=', 'positions.id')
+            ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
+            ->select(
+                'employee_personal.firstname',
+                'employee_personal.middlename',
+                'employee_personal.lastname',
+                'employee_personal.suffix',
+                'eo1.employment_type_id',
+                'positions.name as position_name',
+                'users.id as user_id'
+            )
+            ->first();
 
         if (!$employee_information) {
             throw new \Exception("Employee information not found for employee number: {$this->employee_no}");

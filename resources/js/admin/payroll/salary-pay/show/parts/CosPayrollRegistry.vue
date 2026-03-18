@@ -63,20 +63,21 @@
             <th class="p-4">Name / Position</th>
             <th class="p-4">Monthly <br />Rate</th>
             <th class="p-4">Salary <br />Earned</th>
-            <th class="p-4">Absences / Lates / Undertime</th>
+            <th class="p-4 deduction">Absences / Lates / Undertime</th>
             <th class="p-4">Overtime</th>
             <th class="p-4">Holiday <br />Excess</th>
 
-            <th class="p-4" style="width: 100px;">Total Salary</th>
-            <th class="p-4" style="width: 100px;">EWT <br />(2%)</th>
-            <th class="p-4" style="width: 100px;">Percentage Tax <br />(3%)</th>
-            <th class="p-4" style="width: 100px;">Tax <br />(EWT: 5%)</th>
-            <th class="p-4" style="width: 100px;">Overall Tax</th>
-            <th class="p-4" style="width: 100px;">HMO</th>
+            <th class="p-4 earning" style="width: 100px;">Total Salary</th>
+            <th class="p-4 deduction" style="width: 100px;">EWT <br />(2%)</th>
+            <th class="p-4 deduction" style="width: 100px;">Percentage Tax <br />(3%)</th>
+            <th class="p-4 deduction" style="width: 100px;">Tax <br />(EWT: 5%)</th>
+            <th class="p-4 deduction" style="width: 100px;">Overall Tax</th>
+            <th class="p-4 deduction" style="width: 100px;">HMO</th>
 
             <th style="width: 150px;">Adjustment</th>
             <th class="net-salary">Net <br />Salary</th>
             <th>Remarks</th>
+            <th>actions</th>
           </tr>
         </thead>
 
@@ -121,6 +122,16 @@
               <textarea style="width: 250px;" class="text-center bg-body-secondary form-control my-3"
                 v-model="emp.remarks" @change="adjustRow(emp)"></textarea>
             </td>
+            <td class="text-center">
+                <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    @click="$emit('delete', emp)"
+                    title="Delete"
+                >
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
           </tr>
 
           <!-- Project Total Row -->
@@ -142,6 +153,7 @@
             <td class="number-cell net-salary">
               <strong>{{ formatNumber(projectTotals(project, 'net_salary')) }}</strong>
             </td>
+            <td></td>
             <td></td>
           </tr>
         </tbody>
@@ -305,13 +317,13 @@ export default {
 }
 
 .earning {
-  max-width: 96px;
+  max-width: 150px;
   overflow-wrap: anywhere;
   white-space: normal;
 }
 
 .deduction {
-  max-width: 96px;
+  max-width: 150px;
   overflow-wrap: anywhere;
   white-space: normal;
 }

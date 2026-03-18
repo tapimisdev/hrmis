@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Modules\StoreComponentEmployeeBulkRequest;
 use App\Services\EmployeeService;
 use App\Services\PayrollComponentService;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,11 +16,13 @@ class PayrollComponentsEmployeeController extends Controller
 {
     protected $componentService;
     protected $employeeService;
+    protected $salaryEmployeeService;
 
-    public function __construct(PayrollComponentService $componentService, EmployeeService $employeeService)
+    public function __construct(PayrollComponentService $componentService, EmployeeService $employeeService, SalaryEmloyeeService $salaryEmployeeService)
     {
         $this->componentService = $componentService;
         $this->employeeService = $employeeService;
+        $this->salaryEmployeeService = $salaryEmployeeService;
     }
 
     /**
@@ -344,10 +347,8 @@ class PayrollComponentsEmployeeController extends Controller
      */
     private function checkIfPermanentEmployee(string $employee_no): bool
     {
-        $employment_type_id = DB::table('employee_organization')
-            ->where('employee_no', $employee_no)
-            ->value('employment_type_id');
-
+        $employment_type_id = $this->salaryEmployeeService->activeOrg($employee_no)->value('employment_type_id');
+        
         return (int) $employment_type_id === (int) EmploymentTypesEnum::REGULAR->value;
     }
 
@@ -377,10 +378,7 @@ class PayrollComponentsEmployeeController extends Controller
      */
     private function computePercentageSalary(string $employee_no, float $percentage): float
     {
-        $salaryRaw = DB::table('employee_salary')
-            ->where('employee_no', $employee_no)
-            ->orderByDesc('effectivity_date')
-            ->value('amount');
+        $salaryRaw = $this->salaryEmployeeService->activeSalary($employee_no)->value('amount');
 
         if (!$salaryRaw || $percentage <= 0) {
             return 0.0;

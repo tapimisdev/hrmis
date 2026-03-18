@@ -2,6 +2,7 @@
 
 namespace App\Services\Contributions;
 
+use App\Services\SalaryEmloyeeService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -29,6 +30,13 @@ use Illuminate\Support\Facades\DB;
  */
 class PhilhealthService
 {
+    protected $salaryEmployeeService;
+
+    public function __construct(SalaryEmloyeeService $salaryEmployeeService)
+    {
+        $this->salaryEmployeeService = $salaryEmployeeService;
+    }
+
     /**
      * Compute the PhilHealth contribution for a single employee.
      *
@@ -88,11 +96,7 @@ class PhilhealthService
      */
     private function getEmployeeSalary(string $employee_no): float
     {
-        $salary = DB::table('employee_salary')
-            ->where('employee_no', $employee_no)
-            ->orderByDesc('effectivity_date')
-            ->value('amount');
-
-        return $salary ? (float) $salary : 0.0;
+        $activeSalary = $this->salaryEmployeeService->activeSalary($employee_no)->value('amount');
+        return $activeSalary ? (float) $activeSalary : 0.0;
     }
 }

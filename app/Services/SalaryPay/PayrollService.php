@@ -5,6 +5,7 @@ namespace App\Services\SalaryPay;
 use App\Enums\EmploymentTypesEnum;
 use App\Jobs\Admin\Payroll\PayrollRegistryReport;
 use App\Services\DailyTimeRecordService;
+use App\Services\SalaryEmloyeeService;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ use Throwable;
 class PayrollService
 {
     protected $daily_time_record_service;
+    protected $salaryEmployeeService;
     private $date;
     private $cutoff;
     private $group_id;
@@ -24,9 +26,10 @@ class PayrollService
     private $eligible;
     private $not_eligible;
 
-    public function __construct(DailyTimeRecordService $daily_time_record_service)
+    public function __construct(DailyTimeRecordService $daily_time_record_service, SalaryEmloyeeService $salaryEmployeeService)
     {
         $this->daily_time_record_service = $daily_time_record_service;
+        $this->salaryEmployeeService = $salaryEmployeeService;
     }
 
     public function getPayrolls($payload)
@@ -306,22 +309,15 @@ class PayrollService
 
     private function hasWorkAndShift($emp_no)
     {
-        $schedule = DB::table('employee_shift_work_schedule as esw')
-            ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
+        $schedule = $this->salaryEmployeeService
+            ->activeShift($emp_no, $this->date)
+            ->leftJoin('shifts as s', 'sw1.shift_id', '=', 's.id')
             ->select(
-                'esw.shift_id',
-                'esw.work_schedule_id',
-                's.working_hours'
+                'sw1.id'
             )
-            ->where('esw.employee_no', $emp_no)
-            ->where('esw.effectivity_date', '<=', $this->date)
             ->first();
 
-        if ($schedule) {
-            return true;
-        }
-
-        return false;
+        return $schedule ? true : false;
     }
 
     private function hasInformation($emp_no)
@@ -344,10 +340,8 @@ class PayrollService
 
     private function hasSalary($emp_no)
     {
-        $employee_salary = DB::table('employee_salary')
-            ->where('employee_no', $emp_no)
-            ->whereDate('effectivity_date', '<=', $this->date)
-            ->orderByDesc('effectivity_date')
+        $employee_salary = $this->salaryEmployeeService
+            ->activeSalary($emp_no, $this->date)
             ->first();
 
         return !is_null($employee_salary);
