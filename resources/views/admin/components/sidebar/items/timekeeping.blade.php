@@ -34,6 +34,16 @@
             </li>
             @endcan
 
+            @can('hr.timekeeping.view')
+           <li class="nested-item">
+                <a href="{{ route('timekeeping.monitoring.index') }}"
+                class="{{ Route::is('timekeeping.monitoring.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-display"></i>
+                    <span>Monitoring</span>
+                </a>
+            </li>
+            @endcan
+
             @can('hr.correction.view')
             <li class="nested-item">
                 <a href="{{ route('timelogs-correction.index') }}"

@@ -122,7 +122,10 @@ export default {
         },
     },
     mounted() {
-        this.fetchCards();
+        let vm = this;
+        setTimeout(function() {
+            vm.fetchCards();
+        }, 1000);
     },
     methods: {
         fetchCards() {
