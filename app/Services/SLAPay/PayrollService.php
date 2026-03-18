@@ -145,6 +145,7 @@ class PayrollService {
         $employee->remarks = $remarks ?: $eligibleRemarks;
 
         if (empty($remarks)) {
+            $employee->selected = true;
             $this->eligible[] = $employee;
         } else {
             $this->not_eligible[] = $employee;
@@ -264,11 +265,11 @@ class PayrollService {
 
     public function createReport($payload, $payroll_id)
     {
-        $employees = collect($this->getEligibleEmployees($payload));
-        $eligibleEmployees = $employees->get('eligible', []);
+        $eligibleEmployees = collect($payload['employees']['eligible'] ?? [])
+            ->where('selected', true)
+            ->values();
 
-
-        if (empty($eligibleEmployees)) {
+        if ($eligibleEmployees->isEmpty()) {
             Log::warning("No eligible employees found for payroll ID: {$payroll_id}");
             return null;
         }

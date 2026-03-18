@@ -87,6 +87,7 @@
             <th style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
             <th style="min-width: 220px">Remarks</th>
+            <th>actions</th>
           </tr>
         </thead>
 
@@ -127,9 +128,19 @@
                 @change="adjustRow(emp)"
               ></textarea>
             </td>
+            <td class="text-center">
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="$emit('delete', emp)"
+                title="Delete"
+              >
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
           </tr>
           <tr v-if="!filteredEmployees.length">
-            <td colspan="11" class="text-center py-3">
+            <td colspan="12" class="text-center py-3">
               No employees found for the selected filters.
             </td>
           </tr>
@@ -147,6 +158,7 @@
             <td class="number-cell">{{ formatNumber(grandTotals("healthcard")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("adjustments")) }}</td>
             <td class="number-cell"><strong>{{ formatNumber(grandTotals("net_pay")) }}</strong></td>
+            <td></td>
             <td></td>
           </tr>
         </tfoot>

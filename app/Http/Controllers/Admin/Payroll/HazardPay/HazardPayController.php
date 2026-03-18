@@ -264,4 +264,27 @@ class HazardPayController extends Controller
         }
     }
 
+    public function deleteEmployeePayroll($id, $employment_type)
+    {
+        if ($employment_type !== 'REGULAR') {
+            return response()->json([
+                'message' => 'Invalid employment type.'
+            ], 400);
+        }
+
+        $deleted = DB::table('payroll_hazard_pay_employee')
+            ->where('id', $id)
+            ->delete();
+
+        if (!$deleted) {
+            return response()->json([
+                'message' => 'Employee payroll not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Employee payroll deleted successfully.'
+        ]);
+    }
+
 }
