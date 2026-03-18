@@ -73,6 +73,7 @@ Create one record for each bonus type.
 - `Manual` starts the employee amount at `0.00` and lets payroll adjust later.
 - `Fixed Amount` gives the same amount to every generated employee.
 - `Percentage of Salary` computes the amount from the employee's latest salary.
+- `Formula` lets the user enter a formula expression for the system to compute.
 
 `Amount Value` or `Percentage Value`
 
@@ -80,6 +81,27 @@ Create one record for each bonus type.
 - For `Fixed Amount`, this is the actual monetary amount.
 - For `Percentage of Salary`, this is the percentage rate.
 - For `Manual`, this is not required.
+
+`Formula Expression`
+
+- Used when `Computation Type` is `Formula`.
+- This is where the end user enters the formula.
+- Allowed variables:
+  - `salary`
+  - `basic_salary`
+  - `monthly_salary`
+  - `years_of_service`
+- Allowed operators:
+  - `+`
+  - `-`
+  - `*`
+  - `/`
+  - comparison operators such as `<`, `>`, `<=`, `>=`, `==`, `!=`
+  - ternary `condition ? true_value : false_value`
+- Example:
+  - `(salary * 0.5) + 1000`
+  - `salary * years_of_service * 0.05`
+  - `salary < 50000 ? 20000 : 10000`
 
 `Computation Notes`
 

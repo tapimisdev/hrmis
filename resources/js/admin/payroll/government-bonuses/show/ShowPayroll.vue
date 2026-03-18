@@ -16,6 +16,7 @@
                 :payroll_no="payroll_no"
                 :month="month"
                 :bonus_type_name="bonus_type_name"
+                :computation_type="computation_type"
                 @fetch_data="fetchRegistry"
                 @delete="deleteEmployeePayroll"
             />
@@ -45,6 +46,7 @@ export default {
             employees: [],
             month: "",
             bonus_type_name: "",
+            computation_type: "",
         };
     },
     methods: {
@@ -65,6 +67,7 @@ export default {
 
                 this.month = response.data.month_year;
                 this.bonus_type_name = response.data.bonus_type_name;
+                this.computation_type = response.data.computation_type;
                 this.employees = response.data.employees;
             } catch (error) {
                 console.error("Failed to fetch registry:", error.response?.data || error.message);

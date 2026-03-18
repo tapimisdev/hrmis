@@ -10,6 +10,14 @@ use Illuminate\Validation\Rule;
 
 class GovernmentBonusTypeController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.government_bonus_rules.view')->only(['index']);
+        $this->middleware('permission:hr.government_bonus_rules.create')->only(['store']);
+        $this->middleware('permission:hr.government_bonus_rules.update')->only(['update']);
+        $this->middleware('permission:hr.government_bonus_rules.delete')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         if ($request->wantsJson()) {
@@ -91,8 +99,9 @@ class GovernmentBonusTypeController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('government_bonus_types', 'name')->ignore($id)],
             'slug' => ['required', 'string', 'max:255', Rule::unique('government_bonus_types', 'slug')->ignore($id)],
-            'computation_type' => ['required', Rule::in(['fixed', 'percentage', 'manual'])],
-            'computation_value' => ['nullable', 'numeric', 'min:0', 'required_unless:computation_type,manual'],
+            'computation_type' => ['required', Rule::in(['fixed', 'percentage', 'formula', 'manual'])],
+            'computation_value' => ['nullable', 'numeric', 'min:0', 'required_if:computation_type,fixed,percentage'],
+            'formula_expression' => ['nullable', 'string', 'required_if:computation_type,formula'],
             'computation_notes' => ['nullable', 'string'],
             'service_date_basis' => ['required', Rule::in(['organization', 'company'])],
             'min_years_of_service' => ['nullable', 'integer', 'min:0'],

@@ -54,7 +54,7 @@
             <th>Name / Position</th>
             <th>Bonus Amount</th>
             <th>Total Amount</th>
-            <th style="width: 150px">Adjustments</th>
+            <th v-if="!isManual" style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
             <th style="min-width: 220px">Remarks</th>
             <th>actions</th>
@@ -70,10 +70,21 @@
               <div class="employee-position">{{ emp.position }}</div>
             </td>
 
-            <td class="text-center">{{ formatMoney(emp.bonus_amount) }}</td>
+            <td class="text-center">
+              <input
+                v-if="isManual"
+                type="number"
+                min="0"
+                step="0.01"
+                class="form-control border-0 text-center bg-body"
+                v-model="emp.bonus_amount"
+                @change="adjustRow(emp)"
+              />
+              <span v-else>{{ formatMoney(emp.bonus_amount) }}</span>
+            </td>
             <td class="text-center"><strong>{{ formatMoney(emp.total) }}</strong></td>
 
-            <td class="text-center">
+            <td v-if="!isManual" class="text-center">
               <input
                 type="number"
                 class="form-control border-0 text-center bg-body"
@@ -103,7 +114,7 @@
             </td>
           </tr>
           <tr v-if="!filteredEmployees.length">
-            <td colspan="8" class="text-center py-3">
+            <td :colspan="isManual ? 7 : 8" class="text-center py-3">
               No employees found for the selected filters.
             </td>
           </tr>
@@ -114,7 +125,7 @@
             <td colspan="2" class="text-end"><strong>GRAND TOTAL</strong></td>
             <td class="number-cell">{{ formatNumber(grandTotals("bonus_amount")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("total")) }}</td>
-            <td class="number-cell">{{ formatNumber(grandTotals("adjustments")) }}</td>
+            <td v-if="!isManual" class="number-cell">{{ formatNumber(grandTotals("adjustments")) }}</td>
             <td class="number-cell"><strong>{{ formatNumber(grandTotals("net_pay")) }}</strong></td>
             <td></td>
             <td></td>
@@ -140,6 +151,7 @@ export default {
     payroll_no: { type: String, required: true },
     month: { type: String, required: true },
     bonus_type_name: { type: String, default: "" },
+    computation_type: { type: String, default: "" },
   },
   data() {
     return {
@@ -151,6 +163,9 @@ export default {
     };
   },
   computed: {
+    isManual() {
+      return this.computation_type === "manual";
+    },
     positionOptions() {
       const positions = new Set();
       this.employees.forEach((emp) => {
@@ -201,7 +216,11 @@ export default {
       try {
         await axios.post(
           `/api/payroll/government-bonuses/items/${this.payroll_no}/${emp.id}`,
-          { adjustment: emp.adjustments, remarks: emp.remarks },
+          {
+            bonus_amount: emp.bonus_amount,
+            adjustment: this.isManual ? 0 : emp.adjustments,
+            remarks: emp.remarks,
+          },
           { headers: { Authorization: `Bearer ${this.token}` } }
         );
         this.$emit("fetch_data");

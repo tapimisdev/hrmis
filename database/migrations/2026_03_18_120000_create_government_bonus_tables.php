@@ -12,12 +12,13 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->string('slug')->unique();
-            $table->enum('computation_type', ['fixed', 'percentage', 'manual'])->default('manual');
+            $table->enum('computation_type', ['fixed', 'percentage', 'formula', 'manual'])->default('manual');
             $table->decimal('computation_value', 12, 2)->nullable();
+            $table->text('formula_expression')->nullable();
             $table->text('computation_notes')->nullable();
             $table->enum('service_date_basis', ['organization', 'company'])->default('organization');
-            $table->unsignedInteger('min_years_of_service')->nullable();
             $table->boolean('require_active_account')->default(true);
+            $table->unsignedInteger('min_years_of_service')->nullable();
             $table->boolean('require_work_shift')->default(true);
             $table->boolean('require_information')->default(true);
             $table->boolean('require_salary')->default(true);

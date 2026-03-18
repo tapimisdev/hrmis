@@ -16,6 +16,10 @@ class ComputationService
     protected $payroll_date;
     protected $computation_type;
     protected $computation_value;
+    protected $formula_expression;
+    protected $service_date_basis;
+    protected $date_hired_company;
+    protected $date_hired_organization;
 
     public function __construct(SalaryEmloyeeService $salaryEmployeeService)
     {
@@ -58,7 +62,14 @@ class ComputationService
         $payroll = DB::table('payroll_government_bonus as pgb')
             ->leftJoin('government_bonus_types as gbt', 'pgb.government_bonus_type_id', '=', 'gbt.id')
             ->where('pgb.id', $this->payroll_id)
-            ->select('pgb.month', 'pgb.government_bonus_type_id', 'gbt.computation_type', 'gbt.computation_value')
+            ->select(
+                'pgb.month',
+                'pgb.government_bonus_type_id',
+                'gbt.computation_type',
+                'gbt.computation_value',
+                'gbt.formula_expression',
+                'gbt.service_date_basis'
+            )
             ->first();
 
         if (!$payroll) {
@@ -69,6 +80,8 @@ class ComputationService
         $this->government_bonus_type_id = $payroll->government_bonus_type_id;
         $this->computation_type = $payroll->computation_type;
         $this->computation_value = $payroll->computation_value;
+        $this->formula_expression = $payroll->formula_expression;
+        $this->service_date_basis = $payroll->service_date_basis;
     }
 
     private function getBonusAmount(): float
@@ -83,7 +96,61 @@ class ComputationService
             return round($salary * ($percentage / 100), 2);
         }
 
+        if ($this->computation_type === 'formula') {
+            $salary = $this->getEmployeeSalaryAmount();
+
+            return $this->evaluateFormula((string) $this->formula_expression, [
+                'salary' => $salary,
+                'basic_salary' => $salary,
+                'monthly_salary' => $salary,
+                'years_of_service' => $this->getYearsOfService(),
+            ]);
+        }
+
         return 0.00;
+    }
+
+    private function evaluateFormula(string $formula, array $variables): float
+    {
+        $expression = strtolower(trim($formula));
+
+        if ($expression === '') {
+            return 0.00;
+        }
+
+        uksort($variables, fn ($a, $b) => strlen($b) <=> strlen($a));
+
+        foreach ($variables as $name => $value) {
+            $expression = preg_replace(
+                '/\b' . preg_quote(strtolower($name), '/') . '\b/',
+                (string) round((float) $value, 8),
+                $expression
+            );
+        }
+
+        if (preg_match('/[a-z_]/', $expression)) {
+            throw new \Exception('Formula contains unknown variables. Allowed variables: salary, basic_salary, monthly_salary, years_of_service.');
+        }
+
+        if (!preg_match('/^[0-9+\-*\/().\s<>=!?:&|]+$/', $expression)) {
+            throw new \Exception('Formula contains invalid characters. Allowed characters are numbers, parentheses, spaces, + - * /, comparison operators, and ternary ? :');
+        }
+
+        set_error_handler(function ($severity, $message) {
+            throw new \ErrorException($message, 0, $severity);
+        });
+
+        try {
+            $result = eval('return ' . $expression . ';');
+        } finally {
+            restore_error_handler();
+        }
+
+        if (!is_numeric($result)) {
+            throw new \Exception('Formula did not return a numeric result.');
+        }
+
+        return round((float) $result, 2);
     }
 
     private function getEmployeeSalaryAmount(): float
@@ -100,6 +167,20 @@ class ComputationService
         return (float) filter_var($salary->amount, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
     }
 
+    private function getYearsOfService(): float
+    {
+        $serviceDate = $this->service_date_basis === 'company'
+            ? $this->date_hired_company
+            : $this->date_hired_organization;
+
+        if (!$serviceDate) {
+            return 0.00;
+        }
+
+        return (float) \Carbon\Carbon::parse($serviceDate)
+            ->diffInYears(\Carbon\Carbon::parse($this->payroll_date . '-01')->endOfMonth());
+    }
+
     private function getEmployeeInformation(): void
     {
         $employeeInformation = $this->salaryEmployeeService->activeOrg($this->employee_no)
@@ -111,7 +192,9 @@ class ComputationService
                 'employee_personal.middlename',
                 'employee_personal.lastname',
                 'employee_personal.suffix',
-                'positions.name as position_name'
+                'positions.name as position_name',
+                'employee_information.date_hired_company',
+                'employee_information.date_hired_organization'
             )
             ->first();
 
@@ -126,5 +209,7 @@ class ComputationService
             $employeeInformation->suffix,
         ])));
         $this->position = $employeeInformation->position_name;
+        $this->date_hired_company = $employeeInformation->date_hired_company;
+        $this->date_hired_organization = $employeeInformation->date_hired_organization;
     }
 }

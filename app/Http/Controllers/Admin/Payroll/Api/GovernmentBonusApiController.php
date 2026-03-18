@@ -23,7 +23,8 @@ class GovernmentBonusApiController extends Controller
         $validated = $request->validate([
             'employment_type' => 'nullable|integer',
             'government_bonus_type_id' => 'nullable|integer',
-            'month' => 'required',
+            'year' => 'required|digits:4',
+            'month' => 'nullable',
             'status' => 'nullable|string|in:draft,pending,approved,for_releasing,completed,cancelled',
         ]);
 

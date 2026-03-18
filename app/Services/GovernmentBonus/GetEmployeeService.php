@@ -20,13 +20,20 @@ class GetEmployeeService
         $payroll = DB::table('payroll_government_bonus as pgb')
             ->leftJoin('government_bonus_types as gbt', 'pgb.government_bonus_type_id', '=', 'gbt.id')
             ->where('pgb.id', $this->payroll_id)
-            ->select('pgb.id', 'pgb.month', 'pgb.employment_type_id', 'gbt.name as bonus_type_name')
+            ->select(
+                'pgb.id',
+                'pgb.month',
+                'pgb.employment_type_id',
+                'gbt.name as bonus_type_name',
+                'gbt.computation_type'
+            )
             ->first();
 
         if (!$payroll) {
             $this->employees = [
                 'month_year' => '',
                 'bonus_type_name' => '',
+                'computation_type' => '',
                 'employees' => [],
             ];
             return $this->employees;
@@ -53,6 +60,7 @@ class GetEmployeeService
         $this->employees = [
             'month_year' => Carbon::parse($payroll->month)->format('F Y'),
             'bonus_type_name' => $payroll->bonus_type_name,
+            'computation_type' => $payroll->computation_type,
             'employees' => $data,
         ];
 
