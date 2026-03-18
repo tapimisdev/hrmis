@@ -67,7 +67,7 @@
             <th class="p-4">Overtime</th>
             <th class="p-4">Holiday <br />Excess</th>
 
-            <th class="p-4" style="width: 100px;">Total Salary</th>
+            <th class="p-4 earning" style="width: 100px;">Total Salary</th>
             <th class="p-4 deduction" style="width: 100px;">EWT <br />(2%)</th>
             <th class="p-4 deduction" style="width: 100px;">Percentage Tax <br />(3%)</th>
             <th class="p-4 deduction" style="width: 100px;">Tax <br />(EWT: 5%)</th>

@@ -17,6 +17,9 @@ use App\Http\Controllers\Admin\Payroll\Api\PeraRataApiController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupController;
 use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataController;
 use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataItemController;
+use App\Http\Controllers\Admin\Payroll\Api\LongevityApiController;
+use App\Http\Controllers\Admin\Payroll\LongevityPay\LongevityPayController;
+use App\Http\Controllers\Admin\Payroll\LongevityPay\LongevityPayItemController;
 
 use App\Http\Controllers\Admin\Payroll\ReportsController;
 
@@ -92,6 +95,18 @@ Route::prefix('payroll')->group(function() {
         Route::delete('{id}/delete', [PeraRataController::class, 'destroy']);
         Route::delete('{id}/{employment_type}', [PeraRataController::class, 'deleteEmployeePayroll']);
         Route::patch('{id}/status', [PeraRataController::class, 'updateStatus']);
+    });
+
+    # LONGEVITY Payroll
+    Route::prefix('longevity-pay')->group(function() {
+        Route::post('items/{payroll_id}/{payroll_emp_id}', [LongevityPayItemController::class, 'update']);
+        Route::post('check-employees', [LongevityApiController::class, 'validateAndGetEmployee']);
+        Route::post('processed', [LongevityApiController::class, 'getList']);
+        Route::get('{payroll_id}', [LongevityApiController::class, 'getPayrollData']);
+        Route::post('generate', [LongevityPayController::class, 'store']);
+        Route::delete('{id}/delete', [LongevityPayController::class, 'destroy']);
+        Route::delete('{id}/{employment_type}', [LongevityPayController::class, 'deleteEmployeePayroll']);
+        Route::patch('{id}/status', [LongevityPayController::class, 'updateStatus']);
     });
 
 });
