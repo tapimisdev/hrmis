@@ -6,6 +6,7 @@ use App\Enums\EmploymentTypesEnum;
 use App\Models\User;
 use App\Notifications\PayrollBatchCompleted;
 use App\Jobs\Admin\Payroll\PeraRataReport;
+use App\Services\SalaryEmloyeeService;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
@@ -16,10 +17,19 @@ use Illuminate\Validation\Rule;
 
 use Throwable;
 
-
 class PayrollService {
 
+    protected $salaryEmployeeService;
+
     public $monthYear;
+
+    private $eligible;
+    private $not_eligible;
+
+    public function __construct(SalaryEmloyeeService $salaryEmployeeService)
+    {
+        $this->salaryEmployeeService = $salaryEmployeeService;
+    }
 
     public function getPayrolls($payload)
     {
@@ -84,8 +94,8 @@ class PayrollService {
         }
 
         $seperatedEmployee = [
-            'eligible' => $this->eligibile ?? [],
-            'not_eligible' => $this->not_eligibile ?? [],
+            'eligible' => $this->eligible ?? [],
+            'not_eligible' => $this->not_eligible ?? [],
         ];
 
         return $seperatedEmployee;
@@ -136,28 +146,11 @@ class PayrollService {
         $employee->remarks = $remarks ?: $eligibleRemarks;
 
         if (empty($remarks)) {
-            $this->eligibile[] = $employee;
+            $employee->selected = true;
+            $this->eligible[] = $employee;
         } else {
-            $this->not_eligibile[] = $employee;
+            $this->not_eligible[] = $employee;
         }
-    }
-
-    private function getCutoff()
-    {
-        [$year, $month] = explode('-', $this->monthYear);
-        $dateObj = \DateTime::createFromFormat('Y-m', "$year-$month");
-
-        if (!$dateObj) {
-            throw new InvalidArgumentException("Invalid monthYear format: $this->monthYear");
-        }
-
-        $start = "$year-$month-01";
-        $end   = $dateObj->format('Y-m-t');
-
-        return [
-            'startDate' => $start,
-            'endDate'   => $end,
-        ];
     }
 
     private function hasWorkAndShift($emp_no)
@@ -166,12 +159,13 @@ class PayrollService {
         $startDate = "$year-$month-01";
         $endDate   = date("Y-m-t", strtotime($startDate));
 
-        $schedule = DB::table('employee_shift_work_schedule as esw')
-            ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
-            ->select('esw.shift_id', 'esw.work_schedule_id', 's.working_hours')
-            ->where('esw.employee_no', $emp_no)
-            ->where('esw.effectivity_date', '<=', $endDate)
-            ->first();
+        $schedule = $this->salaryEmployeeService
+                    ->activeShift($emp_no, $endDate)
+                    ->leftJoin('shifts as s', 'sw1.shift_id', '=', 's.id')
+                    ->select(
+                        'sw1.id'
+                    )
+                    ->first();
 
         return $schedule ? true : false;
     }
@@ -201,10 +195,8 @@ class PayrollService {
         $startDate = "$year-$month-01";
         $endDate   = date("Y-m-t", strtotime($startDate));
 
-        $employee_salary = DB::table('employee_salary')
-            ->where('employee_no', $emp_no)
-            ->where('effectivity_date', '<=', $endDate)
-            ->orderByDesc('effectivity_date')
+        $employee_salary = $this->salaryEmployeeService
+            ->activeSalary($emp_no, $endDate)
             ->first();
 
         return !is_null($employee_salary);
@@ -272,10 +264,11 @@ class PayrollService {
 
     public function createReport($payload, $payroll_id)
     {
-        $employees = collect($this->getEligibleEmployees($payload));
-        $eligibleEmployees = $employees->get('eligible', []);
+        $eligibleEmployees = collect($payload['employees']['eligible'] ?? [])
+            ->where('selected', true)
+            ->values();
 
-        if (empty($eligibleEmployees)) {
+        if ($eligibleEmployees->isEmpty()) {
             Log::warning("No eligible employees found for payroll ID: {$payroll_id}");
             return null;
         }

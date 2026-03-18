@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Timekeeping;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\SalaryEmloyeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -11,48 +12,35 @@ use Yajra\DataTables\Facades\DataTables;
 
 class TimelogController extends Controller
 {
-    public function __construct()
+
+    protected $salaryEmployeeService;
+
+    public function __construct(SalaryEmloyeeService $salaryEmployeeService)
     {
         $this->middleware('permission:hr.timekeeping.view')->only(['index', 'show']);
+
+        $this->salaryEmployeeService = $salaryEmployeeService;
     }
 
     public function index(Request $request)
     {
         if (request()->ajax()) {
 
-            $latestOrg = DB::table('employee_organization as eo')
-                ->select('eo.*')
-                ->joinSub(
-                    DB::table('employee_organization')
-                        ->selectRaw('employee_no, MAX(created_at) as max_created_at')
-                        ->groupBy('employee_no'),
-                    'mx',
-                    function ($join) {
-                        $join->on('eo.employee_no', '=', 'mx.employee_no')
-                            ->on('eo.created_at', '=', 'mx.max_created_at');
-                    }
-                )
-                ->joinSub(
-                    DB::table('employee_organization')
-                        ->selectRaw('employee_no, created_at, MAX(id) as max_id')
-                        ->groupBy('employee_no', 'created_at'),
-                    'mx2',
-                    function ($join) {
-                        $join->on('eo.employee_no', '=', 'mx2.employee_no')
-                            ->on('eo.created_at', '=', 'mx2.created_at')
-                            ->on('eo.id', '=', 'mx2.max_id');
-                    }
-                );
+            $latestOrg = $this->salaryEmployeeService->activeOrg();
+            $latestShift = $this->salaryEmployeeService->activeShift();
 
             $employees = DB::table('users')
                 ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
                 ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
 
                 ->leftJoin('employee_information', 'users.id', '=', 'employee_information.user_id')
-                ->leftJoin('employee_shift_work_schedule', 'employee_information.employee_no', '=', 'employee_shift_work_schedule.employee_no')
 
                 ->leftJoinSub($latestOrg, 'employee_organization', function ($join) {
                     $join->on('employee_information.employee_no', '=', 'employee_organization.employee_no');
+                })
+
+                ->leftJoinSub($latestShift, 'employee_shift_work_schedule', function ($join) {
+                    $join->on('employee_information.employee_no', '=', 'employee_shift_work_schedule.employee_no');
                 })
 
                 ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
@@ -78,7 +66,6 @@ class TimelogController extends Controller
                     'shifts.name as shift_name',
                     'employment_types.name as employment_type'
                 );
-
 
             if ($request->filled('type')) {
                 $employees->where('employment_types.name', $request->type);
@@ -145,17 +132,16 @@ class TimelogController extends Controller
             })
             ->addColumn('actions', function ($row) {
 
-          return '<div class="text-nowrap px-3 d-flex gap-2">' .
-                '<a href="' . route('hris.employee.information', ['employee_no' => $row->employee_no]) . '" class="btn btn-dark" title="DTR">' .
+                return '<div class="text-nowrap px-3 d-flex gap-2">' .
+                    '<a href="' . route('hris.employee.information', ['employee_no' => $row->employee_no]) . '" class="btn btn-dark" title="DTR">' .
                     '<i class="fa-solid fa-briefcase"></i>'  .
-                '</a>' .
-                '<a href="' . route('daily-time-record.index', $row->employee_no) . '" class="btn btn-primary" title="DTR">' .
+                    '</a>' .
+                    '<a href="' . route('daily-time-record.index', $row->employee_no) . '" class="btn btn-primary" title="DTR">' .
                     '<i class="fas fa-clock"></i> '  .
-                '</a>' .
-            '</div>';
-            
-        })
-        ->rawColumns(['actions', 'picture', 'fullname', 'employee_no'])
-        ->make(true);
+                    '</a>' .
+                    '</div>';
+            })
+            ->rawColumns(['actions', 'picture', 'fullname', 'employee_no'])
+            ->make(true);
     }
 }

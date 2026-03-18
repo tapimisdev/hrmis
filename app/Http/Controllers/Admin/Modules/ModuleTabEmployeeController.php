@@ -9,6 +9,7 @@ use App\Http\Requests\Admin\Modules\StoreModuleTabEmployeeRequest;
 use App\Http\Requests\Admin\Modules\StorePhilhealthRequest;
 use App\Services\Contributions\PhilhealthService;
 use App\Services\EmployeeService;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,11 +18,13 @@ class ModuleTabEmployeeController extends Controller
 {
     protected $employeeService;
     protected $philhealthService;
+    protected $salaryEmployeeService;
 
-    public function __construct(EmployeeService $employeeService, PhilhealthService $philhealthService)
+    public function __construct(EmployeeService $employeeService, PhilhealthService $philhealthService, SalaryEmloyeeService $salaryEmployeeService)
     {
         $this->philhealthService = $philhealthService;
         $this->employeeService = $employeeService;
+        $this->salaryEmployeeService = $salaryEmployeeService;
     }
 
     /**
@@ -96,9 +99,17 @@ class ModuleTabEmployeeController extends Controller
          * Fetch all REGULAR employees along with basic personal
          * and organizational information.
          */
+        $latestOrg = $this->salaryEmployeeService->activeOrg();
+
         $employees = DB::table('employee_information as ei')
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
+            ->leftJoinSub(
+                $latestOrg,
+                'eo',
+                'ei.employee_no',
+                '=',
+                'eo.employee_no'
+            )
             ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
             ->when($tab !== 'hmo' && $regular_id, function ($query) use ($regular_id) {
                 $query->where('eo.employment_type_id', $regular_id);
@@ -561,15 +572,12 @@ class ModuleTabEmployeeController extends Controller
      */
     private function computePercentageSalary(string $employee_no, float $percentage): float
     {
-        $salary = DB::table('employee_salary')
-            ->where('employee_no', $employee_no)
-            ->orderByDesc('effectivity_date')
-            ->value('amount');
+        $activeSalary = $this->salaryEmployeeService->activeSalary($employee_no)->value('amount');
 
-        if (!$salary || $percentage <= 0) {
+        if (!$activeSalary || $percentage <= 0) {
             return 0.0;
         }
 
-        return round($salary * ($percentage / 100), 2);
+        return round($activeSalary * ($percentage / 100), 2);
     }
 }

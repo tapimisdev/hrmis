@@ -54,6 +54,9 @@ import SlaPayView from "./admin/payroll/sla-pay/show/ShowPayroll.vue";
 import PeraRataIndex from "./admin/payroll/pera-rata/Index.vue";
 import PeraRataStepper from "./admin/payroll/pera-rata/create/PayrollStepper.vue";
 import PeraRataView from "./admin/payroll/pera-rata/show/ShowPayroll.vue";
+import LongevityPayIndex from "./admin/payroll/longevity-pay/Index.vue";
+import LongevityPayStepper from "./admin/payroll/longevity-pay/create/PayrollStepper.vue";
+import LongevityPayView from "./admin/payroll/longevity-pay/show/ShowPayroll.vue";
 
 const authApp = createApp({
     components: {
@@ -101,6 +104,10 @@ const authApp = createApp({
         PeraRataIndex,
         PeraRataStepper,
         PeraRataView,
+
+        LongevityPayIndex,
+        LongevityPayStepper,
+        LongevityPayView,
     },
 
     data() {

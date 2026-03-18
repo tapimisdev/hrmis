@@ -8,6 +8,7 @@ use App\Http\Requests\Employee\Timelogs\CorrectionRequest;
 use App\Services\EmployeeService;
 use App\Services\TimelogsServices;
 use App\Services\EventService;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,14 +24,21 @@ class CorrectionTimelogController extends Controller
     protected $timelog_service;
     protected $employee_service;
     protected $EventService;
+    protected $salaryEmployeeService;
 
     protected $user_id;
 
-    public function __construct(TimelogsServices $timelog_service, EmployeeService $employee_service, EventService $EventService)
+    public function __construct(
+        TimelogsServices $timelog_service, 
+        EmployeeService $employee_service, 
+        EventService $EventService,
+        SalaryEmloyeeService $salaryEmployeeService 
+        )
     {
         $this->timelog_service = $timelog_service;
         $this->employee_service = $employee_service;
         $this->EventService = $EventService;
+        $this->salaryEmployeeService = $salaryEmployeeService;
 
         $this->middleware('permission:emp.correction.view')->only('index');
         $this->middleware('permission:emp.correction.apply')->only(['store']);
@@ -174,10 +182,9 @@ class CorrectionTimelogController extends Controller
 
             }
 
-            $schedule_and_Schift = DB::table('employee_shift_work_schedule')
-                ->where('employee_no', $employee_no)
-                ->latest('effectivity_date')
-                ->first();
+            $schedule_and_Schift = $this->salaryEmployeeService
+                                    ->activeShift($employee_no)
+                                    ->first();
 
             $application_no = $this->generate_reference_no();
 

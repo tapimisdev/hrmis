@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\Payroll\Salary\SalaryController;
 use App\Http\Controllers\Admin\Payroll\HazardPay\HazardPayController;
 use App\Http\Controllers\Admin\Payroll\SLAPay\SLAPayController;
 use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataController;
+use App\Http\Controllers\Admin\Payroll\LongevityPay\LongevityPayController;
 use App\Http\Controllers\Admin\Payroll\Import\SalaryRegistryController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupEmployeesController;
@@ -32,5 +33,8 @@ Route::prefix('payroll')->group(function() {
 
     # RATA PAYROLL
     Route::resource('pera-rata', PeraRataController::class)->only('index', 'create', 'show', 'store', 'destroy');
+
+    # LONGEVITY PAYROLL
+    Route::resource('longevity-pay', LongevityPayController::class)->only('index', 'create', 'show', 'store', 'destroy');
 
 });
