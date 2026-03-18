@@ -113,6 +113,8 @@ class EmployeeService {
                 'employee_information.date_hired_company',
                 'employee_information.account_status',
                 'employee_information.isDeleted',
+                'employee_information.user_id',
+
                 'employee_personal.profile',
                 'employee_personal.firstname',
                 'employee_personal.lastname',
@@ -152,7 +154,7 @@ class EmployeeService {
 
                 // Shift
                 'shift.shift_id',
-                'shift.work_schedule_id'
+                'shift.work_schedule_id',
             )
             ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
             ->leftJoinSub($latestOrg, 'org', 'employee_information.employee_no', '=', 'org.employee_no')

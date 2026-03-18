@@ -106,7 +106,6 @@ class TimelogController extends Controller
 
         return view('admin.pages.timekeeping.timelogs.index', compact('positions', 'types', 'units', 'divisions'));
     }
-
     /**
      * Display the specified resource.
      */
