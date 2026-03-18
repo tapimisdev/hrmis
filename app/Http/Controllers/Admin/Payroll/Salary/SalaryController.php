@@ -290,5 +290,37 @@ class SalaryController extends Controller
         }
     }
 
+    public function deleteEmployeePayroll($id, $employment_type)
+    {
+        // Determine table based on employment type
+        $table = match ($employment_type) {
+            'REGULAR' => 'payroll_salary_permanent_employees',
+            'COS' => 'payroll_salary_employee',
+            default => null,
+        };
+
+        if (!$table) {
+            return response()->json([
+                'message' => 'Invalid employment type.'
+            ], 400);
+        }
+
+        // Check if record exists
+        $exists = DB::table($table)->where('id', $id)->exists();
+
+        if (!$exists) {
+            return response()->json([
+                'message' => 'Employee payroll not found.'
+            ], 404);
+        }
+
+        // Delete record
+        DB::table($table)->where('id', $id)->delete();
+
+        return response()->json([
+            'message' => 'Employee payroll deleted successfully.'
+        ]);
+    }
+
     public function import_save(Request $request) {}
 }

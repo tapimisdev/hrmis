@@ -3,13 +3,16 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use App\Enums\EmploymentTypesEnum;
 
-use function PHPSTORM_META\map;
-
 class EmployeeService {
+
+    protected $salary_employee_service;
+
+    public function __construct(SalaryEmloyeeService $salary_employee_service)
+    {
+        $this->salary_employee_service = $salary_employee_service;
+    }
 
     # GET EMPLOYEE NUMBER BASED ON USER ID
     public function getEmployeeNo($user_id)
@@ -93,18 +96,10 @@ class EmployeeService {
     # STATUS | DIVISION | UNIT ID | EMPLOYMENT TYPE
     public function getEmployees(?string $status, ?string $division_id, ?string $unit_id, ?string $employment_type_id)
     {
-        $latestOrg = DB::table('employee_organization as eo1')
-            ->select('eo1.*')
-            ->whereRaw('eo1.id = (select max(eo2.id) from employee_organization eo2 where eo2.employee_no = eo1.employee_no)');
-
-        $latestSalary = DB::table('employee_salary as es1')
-            ->select('es1.*')
-            ->whereRaw('es1.id = (select max(es2.id) from employee_salary es2 where es2.employee_no = es1.employee_no)');
-
-        $latestShift = DB::table('employee_shift_work_schedule as sw1')
-            ->select('sw1.*')
-            ->whereRaw('sw1.id = (select max(sw2.id) from employee_shift_work_schedule sw2 where sw2.employee_no = sw1.employee_no)');
-
+        $latestOrg = $this->salary_employee_service->activeOrg();
+        $latestSalary = $this->salary_employee_service->activeSalary();
+        $latestShift = $this->salary_employee_service->activeShift();
+        
         return DB::table('employee_information')
             ->select(
                 'employee_information.employee_no',
@@ -228,25 +223,9 @@ class EmployeeService {
          */
         if (!empty($config['joins']) && $type === 'information') {
 
-            $latestOrg = DB::table('employee_organization as eo1')
-                ->select('eo1.*')
-                ->whereRaw('eo1.created_at = (
-                    SELECT MAX(eo2.created_at)
-                    FROM employee_organization eo2
-                    WHERE eo2.employee_no = eo1.employee_no
-                )');
-
-            $latestSalary = DB::table('employee_salary as es1')
-                ->select('es1.*')
-                ->whereRaw('es1.created_at = (
-                    SELECT MAX(es2.created_at)
-                    FROM employee_salary es2
-                    WHERE es2.employee_no = es1.employee_no
-                )');
-                
-            $latestShift = DB::table('employee_shift_work_schedule as sw1')
-                ->select('sw1.*')
-                ->whereRaw('sw1.id = (select max(sw2.id) from employee_shift_work_schedule sw2 where sw2.employee_no = sw1.employee_no)');
+            $latestOrg = $this->salary_employee_service->activeOrg();
+            $latestSalary = $this->salary_employee_service->activeSalary();
+            $latestShift = $this->salary_employee_service->activeShift();
 
             $query->select(
                     'employee_information.employee_no',

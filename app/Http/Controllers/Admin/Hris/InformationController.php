@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin\Hris;
 
 use App\Enums\EmploymentTypesEnum;
-use App\Events\RefreshData;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\EmployeeService;
+use App\Services\SalaryEmloyeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -17,10 +17,13 @@ class InformationController extends Controller
 {
  
     public $employeeService;
+    protected $salaryEmployeeService;
 
-    public function __construct(EmployeeService $employeeService)
+    public function __construct(EmployeeService $employeeService, SalaryEmloyeeService $salaryEmployeeService)
     {
-        $this->employeeService = $employeeService;    
+        $this->employeeService = $employeeService;
+        $this->salaryEmployeeService = $salaryEmployeeService;
+
         $this->middleware('permission:hr.hris.view')->only('index');
         $this->middleware('permission:hr.hris.edit')->only('save');
         $this->middleware('permission:hr.hris.delete')->only('destroy');
@@ -70,6 +73,9 @@ class InformationController extends Controller
         }
 
         if ($employment_type_id) {
+
+            $latestOrg = $this->salaryEmployeeService->activeOrg();
+
             $positions = DB::table('positions')
                 ->where('employment_type_id', $employment_type_id)
                 ->get();
@@ -80,21 +86,18 @@ class InformationController extends Controller
 
             $employees = DB::table('employee_personal as ep')
                 ->leftJoinSub(
-                    DB::table('employee_organization')
-                        ->select('employee_no', 'employment_type_id')
-                        ->whereIn('id', function ($query) {
-                            $query->select(DB::raw('MAX(id)'))
-                                ->from('employee_organization as eo2')
-                                ->whereColumn('eo2.employee_no', 'employee_organization.employee_no')
-                                ->groupBy('eo2.employee_no');
-                        }),
+                    $latestOrg,
                     'eo',
                     'ep.employee_no',
                     '=',
                     'eo.employee_no'
                 )
                 ->where('eo.employment_type_id', $employment_type_id)
-                ->select('ep.employee_no', 'ep.firstname', 'ep.lastname')
+                ->select(
+                    'ep.employee_no',
+                    'ep.firstname',
+                    'ep.lastname'
+                )
                 ->get();
 
             return response()->json([
@@ -300,11 +303,6 @@ class InformationController extends Controller
              * ORGANIZATION
              * -------------------------------------------------
              */
-            $latestOrg = DB::table('employee_organization')
-                ->where('employee_no', $employeeNo)
-                ->latest('created_at')
-                ->first();
-                
             if (
                 !$isExists
             ) {
