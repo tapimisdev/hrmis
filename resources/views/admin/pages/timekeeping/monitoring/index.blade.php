@@ -45,13 +45,14 @@
                         <div class="d-flex align-items-center mb-3">
                             {{-- Profile / Avatar --}}
                             <img 
-                                src="{{ $employee->profile 
-                                    ? asset('storage/profile/'.$employee->profile) 
-                                    : 'https://ui-avatars.com/api/?name='.$employee->firstname }}"
+                                src="{{ $employee->profile
+                                    ? Storage::url('public/users/' . $employee->employee_no . '/profile-image/' . $employee->profile)
+                                    : 'https://ui-avatars.com/api/?name=' . urlencode(($employee->firstname ?? '?') . ' ' . ($employee->lastname ?? '?')) . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true'
+                                }}"
                                 class="rounded-circle me-2"
                                 width="40"
                                 height="40"
-                            >
+                            />
                             <div>
                                 <div class="fw-bold">{{ $employee->firstname }} {{ $employee->lastname }}</div>
                                 <small class="text-muted">{{ $log['time_in'] }}</small>
