@@ -110,7 +110,7 @@
             <td class="text-center">
               <input
                 type="number"
-                class="form-control border-0 text-center"
+                class="form-control border-0 text-center bg-body"
                 v-model="emp.adjustments"
                 @change="adjustRow(emp)"
               />
@@ -122,7 +122,7 @@
 
             <td class="text-center">
               <textarea
-                class="form-control border-0"
+                class="form-control border-0 bg-body"
                 v-model="emp.remarks"
                 @change="adjustRow(emp)"
               ></textarea>

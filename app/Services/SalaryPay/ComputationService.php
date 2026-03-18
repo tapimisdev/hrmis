@@ -426,6 +426,7 @@ class ComputationService
              * Fetch deductions for the employee (includes withholding tax prepended).
              */
             $deductions       = $this->getDeductions($employee_no);
+
             $sum_of_deduction = round($deductions->sum('amount'), 2);
 
             /**
@@ -746,6 +747,7 @@ class ComputationService
             ->value('id');
 
         $tax_table = DB::table('employee_payroll_components')
+            ->select('amount')
             ->where('tax_deduction_id', $components_year_id)
             ->where('employee_no', $employee_no)
             ->where('month', $month)
