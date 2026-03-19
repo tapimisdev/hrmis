@@ -36,6 +36,7 @@
                     :class="{ 'is-invalid': errors.employment_type_id }"
                 >
                     <option :value="1">Regular</option>
+                    <option :value="2">COS</option>
                 </select>
                 <small v-if="errors.employment_type_id" class="text-danger">
                     {{ errors.employment_type_id[0] }}

@@ -91,6 +91,7 @@ Create one record for each bonus type.
   - `basic_salary`
   - `monthly_salary`
   - `years_of_service`
+  - `months_of_service`
 - Allowed operators:
   - `+`
   - `-`

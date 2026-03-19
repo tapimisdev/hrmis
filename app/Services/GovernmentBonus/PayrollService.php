@@ -174,15 +174,44 @@ class PayrollService
 
     private function minimumServiceRemark(): string
     {
-        return sprintf(
-            'Employee does not meet the minimum %d year(s) of service required for this bonus.',
-            (int) $this->bonusType->min_years_of_service
-        );
+        $years = $this->bonusType->min_years_of_service;
+        $months = $this->bonusType->min_months_of_service;
+
+        if (is_null($years) && is_null($months)) {
+            return 'Employee does not meet the minimum service requirements for this bonus.';
+        }
+
+        if (!is_null($years) && !is_null($months) && $months > 0) {
+            return sprintf(
+                'Employee does not meet the minimum %d year(s) and %d month(s) of service required for this bonus.',
+                (int) $years,
+                (int) $months
+            );
+        }
+
+        if (!is_null($years) && $years > 0) {
+            return sprintf(
+                'Employee does not meet the minimum %d year(s) of service required for this bonus.',
+                (int) $years
+            );
+        }
+
+        if (!is_null($months) && $months > 0) {
+            return sprintf(
+                'Employee does not meet the minimum %d month(s) of service required for this bonus.',
+                (int) $months
+            );
+        }
+
+        return 'Employee does not meet the minimum service requirements for this bonus.';
     }
 
     private function meetsMinimumYearsOfService($employee): bool
     {
-        if (is_null($this->bonusType->min_years_of_service)) {
+        $minYears = $this->bonusType->min_years_of_service;
+        $minMonths = $this->bonusType->min_months_of_service;
+
+        if (is_null($minYears) && is_null($minMonths)) {
             return true;
         }
 
@@ -196,10 +225,20 @@ class PayrollService
             return false;
         }
 
-        $serviceYears = Carbon::parse($serviceDate)
-            ->diffInYears(Carbon::parse($this->monthYear . '-01')->endOfMonth());
+        $serviceMonths = Carbon::parse($serviceDate)
+            ->diffInMonths(Carbon::parse($this->monthYear . '-01')->endOfMonth());
 
-        return $serviceYears >= (int) $this->bonusType->min_years_of_service;
+        $requiredMonths = 0;
+
+        if (!is_null($minYears)) {
+            $requiredMonths += (int) $minYears * 12;
+        }
+
+        if (!is_null($minMonths)) {
+            $requiredMonths += (int) $minMonths;
+        }
+
+        return $serviceMonths >= $requiredMonths;
     }
 
     private function hasWorkAndShift($employeeNo): bool

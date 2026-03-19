@@ -9,7 +9,7 @@
             @cancelled="onCancelled"
             @completed="onFinished"
         />
-        <div v-else-if="employment_type === 'REGULAR'">
+        <div v-else-if="['REGULAR', 'COS'].includes(employment_type)">
             <RegularPayrollRegistry
                 :employees="employees"
                 :status="status"

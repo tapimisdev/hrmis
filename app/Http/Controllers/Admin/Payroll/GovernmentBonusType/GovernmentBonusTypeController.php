@@ -105,6 +105,7 @@ class GovernmentBonusTypeController extends Controller
             'computation_notes' => ['nullable', 'string'],
             'service_date_basis' => ['required', Rule::in(['organization', 'company'])],
             'min_years_of_service' => ['nullable', 'integer', 'min:0'],
+            'min_months_of_service' => ['nullable', 'integer', 'min:0'],
             'require_active_account' => ['required', 'boolean'],
             'require_work_shift' => ['required', 'boolean'],
             'require_information' => ['required', 'boolean'],

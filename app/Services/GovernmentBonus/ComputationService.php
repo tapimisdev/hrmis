@@ -104,6 +104,7 @@ class ComputationService
                 'basic_salary' => $salary,
                 'monthly_salary' => $salary,
                 'years_of_service' => $this->getYearsOfService(),
+                'months_of_service' => $this->getMonthsOfService(),
             ]);
         }
 
@@ -179,6 +180,20 @@ class ComputationService
 
         return (float) \Carbon\Carbon::parse($serviceDate)
             ->diffInYears(\Carbon\Carbon::parse($this->payroll_date . '-01')->endOfMonth());
+    }
+
+    private function getMonthsOfService(): float
+    {
+        $serviceDate = $this->service_date_basis === 'company'
+            ? $this->date_hired_company
+            : $this->date_hired_organization;
+
+        if (!$serviceDate) {
+            return 0.00;
+        }
+
+        return (float) \Carbon\Carbon::parse($serviceDate)
+            ->diffInMonths(\Carbon\Carbon::parse($this->payroll_date . '-01')->endOfMonth());
     }
 
     private function getEmployeeInformation(): void

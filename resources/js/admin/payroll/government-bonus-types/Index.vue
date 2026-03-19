@@ -77,13 +77,19 @@
                                 <div class="text-danger small">{{ errors.computation_notes?.[0] }}</div>
                             </div>
 
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-4">
                                 <label class="form-label fw-bold">Minimum Years of Service</label>
                                 <input v-model="form.min_years_of_service" type="number" min="0" class="form-control" />
                                 <div class="text-danger small">{{ errors.min_years_of_service?.[0] }}</div>
                             </div>
 
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold">Minimum Months of Service</label>
+                                <input v-model="form.min_months_of_service" type="number" min="0" class="form-control" />
+                                <div class="text-danger small">{{ errors.min_months_of_service?.[0] }}</div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
                                 <label class="form-label fw-bold">Status</label>
                                 <select v-model="form.is_active" class="form-select">
                                     <option :value="true">Active</option>
@@ -238,6 +244,7 @@ export default {
                 computation_notes: "",
                 service_date_basis: "organization",
                 min_years_of_service: "",
+                min_months_of_service: "",
                 require_active_account: true,
                 require_work_shift: true,
                 require_information: true,
@@ -250,8 +257,22 @@ export default {
         },
         serviceRuleLabel(row) {
             const years = row.min_years_of_service ?? 0;
+            const months = row.min_months_of_service ?? 0;
             const basis = row.service_date_basis === "company" ? "company" : "organization";
-            return `${years} year(s) minimum via ${basis} hire date`;
+
+            if (years > 0 && months > 0) {
+                return `${years} year(s) and ${months} month(s) minimum via ${basis} hire date`;
+            }
+
+            if (years > 0) {
+                return `${years} year(s) minimum via ${basis} hire date`;
+            }
+
+            if (months > 0) {
+                return `${months} month(s) minimum via ${basis} hire date`;
+            }
+
+            return `No minimum service rule (${basis})`;
         },
         computationLabel(row) {
             if (row.computation_type === "fixed") {
@@ -283,6 +304,10 @@ export default {
                     payload.min_years_of_service === "" || payload.min_years_of_service === null
                         ? null
                         : Number(payload.min_years_of_service),
+                min_months_of_service:
+                    payload.min_months_of_service === "" || payload.min_months_of_service === null
+                        ? null
+                        : Number(payload.min_months_of_service),
                 require_active_account: payload.require_active_account ? 1 : 0,
                 require_work_shift: payload.require_work_shift ? 1 : 0,
                 require_information: payload.require_information ? 1 : 0,

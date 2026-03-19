@@ -65,7 +65,10 @@ export default {
                     type: "select",
                     cast: "number",
                     placeholder: "-- CHOOSE EMPLOYMENT TYPE --",
-                    options: [{ label: "Regular", value: 1 }],
+                    options: [
+                        { label: "Regular", value: 1 },
+                        { label: "COS", value: 2 },
+                    ],
                 },
                 {
                     key: "government_bonus_type_id",
