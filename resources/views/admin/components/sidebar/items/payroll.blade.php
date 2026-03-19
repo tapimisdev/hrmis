@@ -57,6 +57,14 @@
                 </a>
             </li>
 
+            <li class="nested-item">
+                <a href="{{ route('government-bonuses.index') }}"
+                    class="{{ request()->is('admin/payroll/government-bonuses*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-landmark"></i>
+                    <span>Government Bonuses</span>
+                </a>
+            </li>
+
             <hr class="mt-2 mb-2">
 
             <li class="nested-item">

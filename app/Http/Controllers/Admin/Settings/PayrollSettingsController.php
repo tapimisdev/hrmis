@@ -10,6 +10,12 @@ use Yajra\DataTables\DataTables;
 
 class PayrollSettingsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.payroll_settings.view')->only(['index']);
+        $this->middleware('permission:hr.payroll_settings.update')->only(['save']);
+    }
+
     /**
      * Display a listing of the resource.
      */

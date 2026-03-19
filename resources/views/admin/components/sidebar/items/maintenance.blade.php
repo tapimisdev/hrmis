@@ -149,6 +149,17 @@
             </li>
             @endcan
 
+            @can('hr.government_bonus_rules.view')
+            <li class="nested-item">
+                <a href="{{ route('government-bonus-types.index') }}"
+                    class="{{ request()->is('admin/payroll/government-bonus-types*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Government Bonus Rules</span>
+                </a>
+            </li>
+            @endcan
+
+            @can('hr.payroll_components.view')
             <li class="nested-item">
                 <a href="{{ route('settings.payroll-components.index') }}"
                    class="{{ request()->is('admin/maintenance/payroll-components*') ? 'active' : '' }}">
@@ -156,7 +167,9 @@
                     <span>Payroll Components</span>
                 </a>
             </li>
+            @endcan
 
+            @can('hr.payroll_settings.view')
             <li class="nested-item">
                 <a href="{{ route('settings.payroll-settings.index') }}"
                    class="{{ request()->is('admin/maintenance/payroll-settings*') ? 'active' : '' }}">
@@ -164,6 +177,7 @@
                     <span>Payroll Settings</span>
                 </a>
             </li>
+            @endcan
 
         </ul>
     </div>

@@ -57,6 +57,10 @@ import PeraRataView from "./admin/payroll/pera-rata/show/ShowPayroll.vue";
 import LongevityPayIndex from "./admin/payroll/longevity-pay/Index.vue";
 import LongevityPayStepper from "./admin/payroll/longevity-pay/create/PayrollStepper.vue";
 import LongevityPayView from "./admin/payroll/longevity-pay/show/ShowPayroll.vue";
+import GovernmentBonusIndex from "./admin/payroll/government-bonuses/Index.vue";
+import GovernmentBonusStepper from "./admin/payroll/government-bonuses/create/PayrollStepper.vue";
+import GovernmentBonusView from "./admin/payroll/government-bonuses/show/ShowPayroll.vue";
+import GovernmentBonusTypeIndex from "./admin/payroll/government-bonus-types/Index.vue";
 
 const authApp = createApp({
     components: {
@@ -108,6 +112,11 @@ const authApp = createApp({
         LongevityPayIndex,
         LongevityPayStepper,
         LongevityPayView,
+
+        GovernmentBonusIndex,
+        GovernmentBonusStepper,
+        GovernmentBonusView,
+        GovernmentBonusTypeIndex,
     },
 
     data() {
