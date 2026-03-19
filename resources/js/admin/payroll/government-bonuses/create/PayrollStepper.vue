@@ -382,9 +382,10 @@ export default {
 }
 
 .stepper-content {
+    position: relative;
+    overflow: hidden;
     background: var(--bs-secondary-bg);
     border-radius: 20px;
-    min-height: 620px;
     display: flex;
     flex-direction: column;
 }
