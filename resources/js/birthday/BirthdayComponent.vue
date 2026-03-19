@@ -1,7 +1,7 @@
 <template>
     <div class="wrapper" ref="wrapper" v-if="isVisible">
         <iframe
-          src="https://www.youtube.com/embed/N6-0syjL9nU?start=3&autoplay=1&loop=1&playlist=N6-0syjL9nU"
+          :src="youtubeSrc"
           title="YouTube video player"
           frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -40,21 +40,32 @@ export default {
             intervalId: null,
             isVisible: false,
             isLoading: true,
+            videoIds: [
+                "N6-0syjL9nU&?start=3",
+                "tL6SQ2PGXV4&?start=3",
+                "4cUfWKOrgEg&?start=20"
+            ],
+            selectedVideo: null
         };
     },
     computed: {
         currentImage() {
             return this.images[this.currentIndex] || null;
         },
+        youtubeSrc() {
+            if (!this.selectedVideo) return "";
+            return `https://www.youtube.com/embed/${this.selectedVideo}&autoplay=1&loop=1&playlist=${this.selectedVideo}`;
+        }
     },
     created() {
-        // Check Laravel session to see if popup was already shown
+        this.selectedVideo = this.videoIds[
+            Math.floor(Math.random() * this.videoIds.length)
+        ];
         axios
             .get("/today-birthday", {
                 headers: { Authorization: `Bearer ${token}` },
             })
             .then((response) => {
-                // If response has data, show popup
                 if (response.data.length > 0) {
                     this.images = response.data;
                     this.isVisible = true;
@@ -63,7 +74,6 @@ export default {
                 }
             });
 
-        // Ensure party.js is loaded
         if (!window.party) {
             const checkParty = setInterval(() => {
                 if (window.party) clearInterval(checkParty);
