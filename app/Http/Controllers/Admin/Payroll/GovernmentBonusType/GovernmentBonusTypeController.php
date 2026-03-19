@@ -103,7 +103,7 @@ class GovernmentBonusTypeController extends Controller
             'computation_value' => ['nullable', 'numeric', 'min:0', 'required_if:computation_type,fixed,percentage'],
             'formula_expression' => ['nullable', 'string', 'required_if:computation_type,formula'],
             'computation_notes' => ['nullable', 'string'],
-            'service_date_basis' => ['required', Rule::in(['organization', 'company'])],
+            'service_date_basis' => ['required', Rule::in(['organization', 'company', 'current_year'])],
             'min_years_of_service' => ['nullable', 'integer', 'min:0'],
             'min_months_of_service' => ['nullable', 'integer', 'min:0'],
             'require_active_account' => ['required', 'boolean'],

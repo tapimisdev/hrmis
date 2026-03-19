@@ -111,9 +111,10 @@ Create one record for each bonus type.
 
 `Service Date Basis`
 
-- Tells the system which hiring date to use when checking years of service.
+- Tells the system which date base to use when checking service age.
 - `Organization` uses the employee's organization hire date.
 - `Company` uses the employee's company hire date.
+- `Current Year` evaluates service from the start of the payroll year.
 
 `Minimum Years of Service`
 

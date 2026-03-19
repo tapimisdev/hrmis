@@ -215,11 +215,14 @@ class PayrollService
             return true;
         }
 
-        $column = $this->bonusType->service_date_basis === 'company'
-            ? 'date_hired_company'
-            : 'date_hired_organization';
-
-        $serviceDate = data_get($employee, $column);
+        if ($this->bonusType->service_date_basis === 'company') {
+            $serviceDate = data_get($employee, 'date_hired_company');
+        } elseif ($this->bonusType->service_date_basis === 'organization') {
+            $serviceDate = data_get($employee, 'date_hired_organization');
+        } else {
+            // current_year: count service from start of payroll year
+            $serviceDate = Carbon::parse($this->monthYear . '-01')->startOfYear();
+        }
 
         if (!$serviceDate) {
             return false;

@@ -170,6 +170,11 @@ class ComputationService
 
     private function getYearsOfService(): float
     {
+        if ($this->service_date_basis === 'current_year') {
+            $startDate = \Carbon\Carbon::parse($this->payroll_date . '-01')->startOfYear();
+            return (float) $startDate->diffInYears(\Carbon\Carbon::parse($this->payroll_date . '-01')->endOfMonth());
+        }
+
         $serviceDate = $this->service_date_basis === 'company'
             ? $this->date_hired_company
             : $this->date_hired_organization;
@@ -184,6 +189,11 @@ class ComputationService
 
     private function getMonthsOfService(): float
     {
+        if ($this->service_date_basis === 'current_year') {
+            $startDate = \Carbon\Carbon::parse($this->payroll_date . '-01')->startOfYear();
+            return (float) $startDate->diffInMonths(\Carbon\Carbon::parse($this->payroll_date . '-01')->endOfMonth());
+        }
+
         $serviceDate = $this->service_date_basis === 'company'
             ? $this->date_hired_company
             : $this->date_hired_organization;

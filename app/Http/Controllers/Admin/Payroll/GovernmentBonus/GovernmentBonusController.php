@@ -270,7 +270,7 @@ class GovernmentBonusController extends Controller
 
     public function deleteEmployeePayroll($id, $employmentType)
     {
-        if ($employmentType !== 'REGULAR') {
+        if (!in_array($employmentType, ['REGULAR', 'COS'], true)) {
             return response()->json([
                 'message' => 'Invalid employment type.',
             ], 400);

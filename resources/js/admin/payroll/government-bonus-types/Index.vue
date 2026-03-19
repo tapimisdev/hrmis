@@ -52,6 +52,7 @@
                                 <select v-model="form.service_date_basis" class="form-select">
                                     <option value="organization">Organization</option>
                                     <option value="company">Company</option>
+                                    <option value="current_year">Current Year</option>
                                 </select>
                             </div>
 
@@ -258,7 +259,11 @@ export default {
         serviceRuleLabel(row) {
             const years = row.min_years_of_service ?? 0;
             const months = row.min_months_of_service ?? 0;
-            const basis = row.service_date_basis === "company" ? "company" : "organization";
+            const basis = row.service_date_basis === "company"
+                ? "company"
+                : row.service_date_basis === "current_year"
+                ? "current year"
+                : "organization";
 
             if (years > 0 && months > 0) {
                 return `${years} year(s) and ${months} month(s) minimum via ${basis} hire date`;
