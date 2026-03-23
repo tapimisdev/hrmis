@@ -3,9 +3,52 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Enums\EmploymentTypesEnum;
 
 class EmployeeService {
+
+    protected const EMPLOYEE_NO_TABLES = [
+        'employee_information',
+        'employee_personal',
+        'employee_family',
+        'employee_children',
+        'employee_education',
+        'employee_work_experience',
+        'employee_civil_service',
+        'employee_trainings',
+        'employee_voluntary_works',
+        'employee_skills_hobbies',
+        'employee_projects',
+        'employee_organization',
+        'employee_salary',
+        'employee_shift_work_schedule',
+        'employee_deductions',
+        'employee_earnings',
+        'leave_credits',
+        'offset_credits',
+        'leave_applications',
+        'overtime_applications',
+        'obs_applications',
+        'offset_applications',
+        'special_order_applications',
+        'lto_applications',
+        'timelogs',
+        'timelog_corrections',
+        'web_time_access',
+        'accomplishment_reports',
+        'payroll_salary_employee',
+        'payroll_salary_permanent_employees',
+        'payroll_dtr',
+        'payroll_hazard_pay_employee',
+        'payroll_sla_pay_employee',
+        'payroll_pera_rata_employee',
+        'payroll_longevity_pay_employee',
+        'payroll_group_employees',
+        'employee_payroll_components',
+        'module_tab_employees',
+        'ot_pay_employee',
+    ];
 
     protected $salary_employee_service;
 
@@ -331,6 +374,54 @@ class EmployeeService {
             );
 
             return $employeeNo;
+        });
+    }
+
+    public function syncEmployeeNo(string $oldEmployeeNo, string $newEmployeeNo): array
+    {
+        $oldEmployeeNo = trim($oldEmployeeNo);
+        $newEmployeeNo = trim($newEmployeeNo);
+
+        if ($oldEmployeeNo === $newEmployeeNo) {
+            return [];
+        }
+
+        $oldExists = DB::table('employee_information')
+            ->where('employee_no', $oldEmployeeNo)
+            ->exists();
+
+        if (!$oldExists) {
+            throw new \RuntimeException("Employee #{$oldEmployeeNo} does not exist.");
+        }
+
+        $newExists = DB::table('employee_information')
+            ->where('employee_no', $newEmployeeNo)
+            ->exists();
+
+        if ($newExists) {
+            throw new \RuntimeException("Employee #{$newEmployeeNo} already exists.");
+        }
+
+        return DB::transaction(function () use ($oldEmployeeNo, $newEmployeeNo) {
+            $updatedTables = [];
+
+            foreach (self::EMPLOYEE_NO_TABLES as $table) {
+                if (!Schema::hasTable($table) || !Schema::hasColumn($table, 'employee_no')) {
+                    continue;
+                }
+
+                $affected = DB::table($table)
+                    ->where('employee_no', $oldEmployeeNo)
+                    ->update([
+                        'employee_no' => $newEmployeeNo,
+                    ]);
+
+                if ($affected > 0) {
+                    $updatedTables[$table] = $affected;
+                }
+            }
+
+            return $updatedTables;
         });
     }
     

@@ -20,6 +20,9 @@ use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataItemController;
 use App\Http\Controllers\Admin\Payroll\Api\LongevityApiController;
 use App\Http\Controllers\Admin\Payroll\LongevityPay\LongevityPayController;
 use App\Http\Controllers\Admin\Payroll\LongevityPay\LongevityPayItemController;
+use App\Http\Controllers\Admin\Payroll\Api\GovernmentBonusApiController;
+use App\Http\Controllers\Admin\Payroll\GovernmentBonus\GovernmentBonusController;
+use App\Http\Controllers\Admin\Payroll\GovernmentBonus\GovernmentBonusItemController;
 
 use App\Http\Controllers\Admin\Payroll\ReportsController;
 
@@ -107,6 +110,19 @@ Route::prefix('payroll')->group(function() {
         Route::delete('{id}/delete', [LongevityPayController::class, 'destroy']);
         Route::delete('{id}/{employment_type}', [LongevityPayController::class, 'deleteEmployeePayroll']);
         Route::patch('{id}/status', [LongevityPayController::class, 'updateStatus']);
+    });
+
+    # GOVERNMENT BONUS Payroll
+    Route::prefix('government-bonuses')->group(function() {
+        Route::get('bonus-types', [GovernmentBonusApiController::class, 'bonusTypes']);
+        Route::post('items/{payroll_id}/{payroll_emp_id}', [GovernmentBonusItemController::class, 'update']);
+        Route::post('check-employees', [GovernmentBonusApiController::class, 'validateAndGetEmployee']);
+        Route::post('processed', [GovernmentBonusApiController::class, 'getList']);
+        Route::get('{payroll_id}', [GovernmentBonusApiController::class, 'getPayrollData']);
+        Route::post('generate', [GovernmentBonusController::class, 'store']);
+        Route::delete('{id}/delete', [GovernmentBonusController::class, 'destroy']);
+        Route::delete('{id}/{employment_type}', [GovernmentBonusController::class, 'deleteEmployeePayroll']);
+        Route::patch('{id}/status', [GovernmentBonusController::class, 'updateStatus']);
     });
 
 });

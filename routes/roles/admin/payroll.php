@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\Payroll\HazardPay\HazardPayController;
 use App\Http\Controllers\Admin\Payroll\SLAPay\SLAPayController;
 use App\Http\Controllers\Admin\Payroll\PeraRata\PeraRataController;
 use App\Http\Controllers\Admin\Payroll\LongevityPay\LongevityPayController;
+use App\Http\Controllers\Admin\Payroll\GovernmentBonus\GovernmentBonusController;
+use App\Http\Controllers\Admin\Payroll\GovernmentBonusType\GovernmentBonusTypeController;
 use App\Http\Controllers\Admin\Payroll\Import\SalaryRegistryController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupEmployeesController;
@@ -36,5 +38,11 @@ Route::prefix('payroll')->group(function() {
 
     # LONGEVITY PAYROLL
     Route::resource('longevity-pay', LongevityPayController::class)->only('index', 'create', 'show', 'store', 'destroy');
+
+    # GOVERNMENT BONUS PAYROLL
+    Route::resource('government-bonuses', GovernmentBonusController::class)->only('index', 'create', 'show', 'store', 'destroy');
+
+    # GOVERNMENT BONUS RULES
+    Route::resource('government-bonus-types', GovernmentBonusTypeController::class)->only('index', 'store', 'update', 'destroy');
 
 });
