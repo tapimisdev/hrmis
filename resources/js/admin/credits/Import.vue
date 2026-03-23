@@ -2,7 +2,7 @@
     <div class="uploading pb-5">
         <!-- Upload -->
         <div v-if="upload && !loading">
-            <label class="form-label fw-bold">Upload File (CSV)</label>
+            <label class="form-label fw-bold">Upload File (CSV or Excel)</label>
             <div
                 class="upload-box text-center p-5 border border-2 border-dashed rounded-3"
                 @click="triggerFileInput"
@@ -11,12 +11,12 @@
                     class="fa-solid fa-file-arrow-up fa-2x mb-3 text-primary"
                 ></i>
                 <p class="mb-1 fw-semibold">Click or drag file to upload</p>
-                <small class="text-muted">Supported: CSV</small>
+                <small class="text-muted">Supported: CSV, XLS, XLSX</small>
                 <input
                     type="file"
                     class="d-none"
                     ref="fileInput"
-                    accept=".csv"
+                    accept=".csv, .xls, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                     @change="onFileUpload"
                 />
             </div>
@@ -48,18 +48,13 @@
         <!-- Preview -->
         <div v-if="!upload && !loading">
             <h6 class="fw-bold mb-3 text-uppercase">Preview Credits</h6>
-            <div class="table-container table-responsive">
+            <div class="table-container table-responsive" style="max-height: 600px; overflow-y: auto;">
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th v-if="type === 'leave'">Leave</th>
-                            <th>Employee No</th>
-                            <th>Month & Year</th>
-                            <th>Sick Leave</th>
-                            <th>Vacation Leave</th>
-                            <th>Total Credits</th>
-                            <th>Remarks</th>
+                            <th class="text-center">Actions</th>
+                            <th class="text-center">#</th>
+                            <th v-for="header in tableHeaders" :key="header">{{ header }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -67,50 +62,55 @@
                             v-for="(credit, index) in creditsData.credits"
                             :key="index"
                         >
-                            <td>
-                                <div class="px-3">{{ index + 1 }}</div>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-danger" @click="deleteRow(index)" title="Delete row">
+                                    <i class="fa fa-trash"></i>
+                                </button>
                             </td>
-                            <td>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    v-model="credit.employee_no"
-                                />
+                            <td class="text-center">
+                                <div>{{ index + 1 }}</div>
                             </td>
-                            <td>
-                                <input
-                                    type="month"
-                                    class="form-control"
-                                    v-model.number="credit.month_year"
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    class="form-control"
-                                    v-model.number="credit.sick_leave"
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    class="form-control"
-                                    v-model.number="credit.vacation_leave"
-                                />
-                            </td>
-                            <td>
-                                <input
-                                    type="number"
-                                    class="form-control"
-                                    v-model.number="credit.total_credits"
-                                />
-                            </td>
-                            <td>
-                                <textarea
-                                    class="form-control"
-                                    rows="3"
-                                    v-model="credit.remarks"
-                                ></textarea>
+                            <td v-for="key in parsedHeaderKeys" :key="key">
+                                <template v-if="key === 'employee_no'">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        v-model="credit.employee_no"
+                                    />
+                                </template>
+
+                                <template v-else-if="key === 'month_year'">
+                                    <input
+                                        type="month"
+                                        class="form-control"
+                                        v-model="credit.month_year"
+                                    />
+                                </template>
+
+                                <template v-else-if="['sick_leave', 'vacation_leave', 'total_credits', 'credits'].includes(key)">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        class="form-control"
+                                        v-model.number="credit[key]"
+                                    />
+                                </template>
+
+                                <template v-else-if="key === 'remarks'">
+                                    <textarea
+                                        class="form-control"
+                                        rows="3"
+                                        v-model="credit.remarks"
+                                    ></textarea>
+                                </template>
+
+                                <template v-else>
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        v-model="credit[key]"
+                                    />
+                                </template>
                             </td>
                         </tr>
                     </tbody>
@@ -162,6 +162,7 @@
 
 <script>
 import axios from "axios";
+import * as XLSX from "xlsx";
 const token = localStorage.getItem("auth_token");
 
 export default {
@@ -177,12 +178,60 @@ export default {
             loading: false,
             creditsData: { credits: [] },
             errors: [],
+            parsedHeaderKeys: [],
+            parsedHeaderLabels: [],
         };
+    },
+
+    computed: {
+        requiredHeaders() {
+            if (this.type === "leave") {
+                return ["employee_no", "month_year", "sick_leave", "vacation_leave", "total_credits"];
+            }
+
+            if (this.type === "offset") {
+                return ["employee_no", "month_year", "credits"];
+            }
+
+            return [];
+        },
+
+        acceptedHeaders() {
+            if (this.type === "leave") {
+                return ["employee_no", "month_year", "sick_leave", "vacation_leave", "total_credits", "remarks"];
+            }
+
+            if (this.type === "offset") {
+                return ["employee_no", "month_year", "credits", "remarks"];
+            }
+
+            return [];
+        },
+
+        tableHeaders() {
+            return this.parsedHeaderLabels.length ? this.parsedHeaderLabels : (this.type === 'leave'
+                ? ['Employee No', 'Month & Year', 'Sick Leave', 'Vacation Leave', 'Total Credits', 'Remarks']
+                : ['Employee No', 'Month & Year', 'Credits', 'Remarks']
+            );
+        },
     },
 
     methods: {
         triggerFileInput() {
             this.$refs.fileInput.click();
+        },
+
+        formatHeader(raw) {
+            const map = {
+                employee_no: 'Employee No',
+                month_year: 'Month & Year',
+                sick_leave: 'Sick Leave',
+                vacation_leave: 'Vacation Leave',
+                total_credits: 'Total Credits',
+                credits: 'Credits',
+                remarks: 'Remarks',
+            };
+            return map[raw] || raw.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
         },
 
         onFileUpload(event) {
@@ -192,37 +241,180 @@ export default {
             this.loading = true;
             this.errors = [];
 
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (!['csv', 'xls', 'xlsx'].includes(extension)) {
+                this.errors = [{ row: '-', field: 'file', message: 'Unsupported file type. Upload CSV, XLS or XLSX.' }];
+                this.loading = false;
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = (e) => {
-                const rows = e.target.result
-                    .split("\n")
-                    .map((r) => r.trim())
-                    .filter(Boolean);
-                const headers = rows[0]
-                    .split(",")
-                    .map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
-                const credits = rows.slice(1).map((row) => {
-                    const values = row.split(",");
-                    const obj = {};
-                    headers.forEach((h, i) => (obj[h] = values[i] || ""));
-                    return {
-                        month_year: obj.month_year || "",
-                        employee_no: obj.employee_no || "",
-                        sick_leave: Number(obj.sick_leave) || 0,
-                        vacation_leave: Number(obj.vacation_leave || 0),
-                        total_credits: Number(obj.total_credits || 0),
-                        remarks: obj.remarks || "",
-                    };
-                });
+                if (extension === 'csv') {
+                    const rawText = e.target.result;
+                    const csvLines = rawText
+                        .split(/\r?\n/)
+                        .map((line) => line.trim())
+                        .filter(Boolean);
 
-                console.log(headers, credits);
+                    if (!csvLines.length || csvLines.length < 2) {
+                        this.errors = [{ row: '-', field: 'file', message: 'CSV should contain at least one data row.' }];
+                        this.loading = false;
+                        return;
+                    }
 
-                this.creditsData.credits = credits;
-                this.loading = false;
-                this.upload = false;
+                    const delimiter = csvLines[0].includes('\t') ? '\t' : ',';
+                    const headers = csvLines[0]
+                        .split(delimiter)
+                        .map((h) => String(h).trim().toLowerCase().replace(/\s+/g, '_'));
+
+                    const rows = csvLines.slice(1).map((row) =>
+                        row.split(delimiter).map((cell) => String(cell).trim()),
+                    );
+
+                    this.processParsedRows(headers, rows);
+                    return;
+                }
+
+                let workbook;
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: 'array' });
+                } catch (err) {
+                    this.errors = [{ row: '-', field: 'file', message: `Error reading file: ${err.message}` }];
+                    this.loading = false;
+                    return;
+                }
+
+                if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+                    this.errors = [{ row: '-', field: 'file', message: 'File has no sheets or data.' }];
+                    this.loading = false;
+                    return;
+                }
+
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                if (!sheetData.length || sheetData.length < 2) {
+                    this.errors = [{ row: '-', field: 'file', message: 'File should contain at least one data row.' }];
+                    this.loading = false;
+                    return;
+                }
+
+                const headers = sheetData[0]
+                    .map((h) => String(h).trim().toLowerCase().replace(/\s+/g, '_'));
+
+                const rows = sheetData.slice(1).map((r) => r.map((cell) => String(cell).trim()));
+
+                this.processParsedRows(headers, rows);
             };
 
-            reader.readAsText(file);
+            if (extension === 'csv') {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        },
+
+        processParsedRows(headers, rows) {
+            if (!rows.length) {
+                this.errors = [{ row: '-', field: 'file', message: 'Uploaded file must include at least one data row.' }];
+                this.loading = false;
+                return;
+            }
+            console.log(this.type);
+            const required = this.type === 'leave'
+                ? ["employee_no", "month_year", "sick_leave", "vacation_leave", "total_credits", "remarks"]
+                : ["employee_no", "month_year", "credits", "remarks"];
+
+            const missing = required.filter((header) => !headers.includes(header));
+            if (missing.length) {
+                const message = `Invalid file template. Missing required headers: ${missing.join(', ')}`;
+                this.errors = [{ row: '-', field: 'headers', message }];
+                this.loading = false;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops',
+                    text: message,
+                });
+                return;
+            }
+
+            const outOfOrder = required.filter((header, index) => headers[index] !== header);
+            if (outOfOrder.length) {
+                const message = `Invalid file template. Headers must be in exact order: ${required.join(', ')}`;
+                this.errors = [{ row: '-', field: 'headers', message }];
+                this.loading = false;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops',
+                    text: message,
+                });
+                return;
+            }
+
+            if (this.type === 'offset') {
+                const requiredOffset = ["employee_no", "month_year", "credits", "remarks"];
+                const missingOffset = requiredOffset.filter((header) => !headers.includes(header));
+                if (missingOffset.length) {
+                    const message = `Invalid file template. Offset import requires: ${missingOffset.join(', ')}`;
+                    this.errors = [{ row: '-', field: 'headers', message }];
+                    this.loading = false;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops',
+                        text: message,
+                    });
+                    return;
+                }
+            }
+
+            this.parsedHeaderKeys = headers;
+            this.parsedHeaderLabels = headers.map((h) => this.formatHeader(h));
+
+            let credits = rows.map((rowArray) => {
+                const obj = {};
+                headers.forEach((header, i) => {
+                    obj[header] = rowArray[i] || '';
+                });
+
+                if (this.type === 'leave') {
+                    obj.employee_no = obj.employee_no || '';
+                    obj.month_year = obj.month_year || '';
+                    obj.sick_leave = Number(obj.sick_leave || 0);
+                    obj.vacation_leave = Number(obj.vacation_leave || 0);
+                    obj.total_credits = Number(obj.total_credits || (obj.sick_leave + obj.vacation_leave));
+                    obj.remarks = obj.remarks || '';
+                    return obj;
+                }
+
+                if (this.type === 'offset') {
+                    const creditsValue = Number(obj.credits || 0);
+                    obj.employee_no = obj.employee_no || '';
+                    obj.month_year = obj.month_year || '';
+                    obj.credits = creditsValue;
+                    obj.remarks = obj.remarks || '';
+                    return obj;
+                }
+
+                return obj;
+            });
+
+            credits = credits.filter(credit => credit.employee_no && credit.employee_no.trim() !== '');
+
+            this.creditsData.credits = credits;
+            console.log('Parsed table data:', {
+                headers: this.parsedHeaderKeys,
+                rows: credits,
+            });
+
+            this.creditsData.credits = credits;
+            this.loading = false;
+            this.upload = false;
+        },
+
+        deleteRow(index) {
+            this.creditsData.credits.splice(index, 1);
         },
 
         backToForm() {
@@ -273,8 +465,34 @@ export default {
                     didOpen: () => Swal.showLoading(),
                 });
 
+                const payload = {
+                    type: this.type,
+                    credits: this.creditsData.credits.map((item) => {
+                        if (this.type === 'offset') {
+                            return {
+                                employee_no: item.employee_no,
+                                as_of: item.month_year || item.as_of,
+                                credits: Number(item.credits ?? 0),
+                                remarks: item.remarks || '',
+                            };
+                        }
+
+                        // leave
+                        return {
+                            employee_no: item.employee_no,
+                            month_year: item.month_year,
+                            sick_leave: Number(item.sick_leave ?? 0),
+                            vacation_leave: Number(item.vacation_leave ?? 0),
+                            total_credits: Number(item.total_credits ?? 0),
+                            remarks: item.remarks || '',
+                        };
+                    }),
+                };
+
+                console.log('Submit payload:', payload);
+
                 axios
-                    .post(this.saveUrl, this.creditsData, {
+                    .post(this.saveUrl, payload, {
                         headers: { Authorization: `Bearer ${token}` },
                     })
                     .then(() => {
@@ -282,11 +500,15 @@ export default {
                             icon: "success",
                             title: "Uploaded!",
                             text: "Credits saved successfully.",
-                            timer: 3500,
-                            showConfirmButton: true,
-                            confirmButtonText: "Got it",
+                            showCancelButton: true,
+                            confirmButtonText: "View Credits",
+                            cancelButtonText: "Got it",
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/admin/service/credits';
+                            }
+                            this.backToForm();
                         });
-                        this.backToForm();
                     })
                     .catch((err) => {
                         Swal.close();
@@ -321,16 +543,18 @@ export default {
 
 <style scoped>
 select {
-    width: 180px;
+    width: 100%;
 }
 input {
-    width: 150px;
+    width: 100%;
 }
 input[type="month"] {
-    width: 200px;
+    width: 100%;
 }
 textarea {
-    width: 250px;
+    min-width: 100%;
+    max-width: 300px;
+    width: 100%;
 }
 .uploading {
     margin: auto;

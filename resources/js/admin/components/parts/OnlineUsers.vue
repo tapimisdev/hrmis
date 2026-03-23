@@ -37,50 +37,53 @@
                 <h6 class="mb-0 fw-semibold text-uppercase">Online Users</h6>
             </li>
 
-            <!-- Empty -->
-            <li
-                v-if="onlineUsers.length === 0"
-                class="text-center py-5 text-muted"
-            >
-                <i class="fa-regular fa-user mb-2" style="font-size: 2rem"></i>
-                <p class="mb-0">No users online</p>
-            </li>
+            <!-- Scrollable content -->
+            <div style="max-height: 300px; overflow-y: auto;">
+                <!-- Empty -->
+                <li
+                    v-if="onlineUsers.length === 0"
+                    class="text-center py-5 text-muted"
+                >
+                    <i class="fa-regular fa-user mb-2" style="font-size: 2rem"></i>
+                    <p class="mb-0">No users online</p>
+                </li>
 
-            <li v-for="user in onlineUsers" :key="user.id">
-                <div class="dropdown-item py-2 px-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="user-list">
-                            <img
-                                v-if="user.profile"
-                                :src="user.profile"
-                                class="rounded-circle"
-                                style="object-fit: cover"
-                            />
-                            <div
-                                v-else
-                                class="rounded-circle bg-success d-flex align-items-center justify-content-center"
-                                style="color: white"
-                            >
-                                {{ user.name.charAt(0).toUpperCase() }}
+                <li v-for="user in onlineUsers" :key="user.id">
+                    <div class="dropdown-item py-2 px-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="user-list">
+                                <img
+                                    v-if="user.profile"
+                                    :src="user.profile"
+                                    class="rounded-circle"
+                                    style="object-fit: cover"
+                                />
+                                <div
+                                    v-else
+                                    class="rounded-circle bg-success d-flex align-items-center justify-content-center"
+                                    style="color: white"
+                                >
+                                    {{ user.name.charAt(0).toUpperCase() }}
+                                </div>
+                                <div class="overlay-online"></div>
                             </div>
-                            <div class="overlay-online"></div>
-                        </div>
-                        <div class="flex-grow-1 mt-1">
-                            <div class="fw-semibold">{{ user.name }}</div>
-                            <small
-                                class="text-muted text-uppercase"
-                                style="
-                                    font-size: 11px;
-                                    position: relative;
-                                    top: -3px;
-                                "
-                            >
-                                {{ user.position }}
-                            </small>
+                            <div class="flex-grow-1 mt-1">
+                                <div class="fw-semibold">{{ user.name }}</div>
+                                <small
+                                    class="text-muted text-uppercase"
+                                    style="
+                                        font-size: 11px;
+                                        position: relative;
+                                        top: -3px;
+                                    "
+                                >
+                                    {{ user.position }}
+                                </small>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </li>
+                </li>
+            </div>
         </ul>
     </div>
 </template>

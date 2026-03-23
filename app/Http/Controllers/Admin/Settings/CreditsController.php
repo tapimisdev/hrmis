@@ -24,7 +24,7 @@ class CreditsController extends Controller
 
     public function index(string $type = 'leave')
     {
-        if (!in_array($type, ['leave'])) {
+        if (!in_array($type, ['leave', 'offset'])) {
             return redirect()->route('settings.credits.index', ['type' => 'leave']);
         }
 
@@ -33,11 +33,21 @@ class CreditsController extends Controller
             return view('admin.pages.settings.credits.index', compact('type', 'leave_types'));
         }
 
-
         return view('admin.pages.settings.credits.index', compact('type'));
     }
 
     public function save(string $type, Request $request) {
+        $requestType = $request->input('type');
+        if ($requestType) {
+            $type = $requestType;
+        }
+
+        if (!in_array($type, ['leave', 'offset'])) {
+            return response()->json([
+                'message' => 'Invalid credit type.',
+            ], 400);
+        }
+
         if ($type === 'leave') {
             return $this->uploadLeave($request);
         } elseif ($type === 'offset') {
@@ -64,6 +74,7 @@ class CreditsController extends Controller
             ],
             'credits.*.sick_leave' => ['required', 'numeric', 'min:0'],
             'credits.*.vacation_leave' => ['required', 'numeric', 'min:0'],
+            'credits.*.total_credits' => ['nullable', 'numeric'],
             'credits.*.remarks' => ['nullable', 'string'],
         ];
 
@@ -92,6 +103,9 @@ class CreditsController extends Controller
             }
 
             foreach ($request->credits as $credit) {
+                if (empty($credit['employee_no'])) {
+                    continue;
+                }
 
                 $employee_no = $credit['employee_no'];
                 $remarks     = $credit['remarks'] ?? null;
@@ -171,9 +185,7 @@ class CreditsController extends Controller
                 'required',
                 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'
             ],
-            'credits.*.earned'   => ['required', 'numeric', 'min:0'],
-            'credits.*.deducted' => ['required', 'numeric', 'min:0'],
-            'credits.*.balance'  => ['required', 'numeric'],
+            'credits.*.credits'   => ['required', 'numeric', 'min:0'],
             'credits.*.remarks'  => ['nullable', 'string'],
         ];
 
@@ -192,6 +204,9 @@ class CreditsController extends Controller
 
             $employeeNos = collect($request->credits)
                 ->pluck('employee_no')
+                ->filter(function ($no) {
+                    return !empty($no);
+                })
                 ->unique()
                 ->values();
 
@@ -200,6 +215,9 @@ class CreditsController extends Controller
                 ->delete();
 
             foreach ($request->credits as $credit) {
+                if (empty($credit['employee_no'])) {
+                    continue;
+                }
 
                 DB::table($table)->updateOrInsert(
                     [
@@ -208,9 +226,9 @@ class CreditsController extends Controller
                     ],
                     [
                         'previous'   => 0,
-                        'earned'     => (float) $credit['earned'],
-                        'deducted'   => (float) $credit['deducted'],
-                        'balance'    => (float) $credit['balance'],
+                        'earned'     => (float) $credit['credits'],
+                        'deducted'   => 0,
+                        'balance'    => (float) $credit['credits'],
                         'remarks'    => $credit['remarks'] ?? null,
                         'created_at' => now(),
                         'updated_at' => now(),
