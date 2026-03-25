@@ -22,15 +22,12 @@ window.Echo = new Echo({
 const socket = window.Echo.connector.pusher.connection;
 
 socket.bind("connected", () => {
-    console.log("Connected to Reverb WebSocket server!");
 });
 
 socket.bind("disconnected", () => {
-    console.warn("Disconnected from Reverb server.");
 });
 
 socket.bind("error", (err) => {
-    console.error("WebSocket connection error:", err);
 });
 
 export default window.Echo;

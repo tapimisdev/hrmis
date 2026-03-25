@@ -182,4 +182,10 @@ img {
     background: #888;
     border-radius: 3px;
 }
+
+[data-bs-theme="light"] {
+  #onlineUsersDropdown i {
+    color: var(--primary) !important;
+  }
+}
 </style>

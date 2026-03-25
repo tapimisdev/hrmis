@@ -96,6 +96,7 @@ export default {
             },
             loggingOut: false,
             userAvatarUrl: "",
+            defaultAvatar: "",
             avatarLoaded: false,
         };
     },
@@ -114,11 +115,11 @@ export default {
                 this.user.email = data.user?.email || "";
                 this.user.profile_image = data.personal?.profile ?? null;
 
-                const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                this.defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
                     this.user.name,
                 )}&background=4f46e5&color=fff&size=128`;
 
-                this.userAvatarUrl = defaultAvatar;
+                this.userAvatarUrl = this.defaultAvatar;
 
                 if (this.user.profile_image && this.user.employee_no) {
                     let avatarUrl = this.user.profile_image.startsWith(
@@ -131,11 +132,12 @@ export default {
                         await axios.head(avatarUrl);
                         this.userAvatarUrl = avatarUrl;
                     } catch {
-                        this.userAvatarUrl = defaultAvatar;
+                        this.userAvatarUrl = this.defaultAvatar;
                     }
                 }
             } catch {
-                this.userAvatarUrl = `https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff&size=128`;
+                this.defaultAvatar = `https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff&size=128`;
+                this.userAvatarUrl = this.defaultAvatar;
             }
         },
         onAvatarLoad() {
@@ -154,7 +156,6 @@ export default {
 
                 window.location.replace("/login");
             } catch (err) {
-                console.error(err);
             } finally {
                 this.loggingOut = false;
             }

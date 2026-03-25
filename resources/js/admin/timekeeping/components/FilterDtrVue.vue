@@ -244,7 +244,6 @@ export default {
                 this.profile = response.data.profile;
                 this.infoCards = response.data.infoCards;
             } catch (error) {
-                console.error("Error fetching logs:", error);
             }
             this.loading = false;
         },

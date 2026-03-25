@@ -101,12 +101,10 @@ watch(
                         setup(editor) {
                             editor.on("init", () => {
                                 isLoading.value = false;
-                                console.log("TinyMCE dark mode initialized");
                             });
                         },
                     });
                 } catch (err) {
-                    console.error("TinyMCE initialization failed:", err);
                     isLoading.value = false;
                 }
             } else {

@@ -40,7 +40,7 @@ export default {
     data() {
         return {
             token: localStorage.getItem("auth_token"),
-            isFinished: false,
+            isFinished: !this.batch_id,
             employees: [],
             month: "",
         };
@@ -63,7 +63,6 @@ export default {
                 this.month = response.data.month_year;
                 this.employees = response.data.employees;
             } catch (error) {
-                console.error("Failed to fetch registry:", error.response?.data || error.message);
             }
         },
         async deleteEmployeePayroll(emp) {

@@ -121,7 +121,6 @@ function getTabs() {
             tabs.value = response.data.tabs;
         })
         .catch((error) => {
-            console.error("Error fetching tabs:", error);
         })
         .finally(() => {
             loading.value = false;

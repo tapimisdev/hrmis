@@ -8,7 +8,7 @@ use App\Services\SLAPay\PayrollService;
 use App\Services\SLAPay\GetEmployeeService;
 use App\Services\Exports\PayslipService;
 use App\Services\Exports\AUTService;
-use App\Services\Exports\RegistryService;
+use App\Services\Exports\SLARegistryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -77,7 +77,7 @@ class SLAApiController extends Controller
 
     public function downloadPayrollRegistry($payroll_no)
     {
-       return app(RegistryService::class)->download($payroll_no);
+       return app(SLARegistryService::class)->download($payroll_no);
     }
 
     public function downloadAbsencesLeaves($payroll_no) {
@@ -114,7 +114,7 @@ class SLAApiController extends Controller
     }
 
     public function getPayrollData(string $payroll_id, bool $isGrouped = true) {
-        $employee_salary = new GetEmployeeService($payroll_id, $isGrouped);
+        $employee_salary = new GetEmployeeService($payroll_id);
         $employee_salary->getAndMapEmployeeSalary();
         $employees = $employee_salary->employees;
         return response()->json($employees);

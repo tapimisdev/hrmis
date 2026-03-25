@@ -4,7 +4,7 @@
       <online-users :user-id="userId"/>      
     </li>
     <li class="nav-item">
-      <notification :user-role="userRole" :user-id="userId" />    
+      <notification :username="username" :user-role="userRole" :user-id="userId" />    
     </li>
     <li>
         <div class="toggle-container">
@@ -176,7 +176,6 @@ export default {
                 await axios.post("/logout");
                 window.location.href = "/login";
             } catch (err) {
-                console.error(err);
             } finally {
                 this.loggingOut = false;
             }

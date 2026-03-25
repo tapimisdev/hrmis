@@ -4,6 +4,12 @@
     <div class="container-fluid">
         <x-header title="Longevity Payroll" subtitle="View longevity pay payroll in this module">
             <x-button-link
+                :href="route('registry.longevity.index')"
+                icon="fa-solid fa-upload"
+                text="Import Registry"
+                variant="dark"
+            />
+            <x-button-link
                 :href="route('longevity-pay.create')"
                 icon="fa-solid fa-plus"
                 text="Create "

@@ -493,6 +493,9 @@ export default {
     },
     async mounted() {},
     methods: {
+        setClickedDate() {
+            // Kept for watcher/reset compatibility.
+        },
         open(date) {
             this.form.date = date;
 
@@ -555,7 +558,6 @@ export default {
                     };
                 }
             } catch (error) {
-                console.error("Failed to load timelogs:", error);
             } finally {
                 this.initial_loading = false;
             }

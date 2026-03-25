@@ -26,7 +26,6 @@ if (csrf) {
         }
     });
 } else {
-  console.error('CSRF token not found!');
 }
 
 
@@ -161,7 +160,6 @@ if ($('.ckeditor').length) {
             editor.ui.view.editable.element.style.height = '300px';
         })
         .catch(error => {
-            console.error(error);
         });
 }
 

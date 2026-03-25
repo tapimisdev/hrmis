@@ -414,7 +414,6 @@ export default {
 
                 this.$emit("fetch_data");
             } catch (error) {
-                console.error("Failed to update payroll row:", error);
             } finally {
                 this.loading = false;
             }

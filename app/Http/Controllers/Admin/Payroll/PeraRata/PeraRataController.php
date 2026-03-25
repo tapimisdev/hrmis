@@ -38,10 +38,6 @@ class PeraRataController extends Controller
     {
         $batch_id = request()->query('batch_id');
 
-        if (!$batch_id) {
-            abort(404, 'Batch ID not provided.');
-        }
-
         $payroll = DB::table('payroll_pera_rata')->where('payroll_no', $payroll_no)->first();
 
         if (!$payroll) {
@@ -49,25 +45,28 @@ class PeraRataController extends Controller
         }
 
         $payroll_id = $payroll->id;
+        $batch_id = $batch_id ?: $payroll->batch_id;
+        $batch = null;
+        $batchProgress = 100;
+        $batchStatus = $payroll->status === 'failed' ? 'failed' : 'completed';
 
-        $batch = Bus::findBatch($batch_id);
+        if ($batch_id) {
+            $batch = Bus::findBatch($batch_id);
 
-        if (!$batch) {
-            abort(404, 'Batch not found.');
+            if ($batch) {
+                if ($batch->finished()) {
+                    $batchStatus = 'completed';
+                } elseif ($batch->cancelled()) {
+                    $batchStatus = 'cancelled';
+                } elseif ($batch->failedJobs > 0) {
+                    $batchStatus = 'failed';
+                } else {
+                    $batchStatus = 'processing';
+                }
+
+                $batchProgress = $batch->progress();
+            }
         }
-
-        if ($batch->finished()) {
-            $batchStatus = 'completed';
-        } elseif ($batch->cancelled()) {
-            $batchStatus = 'cancelled';
-        } elseif ($batch->failedJobs > 0) {
-            $batchStatus = 'failed';
-        } else {
-            $batchStatus = 'processing';
-        }
-
-        // Include progress info (optional)
-        $batchProgress = $batch->progress(); // 0–100 %
 
         $employymentEnums = collect(EmploymentTypesEnum::cases())
                             ->firstWhere('value', $payroll->employment_type_id);

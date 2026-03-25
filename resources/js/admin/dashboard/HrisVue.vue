@@ -100,8 +100,15 @@ export default {
                 },
             ],
         },
-        employment_types_pie: [],
-        employee_movement: [],
+        employment_types_pie: {
+            labels: [],
+            datasets: [],
+        },
+        employee_movement: {
+            labels: [],
+            hires: [],
+            resignations: [],
+        },
     }),
     computed: {
         currentDateTime() {
@@ -138,8 +145,15 @@ export default {
                     this.cards = response.data.cards;
                     this.birthdays = response.data.birthdays;
                     this.attendances = response.data.attendances;
-                    this.employment_types_pie = response.data.employment_types;
-                    this.employee_movement = response.data.employee_movement;
+                    this.employment_types_pie = response.data.employment_types || {
+                        labels: [],
+                        datasets: [],
+                    };
+                    this.employee_movement = response.data.employee_movement || {
+                        labels: [],
+                        hires: [],
+                        resignations: [],
+                    };
                 })
                 .finally(() => {
                     this.isLoading = false;

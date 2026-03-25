@@ -77,6 +77,7 @@ export default {
 
     data() {
         return {
+            loading: false,
             month: null,
             year: null,
             searchable: null,
@@ -89,6 +90,7 @@ export default {
             this.month = month;
             this.year = year;
             this.searchable = searchable;
+            this.loading = true;
 
             $("#correctionModal").modal("show");
 
@@ -158,6 +160,10 @@ export default {
                         width: "200px",
                     },
                 ],
+
+                initComplete: () => {
+                    this.loading = false;
+                },
             });
 
             if (vm.searchable && vm.searchable.trim() !== "") {

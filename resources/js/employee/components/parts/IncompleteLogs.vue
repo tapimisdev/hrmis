@@ -260,7 +260,6 @@ export default {
                 });
                 this.incompleteLogs = Array.isArray(res.data) ? res.data : [];
             } catch (err) {
-                console.error("Fetch incomplete logs failed:", err);
             } finally {
                 this.loading = false;
             }

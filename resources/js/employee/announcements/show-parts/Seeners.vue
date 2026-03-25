@@ -68,7 +68,7 @@ export default {
     components: { ModalVue },
     props: {
         announcement : {
-            type: Array,
+            type: Object,
             required: true,
         },    
         data: {

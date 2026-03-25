@@ -3,6 +3,12 @@
 @section('content')
     <div class="container-fluid">
         <x-header title="Subsistence and Allowance Payroll" subtitle="View susistence and allowance payroll in this module">
+            <x-button-link
+                :href="route('registry.sla.index')"
+                icon="fa-solid fa-upload"
+                text="Import Registry"
+                variant="dark"
+            />
 
             <x-button-link 
                 :href="route('sla-pay.create')" 

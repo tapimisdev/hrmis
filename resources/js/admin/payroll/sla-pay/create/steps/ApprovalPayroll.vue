@@ -124,7 +124,6 @@ export default {
         });
         this.users = response.data;
       } catch (error) {
-        console.error("Error fetching users:", error);
       }
     },
     syncSelect2Values() {

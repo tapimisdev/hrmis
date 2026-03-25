@@ -9,6 +9,10 @@ use App\Http\Controllers\Admin\Payroll\LongevityPay\LongevityPayController;
 use App\Http\Controllers\Admin\Payroll\GovernmentBonus\GovernmentBonusController;
 use App\Http\Controllers\Admin\Payroll\GovernmentBonusType\GovernmentBonusTypeController;
 use App\Http\Controllers\Admin\Payroll\Import\SalaryRegistryController;
+use App\Http\Controllers\Admin\Payroll\Import\HazardRegistryController;
+use App\Http\Controllers\Admin\Payroll\Import\PeraRataRegistryController;
+use App\Http\Controllers\Admin\Payroll\Import\SLARegistryController;
+use App\Http\Controllers\Admin\Payroll\Import\LongevityRegistryController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupEmployeesController;
 
@@ -23,6 +27,22 @@ Route::prefix('payroll')->group(function() {
         ->name('registry.salary.index');
     Route::post('import/salary-pay', [SalaryRegistryController::class, 'store'])
         ->name('registry.salary.store');
+    Route::get('import/hazard-pay', [HazardRegistryController::class, 'index'])
+        ->name('registry.hazard.index');
+    Route::post('import/hazard-pay', [HazardRegistryController::class, 'store'])
+        ->name('registry.hazard.store');
+    Route::get('import/pera-rata', [PeraRataRegistryController::class, 'index'])
+        ->name('registry.pera-rata.index');
+    Route::post('import/pera-rata', [PeraRataRegistryController::class, 'store'])
+        ->name('registry.pera-rata.store');
+    Route::get('import/sla-pay', [SLARegistryController::class, 'index'])
+        ->name('registry.sla.index');
+    Route::post('import/sla-pay', [SLARegistryController::class, 'store'])
+        ->name('registry.sla.store');
+    Route::get('import/longevity-pay', [LongevityRegistryController::class, 'index'])
+        ->name('registry.longevity.index');
+    Route::post('import/longevity-pay', [LongevityRegistryController::class, 'store'])
+        ->name('registry.longevity.store');
 
     # SALARY PAYROLL
     Route::resource('salary-pay', SalaryController::class)->only('index', 'create', 'show', 'store', 'destroy');
