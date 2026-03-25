@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\BirthdayController;
+use App\Http\Controllers\Admin\PatchNotesController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TestController;
@@ -42,6 +43,10 @@ Auth::routes([
 ]);
 
 Route::get('today-birthday', [BirthdayController::class, 'index']);
+
+Route::get('/patch-notes', [PatchNotesController::class, 'index'])
+    ->middleware('auth')
+    ->name('patch-notes');
 
 Route::any('/iclock/cdata', [\App\Http\Controllers\ZktecoController::class, 'cdata'])
     ->middleware('biometric.ip');
