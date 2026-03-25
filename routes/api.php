@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     require __DIR__ . '/apis/maintenance.php';
     require __DIR__ . '/apis/employee.php';
+    require __DIR__ . '/apis/messages.php';
     require __DIR__ . '/apis/payroll.php';
     require __DIR__ . '/apis/user.php';
     require __DIR__ . '/apis/timekeeping.php';

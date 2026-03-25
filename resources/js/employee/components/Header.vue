@@ -3,6 +3,7 @@
     <incomplete-logs> </incomplete-logs>
     <div class="d-flex gap-4 justify-content-end align-items-center">
       <widget-component />
+      <online-users :user-id="userId" />
       <notification-component :user-role="userRole" :user-id="userId" />  
       <profile-component />
     </div>
@@ -13,6 +14,7 @@ import WidgetComponent from "./parts/Widgets.vue";
 import NotificationComponent from "./parts/Notification.vue";
 import ProfileComponent from "./parts/Profile.vue";
 import IncompleteLogs from "./parts/IncompleteLogs.vue";
+import OnlineUsers from "../../admin/components/parts/OnlineUsers.vue";
 
 export default {
     name: "HeaderVue",
@@ -31,6 +33,7 @@ export default {
         NotificationComponent,
         ProfileComponent,
         IncompleteLogs,
+        OnlineUsers,
     },
     methods: {
         toggleMobileMenu() {
