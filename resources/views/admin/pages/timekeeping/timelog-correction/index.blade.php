@@ -141,7 +141,6 @@
             axios.get(`/admin/timekeeping/timelogs-correction/${id}/edit`)
                 .then(response => {
                     const data = response.data;
-                    console.log(data);
 
                     $('#filter-month').val(data.month);
                     $('#filter-year').val(data.year);

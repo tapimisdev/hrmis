@@ -155,7 +155,6 @@ const authApp = createApp({
                 }
             })
             .catch((error) => {
-                console.error("API error:", error);
             });
     },
     methods: {

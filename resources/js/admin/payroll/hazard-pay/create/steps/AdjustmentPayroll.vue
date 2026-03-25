@@ -168,7 +168,6 @@ export default {
         );
         return response.data;
       } catch (error) {
-        console.error("Failed to fetch adjustments:", error.response?.data || error.message);
         return [];
       }
     },
@@ -308,7 +307,6 @@ export default {
           });
         }
       } catch (error) {
-        console.error("Failed to load holiday:", error.response?.data || error.message);
         alert("Failed to load holiday data. Please try again.");
       }
     },
@@ -364,7 +362,6 @@ export default {
           }
         }
       } catch (error) {
-        console.error("Failed to load suspension:", error.response?.data || error.message);
         alert("Failed to load suspension data. Please try again.");
       }
     },

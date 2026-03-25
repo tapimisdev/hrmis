@@ -40,7 +40,7 @@ export default {
     data() {
         return {
             token: localStorage.getItem("auth_token"),
-            isFinished: false,
+            isFinished: !this.batch_id,
             employees: [],
         };
     },
@@ -64,12 +64,7 @@ export default {
 
                 this.month = response.data.month_year;
                 this.employees = response.data.employees;
-            } catch (error) {
-                console.error(
-                    "Failed to fetch registry:",
-                    error.response?.data || error.message
-                );
-            }
+            } catch {}
         },
         async deleteEmployeePayroll(emp) {
             const result = await Swal.fire({

@@ -220,7 +220,6 @@ export default {
                   pass_slip: getStat("Pass Slip")?.value || "0 DAY",
                 };
             } catch (error) {
-                console.error("Error fetching stats:", error);
             }
         },
         viewSchedule() {

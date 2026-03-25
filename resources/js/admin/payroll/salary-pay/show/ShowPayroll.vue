@@ -1,7 +1,7 @@
 <template>
     <div class="p-3">
         <ShowProgressBar
-            v-if="!isFinished"
+            v-if="hasBatch && !isFinished"
             :batchId="batch_id"
             endpoint="/api/payroll/progress"
             cancel-endpoint="/api/payroll/cancel"
@@ -51,9 +51,14 @@ export default {
     data() {
         return {
             token: localStorage.getItem("auth_token"),
-            isFinished: false,
+            isFinished: this.status === "completed",
             employees: [],
         };
+    },
+    computed: {
+        hasBatch() {
+            return !!this.batch_id;
+        },
     },
     methods: {
         onFinished() {
@@ -74,12 +79,7 @@ export default {
                     },
                 );
                 this.employees = response.data;
-            } catch (error) {
-                console.error(
-                    "Failed to fetch registry:",
-                    error.response?.data || error.message,
-                );
-            }
+            } catch {}
         },
 
         async deleteEmployeePayroll(emp) {
@@ -128,7 +128,6 @@ export default {
 
                 this.fetchRegistry();
             } catch (error) {
-              console.log(error);
                 Swal.fire({
                     title: "Error!",
                     text: error.response?.data?.message || "Failed to delete.",
@@ -138,7 +137,9 @@ export default {
         },
     },
     mounted() {
-        this.fetchRegistry();
+        if (this.isFinished || !this.hasBatch) {
+            this.fetchRegistry();
+        }
     },
 };
 </script>

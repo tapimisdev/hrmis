@@ -86,7 +86,6 @@ export default {
                 });
                 this.cards = response.data.data;
             } catch (error) {
-                console.error("Error fetching stats:", error);
             }
         },
         scroll(amount) {

@@ -249,7 +249,11 @@ export default {
                 this.form.employees = res.data.data;
                 const batch_id = res.data.batch_id;
                 const payroll_no = res.data.payroll_no;
-                window.location.href = `/admin/payroll/salary-pay/${payroll_no}?batch_id=${batch_id}`;
+                const baseUrl = `/admin/payroll/salary-pay/${payroll_no}`;
+                window.location.href =
+                    batch_id !== null && batch_id !== undefined && batch_id !== ""
+                        ? `${baseUrl}?batch_id=${batch_id}`
+                        : baseUrl;
                 return true;
             } catch (error) {
                 if (error.response?.status === 422) {

@@ -216,7 +216,6 @@ export default {
           this.$emit("completed", data);
         }
       } catch (err) {
-        console.error("Error fetching progress:", err);
       }
     },
     startPolling() {
@@ -248,7 +247,6 @@ export default {
         this.stopPolling();
         this.$emit("cancelled", res.data);
       } catch (err) {
-        console.error("Cancel error:", err);
       } finally {
         this.isCancelling = false;
       }

@@ -77,7 +77,7 @@
             <th style="width: 150px;">Adjustment</th>
             <th class="net-salary">Net <br />Salary</th>
             <th>Remarks</th>
-            <th>actions</th>
+            <th>Actions</th>
           </tr>
         </thead>
 
@@ -302,7 +302,6 @@ export default {
         );
         this.$emit("fetch_data");
       } catch (error) {
-        console.error(error);
       } finally {
         this.loading = false;
       }

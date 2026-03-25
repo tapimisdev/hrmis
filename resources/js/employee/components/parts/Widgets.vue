@@ -369,7 +369,6 @@ export default {
                 this.todayTimeIn = logs.time_in || null;
                 this.todayTimeOut = logs.time_out || null;
             } catch (err) {
-                console.error("Failed to fetch time logs:", err);
             } finally {
                 this.loading = false;
             }

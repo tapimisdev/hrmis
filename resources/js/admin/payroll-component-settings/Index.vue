@@ -108,7 +108,7 @@ export default {
                 .then((res) => {
                     this.tableData = res.data.data || res.data || [];
                 })
-                .catch((err) => console.error(err));
+                .catch(() => {});
         },
         openEditModal(row) {
             this.selectedRecord = { ...row };
@@ -138,7 +138,7 @@ export default {
                         "success"
                     );
                 })
-                .catch((err) => console.error(err));
+                .catch(() => {});
         },
         confirmDelete(id) {
             Swal.fire({
@@ -167,7 +167,7 @@ export default {
                         "success"
                     );
                 })
-                .catch((err) => console.error(err));
+                .catch(() => {});
         },
     },
 };

@@ -161,7 +161,7 @@ export default {
     props: {
         username: {
             type: String,
-            required: true,
+            default: "",
         },
         userRole: {
             type: String,
@@ -244,7 +244,6 @@ export default {
                     this.notifications = [...this.notifications, ...newNotifications];
                 }
             } catch (err) {
-                console.error("Error fetching notifications:", err);
             } finally {
                 // Reset loading only for full notifications fetch
                 if (!filter) {
@@ -293,7 +292,6 @@ export default {
                   this.unreadCount = 0;
               })
               .catch((error) => {
-                  console.error(error);
               });
         },
         viewMoreNotification() {
@@ -356,7 +354,6 @@ export default {
                     window.location.href = redirectURL;
                 })
                 .catch((error) => {
-                    console.error(error);
                 });
         },
     },

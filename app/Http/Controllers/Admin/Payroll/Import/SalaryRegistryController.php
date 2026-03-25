@@ -7,6 +7,7 @@ use App\Services\Import\SalaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use RuntimeException;
 
 class SalaryRegistryController extends Controller
 {
@@ -26,10 +27,10 @@ class SalaryRegistryController extends Controller
 
         $options = [
             'salary payroll' => route('registry.salary.index'),
-            'hazard payroll' => '',
-            'sla payroll' => '',
-            'pera & rata payroll' => '',
-            'longevity payroll' => ''
+            'hazard payroll' => route('registry.hazard.index'),
+            'sla payroll' => route('registry.sla.index'),
+            'pera & rata payroll' => route('registry.pera-rata.index'),
+            'longevity payroll' => route('registry.longevity.index')
         ];
 
         $active = 'salary payroll';
@@ -46,7 +47,7 @@ class SalaryRegistryController extends Controller
      */
     public function store(Request $request)
     {
-        $employment_type = (int) $request->employment_type;
+        $employment_type = (int) ($request->input('employment_type') ?? data_get($request->input('data'), 'employment_type'));
 
         // Second submit: Import action
         if ($request->boolean('isImport') && $request->filled('data')) {
@@ -60,7 +61,22 @@ class SalaryRegistryController extends Controller
         $file = $request->file('file');
         $path = $file->getRealPath();
 
-        $parsedData = $this->parsePayroll($employment_type, $path);
+        try {
+            $parsedData = $this->parsePayroll($employment_type, $path);
+        } catch (RuntimeException $exception) {
+            if (str_starts_with($exception->getMessage(), 'Missing required header(s):')) {
+                $headers = array_map('trim', explode(',', str_replace('Missing required header(s):', '', $exception->getMessage())));
+
+                return response()->json([
+                    'error_type' => 'missing_headers',
+                    'title' => 'Template headers do not match',
+                    'message' => 'The uploaded file could not be parsed because one or more required column headers are missing or renamed. Review the file and make sure these headers are present exactly as expected.',
+                    'missing_headers' => array_values(array_filter($headers)),
+                ], 422);
+            }
+
+            throw $exception;
+        }
 
         $period_covered = Carbon::parse($request->date)->format('F Y') . ' ' .
             ($request->cut_off_period === 'first_cutoff'
@@ -75,7 +91,10 @@ class SalaryRegistryController extends Controller
             'type' => 'Salary Payroll',
             'employment_type' => $employment_type,
             'date' => $request->date,
-            'data' => $parsedData
+            'data' => $parsedData['rows'],
+            'preview_headers' => $parsedData['preview_headers'],
+            'field_order' => $parsedData['field_order'],
+            'errors' => $parsedData['errors'] ?? [],
         ];
 
         return response()->json($parsedData);

@@ -322,7 +322,6 @@ export default {
                 this.loading = false;
                 return;
             }
-            console.log(this.type);
             const required = this.type === 'leave'
                 ? ["employee_no", "month_year", "sick_leave", "vacation_leave", "total_credits", "remarks"]
                 : ["employee_no", "month_year", "credits", "remarks"];
@@ -403,11 +402,6 @@ export default {
             credits = credits.filter(credit => credit.employee_no && credit.employee_no.trim() !== '');
 
             this.creditsData.credits = credits;
-            console.log('Parsed table data:', {
-                headers: this.parsedHeaderKeys,
-                rows: credits,
-            });
-
             this.creditsData.credits = credits;
             this.loading = false;
             this.upload = false;
@@ -488,9 +482,6 @@ export default {
                         };
                     }),
                 };
-
-                console.log('Submit payload:', payload);
-
                 axios
                     .post(this.saveUrl, payload, {
                         headers: { Authorization: `Bearer ${token}` },

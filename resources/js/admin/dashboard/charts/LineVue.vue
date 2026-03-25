@@ -24,6 +24,7 @@ import {
     Title,
     Tooltip,
     Legend,
+    Filler,
     LineElement,
     PointElement,
     CategoryScale,
@@ -40,6 +41,7 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend,
+    Filler,
 );
 
 export default {

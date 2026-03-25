@@ -305,7 +305,6 @@ export default {
                 });
                 this.shifts = res.data.data;
             } catch (error) {
-                console.error("Failed to load shifts:", error);
             }
         },
         async loadSchedules() {
@@ -315,7 +314,6 @@ export default {
                 });
                 this.weeklySchedules = res.data.data;
             } catch (error) {
-                console.error("Failed to load schedules:", error);
             }
         },
         async loadTimelog() {
@@ -374,7 +372,6 @@ export default {
                     };
                 }
             } catch (error) {
-                console.error("Failed to load timelogs:", error);
             } finally {
                 this.initial_loading = false;
             }

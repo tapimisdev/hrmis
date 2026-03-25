@@ -2,250 +2,464 @@
 
 namespace App\Services\Import;
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use App\Services\EmployeeService;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use App\Enums\TableSettingsEnum;
 use App\Jobs\Import\SalaryJobImport;
-use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
-class SalaryService
+class SalaryService extends BaseImportService
 {
-    /**
-     * Clean uploaded Excel and return data as array
-     *
-     * @param string $filePath
-     * @return array
-     */
-
-    protected $employeeService;
-
-    public function __construct(EmployeeService $employeeService) {
-        $this->employeeService = $employeeService;
-    }
-    
     public function cleanCOS($filePath): array
     {
-        $spreadsheet = IOFactory::load($filePath);
-        $sheet = $spreadsheet->getActiveSheet();
-        $highestRow = $sheet->getHighestDataRow();
-        $highestColumn = 'K'; // A-K
+        $parsed = $this->parseSheetByHeaders($filePath, 7, [
+            'Name' => ['NAME / POSITION', 'NAME / Position', 'Name / Position', 'Name', 'Employee'],
+            'Monthly Rate' => ['MONTHLY RATE', 'Monthly Rate', 'Rate/Month', 'Rate / Month'],
+            'Salary Earned' => ['SALARY EARNED', 'Salary Earned', 'Basic Pay'],
+            'AUT' => ['ABSENCES/ LATES/ UNDERTIME', 'ABSENCES / LATES / UNDERTIME', 'AUT', 'A.U.T.'],
+            'Total Salary' => ['TOTAL SALARY', 'Total Salary', 'Gross Pay'],
+            'Two Percent' => ['EWT (2%)', 'EWT 2%', 'Two Percent', '2%', 'Two %'],
+            'Three Percent' => ['PERCENTAGE TAX (3%)', 'Percentage Tax (3%)', 'Percentage Tax', 'Three Percent', '3%', 'Three %'],
+            'Five Percent' => ['TAX (EWT 5%)', 'TAX (EWT: 5%)', 'Tax (EWT 5%)', 'Tax (EWT: 5%)', 'Five Percent', '5%', 'Five %'],
+            'Healthcard' => ['HEALTHCARD (c/o TAPIEA)', 'HEALTHCARD c/o TAPIEA', 'Healthcard (c/o TAPIEA)', 'Healthcard c/o TAPIEA', 'Healthcard', 'Health Card', 'HMO'],
+            'Net Salary' => ['NET SALARY', 'Net Salary', 'Net Pay'],
+            'Salary Grade' => ['Salary Grade', 'Salary Grade/Step'],
+        ], ['Name' => 1], ['Salary Grade']);
 
-        $data = [];
-        // Skip first 6 rows
-        for ($row = 7; $row <= $highestRow; $row++) {
-            $rowData = $sheet->rangeToArray("A{$row}:K{$row}", null, true, false)[0];
-            $data[] = $rowData;
-        }
+        $cleaned = array_filter($parsed['rows'], fn ($row) => stripos((string) $row['Name'], 'TOTAL') === false);
 
-        // Rename columns
-        $columns = [
-            "Employee No", "Name", "Monthly Rate", "Salary Earned", "AUT",
-            "Total Salary", "Two Percent", "Three Percent", "Five Percent",
-            "Healthcard", "Net Salary"
-        ];
-
-        $cleaned = array_map(function($row) use ($columns) {
-            return array_combine($columns, $row);
-        }, $data);
-
-        // Remove TOTAL rows
-        $cleaned = array_filter($cleaned, function($row) {
-            return stripos((string)$row['Employee No'], 'TOTAL') === false;
-        });
-
-        // Remove rows after Grand Total
-        $grandTotalIndex = null;
         foreach ($cleaned as $i => $row) {
-            if (stripos($row['Employee No'], 'Grand Total') !== false) {
-                $grandTotalIndex = $i;
+            if (stripos((string) $row['Name'], 'Grand Total') !== false) {
+                $cleaned = array_slice($cleaned, 0, $i);
                 break;
             }
         }
-        if (!is_null($grandTotalIndex)) {
-            $cleaned = array_slice($cleaned, 0, $grandTotalIndex);
-        }
 
         $errors = [];
+        $hasSalaryGrade = $this->fieldWasParsed($parsed, 'Salary Grade');
 
-        // Clean Name column
         foreach ($cleaned as &$row) {
+            [$name, $uploadedPosition] = $this->extractNamePositionBlock((string) $row['Name']);
+            $employeeNo = $this->employeeService->getEmployeeNoBasedOnFullName($name);
 
-            $row['Name'] = trim(explode("\n", $row['Name'])[0]);
-            $employee_no = $this->employeeService->getEmployeeNoBasedOnFullName($row['Name']);
-            $row['Employee No'] = $employee_no ?? 'N/A';
+            $row['Name'] = $name;
+            $row['Employee No'] = $employeeNo ?? '';
+            $row['Position'] = $uploadedPosition;
 
-            if (!is_null($employee_no)) {
-
-                $employee = $this->employeeService->getEmployee('information', $employee_no);
-            
+            if ($employeeNo) {
+                $employee = $this->employeeService->getEmployee('information', $employeeNo);
                 if ($employee) {
-                    $row['Position'] = $employee->position_name ?? '';
-                    $row['Salary Grade'] = $employee->salary_grade ?? '';
-                } else {
-                    $row['Position'] = '';
-                    $row['Salary Grade'] = '';
+                    $row['Position'] = $uploadedPosition ?: ($employee->position_name ?? '');
                 }
+            } elseif ($name !== '') {
+                $errors[] = ['name' => $name, 'reason' => 'Unknown employee no'];
+            }
 
-            } else {
-
-                $row['Position'] = '';
-                $row['Salary Grade'] = '';
-
-                $errors[] = [
-                    'name'   => $row['Name'],
-                    'reason' => 'Unable to find employee number'
-                ];
+            if (!$hasSalaryGrade) {
+                unset($row['Salary Grade']);
             }
         }
 
-        // Remove rows with missing key fields
-        $cleaned = array_filter($cleaned, function($row) {
-            return !empty($row['Employee No']) && !empty($row['Name']) && !empty($row['Monthly Rate']);
-        });
+        $cleaned = array_filter($cleaned, fn ($row) => !empty($row['Name']) && !empty($row['Monthly Rate']));
+        $leadingFields = ['Employee No', 'Name', 'Position'];
+        $previewHeaders = ['Employee No' => 'Employee No', 'Name' => 'Name', 'Position' => 'Position'];
 
-        return array_values($cleaned); // reset keys
+        if ($hasSalaryGrade) {
+            $leadingFields[] = 'Salary Grade';
+            $previewHeaders['Salary Grade'] = 'Salary Grade';
+        }
+
+        return [
+            'rows' => array_values($cleaned),
+            'preview_headers' => $this->overridePreviewHeaders($previewHeaders + $parsed['preview_headers'], [
+                'Salary Earned' => 'Salary Earned',
+                'AUT' => 'ABSENCES/ LATES/ UNDERTIME',
+            ]),
+            'field_order' => $this->prependFields($leadingFields, $this->availableFieldOrder($parsed)),
+            'errors' => $errors,
+        ];
     }
 
     public function cleanRegular($filePath): array
     {
-        $spreadsheet = IOFactory::load($filePath);
-        $sheet = $spreadsheet->getActiveSheet();
-        $highestRow = $sheet->getHighestDataRow();
-        $highestColumn = 'S'; 
+        $parsed = $this->parseSheetByHeaders($filePath, 7, [
+            'No.' => ['No.', 'No'],
+            'Employee' => ['Employee', 'Name'],
+            'Position' => ['Position'],
+            'Rate/Month' => ['Rate/Month', 'Rate / Month', 'Monthly Rate'],
+            'Salary Grade' => ['Salary Grade', 'Salary Grade/Step'],
+            'GSIS' => ['GSIS'],
+            'Withholding Tax' => ['Withholding Tax', 'Witholding Tax'],
+            'PAG-IBIG' => ['PAG-IBIG', 'Pag-ibig'],
+            'PHIL-HEALTH' => ['PHIL-HEALTH', 'PhilHealth', 'Phil-Health'],
+            'Pag-ibig MP2 (Savings)' => ['Pag-ibig MP2 (Savings)', 'Pag-Ibig MP 2 (Savings)'],
+            'Pag-ibig Calamity Loan' => ['Pag-ibig Calamity Loan', 'Pag-Ibig Calamity Loan'],
+            'Pag-ibig MPL' => ['Pag-ibig MPL', 'Pag-Ibig MPL'],
+            'GSIS Financial Assistance Loan' => ['GSIS Financial Assistance Loan'],
+            'GSIS MPL' => ['GSIS MPL'],
+            'GSIS Policy Loan' => ['GSIS Policy Loan'],
+            'GSIS Emer. Loan' => ['GSIS Emer. Loan', 'GSIS Emergency Loan'],
+            'GSIS MPL LITE' => ['GSIS MPL LITE'],
+            'Landbank' => ['Landbank'],
+            'Total Deductions' => ['Total Deductions'],
+            'Net Pay' => ['Net Pay', 'Net Salary'],
+            'Net Salary 15th' => ['Net Salary 15th', 'Net Salary'],
+            'Net Salary 31st' => ['Net Salary 31st', 'Net Salary'],
+        ], [], ['Salary Grade']);
 
-        $data = [];
-
-        for ($row = 7; $row <= $highestRow; $row++) {
-            $rowData = $sheet->rangeToArray("A{$row}:S{$row}", null, true, false)[0];
-            $data[] = $rowData;
-        }
-
-        $columns = [
-            "Rate/Month",
-            "Salary Grade",
-            "GSIS",
-            "Withholding Tax",
-            "PAG-IBIG",
-            "PHIL-HEALTH",
-            "Pag-ibig MP2 (Savings)",
-            "Pag-ibig Calamity Loan",
-            "Pag-ibig MPL",
-            "GSIS Financial Assistance Loan",
-            "GSIS MPL",
-            "GSIS Policy Loan",
-            "GSIS Emer. Loan",
-            "GSIS MPL LITE",
-            "Landbank",
-            "Total Deductions",
-            "Net Pay",
-            "Net Salary 15th",
-            "Net Salary 31st"
-        ];
-
-        $cleaned = array_map(function ($row) use ($columns) {
-            return array_combine($columns, $row);
-        }, $data);
-
-        // Remove rows with TOTAL
-        $cleaned = array_filter($cleaned, function ($row) {
-            return stripos((string)$row['Rate/Month'], 'TOTAL') === false;
+        $cleaned = array_filter($parsed['rows'], function ($row) {
+            $employee = (string) ($row['Employee'] ?? '');
+            $rate = (string) ($row['Rate/Month'] ?? '');
+            return stripos($employee, 'TOTAL') === false && stripos($rate, 'TOTAL') === false;
         });
 
-        // Remove rows after Grand Total
-        $grandTotalIndex = null;
         foreach ($cleaned as $i => $row) {
-            if (stripos((string)$row['Rate/Month'], 'Grand Total') !== false) {
-                $grandTotalIndex = $i;
+            $employee = (string) ($row['Employee'] ?? '');
+            $rate = (string) ($row['Rate/Month'] ?? '');
+            if (stripos($employee, 'Grand Total') !== false || stripos($rate, 'Grand Total') !== false) {
+                $cleaned = array_slice($cleaned, 0, $i);
                 break;
             }
         }
 
-        if (!is_null($grandTotalIndex)) {
-            $cleaned = array_slice($cleaned, 0, $grandTotalIndex);
+        $errors = [];
+        $hasSalaryGrade = $this->fieldWasParsed($parsed, 'Salary Grade');
+
+        foreach ($cleaned as &$row) {
+            [$name, $uploadedPosition] = $this->extractNamePositionBlock((string) ($row['Employee'] ?? ''));
+            $employeeNo = $this->employeeService->getEmployeeNoBasedOnFullName($name);
+
+            $row['Employee'] = $name;
+            $row['Position'] = $uploadedPosition ?: (string) ($row['Position'] ?? '');
+            $row['Employee No'] = $employeeNo ?? '';
+
+            if ($employeeNo) {
+                $employee = $this->employeeService->getEmployee('information', $employeeNo);
+                if ($employee) {
+                    $row['Position'] = $row['Position'] ?: ($employee->position_name ?? '');
+                }
+            } elseif ($name !== '') {
+                $errors[] = ['name' => $name, 'reason' => 'Unknown employee no'];
+            }
+
+            if (!$hasSalaryGrade) {
+                unset($row['Salary Grade']);
+            }
         }
 
-        // Remove rows with missing key fields
-        $cleaned = array_filter($cleaned, function ($row) {
-            return !empty($row['Rate/Month']) && !empty($row['Salary Grade']);
-        });
+        $cleaned = array_filter($cleaned, fn ($row) => !empty($row['Employee']) && !empty($row['Rate/Month']));
+        $leadingFields = ['Employee No', 'Employee', 'Position'];
+        $previewHeaders = ['Employee No' => 'Employee No', 'Employee' => 'Employee', 'Position' => 'Position'];
 
-        return array_values($cleaned); // reset keys
+        if ($hasSalaryGrade) {
+            $leadingFields[] = 'Salary Grade';
+            $previewHeaders['Salary Grade'] = 'Salary Grade';
+        }
+
+        return [
+            'rows' => array_values($cleaned),
+            'preview_headers' => $previewHeaders + $parsed['preview_headers'],
+            'field_order' => $this->prependFields($leadingFields, $this->availableFieldOrder($parsed)),
+            'errors' => $errors,
+        ];
     }
 
     public function importCOS(array $data)
     {
         $label = $data['label'];
-        $payroll_no = generateNo('SL-', 4);
-        $employment_type_id = $data['employment_type'];
+        $payrollNo = generateNo('SL-', 4);
+        $employmentTypeId = $data['employment_type'];
         $cutoff = $data['cutoff'];
-        $period_covered = $data['period_covered'];
-        $payroll_date = $data['date'];
-        $no_employee = count($data['data']);
+        $periodCovered = $data['period_covered'];
+        $payrollDate = $data['date'];
+        $noEmployee = count($data['data']);
 
-        // Calculate totals
         $grossAmount = $deductionAmount = $netPayAmount = 0;
         foreach ($data['data'] as $employee) {
             $grossAmount += $employee['Total Salary'] ?? 0;
-            $deductionAmount += 
-                ($employee['AUT'] ?? 0) +
-                ($employee['Two Percent'] ?? 0) +
-                ($employee['Three Percent'] ?? 0) +
-                ($employee['Five Percent'] ?? 0) +
-                ($employee['Healthcard'] ?? 0);
+            $deductionAmount += ($employee['AUT'] ?? 0) + ($employee['Two Percent'] ?? 0) + ($employee['Three Percent'] ?? 0) + ($employee['Five Percent'] ?? 0) + ($employee['Healthcard'] ?? 0);
             $netPayAmount += $employee['Net Salary'] ?? 0;
         }
 
-        // Insert payroll summary (batch_id will be updated after batch creation)
-        $payroll_id = DB::table('payroll_salary')->insertGetId([
+        $payrollId = DB::table('payroll_salary')->insertGetId([
             'batch_id' => null,
             'label' => $label,
-            'payroll_no' => $payroll_no,
-            'employment_type_id' => $employment_type_id,
+            'payroll_no' => $payrollNo,
+            'employment_type_id' => $employmentTypeId,
             'cutoff' => $cutoff,
-            'period_covered' => $period_covered,
-            'no_employee' => $no_employee,
+            'period_covered' => $periodCovered,
+            'no_employee' => $noEmployee,
             'gross_amount' => $grossAmount,
             'deduction_amount' => $deductionAmount,
             'netpay_amount' => $netPayAmount,
-            'payroll_date' => $payroll_date,
+            'payroll_date' => $payrollDate,
             'processed_by_id' => Auth::id(),
-            'status' => 'approved', 
+            'status' => 'approved',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // Build employee jobs
         $jobs = [];
         foreach ($data['data'] as $employee) {
-            $jobs[] = new SalaryJobImport($employee, $payroll_id);
+            $jobs[] = new SalaryJobImport($employee, $payrollId);
         }
 
-
-        // Dispatch the batch
         $batch = Bus::batch($jobs)
-            ->then(function ($batch) use ($payroll_id) {
-                DB::table('payroll_salary')->where('id', $payroll_id)
-                    ->update(['status' => 'completed']);
-            })
-            ->catch(function ($batch, \Throwable $e) use ($payroll_id) {
-                DB::table('payroll_salary')->where('id', $payroll_id)
-                    ->update(['status' => 'failed']);
-            })
+            ->then(fn () => DB::table('payroll_salary')->where('id', $payrollId)->update(['status' => 'completed']))
+            ->catch(fn ($batch, \Throwable $e) => DB::table('payroll_salary')->where('id', $payrollId)->update(['status' => 'failed']))
             ->dispatch();
 
-        // Update payroll with batch ID
-        DB::table('payroll_salary')->where('id', $payroll_id)
-            ->update(['batch_id' => $batch->id]);
+        DB::table('payroll_salary')->where('id', $payrollId)->update(['batch_id' => $batch->id]);
 
         return [
             'status' => 'success',
             'message' => 'Importing Started!',
-            'redirect' => route('salary-pay.show', [
-                'salary_pay' => $payroll_no,
-                'batch_id' => $batch->id
-            ])
+            'redirect' => route('salary-pay.show', ['salary_pay' => $payrollNo, 'batch_id' => $batch->id]),
         ];
+    }
+
+    public function importRegular(array $data)
+    {
+        $label = $data['label'];
+        $payrollNo = generateNo('SL-', 4);
+        $employmentTypeId = $data['employment_type'];
+        $cutoff = $data['cutoff'];
+        $periodCovered = $data['period_covered'];
+        $payrollDate = $data['date'];
+        $noEmployee = count($data['data']);
+        [$year, $month] = array_map('intval', explode('-', substr($payrollDate, 0, 7)));
+        $rows = $data['data'] ?? [];
+
+        $grossAmount = 0;
+        $deductionAmount = 0;
+        $netPayAmount = 0;
+
+        foreach ($rows as $employee) {
+            $rowTotalDeductions = $this->toAmount($employee['Total Deductions'] ?? 0);
+            $rowNetPay = $this->amountFromKeys($employee, ['Net Pay', 'Net Salary']);
+            $grossAmount += $rowNetPay + $rowTotalDeductions;
+            $deductionAmount += $rowTotalDeductions;
+            $netPayAmount += $rowNetPay;
+        }
+
+        $moduleTabs = $this->getRegularModuleTabsByHeader();
+        $salaryTaxYearId = $this->getSalaryTaxYearId($year);
+
+        DB::transaction(function () use ($label, $payrollNo, $employmentTypeId, $cutoff, $periodCovered, $payrollDate, $noEmployee, $grossAmount, $deductionAmount, $netPayAmount, $rows, $year, $month, $moduleTabs, $salaryTaxYearId) {
+            $payrollId = DB::table('payroll_salary')->insertGetId([
+                'batch_id' => null,
+                'label' => $label,
+                'payroll_no' => $payrollNo,
+                'employment_type_id' => $employmentTypeId,
+                'cutoff' => $cutoff,
+                'period_covered' => $periodCovered,
+                'no_employee' => $noEmployee,
+                'gross_amount' => $grossAmount,
+                'deduction_amount' => $deductionAmount,
+                'netpay_amount' => $netPayAmount,
+                'payroll_date' => $payrollDate,
+                'processed_by_id' => Auth::id(),
+                'status' => 'completed',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            foreach ($rows as $employee) {
+                $employeeNo = trim((string) ($employee['Employee No'] ?? ''));
+                [$name, $uploadedPosition] = $this->extractNamePositionBlock((string) ($employee['Employee'] ?? ''));
+                $name = $name ?: ($employee['Employee'] ?? null);
+
+                if (!$name) {
+                    continue;
+                }
+
+                $rowDeductions = $this->extractRegularDeductions($employee, $moduleTabs);
+                $totalDeductions = $this->toAmount($employee['Total Deductions'] ?? 0);
+                $netPay = $this->amountFromKeys($employee, ['Net Pay', 'Net Salary']);
+
+                $pspeId = DB::table('payroll_salary_permanent_employees')->insertGetId([
+                    'payroll_salary_id' => $payrollId,
+                    'employee_no' => $employeeNo,
+                    'name' => $name,
+                    'position' => ($employee['Position'] ?? '') ?: $uploadedPosition,
+                    'monthly_rate' => $this->toAmount($employee['Rate/Month'] ?? 0),
+                    'salary_grade' => (string) ($employee['Salary Grade'] ?? ''),
+                    'ut' => 0,
+                    'absences' => 0,
+                    'overtime' => 0,
+                    'holiday' => 0,
+                    'total_deductions' => $totalDeductions,
+                    'net_pay' => $netPay,
+                    'salary_adjustment' => 0,
+                    'remarks' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                foreach ($rowDeductions as $deduction) {
+                    DB::table('payroll_salary_permanents_employee_deductions')->insert([
+                        'pspe_id' => $pspeId,
+                        'deduction_type' => $deduction['label'],
+                        'amount' => $deduction['amount'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    if ($employeeNo !== '' && $deduction['type'] === 'module_tab' && !empty($deduction['module_tab_id'])) {
+                        DB::table('module_tab_employees')->updateOrInsert(
+                            ['module_tab_id' => $deduction['module_tab_id'], 'employee_no' => $employeeNo, 'year' => $year, 'month' => $month],
+                            ['amount' => $deduction['amount'], 'updated_at' => now(), 'created_at' => now()]
+                        );
+                    }
+
+                    if ($employeeNo !== '' && $deduction['type'] === 'salary_tax' && $salaryTaxYearId) {
+                        DB::table('employee_payroll_components')->updateOrInsert(
+                            ['tax_deduction_id' => $salaryTaxYearId, 'employee_no' => $employeeNo, 'month' => $month],
+                            ['amount' => $deduction['amount'], 'updated_at' => now(), 'created_at' => now()]
+                        );
+                    }
+                }
+            }
+        });
+
+        return [
+            'status' => 'success',
+            'message' => 'Regular payroll imported successfully.',
+            'redirect' => route('salary-pay.show', ['salary_pay' => $payrollNo]),
+        ];
+    }
+
+    private function extractRegularDeductions(array $employee, array $moduleTabs = []): array
+    {
+        $deductions = [];
+        foreach ($employee as $header => $value) {
+            if (in_array($header, $this->getRegularStaticHeaders(), true)) {
+                continue;
+            }
+
+            $resolved = $this->resolveRegularDeduction((string) $header, $moduleTabs);
+            $amount = $this->toAmount($value);
+
+            if ($resolved['type'] === null || $amount <= 0) {
+                continue;
+            }
+
+            $deductions[] = [
+                'header' => (string) $header,
+                'label' => $resolved['label'],
+                'type' => $resolved['type'],
+                'module_tab_id' => $resolved['module_tab_id'],
+                'amount' => $amount,
+            ];
+        }
+
+        return $deductions;
+    }
+
+    private function getRegularStaticHeaders(): array
+    {
+        return ['No.', 'Employee No', 'Employee', 'Position', 'Salary Grade', 'Rate/Month', 'Total Deductions', 'Net Pay', 'Net Salary', 'Net Salary 15th', 'Net Salary 31st'];
+    }
+
+    private function getRegularModuleTabsByHeader(): array
+    {
+        $tabs = DB::table('module_tabs as mt')
+            ->leftJoin('modules as m', 'mt.module_id', '=', 'm.id')
+            ->select('mt.id', 'mt.tab_name', 'm.module_name')
+            ->get();
+
+        $mappedTabs = [];
+
+        foreach ($tabs as $tab) {
+            $labels = array_filter([$tab->tab_name, str_replace(($tab->module_name ? $tab->module_name . ' ' : ''), '', $tab->tab_name)]);
+
+            foreach ($labels as $label) {
+                foreach ($this->buildRegularDeductionAliases($label) as $alias) {
+                    $mappedTabs[$this->normalizeDeductionKey($alias)] = [
+                        'id' => $tab->id,
+                        'label' => str_replace(($tab->module_name ? $tab->module_name . ' ' : ''), '', $tab->tab_name),
+                        'tab_name' => $tab->tab_name,
+                    ];
+                }
+            }
+        }
+
+        return $mappedTabs;
+    }
+
+    private function buildRegularDeductionAliases(string $label): array
+    {
+        $aliases = [
+            $label,
+            str_replace(['(', ')'], '', $label),
+            str_replace(['-', '.'], ' ', $label),
+            preg_replace('/\s+/', ' ', $label),
+            str_ireplace('Pag-Ibig', 'Pagibig', $label),
+            str_ireplace('Pagibig', 'Pag-Ibig', $label),
+            str_ireplace('PhilHealth', 'Phil Health', $label),
+            str_ireplace('Phil Health', 'PhilHealth', $label),
+            str_ireplace('Emergency', 'Emer.', $label),
+            str_ireplace('Emer.', 'Emergency', $label),
+            str_ireplace('MP 2', 'MP2', $label),
+            str_ireplace('MP2', 'MP 2', $label),
+            str_ireplace('Savings', '', $label),
+        ];
+
+        return array_values(array_unique(array_filter(array_map(fn ($value) => trim(preg_replace('/\s+/', ' ', (string) $value)), $aliases))));
+    }
+
+    private function resolveRegularDeduction(string $header, array $moduleTabs): array
+    {
+        $normalizedHeader = $this->normalizeDeductionKey($header);
+
+        if (in_array($normalizedHeader, [$this->normalizeDeductionKey('Withholding Tax'), $this->normalizeDeductionKey('Witholding Tax')], true)) {
+            return ['type' => 'salary_tax', 'module_tab_id' => null, 'label' => 'Withholding tax'];
+        }
+
+        $moduleTab = $moduleTabs[$normalizedHeader] ?? null;
+
+        if (!$moduleTab) {
+            foreach ($this->buildRegularDeductionAliases($header) as $alias) {
+                $moduleTab = $moduleTabs[$this->normalizeDeductionKey($alias)] ?? null;
+                if ($moduleTab) {
+                    break;
+                }
+            }
+        }
+
+        if (!$moduleTab) {
+            foreach ($moduleTabs as $tabKey => $tab) {
+                if ($this->regularDeductionFamily($tabKey) !== $this->regularDeductionFamily($normalizedHeader)) {
+                    continue;
+                }
+                if (str_contains($tabKey, $normalizedHeader) || str_contains($normalizedHeader, $tabKey)) {
+                    $moduleTab = $tab;
+                    break;
+                }
+            }
+        }
+
+        return $moduleTab
+            ? ['type' => 'module_tab', 'module_tab_id' => $moduleTab['id'], 'label' => $moduleTab['label']]
+            : ['type' => null, 'module_tab_id' => null, 'label' => $header];
+    }
+
+    private function getSalaryTaxYearId(int $year): ?int
+    {
+        $componentId = DB::table('payroll_components_settings')
+            ->where('type', TableSettingsEnum::SALARY_ID->value)
+            ->value('tax_id');
+
+        if (!$componentId) {
+            return null;
+        }
+
+        return DB::table('payroll_components_years')->updateOrInsert(
+            ['payroll_component_id' => $componentId, 'year' => $year],
+            ['updated_at' => now(), 'created_at' => now()]
+        )
+            ? DB::table('payroll_components_years')->where('payroll_component_id', $componentId)->where('year', $year)->value('id')
+            : null;
     }
 }
