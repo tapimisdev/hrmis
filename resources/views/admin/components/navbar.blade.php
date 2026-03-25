@@ -10,17 +10,18 @@
         </div>
         
         <ul class="py-2 navbar-nav ms-auto d-flex justify-content-between gap-4 align-items-center">
+            <!-- Hamburger Links -->
+            <li class="nav-item d-lg-none">
+                <div class="hamburger">
+                    <input class="checkbox" type="checkbox" id="toggleSidebar" />
+                    <div class="hamburger-lines">
+                        <span class="line line1 "></span>
+                        <span class="line line2 "></span>
+                        <span class="line line3 "></span>
+                    </div>
+                </div>
+            </li>
             <admin-header :username='@json(Auth::user()->name)' :user-role="'admin'" :user-id='@json(Auth::id())'>
         </ul>
-
-        <!-- Hamburger Links -->
-        <div class="hamburger d-lg-none">
-            <input class="checkbox" type="checkbox" id="toggleSidebar" />
-            <div class="hamburger-lines">
-                <span class="line line1 "></span>
-                <span class="line line2 "></span>
-                <span class="line line3 "></span>
-            </div>
-        </div>
     </div>
 </nav>
