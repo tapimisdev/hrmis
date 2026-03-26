@@ -10,7 +10,7 @@ class PatchNotesController extends Controller
 {
     public function index(Request $request)
     {
-        $patchNotes = $this->loadPatchNotesFromCsv(
+        $allPatchNotes = $this->loadPatchNotesFromCsv(
             public_path('patches/patches.csv')
         );
 
@@ -19,9 +19,10 @@ class PatchNotesController extends Controller
             'type' => trim((string) $request->input('type', '')),
             'status' => trim((string) $request->input('status', '')),
             'priority' => trim((string) $request->input('priority', '')),
+            'assignee' => trim((string) $request->input('assignee', '')),
         ];
 
-        $patchNotes = array_values(array_filter($patchNotes, function (array $note) use ($filters) {
+        $patchNotes = array_values(array_filter($allPatchNotes, function (array $note) use ($filters) {
             if ($filters['q'] !== '') {
                 $haystack = implode(' ', [
                     $note['ticket'] ?? '',
@@ -44,25 +45,36 @@ class PatchNotesController extends Controller
                 }
             }
 
+            if ($filters['assignee'] !== '' && stripos((string) ($note['assignee'] ?? ''), $filters['assignee']) === false) {
+                return false;
+            }
+
             return true;
         }));
 
-        $typeOptions = collect($patchNotes)
+        $typeOptions = collect($allPatchNotes)
             ->pluck('type')
             ->filter()
             ->unique()
             ->sort()
             ->values();
 
-        $statusOptions = collect($patchNotes)
+        $statusOptions = collect($allPatchNotes)
             ->pluck('status')
             ->filter()
             ->unique()
             ->sort()
             ->values();
 
-        $priorityOptions = collect($patchNotes)
+        $priorityOptions = collect($allPatchNotes)
             ->pluck('priority')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        $assigneeOptions = collect($allPatchNotes)
+            ->pluck('assignee')
             ->filter()
             ->unique()
             ->sort()
@@ -83,6 +95,7 @@ class PatchNotesController extends Controller
                 'types' => $typeOptions,
                 'statuses' => $statusOptions,
                 'priorities' => $priorityOptions,
+                'assignees' => $assigneeOptions,
             ],
             'releasedAt' => Carbon::now()->format('F j, Y'),
         ]);
