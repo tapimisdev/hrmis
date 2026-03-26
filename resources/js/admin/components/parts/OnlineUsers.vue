@@ -152,10 +152,16 @@
                                 >
                                     {{ selectedUserState?.name?.charAt(0)?.toUpperCase() }}
                                 </div>
+                                <span
+                                    v-if="selectedUserState?.isOnline"
+                                    class="message-panel__online-dot"
+                                ></span>
                             </div>
                             <div>
                                 <div class="fw-semibold">{{ selectedUserState?.name }}</div>
-                                <small class="theme-muted">{{ selectedUserState?.statusLabel }}</small>
+                                <small class="theme-muted">
+                                    {{ conversationStatusLabel }}
+                                </small>
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
@@ -197,41 +203,207 @@
                             <div
                                 v-for="message in conversationMessages"
                                 :key="message.id"
-                                class="message-bubble"
-                                :class="message.is_mine ? 'message-bubble--mine' : 'message-bubble--theirs'"
+                                class="message-row"
+                                :class="[
+                                    message.is_mine ? 'message-row--mine' : 'message-row--theirs',
+                                    highlightedMessageId === message.id ? 'message-row--highlighted' : '',
+                                ]"
+                                :data-message-id="message.id"
                             >
-                                <div
-                                    v-if="message.reply_to_id"
-                                    class="reply-preview"
-                                >
-                                    <div class="reply-preview__body">
-                                        {{ getReplyPreview(message) }}
-                                    </div>
-                                </div>
-                                <div>{{ message.body }}</div>
-                                <div class="w-100">
-                                    <small>{{ formatMessageTime(message.created_at) }}</small>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <small
-                                            v-if="message.is_mine"
-                                            class="message-status"
-                                            :class="message.read_at ? 'message-status--seen' : 'message-status--sent'"
-                                        >
-                                            {{ message.read_at ? `Seen at ${formatSeenAt(message.read_at)}` : 'Sent' }}
-                                        </small>
+                                <div class="message-bubble-shell">
+                                    <div
+                                        class="message-actions"
+                                        :class="{ 'is-open': activeReactionPickerId === message.id }"
+                                    >
                                         <button
                                             type="button"
-                                            class="btn p-0 text-decoration-none reply-action"
+                                            class="message-action-button message-action-button--reply"
                                             @click="startReply(message)"
                                             title="Reply"
+                                            :aria-label="`Reply to ${message.body || message.attachment?.name || 'message'}`"
                                         >
                                             <i class="fa-solid fa-reply"></i>
                                         </button>
+                                        <button
+                                            type="button"
+                                            class="message-action-button message-action-button--pin"
+                                            :class="{ 'is-active': isMessagePinned(message.id) }"
+                                            @click.stop="togglePinMessage(message)"
+                                            :title="isMessagePinned(message.id) ? 'Unpin message' : 'Pin message'"
+                                            :aria-label="isMessagePinned(message.id) ? 'Unpin message' : 'Pin message'"
+                                            :disabled="!isMessagePinned(message.id) && pinnedMessages.length >= pinnedMessageLimit"
+                                        >
+                                            <i class="fa-solid fa-thumbtack"></i>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="message-action-button message-action-button--react"
+                                            @click.stop="toggleReactionPicker(message)"
+                                            title="React"
+                                            :aria-label="`React to ${message.body || message.attachment?.name || 'message'}`"
+                                        >
+                                            <i class="fa-regular fa-face-smile"></i>
+                                        </button>
+                                        <div
+                                            v-if="activeReactionPickerId === message.id"
+                                            class="reaction-picker"
+                                            @click.stop
+                                        >
+                                            <button
+                                                v-for="reaction in reactionOptions"
+                                                :key="reaction.key"
+                                                type="button"
+                                                class="reaction-picker__btn"
+                                                :style="{ color: reaction.color, backgroundColor: reaction.bg }"
+                                                :title="reaction.label"
+                                                :aria-label="reaction.label"
+                                                @click="setReaction(message, reaction.key)"
+                                            >
+                                                <span class="reaction-picker__glyph">{{ reaction.glyph }}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="message-bubble"
+                                        :class="message.is_mine ? 'message-bubble--mine' : 'message-bubble--theirs'"
+                                    >
+                                        <div
+                                            v-if="message.reply_to_id"
+                                            class="reply-preview reply-preview--linked"
+                                            role="button"
+                                            tabindex="0"
+                                            @click.stop="scrollToReplyMessage(message)"
+                                            @keyup.enter.stop="scrollToReplyMessage(message)"
+                                            :title="'Jump to replied message'"
+                                        >
+                                            <div class="reply-preview__header">
+                                                <i class="fa-solid fa-reply"></i>
+                                                <span>Replied to this message</span>
+                                            </div>
+                                            <div class="reply-preview__body">
+                                                {{ getReplyPreview(message) }}
+                                            </div>
+                                        </div>
+                                        <div
+                                            v-if="isMessagePinned(message.id)"
+                                            class="message-pin-chip"
+                                            :class="message.is_mine ? 'message-pin-chip--mine' : 'message-pin-chip--theirs'"
+                                        >
+                                            <span class="message-pin-chip__dot"></span>
+                                            <span class="message-pin-chip__icon">
+                                                <i class="fa-solid fa-thumbtack"></i>
+                                            </span>
+                                        </div>
+                                        <div
+                                            v-if="message.attachment"
+                                            class="message-attachment"
+                                            :class="message.attachment.type === 'image' ? 'message-attachment--image' : 'message-attachment--file'"
+                                        >
+                                            <div
+                                                v-if="message.attachment.type === 'image'"
+                                                class="message-attachment__image-wrap"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    class="message-attachment__image-link"
+                                                    @click.stop="openImageGallery(message.attachment)"
+                                                    :aria-label="`Open ${message.attachment.name || 'attachment'} in gallery`"
+                                                >
+                                                    <img
+                                                        :src="message.attachment.url"
+                                                        :alt="message.attachment.name || 'Attachment'"
+                                                        class="message-attachment__image"
+                                                    />
+                                                    <span class="message-attachment__image-overlay">
+                                                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                                    </span>
+                                                </button>
+                                                <a
+                                                    :href="message.attachment.url"
+                                                    :download="getAttachmentDownloadName(message.attachment)"
+                                                    class="message-attachment__download-btn"
+                                                    title="Download attachment"
+                                                >
+                                                    <i class="fa-solid fa-download"></i>
+                                                </a>
+                                            </div>
+                                            <div
+                                                v-else
+                                                class="message-attachment__file-wrap"
+                                            >
+                                                <a
+                                                    :href="message.attachment.url"
+                                                    :download="getAttachmentDownloadName(message.attachment)"
+                                                    class="message-attachment__file-link"
+                                                    title="Download attachment"
+                                                >
+                                                    <div class="message-attachment__file-icon">
+                                                        <i :class="getAttachmentIconClass(message.attachment)"></i>
+                                                    </div>
+                                                    <div class="message-attachment__file-meta">
+                                                        <div class="message-attachment__file-name">
+                                                            {{ message.attachment.name || 'Attachment' }}
+                                                        </div>
+                                                        <small class="theme-muted">
+                                                            {{ formatFileSize(message.attachment.size) }}
+                                                        </small>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div v-if="message.body">{{ message.body }}</div>
+                                        <span
+                                            v-if="getReactionMeta(message)"
+                                            class="message-reaction-badge message-reaction-badge--float"
+                                            :class="message.is_mine ? 'message-reaction-badge--mine' : 'message-reaction-badge--theirs'"
+                                            :style="{
+                                                color: getReactionMeta(message).color,
+                                                backgroundColor: getReactionMeta(message).bg,
+                                            }"
+                                            :title="getReactionMeta(message).label"
+                                        >
+                                            <span class="message-reaction-badge__glyph">{{ getReactionMeta(message).glyph }}</span>
+                                        </span>
+                                        <div class="w-100">
+                                            <small>{{ formatMessageTime(message.created_at) }}</small>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <small
+                                                    v-if="message.is_mine"
+                                                    class="message-status"
+                                                    :class="message.read_at ? 'message-status--seen' : 'message-status--sent'"
+                                                >
+                                                    {{ message.read_at ? `Seen at ${formatSeenAt(message.read_at)}` : 'Sent' }}
+                                                </small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div
+                                v-if="typingIndicator"
+                                class="typing-indicator message-panel__typing"
+                            >
+                                <span class="typing-indicator__dots">
+                                    <span></span><span></span><span></span>
+                                </span>
+                                <span>typing...</span>
+                            </div>
+
                         </div>
                     </div>
+
+                    <transition name="fade">
+                        <button
+                            v-if="showScrollToBottomButton"
+                            type="button"
+                            class="btn btn-sm message-scroll-bottom"
+                            @click="scrollConversationToBottom"
+                            title="Scroll to bottom"
+                        >
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </button>
+                    </transition>
 
                     <form class="message-panel__footer" @submit.prevent="sendMessage">
                         <div
@@ -240,9 +412,9 @@
                         >
                             <div class="reply-composer__bar">
                                 <div class="reply-composer__meta">
-                                    <small class="reply-composer__label">Replying</small>
-                                    <div class="reply-composer__body">
-                                        {{ replyTargetMessage.body }}
+                                <small class="reply-composer__label">Replying</small>
+                                <div class="reply-composer__body">
+                                        {{ getReplyPreview(replyTargetMessage) }}
                                     </div>
                                 </div>
                                 <button
@@ -255,8 +427,59 @@
                                 </button>
                             </div>
                         </div>
+                        <div
+                            v-if="selectedAttachment"
+                            class="attachment-preview mb-3"
+                            :class="{ 'attachment-preview--sending': sendingMessage }"
+                        >
+                            <div class="attachment-preview__thumb">
+                                <img
+                                    v-if="selectedAttachmentIsImage"
+                                    :src="selectedAttachmentPreviewUrl"
+                                    :alt="selectedAttachment.name"
+                                />
+                                <div
+                                    v-else
+                                    class="attachment-preview__icon"
+                                >
+                                    <i :class="selectedAttachmentIconClass"></i>
+                                </div>
+                            </div>
+                            <div class="attachment-preview__meta">
+                                <div class="attachment-preview__name">
+                                    {{ selectedAttachment.name }}
+                                </div>
+                                <small class="theme-muted">
+                                    {{ formatFileSize(selectedAttachment.size) }}
+                                </small>
+                            </div>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-link attachment-preview__remove"
+                                @click="clearSelectedAttachment"
+                                title="Remove attachment"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <small v-if="attachmentError" class="text-danger mb-2 d-block">
+                            {{ attachmentError }}
+                        </small>
+                        <div
+                            v-if="sendingMessage"
+                            class="message-panel__composer-status mb-2"
+                            aria-live="polite"
+                            aria-atomic="true"
+                        >
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                            <span>
+                                {{ selectedAttachment ? 'Uploading attachment...' : 'Sending message...' }}
+                            </span>
+                        </div>
                         <textarea
                             v-model="messageDraft"
+                            @input="handleMessageInput"
+                            @blur="handleMessageBlur"
                             class="form-control message-input"
                             rows="3"
                             placeholder="Type a message..."
@@ -266,22 +489,140 @@
                             :disabled="sendingMessage || !selectedUser"
                             :maxlength="messageMaxChars"
                         ></textarea>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="theme-muted">
+                        <div class="message-panel__composer-tools mt-3 mb-2">
+                            <button
+                                type="button"
+                                class="message-panel__attach-btn"
+                                @click="triggerAttachmentPicker"
+                                :disabled="sendingMessage || !selectedUser"
+                                title="Attach file"
+                            >
+                                <span class="message-panel__attach-btn-icon">
+                                    <i class="fa-solid fa-paperclip"></i>
+                                </span>
+                                <span class="message-panel__attach-btn-text">
+                                    Attach file
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                class="message-panel__pins-btn"
+                                @click.stop="togglePinnedMessagesPanel"
+                                :disabled="!selectedUser"
+                                title="View pinned messages"
+                            >
+                                <span class="message-panel__pins-btn-icon">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                </span>
+                                <span class="message-panel__pins-btn-text">
+                                    View pins
+                                </span>
+                                <span
+                                    v-if="pinnedMessages.length"
+                                    class="message-panel__pins-btn-count"
+                                >
+                                    {{ pinnedMessages.length }}
+                                </span>
+                            </button>
+                            <input
+                                ref="attachmentInput"
+                                type="file"
+                                class="d-none"
+                                :accept="attachmentAccept"
+                                @change="handleAttachmentChange"
+                            />
+                        </div>
+                        <small v-if="pinError" class="text-danger d-block mb-2">
+                            {{ pinError }}
+                        </small>
+                        <transition name="fade">
+                            <div
+                                v-if="showPinLimitPopup"
+                                class="pin-limit-popup"
+                                role="status"
+                                aria-live="polite"
+                            >
+                                You’ve reached the pin limit.
+                            </div>
+                        </transition>
+                        <div class="message-panel__composer-bottom mt-3">
+                            <small class="theme-muted message-panel__composer-count">
                                 {{ messageDraftLength }}/{{ messageMaxChars }}
                             </small>
                             <button
                                 type="submit"
                                 class="btn px-4 theme-button"
-                                :disabled="sendingMessage || !messageDraft.trim() || isMessageDraftTooLong"
-                            >
-                                  {{ sendingMessage ? "Sending..." : "Send" }}
+                                :disabled="sendingMessage || (!messageDraft.trim() && !selectedAttachment) || isMessageDraftTooLong || !!attachmentError"
+                              >
+                                <span
+                                    v-if="sendingMessage"
+                                    class="spinner-border spinner-border-sm me-2 align-middle"
+                                    role="status"
+                                ></span>
+                                  {{ sendingMessage ? (selectedAttachment ? "Uploading..." : "Sending...") : "Send" }}
                               </button>
                         </div>
                         <small v-if="isMessageDraftTooLong" class="text-danger mt-2 d-block">
                             Message is too long.
                         </small>
                     </form>
+
+                    <transition name="fade">
+                        <div
+                            v-if="showPinnedMessagesPanel"
+                            class="pinned-messages-panel pinned-messages-panel--floating"
+                            @click.stop
+                        >
+                            <div class="pinned-messages-panel__header">
+                                <div>
+                                    <div class="pinned-messages-panel__title">
+                                        Pinned messages
+                                    </div>
+                                    <small class="theme-muted">
+                                        {{ pinnedMessages.length }}/{{ pinnedMessageLimit }} pinned
+                                    </small>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-link p-0 pinned-messages-panel__close"
+                                    @click="showPinnedMessagesPanel = false"
+                                    title="Close pins"
+                                >
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div
+                                v-if="pinnedMessages.length"
+                                class="pinned-messages-panel__list"
+                            >
+                                <button
+                                    v-for="pin in pinnedMessages"
+                                    :key="pin.message_id"
+                                    type="button"
+                                    class="pinned-messages-panel__item"
+                                    @click="scrollToPinnedMessage(pin)"
+                                >
+                                    <div class="pinned-messages-panel__item-meta">
+                                        <div class="pinned-messages-panel__item-preview">
+                                            {{ pin.preview }}
+                                        </div>
+                                        <small class="theme-muted">
+                                            {{ formatMessageTime(pin.created_at) }}
+                                        </small>
+                                    </div>
+                                    <div class="pinned-messages-panel__item-action">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </div>
+                                </button>
+                            </div>
+                            <div
+                                v-else
+                                class="pinned-messages-panel__empty theme-muted"
+                            >
+                                No pinned messages yet.
+                            </div>
+                        </div>
+                    </transition>
                 </div>
             </transition>
 
@@ -311,6 +652,15 @@
                         <div class="fw-semibold message-dock__name">
                             {{ selectedUserState?.name || 'Messages' }}
                         </div>
+                        <div
+                            v-if="showDockTypingIndicator"
+                            class="message-dock__typing-indicator"
+                        >
+                            <span class="message-dock__typing-dots">
+                                <span></span><span></span><span></span>
+                            </span>
+                            <small class="message-dock__typing-text">typing...</small>
+                        </div>
                     </div>
                     <span
                         v-if="unreadMessageCount > 0"
@@ -329,6 +679,7 @@
                 </button>
             </div>
         </div>
+        <div ref="imageGalleryContainer" class="d-none"></div>
     </div>
 </template>
 
@@ -364,9 +715,81 @@ export default {
             sendingMessage: false,
             messageDraft: "",
             messageMaxChars: 2000,
+            attachmentMaxSizeBytes: 5 * 1024 * 1024,
+            allowedAttachmentExtensions: [
+                "jpg",
+                "jpeg",
+                "png",
+                "gif",
+                "doc",
+                "docx",
+                "docs",
+                "pdf",
+                "xlsx",
+                "txt",
+            ],
+            selectedAttachment: null,
+            selectedAttachmentPreviewUrl: null,
+            attachmentError: "",
             messageChannel: null,
+            imageGalleryInstance: null,
             replyTargetMessage: null,
             receiveSound: null,
+            reactionOptions: [
+                {
+                    key: "like",
+                    label: "Like",
+                    glyph: "👍",
+                    color: "#1877f2",
+                    bg: "rgba(24, 119, 242, 0.12)",
+                },
+                {
+                    key: "love",
+                    label: "Love",
+                    glyph: "❤️",
+                    color: "#f33f58",
+                    bg: "rgba(243, 63, 88, 0.12)",
+                },
+                {
+                    key: "haha",
+                    label: "Haha",
+                    glyph: "😆",
+                    color: "#f7b125",
+                    bg: "rgba(247, 177, 37, 0.14)",
+                },
+                {
+                    key: "sad",
+                    label: "Sad",
+                    glyph: "😢",
+                    color: "#5d6cff",
+                    bg: "rgba(93, 108, 255, 0.12)",
+                },
+                {
+                    key: "angry",
+                    label: "Angry",
+                    glyph: "😡",
+                    color: "#f24d3d",
+                    bg: "rgba(242, 77, 61, 0.12)",
+                },
+            ],
+            typingIndicator: false,
+            typingStateActive: false,
+            typingStopTimer: null,
+            typingIndicatorTimer: null,
+            showScrollToBottomButton: false,
+            highlightedMessageId: null,
+            highlightMessageTimer: null,
+            pinnedMessages: [],
+            showPinnedMessagesPanel: false,
+            pinnedMessageLimit: 10,
+            pinError: "",
+            pinErrorTimer: null,
+            showPinLimitPopup: false,
+            pinLimitPopupTimer: null,
+            activeReactionPickerId: null,
+            messageReactionsKey: `direct_message_reactions_${localStorage.getItem("auth_user_id") || "guest"}`,
+            messageReactions: {},
+            pinnedMessagesKey: null,
             dockStateKey: `message_dock_state_${localStorage.getItem("auth_user_id") || "guest"}`,
         };
     },
@@ -414,11 +837,48 @@ export default {
                 this.selectedUser
             );
         },
+        conversationStatusLabel() {
+            if (!this.selectedUserState) {
+                return "";
+            }
+
+            if (this.showScrollToBottomButton) {
+                return "New messages below";
+            }
+
+            if (this.typingIndicator) {
+                return "typing...";
+            }
+
+            return this.selectedUserState.statusLabel;
+        },
+        showDockTypingIndicator() {
+            return this.typingIndicator && !this.messagePanelOpen;
+        },
         messageDraftLength() {
             return this.messageDraft.length;
         },
         isMessageDraftTooLong() {
             return this.messageDraftLength > this.messageMaxChars;
+        },
+        attachmentAccept() {
+            return ".jpg,.jpeg,.png,.gif,.doc,.docx,.docs,.pdf,.xlsx,.txt";
+        },
+        selectedAttachmentIsImage() {
+            if (!this.selectedAttachment) {
+                return false;
+            }
+
+            const extension = this.getFileExtension(this.selectedAttachment.name);
+            return ["jpg", "jpeg", "png", "gif"].includes(extension);
+        },
+        selectedAttachmentIconClass() {
+            if (!this.selectedAttachment) {
+                return "fa-solid fa-file";
+            }
+
+            const extension = this.getFileExtension(this.selectedAttachment.name);
+            return this.getAttachmentIconClass({ extension });
         },
         unreadMessageCount() {
             if (this.messagePanelOpen && this.selectedUserState) {
@@ -454,19 +914,26 @@ export default {
 
         this.loadUsers();
         this.restoreDockState();
+        this.loadMessageReactions();
         this.statusInterval = setInterval(() => {
             this.syncUsersOnlineState();
         }, 60000);
 
         this.subscribeToDirectMessages();
     },
-    beforeUnmount() {
-        window.Echo.leave("online-users");
-        this.leaveDirectMessageChannel();
-        if (this.statusInterval) {
-            clearInterval(this.statusInterval);
-        }
-    },
+        beforeUnmount() {
+            window.Echo.leave("online-users");
+            this.leaveDirectMessageChannel();
+            if (this.statusInterval) {
+                clearInterval(this.statusInterval);
+            }
+            this.clearTypingTimers();
+            this.clearHighlightTimer();
+            this.clearPinErrorTimer();
+            this.clearPinLimitPopupTimer();
+            this.clearSelectedAttachment(false);
+            this.destroyImageGallery();
+        },
     methods: {
         async loadUsers() {
             this.loadingUsers = true;
@@ -506,25 +973,52 @@ export default {
             this.chatDockVisible = true;
             this.selectedUser = user;
             this.messagePanelOpen = true;
+            this.clearTypingTimers();
+            this.typingIndicator = false;
             this.saveDockState();
             this.resetConversationState();
             this.messageDraft = "";
             this.replyTargetMessage = null;
+            this.clearSelectedAttachment();
+            this.attachmentError = "";
+            this.activeReactionPickerId = null;
+            this.clearHighlightTimer();
+            this.highlightedMessageId = null;
+            this.showPinnedMessagesPanel = false;
+            this.pinError = "";
             await this.loadConversation({ page: 1, reset: true });
+            this.loadPinnedMessages(user.id);
             this.scrollConversationToBottom();
             this.markConversationSeen(user.id);
         },
         closeMessageBox() {
             this.messagePanelOpen = false;
+            this.clearTypingTimers();
+            this.typingIndicator = false;
+            this.activeReactionPickerId = null;
+            this.clearHighlightTimer();
+            this.highlightedMessageId = null;
+            this.showPinnedMessagesPanel = false;
+            this.pinError = "";
             this.saveDockState();
+            this.attachmentError = "";
         },
         hideChatDock() {
             this.messagePanelOpen = false;
             this.chatDockVisible = false;
             this.selectedUser = null;
+            this.clearTypingTimers();
+            this.typingIndicator = false;
+            this.activeReactionPickerId = null;
+            this.clearHighlightTimer();
+            this.highlightedMessageId = null;
+            this.showPinnedMessagesPanel = false;
+            this.pinError = "";
             this.resetConversationState();
             this.messageDraft = "";
             this.replyTargetMessage = null;
+            this.clearSelectedAttachment();
+            this.attachmentError = "";
             this.clearDockState();
         },
         hideUsersDropdown() {
@@ -561,8 +1055,15 @@ export default {
             this.messagePanelOpen = true;
             this.messageDraft = "";
             this.replyTargetMessage = null;
+            this.clearSelectedAttachment();
+            this.attachmentError = "";
+            this.clearTypingTimers();
+            this.typingIndicator = false;
             this.saveDockState();
+            this.showPinnedMessagesPanel = false;
+            this.pinError = "";
             this.loadConversation({ page: 1, reset: true }).then(() => {
+                this.loadPinnedMessages(this.selectedUserState?.id);
                 this.scrollConversationToBottom();
                 this.markConversationSeen(this.selectedUserState?.id);
             });
@@ -574,6 +1075,21 @@ export default {
             this.conversationPage = 1;
             this.conversationLastPage = 1;
             this.conversationHasMore = true;
+            this.showScrollToBottomButton = false;
+            this.clearHighlightTimer();
+            this.highlightedMessageId = null;
+        },
+        clearPinErrorTimer() {
+            if (this.pinErrorTimer) {
+                clearTimeout(this.pinErrorTimer);
+                this.pinErrorTimer = null;
+            }
+        },
+        clearPinLimitPopupTimer() {
+            if (this.pinLimitPopupTimer) {
+                clearTimeout(this.pinLimitPopupTimer);
+                this.pinLimitPopupTimer = null;
+            }
         },
         async loadConversation({
             page = 1,
@@ -634,11 +1150,13 @@ export default {
                     if (isOlderLoad && preserveScroll) {
                         const nextScrollHeight = bodyEl.scrollHeight;
                         bodyEl.scrollTop = nextScrollHeight - previousScrollHeight + previousScrollTop;
+                        this.updateScrollToBottomButton(bodyEl);
                         return;
                     }
 
                     if (page === 1 || isInitialLoad) {
                         bodyEl.scrollTop = bodyEl.scrollHeight;
+                        this.showScrollToBottomButton = false;
                     }
                 });
             } catch (error) {
@@ -651,6 +1169,7 @@ export default {
         handleConversationScroll(event) {
             const body = event?.target;
             if (!body || this.loadingConversation || this.loadingOlderConversation) return;
+            this.updateScrollToBottomButton(body);
             if (!this.conversationHasMore || this.conversationPage >= this.conversationLastPage) return;
 
             if (body.scrollTop > 80) return;
@@ -663,20 +1182,30 @@ export default {
         async sendMessage() {
             const body = this.messageDraft.trim();
             const activeUser = this.selectedUserState;
-            if (!body || !activeUser) return;
+            if ((!body && !this.selectedAttachment) || !activeUser) return;
             if (body.length > this.messageMaxChars) return;
 
             const selectedUserId = activeUser.id;
             this.sendingMessage = true;
+            this.clearTypingTimers();
+            this.typingIndicator = false;
 
             try {
+                const formData = new FormData();
+                formData.append("recipient_id", selectedUserId);
+                formData.append("body", body);
+
+                if (this.replyTargetMessage?.id) {
+                    formData.append("reply_to_id", this.replyTargetMessage.id);
+                }
+
+                if (this.selectedAttachment) {
+                    formData.append("attachment", this.selectedAttachment);
+                }
+
                 const { data } = await axios.post(
                     "/api/direct-messages",
-                    {
-                        recipient_id: selectedUserId,
-                        body,
-                        reply_to_id: this.replyTargetMessage?.id ?? null,
-                    },
+                    formData,
                     {
                         headers: this.token
                             ? { Authorization: `Bearer ${this.token}` }
@@ -691,11 +1220,14 @@ export default {
                     });
                     this.messageDraft = "";
                     this.replyTargetMessage = null;
+                    this.clearSelectedAttachment();
+                    this.attachmentError = "";
 
                     this.$nextTick(() => {
                         const bodyEl = this.$el.querySelector(".message-panel__body");
                         if (bodyEl) {
                             bodyEl.scrollTop = bodyEl.scrollHeight;
+                            this.showScrollToBottomButton = false;
                         }
                     });
                 }
@@ -735,6 +1267,7 @@ export default {
                                 const bodyEl = this.$el.querySelector(".message-panel__body");
                                 if (bodyEl) {
                                     bodyEl.scrollTop = bodyEl.scrollHeight;
+                                    this.showScrollToBottomButton = false;
                                 }
                             });
                         }
@@ -752,6 +1285,11 @@ export default {
 
                     this.playReceiveSound();
                     this.chatDockVisible = true;
+                    this.typingIndicator = false;
+                    if (this.typingIndicatorTimer) {
+                        clearTimeout(this.typingIndicatorTimer);
+                        this.typingIndicatorTimer = null;
+                    }
 
                     if (!this.messagePanelOpen) {
                         this.resetConversationState();
@@ -785,7 +1323,13 @@ export default {
                     this.$nextTick(() => {
                         const bodyEl = this.$el.querySelector(".message-panel__body");
                         if (bodyEl) {
-                            bodyEl.scrollTop = bodyEl.scrollHeight;
+                            if (this.isConversationNearBottom(bodyEl)) {
+                                bodyEl.scrollTop = bodyEl.scrollHeight;
+                                this.showScrollToBottomButton = false;
+                                return;
+                            }
+
+                            this.updateScrollToBottomButton(bodyEl);
                         }
                     });
                 })
@@ -816,6 +1360,33 @@ export default {
                             read_at: readAt,
                         };
                     });
+                })
+                .listen(".direct-message.typing", (event) => {
+                    const payload = event?.payload;
+                    if (!payload || !payload.is_typing) return;
+
+                    if (!this.selectedUserState || this.selectedUserState.id !== payload.sender_id) {
+                        return;
+                    }
+
+                    this.typingIndicator = true;
+                    if (this.typingIndicatorTimer) {
+                        clearTimeout(this.typingIndicatorTimer);
+                    }
+
+                    this.typingIndicatorTimer = setTimeout(() => {
+                        this.typingIndicator = false;
+                        this.typingIndicatorTimer = null;
+                    }, 2500);
+
+                    const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
+                    if (bodyEl && this.messagePanelOpen) {
+                        this.updateScrollToBottomButton(bodyEl);
+
+                        if (!this.showScrollToBottomButton) {
+                            this.scrollConversationToBottom();
+                        }
+                    }
                 });
         },
         leaveDirectMessageChannel() {
@@ -841,11 +1412,121 @@ export default {
                 const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
                 if (bodyEl) {
                     bodyEl.scrollTop = bodyEl.scrollHeight;
+                    this.showScrollToBottomButton = false;
                 }
             });
         },
+        updateScrollToBottomButton(bodyEl) {
+            if (!bodyEl) return;
+
+            const distanceFromBottom =
+                bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight;
+
+            this.showScrollToBottomButton = distanceFromBottom > 220;
+        },
+        isConversationNearBottom(bodyEl, threshold = 220) {
+            if (!bodyEl) return true;
+
+            const distanceFromBottom =
+                bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight;
+
+            return distanceFromBottom <= threshold;
+        },
         handleInterfaceClick() {
+            this.activeReactionPickerId = null;
+            this.showPinnedMessagesPanel = false;
             this.markConversationSeen();
+        },
+        handleMessageInput() {
+            const activeUser = this.selectedUserState;
+            if (!activeUser) return;
+
+            if (!this.messageDraft.trim()) {
+                this.sendTypingState(false);
+                return;
+            }
+
+            this.sendTypingState(true);
+        },
+        handleMessageBlur() {
+            this.sendTypingState(false);
+        },
+        clearTypingTimers() {
+            if (this.typingStopTimer) {
+                clearTimeout(this.typingStopTimer);
+                this.typingStopTimer = null;
+            }
+
+            if (this.typingIndicatorTimer) {
+                clearTimeout(this.typingIndicatorTimer);
+                this.typingIndicatorTimer = null;
+            }
+
+            this.typingStateActive = false;
+        },
+        sendTypingState(isTyping) {
+            const activeUser = this.selectedUserState;
+            if (!activeUser) return;
+
+            if (isTyping) {
+                if (this.typingStateActive) {
+                    if (this.typingStopTimer) {
+                        clearTimeout(this.typingStopTimer);
+                    }
+
+                    this.typingStopTimer = setTimeout(() => {
+                        this.sendTypingState(false);
+                    }, 1800);
+
+                    return;
+                }
+
+                axios.post(
+                    `/api/direct-messages/${activeUser.id}/typing`,
+                    { is_typing: true },
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                ).catch((error) => {
+                    console.error("Failed to send typing state:", error);
+                });
+
+                this.typingStateActive = true;
+                if (this.typingStopTimer) {
+                    clearTimeout(this.typingStopTimer);
+                }
+
+                this.typingStopTimer = setTimeout(() => {
+                    this.sendTypingState(false);
+                }, 1800);
+
+                return;
+            }
+
+            if (!this.typingStateActive) {
+                return;
+            }
+
+            if (this.typingStopTimer) {
+                clearTimeout(this.typingStopTimer);
+                this.typingStopTimer = null;
+            }
+
+            this.typingStateActive = false;
+
+            axios.post(
+                `/api/direct-messages/${activeUser.id}/typing`,
+                { is_typing: false },
+                {
+                    headers: this.token
+                        ? { Authorization: `Bearer ${this.token}` }
+                        : {},
+                },
+            ).catch((error) => {
+                console.error("Failed to clear typing state:", error);
+            });
         },
         saveDockState() {
             try {
@@ -908,6 +1589,194 @@ export default {
                 console.error("Failed to play receive sound:", error);
             }
         },
+        destroyImageGallery() {
+            if (this.imageGalleryInstance) {
+                this.imageGalleryInstance.destroy();
+                this.imageGalleryInstance = null;
+            }
+        },
+        loadMessageReactions() {
+            try {
+                this.messageReactions = JSON.parse(localStorage.getItem(this.messageReactionsKey) || "{}");
+            } catch (error) {
+                this.messageReactions = {};
+            }
+        },
+        saveMessageReactions() {
+            try {
+                localStorage.setItem(this.messageReactionsKey, JSON.stringify(this.messageReactions));
+            } catch (error) {
+                console.error("Failed to save message reactions:", error);
+            }
+        },
+        getPinStorageKey(userId = null) {
+            const currentUserId = this.userId || localStorage.getItem("auth_user_id") || "guest";
+            const selectedUserId = userId ?? this.selectedUserState?.id ?? this.selectedUser?.id ?? null;
+
+            if (!selectedUserId) {
+                return null;
+            }
+
+            return `direct_message_pins_${[currentUserId, selectedUserId].sort().join("_")}`;
+        },
+        loadPinnedMessages(userId = null) {
+            try {
+                const key = this.getPinStorageKey(userId);
+                this.pinnedMessagesKey = key;
+
+                if (!key) {
+                    this.pinnedMessages = [];
+                    return;
+                }
+
+                const storedPins = JSON.parse(localStorage.getItem(key) || "[]");
+                this.pinnedMessages = Array.isArray(storedPins)
+                    ? storedPins.filter((pin) => pin?.message_id)
+                    : [];
+            } catch (error) {
+                this.pinnedMessages = [];
+            }
+        },
+        savePinnedMessages() {
+            try {
+                const key = this.pinnedMessagesKey || this.getPinStorageKey();
+                if (!key) return;
+
+                localStorage.setItem(key, JSON.stringify(this.pinnedMessages));
+            } catch (error) {
+                console.error("Failed to save pinned messages:", error);
+            }
+        },
+        togglePinnedMessagesPanel() {
+            if (!this.selectedUserState) {
+                return;
+            }
+
+            if (!this.pinnedMessagesKey) {
+                this.loadPinnedMessages(this.selectedUserState.id);
+            }
+
+            this.showPinnedMessagesPanel = !this.showPinnedMessagesPanel;
+        },
+        getMessageSnippet(message) {
+            if (!message) {
+                return "Attachment";
+            }
+
+            if (message.body) {
+                return message.body;
+            }
+
+            if (message.attachment?.name) {
+                return message.attachment.name;
+            }
+
+            return "Attachment";
+        },
+        isMessagePinned(messageId) {
+            return this.pinnedMessages.some((pin) => pin.message_id === messageId);
+        },
+        togglePinMessage(message) {
+            if (!message?.id) return;
+
+            this.clearPinErrorTimer();
+            this.pinError = "";
+
+            const pinIndex = this.pinnedMessages.findIndex((pin) => pin.message_id === message.id);
+
+            if (pinIndex !== -1) {
+                this.pinnedMessages.splice(pinIndex, 1);
+                this.savePinnedMessages();
+                return;
+            }
+
+            if (this.pinnedMessages.length >= this.pinnedMessageLimit) {
+                this.pinError = `You can pin up to ${this.pinnedMessageLimit} messages.`;
+                this.clearPinErrorTimer();
+                this.pinErrorTimer = window.setTimeout(() => {
+                    this.pinError = "";
+                    this.pinErrorTimer = null;
+                }, 2200);
+                this.showPinLimitPopup = true;
+                this.clearPinLimitPopupTimer();
+                this.pinLimitPopupTimer = window.setTimeout(() => {
+                    this.showPinLimitPopup = false;
+                    this.pinLimitPopupTimer = null;
+                }, 2400);
+                return;
+            }
+
+            this.pinnedMessages.unshift({
+                message_id: message.id,
+                preview: this.getMessageSnippet(message),
+                created_at: message.created_at,
+            });
+            this.savePinnedMessages();
+        },
+        async scrollToPinnedMessage(pin) {
+            if (!pin?.message_id) return;
+
+            this.showPinnedMessagesPanel = false;
+            await this.scrollToMessage(pin.message_id);
+        },
+        getReactionMeta(message) {
+            const reactionKey = message?.reaction ?? this.messageReactions?.[message?.id] ?? null;
+            if (!reactionKey) {
+                return null;
+            }
+            return this.reactionOptions.find((reaction) => reaction.key === reactionKey) || null;
+        },
+        toggleReactionPicker(message) {
+            this.activeReactionPickerId = this.activeReactionPickerId === message.id ? null : message.id;
+        },
+        setReaction(message, reactionKey) {
+            if (!message?.id) return;
+
+            const existingReaction = message.reaction ?? this.messageReactions?.[message.id] ?? null;
+            const nextReaction = existingReaction === reactionKey ? null : reactionKey;
+
+            this.messageReactions = {
+                ...this.messageReactions,
+                [message.id]: nextReaction,
+            };
+            this.saveMessageReactions();
+            message.reaction = nextReaction;
+            this.activeReactionPickerId = null;
+        },
+        openImageGallery(attachment) {
+            if (!attachment?.url) {
+                return;
+            }
+
+            if (!window.lightGallery) {
+                window.open(attachment.url, "_blank", "noopener");
+                return;
+            }
+
+            const galleryContainer = this.$refs.imageGalleryContainer;
+            if (!galleryContainer) {
+                window.open(attachment.url, "_blank", "noopener");
+                return;
+            }
+
+            this.destroyImageGallery();
+
+            this.imageGalleryInstance = window.lightGallery(galleryContainer, {
+                dynamic: true,
+                dynamicEl: [
+                    {
+                        src: attachment.url,
+                        thumb: attachment.url,
+                        subHtml: attachment.name || "Attachment",
+                    },
+                ],
+                plugins: [window.lgThumbnail, window.lgZoom].filter(Boolean),
+                licenseKey: "0000-0000-000-0000",
+                speed: 300,
+            });
+
+            this.imageGalleryInstance.openGallery();
+        },
         async markConversationSeen(userId = null) {
             const activeUser = this.selectedUserState;
             if (!activeUser || !this.messagePanelOpen) return;
@@ -962,14 +1831,243 @@ export default {
         cancelReply() {
             this.replyTargetMessage = null;
         },
+        clearHighlightTimer() {
+            if (this.highlightMessageTimer) {
+                clearTimeout(this.highlightMessageTimer);
+                this.highlightMessageTimer = null;
+            }
+        },
+        async ensureMessageVisible(messageId) {
+            if (!messageId) {
+                return null;
+            }
+
+            let targetMessage = this.conversationMessages.find((item) => item.id === messageId) || null;
+            let guard = 0;
+
+            while (
+                !targetMessage &&
+                this.conversationHasMore &&
+                this.conversationPage < this.conversationLastPage &&
+                guard < 10
+            ) {
+                const nextPage = this.conversationPage + 1;
+                await this.loadConversation({
+                    page: nextPage,
+                    preserveScroll: true,
+                });
+                targetMessage = this.conversationMessages.find((item) => item.id === messageId) || null;
+                guard += 1;
+            }
+
+            return targetMessage;
+        },
+        async scrollToMessage(messageId) {
+            if (!messageId) return;
+
+            const targetMessage = await this.ensureMessageVisible(messageId);
+            if (!targetMessage) {
+                return;
+            }
+
+            this.$nextTick(() => {
+                const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
+                const targetEl = bodyEl?.querySelector(`[data-message-id="${messageId}"]`)
+                    || this.$el.querySelector(`[data-message-id="${messageId}"]`);
+
+                if (targetEl) {
+                    targetEl.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                    });
+                } else if (bodyEl) {
+                    bodyEl.scrollTop = bodyEl.scrollHeight;
+                }
+
+                this.highlightedMessageId = messageId;
+                this.clearHighlightTimer();
+                this.highlightMessageTimer = setTimeout(() => {
+                    this.highlightedMessageId = null;
+                    this.highlightMessageTimer = null;
+                }, 2200);
+
+                if (bodyEl) {
+                    this.updateScrollToBottomButton(bodyEl);
+                }
+            });
+        },
+        async scrollToReplyMessage(message) {
+            const replyId = message?.reply_to_id || null;
+            if (!replyId) return;
+
+            await this.scrollToMessage(replyId);
+        },
         getReplyPreview(message) {
+            if (!message?.reply_to_id && !message?.reply_to && !message?.reply_preview) {
+                if (message?.body) {
+                    return message.body;
+                }
+
+                if (message?.attachment?.name) {
+                    return message.attachment.name;
+                }
+
+                return "Attachment";
+            }
+
+            if (message?.reply_preview) {
+                return message.reply_preview;
+            }
+
             const replyTarget = message.reply_to
                 ? message.reply_to
                 : this.conversationMessages.find((item) => item.id === message.reply_to_id);
 
             if (!replyTarget) return "Original message not available";
 
-            return replyTarget.body;
+            if (replyTarget.body) {
+                return replyTarget.body;
+            }
+
+            if (replyTarget.attachment?.name) {
+                return replyTarget.attachment.name;
+            }
+
+            return "Attachment";
+        },
+        triggerAttachmentPicker() {
+            const input = this.$refs.attachmentInput;
+            if (input) {
+                input.click();
+            }
+        },
+        handleAttachmentChange(event) {
+            const file = event?.target?.files?.[0] ?? null;
+            this.attachmentError = "";
+
+            if (!file) {
+                this.clearSelectedAttachment();
+                return;
+            }
+
+            const validationError = this.validateAttachment(file);
+            if (validationError) {
+                this.attachmentError = validationError;
+                this.clearSelectedAttachment(false);
+                if (event?.target) {
+                    event.target.value = "";
+                }
+                return;
+            }
+
+            this.setSelectedAttachment(file);
+        },
+        setSelectedAttachment(file) {
+            this.clearSelectedAttachment(false);
+
+            if (!file) {
+                return;
+            }
+
+            this.selectedAttachment = file;
+            this.selectedAttachmentPreviewUrl = URL.createObjectURL(file);
+        },
+        clearSelectedAttachment(resetInput = true) {
+            if (this.selectedAttachmentPreviewUrl) {
+                URL.revokeObjectURL(this.selectedAttachmentPreviewUrl);
+                this.selectedAttachmentPreviewUrl = null;
+            }
+
+            this.selectedAttachment = null;
+
+            if (resetInput) {
+                const input = this.$refs.attachmentInput;
+                if (input) {
+                    input.value = "";
+                }
+            }
+        },
+        validateAttachment(file) {
+            if (!file) {
+                return "";
+            }
+
+            if (file.size > this.attachmentMaxSizeBytes) {
+                return "Attachment must not exceed 5 MB.";
+            }
+
+            const extension = this.getFileExtension(file.name);
+            if (!this.allowedAttachmentExtensions.includes(extension)) {
+                return "Allowed file types: JPG, JPEG, PNG, GIF, DOC, DOCX, DOCS, PDF, XLSX, TXT.";
+            }
+
+            return "";
+        },
+        getFileExtension(filename) {
+            if (!filename || typeof filename !== "string") {
+                return "";
+            }
+
+            const parts = filename.split(".");
+            if (parts.length < 2) {
+                return "";
+            }
+
+            return parts.pop().toLowerCase();
+        },
+        formatFileSize(sizeInBytes) {
+            if (sizeInBytes === null || sizeInBytes === undefined) {
+                return "";
+            }
+
+            const size = Number(sizeInBytes);
+            if (Number.isNaN(size) || size < 0) {
+                return "";
+            }
+
+            const units = ["B", "KB", "MB", "GB"];
+            let value = size;
+            let unitIndex = 0;
+
+            while (value >= 1024 && unitIndex < units.length - 1) {
+                value /= 1024;
+                unitIndex += 1;
+            }
+
+            const precision = unitIndex === 0 ? 0 : 1;
+            return `${value.toFixed(precision)} ${units[unitIndex]}`;
+        },
+        getAttachmentDownloadName(attachment) {
+            if (!attachment) {
+                return "attachment";
+            }
+
+            return attachment.name || attachment.path?.split("/").pop() || "attachment";
+        },
+        getAttachmentIconClass(attachment) {
+            const extension = (attachment?.extension || "").toLowerCase();
+
+            if (["jpg", "jpeg", "png", "gif"].includes(extension)) {
+                return "fa-solid fa-image";
+            }
+
+            if (extension === "pdf") {
+                return "fa-solid fa-file-pdf";
+            }
+
+            if (["doc", "docx", "docs"].includes(extension)) {
+                return "fa-solid fa-file-word";
+            }
+
+            if (extension === "xlsx") {
+                return "fa-solid fa-file-excel";
+            }
+
+            if (extension === "txt") {
+                return "fa-solid fa-file-lines";
+            }
+
+            return "fa-solid fa-file";
         },
         getLastSeenStore() {
             try {
@@ -1160,9 +2258,9 @@ img {
     position: absolute;
     right: 0;
     bottom: 4.5rem;
-    width: min(410px, calc(100vw - 1.5rem));
-    height: min(78vh, 640px);
-    max-height: min(78vh, 640px);
+    width: min(580px, calc(100vw - 1.5rem));
+    height: min(82vh, 700px);
+    max-height: min(82vh, 700px);
     background: var(--bs-body-bg);
     color: var(--bs-body-color);
     border-radius: 18px;
@@ -1219,6 +2317,116 @@ img {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.message-dock__typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.1rem;
+    color: var(--bs-secondary-color);
+}
+
+.message-dock__typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.18rem;
+}
+
+.message-dock__typing-dots span {
+    width: 0.28rem;
+    height: 0.28rem;
+    border-radius: 50%;
+    background: currentColor;
+    animation: dockTypingBounce 1s infinite ease-in-out;
+}
+
+.message-dock__typing-dots span:nth-child(2) {
+    animation-delay: 0.12s;
+}
+
+.message-dock__typing-dots span:nth-child(3) {
+    animation-delay: 0.24s;
+}
+
+.message-dock__typing-text {
+    font-size: 0.72rem;
+    line-height: 1;
+    color: var(--bs-secondary-color);
+}
+
+@keyframes dockTypingBounce {
+    0%, 80%, 100% {
+        transform: translateY(0);
+        opacity: 0.45;
+    }
+    40% {
+        transform: translateY(-2px);
+        opacity: 1;
+    }
+}
+
+.typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: fit-content;
+    padding: 0.4rem 0.65rem;
+    border-radius: 999px;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.message-panel__typing {
+    align-self: flex-start;
+    margin-top: 0.2rem;
+}
+
+.message-panel__online-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 0.78rem;
+    height: 0.78rem;
+    border-radius: 50%;
+    background: #22c55e;
+    border: 2px solid var(--bs-body-bg);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
+}
+
+.typing-indicator__dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.typing-indicator__dots span {
+    width: 0.34rem;
+    height: 0.34rem;
+    border-radius: 50%;
+    background: currentColor;
+    animation: typingBounce 1s infinite ease-in-out;
+}
+
+.typing-indicator__dots span:nth-child(2) {
+    animation-delay: 0.12s;
+}
+
+.typing-indicator__dots span:nth-child(3) {
+    animation-delay: 0.24s;
+}
+
+@keyframes typingBounce {
+    0%, 80%, 100% {
+        transform: translateY(0);
+        opacity: 0.45;
+    }
+    40% {
+        transform: translateY(-2px);
+        opacity: 1;
+    }
 }
 
 .message-dock__badge {
@@ -1314,12 +2522,51 @@ img {
 
 .message-panel__footer {
     border-top: 1px solid var(--bs-border-color);
-    padding: 1rem 1.25rem 1.25rem;
+    padding: 0.72rem 1rem 0.85rem;
     background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    position: relative;
+}
+
+.message-panel__composer-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.12);
+    background: rgba(var(--bs-primary-rgb), 0.08);
+    color: var(--bs-body-color);
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.message-scroll-bottom {
+    position: absolute;
+    right: 1rem;
+    bottom: 6.25rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 999px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+}
+
+.message-scroll-bottom:hover {
+    background: var(--bs-tertiary-bg);
     color: var(--bs-body-color);
 }
 
 .message-bubble {
+    position: relative;
     max-width: 78%;
     min-width: 150px;
     padding: 0.75rem 0.9rem;
@@ -1328,10 +2575,183 @@ img {
     flex-direction: column;
     gap: 0.3rem;
     word-break: break-word;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.message-row {
+    display: flex;
+    width: 100%;
+}
+
+.message-row--theirs {
+    justify-content: flex-start;
+}
+
+.message-row--mine {
+    justify-content: flex-end;
+}
+
+.message-bubble-shell {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 100%;
+}
+
+.message-row--theirs .message-bubble-shell {
+    flex-direction: row-reverse;
+}
+
+.message-row--mine .message-bubble-shell {
+    flex-direction: row;
+}
+
+.message-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    opacity: 0;
+    transform: translateY(0);
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s ease;
+    position: relative;
+}
+
+.message-row:hover .message-actions,
+.message-row:focus-within .message-actions,
+.message-actions.is-open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.message-action-button {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+    transition: transform 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+}
+
+.message-action-button:hover {
+    transform: translateY(-1px);
+    background: var(--bs-tertiary-bg);
+}
+
+.message-action-button--reply {
+    font-size: 0.9rem;
+}
+
+.message-action-button--react {
+    font-size: 0.95rem;
+}
+
+.message-action-button--pin.is-active {
+    background: rgba(var(--bs-primary-rgb), 0.14);
+    color: var(--bs-primary);
+    border-color: rgba(var(--bs-primary-rgb), 0.28);
+}
+
+.reaction-picker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.28rem 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.reaction-picker__btn {
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--bs-body-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.16s ease, background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.reaction-picker__btn:hover {
+    transform: translateY(-1px) scale(1.08);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+
+.reaction-picker__glyph {
+    display: inline-block;
+    font-size: 1.15rem;
+    line-height: 1;
+    animation: reactionPop 0.22s ease-out;
+}
+
+.message-reaction-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: rgba(var(--bs-body-color-rgb), 0.06);
+    font-size: 0.95rem;
+}
+
+.message-reaction-badge--float {
+    position: absolute;
+    bottom: -0.58rem;
+    z-index: 2;
+    box-shadow: 0 8px 14px rgba(0, 0, 0, 0.18);
+    animation: reactionPop 0.22s ease-out;
+}
+
+.message-reaction-badge--theirs {
+    right: -0.52rem;
+}
+
+.message-reaction-badge--mine {
+    left: -0.52rem;
+}
+
+.message-row--mine .message-action-button,
+.message-row--mine .reaction-picker {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--bs-white);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.message-row--mine .message-action-button:hover,
+.message-row--mine .reaction-picker__btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--bs-white);
+}
+
+.message-row--highlighted .message-bubble {
+    box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.18), 0 14px 26px rgba(0, 0, 0, 0.16);
+    transform: translateY(-1px);
 }
 
 .message-bubble small {
     opacity: 1;
+}
+
+@keyframes reactionPop {
+    0% {
+        transform: scale(0.7);
+        opacity: 0.2;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .reply-preview,
@@ -1346,6 +2766,33 @@ img {
 .reply-preview {
     margin-bottom: 0.6rem;
     padding: 0.45rem 0.7rem 0.45rem 0.8rem;
+}
+
+.reply-preview--linked {
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.reply-preview--linked:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.reply-preview__header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.18rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(var(--bs-body-color-rgb), 0.7);
+}
+
+.reply-preview__header i {
+    font-size: 0.7rem;
+    color: var(--bs-primary);
 }
 
 .reply-composer__label {
@@ -1363,11 +2810,6 @@ img {
     word-break: break-word;
 }
 
-.reply-action {
-    font-size: 0.8rem;
-    color: rgba(var(--bs-body-color), 0.55);
-}
-
 .message-status {
     font-size: 11px;
     letter-spacing: 0.02em;
@@ -1378,11 +2820,171 @@ img {
 }
 
 .message-status--seen {
-  font-style: italic;
-  font-size: 10px;
-  position: relative;
-  top: 0.5px;
-  color: rgba(var(--bs-body-color), 1);
+    font-style: italic;
+    font-size: 10px;
+    position: relative;
+    top: 0.5px;
+    color: rgba(var(--bs-body-color), 1);
+}
+
+.message-attachment {
+    width: 100%;
+}
+
+.message-attachment--image {
+    margin-bottom: 0.35rem;
+}
+
+.message-attachment__image-wrap,
+.message-attachment__file-wrap {
+    position: relative;
+}
+
+.message-attachment__image-link {
+    position: relative;
+    display: block;
+    border-radius: 14px;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    width: 100%;
+    cursor: zoom-in;
+}
+
+.message-attachment__image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 14px;
+    object-fit: cover;
+}
+
+.message-attachment__image-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+        180deg,
+        rgba(15, 23, 42, 0.08),
+        rgba(15, 23, 42, 0.18)
+    );
+    color: var(--bs-white);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    font-size: 1.1rem;
+}
+
+.message-attachment__image-link:hover .message-attachment__image-overlay {
+    opacity: 1;
+}
+
+.message-bubble--mine .message-attachment__image-overlay {
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.12)
+    );
+}
+
+.message-attachment__download-btn {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    border: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
+    background: rgba(var(--bs-body-bg-rgb), 0.9);
+    color: var(--bs-body-color);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(8px);
+    transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+    z-index: 2;
+}
+
+.message-attachment__download-btn:hover {
+    color: var(--bs-primary);
+    background: var(--bs-body-bg);
+    transform: translateY(-1px);
+}
+
+.message-bubble--mine .message-attachment__download-btn {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--bs-white);
+}
+
+.message-bubble--mine .message-attachment__download-btn:hover {
+    background: rgba(255, 255, 255, 0.24);
+    color: var(--bs-white);
+}
+
+.message-attachment__file-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.65rem 0.75rem;
+    border-radius: 14px;
+    border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+    background: rgba(var(--bs-body-color-rgb), 0.03);
+}
+
+.message-attachment__file-link:hover {
+    color: inherit;
+    background: rgba(var(--bs-body-color-rgb), 0.06);
+}
+
+.message-attachment__file-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(var(--bs-primary-rgb), 0.08);
+    color: var(--bs-primary);
+    font-size: 1.1rem;
+}
+
+.message-attachment__file-meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.message-attachment__file-name {
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.message-bubble--mine .message-attachment__file-link {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--bs-white);
+}
+
+.message-bubble--mine .message-attachment__file-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.message-bubble--mine .message-attachment__file-icon {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--bs-white);
+}
+
+.message-bubble--mine .message-attachment__file-name,
+.message-bubble--mine .message-attachment__file-link .theme-muted {
+    color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .message-bubble--mine {
@@ -1435,6 +3037,377 @@ img {
     color: var(--bs-body-color);
     background: var(--bs-body-bg);
     border-color: var(--bs-border-color);
+}
+
+.message-panel__composer-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    font-size: 10px;
+    margin-bottom: 0.35rem !important;
+}
+
+.message-panel__attach-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    min-height: 2.45rem;
+    padding: 0.46rem 0.8rem 0.46rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
+    background: linear-gradient(
+        180deg,
+        rgba(var(--bs-body-bg-rgb), 0.98),
+        rgba(var(--bs-body-bg-rgb), 0.88)
+    );
+    color: var(--bs-body-color);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.message-panel__pins-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    min-height: 2.45rem;
+    padding: 0.46rem 0.78rem 0.46rem 0.64rem;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--bs-body-color-rgb), 0.1);
+    background: linear-gradient(
+        180deg,
+        rgba(var(--bs-body-bg-rgb), 0.98),
+        rgba(var(--bs-body-bg-rgb), 0.88)
+    );
+    color: var(--bs-body-color);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.message-panel__pins-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(var(--bs-primary-rgb), 0.22);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    background: linear-gradient(
+        180deg,
+        rgba(var(--bs-primary-rgb), 0.08),
+        rgba(var(--bs-body-bg-rgb), 0.94)
+    );
+    color: var(--bs-body-color);
+}
+
+.message-panel__pins-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.message-panel__pins-btn-icon {
+    width: 1.65rem;
+    height: 1.65rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(var(--bs-primary-rgb), 0.08);
+    color: var(--bs-primary);
+    font-size: 0.8rem;
+}
+
+.message-panel__pins-btn-text {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+}
+
+.message-panel__pins-btn-count {
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--bs-primary-rgb), 0.12);
+    color: var(--bs-primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.pinned-messages-panel {
+    border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+    border-radius: 16px;
+    background: var(--bs-tertiary-bg);
+    padding: 0.8rem;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.pinned-messages-panel--floating {
+    position: absolute;
+    right: 0.85rem;
+    bottom: 5.9rem;
+    width: min(380px, calc(100% - 1.5rem));
+    max-height: min(42vh, 320px);
+    overflow: hidden;
+    z-index: 12;
+    backdrop-filter: blur(10px);
+}
+
+.pinned-messages-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+}
+
+.pinned-messages-panel__title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--bs-body-color);
+}
+
+.pinned-messages-panel__close {
+    color: rgba(var(--bs-body-color-rgb), 0.7);
+}
+
+.pinned-messages-panel__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 0.15rem;
+}
+
+.pinned-messages-panel__item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    border: 1px solid rgba(var(--bs-body-color-rgb), 0.08);
+    border-radius: 14px;
+    background: rgba(var(--bs-body-bg-rgb), 0.9);
+    color: var(--bs-body-color);
+    padding: 0.7rem 0.8rem;
+    text-align: left;
+    transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.pinned-messages-panel__item:hover {
+    transform: translateY(-1px);
+    border-color: rgba(var(--bs-primary-rgb), 0.18);
+    background: rgba(var(--bs-primary-rgb), 0.06);
+}
+
+.pinned-messages-panel__item-meta {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.pinned-messages-panel__item-preview {
+    font-size: 0.9rem;
+    font-weight: 600;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.pinned-messages-panel__item-action {
+    flex-shrink: 0;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--bs-primary-rgb), 0.12);
+    color: var(--bs-primary);
+    font-size: 0.78rem;
+}
+
+.pinned-messages-panel__empty {
+    padding: 0.6rem 0.2rem 0.1rem;
+    font-size: 0.92rem;
+}
+
+.pin-limit-popup {
+    position: absolute;
+    right: 1rem;
+    bottom: 6.8rem;
+    padding: 0.55rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(220, 53, 69, 0.96);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    box-shadow: 0 12px 24px rgba(220, 53, 69, 0.28);
+    z-index: 13;
+}
+
+.message-pin-chip {
+    position: absolute;
+    top: -0.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    color: #dc3545;
+    z-index: 3;
+}
+
+.message-pin-chip--theirs {
+    right: -5px;
+    top: -10px;
+    transform: rotate(40deg);
+}
+
+.message-pin-chip--mine {
+    left: -5px;
+    top: -10px;
+    transform: rotate(-40deg);
+}
+
+
+.message-pin-chip__icon {
+    width: 0.88rem;
+    height: 0.88rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc3545;
+    font-size: 0.62rem;
+    line-height: 1;
+
+    i {
+      font-size: 15px;
+    }
+}
+
+.message-panel__attach-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(var(--bs-primary-rgb), 0.22);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    background: linear-gradient(
+        180deg,
+        rgba(var(--bs-primary-rgb), 0.08),
+        rgba(var(--bs-body-bg-rgb), 0.94)
+    );
+    color: var(--bs-body-color);
+}
+
+.message-panel__attach-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.message-panel__attach-btn-icon {
+    width: 1.65rem;
+    height: 1.65rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: rgba(var(--bs-primary-rgb), 0.08);
+    color: var(--bs-primary);
+    flex-shrink: 0;
+}
+
+.message-panel__attach-btn-text {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+}
+
+.attachment-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 14px;
+    background: var(--bs-secondary-bg);
+}
+
+.attachment-preview--sending {
+    position: relative;
+    overflow: hidden;
+}
+
+.attachment-preview--sending::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(var(--bs-body-bg-rgb), 0.4);
+    backdrop-filter: blur(1px);
+    pointer-events: none;
+}
+
+.attachment-preview__thumb {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(var(--bs-body-color-rgb), 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.attachment-preview__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+}
+
+.attachment-preview__icon {
+    color: var(--bs-secondary-color);
+    font-size: 1.35rem;
+}
+
+.attachment-preview__meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.attachment-preview__name {
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.attachment-preview__remove {
+    color: var(--bs-secondary-color);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.attachment-preview__remove:hover {
+    color: var(--bs-body-color);
+}
+
+.message-panel__composer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.message-panel__composer-count {
+    line-height: 1;
 }
 
 .reply-composer__cancel:hover {
@@ -1507,6 +3480,77 @@ img {
     .message-panel__footer {
         padding-left: 0.9rem;
         padding-right: 0.9rem;
+    }
+
+    .message-panel__composer-tools,
+    .message-panel__composer-bottom {
+        width: 100%;
+    }
+
+    .message-panel__composer-status {
+        font-size: 0.82rem;
+    }
+
+    .message-panel__composer-bottom {
+        align-items: stretch;
+    }
+
+    .message-panel__composer-bottom .theme-muted {
+        width: 100%;
+    }
+
+    .message-panel__composer-bottom .theme-button {
+        width: 100%;
+    }
+
+    .message-panel__attach-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .message-panel__pins-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .message-panel__attach-btn-text {
+        flex: 1;
+        text-align: center;
+    }
+
+    .message-panel__pins-btn-text {
+        flex: 1;
+        text-align: center;
+    }
+
+    .message-panel__composer-count {
+        width: 100%;
+        text-align: center;
+    }
+
+    .pinned-messages-panel--floating {
+        right: 0.5rem;
+        left: 0.5rem;
+        width: auto;
+        bottom: 5.6rem;
+        max-height: min(38vh, 280px);
+    }
+
+    .message-pin-chip {
+        top: -0.55rem;
+        width: 1.08rem;
+        height: 1.08rem;
+    }
+
+    .message-actions {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+    }
+
+    .reaction-picker {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 }
 

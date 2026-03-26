@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Events;
+
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class DirectMessageTyping implements ShouldBroadcastNow
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public function __construct(
+        public array $payload
+    ) {
+    }
+
+    public function broadcastOn(): array
+    {
+        return [
+            new PrivateChannel('direct-messages.' . $this->payload['recipient_id']),
+        ];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'direct-message.typing';
+    }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'payload' => $this->payload,
+        ];
+    }
+}

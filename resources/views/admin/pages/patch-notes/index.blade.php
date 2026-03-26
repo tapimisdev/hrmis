@@ -319,144 +319,18 @@
             }
         }
     </style>
+    @vite(['resources/js/app.js'])
 </head>
 <body>
-    <div class="shell">
-        <div class="topbar">
-            <a class="brand" href="{{ url('/') }}">
-                <div class="brand-mark">
-                    <i class="fa-solid fa-code-branch"></i>
-                </div>
-                <div>
-                    <div class="fw-bold">Patch Notes</div>
-                    <div style="color: var(--text-muted); font-size: 0.92rem;">Standalone release summary</div>
-                </div>
-            </a>
-        </div>
-
-        <section class="hero">
-            <div class="hero-meta">
-                <span class="pill"><i class="fa-solid fa-clipboard-list"></i> Release log</span>
-                <span class="pill"><i class="fa-regular fa-calendar"></i> Updated {{ $releasedAt }}</span>
-                <span class="pill"><i class="fa-solid fa-shield-heart"></i> Production-ready changes</span>
-            </div>
-            <h1 class="mt-3">Recent platform patches, sorted from oldest to latest.</h1>
-            <p class="hero-copy mb-0">
-                This page is intentionally standalone. It reads from <code>public/patches/patches.csv</code>,
-                presents the entries in chronological order, and keeps the language clean for a release note format.
-            </p>
-        </section>
-
-        <section class="filter-panel">
-            <form method="GET" action="{{ url('/patch-notes') }}" class="row g-3 align-items-end">
-                <div class="col-lg-4">
-                    <div class="filter-label">Search</div>
-                    <input
-                        type="text"
-                        name="q"
-                        value="{{ $filters['q'] ?? '' }}"
-                        class="form-control"
-                        placeholder="Search issue key, summary, assignee..."
-                    >
-                </div>
-                <div class="col-md-4 col-lg-2">
-                    <div class="filter-label">Type</div>
-                    <select name="type" class="form-select">
-                        <option value="">All types</option>
-                        @foreach($filterOptions['types'] as $option)
-                            <option value="{{ $option }}" @selected(($filters['type'] ?? '') === $option)>{{ $option }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4 col-lg-2">
-                    <div class="filter-label">Status</div>
-                    <select name="status" class="form-select">
-                        <option value="">All status</option>
-                        @foreach($filterOptions['statuses'] as $option)
-                            <option value="{{ $option }}" @selected(($filters['status'] ?? '') === $option)>{{ $option }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-4 col-lg-2">
-                    <div class="filter-label">Priority</div>
-                    <select name="priority" class="form-select">
-                        <option value="">All priorities</option>
-                        @foreach($filterOptions['priorities'] as $option)
-                            <option value="{{ $option }}" @selected(($filters['priority'] ?? '') === $option)>{{ $option }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-12 col-lg-2">
-                    <div class="filter-actions">
-                        <a href="{{ url('/patch-notes') }}" class="btn btn-outline-secondary w-100">Reset</a>
-                        <button type="submit" class="btn btn-primary w-100">Filter</button>
-                    </div>
-                </div>
-            </form>
-        </section>
-
-        <section class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Notes</div>
-                <div class="stat-value">{{ $stats['notes'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Done</div>
-                <div class="stat-value">{{ $stats['done'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Testing</div>
-                <div class="stat-value">{{ $stats['testing'] }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">In Progress</div>
-                <div class="stat-value">{{ $stats['in_progress'] }}</div>
-            </div>
-        </section>
-
-        <section class="notes-list">
-            @foreach($patchNotes as $note)
-                <article class="note-card" style="--accent: {{ match($note['tone']) {
-                    'emerald' => '#10b981',
-                    'amber' => '#f59e0b',
-                    'sky' => '#0ea5e9',
-                    'rose' => '#f43f5e',
-                    default => '#6366f1',
-                } }}">
-                    <div class="note-header">
-                        <div>
-                            <div class="note-list-meta mb-2">
-                                <span class="tag">{{ $note['ticket'] }}</span>
-                                <span class="tag">{{ $note['type'] }}</span>
-                                <span class="tag badge-status">{{ $note['status'] }}</span>
-                                <span class="tag">{{ $note['priority'] }}</span>
-                            </div>
-                            <div class="note-title note-title--upper">{{ $note['title'] }}</div>
-                            <p class="note-summary">{{ $note['summary'] }}</p>
-                        </div>
-                    </div>
-
-                    <div class="tag-row">
-                        <span class="tag"><i class="fa-regular fa-user"></i> {{ $note['assignee'] }}</span>
-                        <span class="tag"><i class="fa-regular fa-address-card"></i> {{ $note['reporter'] }}</span>
-                    </div>
-
-                    <div class="note-foot">
-                        <div>Created {{ $note['created_label'] }}</div>
-                        <div>Updated {{ $note['updated_label'] }}</div>
-                    </div>
-                </article>
-            @endforeach
-        </section>
-
-        @if(empty($patchNotes))
-            <div class="note-card mt-3">
-                <div class="text-center py-4">
-                    <div class="fw-semibold mb-2">No patch notes matched your filters.</div>
-                    <div style="color: var(--text-muted);">Try a different keyword or clear the filters.</div>
-                </div>
-            </div>
-        @endif
+    <div id="app">
+        <patch-notes-page
+            :patch-notes='@json($patchNotes)'
+            :stats='@json($stats)'
+            :filters='@json($filters)'
+            :filter-options='@json($filterOptions)'
+            :released-at='@json($releasedAt)'
+            page-url="{{ url('/patch-notes') }}"
+        />
     </div>
 </body>
 </html>

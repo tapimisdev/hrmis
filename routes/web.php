@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\Admin;
+use App\Http\Controllers\Api\DirectMessageController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\Admin\PatchNotesController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TestController;
@@ -18,22 +20,7 @@ use App\Http\Controllers\TestController;
 |
 */
 
-Route::get('/', function () {
-
-    if (!Auth::check()) {
-        return redirect('/login');
-    }
-
-    $user = Auth::user();
-    $roles = $user->getRoleNames();
-
-    if ($roles->contains(fn ($role) => str_starts_with($role, 'emp'))) {
-        return redirect('employee/dashboard');
-    }
-
-    return redirect('admin/dashboard');
-
-});
+Route::get('/', [HomeController::class, 'index']);
 
 Auth::routes([
     'register' => false,      // disable registration
@@ -45,8 +32,11 @@ Auth::routes([
 Route::get('today-birthday', [BirthdayController::class, 'index']);
 
 Route::get('/patch-notes', [PatchNotesController::class, 'index'])
-    ->middleware('auth')
     ->name('patch-notes');
+
+Route::get('/direct-messages/{message}/attachment', [DirectMessageController::class, 'attachment'])
+    ->middleware('auth')
+    ->name('direct-messages.attachment');
 
 Route::any('/iclock/cdata', [\App\Http\Controllers\ZktecoController::class, 'cdata'])
     ->middleware('biometric.ip');

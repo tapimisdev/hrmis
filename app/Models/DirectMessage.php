@@ -14,6 +14,12 @@ class DirectMessage extends Model
         'recipient_id',
         'body',
         'reply_to_id',
+        'attachment_path',
+        'attachment_name',
+        'attachment_mime',
+        'attachment_size',
+        'attachment_extension',
+        'attachment_type',
         'read_at',
     ];
 
