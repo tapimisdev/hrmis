@@ -363,7 +363,12 @@
                                                 </a>
                                             </div>
                                         </div>
-                                        <div v-if="message.body">{{ message.body }}</div>
+                                        <div
+                                            v-if="message.body"
+                                            class="message-bubble__body"
+                                        >
+                                            {{ message.body }}
+                                        </div>
                                         <span
                                             v-if="getReactionMeta(message)"
                                             class="message-reaction-badge message-reaction-badge--float"
@@ -492,6 +497,7 @@
                             v-model="messageDraft"
                             @input="handleMessageInput"
                             @blur="handleMessageBlur"
+                            @keydown.enter.exact.prevent="sendMessage"
                             class="form-control message-input"
                             rows="3"
                             placeholder="Type a message..."
@@ -3007,6 +3013,11 @@ img {
 .reply-composer__body {
     font-size: 0.92rem;
     color: var(--bs-body-color);
+    word-break: break-word;
+}
+
+.message-bubble__body {
+    white-space: pre-wrap;
     word-break: break-word;
 }
 
