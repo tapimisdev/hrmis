@@ -20,11 +20,15 @@ class DirectMessage extends Model
         'attachment_size',
         'attachment_extension',
         'attachment_type',
+        'reaction',
+        'pinned_at',
+        'pinned_by_id',
         'read_at',
     ];
 
     protected $casts = [
         'read_at' => 'datetime',
+        'pinned_at' => 'datetime',
     ];
 
     public function sender()

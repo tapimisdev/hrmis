@@ -105,6 +105,10 @@
                                     >
                                         {{ user.name.charAt(0).toUpperCase() }}
                                     </div>
+                                    <span
+                                        class="user-list__status-dot"
+                                        :class="user.isOnline ? 'user-list__status-dot--online' : 'user-list__status-dot--offline'"
+                                    ></span>
                                 </div>
                                 <div class="flex-grow-1 mt-1">
                                     <div class="fw-semibold">{{ user.name }}</div>
@@ -153,8 +157,9 @@
                                     {{ selectedUserState?.name?.charAt(0)?.toUpperCase() }}
                                 </div>
                                 <span
-                                    v-if="selectedUserState?.isOnline"
-                                    class="message-panel__online-dot"
+                                    v-if="selectedUserState"
+                                    class="user-list__status-dot"
+                                    :class="selectedUserState?.isOnline ? 'user-list__status-dot--online' : 'user-list__status-dot--offline'"
                                 ></span>
                             </div>
                             <div>
@@ -233,7 +238,13 @@
                                             :aria-label="isMessagePinned(message.id) ? 'Unpin message' : 'Pin message'"
                                             :disabled="!isMessagePinned(message.id) && pinnedMessages.length >= pinnedMessageLimit"
                                         >
-                                            <i class="fa-solid fa-thumbtack"></i>
+                                            <span class="message-action-button__pin-icon">
+                                                <i
+                                                    v-if="isMessagePinned(message.id)"
+                                                    class="fa-solid fa-thumbtack-slash"
+                                                ></i>
+                                                <i v-else class="fa-solid fa-thumbtack"></i>
+                                            </span>
                                         </button>
                                         <button
                                             type="button"
@@ -313,6 +324,7 @@
                                                         :src="message.attachment.url"
                                                         :alt="message.attachment.name || 'Attachment'"
                                                         class="message-attachment__image"
+                                                        @load="handleAttachmentMediaLoad"
                                                     />
                                                     <span class="message-attachment__image-overlay">
                                                         <i class="fa-solid fa-magnifying-glass-plus"></i>
@@ -596,7 +608,7 @@
                                 class="pinned-messages-panel__list"
                             >
                                 <button
-                                    v-for="pin in pinnedMessages"
+                                    v-for="pin in sortedPinnedMessages"
                                     :key="pin.message_id"
                                     type="button"
                                     class="pinned-messages-panel__item"
@@ -607,11 +619,24 @@
                                             {{ pin.preview }}
                                         </div>
                                         <small class="theme-muted">
-                                            {{ formatMessageTime(pin.created_at) }}
+                                            Pinned {{ formatPinnedAt(pin.pinned_at || pin.created_at) }}
                                         </small>
                                     </div>
-                                    <div class="pinned-messages-panel__item-action">
-                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    <div class="pinned-messages-panel__item-actions">
+                                        <div
+                                            class="pinned-messages-panel__item-action pinned-messages-panel__item-action--unpin"
+                                            role="button"
+                                            tabindex="0"
+                                            @click.stop="unpinPinnedMessage(pin)"
+                                            @keyup.enter.stop="unpinPinnedMessage(pin)"
+                                            title="Remove pin"
+                                            aria-label="Remove pin"
+                                        >
+                                            <i class="fa-solid fa-thumbtack-slash"></i>
+                                        </div>
+                                        <div class="pinned-messages-panel__item-action">
+                                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                        </div>
                                     </div>
                                 </button>
                             </div>
@@ -889,6 +914,18 @@ export default {
                 (message) => !message.is_mine && !message.read_at,
             ).length;
         },
+        sortedPinnedMessages() {
+            return [...this.pinnedMessages].sort((a, b) => {
+                const aPinnedAt = new Date(a?.pinned_at || a?.created_at || 0).getTime();
+                const bPinnedAt = new Date(b?.pinned_at || b?.created_at || 0).getTime();
+
+                if (aPinnedAt !== bPinnedAt) {
+                    return bPinnedAt - aPinnedAt;
+                }
+
+                return (b?.message_id || 0) - (a?.message_id || 0);
+            });
+        },
     },
     mounted() {
         window.Echo.join("online-users")
@@ -986,8 +1023,10 @@ export default {
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
             this.pinError = "";
+            this.showPinLimitPopup = false;
+            this.clearPinLimitPopupTimer();
+            this.pinnedMessages = [];
             await this.loadConversation({ page: 1, reset: true });
-            this.loadPinnedMessages(user.id);
             this.scrollConversationToBottom();
             this.markConversationSeen(user.id);
         },
@@ -1000,6 +1039,9 @@ export default {
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
             this.pinError = "";
+            this.showPinLimitPopup = false;
+            this.clearPinLimitPopupTimer();
+            this.pinnedMessages = [];
             this.saveDockState();
             this.attachmentError = "";
         },
@@ -1014,6 +1056,9 @@ export default {
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
             this.pinError = "";
+            this.showPinLimitPopup = false;
+            this.clearPinLimitPopupTimer();
+            this.pinnedMessages = [];
             this.resetConversationState();
             this.messageDraft = "";
             this.replyTargetMessage = null;
@@ -1062,8 +1107,10 @@ export default {
             this.saveDockState();
             this.showPinnedMessagesPanel = false;
             this.pinError = "";
+            this.showPinLimitPopup = false;
+            this.clearPinLimitPopupTimer();
+            this.pinnedMessages = [];
             this.loadConversation({ page: 1, reset: true }).then(() => {
-                this.loadPinnedMessages(this.selectedUserState?.id);
                 this.scrollConversationToBottom();
                 this.markConversationSeen(this.selectedUserState?.id);
             });
@@ -1076,6 +1123,7 @@ export default {
             this.conversationLastPage = 1;
             this.conversationHasMore = true;
             this.showScrollToBottomButton = false;
+            this.pinnedMessages = [];
             this.clearHighlightTimer();
             this.highlightedMessageId = null;
         },
@@ -1132,9 +1180,11 @@ export default {
 
                 const messages = data.messages ?? [];
                 const pagination = data.pagination ?? {};
+                const pinnedMessages = data.pinned_messages ?? [];
                 this.conversationPage = pagination.current_page ?? page;
                 this.conversationLastPage = pagination.last_page ?? page;
                 this.conversationHasMore = Boolean(pagination.has_more);
+                this.pinnedMessages = Array.isArray(pinnedMessages) ? pinnedMessages : [];
 
                 if (reset || page === 1) {
                     this.conversationMessages = messages;
@@ -1258,7 +1308,7 @@ export default {
                             this.selectedUserState &&
                             this.selectedUserState.id === partnerId
                         ) {
-                            this.upsertConversationMessage({
+                            this.applyServerMessageUpdate({
                                 ...message,
                                 is_mine: true,
                             });
@@ -1314,7 +1364,7 @@ export default {
                         return;
                     }
 
-                    this.upsertConversationMessage({
+                    this.applyServerMessageUpdate({
                         ...message,
                         is_mine: false,
                     });
@@ -1360,6 +1410,22 @@ export default {
                             read_at: readAt,
                         };
                     });
+                })
+                .listen(".direct-message.updated", (event) => {
+                    const payload = event?.payload || {};
+                    const message = payload.message || null;
+                    if (!message) return;
+
+                    const partnerId =
+                        message.sender_id === this.userId
+                            ? message.recipient_id
+                            : message.sender_id;
+
+                    if (!this.selectedUserState || this.selectedUserState.id !== partnerId) {
+                        return;
+                    }
+
+                    this.applyServerMessageUpdate(message, payload.pinned_messages || null);
                 })
                 .listen(".direct-message.typing", (event) => {
                     const payload = event?.payload;
@@ -1423,6 +1489,19 @@ export default {
                 bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight;
 
             this.showScrollToBottomButton = distanceFromBottom > 220;
+        },
+        handleAttachmentMediaLoad() {
+            const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
+            if (!bodyEl || !this.messagePanelOpen) {
+                return;
+            }
+
+            if (!this.isConversationNearBottom(bodyEl)) {
+                this.updateScrollToBottomButton(bodyEl);
+                return;
+            }
+
+            this.scrollConversationToBottom();
         },
         isConversationNearBottom(bodyEl, threshold = 220) {
             if (!bodyEl) return true;
@@ -1609,6 +1688,22 @@ export default {
                 console.error("Failed to save message reactions:", error);
             }
         },
+        applyServerMessageUpdate(message, pinnedMessages = null) {
+            if (!message?.id) {
+                return;
+            }
+
+            const normalizedMessage = {
+                ...message,
+                is_mine: Number(message.sender_id) === Number(this.userId),
+            };
+
+            this.upsertConversationMessage(normalizedMessage);
+
+            if (Array.isArray(pinnedMessages)) {
+                this.pinnedMessages = pinnedMessages;
+            }
+        },
         getPinStorageKey(userId = null) {
             const currentUserId = this.userId || localStorage.getItem("auth_user_id") || "guest";
             const selectedUserId = userId ?? this.selectedUserState?.id ?? this.selectedUser?.id ?? null;
@@ -1652,10 +1747,6 @@ export default {
                 return;
             }
 
-            if (!this.pinnedMessagesKey) {
-                this.loadPinnedMessages(this.selectedUserState.id);
-            }
-
             this.showPinnedMessagesPanel = !this.showPinnedMessagesPanel;
         },
         getMessageSnippet(message) {
@@ -1674,44 +1765,57 @@ export default {
             return "Attachment";
         },
         isMessagePinned(messageId) {
-            return this.pinnedMessages.some((pin) => pin.message_id === messageId);
+            return this.conversationMessages.some(
+                (message) => message.id === messageId && Boolean(message.pinned_at),
+            );
         },
-        togglePinMessage(message) {
+        async togglePinMessage(message) {
             if (!message?.id) return;
 
             this.clearPinErrorTimer();
             this.pinError = "";
 
-            const pinIndex = this.pinnedMessages.findIndex((pin) => pin.message_id === message.id);
+            const isPinned = Boolean(message.pinned_at);
 
-            if (pinIndex !== -1) {
-                this.pinnedMessages.splice(pinIndex, 1);
-                this.savePinnedMessages();
-                return;
+            try {
+                const { data } = await axios.patch(
+                    `/api/direct-messages/${message.id}/pin`,
+                    {
+                        is_pinned: !isPinned,
+                    },
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                );
+
+                const updatedMessage = data?.message ?? null;
+                const pinnedMessages = data?.pinned_messages ?? null;
+                this.applyServerMessageUpdate(updatedMessage, pinnedMessages);
+            } catch (error) {
+                const status = error?.response?.status;
+                const responseMessage = error?.response?.data?.message || "";
+
+                if (status === 422) {
+                    this.showPinLimitPopup = true;
+                    this.clearPinLimitPopupTimer();
+                    this.pinLimitPopupTimer = window.setTimeout(() => {
+                        this.showPinLimitPopup = false;
+                        this.pinLimitPopupTimer = null;
+                    }, 2400);
+
+                    this.pinError = responseMessage || `You’ve reached the pin limit of ${this.pinnedMessageLimit}.`;
+                    this.clearPinErrorTimer();
+                    this.pinErrorTimer = window.setTimeout(() => {
+                        this.pinError = "";
+                        this.pinErrorTimer = null;
+                    }, 2200);
+                    return;
+                }
+
+                console.error("Failed to update pin:", error);
             }
-
-            if (this.pinnedMessages.length >= this.pinnedMessageLimit) {
-                this.pinError = `You can pin up to ${this.pinnedMessageLimit} messages.`;
-                this.clearPinErrorTimer();
-                this.pinErrorTimer = window.setTimeout(() => {
-                    this.pinError = "";
-                    this.pinErrorTimer = null;
-                }, 2200);
-                this.showPinLimitPopup = true;
-                this.clearPinLimitPopupTimer();
-                this.pinLimitPopupTimer = window.setTimeout(() => {
-                    this.showPinLimitPopup = false;
-                    this.pinLimitPopupTimer = null;
-                }, 2400);
-                return;
-            }
-
-            this.pinnedMessages.unshift({
-                message_id: message.id,
-                preview: this.getMessageSnippet(message),
-                created_at: message.created_at,
-            });
-            this.savePinnedMessages();
         },
         async scrollToPinnedMessage(pin) {
             if (!pin?.message_id) return;
@@ -1719,8 +1823,19 @@ export default {
             this.showPinnedMessagesPanel = false;
             await this.scrollToMessage(pin.message_id);
         },
+        async unpinPinnedMessage(pin) {
+            if (!pin?.message_id) return;
+
+            const message = this.conversationMessages.find((item) => item.id === pin.message_id);
+            if (!message) return;
+
+            await this.togglePinMessage({
+                ...message,
+                pinned_at: message.pinned_at || pin.pinned_at || null,
+            });
+        },
         getReactionMeta(message) {
-            const reactionKey = message?.reaction ?? this.messageReactions?.[message?.id] ?? null;
+            const reactionKey = message?.reaction ?? null;
             if (!reactionKey) {
                 return null;
             }
@@ -1729,19 +1844,30 @@ export default {
         toggleReactionPicker(message) {
             this.activeReactionPickerId = this.activeReactionPickerId === message.id ? null : message.id;
         },
-        setReaction(message, reactionKey) {
+        async setReaction(message, reactionKey) {
             if (!message?.id) return;
 
-            const existingReaction = message.reaction ?? this.messageReactions?.[message.id] ?? null;
+            const existingReaction = message.reaction ?? null;
             const nextReaction = existingReaction === reactionKey ? null : reactionKey;
 
-            this.messageReactions = {
-                ...this.messageReactions,
-                [message.id]: nextReaction,
-            };
-            this.saveMessageReactions();
-            message.reaction = nextReaction;
-            this.activeReactionPickerId = null;
+            try {
+                const { data } = await axios.patch(
+                    `/api/direct-messages/${message.id}/reaction`,
+                    {
+                        reaction: nextReaction,
+                    },
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                );
+
+                this.applyServerMessageUpdate(data?.message ?? null);
+                this.activeReactionPickerId = null;
+            } catch (error) {
+                console.error("Failed to update reaction:", error);
+            }
         },
         openImageGallery(attachment) {
             if (!attachment?.url) {
@@ -2134,6 +2260,18 @@ export default {
                 minute: "2-digit",
             }).format(date);
         },
+        formatPinnedAt(timestamp) {
+            if (!timestamp) return "";
+
+            const date = new Date(timestamp);
+            return new Intl.DateTimeFormat(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+            }).format(date);
+        },
     },
 };
 </script>
@@ -2151,6 +2289,30 @@ img {
 .user-list {
     cursor: pointer;
     position: relative;
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0;
+}
+
+.user-list__status-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 0.78rem;
+    height: 0.78rem;
+    border-radius: 50%;
+    border: 2px solid var(--bs-body-bg);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
+}
+
+.user-list__status-dot--online {
+    background: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
+}
+
+.user-list__status-dot--offline {
+    background: #9ca3af;
+    box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.12);
 }
 
 .theme-icon {
@@ -2247,7 +2409,7 @@ img {
     position: fixed;
     right: 2.1rem;
     bottom: 0.75rem;
-    z-index: 1500;
+    z-index: 900;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -2269,6 +2431,7 @@ img {
     flex-direction: column;
     border: 1px solid var(--bs-border-color);
     color: var(--bs-body-color);
+    z-index: 901;
 }
 
 .message-dock__head {
@@ -2382,18 +2545,6 @@ img {
 .message-panel__typing {
     align-self: flex-start;
     margin-top: 0.2rem;
-}
-
-.message-panel__online-dot {
-    position: absolute;
-    right: -1px;
-    bottom: -1px;
-    width: 0.78rem;
-    height: 0.78rem;
-    border-radius: 50%;
-    background: #22c55e;
-    border: 2px solid var(--bs-body-bg);
-    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
 }
 
 .typing-indicator__dots {
@@ -2653,9 +2804,39 @@ img {
 }
 
 .message-action-button--pin.is-active {
-    background: rgba(var(--bs-primary-rgb), 0.14);
-    color: var(--bs-primary);
-    border-color: rgba(var(--bs-primary-rgb), 0.28);
+    background: rgba(13, 110, 253, 0.18) !important;
+    color: #0d6efd;
+    border-color: rgba(13, 110, 253, 0.36);
+}
+
+.message-action-button--pin.is-active:hover {
+    background: rgba(13, 110, 253, 0.24);
+    color: #0b5ed7;
+    border-color: rgba(13, 110, 253, 0.44);
+}
+
+.message-action-button__pin-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+}
+
+.message-action-button__pin-icon i:first-child {
+    font-size: 0.74rem;
+}
+
+.message-action-button__pin-slash {
+    position: absolute;
+    inset: 0;
+    font-size: 0.66rem;
+    transform: rotate(40deg) translateY(-1px);
+    transform-origin: center;
+    color: currentColor;
+    opacity: 0.95;
 }
 
 .reaction-picker {
@@ -2667,6 +2848,14 @@ img {
     border: 1px solid var(--bs-border-color);
     background: var(--bs-body-bg);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 0.45rem);
+    transform: translateY(-50%);
+    max-width: min(100vw - 2rem, 14rem);
+    flex-wrap: wrap;
+    justify-content: center;
+    z-index: 4;
 }
 
 .reaction-picker__btn {
@@ -2728,9 +2917,20 @@ img {
     border-color: rgba(255, 255, 255, 0.18);
 }
 
+.message-row--mine .reaction-picker {
+    left: auto;
+    right: calc(100% + 0.45rem);
+    max-width: min(100vw - 2rem, 14rem);
+}
+
+.message-row--theirs .reaction-picker {
+    left: calc(100% + 0.45rem);
+    right: auto;
+    max-width: min(100vw - 2rem, 14rem);
+}
+
 .message-row--mine .message-action-button:hover,
 .message-row--mine .reaction-picker__btn:hover {
-    background: rgba(255, 255, 255, 0.2);
     color: var(--bs-white);
 }
 
@@ -3234,6 +3434,23 @@ img {
     font-size: 0.78rem;
 }
 
+.pinned-messages-panel__item-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+.pinned-messages-panel__item-action--unpin {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.pinned-messages-panel__item-action--unpin:hover {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.16);
+}
+
 .pinned-messages-panel__empty {
     padding: 0.6rem 0.2rem 0.1rem;
     font-size: 0.92rem;
@@ -3551,6 +3768,7 @@ img {
     .reaction-picker {
         flex-wrap: wrap;
         justify-content: center;
+        max-width: calc(100vw - 1.5rem);
     }
 }
 

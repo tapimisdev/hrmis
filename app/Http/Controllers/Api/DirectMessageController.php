@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Events\DirectMessageSeen;
+use App\Events\DirectMessageUpdated;
 use App\Events\DirectMessageSent;
 use App\Events\DirectMessageTyping;
 use App\Http\Controllers\Controller;
@@ -10,26 +11,20 @@ use App\Models\DirectMessage;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class DirectMessageController extends Controller
 {
+    private const REACTION_KEYS = ['like', 'love', 'haha', 'sad', 'angry'];
+
     public function index(Request $request, User $user)
     {
         $authUser = $request->user();
         $perPage = max(10, min((int) $request->input('per_page', 20), 100));
         $page = max(1, (int) $request->input('page', 1));
 
-        $query = DirectMessage::query()
-            ->with('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type')
-            ->where(function ($query) use ($authUser, $user) {
-                $query->where('sender_id', $authUser->id)
-                    ->where('recipient_id', $user->id);
-            })
-            ->orWhere(function ($query) use ($authUser, $user) {
-                $query->where('sender_id', $user->id)
-                    ->where('recipient_id', $authUser->id);
-            });
+        $query = $this->conversationQuery($authUser, $user);
 
         $paginator = $query
             ->orderByDesc('created_at')
@@ -46,6 +41,10 @@ class DirectMessageController extends Controller
                     'reply_to_id' => $message->reply_to_id,
                     'reply_preview' => $this->formatReplyPreview($message->replyTo),
                     'attachment' => $this->formatAttachment($message),
+                    'reaction' => $message->reaction,
+                    'pinned_at' => $message->pinned_at?->toIso8601String(),
+                    'pinned_by_id' => $message->pinned_by_id,
+                    'is_pinned' => (bool) $message->pinned_at,
                     'reply_to' => $message->replyTo ? [
                         'id' => $message->replyTo->id,
                         'body' => $message->replyTo->body,
@@ -62,8 +61,27 @@ class DirectMessageController extends Controller
             ->reverse()
             ->values();
 
+        $pinnedMessages = $this->supportsPinnedMessages()
+            ? $this->conversationQuery($authUser, $user)
+                ->whereNotNull('pinned_at')
+                ->orderByDesc('pinned_at')
+                ->orderByDesc('id')
+                ->get()
+                ->map(function (DirectMessage $message) {
+                    return [
+                        'message_id' => $message->id,
+                        'preview' => $this->formatReplyPreview($message),
+                        'created_at' => $message->created_at?->toIso8601String(),
+                        'pinned_at' => $message->pinned_at?->toIso8601String(),
+                        'pinned_by_id' => $message->pinned_by_id,
+                    ];
+                })
+                ->values()
+            : collect();
+
         return response()->json([
             'messages' => $messages,
+            'pinned_messages' => $pinnedMessages,
             'pagination' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
@@ -164,6 +182,93 @@ class DirectMessageController extends Controller
         return response()->json([
             'message' => $payload,
         ], 201);
+    }
+
+    public function react(Request $request, DirectMessage $message)
+    {
+        if (!$this->supportsReactionFeatures()) {
+            return response()->json([
+                'message' => 'Reactions are not available yet.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'reaction' => ['nullable', 'string', 'in:' . implode(',', self::REACTION_KEYS)],
+        ]);
+
+        $authUser = $request->user();
+        $this->authorizeMessageParticipant($authUser, $message);
+
+        $message->reaction = $validated['reaction'] ?? null;
+        $message->save();
+        $message->load('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type');
+
+        $payload = $this->formatMessage($message, $authUser, true);
+
+        event(new DirectMessageUpdated([
+            'message' => $payload,
+            'pinned_messages' => $this->pinnedMessagesForConversation($authUser, $message),
+        ]));
+
+        return response()->json([
+            'message' => $payload,
+        ]);
+    }
+
+    public function pin(Request $request, DirectMessage $message)
+    {
+        if (!$this->supportsPinnedMessages()) {
+            return response()->json([
+                'message' => 'Pins are not available yet.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'is_pinned' => ['required', 'boolean'],
+        ]);
+
+        $authUser = $request->user();
+        $this->authorizeMessageParticipant($authUser, $message);
+
+        $partnerId = (int) $message->sender_id === (int) $authUser->id
+            ? $message->recipient_id
+            : $message->sender_id;
+        $partner = User::findOrFail($partnerId);
+        $conversationQuery = $this->conversationQuery($authUser, $partner);
+
+        if ($validated['is_pinned']) {
+            $alreadyPinned = (bool) $message->pinned_at;
+            if (!$alreadyPinned) {
+                $pinnedCount = (clone $conversationQuery)->whereNotNull('pinned_at')->count();
+                if ($pinnedCount >= 10) {
+                    return response()->json([
+                        'message' => 'You have reached the maximum number of pinned messages.',
+                    ], 422);
+                }
+            }
+
+            $message->pinned_at = Carbon::now();
+            $message->pinned_by_id = $authUser->id;
+        } else {
+            $message->pinned_at = null;
+            $message->pinned_by_id = null;
+        }
+
+        $message->save();
+        $message->load('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type');
+
+        $payload = $this->formatMessage($message, $authUser, true);
+        $pinnedMessages = $this->pinnedMessagesForConversation($authUser, $message);
+
+        event(new DirectMessageUpdated([
+            'message' => $payload,
+            'pinned_messages' => $pinnedMessages,
+        ]));
+
+        return response()->json([
+            'message' => $payload,
+            'pinned_messages' => $pinnedMessages,
+        ]);
     }
 
     public function seen(Request $request, User $user)
@@ -270,6 +375,72 @@ class DirectMessageController extends Controller
         ]));
     }
 
+    protected function conversationQuery(User $authUser, User $user)
+    {
+        return DirectMessage::query()
+            ->with('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type')
+            ->where(function ($query) use ($authUser, $user) {
+                $query->where(function ($query) use ($authUser, $user) {
+                    $query->where('sender_id', $authUser->id)
+                        ->where('recipient_id', $user->id);
+                })->orWhere(function ($query) use ($authUser, $user) {
+                    $query->where('sender_id', $user->id)
+                        ->where('recipient_id', $authUser->id);
+                });
+            });
+    }
+
+    protected function pinnedMessagesForConversation(User $authUser, DirectMessage $message): array
+    {
+        if (!$this->supportsPinnedMessages()) {
+            return [];
+        }
+
+        $partnerId = (int) $message->sender_id === (int) $authUser->id
+            ? $message->recipient_id
+            : $message->sender_id;
+
+        $partner = User::findOrFail($partnerId);
+
+        return $this->conversationQuery($authUser, $partner)
+            ->whereNotNull('pinned_at')
+            ->orderByDesc('pinned_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function (DirectMessage $item) {
+                return [
+                    'message_id' => $item->id,
+                    'preview' => $this->formatReplyPreview($item),
+                    'created_at' => $item->created_at?->toIso8601String(),
+                    'pinned_at' => $item->pinned_at?->toIso8601String(),
+                    'pinned_by_id' => $item->pinned_by_id,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    protected function supportsPinnedMessages(): bool
+    {
+        return Schema::hasColumn('direct_messages', 'pinned_at') &&
+            Schema::hasColumn('direct_messages', 'pinned_by_id');
+    }
+
+    protected function supportsReactionFeatures(): bool
+    {
+        return Schema::hasColumn('direct_messages', 'reaction');
+    }
+
+    protected function authorizeMessageParticipant(User $authUser, DirectMessage $message): void
+    {
+        if (
+            (int) $message->sender_id !== (int) $authUser->id &&
+            (int) $message->recipient_id !== (int) $authUser->id
+        ) {
+            abort(403);
+        }
+    }
+
     protected function formatMessage(DirectMessage $message, User $authUser, bool $includeReadAt = true): array
     {
         return [
@@ -280,6 +451,10 @@ class DirectMessageController extends Controller
             'reply_to_id' => $message->reply_to_id,
             'reply_preview' => $this->formatReplyPreview($message->replyTo),
             'attachment' => $this->formatAttachment($message),
+            'reaction' => $message->reaction,
+            'pinned_at' => $message->pinned_at?->toIso8601String(),
+            'pinned_by_id' => $message->pinned_by_id,
+            'is_pinned' => (bool) $message->pinned_at,
             'read_at' => $includeReadAt ? $message->read_at?->toIso8601String() : null,
             'is_mine' => (int) $message->sender_id === (int) $authUser->id,
             'created_at' => $message->created_at?->toIso8601String(),
