@@ -354,7 +354,6 @@ export default {
             return components[this.modalType] || null;
         },
         modalProps() {
-            console.log("empid: " + this.employee_no);
             return {
                 employee_no: this.employee_no,
                 employee_id: this.employee_id,
@@ -376,10 +375,8 @@ export default {
                 this.information = data.information;
                 this.logs = data.computedData;
                 this.summary = data.summary;
-                console.log(data);
                 this.$emit("send-payload", data);
             } catch (error) {
-                console.error("Error fetching logs:", error);
             } finally {
                 this.loading = false;
             }

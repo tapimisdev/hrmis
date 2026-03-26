@@ -296,10 +296,8 @@ export default {
                 this.logs = response.data.computedData;
                 this.summary = response.data.summary;
                 this.dtr_all = response.data;
-                console.log(toRaw(this.logs));
                 this.$emit("send-summary", response.data.summary);
             } catch (error) {
-                console.error("Error fetching logs:", error);
             }
             this.loading = false;
         },
@@ -519,7 +517,6 @@ export default {
             })
                 .then((response) => {})
                 .catch((error) => {
-                    console.error("Error downloading DTR:", error);
                     alert("Failed to download DTR. Please try again.");
                 });
         },

@@ -113,7 +113,7 @@ export default {
                         ? response.data.data
                         : response.data;
                 })
-                .catch((error) => console.error(error));
+                .catch(() => {});
         },
         search() {
             this.errors = {};

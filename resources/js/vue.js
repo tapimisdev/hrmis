@@ -22,6 +22,7 @@ import HrisIndex from "./admin/hris/HrisIndex.vue";
 import ImportCredits from "./admin/credits/Import.vue";
 import ImportEmployeeVue from "./admin/hris/employee/ImportEmployeeVue.vue";
 import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
+import PatchNotesPage from "./admin/pages/patch-notes/PatchNotesPage.vue";
 
 import WebtimeIndex from "./admin/web-time-access/WebtimeIndex.vue";
 
@@ -84,6 +85,7 @@ const authApp = createApp({
         ImportCredits,
         ImportEmployeeVue,
         UploadTimelogVue,
+        PatchNotesPage,
 
         PayrollEmployeeComponentIndex,
         PayrollEmployeeComponentForm,
@@ -155,7 +157,6 @@ const authApp = createApp({
                 }
             })
             .catch((error) => {
-                console.error("API error:", error);
             });
     },
     methods: {

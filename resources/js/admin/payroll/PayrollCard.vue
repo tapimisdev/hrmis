@@ -205,7 +205,12 @@ export default {
     },
 
     manageHref() {
-      return `/admin/payroll/${this.url}/${this.payroll.payroll_no}?batch_id=${this.payroll.batch_id}`
+      const baseUrl = `/admin/payroll/${this.url}/${this.payroll.payroll_no}`
+      const batchId = this.payroll?.batch_id
+
+      return batchId !== null && batchId !== undefined && batchId !== ""
+        ? `${baseUrl}?batch_id=${batchId}`
+        : baseUrl
     },
 
     actions() {

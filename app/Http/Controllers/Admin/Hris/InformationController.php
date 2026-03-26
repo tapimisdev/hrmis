@@ -412,7 +412,7 @@ class InformationController extends Controller
     {
         $rules = [
             'employee_no' => [
-                'required',
+                'nullable',
                 Rule::unique('employee_information', 'employee_no')
                     ->ignore($employee_no, 'employee_no')
             ],

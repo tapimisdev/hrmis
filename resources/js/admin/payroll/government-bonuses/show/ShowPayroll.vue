@@ -70,7 +70,6 @@ export default {
                 this.computation_type = response.data.computation_type;
                 this.employees = response.data.employees;
             } catch (error) {
-                console.error("Failed to fetch registry:", error.response?.data || error.message);
             }
         },
         async deleteEmployeePayroll(emp) {

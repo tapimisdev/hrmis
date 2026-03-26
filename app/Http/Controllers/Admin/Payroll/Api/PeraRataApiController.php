@@ -8,7 +8,7 @@ use App\Services\PeraRata\PayrollService;
 use App\Services\PeraRata\GetEmployeeService;
 use App\Services\Exports\PayslipService;
 use App\Services\Exports\AUTService;
-use App\Services\Exports\RegistryService;
+use App\Services\Exports\PeraRataRegistryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -77,7 +77,7 @@ class PeraRataApiController extends Controller
 
     public function downloadPayrollRegistry($payroll_no)
     {
-       return app(RegistryService::class)->download($payroll_no);
+       return app(PeraRataRegistryService::class)->download($payroll_no);
     }
 
     public function downloadAbsencesLeaves($payroll_no) {

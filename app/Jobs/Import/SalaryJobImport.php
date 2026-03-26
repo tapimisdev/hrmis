@@ -26,20 +26,21 @@ class SalaryJobImport implements ShouldQueue
     public function handle(): void
     {
         $employeeNo     = $this->employee['Employee No'] ?? null;
-        $name           = $this->employee['Name'] ?? null;
-        $position       = $this->employee['Position'] ?? null;
+        [$nameFromBlock, $positionFromBlock] = $this->extractNameAndPosition((string) ($this->employee['Name'] ?? ''));
+        $name           = $nameFromBlock ?: ($this->employee['Name'] ?? null);
+        $position       = $this->employee['Position'] ?? $positionFromBlock;
         $salaryGrade    = $this->employee['Salary Grade'] ?? null;
 
-        $basicSalary    = (float) ($this->employee['Monthly Rate'] ?? 0);
-        $salaryEarned   = (float) ($this->employee['Salary Earned'] ?? 0);
-        $netSalary      = (float) ($this->employee['Net salary'] ?? 0);
+        $basicSalary    = $this->amountFromKeys(['Monthly Rate']);
+        $salaryEarned   = $this->amountFromKeys(['Salary Earned']);
+        $netSalary      = $this->amountFromKeys(['Net Salary', 'Net salary', 'NET SALARY']);
 
-        $threePercent   = (float) ($this->employee['Three Percent'] ?? 0);
-        $twoPercent     = (float) ($this->employee['Two Percent'] ?? 0);
-        $fivePercent    = (float) ($this->employee['Five Percent'] ?? 0);
+        $threePercent   = $this->amountFromKeys(['Three Percent']);
+        $twoPercent     = $this->amountFromKeys(['Two Percent']);
+        $fivePercent    = $this->amountFromKeys(['Five Percent']);
 
-        $hmo            = (float) ($this->employee['Healthcard'] ?? 0);
-        $aut            = (float) ($this->employee['AUT'] ?? 0);
+        $hmo            = $this->amountFromKeys(['Healthcard', 'Health Card', 'HMO']);
+        $aut            = $this->amountFromKeys(['AUT']);
 
         if (!$employeeNo || !$name) {
             return; 
@@ -84,5 +85,47 @@ class SalaryJobImport implements ShouldQueue
                 'created_at'        => now(),
             ]
         );
+    }
+
+    private function extractNameAndPosition(string $value): array
+    {
+        $normalizedValue = preg_replace('/<br\s*\/?>/i', "\n", $value);
+        $normalizedValue = str_replace(["\r\n", "\r"], "\n", $normalizedValue);
+        $lines = array_values(array_filter(array_map('trim', explode("\n", $normalizedValue)), fn ($line) => $line !== ''));
+
+        $name = $lines[0] ?? '';
+        $position = count($lines) > 1 ? implode("\n", array_slice($lines, 1)) : '';
+
+        return [$name, $position];
+    }
+
+    private function toAmount($value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        $normalized = preg_replace('/[^0-9.\-]/', '', (string) $value);
+
+        if ($normalized === '' || $normalized === '-' || $normalized === '.') {
+            return 0.0;
+        }
+
+        return (float) $normalized;
+    }
+
+    private function amountFromKeys(array $keys): float
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $this->employee)) {
+                return $this->toAmount($this->employee[$key]);
+            }
+        }
+
+        return 0.0;
     }
 }

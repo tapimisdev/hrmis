@@ -267,7 +267,6 @@ export default {
                 this.validateAndGetReview();
             })
             .error((error) => {
-                console.error("Error:", error);
             });
     },
     beforeDestroy() {

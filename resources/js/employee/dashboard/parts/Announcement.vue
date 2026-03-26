@@ -42,7 +42,6 @@ export default {
 
         this.announcements = response.data.data;
       } catch (error) {
-        console.error('Error fetching stats:', error);
       }
     },
   }

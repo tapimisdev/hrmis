@@ -108,7 +108,6 @@ export default {
 
                 this.overtime = response.data.overtime ?? this.overtime;
             } catch (error) {
-                console.error("Error fetching overtime:", error);
                 if (error.response?.status === 422) {
                     this.errors = error.response.data.errors;
                 }

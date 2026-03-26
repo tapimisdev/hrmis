@@ -3,6 +3,12 @@
 @section('content')
     <div class="container-fluid">
         <x-header title="Hazard Payroll" subtitle="View hazard payroll in this module">
+            <x-button-link
+                :href="route('registry.hazard.index')"
+                icon="fa-solid fa-upload"
+                text="Import Registry"
+                variant="dark"
+            />
 
             <x-button-link 
                 :href="route('hazard-pay.create')" 

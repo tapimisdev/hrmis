@@ -12,7 +12,7 @@
   >
     <template #sheet-type>( GOVERNMENT BONUS )</template>
     <template #agency>TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template>
-    <template #title>PAYROLL OF {{ (bonus_type_name || 'GOVERNMENT BONUS').toUpperCase() }} FOR THE MONTH OF {{ month }}</template>
+    <template #title>PAYROLL OF {{ (bonus_type_name || 'GOVERNMENT BONUS').toUpperCase() }} FOR THE MONTH OF {{ month?.toUpperCase() }}</template>
 
     <template #period>
       Month: <strong>{{ month }}</strong>
@@ -57,7 +57,7 @@
             <th v-if="!isManual" style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
             <th style="min-width: 220px">Remarks</th>
-            <th>actions</th>
+            <th>Actions</th>
           </tr>
         </thead>
 
@@ -225,7 +225,6 @@ export default {
         );
         this.$emit("fetch_data");
       } catch (error) {
-        console.error(error.response?.data || error.message);
       } finally {
         this.loading = false;
       }

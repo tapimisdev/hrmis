@@ -84,7 +84,6 @@ export default {
                 if (!response.ok) throw new Error("API error");
                 this.logs = await response.json();
             } catch (error) {
-                console.error("Failed to fetch logs:", error);
                 this.logs = [
                     {
                         employee_name: "John Doe",

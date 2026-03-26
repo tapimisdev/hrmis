@@ -681,5 +681,4 @@ class EmployeeService {
             'previous_balance' => $previousBalance ?? 0
         ];
     }
-
 }

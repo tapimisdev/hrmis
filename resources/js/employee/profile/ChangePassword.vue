@@ -114,7 +114,6 @@ export default {
                 this.isForcedUpdate = response.data.isForcedUpdate ?? false;
             })
             .catch((error) => {
-                console.error("API error:", error);
             });
     },
     methods: {

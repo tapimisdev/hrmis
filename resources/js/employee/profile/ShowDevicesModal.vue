@@ -150,7 +150,6 @@ export default {
                 });
                 this.devices = response.data;
             } catch (error) {
-                console.error("Error fetching devices:", error);
                 this.loading = false;
             }
         },
@@ -219,7 +218,6 @@ export default {
                 this.showDeleteModal = false;
                 this.deviceToDelete = null;
             } catch (error) {
-                console.error("Error deleting device:", error);
             } finally {
                 this.isDeleting = false;
             }

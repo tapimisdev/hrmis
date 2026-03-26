@@ -4,7 +4,7 @@
     <div class="container-fluid">
         <x-header title="Salary Payroll" subtitle="View salary payroll in this module">
             <x-button-link 
-                :href="route('salary-pay.create')" 
+                :href="route('registry.salary.index')" 
                 icon="fa-solid fa-upload" 
                 text="Import Registry" 
                 variant="dark"

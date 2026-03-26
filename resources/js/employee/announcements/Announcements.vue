@@ -173,7 +173,6 @@ export default {
                 }?${params.toString()}`;
                 window.history.pushState({}, "", newUrl);
             } catch (error) {
-                console.error("Error fetching announcements:", error);
             } finally {
                 this.loading = false; // Always reset loading
             }

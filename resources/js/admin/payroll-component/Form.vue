@@ -254,7 +254,6 @@ export default {
                     this.filteredItems();
                 })
                 .catch((error) => {
-                    console.error(error);
                     ErrorToast.fire({
                         title:
                             error.response?.data?.message ||
@@ -276,7 +275,6 @@ export default {
                     });
                 })
                 .catch((error) => {
-                    console.error(error);
                     ErrorToast.fire({
                         title:
                             error.response?.data?.message ||

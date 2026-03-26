@@ -11,7 +11,6 @@ let modalContext = null;
 export function initCalendar(selector = '.full-calendar', options = {}) {
     const calendarEl = document.querySelector(selector);
     if (!calendarEl) {
-        console.warn('Calendar element not found:', selector);
         return;
     }
 
@@ -114,7 +113,6 @@ export function initCalendar(selector = '.full-calendar', options = {}) {
 
         const $container = $('#slot-modal');
         if ($container.length === 0) {
-            console.error('Missing #slot-modal container.');
             return;
         }
 
@@ -294,7 +292,6 @@ export function setEvents(events = [], raw = []) {
     rawData = raw;
 
     if (!calendar) {
-        console.error('Calendar not initialized.');
         return;
     }
 

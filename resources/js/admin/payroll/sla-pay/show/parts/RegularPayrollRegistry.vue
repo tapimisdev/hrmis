@@ -3,10 +3,10 @@
     :status="status"
     :payroll_no="payroll_no"
     :loading="loading"
-    :downloads="[
-      { key: 'registry', label: 'Payroll Registry' },
-      { key: 'payslip', label: 'Payslip' },
-    ]"
+    :downloads="[{ key: 'registry', label: 'Registry' }]"
+    :download-endpoints="{
+      registry: `/api/payroll/sla-pay/download/registry/${payroll_no}`,
+    }"
     @print="handlePrint"
     @download="handleDownload"
   >
@@ -14,7 +14,7 @@
     <template #sheet-type>( SLA PAY )</template>
     <template #agency>TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template>
     <template #title>
-      PAYROLL OF SUBSISTENCE AND LAUNDRY ALLOWANCE PAY FOR THE MONTH OF {{ month }}
+      PAYROLL OF SUBSISTENCE AND LAUNDRY ALLOWANCE PAY FOR THE MONTH OF {{ month?.toUpperCase() }}
     </template>
 
     <template #period>
@@ -87,7 +87,7 @@
             <th style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
             <th style="min-width: 220px">Remarks</th>
-            <th>actions</th>
+            <th>Actions</th>
           </tr>
         </thead>
 
@@ -224,14 +224,30 @@ export default {
       window.print();
     },
 
-    // Layout should emit: this.$emit('download', { key: 'registry' | 'payslip' })
     async handleDownload({ key }) {
-      // TODO: wire endpoints
-      // const urlArr = {
-      //   registry: `/api/payroll/sla-pay/download/registry/${this.payroll_no}`,
-      //   payslip: `/api/payroll/sla-pay/download/payslip/${this.payroll_no}`,
-      // };
-      // await this.downloadFile(urlArr[key], `${key}_${this.payroll_no}.xlsx`);
+      if (key !== "registry") return;
+
+      try {
+        const response = await axios.get(
+          `/api/payroll/sla-pay/download/registry/${this.payroll_no}`,
+          {
+            headers: { Authorization: `Bearer ${this.token}` },
+            responseType: "blob",
+          }
+        );
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${this.payroll_no}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Download failed:", error);
+      }
     },
 
     formatNumber(value) {
@@ -265,7 +281,6 @@ export default {
 
         this.$emit("fetch_data");
       } catch (error) {
-        console.error(error.response?.data || error.message);
       } finally {
         this.loading = false;
       }

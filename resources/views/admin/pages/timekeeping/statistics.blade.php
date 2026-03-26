@@ -518,8 +518,6 @@ $(function () {
         const accessed = resultData.loginAccessed ?? {};
         const notAccessed = resultData.loginNotAccessed ?? {};
 
-        console.log(resultData);
-
         const accessedCount = Number(accessed.count ?? 0);
         const notAccessedCount = Number(notAccessed.count ?? 0);
         const totalEmployees = accessedCount + notAccessedCount;
