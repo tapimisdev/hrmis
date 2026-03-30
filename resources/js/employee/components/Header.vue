@@ -3,7 +3,7 @@
     <incomplete-logs> </incomplete-logs>
     <div class="d-flex gap-4 justify-content-end align-items-center">
       <widget-component />
-      <online-users :user-id="userId" />
+      <online-users :user-id="userId" :user-role="userRole" />
       <notification-component :user-role="userRole" :user-id="userId" />  
       <profile-component />
     </div>

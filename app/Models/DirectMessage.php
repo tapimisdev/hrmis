@@ -24,11 +24,19 @@ class DirectMessage extends Model
         'pinned_at',
         'pinned_by_id',
         'read_at',
+        'edited_at',
+        'unsent_at',
+        'unsent_by_id',
+        'is_unsent',
     ];
 
     protected $casts = [
+        'body' => 'encrypted',
         'read_at' => 'datetime',
         'pinned_at' => 'datetime',
+        'edited_at' => 'datetime',
+        'unsent_at' => 'datetime',
+        'is_unsent' => 'boolean',
     ];
 
     public function sender()
@@ -44,5 +52,10 @@ class DirectMessage extends Model
     public function replyTo()
     {
         return $this->belongsTo(self::class, 'reply_to_id');
+    }
+
+    public function unsentBy()
+    {
+        return $this->belongsTo(User::class, 'unsent_by_id');
     }
 }

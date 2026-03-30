@@ -13,6 +13,8 @@ class Note extends Model
     protected $fillable = ['user_id', 'title', 'content', 'hasPin', 'pin'];
 
     protected $casts = [
+        'title' => 'encrypted',
+        'content' => 'encrypted',
         'hasPin' => 'boolean',
         'pin' => 'string', // Ensure it's treated as string
     ];

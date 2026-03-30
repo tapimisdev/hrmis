@@ -45,6 +45,10 @@ class DirectMessageController extends Controller
                     'pinned_at' => $message->pinned_at?->toIso8601String(),
                     'pinned_by_id' => $message->pinned_by_id,
                     'is_pinned' => (bool) $message->pinned_at,
+                    'edited_at' => $message->edited_at?->toIso8601String(),
+                    'unsent_at' => $message->unsent_at?->toIso8601String(),
+                    'unsent_by_id' => $message->unsent_by_id,
+                    'is_unsent' => (bool) ($message->is_unsent ?? $message->unsent_at),
                     'reply_to' => $message->replyTo ? [
                         'id' => $message->replyTo->id,
                         'body' => $message->replyTo->body,
@@ -171,6 +175,7 @@ class DirectMessageController extends Controller
             'attachment_size' => $attachmentSize,
             'attachment_extension' => $attachmentExtension,
             'attachment_type' => $attachmentType,
+            'is_unsent' => false,
         ]);
 
         $message->load('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type');
@@ -182,6 +187,99 @@ class DirectMessageController extends Controller
         return response()->json([
             'message' => $payload,
         ], 201);
+    }
+
+    public function update(Request $request, DirectMessage $message)
+    {
+        $authUser = $request->user();
+        $this->authorizeMessageParticipant($authUser, $message);
+
+        if ((int) $message->sender_id !== (int) $authUser->id) {
+            return response()->json([
+                'message' => 'Only the sender can edit this message.',
+            ], 403);
+        }
+
+        if ((bool) ($message->is_unsent ?? $message->unsent_at)) {
+            return response()->json([
+                'message' => 'This message has already been unsent.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $message->body = trim((string) $validated['body']);
+        $message->edited_at = Carbon::now();
+        $message->save();
+        $message->load('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type');
+
+        $payload = $this->formatMessage($message, $authUser, true);
+        $conversationPreview = $this->conversationPreviewForMessage($message, $authUser);
+
+        event(new DirectMessageUpdated([
+            'message' => $payload,
+            'conversation_preview' => $conversationPreview,
+        ]));
+
+        return response()->json([
+            'message' => $payload,
+            'conversation_preview' => $conversationPreview,
+        ]);
+    }
+
+    public function destroy(Request $request, DirectMessage $message)
+    {
+        $authUser = $request->user();
+        $this->authorizeMessageParticipant($authUser, $message);
+
+        if ((int) $message->sender_id !== (int) $authUser->id) {
+            return response()->json([
+                'message' => 'Only the sender can unsend this message.',
+            ], 403);
+        }
+
+        if ((bool) ($message->is_unsent ?? $message->unsent_at)) {
+            return response()->json([
+                'message' => 'This message has already been unsent.',
+            ], 422);
+        }
+
+        if ($message->attachment_path) {
+            Storage::disk('public')->delete($message->attachment_path);
+        }
+
+        $message->unsent_at = Carbon::now();
+        $message->unsent_by_id = $authUser->id;
+        $message->is_unsent = true;
+        $message->body = null;
+        $message->attachment_path = null;
+        $message->attachment_name = null;
+        $message->attachment_mime = null;
+        $message->attachment_size = null;
+        $message->attachment_extension = null;
+        $message->attachment_type = null;
+        $message->edited_at = null;
+        $message->reaction = null;
+        $message->pinned_at = null;
+        $message->pinned_by_id = null;
+        $message->save();
+        $message->load('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type');
+
+        $payload = $this->formatMessage($message, $authUser, true);
+        $conversationPreview = $this->conversationPreviewForMessage($message, $authUser);
+
+        event(new DirectMessageUpdated([
+            'message' => $payload,
+            'conversation_preview' => $conversationPreview,
+            'is_unsent' => true,
+        ]));
+
+        return response()->json([
+            'message' => $payload,
+            'conversation_preview' => $conversationPreview,
+        ]);
     }
 
     public function react(Request $request, DirectMessage $message)
@@ -420,6 +518,26 @@ class DirectMessageController extends Controller
             ->all();
     }
 
+    protected function conversationPreviewForMessage(DirectMessage $message, User $authUser): array
+    {
+        $partnerId = (int) $message->sender_id === (int) $authUser->id
+            ? $message->recipient_id
+            : $message->sender_id;
+
+        $partner = User::findOrFail($partnerId);
+        $latestMessage = $this->conversationQuery($authUser, $partner)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+
+        return [
+            'partner_id' => $partnerId,
+            'latest_message' => $latestMessage ? $this->formatMessage($latestMessage, $authUser, true) : null,
+            'preview' => $latestMessage ? $this->formatReplyPreview($latestMessage) : 'Start a conversation',
+            'latest_at' => $latestMessage?->created_at?->toIso8601String(),
+        ];
+    }
+
     protected function supportsPinnedMessages(): bool
     {
         return Schema::hasColumn('direct_messages', 'pinned_at') &&
@@ -456,6 +574,10 @@ class DirectMessageController extends Controller
             'pinned_by_id' => $message->pinned_by_id,
             'is_pinned' => (bool) $message->pinned_at,
             'read_at' => $includeReadAt ? $message->read_at?->toIso8601String() : null,
+            'edited_at' => $message->edited_at?->toIso8601String(),
+            'unsent_at' => $message->unsent_at?->toIso8601String(),
+            'unsent_by_id' => $message->unsent_by_id,
+            'is_unsent' => (bool) ($message->is_unsent ?? $message->unsent_at),
             'is_mine' => (int) $message->sender_id === (int) $authUser->id,
             'created_at' => $message->created_at?->toIso8601String(),
         ];
@@ -469,6 +591,10 @@ class DirectMessageController extends Controller
 
         if (filled($message->body)) {
             return $message->body;
+        }
+
+        if ((bool) ($message->is_unsent ?? $message->unsent_at)) {
+            return 'Unsent Message';
         }
 
         if ($message->attachment_name) {
