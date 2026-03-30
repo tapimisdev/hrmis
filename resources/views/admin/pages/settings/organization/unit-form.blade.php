@@ -62,6 +62,11 @@
                             <input type="text" id="name" name="name" class="form-control" value="{{$isEdit ? $data->name : ''}}">
                             <div class="error-field"></div>
                         </div>
+                        <div class="col-12 col-md-12 mb-3">
+                            <label class="mb-2" for="supervisor">Supervisor <span class="text-danger">*</span></label>
+                            <input type="text" id="supervisor" name="supervisor" class="form-control" value="{{$isEdit ? $data->supervisor : ''}}">
+                            <div class="error-field"></div>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-12 col-md-12 mb-3">

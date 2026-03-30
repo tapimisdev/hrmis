@@ -3,13 +3,59 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Schema;
 use App\Enums\EmploymentTypesEnum;
 
-use function PHPSTORM_META\map;
-
 class EmployeeService {
+
+    protected const EMPLOYEE_NO_TABLES = [
+        'employee_information',
+        'employee_personal',
+        'employee_family',
+        'employee_children',
+        'employee_education',
+        'employee_work_experience',
+        'employee_civil_service',
+        'employee_trainings',
+        'employee_voluntary_works',
+        'employee_skills_hobbies',
+        'employee_projects',
+        'employee_organization',
+        'employee_salary',
+        'employee_shift_work_schedule',
+        'employee_deductions',
+        'employee_earnings',
+        'leave_credits',
+        'offset_credits',
+        'leave_applications',
+        'overtime_applications',
+        'obs_applications',
+        'offset_applications',
+        'special_order_applications',
+        'lto_applications',
+        'timelogs',
+        'timelog_corrections',
+        'web_time_access',
+        'accomplishment_reports',
+        'payroll_salary_employee',
+        'payroll_salary_permanent_employees',
+        'payroll_dtr',
+        'payroll_hazard_pay_employee',
+        'payroll_sla_pay_employee',
+        'payroll_pera_rata_employee',
+        'payroll_longevity_pay_employee',
+        'payroll_group_employees',
+        'employee_payroll_components',
+        'module_tab_employees',
+        'ot_pay_employee',
+    ];
+
+    protected $salary_employee_service;
+
+    public function __construct(SalaryEmloyeeService $salary_employee_service)
+    {
+        $this->salary_employee_service = $salary_employee_service;
+    }
 
     # GET EMPLOYEE NUMBER BASED ON USER ID
     public function getEmployeeNo($user_id)
@@ -19,7 +65,7 @@ class EmployeeService {
                 ->select('id', 'employee_no')
                 ->first();
 
-        return $employee->employee_no;
+        return $employee->employee_no ?? null;
     }
 
     # GET EMPLOYEE NUMBER BASED ON FULL NAME
@@ -93,18 +139,10 @@ class EmployeeService {
     # STATUS | DIVISION | UNIT ID | EMPLOYMENT TYPE
     public function getEmployees(?string $status, ?string $division_id, ?string $unit_id, ?string $employment_type_id)
     {
-        $latestOrg = DB::table('employee_organization as eo1')
-            ->select('eo1.*')
-            ->whereRaw('eo1.id = (select max(eo2.id) from employee_organization eo2 where eo2.employee_no = eo1.employee_no)');
-
-        $latestSalary = DB::table('employee_salary as es1')
-            ->select('es1.*')
-            ->whereRaw('es1.id = (select max(es2.id) from employee_salary es2 where es2.employee_no = es1.employee_no)');
-
-        $latestShift = DB::table('employee_shift_work_schedule as sw1')
-            ->select('sw1.*')
-            ->whereRaw('sw1.id = (select max(sw2.id) from employee_shift_work_schedule sw2 where sw2.employee_no = sw1.employee_no)');
-
+        $latestOrg = $this->salary_employee_service->activeOrg();
+        $latestSalary = $this->salary_employee_service->activeSalary();
+        $latestShift = $this->salary_employee_service->activeShift();
+        
         return DB::table('employee_information')
             ->select(
                 'employee_information.employee_no',
@@ -113,6 +151,8 @@ class EmployeeService {
                 'employee_information.date_hired_company',
                 'employee_information.account_status',
                 'employee_information.isDeleted',
+                'employee_information.user_id',
+
                 'employee_personal.profile',
                 'employee_personal.firstname',
                 'employee_personal.lastname',
@@ -131,6 +171,7 @@ class EmployeeService {
                 'units.id as unit_id',
                 'units.code as unit_code',
                 'units.name as unit_name',
+                'units.supervisor as units_supervisor',
 
                 // Position
                 'positions.id as position_id',
@@ -151,7 +192,7 @@ class EmployeeService {
 
                 // Shift
                 'shift.shift_id',
-                'shift.work_schedule_id'
+                'shift.work_schedule_id',
             )
             ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
             ->leftJoinSub($latestOrg, 'org', 'employee_information.employee_no', '=', 'org.employee_no')
@@ -225,25 +266,9 @@ class EmployeeService {
          */
         if (!empty($config['joins']) && $type === 'information') {
 
-            $latestOrg = DB::table('employee_organization as eo1')
-                ->select('eo1.*')
-                ->whereRaw('eo1.created_at = (
-                    SELECT MAX(eo2.created_at)
-                    FROM employee_organization eo2
-                    WHERE eo2.employee_no = eo1.employee_no
-                )');
-
-            $latestSalary = DB::table('employee_salary as es1')
-                ->select('es1.*')
-                ->whereRaw('es1.created_at = (
-                    SELECT MAX(es2.created_at)
-                    FROM employee_salary es2
-                    WHERE es2.employee_no = es1.employee_no
-                )');
-                
-            $latestShift = DB::table('employee_shift_work_schedule as sw1')
-                ->select('sw1.*')
-                ->whereRaw('sw1.id = (select max(sw2.id) from employee_shift_work_schedule sw2 where sw2.employee_no = sw1.employee_no)');
+            $latestOrg = $this->salary_employee_service->activeOrg();
+            $latestSalary = $this->salary_employee_service->activeSalary();
+            $latestShift = $this->salary_employee_service->activeShift();
 
             $query->select(
                     'employee_information.employee_no',
@@ -271,6 +296,7 @@ class EmployeeService {
                     'units.id as unit_id',
                     'units.code as unit_code',
                     'units.name as unit_name',
+                    'units.supervisor as units_supervisor',
 
                     'positions.id as position_id',
                     'positions.code as position_code',
@@ -348,6 +374,54 @@ class EmployeeService {
             );
 
             return $employeeNo;
+        });
+    }
+
+    public function syncEmployeeNo(string $oldEmployeeNo, string $newEmployeeNo): array
+    {
+        $oldEmployeeNo = trim($oldEmployeeNo);
+        $newEmployeeNo = trim($newEmployeeNo);
+
+        if ($oldEmployeeNo === $newEmployeeNo) {
+            return [];
+        }
+
+        $oldExists = DB::table('employee_information')
+            ->where('employee_no', $oldEmployeeNo)
+            ->exists();
+
+        if (!$oldExists) {
+            throw new \RuntimeException("Employee #{$oldEmployeeNo} does not exist.");
+        }
+
+        $newExists = DB::table('employee_information')
+            ->where('employee_no', $newEmployeeNo)
+            ->exists();
+
+        if ($newExists) {
+            throw new \RuntimeException("Employee #{$newEmployeeNo} already exists.");
+        }
+
+        return DB::transaction(function () use ($oldEmployeeNo, $newEmployeeNo) {
+            $updatedTables = [];
+
+            foreach (self::EMPLOYEE_NO_TABLES as $table) {
+                if (!Schema::hasTable($table) || !Schema::hasColumn($table, 'employee_no')) {
+                    continue;
+                }
+
+                $affected = DB::table($table)
+                    ->where('employee_no', $oldEmployeeNo)
+                    ->update([
+                        'employee_no' => $newEmployeeNo,
+                    ]);
+
+                if ($affected > 0) {
+                    $updatedTables[$table] = $affected;
+                }
+            }
+
+            return $updatedTables;
         });
     }
     
@@ -607,5 +681,4 @@ class EmployeeService {
             'previous_balance' => $previousBalance ?? 0
         ];
     }
-
 }

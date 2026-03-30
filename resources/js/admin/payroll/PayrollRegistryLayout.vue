@@ -107,6 +107,10 @@ export default {
         { key: "payslip", label: "Payslip" },
       ],
     },
+    downloadEndpoints: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   data() {
     return {
@@ -180,13 +184,15 @@ export default {
   },
   methods: {
     async downloadPayroll(type, payroll_no) {
-      const urlArr = {
+      const defaultEndpoints = {
         registry: `/api/payroll/salary-pay/${payroll_no}/download`,
         aut: `/api/payroll/salary-pay/absences-leaves/${payroll_no}/download`,
         payslip: `/api/payroll/salary-pay/payslip/${payroll_no}/download`,
       };
 
-      const endPoint = urlArr[type];
+      const endPoint = this.downloadEndpoints[type] || defaultEndpoints[type];
+
+      if (!endPoint) return;
 
       try {
         const response = await axios.get(endPoint, {
@@ -551,11 +557,11 @@ export default {
 }
 
 [data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .earning) {
-  background: rgba(16, 185, 129, 0.15) !important;
+  background: rgb(50, 119, 96) !important;
 }
 
 [data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .deduction) {
-  background: rgba(248, 113, 113, 0.15) !important;
+  background: rgb(126, 74, 74) !important;
 }
 
 [data-bs-theme="dark"] .excel-table-wrapper :deep(.excel-table .net-salary) {

@@ -193,7 +193,6 @@ export default {
                 });
                 this.leaveTypes = data.leaves || [];
             } catch (e) {
-                console.error(e);
             }
         },
 

@@ -6,6 +6,10 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobFailed;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -18,6 +22,13 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        JobProcessed::class => [
+            \App\Listeners\AuditJobProcessed::class,
+        ],
+
+        JobFailed::class => [
+            \App\Listeners\AuditJobFailed::class,
+        ],
         // \Illuminate\Auth\Events\Login::class => [
         //     \App\Listeners\LogNewLogin::class,
         // ],
@@ -28,7 +39,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        
     }
 
     /**

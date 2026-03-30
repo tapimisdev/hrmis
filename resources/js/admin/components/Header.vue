@@ -1,7 +1,11 @@
 <template>
     <!-- Notification Component -->
     <li class="nav-item">
-      <notification :user-role="userRole" :user-id="userId" />    </li>
+      <online-users :user-id="userId"/>      
+    </li>
+    <li class="nav-item">
+      <notification :username="username" :user-role="userRole" :user-id="userId" />    
+    </li>
     <li>
         <div class="toggle-container">
             <button
@@ -132,10 +136,12 @@
 
 <script>
 import Notification from "./parts/Notification.vue";
+import OnlineUsers from "./parts/OnlineUsers.vue";
 export default {
     name: "AdminHeader",
     components: {
         Notification,
+        OnlineUsers
     },
     props: {
         username: {
@@ -170,7 +176,6 @@ export default {
                 await axios.post("/logout");
                 window.location.href = "/login";
             } catch (err) {
-                console.error(err);
             } finally {
                 this.loggingOut = false;
             }

@@ -3,10 +3,10 @@
     :status="status"
     :payroll_no="payroll_no"
     :loading="loading"
-    :downloads="[
-      { key: 'registry', label: 'Payroll Registry' },
-      { key: 'payslip', label: 'Payslip' },
-    ]"
+    :downloads="[{ key: 'registry', label: 'Registry' }]"
+    :download-endpoints="{
+      registry: `/api/payroll/sla-pay/download/registry/${payroll_no}`,
+    }"
     @print="handlePrint"
     @download="handleDownload"
   >
@@ -14,7 +14,7 @@
     <template #sheet-type>( SLA PAY )</template>
     <template #agency>TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template>
     <template #title>
-      PAYROLL OF SUBSISTENCE AND LAUNDRY ALLOWANCE PAY FOR THE MONTH OF {{ month }}
+      PAYROLL OF SUBSISTENCE AND LAUNDRY ALLOWANCE PAY FOR THE MONTH OF {{ month?.toUpperCase() }}
     </template>
 
     <template #period>
@@ -87,6 +87,7 @@
             <th style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
             <th style="min-width: 220px">Remarks</th>
+            <th>Actions</th>
           </tr>
         </thead>
 
@@ -110,7 +111,7 @@
             <td class="text-center">
               <input
                 type="number"
-                class="form-control border-0 text-center"
+                class="form-control border-0 text-center bg-body"
                 v-model="emp.adjustments"
                 @change="adjustRow(emp)"
               />
@@ -122,14 +123,24 @@
 
             <td class="text-center">
               <textarea
-                class="form-control border-0"
+                class="form-control border-0 bg-body"
                 v-model="emp.remarks"
                 @change="adjustRow(emp)"
               ></textarea>
             </td>
+            <td class="text-center">
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="$emit('delete', emp)"
+                title="Delete"
+              >
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
           </tr>
           <tr v-if="!filteredEmployees.length">
-            <td colspan="11" class="text-center py-3">
+            <td colspan="12" class="text-center py-3">
               No employees found for the selected filters.
             </td>
           </tr>
@@ -147,6 +158,7 @@
             <td class="number-cell">{{ formatNumber(grandTotals("healthcard")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("adjustments")) }}</td>
             <td class="number-cell"><strong>{{ formatNumber(grandTotals("net_pay")) }}</strong></td>
+            <td></td>
             <td></td>
           </tr>
         </tfoot>
@@ -212,14 +224,30 @@ export default {
       window.print();
     },
 
-    // Layout should emit: this.$emit('download', { key: 'registry' | 'payslip' })
     async handleDownload({ key }) {
-      // TODO: wire endpoints
-      // const urlArr = {
-      //   registry: `/api/payroll/sla-pay/download/registry/${this.payroll_no}`,
-      //   payslip: `/api/payroll/sla-pay/download/payslip/${this.payroll_no}`,
-      // };
-      // await this.downloadFile(urlArr[key], `${key}_${this.payroll_no}.xlsx`);
+      if (key !== "registry") return;
+
+      try {
+        const response = await axios.get(
+          `/api/payroll/sla-pay/download/registry/${this.payroll_no}`,
+          {
+            headers: { Authorization: `Bearer ${this.token}` },
+            responseType: "blob",
+          }
+        );
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${this.payroll_no}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Download failed:", error);
+      }
     },
 
     formatNumber(value) {
@@ -253,7 +281,6 @@ export default {
 
         this.$emit("fetch_data");
       } catch (error) {
-        console.error(error.response?.data || error.message);
       } finally {
         this.loading = false;
       }

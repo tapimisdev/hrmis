@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\DB;
 
 class PayrollComponentsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:hr.payroll_components.view')->only(['index', 'create']);
+        $this->middleware('permission:hr.payroll_components.create')->only(['store']);
+        $this->middleware('permission:hr.payroll_components.update')->only(['update']);
+        $this->middleware('permission:hr.payroll_components.delete')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         if($request->wantsJson()) {
@@ -23,9 +31,7 @@ class PayrollComponentsController extends Controller
     }
 
     public function create() {
-
         return view('admin.pages.settings.payroll-components.form');
-
     }
 
     public function store(Request $request)

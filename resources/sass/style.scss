@@ -33,6 +33,19 @@
     cursor: no-drop;   
 }
 
+/* Keep lightGallery above the admin UI, sidebars, and chat dock */
+.lg-backdrop {
+    z-index: 20000 !important;
+}
+
+.lg-outer {
+    z-index: 20001 !important;
+}
+
+.lg-container {
+    z-index: 20002 !important;
+}
+
 #calendar {
     td {
         height: 100px;

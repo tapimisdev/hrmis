@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Log;
 class DailyTimeRecordService {
 
     protected $timelogs_services;
+    protected $salaryEmloyeeService;
 
-    public function __construct(TimelogsServices $timelogs_services)
+    public function __construct(TimelogsServices $timelogs_services, SalaryEmloyeeService $salaryEmloyeeService)
     {
         $this->timelogs_services = $timelogs_services;
+        $this->salaryEmloyeeService = $salaryEmloyeeService;
     }
 
     /**
@@ -46,9 +48,7 @@ class DailyTimeRecordService {
         $period = CarbonPeriod::create($startDate, $endDate);
 
         $timelogs = $this->timelogs_services->getTimeLogsWithPeriod($userId, $startDate, $endDate);
-
         $mapPeriodToTimelogs = $this->mapPeriodToTimelogs($period, $timelogs);
-                
         return $this->compute($mapPeriodToTimelogs, $userId);
     }
 
@@ -551,6 +551,7 @@ class DailyTimeRecordService {
                 'late_undertime'    => max(0, $tar_under['lost_minutes']),
                 'paid_hours'        => $paid_hours,
                 'remarks'           => $remarks,
+                'accomplishments'   => $date['accomplishment'] ?? null
             ];
         }
 
@@ -717,11 +718,15 @@ class DailyTimeRecordService {
      */
     protected function getUserDefault($user_id)
     {
-        return  DB::table('employee_information as ei')
-                ->leftJoin('employee_shift_work_schedule as sws', 'ei.employee_no', '=', 'sws.employee_no')
-                ->where('ei.user_id', $user_id)
-                ->select('ei.employee_no', 'sws.shift_id', 'sws.work_schedule_id')
-                ->first();                
+        $active_shift = $this->salaryEmloyeeService->activeShift();
+
+        return DB::table('employee_information as ei')
+            ->leftJoinSub($active_shift, 'sws', function ($join) {
+                $join->on('ei.employee_no', '=', 'sws.employee_no');
+            })
+            ->where('ei.user_id', $user_id)
+            ->select('ei.employee_no', 'sws.shift_id', 'sws.work_schedule_id')
+            ->first();
     }
 
     private function formatTime($totalMinutes) {

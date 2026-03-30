@@ -3,46 +3,22 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <title>{{ config('app.name', 'Laravel') }}</title>
-
-    <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
-    <!-- DataTables -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-
-    <!-- FullCalendar -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
-
-    <!-- Fancybox -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/fancybox/fancybox.css"/>
-
-    <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon/favicon-16x16.png') }}">
-
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.0/moment.min.js"></script>
-
-    <!-- Theme + Sidebar init -->
     <script>
         (function () {
-            // Theme setup
             const storageKey = 'theme-preference';
             const storedTheme = localStorage.getItem(storageKey);
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -51,7 +27,6 @@
         })();
 
         (function () {
-            // Sidebar collapse setup
             const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
             document.addEventListener('DOMContentLoaded', () => {
                 const sidebar = document.querySelector('.sidebar');
@@ -64,10 +39,7 @@
             });
         })();
     </script>
-
     @yield('styles')
-
-    <!-- Vite compiled assets -->
     @vite([
         'resources/sass/app.scss',
         'resources/js/app.js',
@@ -92,7 +64,6 @@
 
             @include('employee.components.footer')
 
-            <!-- FORCE CHANGE PASSWORD MODAL -->
             <div class="modal fade"
                  id="forceChangePasswordModal"
                  tabindex="-1"
@@ -106,7 +77,6 @@
 
                             <div class="row g-4 align-items-start">
 
-                                <!-- LEFT : VIDEO SECTION -->
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <h4 class="fw-semibold mb-1">📺 Full Video Tutorial</h4>
@@ -134,7 +104,6 @@
                                     </div>
                                 </div>
 
-                                <!-- RIGHT : PASSWORD SECTION -->
                                 <div class="col-md-6">
                                     <div class="alert alert-info d-flex align-items-start gap-2 small mb-4 rounded shadow-sm" role="alert">
                                         <span class="fs-5">🔐</span>
@@ -156,33 +125,21 @@
                     </div>
                 </div>
             </div>
-
             <push-notification :user-role="'employee'" :user-id='@json(Auth::id())'></push-notification>
         </main>
     </div>
-
-    <!-- JS Libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-    <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-    <!-- Fancybox -->
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.0/dist/fancybox/fancybox.umd.js"></script>
-
-    <!-- FullCalendar -->
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.15/index.global.min.js'></script>
-
-    <!-- Party.js -->
     <script src="https://cdn.jsdelivr.net/npm/party-js@latest/bundle/party.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.0/tinymce.min.js"></script>
     @yield('scripts')
 
-    <!-- Sidebar Toggle Script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const app = document.getElementById('app');
@@ -216,8 +173,6 @@
             });
         });
     </script>
-
-    <!-- Save auth_token to localStorage -->
     <script>
         @if(session('auth_token'))
             localStorage.setItem('auth_token', @json(session('auth_token')));

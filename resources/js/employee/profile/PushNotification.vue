@@ -222,7 +222,6 @@ export default {
                                     window.location.href = newToast.link;
                                 })
                                 .catch((error) => {
-                                    console.error(error);
                                 });
                         },
                         { once: true },
@@ -276,7 +275,6 @@ export default {
             if (!this.audio) return;
             this.audio.currentTime = 0;
             this.audio.play().catch((err) => {
-                console.warn("Unable to play sound:", err);
             });
         },
     },

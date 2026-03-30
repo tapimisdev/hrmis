@@ -40,10 +40,6 @@ class SalaryController extends Controller
     {
         $batch_id = request()->query('batch_id');
 
-        if (!$batch_id) {
-            abort(404, 'Batch ID not provided.');
-        }
-
         // Fetch payroll record
         $payroll = DB::table('payroll_salary')->where('payroll_no', $payroll_no)->first();
 
@@ -51,28 +47,30 @@ class SalaryController extends Controller
             abort(404, 'Payroll not found.');
         }
 
-        $payroll_id = $payroll->id;
+        $batch_id = $batch_id ?: $payroll->batch_id;
+        $batch = null;
+        $batchProgress = 100;
+        $batchStatus = $payroll->status === 'failed' ? 'failed' : 'completed';
 
-        // Find the batch using Laravel's Bus helper
-        $batch = Bus::findBatch($batch_id);
+        if ($batch_id) {
+            // Find the batch using Laravel's Bus helper
+            $batch = Bus::findBatch($batch_id);
 
-        if (!$batch) {
-            abort(404, 'Batch not found.');
+            if ($batch) {
+                // Determine the batch status
+                if ($batch->finished()) {
+                    $batchStatus = 'completed';
+                } elseif ($batch->cancelled()) {
+                    $batchStatus = 'cancelled';
+                } elseif ($batch->failedJobs > 0) {
+                    $batchStatus = 'failed';
+                } else {
+                    $batchStatus = 'processing';
+                }
+
+                $batchProgress = $batch->progress();
+            }
         }
-
-        // Determine the batch status
-        if ($batch->finished()) {
-            $batchStatus = 'completed';
-        } elseif ($batch->cancelled()) {
-            $batchStatus = 'cancelled';
-        } elseif ($batch->failedJobs > 0) {
-            $batchStatus = 'failed';
-        } else {
-            $batchStatus = 'processing';
-        }
-
-        // Include progress info (optional)
-        $batchProgress = $batch->progress(); // 0–100 %
 
         $employymentEnums = collect(EmploymentTypesEnum::cases())
             ->firstWhere('value', $payroll->employment_type_id);
@@ -96,6 +94,7 @@ class SalaryController extends Controller
         Log::info('Creating payroll with data: ', $validatedData);
 
         try {
+            
             // Wrap only the critical DB operation in a transaction
             $payroll = DB::transaction(function () use ($validatedData) {
                 return $this->payroll_service->createPayroll($validatedData);
@@ -113,6 +112,7 @@ class SalaryController extends Controller
                 'payroll_id' => $payroll_id,
                 'payroll_no' => $payroll_no
             ], 201);
+
         } catch (\Throwable $e) {
             Log::error('Payroll creation failed: ' . $e->getMessage(), ['exception' => $e]);
             return response()->json([
@@ -286,6 +286,38 @@ class SalaryController extends Controller
                 'status'  => 'update failed'
             ], 500);
         }
+    }
+
+    public function deleteEmployeePayroll($id, $employment_type)
+    {
+        // Determine table based on employment type
+        $table = match ($employment_type) {
+            'REGULAR' => 'payroll_salary_permanent_employees',
+            'COS' => 'payroll_salary_employee',
+            default => null,
+        };
+
+        if (!$table) {
+            return response()->json([
+                'message' => 'Invalid employment type.'
+            ], 400);
+        }
+
+        // Check if record exists
+        $exists = DB::table($table)->where('id', $id)->exists();
+
+        if (!$exists) {
+            return response()->json([
+                'message' => 'Employee payroll not found.'
+            ], 404);
+        }
+
+        // Delete record
+        DB::table($table)->where('id', $id)->delete();
+
+        return response()->json([
+            'message' => 'Employee payroll deleted successfully.'
+        ]);
     }
 
     public function import_save(Request $request) {}

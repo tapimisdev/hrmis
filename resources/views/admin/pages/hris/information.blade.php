@@ -90,8 +90,8 @@
                                 <div class="accordion-body">
                                     <div class="row">
                                         <div class="col-12 col-md-3 mb-3">
-                                            <label class="mb-2" for="employee_no">Employee No. <span class="text-danger">*</span></label>
-                                            <input type="text" id="employee_no" name="employee_no" class="form-control" value="{{ optional($data)->employee_no ?? '' }}">
+                                            <label class="mb-2" for="employee_no">Employee No.</label>
+                                            <input type="text" id="employee_no" name="employee_no" class="form-control" value="{{ optional($data)->employee_no ?? '' }}" disabled>
                                             <div class="error-field"></div>
                                         </div>
                                         <div class="col-12 col-md-3 mb-3">

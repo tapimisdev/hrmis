@@ -16,7 +16,6 @@ use App\Http\Controllers\Api\ForceUpdatePassword;
 |
 */
 
-
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', function (Request $request) {
@@ -30,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     require __DIR__ . '/apis/maintenance.php';
     require __DIR__ . '/apis/employee.php';
+    require __DIR__ . '/apis/messages.php';
     require __DIR__ . '/apis/payroll.php';
     require __DIR__ . '/apis/user.php';
     require __DIR__ . '/apis/timekeeping.php';
@@ -39,4 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
     require __DIR__ . '/apis/reports.php';
     require __DIR__ . '/apis/tax.php';
     
+<<<<<<< HEAD
 });
+=======
+
+});
+>>>>>>> 0935048366916ed6b0ddff6397b9fa81e380e2ba

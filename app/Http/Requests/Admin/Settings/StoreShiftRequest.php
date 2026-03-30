@@ -48,7 +48,8 @@ class StoreShiftRequest extends FormRequest
             // Flags
             'is_break_required' => 'required|boolean',
             'is_night_shift'    => 'required|boolean',
-            'is_flexible'       => 'required|boolean',
+            'is_flexible'  => 'required|boolean',
+            'grace_period' => 'required_if:is_flexible,0|nullable|numeric',
         ];
     }
 

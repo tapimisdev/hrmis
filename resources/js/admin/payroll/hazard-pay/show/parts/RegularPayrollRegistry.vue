@@ -3,20 +3,21 @@
     :status="status"
     :payroll_no="payroll_no"
     :loading="loading"
-    :downloads="[
-      { key: 'registry', label: 'Payroll Registry' },
-      { key: 'payslip', label: 'Payslip' },
-    ]"
+    :downloads="[{ key: 'registry', label: 'Registry' }]"
+    :download-endpoints="{
+      registry: `/api/payroll/hazard-pay/${payroll_no}/download`,
+    }"
     @print="handlePrint"
     @download="handleDownload"
   >
     <!-- Header slots -->
     <template #sheet-type>( REGULAR )</template>
     <template #agency>TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template>
-    <template #title>PAYROLL OF HAZARD PAY FOR THE MONTH OF {{ month }}</template>
-
+    <template #title>
+      PAYROLL OF HAZARD PAY FOR THE MONTH OF {{ displayMonthYear?.toUpperCase() }}
+    </template>
     <template #period>
-      Month: <strong>{{ month }}</strong>
+      Month: <strong>{{ displayMonthYear }}</strong>
     </template>
 
     <template #filters>
@@ -61,6 +62,7 @@
             <th style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
             <th style="min-width: 220px">Remarks</th>
+            <th>actions</th>
           </tr>
         </thead>
 
@@ -81,7 +83,7 @@
             <td class="text-center">
               <input
                 type="number"
-                class="form-control border-0 text-center"
+                class="form-control border-0 text-center bg-body"
                 v-model="emp.adjustments"
                 @change="adjustRow(emp)"
               />
@@ -93,14 +95,24 @@
 
             <td class="text-center">
               <textarea
-                class="form-control border-0"
+                class="form-control border-0 bg-body"
                 v-model="emp.remarks"
                 @change="adjustRow(emp)"
               ></textarea>
             </td>
+            <td class="text-center">
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="$emit('delete', emp)"
+                title="Delete"
+              >
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </td>
           </tr>
           <tr v-if="!filteredEmployees.length">
-            <td colspan="9" class="text-center py-3">
+            <td colspan="10" class="text-center py-3">
               No employees found for the selected filters.
             </td>
           </tr>
@@ -117,6 +129,7 @@
             <td class="number-cell net-salary">
               <strong>{{ formatNumber(grandTotals("net_pay")) }}</strong>
             </td>
+            <td></td>
             <td></td>
           </tr>
         </tfoot>
@@ -150,6 +163,24 @@ export default {
     };
   },
   computed: {
+    displayMonthYear() {
+      const value = String(this.month || "").trim();
+
+      if (!value) return "";
+
+      if (/^\d{4}-\d{2}$/.test(value)) {
+        const [year, month] = value.split("-").map(Number);
+        const date = new Date(year, month - 1, 1);
+
+        return date.toLocaleString(undefined, {
+          month: "long",
+          year: "numeric",
+        });
+      }
+
+      return value.toUpperCase();
+    },
+
     positionOptions() {
       const positions = new Set();
       this.employees.forEach((emp) => {
@@ -185,12 +216,25 @@ export default {
     // PayrollRegistryLayout should emit @download with { key }
     // Example payload: { key: 'registry' } or { key: 'payslip' }
     async handleDownload({ key }) {
-      // TODO: map keys to your backend endpoints
-      // const urlArr = {
-      //   registry: `/api/payroll/hazard-pay/download/registry/${this.payroll_no}`,
-      //   payslip: `/api/payroll/hazard-pay/download/payslip/${this.payroll_no}`,
-      // };
-      // await this.downloadFile(urlArr[key], `${key}_${this.payroll_no}.xlsx`);
+      if (key !== "registry") return;
+
+      try {
+        const response = await axios.get(`/api/payroll/hazard-pay/${this.payroll_no}/download`, {
+          headers: { Authorization: `Bearer ${this.token}` },
+          responseType: "blob",
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${this.payroll_no}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+      }
     },
 
     formatNumber(value) {

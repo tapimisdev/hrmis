@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class PeraRataController extends Controller
@@ -37,10 +38,6 @@ class PeraRataController extends Controller
     {
         $batch_id = request()->query('batch_id');
 
-        if (!$batch_id) {
-            abort(404, 'Batch ID not provided.');
-        }
-
         $payroll = DB::table('payroll_pera_rata')->where('payroll_no', $payroll_no)->first();
 
         if (!$payroll) {
@@ -48,25 +45,28 @@ class PeraRataController extends Controller
         }
 
         $payroll_id = $payroll->id;
+        $batch_id = $batch_id ?: $payroll->batch_id;
+        $batch = null;
+        $batchProgress = 100;
+        $batchStatus = $payroll->status === 'failed' ? 'failed' : 'completed';
 
-        $batch = Bus::findBatch($batch_id);
+        if ($batch_id) {
+            $batch = Bus::findBatch($batch_id);
 
-        if (!$batch) {
-            abort(404, 'Batch not found.');
+            if ($batch) {
+                if ($batch->finished()) {
+                    $batchStatus = 'completed';
+                } elseif ($batch->cancelled()) {
+                    $batchStatus = 'cancelled';
+                } elseif ($batch->failedJobs > 0) {
+                    $batchStatus = 'failed';
+                } else {
+                    $batchStatus = 'processing';
+                }
+
+                $batchProgress = $batch->progress();
+            }
         }
-
-        if ($batch->finished()) {
-            $batchStatus = 'completed';
-        } elseif ($batch->cancelled()) {
-            $batchStatus = 'cancelled';
-        } elseif ($batch->failedJobs > 0) {
-            $batchStatus = 'failed';
-        } else {
-            $batchStatus = 'processing';
-        }
-
-        // Include progress info (optional)
-        $batchProgress = $batch->progress(); // 0–100 %
 
         $employymentEnums = collect(EmploymentTypesEnum::cases())
                             ->firstWhere('value', $payroll->employment_type_id);
@@ -87,8 +87,16 @@ class PeraRataController extends Controller
     {
 
         $validatedData = $request->validated();
+        $selectedEmployees = collect(data_get($validatedData, 'employees.eligible', []))
+            ->where('selected', true);
 
         Log::info('Creating payroll with data: ', $validatedData);
+
+        if ($selectedEmployees->isEmpty()) {
+            throw ValidationException::withMessages([
+                'employees' => ['Select at least one eligible employee to generate the payroll.'],
+            ]);
+        }
 
         try {
             // Wrap only the critical DB operation in a transaction
@@ -101,6 +109,20 @@ class PeraRataController extends Controller
 
             // Dispatch the payroll registry generation asynchronously
             $batch_id = $this->payroll_service->createReport($validatedData, $payroll_id);
+
+            if (!$batch_id) {
+                DB::table('payroll_pera_rata_approvers')
+                    ->where('payroll_pera_rata_id', $payroll_id)
+                    ->delete();
+
+                DB::table('payroll_pera_rata')
+                    ->where('id', $payroll_id)
+                    ->delete();
+
+                throw ValidationException::withMessages([
+                    'employees' => ['Select at least one eligible employee to generate the payroll.'],
+                ]);
+            }
 
             return response()->json([
                 'batch_id' => $batch_id, 
@@ -264,6 +286,29 @@ class PeraRataController extends Controller
                 'status'  => 'update failed'
             ], 500);
         }
+    }
+
+    public function deleteEmployeePayroll($id, $employment_type)
+    {
+        if ($employment_type !== 'REGULAR') {
+            return response()->json([
+                'message' => 'Invalid employment type.'
+            ], 400);
+        }
+
+        $deleted = DB::table('payroll_pera_rata_employee')
+            ->where('id', $id)
+            ->delete();
+
+        if (!$deleted) {
+            return response()->json([
+                'message' => 'Employee payroll not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Employee payroll deleted successfully.'
+        ]);
     }
 
 }

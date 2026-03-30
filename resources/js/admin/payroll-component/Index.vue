@@ -159,8 +159,11 @@ export default {
         loadTable() {
             axios
                 .get(this.fetchUrl.replace("__SLUG__", this.slug))
-                .then((res) => (this.tableData = res.data.data || []))
-                .catch((err) => console.error(err));
+                .then((res) => {
+                    const rows = res.data.data || [];
+                    this.tableData = rows.sort((a, b) => Number(a.year) - Number(b.year));
+                })
+                .catch(() => {});
         },
 
         /** Open modal -> always reset to ADD mode **/
@@ -203,7 +206,7 @@ export default {
                     this.form.originalYear = res.data.data.year;
                     this.$refs.taxModal.open();
                 })
-                .catch((err) => console.error(err));
+                .catch(() => {});
         },
 
         /** Clear errors **/

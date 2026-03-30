@@ -53,8 +53,8 @@ export default {
             default: () => [],
         },
         total_employees: {
-            type: String,
-            default: () => [],
+            type: [Number, String],
+            default: 0,
         },
         labels: {
             type: Array,
@@ -131,7 +131,7 @@ export default {
                         ticks: { color: textColor, precision: 0 },
                         grid: { color: gridColor },
                         beginAtZero: true,
-                        max: this.total_employees,
+                        max: Number(this.total_employees) || undefined,
                     },
                 },
             };

@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin\Timekeeping;
 
 use App\Http\Controllers\Controller;
 use App\Services\DailyTimeRecordService;
+use App\Services\EmployeeService;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class DailyTimeRecordController extends Controller
 {
@@ -17,15 +20,23 @@ class DailyTimeRecordController extends Controller
      * @var DailyTimeRecordService
      */
     protected $daily_time_record_service;
+    protected $employeeService;
+    protected $salaryEmloyeeService;
 
     /**
      * Inject the DailyTimeRecordService dependency.
      *
      * @param DailyTimeRecordService $daily_time_record_service
      */
-    public function __construct(DailyTimeRecordService $daily_time_record_service)
+    public function __construct(
+        DailyTimeRecordService $daily_time_record_service,
+        EmployeeService $employeeService,
+        SalaryEmloyeeService $salaryEmloyeeService
+    )
     {
         $this->daily_time_record_service = $daily_time_record_service;
+        $this->employeeService = $employeeService;
+        $this->salaryEmloyeeService = $salaryEmloyeeService;
 
         $this->middleware(function ($request, $next) {
             if (
@@ -56,7 +67,10 @@ class DailyTimeRecordController extends Controller
             return redirect()->route('timelogs.index');
         }
 
-        return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no', 'employee_id'));
+        $employee = $this->employeeService->getEmployee('information', $employee_no);
+        $supervisor = $employee->units_supervisor ?? '';
+
+        return view('admin.pages.timekeeping.timelogs.daily-time-record.index', compact('employee_no', 'employee_id', 'supervisor'));
     }
 
     /**
@@ -118,22 +132,10 @@ class DailyTimeRecordController extends Controller
     public function employee_information_with_summary(Request $request, $employee_no)
     {
         // Subquery: latest shift work schedule
-        $latestShift = DB::table('employee_shift_work_schedule as esws1')
-            ->select('esws1.*')
-            ->whereRaw('esws1.id = (
-                SELECT MAX(esws2.id)
-                FROM employee_shift_work_schedule esws2
-                WHERE esws2.employee_no = esws1.employee_no
-            )');
+        $latestShift = $this->salaryEmloyeeService->activeShift();
 
         // Subquery: latest organization
-        $latestOrg = DB::table('employee_organization as eo1')
-            ->select('eo1.*')
-            ->whereRaw('eo1.id = (
-                SELECT MAX(eo2.id)
-                FROM employee_organization eo2
-                WHERE eo2.employee_no = eo1.employee_no
-            )');
+        $latestOrg = $this->salaryEmloyeeService->activeOrg();
 
         $employee = DB::table('users')
             ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
@@ -197,6 +199,61 @@ class DailyTimeRecordController extends Controller
             'profile'   => $profile,
             'infoCards' => $infoCards
         ], 200);
+    }
+
+    public function downloadDAR(Request $request)
+    {
+
+        $user = Auth::user();
+        $roles = $user->getRoleNames()->toArray() ?? [];
+        $user_id = $request->user_id;
+
+        $isEmpRole = collect($roles)->contains(function ($role) {
+            return str_contains($role, 'emp_');
+        });
+
+        if($isEmpRole) {
+            $employee_no = $user->employee_no?? null;
+        } else {
+            $employee_no = $this->employeeService->getEmployeeNo($user_id) ?? null;
+            $employee = $this->employeeService->getEmployee('information', $employee_no) ?? null;
+        }
+
+
+        if(is_null($employee_no)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are no longer allowed to proceess action'
+            ]);
+        }
+
+        $file_path = $request->path;
+
+        preg_match('#/users/([^/]+)#', $file_path, $matches);
+        
+        $folderName = $matches[1] ?? null;
+
+        if ($folderName !== $employee_no) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You are not allowed to download the Daily Accomplishment Report of employee no. `'.$employee_no.'`'
+            ]);
+        }
+
+        $storage_path = ltrim($file_path, '/storage/');
+
+        if (!Storage::disk('public')->exists($storage_path)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sorry, we\'re unable to find this file. Please contact HR / Administrator. Thank you.'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            "message" => "Your file is ready for download",
+            'file' => $file_path 
+        ]);
     }
 
 }

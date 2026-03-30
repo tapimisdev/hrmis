@@ -1,7 +1,7 @@
 <template>
     <div class="timekeeping-summary">
         <PrintableDtrView ref="printableModal">
-            <ViewDtr :payload="payload" :month="localMonth" :year="localYear" />
+            <ViewDtr :payload="payload" :month="localMonth" :year="localYear" :supervisor="supervisor" />
         </PrintableDtrView>
 
         <SkeletonProfile v-if="loading" :lines="1" />
@@ -168,6 +168,7 @@ export default {
         month: { type: Number, default: () => new Date().getMonth() + 1 },
         year: { type: Number, default: () => new Date().getFullYear() },
         employee_no: { type: String, required: true },
+        supervisor: { type: String, required: true },
         payload: { type: Object, required: true },
     },
     data() {
@@ -243,7 +244,6 @@ export default {
                 this.profile = response.data.profile;
                 this.infoCards = response.data.infoCards;
             } catch (error) {
-                console.error("Error fetching logs:", error);
             }
             this.loading = false;
         },

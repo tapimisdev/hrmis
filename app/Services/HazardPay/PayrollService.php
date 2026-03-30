@@ -4,6 +4,7 @@ namespace App\Services\HazardPay;
 
 use App\Enums\EmploymentTypesEnum;
 use App\Jobs\Admin\Payroll\HazardPayReport;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
@@ -15,10 +16,17 @@ use Throwable;
 
 class PayrollService {
 
+    protected $salaryEmployeeService;
+
     private $monthYear;
 
     private $eligible;
     private $not_eligible;
+
+    public function __construct(SalaryEmloyeeService $salaryEmployeeService)
+    {
+        $this->salaryEmployeeService = $salaryEmployeeService;
+    }
 
     public function getPayrolls($payload)
     {
@@ -49,29 +57,7 @@ class PayrollService {
     {
         $this->monthYear = $payload['month'];
 
-        $latestOrg = DB::table('employee_organization as eo')
-            ->select('eo.*')
-            ->joinSub(
-                DB::table('employee_organization')
-                    ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
-                    ->groupBy('employee_no'),
-                'mx',
-                function ($join) {
-                    $join->on('eo.employee_no', '=', 'mx.employee_no')
-                        ->on('eo.effectivity_date', '=', 'mx.max_effectivity_date');
-                }
-            )
-            ->joinSub(
-                DB::table('employee_organization')
-                    ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
-                    ->groupBy('employee_no', 'effectivity_date'),
-                'mx2',
-                function ($join) {
-                    $join->on('eo.employee_no', '=', 'mx2.employee_no')
-                        ->on('eo.effectivity_date', '=', 'mx2.effectivity_date')
-                        ->on('eo.id', '=', 'mx2.max_id');
-                }
-            );
+        $latestOrg = $this->salaryEmployeeService->activeOrg();
                 
         $employees = DB::table('employee_information as ei')
             ->leftJoinSub($latestOrg, 'eo', function ($join) {
@@ -219,12 +205,13 @@ class PayrollService {
         $startDate = "$year-$month-01";
         $endDate   = date("Y-m-t", strtotime($startDate));
 
-        $schedule = DB::table('employee_shift_work_schedule as esw')
-            ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
-            ->select('esw.shift_id', 'esw.work_schedule_id', 's.working_hours')
-            ->where('esw.employee_no', $emp_no)
-            ->where('esw.effectivity_date', '<=', $endDate)
-            ->first();
+        $schedule = $this->salaryEmployeeService
+                        ->activeShift($emp_no, $endDate)
+                        ->leftJoin('shifts as s', 'sw1.shift_id', '=', 's.id')
+                        ->select(
+                            'sw1.id'
+                        )
+                        ->first();
 
         return $schedule ? true : false;
     }
@@ -251,16 +238,11 @@ class PayrollService {
     private function hasSalary($emp_no)
     {
         [$year, $month] = explode('-', $this->monthYear);
-        $startDate = "$year-$month-01";
-        $endDate   = date("Y-m-t", strtotime($startDate));
+        $endDate = date('Y-m-t', strtotime("$year-$month-01"));
 
-        $employee_salary = DB::table('employee_salary')
-            ->where('employee_no', $emp_no)
-            ->where('effectivity_date', '<=', $endDate)
-            ->orderByDesc('effectivity_date')
+        return $this->salaryEmployeeService
+            ->activeSalary($emp_no, $endDate)
             ->first();
-
-        return !is_null($employee_salary);
     }
 
     private function hasProject($emp_no)

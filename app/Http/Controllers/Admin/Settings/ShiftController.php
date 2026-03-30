@@ -63,8 +63,8 @@ class ShiftController extends Controller
         $shift = DB::table('shifts')
             ->insert([
                 'name' => $validatedData['name'],
-                'earliest_time' => $validatedData['earliest_time'],
-                'start_time' => $validatedData['start_time'],
+                'earliest_time' => $validatedData['earliest_time'] ?? null,
+                'start_time' => $validatedData['start_time'] ?? null,
                 'break_out_time' => $validatedData['break_out_time'] ?? null,
                 'break_in_time' => $validatedData['break_in_time'] ?? null,
                 'end_time' => $validatedData['end_time'] ?? null,
@@ -73,6 +73,7 @@ class ShiftController extends Controller
                 'is_break_required' => $request->input('is_break_required', 1),
                 'is_night_shift' => $request->input('is_night_shift', 0),
                 'is_flexible' => $request->input('is_flexible', 0),
+                'grace_period' => $request->input('grace_period', 0),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -155,6 +156,7 @@ class ShiftController extends Controller
                 'is_break_required' => $request->input('is_break_required', 1),
                 'is_night_shift' => $request->input('is_night_shift', 0),
                 'is_flexible' => $request->input('is_flexible', 0),
+                'grace_period' => $request->input('grace_period', 0),
                 'updated_at' => now(),
             ]);
 

@@ -22,6 +22,7 @@ import HrisIndex from "./admin/hris/HrisIndex.vue";
 import ImportCredits from "./admin/credits/Import.vue";
 import ImportEmployeeVue from "./admin/hris/employee/ImportEmployeeVue.vue";
 import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
+import PatchNotesPage from "./admin/pages/patch-notes/PatchNotesPage.vue";
 
 import TaxationIndex from "./admin/taxation/TaxationIndex.vue";
 import TrainLawIndex from "./admin/trainlaw/TrainLawIndex.vue";
@@ -57,6 +58,13 @@ import SlaPayView from "./admin/payroll/sla-pay/show/ShowPayroll.vue";
 import PeraRataIndex from "./admin/payroll/pera-rata/Index.vue";
 import PeraRataStepper from "./admin/payroll/pera-rata/create/PayrollStepper.vue";
 import PeraRataView from "./admin/payroll/pera-rata/show/ShowPayroll.vue";
+import LongevityPayIndex from "./admin/payroll/longevity-pay/Index.vue";
+import LongevityPayStepper from "./admin/payroll/longevity-pay/create/PayrollStepper.vue";
+import LongevityPayView from "./admin/payroll/longevity-pay/show/ShowPayroll.vue";
+import GovernmentBonusIndex from "./admin/payroll/government-bonuses/Index.vue";
+import GovernmentBonusStepper from "./admin/payroll/government-bonuses/create/PayrollStepper.vue";
+import GovernmentBonusView from "./admin/payroll/government-bonuses/show/ShowPayroll.vue";
+import GovernmentBonusTypeIndex from "./admin/payroll/government-bonus-types/Index.vue";
 
 const authApp = createApp({
     components: {
@@ -82,6 +90,7 @@ const authApp = createApp({
         ImportCredits,
         ImportEmployeeVue,
         UploadTimelogVue,
+        PatchNotesPage,
 
         PayrollEmployeeComponentIndex,
         PayrollEmployeeComponentForm,
@@ -106,6 +115,15 @@ const authApp = createApp({
         PeraRataIndex,
         PeraRataStepper,
         PeraRataView,
+
+        LongevityPayIndex,
+        LongevityPayStepper,
+        LongevityPayView,
+
+        GovernmentBonusIndex,
+        GovernmentBonusStepper,
+        GovernmentBonusView,
+        GovernmentBonusTypeIndex,
     },
 
     data() {
@@ -117,6 +135,11 @@ const authApp = createApp({
         const token = localStorage.getItem("auth_token");
 
         if (!token) return;
+
+        window.Echo.join('online-users')
+            .here(() => {})
+            .joining(() => {})
+            .leaving(() => {});
 
         axios
             .get("/api/force-update-password", {
@@ -139,7 +162,6 @@ const authApp = createApp({
                 }
             })
             .catch((error) => {
-                console.error("API error:", error);
             });
     },
     methods: {

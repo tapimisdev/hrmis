@@ -8,7 +8,7 @@ use App\Services\HazardPay\PayrollService;
 use App\Services\HazardPay\GetEmployeeService;
 use App\Services\Exports\PayslipService;
 use App\Services\Exports\AUTService;
-use App\Services\Exports\RegistryService;
+use App\Services\Exports\HazardRegistryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 class HazardApiController extends Controller
@@ -76,7 +76,7 @@ class HazardApiController extends Controller
 
     public function downloadPayrollRegistry($payroll_no)
     {
-       return app(RegistryService::class)->download($payroll_no);
+       return app(HazardRegistryService::class)->download($payroll_no);
     }
 
     public function downloadAbsencesLeaves($payroll_no) {

@@ -141,7 +141,6 @@ export default {
             }).then(response => {
                 this.payslip = response.data;   
             }).catch(error => {
-                console.error(error);
                 this.error = error.response.data.message || 'An error occurred while fetching payslip data.';
             }).finally(() => {
                 this.loading = false;

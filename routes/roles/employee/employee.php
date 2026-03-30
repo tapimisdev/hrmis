@@ -37,7 +37,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
     # EMPLOYEE TIMELOGS
     Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store')->names('checkinout');
     Route::get('employee-timelogs/{employee_no}/get', [DailyTimeRecordController::class, 'show']);
-
+    Route::get('accomplishment-report', [DailyTimeRecordController::class, 'downloadDAR']);
     Route::get('check-in-out/today-logs', [CheckInOutController::class, 'todayLogs']);
 
     Route::prefix('credits')->group(function() {

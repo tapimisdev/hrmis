@@ -1,13 +1,17 @@
 <template>
     <div class="attendance-container">
         <CorrectionLog ref="correctionModal" />
-        <CorrectionList ref="correctionListModal" @clearSearchable="clearSearchable"/>
+        <CorrectionList
+            ref="correctionListModal"
+            @clearSearchable="clearSearchable"
+        />
 
         <PrintableDtrView ref="printableModal">
             <ViewDtr
                 :payload="dtr_all"
                 :month="selectedMonth"
                 :year="selectedYear"
+                :supervisor="supervisor"
             />
         </PrintableDtrView>
 
@@ -39,11 +43,11 @@
                     </option>
                 </select>
                 <button
-                    class="btn btn-primary"
+                    class="btn btn-primary open-printables text-uppercase fw-semibold"
                     @click="openPrintables"
                     title="Print View"
                 >
-                    <i class="fa-solid fa-print"></i>
+                    <i class="fa-solid fa-print me-1"></i> Print
                 </button>
             </div>
         </div>
@@ -108,16 +112,16 @@
 
                             <!-- ACTIONS (ABSENT) -->
                             <td>
-                                <button
-                                    v-if="hasRemark(log.remarks, 'absent')"
-                                    class="btn btn-sm btn-transparent"
-                                    title="Request Timelog Correction"
-                                    @click="openModal(index + 1)"
-                                >
-                                    <i
-                                        class="fa-solid fa-code-pull-request"
-                                    ></i>
-                                </button>
+                                <div class="pe-2">
+                                    <button
+                                        v-if="hasRemark(log.remarks, 'absent')"
+                                        class="btn btn-dark"
+                                        title="Request Timelog Correction"
+                                        @click="openModal(index + 1)"
+                                    >
+                                        <i class="fa-solid fa-file-pen"></i>
+                                    </button>
+                                </div>
                             </td>
                         </template>
 
@@ -191,15 +195,29 @@
                             </td>
 
                             <td>
-                                <button
-                                    class="btn btn-sm btn-transparent"
-                                    title="Request Correction"
-                                    @click="openModal(index + 1)"
+                                <div
+                                    class="d-flex justify-content-end gap-2 pe-2"
                                 >
-                                    <i
-                                        class="fa-solid fa-code-pull-request"
-                                    ></i>
-                                </button>
+                                    <button
+                                        v-if="log.accomplishments"
+                                        class="btn btn-primary"
+                                        title="Download Accomplishment Report"
+                                        @click="
+                                            downloadDAR(log.accomplishments)
+                                        "
+                                    >
+                                        <i
+                                            class="fa-solid fa-file-arrow-down"
+                                        ></i>
+                                    </button>
+                                    <button
+                                        class="btn btn-dark"
+                                        title="Request Correction"
+                                        @click="openModal(index + 1)"
+                                    >
+                                        <i class="fa-solid fa-file-pen"></i>
+                                    </button>
+                                </div>
                             </td>
                         </template>
                     </tr>
@@ -215,6 +233,7 @@ import CorrectionLog from "./Corrections/CorrectionLog.vue";
 import CorrectionList from "./Corrections/CorrectionList.vue";
 import PrintableDtrView from "./printables/PrintableDtrView.vue";
 import ViewDtr from "./ViewDtr.vue";
+import { toRaw } from "vue";
 
 const token = localStorage.getItem("auth_token");
 
@@ -224,6 +243,7 @@ export default {
         employeeNumber: { type: String, required: true },
         month: { type: Number, default: null },
         year: { type: Number, default: null },
+        supervisor: { type: String, required: true },
     },
     data() {
         const currentDate = new Date();
@@ -236,7 +256,7 @@ export default {
             summary: [],
             selectedMonth: this.month || currentDate.getMonth() + 1,
             selectedYear: this.year || currentYear,
-            searchable: '',
+            searchable: "",
             months: [
                 "January",
                 "February",
@@ -278,7 +298,6 @@ export default {
                 this.dtr_all = response.data;
                 this.$emit("send-summary", response.data.summary);
             } catch (error) {
-                console.error("Error fetching logs:", error);
             }
             this.loading = false;
         },
@@ -430,15 +449,55 @@ export default {
 
             this.$refs.correctionModal.open(formatted);
         },
+        downloadDAR(path) {
+            axios
+                .get("/employee/accomplishment-report", {
+                    params: { path },
+                })
+                .then((response) => {
+                    const { status, message, file } = response.data;
+
+                    Swal.fire({
+                        icon: status === "success" ? "success" : "error",
+                        title: status === "success" ? "Yeyy" : "Oops!",
+                        text: message,
+                        confirmButtonText:
+                            status === "success" ? "Download" : "Got it",
+                    }).then((result) => {
+                        if (
+                            status === "success" &&
+                            result.isConfirmed &&
+                            file
+                        ) {
+                            const link = document.createElement("a");
+                            link.href = file;
+                            link.download = ""; 
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+                    });
+                })
+                .catch((error) => {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text:
+                            error.response?.data?.message ||
+                            "Something went wrong!",
+                        confirmButtonText: "Got it",
+                    });
+                });
+        },
         openCorretionList() {
             this.$refs.correctionListModal.open(
                 this.selectedMonth,
                 this.selectedYear,
-                this.searchable
+                this.searchable,
             );
         },
         clearSearchable() {
-          this.searchable = '';
+            this.searchable = "";
         },
         downloadDTR() {
             // Build request parameters
@@ -458,7 +517,6 @@ export default {
             })
                 .then((response) => {})
                 .catch((error) => {
-                    console.error("Error downloading DTR:", error);
                     alert("Failed to download DTR. Please try again.");
                 });
         },
@@ -476,17 +534,17 @@ export default {
         employeeNumber: "loadTimelogs",
     },
     mounted() {
-      this.loadTimelogs().then(() => {
-          const params = new URLSearchParams(window.location.search);
+        this.loadTimelogs().then(() => {
+            const params = new URLSearchParams(window.location.search);
 
-          const shouldOpen = params.get("view-corrections") === "true";
-          const referenceNo = params.get("reference-no"); 
+            const shouldOpen = params.get("view-corrections") === "true";
+            const referenceNo = params.get("reference-no");
 
-          this.searchable = referenceNo;
-          if (shouldOpen) {
-              this.openCorretionList(); 
-          }
-      });
+            this.searchable = referenceNo;
+            if (shouldOpen) {
+                this.openCorretionList();
+            }
+        });
     },
 };
 </script>
@@ -512,7 +570,12 @@ export default {
             }
         }
 
+        .open-printables {
+          margin: 10px 0 10px 0;
+        }
+
         td {
+            white-space: nowrap;
             padding: 5px;
         }
     }
@@ -580,6 +643,10 @@ table {
         text-align: center;
         border-bottom: 1px solid var(--bs-border-color);
     }
+    td:has(button) {
+        text-align: end;
+    }
+
     thead {
         position: sticky;
         top: 0;

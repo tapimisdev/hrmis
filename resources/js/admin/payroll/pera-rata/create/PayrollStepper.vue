@@ -224,6 +224,25 @@ export default {
             this.loading = true;
             this.errors = {};
             try {
+                const selectedEmployees =
+                    this.form.employees?.eligible?.filter((employee) =>
+                        Boolean(employee.selected)
+                    ) || [];
+
+                if (!selectedEmployees.length) {
+                    this.errors = {
+                        employees: [
+                            "Select at least one eligible employee to generate the payroll.",
+                        ],
+                    };
+                    Swal.fire(
+                        "No Employees Selected",
+                        this.errors.employees[0],
+                        "warning"
+                    );
+                    return false;
+                }
+
                 const res = await axios.post(
                     "/api/payroll/pera-rata/generate",
                     this.form,
@@ -237,11 +256,28 @@ export default {
                 this.form.employees = res.data.data;
                 const batch_id = res.data.batch_id;
                 const payroll_no = res.data.payroll_no;
+
+                if (!batch_id) {
+                    Swal.fire(
+                        "Error",
+                        "Payroll generation did not start because no batch ID was returned.",
+                        "error"
+                    );
+                    return false;
+                }
+
                 window.location.href = `/admin/payroll/pera-rata/${payroll_no}?batch_id=${batch_id}`;
                 return true;
             } catch (error) {
                 if (error.response?.status === 422) {
                     this.errors = error.response.data.errors;
+                    if (this.errors.employees?.[0]) {
+                        Swal.fire(
+                            "No Employees Selected",
+                            this.errors.employees[0],
+                            "warning"
+                        );
+                    }
                 } else {
                     Swal.fire(
                         error.response?.data?.message ===
@@ -268,7 +304,6 @@ export default {
                 this.validateAndGetReview();
             })
             .error((error) => {
-                console.error("Error:", error);
             });
     },
     beforeDestroy() {

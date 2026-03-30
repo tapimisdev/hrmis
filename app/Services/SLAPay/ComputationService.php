@@ -6,6 +6,7 @@ use App\Services\DailyTimeRecordService;
 use App\Enums\EmploymentTypesEnum;
 use App\Enums\PayrollStatusEnum;
 use App\Enums\TableSettingsEnum;
+use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 class ComputationService {
 
     protected $daily_time_record_service;
+    protected $salaryEmployeeService;
 
     protected $employee_no;
     protected $payroll_id;
@@ -32,9 +34,10 @@ class ComputationService {
     protected $start_date;
     protected $end_date;
 
-    public function __construct(DailyTimeRecordService $daily_time_record_service) 
+    public function __construct(DailyTimeRecordService $daily_time_record_service, SalaryEmloyeeService $salaryEmployeeService) 
     {
         $this->daily_time_record_service = $daily_time_record_service;
+        $this->salaryEmployeeService = $salaryEmployeeService;
     }
 
     private function computeUTDeduction(int $minutes): int
@@ -125,21 +128,17 @@ class ComputationService {
     {
         $year = substr($this->payroll_date, 0, 4);
         $month = substr($this->payroll_date, 5, 2);
+        $cutoffDate = Carbon::create($year, $month, 1)->endOfMonth();
 
-        $schedule = DB::table('employee_shift_work_schedule as esw')
-            ->leftJoin('shifts as s', 'esw.shift_id', '=', 's.id')
-            ->select(
-                'esw.shift_id',
-                'esw.work_schedule_id',
-                's.working_hours'
-            )
-            ->where('esw.employee_no', $this->employee_no)
-            ->where(function ($query) use ($year, $month) {
-                $cutoffDate = Carbon::create($year, $month, 1)->endOfMonth();
-                $query->whereDate('esw.effectivity_date', '<=', $cutoffDate);
-            })
-            ->orderByDesc('esw.effectivity_date')
-            ->first();
+        $schedule = $this->salaryEmployeeService
+                        ->activeShift($this->employee_no, $cutoffDate)
+                        ->leftJoin('shifts as s', 'sw1.shift_id', '=', 's.id')
+                        ->select(
+                            'sw1.shift_id',
+                            'sw1.work_schedule_id',
+                            's.working_hours',
+                        )
+                        ->first();
 
         if (!$schedule) {
             throw new \Exception('Please ask your HR to set your Shift and Work Schedule.');
@@ -156,10 +155,8 @@ class ComputationService {
 
         $cutoff = $this->payroll_date . '-31';
 
-        $employee_salary = DB::table('employee_salary')
-            ->where('employee_no', $this->employee_no)
-            ->where('effectivity_date', '<=', $cutoff)
-            ->orderByDesc('effectivity_date')
+        $employee_salary = $this->salaryEmployeeService
+            ->activeSalary($this->employee_no, $cutoff)
             ->first();
 
         if (!$employee_salary) {
@@ -175,22 +172,21 @@ class ComputationService {
 
     private function getEmployeeInformation()
     {
-        $employee_information = DB::table('employee_organization')
-                ->leftJoin('employee_information', 'employee_organization.employee_no', '=', 'employee_information.employee_no')
-                ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
-                ->leftJoin('positions', 'employee_organization.position_id', '=', 'positions.id')
-                ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
-                ->select(
-                    'employee_personal.firstname',
-                    'employee_personal.middlename',
-                    'employee_personal.lastname',
-                    'employee_personal.suffix',
-                    'employee_organization.employment_type_id',
-                    'positions.name as position_name',
-                    'users.id as user_id'
-                )
-                ->where('employee_organization.employee_no', $this->employee_no)
-                ->first();
+        $employee_information = $this->salaryEmployeeService->activeOrg($this->employee_no)
+            ->leftJoin('employee_information', 'eo1.employee_no', '=', 'employee_information.employee_no')
+            ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
+            ->leftJoin('positions', 'eo1.position_id', '=', 'positions.id')
+            ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
+            ->select(
+                'employee_personal.firstname',
+                'employee_personal.middlename',
+                'employee_personal.lastname',
+                'employee_personal.suffix',
+                'eo1.employment_type_id',
+                'positions.name as position_name',
+                'users.id as user_id'
+            )
+            ->first();
 
         if (!$employee_information) {
             throw new \Exception("Employee information not found for employee number: {$this->employee_no}");
@@ -203,30 +199,5 @@ class ComputationService {
         $this->position = $employee_information->position_name;
         $this->employment_type = $employee_information->employment_type_id;
         $this->user_id = $employee_information->user_id;
-    }
-
-    private function getWithHoldingTax() 
-    {
-
-        $date = explode('-', $this->payroll_date);
-        $year = (int) $date[0];
-        $month = (int) $date[1];
-
-        $component_table_id = DB::table('payroll_components_settings')
-            ->where('type', TableSettingsEnum::SALARY_ID->value)
-            ->value('tax_id');
-
-        $components_year_id = DB::table('payroll_components_years')
-            ->where('payroll_component_id', $component_table_id)
-            ->where('year', $year)
-            ->value('id');
-
-        $tax_table = DB::table('employee_payroll_components')
-            ->where('tax_deduction_id', $components_year_id)
-            ->where('employee_no', $this->employee_no)
-            ->where('month', $month)
-            ->first();
-
-        return $tax_table->amount ?? 0;
     }
 }

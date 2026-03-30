@@ -84,7 +84,6 @@ export default {
                 this.announcementData = response.data.data;
                 await this.$nextTick();
             } catch (err) {
-                console.error("Error fetching announcement:", err);
                 this.error = "Failed to load announcement. Please try again.";
             } finally {
                 this.loading = false;

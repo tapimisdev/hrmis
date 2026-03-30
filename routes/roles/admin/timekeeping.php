@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Timekeeping\DailyTimeRecordController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogCorrectionController;
 use App\Http\Controllers\Admin\WebTimeAccess\WebTimeAccessController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogStatisticsController;
+use App\Http\Controllers\Admin\Timekeeping\MonitoringController;
 
 Route::prefix('timekeeping')->group(function() {
 
@@ -17,15 +18,20 @@ Route::prefix('timekeeping')->group(function() {
     Route::resource('upload-timelogs', UploadTimeLogController::class)->only('index')->names(['index' => 'import.timelogs.index']);
 
     Route::resource('timelogs-correction', TimelogCorrectionController::class)->only('index', 'edit');
-    route::post('timelogs-correction/{id}/approve', [TimelogCorrectionController::class, 'approve']);
-    route::post('timelogs-correction/{id}/reject', [TimelogCorrectionController::class, 'reject']);
+    Route::post('timelogs-correction/{id}/approve', [TimelogCorrectionController::class, 'approve']);
+    Route::post('timelogs-correction/{id}/reject', [TimelogCorrectionController::class, 'reject']);
     
+    Route::resource('monitoring', MonitoringController::class)
+        ->only('index')
+        ->names('timekeeping.monitoring');
+
     # API TIMEKEEPING
     Route::get('daily-time-record/{employee_no}', [DailyTimeRecordController::class, 'index'])
         ->name('daily-time-record.index');
     Route::get('daily-time-record/{employee_no}/show', [DailyTimeRecordController::class, 'show'])
         ->name('daily-time-record.show');
     Route::get('daily-time-record/{employee_no}/employee_information', [DailyTimeRecordController::class, 'employee_information_with_summary']);
+    Route::get('accomplishment-report', [DailyTimeRecordController::class, 'downloadDAR']);
 
     Route::resource('web-time-access', WebTimeAccessController::class)->only('index', 'show', 'store', 'destroy')->names('webtime');
 

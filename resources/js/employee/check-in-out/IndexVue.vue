@@ -2,10 +2,12 @@
     <div>
         <check-in-out-vue 
           :is-allowed="isAllowed" 
+          :is-required-ar="normalizedIsRequiredAr"
           @submit-log="handleSubmit">
         </check-in-out-vue>
         <employee-timelog ref="employeeTimelog" 
           :employee-number='employeeNumber' 
+          :supervisor='supervisor'
         /> 
     </div>
 </template>
@@ -22,6 +24,13 @@
         props: {
             isAllowed: { type: Boolean, required: true },
             employeeNumber: { type: String, required: true },
+            supervisor: { type: String, required: true },
+            isRequiredAr: { type: [Boolean, Number], required: true }
+        },
+        computed: {
+            normalizedIsRequiredAr() {
+                return Boolean(this.isRequiredAr);
+            },
         },
         methods: {
             handleSubmit() {

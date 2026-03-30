@@ -339,7 +339,7 @@
                         </div>
                     </div>
                     <div
-                        class="d-flex justify-content-center w-100 text-center mt-0"
+                        class="d-flex justify-content-center w-100 text-center mt-0 pb-4"
                         style="gap: 100px;"
                       >
                         <div style="width: 320px">
@@ -352,21 +352,24 @@
                             >
                                 EMPLOYEE'S SIGNATURE
                             </div>
-                        </div>
-                        <div style="width: 320px; position: relative; top: 15px">
                             <div
-                                class="border-top pt-1 small fw-semibold mt-3"
+                              class="mt-4 small text-center fst-italic text-body-secondary"
+                              >
+                                  I hereby certify that the above records are true
+                                  and correct.
+                            </div>
+                        </div>
+                        <div style="width: 320px; position: relative">
+                            <div class="mt-2 text-uppercase mb-1">
+                                {{ supervisor || '‎ ‎' }}
+                            </div>
+                            <div
+                                class="border-top pt-1 small fw-semibold"
                             >
                                 SUPERVISOR'S SIGNATURE
                             </div>
                         </div>
                     </div>
-                    <div
-                          class="mt-4 small text-center fst-italic text-body-secondary"
-                      >
-                          I hereby certify that the above records are true
-                          and correct.
-                      </div>
                 </div>
             </div>
         </div>
@@ -388,7 +391,7 @@ const props = defineProps({
     },
     month: { type: Number, required: true },
     year: { type: Number, required: true },
-
+    supervisor: { type: String, required: true },
     // Optional: overrides (still supported)
     form: {
         type: Object,
@@ -636,19 +639,62 @@ const rowsSecondHalf = computed(() => monthRows.value.slice(15, 31));
 /** Remarks column: same idea as parent getFilteredRemarks */
 function filteredRemarks(remarks) {
     if (!Array.isArray(remarks)) return [];
-    return remarks.filter((r) => {
-        const v = String(r).toLowerCase().trim();
-        return ![
-            "restday",
-            "holiday",
-            "leave",
-            "ob",
-            "absent",
-            "today",
-            "overtime",
-            "pending overtime",
-        ].includes(v);
-    });
+
+    const excluded = [
+        "restday",
+        "holiday",
+        "leave",
+        "ob",
+        "absent",
+        "today",
+        "overtime",
+        "pending overtime",
+    ];
+
+    const formatRemarks = (remark) => {
+        if (!remark) return "";
+
+        const value = String(remark).toLowerCase();
+        const isPending = value.includes("pending");
+
+        const formatType = (type, label = null) => {
+            const display = label ?? type.toUpperCase();
+            const hasType = value.includes(type);
+
+            if (!hasType) return null;
+
+            if (value.includes("morning")) {
+                return isPending
+                    ? `PENDING MORNING ${display}`
+                    : `MORNING ${display}`;
+            }
+
+            if (value.includes("afternoon")) {
+                return isPending
+                    ? `PENDING AFTERNOON ${display}`
+                    : `AFTERNOON ${display}`;
+            }
+
+            if (value.includes("wholeday")) {
+                return isPending ? `PENDING ${display}` : display;
+            }
+
+            return isPending ? `PENDING ${display}` : display;
+        };
+
+        return (
+            formatType("leave") ||
+            formatType("offset") ||
+            formatType("special order", "SPECIAL ORDER") ||
+            formatType("(so)", "SPECIAL ORDER") ||
+            String(remark).toUpperCase()
+        );
+    };
+
+    return remarks
+        .map((r) => String(r).toLowerCase().trim())
+        .filter((v) => !excluded.includes(v))
+        .map((r) => formatRemarks(r));
 }
 
 /** Optional: color tags similar to parent */
@@ -664,7 +710,6 @@ function cellClass(row, fieldKey) {
     if (!row?.raw) return "text-body-secondary";
     if (!row?.[fieldKey]) return "text-body-secondary";
 
-    // Optional highlight if flagged by remarks or has late/undertime
     if (
         hasRemarkExact(row.remarks, "consider absent") ||
         Number(row.late_undertime) > 0

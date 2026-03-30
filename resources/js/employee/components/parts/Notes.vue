@@ -326,7 +326,6 @@ export default {
                 });
                 this.notes = response.data;
             } catch (error) {
-                console.error("Error loading notes:", error);
             }
         },
         closeNotes() {
@@ -408,7 +407,6 @@ export default {
                 this.viewingNote = true;
                 this.editingNote = false;
             } catch (error) {
-                console.error("Error loading note:", error);
             }
         },
         editFromView() {
@@ -451,7 +449,6 @@ export default {
                 this.showDeleteModal = false;
                 this.backToList();
             } catch (error) {
-                console.error("Error deleting note:", error);
             } finally {
                 this.isDeleting = false; // Stop loading
             }
@@ -493,7 +490,6 @@ export default {
                 if (error.response && error.response.status === 422) {
                     this.errors = error.response.data.errors || {};
                 } else {
-                    console.error("Error saving note:", error);
                 }
             } finally {
                 this.isSaving = false; // Stop loading
@@ -535,7 +531,6 @@ export default {
                 ) {
                     this.pinError = "PIN is incorrect";
                 } else {
-                    console.error("Error loading note:", error);
                 }
                 // Modal stays open on error
             } finally {
@@ -560,7 +555,6 @@ export default {
                 ) {
                     this.pinError = "PIN is incorrect";
                 } else {
-                    console.error("Error deleting note:", error);
                 }
             } finally {
                 this.isDeleting = false;

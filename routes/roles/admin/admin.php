@@ -3,7 +3,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\IDMakerController;
-
+use App\Http\Controllers\Admin\TrailsController;
 
 Route::prefix('admin')->middleware(['auth'])->group(function () {
     
@@ -22,5 +22,13 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     require __DIR__ . '/maintenance.php';
     require __DIR__ . '/deductions.php';
     require __DIR__ . '/users.php';
+
+    Route::middleware(['auth'])->group(function () {
+        Route::get('trails', [TrailsController::class, 'index'])
+            ->name('trails.index');
+
+        Route::get('trails/{auditTrail}', [TrailsController::class, 'show'])
+            ->name('trails.show');
+    });
 
 });

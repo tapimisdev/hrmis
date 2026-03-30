@@ -22,21 +22,30 @@ class LoginController extends Controller
      */
     protected function redirectTo()
     {
-        $user = auth()->user();
-
-        $hasEmployeeRole = $user->roles->contains(function ($role) {
-            return str_starts_with($role->name, 'emp_');
-        });
-
-        if ($hasEmployeeRole) {
-            return '/employee/dashboard';
-        }
-
-        return '/admin/dashboard';
+        return $this->dashboardPath(auth()->user());
     }
 
     protected function authenticated(Request $request, $user)
     {
+        $user = $user->load('employeeInformation');
+        $roles = $user->getRoleNames();
+
+        $isEmployee = $roles->contains(function ($role) {
+            return str_starts_with($role, 'emp');
+        });
+
+        if($isEmployee) {
+            if (!$user->employeeInformation || $user->employeeInformation->account_status !== 'active') {
+                auth()->logout();
+
+                return redirect('/login')
+                    ->withErrors([
+                        'email' => 'Sorry, your account is currently inactive.'
+                    ])
+                    ->withInput($request->only('email'));
+            }
+        }
+
         $token = $user->createToken('app-token')->plainTextToken;
 
         session([
@@ -54,6 +63,8 @@ class LoginController extends Controller
             Cookie::queue(Cookie::forget('remember_email'));
             Cookie::queue(Cookie::forget('remember_password'));
         }
+
+        return redirect()->intended($this->dashboardPath($user));
     }
 
     /**
@@ -84,5 +95,16 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login');
+    }
+
+    protected function dashboardPath($user): string
+    {
+        $roles = $user?->getRoleNames() ?? collect();
+
+        $isEmployee = $roles->contains(function ($role) {
+            return str_starts_with($role, 'emp');
+        });
+
+        return $isEmployee ? '/employee/dashboard' : '/admin/dashboard';
     }
 }
