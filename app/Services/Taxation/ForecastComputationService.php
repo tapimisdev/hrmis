@@ -16,8 +16,19 @@ class ForecastComputationService
         string $employeeNo,
         array $computedAnnualTaxableAmounts
     ): int {
+        return DB::transaction(function () use (
+            $payload,
+            $taxationId,
+            $employeeNo,
+            $computedAnnualTaxableAmounts
+        ) {
+            // Replace the prior snapshot only once the new recompute is ready to persist.
+            DB::table('taxation_employees')
+                ->where('taxation_id', $taxationId)
+                ->where('employee_no', $employeeNo)
+                ->delete();
 
-        $taxationEmployeeId = DB::table('taxation_employees')->insertGetId([
+            $taxationEmployeeId = DB::table('taxation_employees')->insertGetId([
             'taxation_id'           => $taxationId,
             'year'                  => data_get($payload, 'year'),
             'employee_no'           => $employeeNo,
@@ -73,135 +84,136 @@ class ForecastComputationService
             'is_active'             => true,
             'created_at'            => now(),
             'updated_at'            => now(),
-        ]);
+            ]);
 
-        // Employee Others Earnings
-        $earnings = collect(data_get($payload, 'othersEarnings', []))
-            ->filter(fn($r) => filled(data_get($r, 'name')))
-            ->map(fn($r) => [
-                'taxation_employee_id' => $taxationEmployeeId,
-                'is_default'           => $r['is_default'] ?? false,
-                'name'                 => trim($r['name']),
-                'tax_type'             => trim($r['tax_type'] ?? ''),
-                'amount'               => (int) ($r['amount'] ?? 0),
-                'created_at'           => now(),
-                'updated_at'           => now(),
-            ])
-            ->all();
-
-        if (!empty($earnings)) {
-            DB::table('taxation_employee_other_earnings')->insert($earnings);
-        }
-
-        // Employee Others Deductions
-        $deductions = collect(data_get($payload, 'othersDeductions', []))
-            ->filter(fn($r) => filled(data_get($r, 'name')))
-            ->map(fn($r) => [
-                'taxation_employee_id' => $taxationEmployeeId,
-                'is_default'           => $r['is_default'] ?? false,
-                'name'                 => trim($r['name']),
-                'amount'               => (int) ($r['amount'] ?? 0),
-                'created_at'           => now(),
-                'updated_at'           => now(),
-            ])
-            ->all();
-        
-        if (!empty($deductions)) {
-            DB::table('taxation_employee_other_deductions')->insert($deductions);
-        }
-
-        if (!empty($payload['midyear'])) {
-            if (data_get($payload, 'assumptions.midYear') === true) {
-                DB::table('taxation_employee_bonus')->insert([
+            // Employee Others Earnings
+            $earnings = collect(data_get($payload, 'othersEarnings', []))
+                ->filter(fn($r) => filled(data_get($r, 'name')))
+                ->map(fn($r) => [
                     'taxation_employee_id' => $taxationEmployeeId,
-                    'employee_no'          => $employeeNo,
-                    'type'                 => 'midyear',
-
-                    'as_of'                => data_get($payload, 'midyear.as_of'),
-                    'basic_salary_as_of'   => (float) data_get($payload, 'midyear.basic_salary_as_of', 0),
-                    'salary_effective_date' => data_get($payload, 'midyear.salary_effective_date'),
-                    'eligible'             => (bool) data_get($payload, 'midyear.eligible', false),
-                    'months_of_service'    => (int) data_get($payload, 'midyear.months_of_service', 0),
-                    'service_start'        => data_get($payload, 'midyear.service_start'),
-                    'service_end'          => data_get($payload, 'midyear.service_end'),
-
-                    'amount'               => (float) data_get($payload, 'midyear.amount', 0),
+                    'is_default'           => $r['is_default'] ?? false,
+                    'name'                 => trim($r['name']),
+                    'tax_type'             => trim($r['tax_type'] ?? ''),
+                    'amount'               => (int) ($r['amount'] ?? 0),
                     'created_at'           => now(),
                     'updated_at'           => now(),
-                ]);
+                ])
+                ->all();
+
+            if (!empty($earnings)) {
+                DB::table('taxation_employee_other_earnings')->insert($earnings);
             }
-        }
 
-        if (!empty($payload['year_end'])) {
-            if (data_get($payload, 'assumptions.yearEnd') === true) {
-                DB::table('taxation_employee_bonus')->insert([
+            // Employee Others Deductions
+            $deductions = collect(data_get($payload, 'othersDeductions', []))
+                ->filter(fn($r) => filled(data_get($r, 'name')))
+                ->map(fn($r) => [
                     'taxation_employee_id' => $taxationEmployeeId,
-                    'employee_no'          => $employeeNo,
-                    'type'                 => 'year_end',
-
-                    'as_of'                => data_get($payload, 'year_end.as_of'),
-                    'basic_salary_as_of'   => (float) data_get($payload, 'year_end.basic_salary_as_of', 0),
-                    'salary_effective_date' => data_get($payload, 'year_end.salary_effective_date'),
-                    'eligible'             => (bool) data_get($payload, 'year_end.eligible', false),
-                    'months_of_service'    => (int) data_get($payload, 'year_end.months_of_service', 0),
-                    'service_start'        => data_get($payload, 'year_end.service_start'),
-                    'service_end'          => data_get($payload, 'year_end.service_end'),
-
-                    'amount'               => (float) data_get($payload, 'year_end.amount', 0),
+                    'is_default'           => $r['is_default'] ?? false,
+                    'name'                 => trim($r['name']),
+                    'amount'               => (int) ($r['amount'] ?? 0),
                     'created_at'           => now(),
                     'updated_at'           => now(),
-                ]);
+                ])
+                ->all();
+
+            if (!empty($deductions)) {
+                DB::table('taxation_employee_other_deductions')->insert($deductions);
             }
-        }
 
-        DB::table('tax_computation_logs')->insert([
-            'taxation_employee_id' => $taxationEmployeeId,
-            'employee_no'          => $employeeNo,
+            if (!empty($payload['midyear'])) {
+                if (data_get($payload, 'assumptions.midYear') === true) {
+                    DB::table('taxation_employee_bonus')->insert([
+                        'taxation_employee_id' => $taxationEmployeeId,
+                        'employee_no'          => $employeeNo,
+                        'type'                 => 'midyear',
 
-            'annual_income'        => (float) data_get($computedAnnualTaxableAmounts, 'annual_income', 0),
-            'fixed_tax'            => (float) data_get($computedAnnualTaxableAmounts, 'fixed_tax', 0),
-            'tax_rate'             => (float) data_get($computedAnnualTaxableAmounts, 'tax_rate', 0),
-            'excess_over'          => (float) data_get($computedAnnualTaxableAmounts, 'excess_over', 0),
-            'excess_amount'        => (float) data_get($computedAnnualTaxableAmounts, 'excess_amount', 0),
-            'tax'                  => (float) data_get($computedAnnualTaxableAmounts, 'tax', 0),
-            'monthly_tax'          => (float) data_get($computedAnnualTaxableAmounts, 'monthly_tax', 0),
-            'bracket_from'         => (float) data_get($computedAnnualTaxableAmounts, 'bracket.from', 0),
-            'bracket_to'           => (float) data_get($computedAnnualTaxableAmounts, 'bracket.to', 0),
+                        'as_of'                => data_get($payload, 'midyear.as_of'),
+                        'basic_salary_as_of'   => (float) data_get($payload, 'midyear.basic_salary_as_of', 0),
+                        'salary_effective_date' => data_get($payload, 'midyear.salary_effective_date'),
+                        'eligible'             => (bool) data_get($payload, 'midyear.eligible', false),
+                        'months_of_service'    => (int) data_get($payload, 'midyear.months_of_service', 0),
+                        'service_start'        => data_get($payload, 'midyear.service_start'),
+                        'service_end'          => data_get($payload, 'midyear.service_end'),
 
-            'remarks'              => data_get($computedAnnualTaxableAmounts, 'remarks', ''),
+                        'amount'               => (float) data_get($payload, 'midyear.amount', 0),
+                        'created_at'           => now(),
+                        'updated_at'           => now(),
+                    ]);
+                }
+            }
 
-            'raw_payload'          => json_encode($computedAnnualTaxableAmounts),
+            if (!empty($payload['year_end'])) {
+                if (data_get($payload, 'assumptions.yearEnd') === true) {
+                    DB::table('taxation_employee_bonus')->insert([
+                        'taxation_employee_id' => $taxationEmployeeId,
+                        'employee_no'          => $employeeNo,
+                        'type'                 => 'year_end',
 
-            'created_at'           => now(),
-            'updated_at'           => now(),
-        ]);
+                        'as_of'                => data_get($payload, 'year_end.as_of'),
+                        'basic_salary_as_of'   => (float) data_get($payload, 'year_end.basic_salary_as_of', 0),
+                        'salary_effective_date' => data_get($payload, 'year_end.salary_effective_date'),
+                        'eligible'             => (bool) data_get($payload, 'year_end.eligible', false),
+                        'months_of_service'    => (int) data_get($payload, 'year_end.months_of_service', 0),
+                        'service_start'        => data_get($payload, 'year_end.service_start'),
+                        'service_end'          => data_get($payload, 'year_end.service_end'),
 
-        foreach ($payload['computations'] as $computation) {
+                        'amount'               => (float) data_get($payload, 'year_end.amount', 0),
+                        'created_at'           => now(),
+                        'updated_at'           => now(),
+                    ]);
+                }
+            }
+
+            DB::table('tax_computation_logs')->insert([
+                'taxation_employee_id' => $taxationEmployeeId,
+                'employee_no'          => $employeeNo,
+
+                'annual_income'        => (float) data_get($computedAnnualTaxableAmounts, 'annual_income', 0),
+                'fixed_tax'            => (float) data_get($computedAnnualTaxableAmounts, 'fixed_tax', 0),
+                'tax_rate'             => (float) data_get($computedAnnualTaxableAmounts, 'tax_rate', 0),
+                'excess_over'          => (float) data_get($computedAnnualTaxableAmounts, 'excess_over', 0),
+                'excess_amount'        => (float) data_get($computedAnnualTaxableAmounts, 'excess_amount', 0),
+                'tax'                  => (float) data_get($computedAnnualTaxableAmounts, 'tax', 0),
+                'monthly_tax'          => (float) data_get($computedAnnualTaxableAmounts, 'monthly_tax', 0),
+                'bracket_from'         => (float) data_get($computedAnnualTaxableAmounts, 'bracket.from', 0),
+                'bracket_to'           => (float) data_get($computedAnnualTaxableAmounts, 'bracket.to', 0),
+
+                'remarks'              => data_get($computedAnnualTaxableAmounts, 'remarks', ''),
+
+                'raw_payload'          => json_encode($computedAnnualTaxableAmounts),
+
+                'created_at'           => now(),
+                'updated_at'           => now(),
+            ]);
+
+            foreach ($payload['computations'] as $computation) {
 
             
 
-            // Guard: skip anything not an array computation object
-            if (!is_array($computation)) {
-                continue;
+                // Guard: skip anything not an array computation object
+                if (!is_array($computation)) {
+                    continue;
+                }
+
+                // Guard: must have a key
+                if (!isset($computation['key'])) {
+                    continue;
+                }
+
+                DB::table('taxation_employee_computations')->insert([
+                    'taxation_employee_id' => $taxationEmployeeId,
+                    'type'                 => $computation['key'], // safe now
+                    'raw_computation'      => json_encode($computation, JSON_UNESCAPED_UNICODE),
+                    'amount'               => (float) ($computation['result_raw']
+                                            ?? str_replace(',', '', (string) ($computation['result'] ?? 0))),
+                ]);
             }
 
-            // Guard: must have a key
-            if (!isset($computation['key'])) {
-                continue;
-            }
+            // dd($payload['computations']);
 
-            DB::table('taxation_employee_computations')->insert([
-                'taxation_employee_id' => $taxationEmployeeId,
-                'type'                 => $computation['key'], // safe now
-                'raw_computation'      => json_encode($computation, JSON_UNESCAPED_UNICODE),
-                'amount'               => (float) ($computation['result_raw']
-                                        ?? str_replace(',', '', (string) ($computation['result'] ?? 0))),
-            ]);
-        }
-
-        // dd($payload['computations']);
-
-        return $taxationEmployeeId;
+            return $taxationEmployeeId;
+        });
     }
 
     public function annualSalaryTotalByMonth(

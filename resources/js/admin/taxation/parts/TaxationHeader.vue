@@ -17,18 +17,18 @@
             <!-- RIGHT -->
             <div class="fb-buttons">
                 <RunForecastModal ref="foreCastModal" :selectedYear="selectedYear"
-                    @forecast-ran="$emit('taxation-data-updated')" />
-                <button class="fb-btn bg-danger" v-if="!show_button" @click="$emit('delete')">
+                    @forecast-ran="emitYearToParent" />
+                <button class="fb-btn bg-danger" v-if="showDeleteButton" @click="$emit('delete')">
                     <i class="fa-solid fa-trash me-1"></i>
                     Delete Permanently
                 </button>
 
-                <button class="fb-btn fb-primary" v-if="show_button" @click="$refs.foreCastModal.handleOpenaddModal()">
+                <button class="fb-btn fb-primary" v-if="showRunButton" @click="$refs.foreCastModal.handleOpenaddModal()">
                     <i class="fa-solid fa-calculator me-1"></i>
                     Run Forecast
                 </button>
 
-                <template v-else>
+                <template v-else-if="showDeleteButton">
                     <button class="fb-btn fb-secondary">
                         <i class="fa-solid fa-file-lines me-1"></i>
                         BIR 2316
@@ -51,14 +51,13 @@ export default {
     name: "TaxationHeader",
     components: { RunForecastModal },
     props: {
-        show_button: {
-            type: Boolean,
-            default: true,
+        has_taxation_record: {
+            default: null,
         },
-        taxation_id: {
-            type: Number,
-            default: null
-        }
+        is_busy: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         const currentYear = new Date().getFullYear();
@@ -80,6 +79,14 @@ export default {
             ],
         };
     },
+    computed: {
+        showRunButton() {
+            return this.has_taxation_record === false && !this.is_busy;
+        },
+        showDeleteButton() {
+            return this.has_taxation_record === true && !this.is_busy;
+        },
+    },
 
     created() {
         this.initYearFromUrl();
@@ -93,6 +100,9 @@ export default {
     },
 
     methods: {
+        emitYearToParent() {
+            this.$emit("taxation-data-updated", this.selectedYear);
+        },
         initYearFromUrl() {
             const currentYear = new Date().getFullYear();
             const params = new URLSearchParams(window.location.search);
@@ -121,7 +131,7 @@ export default {
 
         sendYearToParent() {
             this.setUrlYear(this.selectedYear);
-            this.$emit("taxation-data-updated", this.selectedYear);
+            this.emitYearToParent();
         },
 
         onPopState() {

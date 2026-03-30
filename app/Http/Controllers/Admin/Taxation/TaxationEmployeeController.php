@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin\Taxation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Taxation\UpdateForecastRequest;
 use App\Jobs\Taxation\ForeCastEmployeeJob;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class TaxationEmployeeController extends Controller
@@ -93,20 +92,7 @@ class TaxationEmployeeController extends Controller
     public function update(UpdateForecastRequest $request, $id)
     {
         $payload = $request->validated();
-
-        $taxation_employee = DB::table('taxation_employees as te')
-            ->leftJoin('taxations as t', 'te.taxation_id', '=', 't.id')
-            ->select(
-                't.id',
-                't.year',
-                'te.employee_no',
-                't.hazard_tax_id as hazardTaxId',
-                't.salary_tax_id as salaryTaxId',
-                't.longevity_id as longevityTaxId',
-                't.train_law_id as trainLawId',
-            )
-            ->where('te.id', $id)
-            ->first();
+        $taxation_employee = $this->getForecastContext($id);
 
         if (!$taxation_employee) {
             return response()->json([
@@ -114,23 +100,44 @@ class TaxationEmployeeController extends Controller
             ], 404);
         }
 
-        $taxation_id = $taxation_employee->id;
-        $payload['year'] = $taxation_employee->year;
-        $payload['hazardTaxId'] = $taxation_employee->hazardTaxId;
-        $payload['salaryTaxId'] = $taxation_employee->salaryTaxId;
-        $payload['longevityTaxId'] = $taxation_employee->longevityTaxId;
-        $payload['trainLawId'] = $taxation_employee->trainLawId;
+        $payload = $this->mergeForecastContextIntoPayload($payload, $taxation_employee);
 
         ForeCastEmployeeJob::dispatch(
-            $taxation_id,
+            $taxation_employee->taxation_id,
             $taxation_employee->employee_no,
             $payload
         );
 
-        // delete old data
-        DB::table('taxation_employees')
-            ->where('id', $id)
-            ->delete();
+        return response()->json([
+            'message' => 'Forecast recomputation has been queued successfully.'
+        ]);
+    }
+
+    public function recompute($id)
+    {
+        $taxation_employee = $this->getForecastContext($id);
+
+        if (!$taxation_employee) {
+            return response()->json([
+                'message' => 'Taxation employee not found.'
+            ], 404);
+        }
+
+        $payload = json_decode($taxation_employee->raw_payload ?? '[]', true);
+
+        if (!is_array($payload) || empty($payload)) {
+            return response()->json([
+                'message' => 'Unable to recompute because the saved taxation payload is missing.'
+            ], 422);
+        }
+
+        $payload = $this->mergeForecastContextIntoPayload($payload, $taxation_employee);
+
+        ForeCastEmployeeJob::dispatch(
+            $taxation_employee->taxation_id,
+            $taxation_employee->employee_no,
+            $payload
+        );
 
         return response()->json([
             'message' => 'Forecast recomputation has been queued successfully.'
@@ -150,5 +157,35 @@ class TaxationEmployeeController extends Controller
             });
 
         return response()->json($computations);
+    }
+
+    private function getForecastContext($id): ?object
+    {
+        return DB::table('taxation_employees as te')
+            ->leftJoin('taxations as t', 'te.taxation_id', '=', 't.id')
+            ->select(
+                'te.id',
+                'te.taxation_id',
+                'te.employee_no',
+                'te.raw_payload',
+                't.year',
+                't.hazard_tax_id as hazardTaxId',
+                't.salary_tax_id as salaryTaxId',
+                't.longevity_id as longevityTaxId',
+                't.train_law_id as trainLawId',
+            )
+            ->where('te.id', $id)
+            ->first();
+    }
+
+    private function mergeForecastContextIntoPayload(array $payload, object $taxationEmployee): array
+    {
+        $payload['year'] = $taxationEmployee->year;
+        $payload['hazardTaxId'] = $taxationEmployee->hazardTaxId;
+        $payload['salaryTaxId'] = $taxationEmployee->salaryTaxId;
+        $payload['longevityTaxId'] = $taxationEmployee->longevityTaxId;
+        $payload['trainLawId'] = $taxationEmployee->trainLawId;
+
+        return $payload;
     }
 }

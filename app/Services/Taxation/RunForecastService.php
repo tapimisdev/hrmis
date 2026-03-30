@@ -35,11 +35,21 @@ class RunForecastService
 
     public function createTaxation(array $payload): int
     {
+        $hazardTaxComponentId = $this->resolvePayrollComponentId(
+            data_get($payload, 'hazardTaxId')
+        );
+        $salaryTaxComponentId = $this->resolvePayrollComponentId(
+            data_get($payload, 'salaryTaxId')
+        );
+        $longevityTaxComponentId = $this->resolvePayrollComponentId(
+            data_get($payload, 'longevityTaxId')
+        );
+
         $taxationId = DB::table('taxations')->insertGetId([
             'year'                  => data_get($payload, 'year'),
-            'hazard_tax_id'         => data_get($payload, 'hazardTaxId'),
-            'salary_tax_id'         => data_get($payload, 'salaryTaxId'),
-            'longevity_id'          => data_get($payload, 'longevityTaxId'),
+            'hazard_tax_id'         => $hazardTaxComponentId,
+            'salary_tax_id'         => $salaryTaxComponentId,
+            'longevity_id'          => $longevityTaxComponentId,
             'train_law_id'          => data_get($payload, 'trainLawId'),
 
             // assumptions
@@ -98,5 +108,16 @@ class RunForecastService
         }
 
         return $taxationId;
+    }
+
+    private function resolvePayrollComponentId($selectedYearId): int
+    {
+        $selectedYearId = (int) $selectedYearId;
+
+        $componentId = DB::table('payroll_components_years')
+            ->where('id', $selectedYearId)
+            ->value('payroll_component_id');
+
+        return (int) ($componentId ?: $selectedYearId);
     }
 }

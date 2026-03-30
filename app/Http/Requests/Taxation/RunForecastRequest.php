@@ -28,9 +28,9 @@ class RunForecastRequest extends FormRequest
             // =========================
             // Tax settings (TAB A)
             // =========================
-            'hazardTaxId'     => ['required', 'integer', 'exists:payroll_components,id'],
-            'salaryTaxId'     => ['required', 'integer', 'exists:payroll_components,id'],
-            'longevityTaxId'  => ['required', 'integer', 'exists:payroll_components,id'],
+            'hazardTaxId'     => ['required', 'integer', 'exists:payroll_components_years,id'],
+            'salaryTaxId'     => ['required', 'integer', 'exists:payroll_components_years,id'],
+            'longevityTaxId'  => ['required', 'integer', 'exists:payroll_components_years,id'],
             'trainLawId'      => ['required', 'integer', 'exists:train_law,id'],
 
             // =========================

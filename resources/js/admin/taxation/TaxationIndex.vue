@@ -1,7 +1,8 @@
 <template>
     <div class="container-fluid" style="padding: 16px 18px">
         <TaxationHeader
-            :show_button="show_run_button"
+            :has_taxation_record="has_taxation_record"
+            :is_busy="is_loading || is_processing"
             @delete="handleDelete"
             @taxation-data-updated="fetchTaxation"
         />
@@ -20,7 +21,7 @@
             <TaxationCard :cards="taxationData.cards" />
             <TaxationBody
                 :body="taxationData.body"
-                :disable_recon="show_run_button"
+                :disable_recon="!has_taxation_record"
                 @refresh-forecast="handleForecastRefresh"
             />
             <TaxSettings :settings="taxationData.settings" />
@@ -64,7 +65,7 @@ export default {
 
             finalized: false,
 
-            show_run_button: false,
+            has_taxation_record: null,
             taxation_id: null,
             is_loading: false,
 
@@ -74,7 +75,7 @@ export default {
 
     methods: {
         fetchTaxation(year) {
-            this.selectedYear = year;
+            this.selectedYear = year ?? this.selectedYear ?? new Date().getFullYear();
             this.is_loading = true;
             this.finalized = false;
             this.batch_id = null;
@@ -86,13 +87,7 @@ export default {
                 .then((response) => {
                     const data = response.data || {};
 
-                    if (data.id != null) {
-                        this.show_run_button = false;
-                        this.taxation_id = data.id;
-                    } else {
-                        this.show_run_button = true;
-                        this.taxation_id = null;
-                    }
+                    this.applyTaxationIdentity(data);
 
                     if (data.status === "processing") {
                         this.batch_id = data.batch_id || null;
@@ -121,13 +116,7 @@ export default {
                 .then((response) => {
                     const data = response.data || {};
 
-                    if (data.id != null) {
-                        this.show_run_button = false;
-                        this.taxation_id = data.id;
-                    } else {
-                        this.show_run_button = true;
-                        this.taxation_id = null;
-                    }
+                    this.applyTaxationIdentity(data);
 
                     if (data.status === "processing") {
                         this.batch_id = data.batch_id || null;
@@ -182,6 +171,7 @@ export default {
                         return;
                     }
 
+                    this.applyTaxationIdentity(data);
                     this.taxationData = TaxationSettingModel(data);
                     this.progress = 100;
                     this.batch_id = null;
@@ -209,6 +199,11 @@ export default {
                 clearInterval(this.statusPollId);
                 this.statusPollId = null;
             }
+        },
+        applyTaxationIdentity(data = {}) {
+            const hasTaxationRecord = data.id != null;
+            this.has_taxation_record = hasTaxationRecord;
+            this.taxation_id = hasTaxationRecord ? data.id : null;
         },
 
         async handleDelete() {
@@ -269,7 +264,7 @@ export default {
             this.resetProcessingState(); // stop polling + clear batch/progress
             // (optional) also clear view instantly so user feels it changed
             this.taxationData = TaxationSettingModel();
-            this.show_run_button = true;
+            this.has_taxation_record = false;
 
             try {
                 await axios.delete(
@@ -302,6 +297,7 @@ export default {
                     text: msg,
                     icon: "error",
                 });
+                this.has_taxation_record = this.taxation_id != null;
                 this.is_loading = false;
             }
         },

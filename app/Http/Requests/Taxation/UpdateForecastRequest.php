@@ -35,7 +35,7 @@ class UpdateForecastRequest extends FormRequest
             'othersEarnings.*.tax_type'     => [
                 'required_with:earnings.others',
                 'string',
-                Rule::in(['taxable', 'non_taxable']),
+                Rule::in(['taxable', 'non_taxable', 'exempt']),
             ],
             'othersEarnings.*.amount'       => ['required_with:earnings.others', 'numeric', 'min:1'],
 
@@ -77,9 +77,9 @@ class UpdateForecastRequest extends FormRequest
                 $basic = $this->input('allocation.basicPayPct', 0);
                 $long = $this->input('allocation.longevityPct', 0);
 
-                $total = $hazard + $basic + $long;
+                $total = (float) $hazard + (float) $basic + (float) $long;
 
-                if ($total != 100) {
+                if (abs($total - 100.0) > 0.0001) {
                     $validator->errors()->add(
                         'allocation',
                         'Hazard Pay, Basic Pay, and Longevity must total exactly 100%.'
