@@ -39,9 +39,4 @@ Route::middleware('auth:sanctum')->group(function () {
     require __DIR__ . '/apis/reports.php';
     require __DIR__ . '/apis/tax.php';
     
-<<<<<<< HEAD
 });
-=======
-
-});
->>>>>>> 0935048366916ed6b0ddff6397b9fa81e380e2ba
