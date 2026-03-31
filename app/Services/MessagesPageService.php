@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DirectMessage;
 use App\Models\GroupChat;
+use App\Models\GroupMessage;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Carbon;
@@ -209,47 +210,28 @@ class MessagesPageService
 
     protected function buildConversations(User $authUser, Collection $availableUsers): Collection
     {
-        $directClearMarkers = DB::table('direct_conversation_clears')
-            ->where('user_id', $authUser->id)
-            ->pluck('cleared_before_message_id', 'partner_id');
         $directNicknames = Schema::hasTable('direct_conversation_settings')
             ? DB::table('direct_conversation_settings')
                 ->where('user_id', $authUser->id)
                 ->pluck('nickname', 'partner_id')
             : collect();
+        $directStats = $this->directConversationStats($authUser);
+        $latestDirectMessages = DirectMessage::query()
+            ->with('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type')
+            ->whereIn('id', $directStats->pluck('latest_message_id')->filter()->unique()->values())
+            ->get()
+            ->keyBy('id');
 
         $directConversations = $availableUsers
-            ->map(function (array $user) use ($authUser, $directClearMarkers, $directNicknames) {
-                $clearedBeforeMessageId = (int) ($directClearMarkers[$user['id']] ?? 0);
+            ->map(function (array $user) use ($directStats, $directNicknames, $latestDirectMessages) {
+                $stats = $directStats->get($user['id']);
                 $nickname = trim((string) ($directNicknames[$user['id']] ?? ''));
                 $displayName = $nickname !== '' ? $nickname : $user['name'];
-
-                $baseQuery = DirectMessage::query()
-                    ->where(function ($query) use ($authUser, $user) {
-                        $query->where('sender_id', $authUser->id)
-                            ->where('recipient_id', $user['id']);
-                    })
-                    ->orWhere(function ($query) use ($authUser, $user) {
-                        $query->where('sender_id', $user['id'])
-                            ->where('recipient_id', $authUser->id);
-                    });
-
-                $latestMessage = (clone $baseQuery)
-                    ->when($clearedBeforeMessageId > 0, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId))
-                    ->orderByDesc('created_at')
-                    ->orderByDesc('id')
-                    ->first();
-
-                $unreadCount = DirectMessage::query()
-                    ->where('sender_id', $user['id'])
-                    ->where('recipient_id', $authUser->id)
-                    ->whereNull('read_at')
-                    ->when($clearedBeforeMessageId > 0, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId))
-                    ->count();
-
-                $latestAt = $latestMessage?->created_at
-                    ? Carbon::parse($latestMessage->created_at)
+                $latestMessage = $stats?->latest_message_id
+                    ? $latestDirectMessages->get((int) $stats->latest_message_id)
                     : null;
+                $latestAt = $latestMessage?->created_at ? Carbon::parse($latestMessage->created_at) : null;
+                $unreadCount = (int) ($stats?->unread_count ?? 0);
 
                 return [
                     ...$user,
@@ -268,6 +250,13 @@ class MessagesPageService
                 ];
             });
 
+        $groupStats = $this->groupConversationStats($authUser);
+        $latestGroupMessages = GroupMessage::query()
+            ->with('replyTo:id,group_chat_id,body,reply_to_id,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type,reaction,pinned_at,pinned_by_id,edited_at,unsent_at,unsent_by_id,is_unsent,created_at')
+            ->whereIn('id', $groupStats->pluck('latest_visible_message_id')->filter()->unique()->values())
+            ->get()
+            ->keyBy('id');
+
         $groupConversations = GroupChat::query()
             ->with('members:user_id,group_chat_id,last_read_at,cleared_before_message_id')
             ->withCount('members')
@@ -277,24 +266,14 @@ class MessagesPageService
             })
             ->orderByDesc(DB::raw('COALESCE(last_message_at, created_at)'))
             ->get()
-            ->map(function (GroupChat $groupChat) use ($authUser) {
+            ->map(function (GroupChat $groupChat) use ($groupStats, $latestGroupMessages) {
                 $displayName = $groupChat->name ?: 'Group Chat';
-                $member = $groupChat->members->firstWhere('user_id', $authUser->id);
-                $lastReadAt = $member?->last_read_at;
-                $clearedBeforeMessageId = (int) ($member?->cleared_before_message_id ?? 0);
-                $latestVisibleMessage = \App\Models\GroupMessage::query()
-                    ->where('group_chat_id', $groupChat->id)
-                    ->when($clearedBeforeMessageId > 0, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId))
-                    ->orderByDesc('created_at')
-                    ->orderByDesc('id')
-                    ->first();
+                $stats = $groupStats->get($groupChat->id);
+                $latestVisibleMessage = $stats?->latest_visible_message_id
+                    ? $latestGroupMessages->get((int) $stats->latest_visible_message_id)
+                    : null;
                 $latestAt = $latestVisibleMessage?->created_at;
-                $unreadCount = \App\Models\GroupMessage::query()
-                    ->where('group_chat_id', $groupChat->id)
-                    ->where('sender_id', '!=', $authUser->id)
-                    ->when($clearedBeforeMessageId > 0, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId))
-                    ->when($lastReadAt, fn ($query) => $query->where('created_at', '>', $lastReadAt))
-                    ->count();
+                $unreadCount = (int) ($stats?->unread_count ?? 0);
 
                 return [
                     'id' => (int) $groupChat->id,
@@ -399,5 +378,62 @@ class MessagesPageService
         $body = trim((string) $message->body);
 
         return $body !== '' ? Str::limit($body, 68) : 'Message';
+    }
+
+    protected function directConversationStats(User $authUser): Collection
+    {
+        $baseQuery = DirectMessage::query()
+            ->leftJoin('direct_conversation_clears as dcc', function ($join) use ($authUser) {
+                $join->where('dcc.user_id', '=', $authUser->id)
+                    ->whereRaw(
+                        'dcc.partner_id = CASE WHEN direct_messages.sender_id = ? THEN direct_messages.recipient_id ELSE direct_messages.sender_id END',
+                        [$authUser->id]
+                    );
+            })
+            ->where(function ($query) use ($authUser) {
+                $query->where('direct_messages.sender_id', $authUser->id)
+                    ->orWhere('direct_messages.recipient_id', $authUser->id);
+            })
+            ->whereRaw('direct_messages.id > COALESCE(dcc.cleared_before_message_id, 0)')
+            ->selectRaw(
+                'CASE WHEN direct_messages.sender_id = ? THEN direct_messages.recipient_id ELSE direct_messages.sender_id END as partner_id',
+                [$authUser->id]
+            )
+            ->addSelect([
+                'direct_messages.id',
+                'direct_messages.sender_id',
+                'direct_messages.recipient_id',
+                'direct_messages.read_at',
+            ]);
+
+        return DB::query()
+            ->fromSub($baseQuery, 'conversation_messages')
+            ->select('partner_id')
+            ->selectRaw('MAX(id) as latest_message_id')
+            ->selectRaw(
+                'SUM(CASE WHEN sender_id != ? AND recipient_id = ? AND read_at IS NULL THEN 1 ELSE 0 END) as unread_count',
+                [$authUser->id, $authUser->id]
+            )
+            ->groupBy('partner_id')
+            ->get()
+            ->keyBy(fn ($row) => (int) $row->partner_id);
+    }
+
+    protected function groupConversationStats(User $authUser): Collection
+    {
+        return DB::table('group_chat_members')
+            ->leftJoin('group_messages', 'group_messages.group_chat_id', '=', 'group_chat_members.group_chat_id')
+            ->where('group_chat_members.user_id', $authUser->id)
+            ->select('group_chat_members.group_chat_id')
+            ->selectRaw(
+                'MAX(CASE WHEN group_messages.id > COALESCE(group_chat_members.cleared_before_message_id, 0) THEN group_messages.id ELSE NULL END) as latest_visible_message_id'
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN group_messages.sender_id != ? AND group_messages.id > COALESCE(group_chat_members.cleared_before_message_id, 0) AND (group_chat_members.last_read_at IS NULL OR group_messages.created_at > group_chat_members.last_read_at) THEN 1 ELSE 0 END) as unread_count',
+                [$authUser->id]
+            )
+            ->groupBy('group_chat_members.group_chat_id')
+            ->get()
+            ->keyBy(fn ($row) => (int) $row->group_chat_id);
     }
 }

@@ -35,6 +35,9 @@ class GroupChatController extends Controller
         'angry',
     ];
 
+    protected array $groupMemberNameCache = [];
+    protected array $groupRecipientIdCache = [];
+
     public function __construct(
         protected MessagesPageService $messagesPageService,
         protected EventService $eventService
@@ -256,19 +259,8 @@ class GroupChatController extends Controller
             'attachment' => [
                 'nullable',
                 'file',
+                'mimes:jpg,jpeg,png,gif,doc,docx,pdf,xlsx,txt',
                 'max:5120',
-                function ($attribute, $value, $fail) {
-                    if (!$value) {
-                        return;
-                    }
-
-                    $extension = strtolower($value->getClientOriginalExtension() ?: '');
-                    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'docs', 'pdf', 'xlsx', 'txt'];
-
-                    if (!in_array($extension, $allowedExtensions, true)) {
-                        $fail('The attachment must be a valid image or document file.');
-                    }
-                },
             ],
         ]);
 
@@ -566,6 +558,12 @@ class GroupChatController extends Controller
             'body' => ['required', 'string', 'max:2000'],
         ]);
 
+        if (trim((string) $validated['body']) === '') {
+            return response()->json([
+                'message' => 'Message body cannot be empty.',
+            ], 422);
+        }
+
         $message->body = trim((string) $validated['body']);
         $message->edited_at = now();
         $message->save();
@@ -734,12 +732,12 @@ class GroupChatController extends Controller
     {
         $authUser = $request->user();
         $this->authorizeMember($authUser->id, $groupChat, true);
+        $validated = $request->validate([
+            'is_typing' => ['nullable', 'boolean'],
+        ]);
 
-        $recipientIds = GroupChatMember::query()
-            ->where('group_chat_id', $groupChat->id)
-            ->where('user_id', '!=', $authUser->id)
-            ->pluck('user_id')
-            ->map(fn ($id) => (int) $id)
+        $recipientIds = collect($this->groupRecipientIds($groupChat))
+            ->reject(fn (int $userId) => $userId === (int) $authUser->id)
             ->values()
             ->all();
 
@@ -748,7 +746,7 @@ class GroupChatController extends Controller
                 'group_chat_id' => (int) $groupChat->id,
                 'sender_id' => (int) $authUser->id,
                 'sender_name' => $this->groupMemberDisplayName((int) $groupChat->id, (int) $authUser->id, $authUser->name),
-                'is_typing' => (bool) $request->boolean('is_typing', true),
+                'is_typing' => (bool) ($validated['is_typing'] ?? true),
                 'updated_at' => now()->toIso8601String(),
             ], $recipientIds));
         }
@@ -1036,12 +1034,16 @@ class GroupChatController extends Controller
 
     protected function groupRecipientIds(GroupChat $groupChat): array
     {
-        return GroupChatMember::query()
-            ->where('group_chat_id', $groupChat->id)
-            ->pluck('user_id')
-            ->map(fn ($id) => (int) $id)
-            ->values()
-            ->all();
+        if (!array_key_exists($groupChat->id, $this->groupRecipientIdCache)) {
+            $this->groupRecipientIdCache[$groupChat->id] = GroupChatMember::query()
+                ->where('group_chat_id', $groupChat->id)
+                ->pluck('user_id')
+                ->map(fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        return $this->groupRecipientIdCache[$groupChat->id];
     }
 
     protected function formatConversationMembers(GroupChat $groupChat): array
@@ -1079,12 +1081,22 @@ class GroupChatController extends Controller
 
     protected function groupMemberDisplayName(int $groupChatId, int $userId, string $fallbackName): string
     {
-        $nickname = GroupChatMember::query()
-            ->where('group_chat_id', $groupChatId)
-            ->where('user_id', $userId)
-            ->value('nickname');
+        if (!array_key_exists($groupChatId, $this->groupMemberNameCache)) {
+            $this->groupMemberNameCache[$groupChatId] = GroupChatMember::query()
+                ->with('user:id,name')
+                ->where('group_chat_id', $groupChatId)
+                ->get()
+                ->mapWithKeys(function (GroupChatMember $member) {
+                    return [
+                        (int) $member->user_id => filled($member->nickname)
+                            ? (string) $member->nickname
+                            : ($member->user?->name ?? 'User'),
+                    ];
+                })
+                ->all();
+        }
 
-        return filled($nickname) ? (string) $nickname : $fallbackName;
+        return $this->groupMemberNameCache[$groupChatId][$userId] ?? $fallbackName;
     }
 
     protected function formatGroupMessageUpdatePayload(GroupChat $groupChat, GroupMessage $message, int $authUserId): array

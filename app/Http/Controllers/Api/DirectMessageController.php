@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class DirectMessageController extends Controller
 {
@@ -105,6 +106,7 @@ class DirectMessageController extends Controller
 
     public function store(Request $request)
     {
+        $authUser = $request->user();
         $validated = $request->validate([
             'recipient_id' => ['required', 'exists:users,id'],
             'body' => [
@@ -121,36 +123,17 @@ class DirectMessageController extends Controller
                     }
                 },
             ],
-            'reply_to_id' => ['nullable', 'exists:direct_messages,id'],
+            'reply_to_id' => ['nullable', 'integer', 'exists:direct_messages,id'],
             'attachment' => [
                 'nullable',
                 'file',
+                'mimes:jpg,jpeg,png,gif,doc,docx,pdf,xlsx,txt',
                 'max:5120',
-                function ($attribute, $value, $fail) {
-                    if (!$value) {
-                        return;
-                    }
-
-                    $extension = strtolower($value->getClientOriginalExtension() ?: '');
-                    $allowedExtensions = [
-                        'jpg',
-                        'jpeg',
-                        'png',
-                        'gif',
-                        'doc',
-                        'docx',
-                        'docs',
-                        'pdf',
-                        'xlsx',
-                        'txt',
-                    ];
-
-                    if (!in_array($extension, $allowedExtensions, true)) {
-                        $fail('The attachment must be a valid image or document file.');
-                    }
-                },
             ],
         ]);
+
+        $recipient = User::query()->findOrFail((int) $validated['recipient_id']);
+        $body = trim((string) ($validated['body'] ?? ''));
 
         $attachment = $request->file('attachment');
         $attachmentPath = null;
@@ -172,10 +155,10 @@ class DirectMessageController extends Controller
         }
 
         $message = DirectMessage::create([
-            'sender_id' => $request->user()->id,
-            'recipient_id' => $validated['recipient_id'],
-            'body' => trim((string) ($validated['body'] ?? '')),
-            'reply_to_id' => $validated['reply_to_id'] ?? null,
+            'sender_id' => $authUser->id,
+            'recipient_id' => $recipient->id,
+            'body' => $body,
+            'reply_to_id' => $this->resolveReplyTargetId($authUser, $recipient, $validated['reply_to_id'] ?? null),
             'attachment_path' => $attachmentPath,
             'attachment_name' => $attachmentName,
             'attachment_mime' => $attachmentMime,
@@ -187,7 +170,7 @@ class DirectMessageController extends Controller
 
         $message->load('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type');
 
-        $payload = $this->formatMessage($message, $request->user(), true);
+        $payload = $this->formatMessage($message, $authUser, true);
 
         event(new DirectMessageSent($payload));
 
@@ -279,7 +262,16 @@ class DirectMessageController extends Controller
         }
 
         $validated = $request->validate([
-            'body' => ['required', 'string', 'max:2000'],
+            'body' => [
+                'required',
+                'string',
+                'max:2000',
+                function ($attribute, $value, $fail) {
+                    if (trim((string) $value) === '') {
+                        $fail('Message body cannot be empty.');
+                    }
+                },
+            ],
         ]);
 
         $message->body = trim((string) $validated['body']);
@@ -508,11 +500,14 @@ class DirectMessageController extends Controller
     public function typing(Request $request, User $user)
     {
         $authUser = $request->user();
+        $validated = $request->validate([
+            'is_typing' => ['nullable', 'boolean'],
+        ]);
 
         event(new DirectMessageTyping([
             'sender_id' => $authUser->id,
             'recipient_id' => $user->id,
-            'is_typing' => (bool) $request->boolean('is_typing', true),
+            'is_typing' => (bool) ($validated['is_typing'] ?? true),
             'updated_at' => Carbon::now()->toIso8601String(),
         ]));
 
@@ -582,16 +577,21 @@ class DirectMessageController extends Controller
 
     protected function conversationQuery(User $authUser, User $user)
     {
-        $clearedBeforeMessageId = $this->conversationClearMarker($authUser, $user);
+        return $this->conversationQueryByPartnerId($authUser, (int) $user->id);
+    }
+
+    protected function conversationQueryByPartnerId(User $authUser, int $partnerId)
+    {
+        $clearedBeforeMessageId = $this->conversationClearMarkerByPartnerId((int) $authUser->id, $partnerId);
 
         return DirectMessage::query()
             ->with('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type')
-            ->where(function ($query) use ($authUser, $user) {
-                $query->where(function ($query) use ($authUser, $user) {
+            ->where(function ($query) use ($authUser, $partnerId) {
+                $query->where(function ($query) use ($authUser, $partnerId) {
                     $query->where('sender_id', $authUser->id)
-                        ->where('recipient_id', $user->id);
-                })->orWhere(function ($query) use ($authUser, $user) {
-                    $query->where('sender_id', $user->id)
+                        ->where('recipient_id', $partnerId);
+                })->orWhere(function ($query) use ($authUser, $partnerId) {
+                    $query->where('sender_id', $partnerId)
                         ->where('recipient_id', $authUser->id);
                 });
             })
@@ -600,9 +600,14 @@ class DirectMessageController extends Controller
 
     protected function conversationClearMarker(User $authUser, User $user): ?int
     {
+        return $this->conversationClearMarkerByPartnerId((int) $authUser->id, (int) $user->id);
+    }
+
+    protected function conversationClearMarkerByPartnerId(int $authUserId, int $partnerId): ?int
+    {
         $clearMarker = DB::table('direct_conversation_clears')
-            ->where('user_id', $authUser->id)
-            ->where('partner_id', $user->id)
+            ->where('user_id', $authUserId)
+            ->where('partner_id', $partnerId)
             ->value('cleared_before_message_id');
 
         return $clearMarker ? (int) $clearMarker : null;
@@ -618,9 +623,7 @@ class DirectMessageController extends Controller
             ? $message->recipient_id
             : $message->sender_id;
 
-        $partner = User::findOrFail($partnerId);
-
-        return $this->conversationQuery($authUser, $partner)
+        return $this->conversationQueryByPartnerId($authUser, (int) $partnerId)
             ->whereNotNull('pinned_at')
             ->orderByDesc('pinned_at')
             ->orderByDesc('id')
@@ -644,8 +647,7 @@ class DirectMessageController extends Controller
             ? $message->recipient_id
             : $message->sender_id;
 
-        $partner = User::findOrFail($partnerId);
-        $latestMessage = $this->conversationQuery($authUser, $partner)
+        $latestMessage = $this->conversationQueryByPartnerId($authUser, (int) $partnerId)
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->first();
@@ -726,6 +728,25 @@ class DirectMessageController extends Controller
         }
 
         return "Attachment";
+    }
+
+    protected function resolveReplyTargetId(User $authUser, User $recipient, mixed $replyTargetId): ?int
+    {
+        if (!$replyTargetId) {
+            return null;
+        }
+
+        $replyMessage = $this->conversationQuery($authUser, $recipient)
+            ->whereKey((int) $replyTargetId)
+            ->first();
+
+        if (!$replyMessage) {
+            throw ValidationException::withMessages([
+                'reply_to_id' => 'The selected reply target is invalid.',
+            ]);
+        }
+
+        return (int) $replyMessage->id;
     }
 
     protected function formatAttachment(DirectMessage $message): ?array

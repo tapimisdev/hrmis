@@ -10,867 +10,1435 @@
                     :mobile-users-panel-closing="mobileUsersPanelClosing"
                 >
                     <template #header>
-                    <div class="contacts-panel__header-block">
-                        <div class="contacts-panel__header">
-                            <div>
-                                <div class="contacts-panel__eyebrow">Conversations</div>
-                                <div class="contacts-panel__title-row">
-                                    <h2>Inbox</h2>
-                                    <span class="contacts-panel__count-badge">{{ visibleUsers.length }}</span>
+                        <div class="contacts-panel__header-block">
+                            <div class="contacts-panel__header">
+                                <div>
+                                    <div class="contacts-panel__eyebrow">
+                                        Conversations
+                                    </div>
+                                    <div class="contacts-panel__title-row">
+                                        <h2>Inbox</h2>
+                                        <span
+                                            class="contacts-panel__count-badge"
+                                            >{{ visibleUsers.length }}</span
+                                        >
+                                    </div>
+                                    <p class="contacts-panel__subtitle">
+                                        Direct and group chats synced with your
+                                        HRIS workspace.
+                                    </p>
                                 </div>
-                                <p class="contacts-panel__subtitle">
-                                    Direct and group chats synced with your HRIS workspace.
-                                </p>
+
+                                <div class="contacts-panel__actions">
+                                    <button
+                                        type="button"
+                                        class="icon-chip contacts-panel__mobile-close"
+                                        aria-label="Close user list"
+                                        title="Close user list"
+                                        @click="closeMobileUsersPanel"
+                                    >
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="icon-chip"
+                                        aria-label="Create group chat"
+                                        title="Create group chat"
+                                        @click="openGroupChatModal"
+                                    >
+                                        <i class="fa-solid fa-people-group"></i>
+                                    </button>
+                                    <button
+                                        v-if="groupChatRequestHistory.length"
+                                        type="button"
+                                        class="icon-chip"
+                                        aria-label="Request history"
+                                        title="Request history"
+                                        @click="
+                                            showGroupChatRequestsModal = true
+                                        "
+                                    >
+                                        <i class="fa-solid fa-list-check"></i>
+                                        <span
+                                            class="contacts-panel__action-badge"
+                                        >
+                                            {{ groupChatRequestHistory.length }}
+                                        </span>
+                                    </button>
+                                    <button
+                                        v-if="isAdmin"
+                                        type="button"
+                                        class="icon-chip"
+                                        aria-label="Pending approvals"
+                                        title="Pending approvals"
+                                        @click="showApprovalModal = true"
+                                    >
+                                        <i class="fa-solid fa-user-check"></i>
+                                        <span
+                                            v-if="
+                                                pendingGroupChatApprovals.length
+                                            "
+                                            class="contacts-panel__action-badge"
+                                        >
+                                            {{
+                                                pendingGroupChatApprovals.length
+                                            }}
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <div class="contacts-panel__actions">
+                            <div class="contacts-panel__utility-row">
+                                <a
+                                    href="/employee/dashboard"
+                                    class="contacts-panel__utility-link"
+                                >
+                                    <i class="fa-solid fa-arrow-left"></i>
+                                    <span>Dashboard</span>
+                                </a>
                                 <button
                                     type="button"
-                                    class="icon-chip contacts-panel__mobile-close"
-                                    aria-label="Close user list"
-                                    title="Close user list"
-                                    @click="closeMobileUsersPanel"
+                                    class="contacts-panel__utility-badge"
+                                    @click="showBetaInfoModal = true"
                                 >
-                                    <i class="fa-solid fa-xmark"></i>
+                                    <i class="fa-solid fa-flask"></i>
+                                    <span>Beta</span>
                                 </button>
                                 <button
                                     type="button"
-                                    class="icon-chip"
-                                    aria-label="Create group chat"
-                                    title="Create group chat"
-                                    @click="openGroupChatModal"
+                                    class="contacts-panel__utility-badge"
+                                    @click="showPrivacyInfoModal = true"
                                 >
-                                    <i class="fa-solid fa-people-group"></i>
-                                </button>
-                                <button
-                                    v-if="groupChatRequestHistory.length"
-                                    type="button"
-                                    class="icon-chip"
-                                    aria-label="Request history"
-                                    title="Request history"
-                                    @click="showGroupChatRequestsModal = true"
-                                >
-                                    <i class="fa-solid fa-list-check"></i>
-                                    <span class="contacts-panel__action-badge">
-                                        {{ groupChatRequestHistory.length }}
-                                    </span>
-                                </button>
-                                <button
-                                    v-if="isAdmin"
-                                    type="button"
-                                    class="icon-chip"
-                                    aria-label="Pending approvals"
-                                    title="Pending approvals"
-                                    @click="showApprovalModal = true"
-                                >
-                                    <i class="fa-solid fa-user-check"></i>
-                                    <span v-if="pendingGroupChatApprovals.length" class="contacts-panel__action-badge">
-                                        {{ pendingGroupChatApprovals.length }}
-                                    </span>
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                    <span>Privacy</span>
                                 </button>
                             </div>
                         </div>
-
-                        <div class="contacts-panel__utility-row">
-                            <a href="/employee/dashboard" class="contacts-panel__utility-link">
-                                <i class="fa-solid fa-arrow-left"></i>
-                                <span>Dashboard</span>
-                            </a>
-                            <button
-                                type="button"
-                                class="contacts-panel__utility-badge"
-                                @click="showBetaInfoModal = true"
-                            >
-                                <i class="fa-solid fa-flask"></i>
-                                <span>Beta</span>
-                            </button>
-                            <button
-                                type="button"
-                                class="contacts-panel__utility-badge"
-                                @click="showPrivacyInfoModal = true"
-                            >
-                                <i class="fa-solid fa-shield-halved"></i>
-                                <span>Privacy</span>
-                            </button>
-                        </div>
-                    </div>
                     </template>
 
                     <template #search>
-                    <div class="contacts-panel__search">
-                        <div class="search-shell">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                            <input
-                                v-model="searchQuery"
-                                type="text"
-                                placeholder="Search conversations"
-                            />
+                        <div class="contacts-panel__search">
+                            <div class="search-shell">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input
+                                    v-model="searchQuery"
+                                    type="text"
+                                    placeholder="Search conversations"
+                                />
+                            </div>
                         </div>
-                    </div>
                     </template>
 
                     <template #list>
-                    <div class="contacts-list">
-                        <template v-if="showInitialPageSkeleton">
-                            <div
-                                v-for="index in 7"
-                                :key="`contact-skeleton-${index}`"
-                                class="contact-card contact-card--skeleton"
-                            >
-                                <span class="contact-card__avatar contact-card__avatar--skeleton skeleton-shimmer"></span>
-                                <span class="contact-card__body">
-                                    <span class="contact-card__skeleton-line contact-card__skeleton-line--name skeleton-shimmer"></span>
-                                    <span class="contact-card__skeleton-line contact-card__skeleton-line--preview skeleton-shimmer"></span>
-                                    <span class="contact-card__skeleton-line contact-card__skeleton-line--status skeleton-shimmer"></span>
-                                </span>
-                                <span class="contact-card__meta">
-                                    <span class="contact-card__skeleton-time skeleton-shimmer"></span>
-                                </span>
-                            </div>
-                        </template>
-
-                        <template v-else>
-                            <div
-                                v-for="user in visibleUsers"
-                                :key="user.conversation_key || user.id"
-                                class="contact-card"
-                                :class="{ 'is-active': user.conversation_key === selectedConversationKey }"
-                                role="button"
-                                tabindex="0"
-                                @click="selectUser(user)"
-                                @keydown.enter.prevent="selectUser(user)"
-                                @keydown.space.prevent="selectUser(user)"
-                            >
-                                <span class="contact-card__avatar">
-                                    <img :src="user.profile" alt="profile" />
+                        <div class="contacts-list">
+                            <template v-if="showInitialPageSkeleton">
+                                <div
+                                    v-for="index in 7"
+                                    :key="`contact-skeleton-${index}`"
+                                    class="contact-card contact-card--skeleton"
+                                >
                                     <span
-                                        class="contact-card__status-dot"
-                                        :class="isConversationOnline(user) ? 'contact-card__status-dot--active' : 'contact-card__status-dot--inactive'"
+                                        class="contact-card__avatar contact-card__avatar--skeleton skeleton-shimmer"
                                     ></span>
-                                </span>
+                                    <span class="contact-card__body">
+                                        <span
+                                            class="contact-card__skeleton-line contact-card__skeleton-line--name skeleton-shimmer"
+                                        ></span>
+                                        <span
+                                            class="contact-card__skeleton-line contact-card__skeleton-line--preview skeleton-shimmer"
+                                        ></span>
+                                        <span
+                                            class="contact-card__skeleton-line contact-card__skeleton-line--status skeleton-shimmer"
+                                        ></span>
+                                    </span>
+                                    <span class="contact-card__meta">
+                                        <span
+                                            class="contact-card__skeleton-time skeleton-shimmer"
+                                        ></span>
+                                    </span>
+                                </div>
+                            </template>
 
-                                <span class="contact-card__body">
-                                    <span class="contact-card__name-row">
-                                        <span class="contact-card__name">{{ user.name }}</span>
-                                        <span v-if="user.unread_count > 0" class="unread-pill contact-card__name-unread">
-                                            {{ formatUnreadCount(user.unread_count) }}
+                            <template v-else>
+                                <div
+                                    v-for="user in visibleUsers"
+                                    :key="user.conversation_key || user.id"
+                                    class="contact-card"
+                                    :class="{
+                                        'is-active':
+                                            user.conversation_key ===
+                                            selectedConversationKey,
+                                    }"
+                                    role="button"
+                                    tabindex="0"
+                                    @click="selectUser(user)"
+                                    @keydown.enter.prevent="selectUser(user)"
+                                    @keydown.space.prevent="selectUser(user)"
+                                >
+                                    <span class="contact-card__avatar">
+                                        <img
+                                            :src="user.profile"
+                                            alt="profile"
+                                        />
+                                        <span
+                                            class="contact-card__status-dot"
+                                            :class="
+                                                isConversationOnline(user)
+                                                    ? 'contact-card__status-dot--active'
+                                                    : 'contact-card__status-dot--inactive'
+                                            "
+                                        ></span>
+                                    </span>
+
+                                    <span class="contact-card__body">
+                                        <span class="contact-card__name-row">
+                                            <span class="contact-card__name">{{
+                                                user.name
+                                            }}</span>
+                                            <span
+                                                v-if="user.unread_count > 0"
+                                                class="unread-pill contact-card__name-unread"
+                                            >
+                                                {{
+                                                    formatUnreadCount(
+                                                        user.unread_count,
+                                                    )
+                                                }}
+                                            </span>
+                                        </span>
+                                        <span class="contact-card__preview">
+                                            {{
+                                                user.preview ||
+                                                getConversationStatusLabel(user)
+                                            }}
+                                        </span>
+                                        <span class="contact-card__status">
+                                            <i
+                                                v-if="
+                                                    user.conversation_type ===
+                                                    'group'
+                                                "
+                                                class="fa-solid fa-people-group me-1"
+                                            ></i>
+                                            {{
+                                                getConversationStatusLabel(user)
+                                            }}
                                         </span>
                                     </span>
-                                    <span class="contact-card__preview">
-                                        {{ user.preview || getConversationStatusLabel(user) }}
-                                    </span>
-                                    <span class="contact-card__status">
-                                        <i
-                                            v-if="user.conversation_type === 'group'"
-                                            class="fa-solid fa-people-group me-1"
-                                        ></i>
-                                        {{ getConversationStatusLabel(user) }}
-                                    </span>
-                                </span>
 
-                                <span class="contact-card__meta">
-                                    <span class="contact-card__time">
-                                        {{ formatConversationTimestamp(user.latest_at) }}
-                                    </span>
-                                    <span class="contact-card__actions">
-                                        <button
-                                            type="button"
-                                            class="contact-card__more"
-                                            :aria-expanded="contactActionMenuKey === user.conversation_key"
-                                            aria-label="More conversation actions"
-                                            @click.stop="toggleContactActionMenu(user)"
-                                        >
-                                            <i class="fa-solid fa-ellipsis"></i>
-                                        </button>
-                                        <transition name="fade">
-                                            <div
-                                                v-if="contactActionMenuKey === user.conversation_key"
-                                                class="contact-card__menu"
-                                                @click.stop
+                                    <span class="contact-card__meta">
+                                        <span class="contact-card__time">
+                                            {{
+                                                formatConversationTimestamp(
+                                                    user.latest_at,
+                                                )
+                                            }}
+                                        </span>
+                                        <span class="contact-card__actions">
+                                            <button
+                                                type="button"
+                                                class="contact-card__more"
+                                                :aria-expanded="
+                                                    contactActionMenuKey ===
+                                                    user.conversation_key
+                                                "
+                                                aria-label="More conversation actions"
+                                                @click.stop="
+                                                    toggleContactActionMenu(
+                                                        user,
+                                                    )
+                                                "
                                             >
-                                                <button
-                                                    type="button"
-                                                    class="contact-card__menu-item contact-card__menu-item--danger"
-                                                    @click.stop="openConversationDeleteModal(user)"
+                                                <i
+                                                    class="fa-solid fa-ellipsis"
+                                                ></i>
+                                            </button>
+                                            <transition name="fade">
+                                                <div
+                                                    v-if="
+                                                        contactActionMenuKey ===
+                                                        user.conversation_key
+                                                    "
+                                                    class="contact-card__menu"
+                                                    @click.stop
                                                 >
-                                                    <i class="fa-regular fa-trash-can"></i>
-                                                    <span>Delete messages</span>
-                                                </button>
-                                            </div>
-                                        </transition>
+                                                    <button
+                                                        type="button"
+                                                        class="contact-card__menu-item contact-card__menu-item--danger"
+                                                        @click.stop="
+                                                            openConversationDeleteModal(
+                                                                user,
+                                                            )
+                                                        "
+                                                    >
+                                                        <i
+                                                            class="fa-regular fa-trash-can"
+                                                        ></i>
+                                                        <span
+                                                            >Delete
+                                                            messages</span
+                                                        >
+                                                    </button>
+                                                </div>
+                                            </transition>
+                                        </span>
                                     </span>
-                                </span>
-                            </div>
+                                </div>
 
-                            <div v-if="visibleUsers.length === 0" class="chat-empty mt-4">
-                        <div class="chat-empty__icon">
-                            <i class="fa-regular fa-comment-dots"></i>
+                                <div
+                                    v-if="visibleUsers.length === 0"
+                                    class="chat-empty mt-4"
+                                >
+                                    <div class="chat-empty__icon">
+                                        <i
+                                            class="fa-regular fa-comment-dots"
+                                        ></i>
+                                    </div>
+                                    <div class="fw-semibold">
+                                        No conversations match
+                                    </div>
+                                    <div class="text-white-50 small">
+                                        Try a different search or filter.
+                                    </div>
+                                </div>
+                            </template>
                         </div>
-                        <div class="fw-semibold">No conversations match</div>
-                        <div class="text-white-50 small">Try a different search or filter.</div>
-                            </div>
-                        </template>
-                    </div>
                     </template>
                 </MessagesSidebar>
 
-                <ConversationWorkspace :show-mobile-users-panel="showMobileUsersPanel">
+                <ConversationWorkspace
+                    :show-mobile-users-panel="showMobileUsersPanel"
+                >
                     <template #header>
-                <div class="conversation-panel__top">
-                    <div class="conversation-user">
-                        <span class="conversation-user__avatar">
-                            <img :src="activeUserAvatar" alt="profile" />
-                            <span
-                                class="conversation-user__status-dot"
-                                :class="isConversationOnline(activeUser) ? 'conversation-user__status-dot--active' : 'conversation-user__status-dot--inactive'"
-                            ></span>
-                        </span>
-                        <div class="conversation-user__text text-truncate">
-                            <div class="conversation-user__eyebrow">
-                                {{ activeConversationIsGroup ? 'Group conversation' : 'Direct message' }}
+                        <div class="conversation-panel__top">
+                            <div class="conversation-user">
+                                <span class="conversation-user__avatar">
+                                    <img
+                                        :src="activeUserAvatar"
+                                        alt="profile"
+                                    />
+                                    <span
+                                        class="conversation-user__status-dot"
+                                        :class="
+                                            isConversationOnline(activeUser)
+                                                ? 'conversation-user__status-dot--active'
+                                                : 'conversation-user__status-dot--inactive'
+                                        "
+                                    ></span>
+                                </span>
+                                <div
+                                    class="conversation-user__text text-truncate"
+                                >
+                                    <div class="conversation-user__eyebrow">
+                                        {{
+                                            activeConversationIsGroup
+                                                ? "Group conversation"
+                                                : "Direct message"
+                                        }}
+                                    </div>
+                                    <h2 class="conversation-user__name">
+                                        {{ activeUserName }}
+                                    </h2>
+                                    <div class="conversation-user__status">
+                                        {{ activeUserStatus }}
+                                    </div>
+                                </div>
                             </div>
-                            <h2 class="conversation-user__name">{{ activeUserName }}</h2>
-                            <div class="conversation-user__status">
-                                {{ activeUserStatus }}
+
+                            <div class="conversation-actions">
+                                <template v-if="activeConversationIsGroup">
+                                    <button
+                                        type="button"
+                                        class="conversation-info-btn"
+                                        aria-label="Invite users"
+                                        title="Invite users"
+                                        @click="openInviteMembersModal"
+                                    >
+                                        <i class="fa-solid fa-user-plus"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="conversation-info-btn"
+                                        aria-label="See members"
+                                        title="See members"
+                                        @click="openGroupMembersModal"
+                                    >
+                                        <i class="fa-solid fa-users"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="conversation-info-btn conversation-info-btn--danger"
+                                        aria-label="Leave group"
+                                        title="Leave group"
+                                        @click="leaveActiveGroup"
+                                    >
+                                        <i
+                                            class="fa-solid fa-right-from-bracket"
+                                        ></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="conversation-info-btn conversation-info-btn--info"
+                                        aria-label="Group info"
+                                        title="Group info"
+                                        @click="openConversationInfoModal"
+                                    >
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </button>
+                                </template>
+                                <button
+                                    v-else-if="activeUser"
+                                    type="button"
+                                    class="conversation-info-btn conversation-info-btn--info"
+                                    aria-label="Conversation info"
+                                    title="Conversation info"
+                                    @click="openConversationInfoModal"
+                                >
+                                    <i class="fa-solid fa-circle-info"></i>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="icon-chip contacts-panel__mobile-close"
+                                    aria-label="Open user list"
+                                    title="Open user list"
+                                    @click="openMobileUsersPanel"
+                                >
+                                    <i class="fa-solid fa-user-group"></i>
+                                </button>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="conversation-actions">
-                        <template v-if="activeConversationIsGroup">
-                            <button
-                                type="button"
-                                class="conversation-info-btn"
-                                aria-label="Invite users"
-                                title="Invite users"
-                                @click="openInviteMembersModal"
-                            >
-                                <i class="fa-solid fa-user-plus"></i>
-                            </button>
-                            <button
-                                type="button"
-                                class="conversation-info-btn"
-                                aria-label="See members"
-                                title="See members"
-                                @click="openGroupMembersModal"
-                            >
-                                <i class="fa-solid fa-users"></i>
-                            </button>
-                            <button
-                                type="button"
-                                class="conversation-info-btn conversation-info-btn--danger"
-                                aria-label="Leave group"
-                                title="Leave group"
-                                @click="leaveActiveGroup"
-                            >
-                                <i class="fa-solid fa-right-from-bracket"></i>
-                            </button>
-                            <button
-                                type="button"
-                                class="conversation-info-btn conversation-info-btn--info"
-                                aria-label="Group info"
-                                title="Group info"
-                                @click="openConversationInfoModal"
-                            >
-                                <i class="fa-solid fa-circle-info"></i>
-                            </button>
-                        </template>
-                        <button
-                            v-else-if="activeUser"
-                            type="button"
-                            class="conversation-info-btn conversation-info-btn--info"
-                            aria-label="Conversation info"
-                            title="Conversation info"
-                            @click="openConversationInfoModal"
-                        >
-                            <i class="fa-solid fa-circle-info"></i>
-                        </button>
-                        <button
-                            type="button"
-                            class="icon-chip contacts-panel__mobile-close"
-                            aria-label="Open user list"
-                            title="Open user list"
-                            @click="openMobileUsersPanel"
-                        >
-                            <i class="fa-solid fa-user-group"></i>
-                        </button>
-                    </div>
-                </div>
                     </template>
 
                     <template #pinned-banner>
-                <template v-if="pinnedMessages.length">
-                    <button
-                        type="button"
-                        class="conversation-banner"
-                        @click="togglePinnedMessagesPanel"
-                    >
-                        <div class="conversation-banner__pinned-summary">
-                            <i class="fa-solid fa-thumbtack"></i>
-                            <div class="conversation-banner__pinned-copy">
-                                <div class="conversation-banner__title">Pinned messages</div>
-                                <small class="conversation-banner__subtitle">
-                                    {{ latestPinnedPreview }}
-                                </small>
-                            </div>
-                        </div>
-                        <div class="conversation-banner__pinned-count">
-                            {{ pinnedMessages.length }}
-                        </div>
-                    </button>
-                </template>
+                        <template v-if="pinnedMessages.length">
+                            <button
+                                type="button"
+                                class="conversation-banner"
+                                @click="togglePinnedMessagesPanel"
+                            >
+                                <div
+                                    class="conversation-banner__pinned-summary"
+                                >
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                    <div
+                                        class="conversation-banner__pinned-copy"
+                                    >
+                                        <div class="conversation-banner__title">
+                                            Pinned messages
+                                        </div>
+                                        <small
+                                            class="conversation-banner__subtitle"
+                                        >
+                                            {{ latestPinnedPreview }}
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="conversation-banner__pinned-count">
+                                    {{ pinnedMessages.length }}
+                                </div>
+                            </button>
+                        </template>
                     </template>
 
                     <template #pinned-panel>
-                <transition name="fade">
-                    <div
-                        v-if="showPinnedMessagesPanel"
-                        class="pinned-modal-backdrop"
-                        @click.self="showPinnedMessagesPanel = false"
-                    >
-                        <div class="pinned-modal">
-                            <div class="pinned-modal__header">
-                                <div>
-                                    <div class="pinned-modal__title">Pinned messages</div>
-                                    <small class="text-white-50">
-                                        {{ pinnedMessages.length }} pinned
-                                    </small>
+                        <transition name="fade">
+                            <div
+                                v-if="showPinnedMessagesPanel"
+                                class="pinned-modal-backdrop"
+                                @click.self="showPinnedMessagesPanel = false"
+                            >
+                                <div class="pinned-modal">
+                                    <div class="pinned-modal__header">
+                                        <div>
+                                            <div class="pinned-modal__title">
+                                                Pinned messages
+                                            </div>
+                                            <small class="text-white-50">
+                                                {{ pinnedMessages.length }}
+                                                pinned
+                                            </small>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="pinned-modal__close"
+                                            @click="
+                                                showPinnedMessagesPanel = false
+                                            "
+                                            aria-label="Close pinned messages"
+                                        >
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+
+                                    <div
+                                        v-if="pinnedMessages.length"
+                                        class="pinned-modal__list"
+                                    >
+                                        <div
+                                            v-for="pin in pinnedMessages"
+                                            :key="pin.message_id"
+                                            class="pinned-modal__item"
+                                        >
+                                            <button
+                                                type="button"
+                                                class="pinned-modal__item-body"
+                                                @click="
+                                                    scrollToPinnedMessage(pin)
+                                                "
+                                            >
+                                                <div
+                                                    class="pinned-modal__item-preview"
+                                                >
+                                                    {{ pin.preview }}
+                                                </div>
+                                                <small
+                                                    class="pinned-modal__item-date"
+                                                >
+                                                    Pinned
+                                                    {{
+                                                        formatPinnedAt(
+                                                            pin.pinned_at ||
+                                                                pin.created_at,
+                                                        )
+                                                    }}
+                                                </small>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="pinned-modal__item-unpin"
+                                                @click.stop="
+                                                    unpinPinnedMessage(pin)
+                                                "
+                                                aria-label="Unpin message"
+                                                title="Unpin"
+                                            >
+                                                <i
+                                                    class="fa-solid fa-thumbtack-slash"
+                                                ></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div
+                                        v-else
+                                        class="pinned-modal__empty text-white-50"
+                                    >
+                                        Currently no pinned messages yet.
+                                    </div>
+                                </div>
+                            </div>
+                        </transition>
+                    </template>
+
+                    <template #body>
+                        <div
+                            class="conversation-panel__body"
+                            ref="conversationBody"
+                            @scroll.passive="handleConversationScroll"
+                        >
+                            <div
+                                v-if="showInitialPageSkeleton"
+                                class="chat-skeleton"
+                            >
+                                <div
+                                    class="chat-skeleton__date skeleton-shimmer"
+                                ></div>
+                                <div
+                                    v-for="index in 6"
+                                    :key="`message-skeleton-${index}`"
+                                    class="chat-skeleton__row"
+                                    :class="
+                                        index % 2 === 0
+                                            ? 'chat-skeleton__row--mine'
+                                            : 'chat-skeleton__row--theirs'
+                                    "
+                                >
+                                    <div
+                                        class="chat-skeleton__bubble skeleton-shimmer"
+                                    ></div>
+                                </div>
+                            </div>
+
+                            <div
+                                v-else-if="loadingConversation"
+                                class="chat-loading"
+                            >
+                                <span class="loader-dot"></span>
+                                <div class="fw-semibold">
+                                    Loading messages...
+                                </div>
+                            </div>
+
+                            <div v-else-if="!activeUser" class="chat-empty">
+                                <div class="chat-empty__icon">
+                                    <i class="fa-regular fa-comments"></i>
+                                </div>
+                                <div class="fw-semibold">
+                                    Choose a chat on the left
+                                </div>
+                            </div>
+
+                            <div
+                                v-else-if="conversationError"
+                                class="chat-empty"
+                            >
+                                <div class="chat-empty__icon">
+                                    <i
+                                        class="fa-regular fa-triangle-exclamation"
+                                    ></i>
+                                </div>
+                                <div class="fw-semibold">
+                                    Conversation unavailable
+                                </div>
+                                <div class="text-white-50 small">
+                                    {{ conversationError }}
+                                </div>
+                            </div>
+
+                            <div
+                                v-else-if="messages.length === 0"
+                                class="chat-empty"
+                            >
+                                <div class="chat-empty__icon">
+                                    <i class="fa-regular fa-message"></i>
+                                </div>
+                                <div class="fw-semibold">No messages yet</div>
+                                <div class="text-white-50 small">
+                                    Send the first message to start the
+                                    conversation.
+                                </div>
+                            </div>
+
+                            <div v-else class="message-stream">
+                                <div
+                                    v-if="
+                                        !conversationHasMore ||
+                                        conversationPage >= conversationLastPage
+                                    "
+                                    class="conversation-start-marker mt-4 mb-4"
+                                >
+                                    Your conversation starts here
+                                </div>
+
+                                <div
+                                    v-if="loadingOlderConversation"
+                                    class="chat-loading chat-loading--inline"
+                                >
+                                    <span class="loader-dot"></span>
+                                    <div class="fw-semibold">
+                                        Loading messages...
+                                    </div>
+                                </div>
+
+                                <div
+                                    v-for="message in messages"
+                                    :key="message.id"
+                                    class="message-row"
+                                    :class="[
+                                        message.is_system
+                                            ? 'message-row--system'
+                                            : '',
+                                        message.is_mine
+                                            ? 'message-row--mine'
+                                            : 'message-row--theirs',
+                                        message.is_unsent
+                                            ? 'message-row--unsent'
+                                            : '',
+                                    ]"
+                                    :data-message-id="message.id"
+                                    @click="
+                                        message.is_system
+                                            ? null
+                                            : selectMessage(message)
+                                    "
+                                >
+                                    <div
+                                        v-if="message.is_system"
+                                        class="message-system-note"
+                                    >
+                                        {{ message.body }}
+                                    </div>
+                                    <div v-else class="message-bubble-wrap">
+                                        <div
+                                            class="message-bubble"
+                                            :class="{
+                                                'message-bubble--unsent':
+                                                    message.is_unsent,
+                                            }"
+                                        >
+                                            <div
+                                                class="message-bubble__floating-actions"
+                                                :class="{
+                                                    'is-open':
+                                                        activeMessageActionsId ===
+                                                        message.id,
+                                                }"
+                                            >
+                                                <div
+                                                    v-if="
+                                                        message.is_mine &&
+                                                        !message.is_unsent
+                                                    "
+                                                    class="bubble-action-group"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        class="bubble-action"
+                                                        :class="{
+                                                            'is-active':
+                                                                activeMessageActionsId ===
+                                                                message.id,
+                                                        }"
+                                                        @click.stop="
+                                                            toggleMessageActions(
+                                                                message,
+                                                            )
+                                                        "
+                                                        title="More actions"
+                                                        :aria-label="`More actions for ${message.body || message.attachment?.name || 'message'}`"
+                                                        :aria-expanded="
+                                                            activeMessageActionsId ===
+                                                            message.id
+                                                        "
+                                                    >
+                                                        <i
+                                                            class="fa-solid fa-ellipsis-vertical"
+                                                        ></i>
+                                                    </button>
+                                                    <div
+                                                        v-if="
+                                                            activeMessageActionsId ===
+                                                            message.id
+                                                        "
+                                                        class="bubble-action-menu"
+                                                    >
+                                                        <button
+                                                            v-if="
+                                                                message.is_mine &&
+                                                                message.body
+                                                            "
+                                                            type="button"
+                                                            class="bubble-action bubble-action--menu"
+                                                            @click.stop="
+                                                                editMessage(
+                                                                    message,
+                                                                )
+                                                            "
+                                                            title="Edit message"
+                                                            :aria-label="`Edit message ${message.body}`"
+                                                        >
+                                                            <span
+                                                                class="bubble-action__icon"
+                                                            >
+                                                                <i
+                                                                    class="fa-regular fa-pen-to-square"
+                                                                ></i>
+                                                            </span>
+                                                            <span>Edit</span>
+                                                        </button>
+                                                        <button
+                                                            v-if="
+                                                                message.is_mine
+                                                            "
+                                                            type="button"
+                                                            class="bubble-action bubble-action--menu bubble-action--danger"
+                                                            @click.stop="
+                                                                unsendMessage(
+                                                                    message,
+                                                                )
+                                                            "
+                                                            title="Unsend message"
+                                                            :aria-label="`Unsend message ${message.body || message.attachment?.name || 'message'}`"
+                                                        >
+                                                            <span
+                                                                class="bubble-action__icon"
+                                                            >
+                                                                <i
+                                                                    class="fa-regular fa-trash-can"
+                                                                ></i>
+                                                            </span>
+                                                            <span>Unsend</span>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            class="bubble-action bubble-action--menu"
+                                                            :class="{
+                                                                'is-active':
+                                                                    Boolean(
+                                                                        message.pinned_at,
+                                                                    ),
+                                                            }"
+                                                            @click.stop="
+                                                                togglePinMessage(
+                                                                    message,
+                                                                )
+                                                            "
+                                                            :title="
+                                                                message.pinned_at
+                                                                    ? 'Unpin message'
+                                                                    : 'Pin message'
+                                                            "
+                                                            :aria-label="
+                                                                message.pinned_at
+                                                                    ? 'Unpin message'
+                                                                    : 'Pin message'
+                                                            "
+                                                        >
+                                                            <span
+                                                                class="bubble-action__icon"
+                                                            >
+                                                                <i
+                                                                    :class="
+                                                                        message.pinned_at
+                                                                            ? 'fa-solid fa-thumbtack-slash'
+                                                                            : 'fa-solid fa-thumbtack'
+                                                                    "
+                                                                ></i>
+                                                            </span>
+                                                            <span>{{
+                                                                message.pinned_at
+                                                                    ? "Unpin"
+                                                                    : "Pin"
+                                                            }}</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    v-else-if="
+                                                        !message.is_unsent
+                                                    "
+                                                    type="button"
+                                                    class="bubble-action"
+                                                    :class="{
+                                                        'is-active': Boolean(
+                                                            message.pinned_at,
+                                                        ),
+                                                    }"
+                                                    @click.stop="
+                                                        togglePinMessage(
+                                                            message,
+                                                        )
+                                                    "
+                                                    :title="
+                                                        message.pinned_at
+                                                            ? 'Unpin message'
+                                                            : 'Pin message'
+                                                    "
+                                                    :aria-label="
+                                                        message.pinned_at
+                                                            ? 'Unpin message'
+                                                            : 'Pin message'
+                                                    "
+                                                >
+                                                    <span
+                                                        class="bubble-action__icon"
+                                                    >
+                                                        <i
+                                                            :class="
+                                                                message.pinned_at
+                                                                    ? 'fa-solid fa-thumbtack-slash'
+                                                                    : 'fa-solid fa-thumbtack'
+                                                            "
+                                                        ></i>
+                                                    </span>
+                                                </button>
+                                                <button
+                                                    v-if="!message.is_unsent"
+                                                    type="button"
+                                                    class="bubble-action"
+                                                    @click.stop="
+                                                        startReply(message)
+                                                    "
+                                                >
+                                                    <i
+                                                        class="fa-solid fa-reply"
+                                                    ></i>
+                                                </button>
+                                                <button
+                                                    v-if="!message.is_unsent"
+                                                    type="button"
+                                                    class="bubble-action"
+                                                    :class="{
+                                                        'is-active':
+                                                            selectedMessageId ===
+                                                                message.id &&
+                                                            showReactionPicker,
+                                                    }"
+                                                    @click.stop="
+                                                        toggleReactionPicker(
+                                                            message,
+                                                        )
+                                                    "
+                                                    :aria-pressed="
+                                                        selectedMessageId ===
+                                                            message.id &&
+                                                        showReactionPicker
+                                                    "
+                                                >
+                                                    <i
+                                                        class="fa-regular fa-face-smile"
+                                                    ></i>
+                                                </button>
+                                                <button
+                                                    v-if="message.attachment"
+                                                    type="button"
+                                                    class="bubble-action"
+                                                    @click.stop="
+                                                        downloadAttachment(
+                                                            message.attachment,
+                                                        )
+                                                    "
+                                                >
+                                                    <i
+                                                        class="fa-solid fa-download"
+                                                    ></i>
+                                                </button>
+                                            </div>
+                                            <button
+                                                v-if="message.reply_preview"
+                                                type="button"
+                                                class="message-bubble__reply message-bubble__reply--link"
+                                                @click.stop="
+                                                    scrollToReplyMessage(
+                                                        message,
+                                                    )
+                                                "
+                                                :aria-label="`Jump to replied message for ${message.reply_preview}`"
+                                            >
+                                                <div
+                                                    class="message-bubble__reply-label"
+                                                >
+                                                    <i
+                                                        class="fa-solid fa-reply"
+                                                    ></i>
+                                                    Replied to this message
+                                                </div>
+                                                <div>
+                                                    {{ message.reply_preview }}
+                                                </div>
+                                            </button>
+
+                                            <div
+                                                v-if="
+                                                    activeConversationIsGroup &&
+                                                    !message.is_mine
+                                                "
+                                                class="message-bubble__sender"
+                                            >
+                                                {{
+                                                    message.sender_name ||
+                                                    "User"
+                                                }}
+                                            </div>
+                                            <div
+                                                v-if="message.body"
+                                                class="message-bubble__text"
+                                            >
+                                                {{ message.body }}
+                                            </div>
+                                            <div
+                                                v-if="message.is_unsent"
+                                                class="message-bubble__text message-bubble__text--unsent"
+                                            >
+                                                Unsent Message
+                                            </div>
+
+                                            <div
+                                                v-if="message.pinned_at"
+                                                class="message-pin-chip message-pin-chip--floating"
+                                                :class="
+                                                    message.is_mine
+                                                        ? 'message-pin-chip--mine'
+                                                        : 'message-pin-chip--theirs'
+                                                "
+                                                title="Pinned message"
+                                            >
+                                                <span
+                                                    class="message-pin-chip__icon"
+                                                >
+                                                    <i
+                                                        class="fa-solid fa-thumbtack"
+                                                    ></i>
+                                                </span>
+                                            </div>
+
+                                            <div
+                                                v-if="message.reaction"
+                                                class="message-reaction-badge message-reaction-badge--floating"
+                                                :class="
+                                                    message.is_mine
+                                                        ? 'message-reaction-badge--mine'
+                                                        : 'message-reaction-badge--theirs'
+                                                "
+                                                :title="
+                                                    getReactionEmoji(
+                                                        message.reaction,
+                                                    )
+                                                "
+                                            >
+                                                <span
+                                                    class="message-reaction-badge__glyph"
+                                                    >{{
+                                                        getReactionEmoji(
+                                                            message.reaction,
+                                                        )
+                                                    }}</span
+                                                >
+                                            </div>
+
+                                            <div
+                                                v-if="
+                                                    message.attachment &&
+                                                    message.attachment.type ===
+                                                        'image' &&
+                                                    !message.is_unsent
+                                                "
+                                                class="message-bubble__attachment message-bubble__attachment--image"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    class="message-bubble__image-link"
+                                                    @click.stop="
+                                                        openImageGallery(
+                                                            message.attachment,
+                                                        )
+                                                    "
+                                                    :aria-label="`Open ${message.attachment.name || 'attachment'} in gallery`"
+                                                >
+                                                    <img
+                                                        :src="
+                                                            message.attachment
+                                                                .url
+                                                        "
+                                                        :alt="
+                                                            message.attachment
+                                                                .name
+                                                        "
+                                                        @load="
+                                                            handleAttachmentImageLoad
+                                                        "
+                                                    />
+                                                    <span
+                                                        class="message-bubble__attachment-overlay"
+                                                    >
+                                                        <i
+                                                            class="fa-solid fa-magnifying-glass-plus"
+                                                        ></i>
+                                                    </span>
+                                                </button>
+                                            </div>
+
+                                            <a
+                                                v-else-if="
+                                                    message.attachment &&
+                                                    !message.is_unsent
+                                                "
+                                                class="message-bubble__attachment message-bubble__attachment--file"
+                                                :href="message.attachment.url"
+                                                target="_blank"
+                                                rel="noopener"
+                                                :download="
+                                                    message.attachment.name
+                                                "
+                                            >
+                                                <span
+                                                    class="message-bubble__attachment-icon"
+                                                >
+                                                    <i
+                                                        class="fa-regular fa-file-lines"
+                                                    ></i>
+                                                </span>
+                                                <span
+                                                    class="message-bubble__attachment-meta"
+                                                >
+                                                    <span
+                                                        class="message-bubble__attachment-name"
+                                                        >{{
+                                                            message.attachment
+                                                                .name
+                                                        }}</span
+                                                    >
+                                                    <small
+                                                        class="text-white-50"
+                                                        >{{
+                                                            formatFileSize(
+                                                                message
+                                                                    .attachment
+                                                                    .size,
+                                                            )
+                                                        }}</small
+                                                    >
+                                                </span>
+                                                <span
+                                                    class="message-bubble__attachment-download"
+                                                >
+                                                    <i
+                                                        class="fa-solid fa-download"
+                                                    ></i>
+                                                </span>
+                                            </a>
+
+                                            <div class="message-bubble__time">
+                                                {{
+                                                    formatTime(
+                                                        message.created_at,
+                                                    )
+                                                }}
+                                            </div>
+                                        </div>
+                                        <div
+                                            v-if="
+                                                message.is_mine &&
+                                                (shouldShowSeenReceipt(
+                                                    message,
+                                                ) ||
+                                                    !message.read_at ||
+                                                    message.edited_at)
+                                            "
+                                            class="message-bubble__status"
+                                            :class="
+                                                shouldShowSeenReceipt(message)
+                                                    ? 'message-bubble__status--seen'
+                                                    : 'message-bubble__status--sent'
+                                            "
+                                        >
+                                            <template
+                                                v-if="
+                                                    shouldShowSeenReceipt(
+                                                        message,
+                                                    )
+                                                "
+                                            >
+                                                <template
+                                                    v-if="
+                                                        activeConversationIsGroup
+                                                    "
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        class="message-bubble__seen-group"
+                                                        :title="
+                                                            formatGroupSeenReceiptTooltip(
+                                                                message,
+                                                            )
+                                                        "
+                                                        :aria-label="
+                                                            formatGroupSeenReceiptTooltip(
+                                                                message,
+                                                            )
+                                                        "
+                                                        @click.stop="
+                                                            openSeenByModal(
+                                                                message,
+                                                            )
+                                                        "
+                                                    >
+                                                        <span
+                                                            v-for="user in getSeenReceiptPreviewUsers(
+                                                                message,
+                                                            )"
+                                                            :key="`seen-preview-${message.id}-${user.id}`"
+                                                            class="message-bubble__seen-avatar"
+                                                        >
+                                                            <img
+                                                                :src="
+                                                                    getMemberProfile(
+                                                                        user,
+                                                                    )
+                                                                "
+                                                                :alt="`${getSeenMemberName(user)} profile`"
+                                                            />
+                                                        </span>
+                                                        <span
+                                                            v-if="
+                                                                getSeenReceiptOverflowCount(
+                                                                    message,
+                                                                ) > 0
+                                                            "
+                                                            class="message-bubble__seen-overflow"
+                                                        >
+                                                            +{{
+                                                                getSeenReceiptOverflowCount(
+                                                                    message,
+                                                                )
+                                                            }}
+                                                        </span>
+                                                    </button>
+                                                </template>
+                                                <template v-else>
+                                                    <span
+                                                        class="message-bubble__seen-avatar"
+                                                        :title="
+                                                            formatSeenReceiptTooltip(
+                                                                message.read_at,
+                                                            )
+                                                        "
+                                                        :aria-label="
+                                                            formatSeenReceiptTooltip(
+                                                                message.read_at,
+                                                            )
+                                                        "
+                                                    >
+                                                        <img
+                                                            :src="
+                                                                getSeenReceiptAvatar()
+                                                            "
+                                                            :alt="`${activeUserName} profile`"
+                                                        />
+                                                    </span>
+                                                </template>
+                                            </template>
+                                            <template v-else>Sent</template>
+                                            <span
+                                                v-if="message.edited_at"
+                                                class="message-bubble__status-edit"
+                                                :class="{
+                                                    'message-bubble__status-edit--stacked':
+                                                        message.read_at,
+                                                }"
+                                            >
+                                                · Edited
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div
+                                    v-if="typingIndicator && activeUser"
+                                    class="message-row message-row--theirs message-row--typing"
+                                >
+                                    <div
+                                        class="message-bubble message-bubble--typing"
+                                    >
+                                        <span
+                                            class="typing-indicator__dots"
+                                            aria-hidden="true"
+                                        >
+                                            <span></span><span></span
+                                            ><span></span>
+                                        </span>
+                                        <span class="typing-indicator__label">{{
+                                            typingIndicatorLabel
+                                        }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                v-if="replyTargetMessage"
+                                class="composer-reply"
+                            >
+                                <div class="composer-reply__meta">
+                                    <strong
+                                        >Replying to
+                                        {{ replyTargetLabel }}</strong
+                                    >
+                                    <button
+                                        type="button"
+                                        class="composer-reply__close"
+                                        @click="clearReplyTarget"
+                                    >
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div class="composer-reply__preview">
+                                    {{ getMessageSnippet(replyTargetMessage) }}
+                                </div>
+                            </div>
+
+                            <div
+                                v-if="selectedAttachment"
+                                class="attachment-preview"
+                            >
+                                <div class="attachment-preview__meta">
+                                    <span
+                                        v-if="
+                                            selectedAttachmentPreviewType ===
+                                                'image' &&
+                                            selectedAttachmentPreviewUrl
+                                        "
+                                        class="attachment-preview__thumb"
+                                    >
+                                        <img
+                                            :src="selectedAttachmentPreviewUrl"
+                                            :alt="selectedAttachment.name"
+                                        />
+                                    </span>
+                                    <span
+                                        v-else
+                                        class="attachment-preview__icon"
+                                    >
+                                        <i class="fa-regular fa-file-lines"></i>
+                                    </span>
+                                    <div class="attachment-preview__body">
+                                        <div class="attachment-preview__name">
+                                            {{ selectedAttachment.name }}
+                                        </div>
+                                        <small class="text-white-50">{{
+                                            formatFileSize(
+                                                selectedAttachment.size,
+                                            )
+                                        }}</small>
+                                    </div>
                                 </div>
                                 <button
                                     type="button"
-                                    class="pinned-modal__close"
-                                    @click="showPinnedMessagesPanel = false"
-                                    aria-label="Close pinned messages"
+                                    class="attachment-preview__remove"
+                                    @click="clearSelectedAttachment"
                                 >
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
 
-                            <div v-if="pinnedMessages.length" class="pinned-modal__list">
-                                <div
-                                    v-for="pin in pinnedMessages"
-                                    :key="pin.message_id"
-                                    class="pinned-modal__item"
-                                >
-                                    <button
-                                        type="button"
-                                        class="pinned-modal__item-body"
-                                        @click="scrollToPinnedMessage(pin)"
-                                    >
-                                        <div class="pinned-modal__item-preview">
-                                            {{ pin.preview }}
-                                        </div>
-                                        <small class="pinned-modal__item-date">
-                                            Pinned {{ formatPinnedAt(pin.pinned_at || pin.created_at) }}
-                                        </small>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="pinned-modal__item-unpin"
-                                        @click.stop="unpinPinnedMessage(pin)"
-                                        aria-label="Unpin message"
-                                        title="Unpin"
-                                    >
-                                        <i class="fa-solid fa-thumbtack-slash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div v-else class="pinned-modal__empty text-white-50">
-                                Currently no pinned messages yet.
-                            </div>
-                        </div>
-                    </div>
-                </transition>
-                    </template>
-
-                    <template #body>
-                <div class="conversation-panel__body" ref="conversationBody" @scroll.passive="handleConversationScroll">
-                    <div v-if="showInitialPageSkeleton" class="chat-skeleton">
-                        <div class="chat-skeleton__date skeleton-shimmer"></div>
-                        <div
-                            v-for="index in 6"
-                            :key="`message-skeleton-${index}`"
-                            class="chat-skeleton__row"
-                            :class="index % 2 === 0 ? 'chat-skeleton__row--mine' : 'chat-skeleton__row--theirs'"
-                        >
-                            <div class="chat-skeleton__bubble skeleton-shimmer"></div>
-                        </div>
-                    </div>
-
-                    <div v-else-if="loadingConversation" class="chat-loading">
-                        <span class="loader-dot"></span>
-                        <div class="fw-semibold">Loading messages...</div>
-                    </div>
-
-                    <div v-else-if="!activeUser" class="chat-empty">
-                        <div class="chat-empty__icon">
-                            <i class="fa-regular fa-comments"></i>
-                        </div>
-                        <div class="fw-semibold">Choose a chat on the left</div>
-                    </div>
-
-                    <div v-else-if="conversationError" class="chat-empty">
-                        <div class="chat-empty__icon">
-                            <i class="fa-regular fa-triangle-exclamation"></i>
-                        </div>
-                        <div class="fw-semibold">Conversation unavailable</div>
-                        <div class="text-white-50 small">{{ conversationError }}</div>
-                    </div>
-
-                    <div v-else-if="messages.length === 0" class="chat-empty">
-                        <div class="chat-empty__icon">
-                            <i class="fa-regular fa-message"></i>
-                        </div>
-                        <div class="fw-semibold">No messages yet</div>
-                        <div class="text-white-50 small">
-                            Send the first message to start the conversation.
-                        </div>
-                    </div>
-
-                <div v-else class="message-stream">
-                    <div
-                        v-if="!conversationHasMore || conversationPage >= conversationLastPage"
-                        class="conversation-start-marker mt-4 mb-4"
-                    >
-                        Your conversation starts here
-                    </div>
-
-                    <div v-if="loadingOlderConversation" class="chat-loading chat-loading--inline">
-                        <span class="loader-dot"></span>
-                        <div class="fw-semibold">Loading messages...</div>
-                    </div>
-
-                    <div
-                        v-for="message in messages"
-                        :key="message.id"
-                        class="message-row"
-                        :class="[
-                            message.is_system ? 'message-row--system' : '',
-                            message.is_mine ? 'message-row--mine' : 'message-row--theirs',
-                            message.is_unsent ? 'message-row--unsent' : '',
-                        ]"
-                        :data-message-id="message.id"
-                        @click="message.is_system ? null : selectMessage(message)"
-                    >
-                        <div v-if="message.is_system" class="message-system-note">
-                            {{ message.body }}
-                        </div>
-                        <div v-else class="message-bubble-wrap">
-                            <div class="message-bubble" :class="{ 'message-bubble--unsent': message.is_unsent }">
-                                <div
-                                    class="message-bubble__floating-actions"
-                                    :class="{ 'is-open': activeMessageActionsId === message.id }"
-                                >
-                                    <div v-if="message.is_mine && !message.is_unsent" class="bubble-action-group">
-                                        <button
-                                            type="button"
-                                            class="bubble-action"
-                                            :class="{ 'is-active': activeMessageActionsId === message.id }"
-                                            @click.stop="toggleMessageActions(message)"
-                                            title="More actions"
-                                            :aria-label="`More actions for ${message.body || message.attachment?.name || 'message'}`"
-                                            :aria-expanded="activeMessageActionsId === message.id"
-                                        >
-                                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                                        </button>
-                                        <div v-if="activeMessageActionsId === message.id" class="bubble-action-menu">
-                                            <button
-                                                v-if="message.is_mine && message.body"
-                                                type="button"
-                                                class="bubble-action bubble-action--menu"
-                                                @click.stop="editMessage(message)"
-                                                title="Edit message"
-                                                :aria-label="`Edit message ${message.body}`"
-                                            >
-                                                <span class="bubble-action__icon">
-                                                    <i class="fa-regular fa-pen-to-square"></i>
-                                                </span>
-                                                <span>Edit</span>
-                                            </button>
-                                            <button
-                                                v-if="message.is_mine"
-                                                type="button"
-                                                class="bubble-action bubble-action--menu bubble-action--danger"
-                                                @click.stop="unsendMessage(message)"
-                                                title="Unsend message"
-                                                :aria-label="`Unsend message ${message.body || message.attachment?.name || 'message'}`"
-                                            >
-                                                <span class="bubble-action__icon">
-                                                    <i class="fa-regular fa-trash-can"></i>
-                                                </span>
-                                                <span>Unsend</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                class="bubble-action bubble-action--menu"
-                                                :class="{ 'is-active': Boolean(message.pinned_at) }"
-                                                @click.stop="togglePinMessage(message)"
-                                                :title="message.pinned_at ? 'Unpin message' : 'Pin message'"
-                                                :aria-label="message.pinned_at ? 'Unpin message' : 'Pin message'"
-                                            >
-                                                <span class="bubble-action__icon">
-                                                    <i :class="message.pinned_at ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
-                                                </span>
-                                                <span>{{ message.pinned_at ? 'Unpin' : 'Pin' }}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <button
-                                        v-else-if="!message.is_unsent"
-                                        type="button"
-                                        class="bubble-action"
-                                        :class="{ 'is-active': Boolean(message.pinned_at) }"
-                                        @click.stop="togglePinMessage(message)"
-                                        :title="message.pinned_at ? 'Unpin message' : 'Pin message'"
-                                        :aria-label="message.pinned_at ? 'Unpin message' : 'Pin message'"
-                                    >
-                                        <span class="bubble-action__icon">
-                                            <i :class="message.pinned_at ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
-                                        </span>
-                                    </button>
-                                    <button
-                                        v-if="!message.is_unsent"
-                                        type="button"
-                                        class="bubble-action"
-                                        @click.stop="startReply(message)"
-                                    >
-                                        <i class="fa-solid fa-reply"></i>
-                                    </button>
-                                    <button
-                                        v-if="!message.is_unsent"
-                                        type="button"
-                                        class="bubble-action"
-                                        :class="{ 'is-active': selectedMessageId === message.id && showReactionPicker }"
-                                        @click.stop="toggleReactionPicker(message)"
-                                        :aria-pressed="selectedMessageId === message.id && showReactionPicker"
-                                    >
-                                        <i class="fa-regular fa-face-smile"></i>
-                                    </button>
-                                    <button
-                                        v-if="message.attachment"
-                                        type="button"
-                                        class="bubble-action"
-                                        @click.stop="downloadAttachment(message.attachment)"
-                                    >
-                                        <i class="fa-solid fa-download"></i>
-                                    </button>
-                                </div>
+                            <transition name="fade">
                                 <button
-                                    v-if="message.reply_preview"
+                                    v-if="showScrollToBottomButton"
                                     type="button"
-                                    class="message-bubble__reply message-bubble__reply--link"
-                                    @click.stop="scrollToReplyMessage(message)"
-                                    :aria-label="`Jump to replied message for ${message.reply_preview}`"
+                                    class="message-scroll-bottom"
+                                    @click="scrollConversationToBottom"
+                                    title="Scroll to bottom"
+                                    aria-label="Scroll to bottom"
                                 >
-                                    <div class="message-bubble__reply-label">
-                                        <i class="fa-solid fa-reply"></i>
-                                        Replied to this message
-                                    </div>
-                                    <div>{{ message.reply_preview }}</div>
+                                    <i class="fa-solid fa-arrow-down"></i>
                                 </button>
-
-                                <div
-                                    v-if="activeConversationIsGroup && !message.is_mine"
-                                    class="message-bubble__sender"
-                                >
-                                    {{ message.sender_name || 'User' }}
+                            </transition>
+                        </div>
+                        <form class="composer" @submit.prevent="sendMessage">
+                            <input
+                                ref="attachmentInput"
+                                type="file"
+                                class="d-none"
+                                :accept="attachmentAccept"
+                                @change="handleAttachmentChange"
+                            />
+                            <button
+                                type="button"
+                                class="composer__button"
+                                :class="{
+                                    'is-active': showPinnedMessagesPanel,
+                                }"
+                                aria-label="Pinned messages"
+                                title="View pinned messages"
+                                @click.stop="togglePinnedMessagesPanel"
+                            >
+                                <i class="fa-solid fa-thumbtack"></i>
+                            </button>
+                            <button
+                                type="button"
+                                class="composer__button"
+                                ref="composerEmojiButton"
+                                aria-label="Insert emoji"
+                                @click="toggleComposerEmojiPicker"
+                            >
+                                <i class="fa-regular fa-face-smile"></i>
+                            </button>
+                            <button
+                                type="button"
+                                class="composer__button"
+                                aria-label="Attach file"
+                                @click="triggerAttachmentPicker('file')"
+                            >
+                                <i class="fa-regular fa-file-lines"></i>
+                            </button>
+                            <div class="composer__field">
+                                <div class="composer__input-shell">
+                                    <textarea
+                                        ref="composerInput"
+                                        v-model="draftMessage"
+                                        class="composer__input"
+                                        rows="1"
+                                        :placeholder="
+                                            activeConversationIsGroup
+                                                ? 'Message the group'
+                                                : 'Aa'
+                                        "
+                                        :maxlength="messageCharacterLimit"
+                                        :disabled="
+                                            !activeUser || sendingMessage
+                                        "
+                                        @input="handleComposerInput"
+                                        @blur="handleComposerBlur"
+                                        @focus="captureComposerSelection"
+                                        @click="captureComposerSelection"
+                                        @keyup="captureComposerSelection"
+                                        @select="captureComposerSelection"
+                                        @keydown.enter.exact.prevent="
+                                            sendMessage
+                                        "
+                                        @keydown.enter.shift.exact.stop
+                                    ></textarea>
                                 </div>
-                                <div
-                                    v-if="message.body"
-                                    class="message-bubble__text"
-                                >
-                                    {{ message.body }}
-                                </div>
-                                <div
-                                    v-if="message.is_unsent"
-                                    class="message-bubble__text message-bubble__text--unsent"
-                                >
-                                    Unsent Message
-                                </div>
-
-                                <div
-                                    v-if="message.pinned_at"
-                                    class="message-pin-chip message-pin-chip--floating"
-                                    :class="message.is_mine ? 'message-pin-chip--mine' : 'message-pin-chip--theirs'"
-                                    title="Pinned message"
-                                >
-                                    <span class="message-pin-chip__icon">
-                                        <i class="fa-solid fa-thumbtack"></i>
-                                    </span>
-                                </div>
-
-                                <div
-                                    v-if="message.reaction"
-                                    class="message-reaction-badge message-reaction-badge--floating"
-                                    :class="message.is_mine ? 'message-reaction-badge--mine' : 'message-reaction-badge--theirs'"
-                                    :title="getReactionEmoji(message.reaction)"
-                                >
-                                    <span class="message-reaction-badge__glyph">{{ getReactionEmoji(message.reaction) }}</span>
-                                </div>
-
-                                <div
-                                    v-if="message.attachment && message.attachment.type === 'image' && !message.is_unsent"
-                                    class="message-bubble__attachment message-bubble__attachment--image"
-                                >
-                                    <button
-                                        type="button"
-                                        class="message-bubble__image-link"
-                                        @click.stop="openImageGallery(message.attachment)"
-                                        :aria-label="`Open ${message.attachment.name || 'attachment'} in gallery`"
+                                <div class="composer__meta mt-2">
+                                    <small class="composer__hint"
+                                        >Shift+Enter for a new line</small
                                     >
-                                        <img
-                                            :src="message.attachment.url"
-                                            :alt="message.attachment.name"
-                                            @load="handleAttachmentImageLoad"
-                                        />
-                                        <span class="message-bubble__attachment-overlay">
-                                            <i class="fa-solid fa-magnifying-glass-plus"></i>
-                                        </span>
-                                    </button>
-                                </div>
-
-                                <a
-                                    v-else-if="message.attachment && !message.is_unsent"
-                                    class="message-bubble__attachment message-bubble__attachment--file"
-                                    :href="message.attachment.url"
-                                    target="_blank"
-                                    rel="noopener"
-                                    :download="message.attachment.name"
-                                >
-                                    <span class="message-bubble__attachment-icon">
-                                        <i class="fa-regular fa-file-lines"></i>
-                                    </span>
-                                    <span class="message-bubble__attachment-meta">
-                                        <span class="message-bubble__attachment-name">{{ message.attachment.name }}</span>
-                                        <small class="text-white-50">{{ formatFileSize(message.attachment.size) }}</small>
-                                    </span>
-                                    <span class="message-bubble__attachment-download">
-                                        <i class="fa-solid fa-download"></i>
-                                    </span>
-                                </a>
-
-                                <div class="message-bubble__time">
-                                    {{ formatTime(message.created_at) }}
+                                    <small
+                                        class="composer__counter"
+                                        :class="{
+                                            'is-near-limit':
+                                                messageCharactersRemaining <=
+                                                200,
+                                        }"
+                                    >
+                                        {{ messageCharacterCount }}/{{
+                                            messageCharacterLimit
+                                        }}
+                                    </small>
                                 </div>
                             </div>
-                            <div
-                                v-if="message.is_mine && (shouldShowSeenReceipt(message) || !message.read_at || message.edited_at)"
-                                class="message-bubble__status"
-                                :class="shouldShowSeenReceipt(message) ? 'message-bubble__status--seen' : 'message-bubble__status--sent'"
+                            <button
+                                v-if="showScrollToBottomButton"
+                                type="button"
+                                class="composer__scroll-bottom"
+                                @click="scrollConversationToBottom"
+                                title="Scroll to bottom"
+                                aria-label="Scroll to bottom"
                             >
-                                <template v-if="shouldShowSeenReceipt(message)">
-                                    <template v-if="activeConversationIsGroup">
-                                        <button
-                                            type="button"
-                                            class="message-bubble__seen-group"
-                                            :title="formatGroupSeenReceiptTooltip(message)"
-                                            :aria-label="formatGroupSeenReceiptTooltip(message)"
-                                            @click.stop="openSeenByModal(message)"
-                                        >
-                                            <span
-                                                v-for="user in getSeenReceiptPreviewUsers(message)"
-                                                :key="`seen-preview-${message.id}-${user.id}`"
-                                                class="message-bubble__seen-avatar"
-                                            >
-                                                <img
-                                                    :src="getMemberProfile(user)"
-                                                    :alt="`${getSeenMemberName(user)} profile`"
-                                                />
-                                            </span>
-                                            <span
-                                                v-if="getSeenReceiptOverflowCount(message) > 0"
-                                                class="message-bubble__seen-overflow"
-                                            >
-                                                +{{ getSeenReceiptOverflowCount(message) }}
-                                            </span>
-                                        </button>
-                                    </template>
-                                    <template v-else>
-                                        <span
-                                            class="message-bubble__seen-avatar"
-                                            :title="formatSeenReceiptTooltip(message.read_at)"
-                                            :aria-label="formatSeenReceiptTooltip(message.read_at)"
-                                        >
-                                            <img
-                                                :src="getSeenReceiptAvatar()"
-                                                :alt="`${activeUserName} profile`"
-                                            />
-                                        </span>
-                                    </template>
-                                </template>
-                                <template v-else>Sent</template>
+                                <i class="fa-solid fa-arrow-down"></i>
+                            </button>
+                            <button
+                                type="submit"
+                                class="composer__send"
+                                :disabled="
+                                    !activeUser ||
+                                    sendingMessage ||
+                                    (!draftMessage.trim() &&
+                                        !selectedAttachment)
+                                "
+                            >
+                                <i
+                                    v-if="!sendingMessage"
+                                    class="fa-regular fa-paper-plane"
+                                ></i>
                                 <span
-                                    v-if="message.edited_at"
-                                    class="message-bubble__status-edit"
-                                    :class="{ 'message-bubble__status-edit--stacked': message.read_at }"
+                                    v-else
+                                    class="spinner-border spinner-border-sm"
+                                    aria-hidden="true"
+                                ></span>
+                            </button>
+
+                            <transition name="fade">
+                                <div
+                                    v-if="showComposerEmojiPicker"
+                                    ref="composerEmojiOverlay"
+                                    class="composer-emoji-overlay"
+                                    @click.stop
                                 >
-                                    · Edited
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        v-if="typingIndicator && activeUser"
-                        class="message-row message-row--theirs message-row--typing"
-                    >
-                        <div class="message-bubble message-bubble--typing">
-                            <span class="typing-indicator__dots" aria-hidden="true">
-                                <span></span><span></span><span></span>
-                            </span>
-                            <span class="typing-indicator__label">{{ typingIndicatorLabel }}</span>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div v-if="replyTargetMessage" class="composer-reply">
-                    <div class="composer-reply__meta">
-                        <strong>Replying to {{ replyTargetLabel }}</strong>
-                        <button type="button" class="composer-reply__close" @click="clearReplyTarget">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                    <div class="composer-reply__preview">{{ getMessageSnippet(replyTargetMessage) }}</div>
-                </div>
-
-                <div v-if="selectedAttachment" class="attachment-preview">
-                    <div class="attachment-preview__meta">
-                        <span v-if="selectedAttachmentPreviewType === 'image' && selectedAttachmentPreviewUrl" class="attachment-preview__thumb">
-                            <img :src="selectedAttachmentPreviewUrl" :alt="selectedAttachment.name" />
-                        </span>
-                        <span v-else class="attachment-preview__icon">
-                            <i class="fa-regular fa-file-lines"></i>
-                        </span>
-                        <div class="attachment-preview__body">
-                            <div class="attachment-preview__name">{{ selectedAttachment.name }}</div>
-                            <small class="text-white-50">{{ formatFileSize(selectedAttachment.size) }}</small>
-                        </div>
-                    </div>
-                    <button type="button" class="attachment-preview__remove" @click="clearSelectedAttachment">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-
-                <form class="composer" @submit.prevent="sendMessage">
-                    <input
-                        ref="attachmentInput"
-                        type="file"
-                        class="d-none"
-                        :accept="attachmentAccept"
-                        @change="handleAttachmentChange"
-                    >
-                    <button
-                        type="button"
-                        class="composer__button"
-                        :class="{ 'is-active': showPinnedMessagesPanel }"
-                        aria-label="Pinned messages"
-                        title="View pinned messages"
-                        @click.stop="togglePinnedMessagesPanel"
-                    >
-                        <i class="fa-solid fa-thumbtack"></i>
-                    </button>
-                    <button
-                        type="button"
-                        class="composer__button"
-                        ref="composerEmojiButton"
-                        aria-label="Insert emoji"
-                        @click="toggleComposerEmojiPicker"
-                    >
-                        <i class="fa-regular fa-face-smile"></i>
-                    </button>
-                    <button
-                        type="button"
-                        class="composer__button"
-                        aria-label="Attach file"
-                        @click="triggerAttachmentPicker('file')"
-                    >
-                        <i class="fa-regular fa-file-lines"></i>
-                    </button>
-                    <div class="composer__field">
-                        <div class="composer__input-shell">
-                            <textarea
-                                ref="composerInput"
-                                v-model="draftMessage"
-                                class="composer__input"
-                                rows="1"
-                                :placeholder="activeConversationIsGroup ? 'Message the group' : 'Aa'"
-                                :maxlength="messageCharacterLimit"
-                                :disabled="!activeUser || sendingMessage"
-                                @input="handleComposerInput"
-                                @blur="handleComposerBlur"
-                                @focus="captureComposerSelection"
-                                @click="captureComposerSelection"
-                                @keyup="captureComposerSelection"
-                                @select="captureComposerSelection"
-                                @keydown.enter.exact.prevent="sendMessage"
-                                @keydown.enter.shift.exact.stop
-                            ></textarea>
-                        </div>
-                        <div class="composer__meta mt-2">
-                            <small class="composer__hint">Shift+Enter for a new line</small>
-                            <small
-                                class="composer__counter"
-                                :class="{ 'is-near-limit': messageCharactersRemaining <= 200 }"
-                            >
-                                {{ messageCharacterCount }}/{{ messageCharacterLimit }}
-                            </small>
-                        </div>
-                    </div>
-                    <button
-                        v-if="showScrollToBottomButton"
-                        type="button"
-                        class="composer__scroll-bottom"
-                        @click="scrollConversationToBottom"
-                        title="Scroll to bottom"
-                        aria-label="Scroll to bottom"
-                    >
-                        <i class="fa-solid fa-arrow-down"></i>
-                    </button>
-                    <button
-                        type="submit"
-                        class="composer__send"
-                        :disabled="!activeUser || sendingMessage || (!draftMessage.trim() && !selectedAttachment)"
-                    >
-                        <i v-if="!sendingMessage" class="fa-regular fa-paper-plane"></i>
-                        <span v-else class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-                    </button>
-
-                    <transition name="fade">
-                        <div
-                            v-if="showComposerEmojiPicker"
-                            ref="composerEmojiOverlay"
-                            class="composer-emoji-overlay"
-                            @click.stop
-                        >
-                            <div class="composer-emoji-picker">
-                                <button
-                                    v-for="emoji in composerEmojiOptions"
-                                    :key="emoji"
-                                    type="button"
-                                    class="composer-emoji-picker__btn"
-                                    @pointerdown.prevent.stop="insertComposerEmoji(emoji)"
-                                >
-                                    {{ emoji }}
-                                </button>
-                            </div>
-                        </div>
-                    </transition>
-                </form>
-
-                <transition name="fade">
-                    <button
-                        v-if="showScrollToBottomButton"
-                        type="button"
-                        class="message-scroll-bottom"
-                        @click="scrollConversationToBottom"
-                        title="Scroll to bottom"
-                        aria-label="Scroll to bottom"
-                    >
-                        <i class="fa-solid fa-arrow-down"></i>
-                    </button>
-                </transition>
-                </div>
+                                    <div class="composer-emoji-picker">
+                                        <button
+                                            v-for="emoji in composerEmojiOptions"
+                                            :key="emoji"
+                                            type="button"
+                                            class="composer-emoji-picker__btn"
+                                            @pointerdown.prevent.stop="
+                                                insertComposerEmoji(emoji)
+                                            "
+                                        >
+                                            {{ emoji }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </transition>
+                        </form>
                     </template>
                 </ConversationWorkspace>
             </div>
@@ -882,17 +1450,29 @@
                 class="message-action-modal-backdrop"
                 @click.self="showBetaInfoModal = false"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-solid fa-flask"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Beta release</div>
-                            <h3 class="message-action-modal__title">About the BETA release</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Beta release
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                About the BETA release
+                            </h3>
                             <p class="message-action-modal__subtitle">
-                                This module is aimed at giving HRIS users one built-in space for direct messages,
-                                group coordination, approvals, and quick internal communication without leaving the portal.
+                                This module is aimed at giving HRIS users one
+                                built-in space for direct messages, group
+                                coordination, approvals, and quick internal
+                                communication without leaving the portal.
                             </p>
                         </div>
                         <button
@@ -907,10 +1487,22 @@
 
                     <div class="message-action-modal__body">
                         <div class="message-action-modal__context">
-                            <div class="message-action-modal__context-label">What this beta is for</div>
-                            <div class="message-action-modal__preview message-action-modal__preview--stacked">
-                                <p>The goal is to make messaging feel native to the HRIS Portal instead of a separate tool.</p>
-                                <p>It is designed for employee-to-employee chat, team group chats, coordination with admins, and faster in-system updates tied to daily HR workflows.</p>
+                            <div class="message-action-modal__context-label">
+                                What this beta is for
+                            </div>
+                            <div
+                                class="message-action-modal__preview message-action-modal__preview--stacked"
+                            >
+                                <p>
+                                    The goal is to make messaging feel native to
+                                    the HRIS Portal instead of a separate tool.
+                                </p>
+                                <p>
+                                    It is designed for employee-to-employee
+                                    chat, team group chats, coordination with
+                                    admins, and faster in-system updates tied to
+                                    daily HR workflows.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -934,16 +1526,28 @@
                 class="message-action-modal-backdrop"
                 @click.self="showPrivacyInfoModal = false"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-solid fa-shield-halved"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Privacy notice</div>
-                            <h3 class="message-action-modal__title">About message privacy</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Privacy notice
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                About message privacy
+                            </h3>
                             <p class="message-action-modal__subtitle">
-                                Your conversations are handled with privacy controls designed to protect exchanged messages inside the portal.
+                                Your conversations are handled with privacy
+                                controls designed to protect exchanged messages
+                                inside the portal.
                             </p>
                         </div>
                         <button
@@ -958,11 +1562,27 @@
 
                     <div class="message-action-modal__body">
                         <div class="message-action-modal__context">
-                            <div class="message-action-modal__context-label">How your messages are protected</div>
-                            <div class="message-action-modal__preview message-action-modal__preview--stacked">
-                                <p>All exchanged messages are encrypted on the server and stored in a form that is not readable to the human eye.</p>
-                                <p>To help protect privacy over time, messages older than 3 months are included in a scheduled permanent deletion process.</p>
-                                <p>Once they pass the 3-month retention window, those older messages are permanently removed from the system.</p>
+                            <div class="message-action-modal__context-label">
+                                How your messages are protected
+                            </div>
+                            <div
+                                class="message-action-modal__preview message-action-modal__preview--stacked"
+                            >
+                                <p>
+                                    All exchanged messages are encrypted on the
+                                    server and stored in a form that is not
+                                    readable to the human eye.
+                                </p>
+                                <p>
+                                    To help protect privacy over time, messages
+                                    older than 3 months are included in a
+                                    scheduled permanent deletion process.
+                                </p>
+                                <p>
+                                    Once they pass the 3-month retention window,
+                                    those older messages are permanently removed
+                                    from the system.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -986,16 +1606,27 @@
                 class="message-action-modal-backdrop"
                 @click.self="showGroupChatRequestsModal = false"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-solid fa-list-check"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Request history</div>
-                            <h3 class="message-action-modal__title">Group chat request updates</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Request history
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                Group chat request updates
+                            </h3>
                             <p class="message-action-modal__subtitle">
-                                Review all of your approved and rejected group chat requests.
+                                Review all of your approved and rejected group
+                                chat requests.
                             </p>
                         </div>
                         <button
@@ -1009,74 +1640,148 @@
                     </div>
 
                     <div class="message-action-modal__body">
-                        <div v-if="groupChatRequestHistory.length" class="group-chat-approval-list">
+                        <div
+                            v-if="groupChatRequestHistory.length"
+                            class="group-chat-approval-list"
+                        >
                             <div
                                 v-for="request in groupChatRequestHistory"
                                 :key="`group-chat-request-${request.id}`"
                                 class="group-chat-approval-card"
                             >
                                 <div class="group-chat-approval-card__topline">
-                                    <div class="group-chat-approval-card__heading">
-                                        <div class="group-chat-approval-card__title">{{ request.name }}</div>
-                                        <div class="group-chat-approval-card__meta">
-                                            {{ request.approval_status === 'approved' ? 'Approved' : 'Rejected' }}
-                                            · Bctioned By {{ request.processed_by?.name || 'Admin' }}
-                                            <span v-if="request.processed_at || request.created_at">
-                                                • {{ formatConversationTimestamp(request.processed_at || request.created_at) }}
+                                    <div
+                                        class="group-chat-approval-card__heading"
+                                    >
+                                        <div
+                                            class="group-chat-approval-card__title"
+                                        >
+                                            {{ request.name }}
+                                        </div>
+                                        <div
+                                            class="group-chat-approval-card__meta"
+                                        >
+                                            {{
+                                                request.approval_status ===
+                                                "approved"
+                                                    ? "Approved"
+                                                    : "Rejected"
+                                            }}
+                                            · Bctioned By
+                                            {{
+                                                request.processed_by?.name ||
+                                                "Admin"
+                                            }}
+                                            <span
+                                                v-if="
+                                                    request.processed_at ||
+                                                    request.created_at
+                                                "
+                                            >
+                                                •
+                                                {{
+                                                    formatConversationTimestamp(
+                                                        request.processed_at ||
+                                                            request.created_at,
+                                                    )
+                                                }}
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="group-chat-approval-card__top-actions">
+                                    <div
+                                        class="group-chat-approval-card__top-actions"
+                                    >
                                         <span
                                             class="group-chat-request-status"
                                             :class="`group-chat-request-status--${request.approval_status}`"
                                         >
-                                            {{ formatRequestStatus(request.approval_status) }}
+                                            {{
+                                                formatRequestStatus(
+                                                    request.approval_status,
+                                                )
+                                            }}
                                         </span>
                                         <button
-                                            v-if="request.approval_status === 'approved'"
+                                            v-if="
+                                                request.approval_status ===
+                                                'approved'
+                                            "
                                             type="button"
                                             class="group-chat-approval-card__open-btn"
                                             aria-label="Open messages"
                                             title="Open messages"
-                                            @click="openApprovedRequestConversation(request)"
+                                            @click="
+                                                openApprovedRequestConversation(
+                                                    request,
+                                                )
+                                            "
                                         >
-                                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                            <i
+                                                class="fa-solid fa-arrow-up-right-from-square"
+                                            ></i>
                                         </button>
                                     </div>
                                 </div>
-                                <div v-if="(request.members || []).length" class="group-chat-approval-card__members">
+                                <div
+                                    v-if="(request.members || []).length"
+                                    class="group-chat-approval-card__members"
+                                >
                                     <button
                                         type="button"
                                         class="group-chat-approval-card__member-trigger"
-                                        :aria-expanded="activeGroupRequestTooltipId === request.id"
+                                        :aria-expanded="
+                                            activeGroupRequestTooltipId ===
+                                            request.id
+                                        "
                                         :aria-label="`Show members for ${request.name}`"
-                                        @click.stop="toggleGroupRequestTooltip(request.id)"
+                                        @click.stop="
+                                            toggleGroupRequestTooltip(
+                                                request.id,
+                                            )
+                                        "
                                     >
-                                        <span class="group-chat-approval-card__member-stack">
+                                        <span
+                                            class="group-chat-approval-card__member-stack"
+                                        >
                                             <span
-                                                v-for="member in getRequestMemberPreview(request.members)"
+                                                v-for="member in getRequestMemberPreview(
+                                                    request.members,
+                                                )"
                                                 :key="`request-member-${request.id}-${member.id || member.name}`"
                                                 class="group-chat-approval-card__member-avatar"
                                             >
-                                                <img :src="getMemberProfile(member)" :alt="member.name || 'User'">
+                                                <img
+                                                    :src="
+                                                        getMemberProfile(member)
+                                                    "
+                                                    :alt="member.name || 'User'"
+                                                />
                                             </span>
                                             <span
-                                                v-if="request.members.length > 10"
+                                                v-if="
+                                                    request.members.length > 10
+                                                "
                                                 class="group-chat-approval-card__member-avatar group-chat-approval-card__member-avatar--more"
                                             >
-                                                +{{ request.members.length - 10 }}
+                                                +{{
+                                                    request.members.length - 10
+                                                }}
                                             </span>
                                         </span>
                                     </button>
 
                                     <transition name="fade">
                                         <div
-                                            v-if="activeGroupRequestTooltipId === request.id"
+                                            v-if="
+                                                activeGroupRequestTooltipId ===
+                                                request.id
+                                            "
                                             class="group-chat-approval-card__tooltip"
                                             @click.stop
                                         >
-                                            <div class="group-chat-approval-card__tooltip-list">
+                                            <div
+                                                class="group-chat-approval-card__tooltip-list"
+                                            >
                                                 <span
                                                     v-for="member in request.members"
                                                     :key="`request-member-name-${request.id}-${member.id || member.name}`"
@@ -1089,7 +1794,11 @@
                                     </transition>
                                 </div>
                                 <div
-                                    v-if="request.approval_status === 'rejected' && request.rejection_reason"
+                                    v-if="
+                                        request.approval_status ===
+                                            'rejected' &&
+                                        request.rejection_reason
+                                    "
                                     class="group-chat-request-note"
                                 >
                                     {{ request.rejection_reason }}
@@ -1110,16 +1819,27 @@
                 class="message-action-modal-backdrop"
                 @click.self="closeConversationDeleteModal"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--danger">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--danger"
+                            >
                                 <i class="fa-regular fa-trash-can"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Delete for you</div>
-                            <h3 class="message-action-modal__title">Delete your copy of this chat?</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Delete for you
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                Delete your copy of this chat?
+                            </h3>
                             <p class="message-action-modal__subtitle">
-                                This clears the messages only for you. Other participants will still be able to see them.
+                                This clears the messages only for you. Other
+                                participants will still be able to see them.
                             </p>
                         </div>
                         <button
@@ -1135,13 +1855,18 @@
 
                     <div class="message-action-modal__body">
                         <div class="message-action-modal__context">
-                            <div class="message-action-modal__context-label">Conversation</div>
+                            <div class="message-action-modal__context-label">
+                                Conversation
+                            </div>
                             <div class="message-action-modal__preview">
-                                {{ contactActionTarget?.name || 'This chat' }}
+                                {{ contactActionTarget?.name || "This chat" }}
                             </div>
                         </div>
 
-                        <p v-if="conversationDeleteError" class="message-action-modal__error">
+                        <p
+                            v-if="conversationDeleteError"
+                            class="message-action-modal__error"
+                        >
                             {{ conversationDeleteError }}
                         </p>
                     </div>
@@ -1158,10 +1883,17 @@
                         <button
                             type="button"
                             class="message-action-modal__btn message-action-modal__btn--danger"
-                            :disabled="conversationDeleteSubmitting || !contactActionTarget"
+                            :disabled="
+                                conversationDeleteSubmitting ||
+                                !contactActionTarget
+                            "
                             @click="confirmDeleteConversationMessages"
                         >
-                            <span v-if="conversationDeleteSubmitting" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span
+                                v-if="conversationDeleteSubmitting"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
                             <span v-else>Delete for me</span>
                         </button>
                     </div>
@@ -1175,18 +1907,30 @@
                 class="message-action-modal-backdrop"
                 @click.self="closeGroupChatModal"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-solid fa-people-group"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Create group chat</div>
-                            <h3 class="message-action-modal__title">Start a shared conversation</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Create group chat
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                Start a shared conversation
+                            </h3>
                             <p class="message-action-modal__subtitle">
-                                {{ isAdmin
-                                    ? 'Admins can create a group chat immediately.'
-                                    : 'Your request will be sent to admins for approval first.' }}
+                                {{
+                                    isAdmin
+                                        ? "Admins can create a group chat immediately."
+                                        : "Your request will be sent to admins for approval first."
+                                }}
                             </p>
                         </div>
                         <button
@@ -1202,26 +1946,30 @@
 
                     <div class="message-action-modal__body">
                         <div class="mb-3">
-                            <label class="form-label text-white-50 small">Group name</label>
+                            <label class="form-label text-white-50 small"
+                                >Group name</label
+                            >
                             <input
                                 v-model="groupChatForm.name"
                                 type="text"
                                 class="message-action-modal__textarea"
-                                style="min-height: 52px;"
+                                style="min-height: 52px"
                                 maxlength="120"
                                 placeholder="Enter group name"
-                            >
+                            />
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label text-white-50 small">Members</label>
+                            <label class="form-label text-white-50 small"
+                                >Members</label
+                            >
                             <div class="mb-3">
                                 <input
                                     v-model="groupChatUserSearch"
                                     type="text"
                                     class="message-action-modal__input"
                                     placeholder="Search user to add"
-                                >
+                                />
                             </div>
                             <div class="group-chat-member-list">
                                 <label
@@ -1230,20 +1978,30 @@
                                     class="group-chat-member-item"
                                 >
                                     <input
-                                        :checked="groupChatForm.member_ids.includes(user.id)"
+                                        :checked="
+                                            groupChatForm.member_ids.includes(
+                                                user.id,
+                                            )
+                                        "
                                         type="checkbox"
                                         @change="toggleGroupChatMember(user.id)"
-                                    >
-                                    <img :src="user.profile" :alt="user.name">
+                                    />
+                                    <img :src="user.profile" :alt="user.name" />
                                     <span>{{ user.name }}</span>
                                 </label>
                             </div>
-                            <div v-if="filteredGroupChatUsers.length === 0" class="text-white-50 small mt-2">
+                            <div
+                                v-if="filteredGroupChatUsers.length === 0"
+                                class="text-white-50 small mt-2"
+                            >
                                 No users match your search.
                             </div>
                         </div>
 
-                        <p v-if="groupChatError" class="message-action-modal__error">
+                        <p
+                            v-if="groupChatError"
+                            class="message-action-modal__error"
+                        >
                             {{ groupChatError }}
                         </p>
                     </div>
@@ -1260,10 +2018,16 @@
                         <button
                             type="button"
                             class="message-action-modal__btn message-action-modal__btn--primary"
-                            :disabled="groupChatSubmitting || !canSubmitGroupChat"
+                            :disabled="
+                                groupChatSubmitting || !canSubmitGroupChat
+                            "
                             @click="submitGroupChat"
                         >
-                            <span v-if="groupChatSubmitting" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span
+                                v-if="groupChatSubmitting"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
                             <span v-else>Create</span>
                         </button>
                     </div>
@@ -1277,20 +2041,34 @@
                 class="message-action-modal-backdrop"
                 @click.self="closeGroupInfoModal"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-solid fa-circle-info"></i>
                             </div>
                             <div class="message-action-modal__eyebrow">
-                                {{ activeConversationIsGroup ? 'Group info' : 'Conversation info' }}
+                                {{
+                                    activeConversationIsGroup
+                                        ? "Group info"
+                                        : "Conversation info"
+                                }}
                             </div>
-                            <h3 class="message-action-modal__title">Edit {{ activeUserName }}</h3>
+                            <h3 class="message-action-modal__title">
+                                Edit {{ activeUserName }}
+                            </h3>
                             <p class="message-action-modal__subtitle">
-                                {{ activeConversationIsGroup
-                                    ? 'Update the group name, photo, your nickname, and browse shared media.'
-                                    : 'Set a nickname for this conversation and browse shared media.' }}
+                                {{
+                                    activeConversationIsGroup
+                                        ? "Update the group name, photo, your nickname, and browse shared media."
+                                        : "Set a nickname for this conversation and browse shared media."
+                                }}
                             </p>
                         </div>
                         <button
@@ -1311,7 +2089,13 @@
                     >
                         <div class="group-info-editor">
                             <div class="group-info-editor__avatar">
-                                <img :src="groupInfoPhotoPreview || activeUserAvatar" :alt="activeUserName">
+                                <img
+                                    :src="
+                                        groupInfoPhotoPreview ||
+                                        activeUserAvatar
+                                    "
+                                    :alt="activeUserName"
+                                />
                                 <button
                                     v-if="activeConversationIsGroup"
                                     type="button"
@@ -1328,51 +2112,73 @@
                                     class="d-none"
                                     accept="image/*"
                                     @change="handleGroupInfoPhotoChange"
-                                >
+                                />
                             </div>
 
                             <div v-if="activeConversationIsGroup" class="mb-3">
-                                <label class="form-label text-white-50 small">Group name</label>
+                                <label class="form-label text-white-50 small"
+                                    >Group name</label
+                                >
                                 <input
                                     v-model="groupInfoForm.name"
                                     type="text"
                                     class="message-action-modal__input"
                                     maxlength="120"
                                     placeholder="Enter group name"
-                                >
+                                />
                             </div>
 
                             <div v-else class="mb-3">
-                                <label class="form-label text-white-50 small">Name</label>
+                                <label class="form-label text-white-50 small"
+                                    >Name</label
+                                >
                                 <div class="message-action-modal__preview">
-                                    {{ activeUser?.actual_name || activeUserName }}
+                                    {{
+                                        activeUser?.actual_name ||
+                                        activeUserName
+                                    }}
                                 </div>
                             </div>
 
                             <div class="mb-2">
                                 <label class="form-label text-white-50 small">
-                                    {{ activeConversationIsGroup ? 'Your nickname' : 'Nickname' }}
+                                    {{
+                                        activeConversationIsGroup
+                                            ? "Your nickname"
+                                            : "Nickname"
+                                    }}
                                 </label>
                                 <input
                                     v-model="groupInfoForm.nickname"
                                     type="text"
                                     class="message-action-modal__input"
                                     maxlength="120"
-                                    :placeholder="activeConversationIsGroup
-                                        ? 'Set your nickname in this group'
-                                        : 'Set a nickname for this conversation'"
-                                >
+                                    :placeholder="
+                                        activeConversationIsGroup
+                                            ? 'Set your nickname in this group'
+                                            : 'Set a nickname for this conversation'
+                                    "
+                                />
                             </div>
                         </div>
 
                         <div class="conversation-info-media">
                             <div class="conversation-info-media__header">
                                 <div>
-                                    <div class="message-action-modal__context-label">Shared media</div>
-                                    <div class="text-white-50 small">Images and files from this conversation.</div>
+                                    <div
+                                        class="message-action-modal__context-label"
+                                    >
+                                        Shared media
+                                    </div>
+                                    <div class="text-white-50 small">
+                                        Images and files from this conversation.
+                                    </div>
                                 </div>
                                 <div
-                                    v-if="conversationInfoMediaLoading && conversationInfoMediaItems.length"
+                                    v-if="
+                                        conversationInfoMediaLoading &&
+                                        conversationInfoMediaItems.length
+                                    "
                                     class="text-white-50 small"
                                 >
                                     Loading...
@@ -1383,7 +2189,10 @@
                                 <button
                                     type="button"
                                     class="conversation-info-media__tab"
-                                    :class="{ 'is-active': conversationInfoTab === 'media' }"
+                                    :class="{
+                                        'is-active':
+                                            conversationInfoTab === 'media',
+                                    }"
                                     @click="conversationInfoTab = 'media'"
                                 >
                                     Media
@@ -1391,7 +2200,10 @@
                                 <button
                                     type="button"
                                     class="conversation-info-media__tab"
-                                    :class="{ 'is-active': conversationInfoTab === 'files' }"
+                                    :class="{
+                                        'is-active':
+                                            conversationInfoTab === 'files',
+                                    }"
                                     @click="conversationInfoTab = 'files'"
                                 >
                                     Files
@@ -1399,7 +2211,10 @@
                             </div>
 
                             <div
-                                v-if="conversationInfoTab === 'media' && conversationInfoImageItems.length"
+                                v-if="
+                                    conversationInfoTab === 'media' &&
+                                    conversationInfoImageItems.length
+                                "
                                 class="conversation-info-media__section"
                             >
                                 <div class="conversation-info-media__grid">
@@ -1408,15 +2223,25 @@
                                         :key="`image-${item.message_id}`"
                                         type="button"
                                         class="conversation-info-media__image"
-                                        @click="openImageGallery(item.attachment)"
+                                        @click="
+                                            openImageGallery(item.attachment)
+                                        "
                                     >
-                                        <img :src="item.attachment.url" :alt="item.attachment.name || 'Image'">
+                                        <img
+                                            :src="item.attachment.url"
+                                            :alt="
+                                                item.attachment.name || 'Image'
+                                            "
+                                        />
                                     </button>
                                 </div>
                             </div>
 
                             <div
-                                v-if="conversationInfoTab === 'files' && conversationInfoFileItems.length"
+                                v-if="
+                                    conversationInfoTab === 'files' &&
+                                    conversationInfoFileItems.length
+                                "
                                 class="conversation-info-media__section"
                             >
                                 <button
@@ -1426,42 +2251,74 @@
                                     class="conversation-info-media__file"
                                     @click="downloadAttachment(item.attachment)"
                                 >
-                                    <span class="conversation-info-media__file-icon">
+                                    <span
+                                        class="conversation-info-media__file-icon"
+                                    >
                                         <i class="fa-regular fa-file-lines"></i>
                                     </span>
-                                    <span class="conversation-info-media__file-body">
-                                        <span class="conversation-info-media__file-name">{{ item.attachment.name }}</span>
+                                    <span
+                                        class="conversation-info-media__file-body"
+                                    >
+                                        <span
+                                            class="conversation-info-media__file-name"
+                                            >{{ item.attachment.name }}</span
+                                        >
                                         <small class="text-white-50">
-                                            {{ formatFileSize(item.attachment.size) }} · {{ formatTime(item.created_at) }}
+                                            {{
+                                                formatFileSize(
+                                                    item.attachment.size,
+                                                )
+                                            }}
+                                            · {{ formatTime(item.created_at) }}
                                         </small>
                                     </span>
                                 </button>
                             </div>
 
                             <div
-                                v-if="conversationInfoMediaLoaded && !activeConversationInfoItems.length && !conversationInfoMediaLoading"
+                                v-if="
+                                    conversationInfoMediaLoaded &&
+                                    !activeConversationInfoItems.length &&
+                                    !conversationInfoMediaLoading
+                                "
                                 class="text-white-50 small"
                             >
-                                {{ conversationInfoTab === 'files' ? 'No shared files yet.' : 'No shared media yet.' }}
+                                {{
+                                    conversationInfoTab === "files"
+                                        ? "No shared files yet."
+                                        : "No shared media yet."
+                                }}
                             </div>
 
                             <div
-                                v-if="conversationInfoMediaLoading && !conversationInfoMediaItems.length"
+                                v-if="
+                                    conversationInfoMediaLoading &&
+                                    !conversationInfoMediaItems.length
+                                "
                                 class="chat-loading chat-loading--inline"
                             >
                                 <span class="loader-dot"></span>
-                                <div class="fw-semibold">Loading shared media...</div>
+                                <div class="fw-semibold">
+                                    Loading shared media...
+                                </div>
                             </div>
 
                             <div
-                                v-if="conversationInfoMediaLoaded && conversationInfoMediaHasMore && !conversationInfoMediaLoading"
+                                v-if="
+                                    conversationInfoMediaLoaded &&
+                                    conversationInfoMediaHasMore &&
+                                    !conversationInfoMediaLoading
+                                "
                                 class="conversation-info-media__hint"
                             >
                                 Scroll to load more
                             </div>
                         </div>
 
-                        <p v-if="groupInfoError" class="message-action-modal__error">
+                        <p
+                            v-if="groupInfoError"
+                            class="message-action-modal__error"
+                        >
                             {{ groupInfoError }}
                         </p>
                     </div>
@@ -1478,10 +2335,16 @@
                         <button
                             type="button"
                             class="message-action-modal__btn message-action-modal__btn--primary"
-                            :disabled="groupInfoSubmitting || !canSubmitGroupInfo"
+                            :disabled="
+                                groupInfoSubmitting || !canSubmitGroupInfo
+                            "
                             @click="submitConversationInfo"
                         >
-                            <span v-if="groupInfoSubmitting" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span
+                                v-if="groupInfoSubmitting"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
                             <span v-else>Save changes</span>
                         </button>
                     </div>
@@ -1495,16 +2358,27 @@
                 class="message-action-modal-backdrop"
                 @click.self="closeGroupMembersModal"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-solid fa-users"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Group members</div>
-                            <h3 class="message-action-modal__title">{{ activeUserName }}</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Group members
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                {{ activeUserName }}
+                            </h3>
                             <p class="message-action-modal__subtitle">
-                                {{ activeGroupMembers.length }} members in this chat.
+                                {{ activeGroupMembers.length }} members in this
+                                chat.
                             </p>
                         </div>
                         <button
@@ -1518,25 +2392,59 @@
                     </div>
 
                     <div class="message-action-modal__body">
-                        <div v-if="activeGroupMembers.length" class="group-chat-member-list">
+                        <div
+                            v-if="activeGroupMembers.length"
+                            class="group-chat-member-list"
+                        >
                             <div
                                 v-for="member in activeGroupMembers"
                                 :key="member.id"
                                 class="group-chat-member-item group-chat-member-item--static"
                             >
-                                <img :src="getMemberProfile(member)" :alt="member.display_name || member.name">
+                                <img
+                                    :src="getMemberProfile(member)"
+                                    :alt="member.display_name || member.name"
+                                />
                                 <div class="group-chat-member-item__content">
-                                    <div class="group-chat-member-item__headline">
-                                        <span>{{ member.display_name || member.name }}</span>
-                                        <small v-if="Number(member.id) === Number(authUser?.id || 0)" class="text-white-50">(You)</small>
+                                    <div
+                                        class="group-chat-member-item__headline"
+                                    >
+                                        <span>{{
+                                            member.display_name || member.name
+                                        }}</span>
+                                        <small
+                                            v-if="
+                                                Number(member.id) ===
+                                                Number(authUser?.id || 0)
+                                            "
+                                            class="text-white-50"
+                                            >(You)</small
+                                        >
                                     </div>
-                                    <small v-if="member.nickname && member.nickname !== member.name" class="text-white-50">
+                                    <small
+                                        v-if="
+                                            member.nickname &&
+                                            member.nickname !== member.name
+                                        "
+                                        class="text-white-50"
+                                    >
                                         {{ member.name }}
                                     </small>
-                                    <small v-if="member.added_by_name" class="text-white-50">Added by {{ member.added_by_name }}</small>
+                                    <small
+                                        v-if="member.added_by_name"
+                                        class="text-white-50"
+                                        >Added by
+                                        {{ member.added_by_name }}</small
+                                    >
                                 </div>
-                                <div v-if="member.joined_at" class="group-chat-member-item__date">
-                                    Added {{ formatGroupMemberDate(member.joined_at) }}
+                                <div
+                                    v-if="member.joined_at"
+                                    class="group-chat-member-item__date"
+                                >
+                                    Added
+                                    {{
+                                        formatGroupMemberDate(member.joined_at)
+                                    }}
                                 </div>
                             </div>
                         </div>
@@ -1554,14 +2462,24 @@
                 class="message-action-modal-backdrop"
                 @click.self="closeInviteMembersModal"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-solid fa-user-plus"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Invite members</div>
-                            <h3 class="message-action-modal__title">Add users to {{ activeUserName }}</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Invite members
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                Add users to {{ activeUserName }}
+                            </h3>
                             <p class="message-action-modal__subtitle">
                                 Invite more people into this group conversation.
                             </p>
@@ -1584,7 +2502,7 @@
                                 type="text"
                                 class="message-action-modal__input"
                                 placeholder="Search user to invite"
-                            >
+                            />
                         </div>
                         <div class="group-chat-member-list">
                             <label
@@ -1593,18 +2511,26 @@
                                 class="group-chat-member-item"
                             >
                                 <input
-                                    :checked="groupInviteMemberIds.includes(user.id)"
+                                    :checked="
+                                        groupInviteMemberIds.includes(user.id)
+                                    "
                                     type="checkbox"
                                     @change="toggleInviteMember(user.id)"
-                                >
-                                <img :src="user.profile" :alt="user.name">
+                                />
+                                <img :src="user.profile" :alt="user.name" />
                                 <span>{{ user.name }}</span>
                             </label>
                         </div>
-                        <div v-if="filteredInvitableUsers.length === 0" class="text-white-50 small mt-2">
+                        <div
+                            v-if="filteredInvitableUsers.length === 0"
+                            class="text-white-50 small mt-2"
+                        >
                             No more users available to invite.
                         </div>
-                        <p v-if="groupInviteError" class="message-action-modal__error">
+                        <p
+                            v-if="groupInviteError"
+                            class="message-action-modal__error"
+                        >
                             {{ groupInviteError }}
                         </p>
                     </div>
@@ -1621,10 +2547,17 @@
                         <button
                             type="button"
                             class="message-action-modal__btn message-action-modal__btn--primary"
-                            :disabled="groupInviteSubmitting || groupInviteMemberIds.length === 0"
+                            :disabled="
+                                groupInviteSubmitting ||
+                                groupInviteMemberIds.length === 0
+                            "
                             @click="submitInviteMembers"
                         >
-                            <span v-if="groupInviteSubmitting" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span
+                                v-if="groupInviteSubmitting"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
                             <span v-else>Invite</span>
                         </button>
                     </div>
@@ -1638,16 +2571,27 @@
                 class="message-action-modal-backdrop"
                 @click.self="closeLeaveGroupModal"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--danger">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--danger"
+                            >
                                 <i class="fa-solid fa-right-from-bracket"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Leave group</div>
-                            <h3 class="message-action-modal__title">Leave {{ activeUserName }}?</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Leave group
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                Leave {{ activeUserName }}?
+                            </h3>
                             <p class="message-action-modal__subtitle">
-                                You will stop receiving messages from this group unless someone invites you again.
+                                You will stop receiving messages from this group
+                                unless someone invites you again.
                             </p>
                         </div>
                         <button
@@ -1663,12 +2607,17 @@
 
                     <div class="message-action-modal__body">
                         <div class="message-action-modal__context">
-                            <div class="message-action-modal__context-label">Group</div>
+                            <div class="message-action-modal__context-label">
+                                Group
+                            </div>
                             <div class="message-action-modal__preview">
                                 {{ activeUserName }}
                             </div>
                         </div>
-                        <p v-if="leaveGroupError" class="message-action-modal__error">
+                        <p
+                            v-if="leaveGroupError"
+                            class="message-action-modal__error"
+                        >
                             {{ leaveGroupError }}
                         </p>
                     </div>
@@ -1688,7 +2637,11 @@
                             :disabled="leaveGroupSubmitting"
                             @click="confirmLeaveActiveGroup"
                         >
-                            <span v-if="leaveGroupSubmitting" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span
+                                v-if="leaveGroupSubmitting"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
                             <span v-else>Leave group</span>
                         </button>
                     </div>
@@ -1702,14 +2655,24 @@
                 class="message-action-modal-backdrop"
                 @click.self="closeSeenByModal"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-regular fa-eye"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Seen by</div>
-                            <h3 class="message-action-modal__title">{{ seenByModalUsers.length }} members</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Seen by
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                {{ seenByModalUsers.length }} members
+                            </h3>
                             <p class="message-action-modal__subtitle">
                                 People who have seen this message.
                             </p>
@@ -1725,27 +2688,56 @@
                     </div>
 
                     <div class="message-action-modal__body">
-                        <div v-if="seenByModalUsers.length" class="group-chat-member-list">
+                        <div
+                            v-if="seenByModalUsers.length"
+                            class="group-chat-member-list"
+                        >
                             <div
                                 v-for="member in seenByModalUsers"
                                 :key="`seen-modal-${member.id}`"
                                 class="group-chat-member-item group-chat-member-item--static"
                             >
-                                <img :src="getMemberProfile(member)" :alt="getSeenMemberName(member)">
+                                <img
+                                    :src="getMemberProfile(member)"
+                                    :alt="getSeenMemberName(member)"
+                                />
                                 <div class="group-chat-member-item__content">
-                                    <div class="group-chat-member-item__headline">
-                                        <span>{{ getSeenMemberName(member) }}</span>
-                                        <small v-if="Number(member.id) === Number(authUser?.id || 0)" class="text-white-50">(You)</small>
+                                    <div
+                                        class="group-chat-member-item__headline"
+                                    >
+                                        <span>{{
+                                            getSeenMemberName(member)
+                                        }}</span>
+                                        <small
+                                            v-if="
+                                                Number(member.id) ===
+                                                Number(authUser?.id || 0)
+                                            "
+                                            class="text-white-50"
+                                            >(You)</small
+                                        >
                                     </div>
                                     <small
-                                        v-if="member.nickname && member.name && member.nickname !== member.name"
+                                        v-if="
+                                            member.nickname &&
+                                            member.name &&
+                                            member.nickname !== member.name
+                                        "
                                         class="text-white-50"
                                     >
                                         {{ member.name }}
                                     </small>
                                 </div>
-                                <div v-if="member.last_read_at" class="group-chat-member-item__date">
-                                    Seen {{ formatGroupMemberDate(member.last_read_at) }}
+                                <div
+                                    v-if="member.last_read_at"
+                                    class="group-chat-member-item__date"
+                                >
+                                    Seen
+                                    {{
+                                        formatGroupMemberDate(
+                                            member.last_read_at,
+                                        )
+                                    }}
                                 </div>
                             </div>
                         </div>
@@ -1763,14 +2755,24 @@
                 class="message-action-modal-backdrop"
                 @click.self="showApprovalModal = false"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
-                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                            <div
+                                class="message-action-modal__badge message-action-modal__badge--edit"
+                            >
                                 <i class="fa-solid fa-user-check"></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Admin approvals</div>
-                            <h3 class="message-action-modal__title">Pending group chat requests</h3>
+                            <div class="message-action-modal__eyebrow">
+                                Admin approvals
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                Pending group chat requests
+                            </h3>
                             <p class="message-action-modal__subtitle">
                                 Review and approve employee-created group chats.
                             </p>
@@ -1786,18 +2788,28 @@
                     </div>
 
                     <div class="message-action-modal__body">
-                        <div v-if="pendingGroupChatApprovals.length" class="group-chat-approval-list">
+                        <div
+                            v-if="pendingGroupChatApprovals.length"
+                            class="group-chat-approval-list"
+                        >
                             <div
                                 v-for="request in pendingGroupChatApprovals"
                                 :key="request.id"
                                 class="group-chat-approval-card"
                             >
-                                <div class="group-chat-approval-card__title">{{ request.name }}</div>
+                                <div class="group-chat-approval-card__title">
+                                    {{ request.name }}
+                                </div>
                                 <div class="group-chat-approval-card__meta">
-                                    Requested by {{ request.creator?.name || 'User' }}
+                                    Requested by
+                                    {{ request.creator?.name || "User" }}
                                 </div>
                                 <div class="group-chat-approval-card__members">
-                                    {{ request.members.map((member) => member.name).join(', ') }}
+                                    {{
+                                        request.members
+                                            .map((member) => member.name)
+                                            .join(", ")
+                                    }}
                                 </div>
                                 <div class="group-chat-approval-card__actions">
                                     <button
@@ -1810,7 +2822,9 @@
                                     <button
                                         type="button"
                                         class="message-action-modal__btn message-action-modal__btn--primary"
-                                        @click="approveGroupChatRequest(request)"
+                                        @click="
+                                            approveGroupChatRequest(request)
+                                        "
                                     >
                                         Approve
                                     </button>
@@ -1840,8 +2854,12 @@
                 >
                     <div class="reaction-modal__header">
                         <div>
-                            <div class="reaction-modal__eyebrow">Emoji reaction</div>
-                            <h3 class="reaction-modal__title">React to this message</h3>
+                            <div class="reaction-modal__eyebrow">
+                                Emoji reaction
+                            </div>
+                            <h3 class="reaction-modal__title">
+                                React to this message
+                            </h3>
                             <p class="reaction-modal__subtitle">
                                 {{ reactionTargetPreview }}
                             </p>
@@ -1862,13 +2880,20 @@
                             :key="reaction.key"
                             type="button"
                             class="reaction-modal__option"
-                            :class="{ 'is-active': selectedMessage?.reaction === reaction.key }"
+                            :class="{
+                                'is-active':
+                                    selectedMessage?.reaction === reaction.key,
+                            }"
                             :title="reaction.label"
                             :aria-label="reaction.label"
                             @click="setReaction(selectedMessage, reaction.key)"
                         >
-                            <span class="reaction-modal__emoji">{{ reaction.emoji }}</span>
-                            <span class="reaction-modal__label">{{ reaction.label }}</span>
+                            <span class="reaction-modal__emoji">{{
+                                reaction.emoji
+                            }}</span>
+                            <span class="reaction-modal__label">{{
+                                reaction.label
+                            }}</span>
                         </button>
                     </div>
                 </div>
@@ -1892,24 +2917,40 @@
                         <div class="message-action-modal__headline">
                             <div
                                 class="message-action-modal__badge"
-                                :class="messageActionModalMode === 'edit'
-                                    ? 'message-action-modal__badge--edit'
-                                    : 'message-action-modal__badge--danger'"
+                                :class="
+                                    messageActionModalMode === 'edit'
+                                        ? 'message-action-modal__badge--edit'
+                                        : 'message-action-modal__badge--danger'
+                                "
                             >
-                                <i :class="messageActionModalMode === 'edit'
-                                    ? 'fa-regular fa-pen-to-square'
-                                    : 'fa-regular fa-trash-can'"></i>
+                                <i
+                                    :class="
+                                        messageActionModalMode === 'edit'
+                                            ? 'fa-regular fa-pen-to-square'
+                                            : 'fa-regular fa-trash-can'
+                                    "
+                                ></i>
                             </div>
                             <div class="message-action-modal__eyebrow">
-                                {{ messageActionModalMode === 'edit' ? 'Custom editor' : 'Confirmation' }}
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Custom editor"
+                                        : "Confirmation"
+                                }}
                             </div>
                             <h3 class="message-action-modal__title">
-                                {{ messageActionModalMode === 'edit' ? 'Edit this message' : 'Unsend this message?' }}
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Edit this message"
+                                        : "Unsend this message?"
+                                }}
                             </h3>
                             <p class="message-action-modal__subtitle">
-                                {{ messageActionModalMode === 'edit'
-                                    ? 'Update the message text below and save when you are ready.'
-                                    : 'This removes the message for everyone in this conversation.' }}
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Update the message text below and save when you are ready."
+                                        : "This removes the message for everyone in this conversation."
+                                }}
                             </p>
                         </div>
                         <button
@@ -1933,8 +2974,12 @@
                                 rows="6"
                                 :disabled="messageActionModalSaving"
                                 maxlength="2000"
-                                @keydown.ctrl.enter.prevent="submitMessageActionModal"
-                                @keydown.meta.enter.prevent="submitMessageActionModal"
+                                @keydown.ctrl.enter.prevent="
+                                    submitMessageActionModal
+                                "
+                                @keydown.meta.enter.prevent="
+                                    submitMessageActionModal
+                                "
                             ></textarea>
                             <div class="message-action-modal__meta">
                                 <small class="message-action-modal__count">
@@ -1945,14 +2990,21 @@
 
                         <template v-else>
                             <div class="message-action-modal__context">
-                                <div class="message-action-modal__context-label">Message to unsend</div>
+                                <div
+                                    class="message-action-modal__context-label"
+                                >
+                                    Message to unsend
+                                </div>
                                 <div class="message-action-modal__preview">
                                     {{ messageActionModalMessagePreview }}
                                 </div>
                             </div>
                         </template>
 
-                        <p v-if="messageActionModalError" class="message-action-modal__error">
+                        <p
+                            v-if="messageActionModalError"
+                            class="message-action-modal__error"
+                        >
                             {{ messageActionModalError }}
                         </p>
                     </div>
@@ -1970,15 +3022,28 @@
                         <button
                             type="button"
                             class="message-action-modal__btn"
-                            :class="messageActionModalMode === 'edit'
-                                ? 'message-action-modal__btn--primary'
-                                : 'message-action-modal__btn--danger'"
-                            :disabled="messageActionModalSaving || messageActionModalSubmitDisabled"
+                            :class="
+                                messageActionModalMode === 'edit'
+                                    ? 'message-action-modal__btn--primary'
+                                    : 'message-action-modal__btn--danger'
+                            "
+                            :disabled="
+                                messageActionModalSaving ||
+                                messageActionModalSubmitDisabled
+                            "
                             @click="submitMessageActionModal"
                         >
-                            <span v-if="messageActionModalSaving" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span
+                                v-if="messageActionModalSaving"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
                             <span v-else>
-                                {{ messageActionModalMode === 'edit' ? 'Save changes' : 'Unsend message' }}
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Save changes"
+                                        : "Unsend message"
+                                }}
                             </span>
                         </button>
                     </div>
@@ -1991,22 +3056,38 @@
                 class="message-action-modal-backdrop"
                 @click.self="closeAlertModal"
             >
-                <div class="message-action-modal" role="dialog" aria-modal="true">
+                <div
+                    class="message-action-modal"
+                    role="dialog"
+                    aria-modal="true"
+                >
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
                             <div
                                 class="message-action-modal__badge"
-                                :class="alertModalType === 'success'
-                                    ? 'message-action-modal__badge--edit'
-                                    : 'message-action-modal__badge--danger'"
+                                :class="
+                                    alertModalType === 'success'
+                                        ? 'message-action-modal__badge--edit'
+                                        : 'message-action-modal__badge--danger'
+                                "
                             >
-                                <i :class="alertModalType === 'success'
-                                    ? 'fa-solid fa-check'
-                                    : 'fa-solid fa-triangle-exclamation'"></i>
+                                <i
+                                    :class="
+                                        alertModalType === 'success'
+                                            ? 'fa-solid fa-check'
+                                            : 'fa-solid fa-triangle-exclamation'
+                                    "
+                                ></i>
                             </div>
-                            <div class="message-action-modal__eyebrow">Notice</div>
-                            <h3 class="message-action-modal__title">{{ alertModalTitle }}</h3>
-                            <p class="message-action-modal__subtitle">{{ alertModalMessage }}</p>
+                            <div class="message-action-modal__eyebrow">
+                                Notice
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                {{ alertModalTitle }}
+                            </h3>
+                            <p class="message-action-modal__subtitle">
+                                {{ alertModalMessage }}
+                            </p>
                         </div>
                         <button
                             type="button"
@@ -2022,9 +3103,11 @@
                         <button
                             type="button"
                             class="message-action-modal__btn"
-                            :class="alertModalType === 'success'
-                                ? 'message-action-modal__btn--primary'
-                                : 'message-action-modal__btn--danger'"
+                            :class="
+                                alertModalType === 'success'
+                                    ? 'message-action-modal__btn--primary'
+                                    : 'message-action-modal__btn--danger'
+                            "
                             @click="closeAlertModal"
                         >
                             OK
@@ -2047,8 +3130,12 @@
                     <i :class="getNotificationIcon(notification.type)"></i>
                 </div>
                 <div class="messages-toast__content">
-                    <div class="messages-toast__title">{{ notification.title }}</div>
-                    <div class="messages-toast__message">{{ notification.message }}</div>
+                    <div class="messages-toast__title">
+                        {{ notification.title }}
+                    </div>
+                    <div class="messages-toast__message">
+                        {{ notification.message }}
+                    </div>
                 </div>
                 <button
                     type="button"
@@ -2065,12 +3152,12 @@
 </template>
 
 <script>
-import axios from 'axios';
-import ConversationWorkspace from './components/ConversationWorkspace.vue';
-import MessagesSidebar from './components/MessagesSidebar.vue';
+import axios from "axios";
+import ConversationWorkspace from "./components/ConversationWorkspace.vue";
+import MessagesSidebar from "./components/MessagesSidebar.vue";
 
 export default {
-    name: 'MessagesPage',
+    name: "MessagesPage",
     components: {
         ConversationWorkspace,
         MessagesSidebar,
@@ -2102,33 +3189,42 @@ export default {
         },
         messagesBaseUrl: {
             type: String,
-            default: '',
+            default: "",
         },
         csrfToken: {
             type: String,
-            default: '',
+            default: "",
         },
     },
     data() {
-        const selectedConversationKey = this.initialSelectedConversationKey || this.initialUsers?.[0]?.conversation_key || null;
+        const selectedConversationKey =
+            this.initialSelectedConversationKey ||
+            this.initialUsers?.[0]?.conversation_key ||
+            null;
         const normalizeUserId = (userId) => Number(userId);
         const getLastSeenStore = () => {
             try {
-                return JSON.parse(localStorage.getItem('online-users-last-seen') || '{}');
+                return JSON.parse(
+                    localStorage.getItem("online-users-last-seen") || "{}",
+                );
             } catch (error) {
                 return {};
             }
         };
         const getActivityState = (userId, latestAt = null) => {
             const normalizedUserId = normalizeUserId(userId);
-            const storedLastSeenAt = getLastSeenStore()[normalizedUserId] ?? null;
-            const isOnline = this.onlineUserIds?.includes(normalizedUserId) ?? false;
+            const storedLastSeenAt =
+                getLastSeenStore()[normalizedUserId] ?? null;
+            const isOnline =
+                this.onlineUserIds?.includes(normalizedUserId) ?? false;
 
             if (isOnline) {
                 return {
-                    label: 'Online',
+                    label: "Online",
                     isActive: true,
-                    lastSeenAt: storedLastSeenAt ? Number(storedLastSeenAt) : Date.now(),
+                    lastSeenAt: storedLastSeenAt
+                        ? Number(storedLastSeenAt)
+                        : Date.now(),
                 };
             }
 
@@ -2136,7 +3232,7 @@ export default {
 
             if (!fallbackSource) {
                 return {
-                    label: 'Offline',
+                    label: "Offline",
                     isActive: false,
                     lastSeenAt: null,
                 };
@@ -2147,7 +3243,7 @@ export default {
 
             if (Number.isNaN(diffMs) || diffMs < 0) {
                 return {
-                    label: 'Offline',
+                    label: "Offline",
                     isActive: false,
                     lastSeenAt: null,
                 };
@@ -2178,7 +3274,7 @@ export default {
             };
         };
         const withStatus = (user) => {
-            const isGroup = user.conversation_type === 'group';
+            const isGroup = user.conversation_type === "group";
             const activityState = isGroup
                 ? this.getGroupActivityState(user)
                 : getActivityState(user.id, user.latest_at);
@@ -2186,16 +3282,20 @@ export default {
             return {
                 ...user,
                 id: normalizeUserId(user.id),
-                conversation_key: user.conversation_key || `direct:${normalizeUserId(user.id)}`,
+                conversation_key:
+                    user.conversation_key ||
+                    `direct:${normalizeUserId(user.id)}`,
                 conversation_token: user.conversation_token || null,
-                conversation_type: user.conversation_type || 'direct',
-                member_ids: Array.isArray(user.member_ids) ? user.member_ids.map((id) => Number(id)) : [],
+                conversation_type: user.conversation_type || "direct",
+                member_ids: Array.isArray(user.member_ids)
+                    ? user.member_ids.map((id) => Number(id))
+                    : [],
                 active_label: user.active_label || activityState.label,
                 is_active: user.is_active ?? activityState.isActive,
                 last_seen_at: activityState.lastSeenAt,
             };
         };
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem("auth_token");
 
         if (token) {
             axios.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -2208,37 +3308,40 @@ export default {
                 ...user,
                 id: Number(user.id),
             })),
-            pendingGroupChatApprovals: this.initialPendingGroupChatApprovals.map((request) => ({
-                ...request,
-                id: Number(request.id),
-            })),
-            groupChatRequestHistory: this.initialGroupChatRequestHistory.map((request) => ({
-                ...request,
-                id: Number(request.id),
-            })),
+            pendingGroupChatApprovals:
+                this.initialPendingGroupChatApprovals.map((request) => ({
+                    ...request,
+                    id: Number(request.id),
+                })),
+            groupChatRequestHistory: this.initialGroupChatRequestHistory.map(
+                (request) => ({
+                    ...request,
+                    id: Number(request.id),
+                }),
+            ),
             selectedConversationKey,
-            searchQuery: '',
+            searchQuery: "",
             messages: [],
             pinnedMessages: [],
-            draftMessage: '',
+            draftMessage: "",
             replyTargetMessage: null,
             selectedMessage: null,
             selectedMessageId: null,
             messageActionModalVisible: false,
-            messageActionModalMode: 'edit',
+            messageActionModalMode: "edit",
             messageActionModalMessage: null,
-            messageActionModalBody: '',
-            messageActionModalError: '',
+            messageActionModalBody: "",
+            messageActionModalError: "",
             messageActionModalSaving: false,
             alertModalVisible: false,
-            alertModalType: 'error',
-            alertModalTitle: '',
-            alertModalMessage: '',
+            alertModalType: "error",
+            alertModalTitle: "",
+            alertModalMessage: "",
             selectedAttachment: null,
             selectedAttachmentPreviewUrl: null,
-            selectedAttachmentPreviewType: 'file',
-            attachmentAccept: '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xlsx,.txt',
-            attachmentMode: 'file',
+            selectedAttachmentPreviewType: "file",
+            attachmentAccept: ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xlsx,.txt",
+            attachmentMode: "file",
             messageCharacterLimit: 2000,
             onlineUserIds: [],
             onlineUsersResolved: false,
@@ -2252,7 +3355,7 @@ export default {
             receiveSound: null,
             sendSound: null,
             typingIndicator: false,
-            typingIndicatorSenderName: '',
+            typingIndicatorSenderName: "",
             typingIndicatorTimer: null,
             typingStateActive: false,
             typingStopTimer: null,
@@ -2275,34 +3378,45 @@ export default {
             activityRefreshTimer: null,
             loadingConversation: false,
             sendingMessage: false,
-            conversationError: '',
-            composerEmojiOptions: ['😀', '😂', '😍', '🥳', '👍', '🙏', '🔥', '🎉', '❤️', '😎'],
+            conversationError: "",
+            composerEmojiOptions: [
+                "😀",
+                "😂",
+                "😍",
+                "🥳",
+                "👍",
+                "🙏",
+                "🔥",
+                "🎉",
+                "❤️",
+                "😎",
+            ],
             reactionOptions: [
-                { key: 'like', emoji: '👍', label: 'Like' },
-                { key: 'number-one', emoji: '☝️', label: 'One DOST' },
-                { key: 'love', emoji: '❤️', label: 'Love' },
-                { key: 'haha', emoji: '😂', label: 'Haha' },
-                { key: 'sad', emoji: '😢', label: 'Sad' },
-                { key: 'angry', emoji: '😡', label: 'Angry' },
+                { key: "like", emoji: "👍", label: "Like" },
+                { key: "number-one", emoji: "☝️", label: "One DOST" },
+                { key: "love", emoji: "❤️", label: "Love" },
+                { key: "haha", emoji: "😂", label: "Haha" },
+                { key: "sad", emoji: "😢", label: "Sad" },
+                { key: "angry", emoji: "😡", label: "Angry" },
             ],
             presenceLifecycleBound: false,
             handlePresencePageHide: null,
             handlePresenceBeforeUnload: null,
             showGroupChatModal: false,
             groupChatSubmitting: false,
-            groupChatError: '',
+            groupChatError: "",
             groupChatForm: {
-                name: '',
+                name: "",
                 member_ids: [],
             },
-            groupChatUserSearch: '',
+            groupChatUserSearch: "",
             showGroupInfoModal: false,
             groupInfoSubmitting: false,
-            groupInfoError: '',
-            groupInfoPhotoPreview: '',
+            groupInfoError: "",
+            groupInfoPhotoPreview: "",
             groupInfoForm: {
-                name: '',
-                nickname: '',
+                name: "",
+                nickname: "",
                 photo: null,
             },
             conversationInfoMediaItems: [],
@@ -2310,12 +3424,12 @@ export default {
             conversationInfoMediaHasMore: true,
             conversationInfoMediaLoading: false,
             conversationInfoMediaLoaded: false,
-            conversationInfoTab: 'media',
+            conversationInfoTab: "media",
             showGroupMembersModal: false,
             showInviteMembersModal: false,
             groupInviteSubmitting: false,
-            groupInviteError: '',
-            groupInviteSearch: '',
+            groupInviteError: "",
+            groupInviteSearch: "",
             groupInviteMemberIds: [],
             showSeenByModal: false,
             seenByModalUsers: [],
@@ -2325,13 +3439,13 @@ export default {
             activeGroupRequestTooltipId: null,
             showLeaveGroupModal: false,
             leaveGroupSubmitting: false,
-            leaveGroupError: '',
+            leaveGroupError: "",
             showApprovalModal: false,
             contactActionMenuKey: null,
             contactActionTarget: null,
             conversationDeleteModalVisible: false,
             conversationDeleteSubmitting: false,
-            conversationDeleteError: '',
+            conversationDeleteError: "",
             now: new Date(),
             nowTimer: null,
             notifications: [],
@@ -2339,62 +3453,77 @@ export default {
             showInitialCacheLoader: false,
             didHydrateFromCache: false,
             cachePersistTimer: null,
-            cacheVersion: 'v1',
+            cacheVersion: "v1",
         };
     },
-        computed: {
+    computed: {
         greetingLabel() {
             const hour = this.now.getHours();
 
             if (hour < 12) {
-                return 'Good morning,';
+                return "Good morning,";
             }
 
             if (hour < 18) {
-                return 'Good afternoon,';
+                return "Good afternoon,";
             }
 
-            return 'Good evening,';
+            return "Good evening,";
         },
         currentDateBadge() {
-            return new Intl.DateTimeFormat('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
+            return new Intl.DateTimeFormat("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
             }).format(this.now);
         },
         currentTimeBadge() {
-            return new Intl.DateTimeFormat('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
+            return new Intl.DateTimeFormat("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
             }).format(this.now);
         },
         totalUnreadCount() {
-            return this.users.reduce((total, user) => total + Number(user.unread_count || 0), 0);
+            return this.users.reduce(
+                (total, user) => total + Number(user.unread_count || 0),
+                0,
+            );
         },
         showInitialPageSkeleton() {
             return this.loadingConversation && !this.didHydrateFromCache;
         },
         typingIndicatorLabel() {
             if (!this.activeConversationIsGroup) {
-                return 'typing...';
+                return "typing...";
             }
 
-            const senderName = String(this.typingIndicatorSenderName || '').trim();
-            return senderName ? `${senderName} is typing...` : 'Someone is typing...';
+            const senderName = String(
+                this.typingIndicatorSenderName || "",
+            ).trim();
+            return senderName
+                ? `${senderName} is typing...`
+                : "Someone is typing...";
         },
         activeUser() {
-            return this.users.find((user) => user.conversation_key === this.selectedConversationKey) || null;
+            return (
+                this.users.find(
+                    (user) =>
+                        user.conversation_key === this.selectedConversationKey,
+                ) || null
+            );
         },
         activeUserName() {
-            return this.activeUser?.name || 'Select a conversation';
+            return this.activeUser?.name || "Select a conversation";
         },
         activeUserAvatar() {
-            return this.activeUser?.profile || `https://ui-avatars.com/api/?name=${encodeURIComponent(this.activeUserName)}&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true`;
+            return (
+                this.activeUser?.profile ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(this.activeUserName)}&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true`
+            );
         },
         activeUserStatus() {
             if (!this.activeUser) {
-                return 'Choose a user on the left';
+                return "Choose a user on the left";
             }
 
             return this.getConversationStatusLabel(this.activeUser);
@@ -2434,7 +3563,9 @@ export default {
                 return [];
             }
 
-            const members = Array.isArray(this.activeUser?.members) ? this.activeUser.members : [];
+            const members = Array.isArray(this.activeUser?.members)
+                ? this.activeUser.members
+                : [];
             return members.map((member) => ({
                 ...member,
                 id: Number(member.id),
@@ -2443,25 +3574,29 @@ export default {
         },
         activeGroupSelfMember() {
             const authUserId = Number(this.authUser?.id || 0);
-            return this.activeGroupMembers.find((member) => Number(member.id) === authUserId) || null;
+            return (
+                this.activeGroupMembers.find(
+                    (member) => Number(member.id) === authUserId,
+                ) || null
+            );
         },
         replyTargetLabel() {
             if (!this.replyTargetMessage) {
-                return 'you';
+                return "you";
             }
 
             if (this.replyTargetMessage.is_mine) {
-                return 'you';
+                return "you";
             }
 
             if (this.activeConversationIsGroup) {
-                return this.replyTargetMessage.sender_name || 'User';
+                return this.replyTargetMessage.sender_name || "User";
             }
 
             return this.activeUserName;
         },
         activeConversationIsGroup() {
-            return this.activeUser?.conversation_type === 'group';
+            return this.activeUser?.conversation_type === "group";
         },
         isAdmin() {
             return Boolean(this.authUser?.is_admin);
@@ -2470,33 +3605,40 @@ export default {
             const search = this.searchQuery.trim().toLowerCase();
             const filtered = [...this.users]
                 .filter((user) => {
-                    const haystack = `${user.name || ''} ${user.email || ''} ${user.preview || ''}`.toLowerCase();
+                    const haystack =
+                        `${user.name || ""} ${user.email || ""} ${user.preview || ""}`.toLowerCase();
                     const matchesSearch = !search || haystack.includes(search);
                     return matchesSearch;
                 })
                 .sort((a, b) => {
-                    const aTime = a.latest_at ? new Date(a.latest_at).getTime() : 0;
-                    const bTime = b.latest_at ? new Date(b.latest_at).getTime() : 0;
+                    const aTime = a.latest_at
+                        ? new Date(a.latest_at).getTime()
+                        : 0;
+                    const bTime = b.latest_at
+                        ? new Date(b.latest_at).getTime()
+                        : 0;
                     return bTime - aTime;
                 });
 
             return filtered;
         },
         latestPinnedPreview() {
-            return this.pinnedMessages?.[0]?.preview || '';
+            return this.pinnedMessages?.[0]?.preview || "";
         },
         messageActionModalMessagePreview() {
-            return this.messageActionModalMessage?.body
-                || this.messageActionModalMessage?.attachment?.name
-                || 'This message will be removed.';
+            return (
+                this.messageActionModalMessage?.body ||
+                this.messageActionModalMessage?.attachment?.name ||
+                "This message will be removed."
+            );
         },
         messageActionModalSubmitDisabled() {
-            if (this.messageActionModalMode !== 'edit') {
+            if (this.messageActionModalMode !== "edit") {
                 return false;
             }
 
             const body = this.messageActionModalBody.trim();
-            const original = this.messageActionModalMessage?.body || '';
+            const original = this.messageActionModalMessage?.body || "";
 
             return !body || body === original.trim();
         },
@@ -2504,22 +3646,28 @@ export default {
             const preview = this.getMessageSnippet(this.selectedMessage);
 
             if (!preview) {
-                return 'Pick an emoji to react.';
+                return "Pick an emoji to react.";
             }
 
             return preview.length > 96 ? `${preview.slice(0, 93)}...` : preview;
         },
         selectedAttachmentName() {
-            return this.selectedAttachment?.name || '';
+            return this.selectedAttachment?.name || "";
         },
         messageCharacterCount() {
             return this.draftMessage.length;
         },
         messageCharactersRemaining() {
-            return Math.max(0, this.messageCharacterLimit - this.messageCharacterCount);
+            return Math.max(
+                0,
+                this.messageCharacterLimit - this.messageCharacterCount,
+            );
         },
         canSubmitGroupChat() {
-            return this.groupChatForm.name.trim() !== '' && this.groupChatForm.member_ids.length >= 2;
+            return (
+                this.groupChatForm.name.trim() !== "" &&
+                this.groupChatForm.member_ids.length >= 2
+            );
         },
         canSubmitGroupInfo() {
             if (!this.activeUser) {
@@ -2527,27 +3675,33 @@ export default {
             }
 
             if (this.activeConversationIsGroup) {
-                return this.groupInfoForm.name.trim() !== '';
+                return this.groupInfoForm.name.trim() !== "";
             }
 
             return true;
         },
         conversationInfoImageItems() {
-            return this.conversationInfoMediaItems.filter((item) => item?.attachment?.type === 'image');
+            return this.conversationInfoMediaItems.filter(
+                (item) => item?.attachment?.type === "image",
+            );
         },
         conversationInfoFileItems() {
-            return this.conversationInfoMediaItems.filter((item) => item?.attachment?.type !== 'image');
+            return this.conversationInfoMediaItems.filter(
+                (item) => item?.attachment?.type !== "image",
+            );
         },
         activeConversationInfoItems() {
-            return this.conversationInfoTab === 'files'
+            return this.conversationInfoTab === "files"
                 ? this.conversationInfoFileItems
                 : this.conversationInfoImageItems;
         },
         filteredInvitableUsers() {
             const search = this.groupInviteSearch.trim().toLowerCase();
             const memberIds = new Set(
-                (Array.isArray(this.activeUser?.member_ids) ? this.activeUser.member_ids : [])
-                    .map((id) => Number(id)),
+                (Array.isArray(this.activeUser?.member_ids)
+                    ? this.activeUser.member_ids
+                    : []
+                ).map((id) => Number(id)),
             );
 
             return this.availableUsers.filter((user) => {
@@ -2555,7 +3709,8 @@ export default {
                     return false;
                 }
 
-                const haystack = `${user.name || ''} ${user.email || ''}`.toLowerCase();
+                const haystack =
+                    `${user.name || ""} ${user.email || ""}`.toLowerCase();
                 return !search || haystack.includes(search);
             });
         },
@@ -2567,7 +3722,8 @@ export default {
                     return true;
                 }
 
-                const haystack = `${user.name || ''} ${user.email || ''}`.toLowerCase();
+                const haystack =
+                    `${user.name || ""} ${user.email || ""}`.toLowerCase();
                 return haystack.includes(search);
             });
         },
@@ -2580,15 +3736,15 @@ export default {
         this.nowTimer = window.setInterval(() => {
             this.now = new Date();
         }, 60_000);
-        this.receiveSound = new Audio('/sounds/receive.mp3');
-        this.receiveSound.preload = 'auto';
-        this.sendSound = new Audio('/sounds/sent.mp3');
-        this.sendSound.preload = 'auto';
+        this.receiveSound = new Audio("/sounds/receive.mp3");
+        this.receiveSound.preload = "auto";
+        this.sendSound = new Audio("/sounds/sent.mp3");
+        this.sendSound.preload = "auto";
         this.hydrateOnlineUsersFromSharedState();
         this.bindSharedOnlineUsersListener();
         this.initializeOnlineUsers();
         this.bindPresenceLifecycleEvents();
-        this.announcePresence('online');
+        this.announcePresence("online");
         this.refreshUserActivityLabels();
         this.activityRefreshTimer = window.setInterval(() => {
             this.refreshUserActivityLabels();
@@ -2604,8 +3760,8 @@ export default {
         }
 
         this.initializeDirectMessageListener();
-        window.addEventListener('popstate', this.handleBrowserNavigation);
-        window.addEventListener('click', this.handleGlobalClick);
+        window.addEventListener("popstate", this.handleBrowserNavigation);
+        window.addEventListener("click", this.handleGlobalClick);
     },
     beforeUnmount() {
         if (this.nowTimer) {
@@ -2625,7 +3781,7 @@ export default {
         });
         this.notifications = [];
 
-        this.announcePresence('offline');
+        this.announcePresence("offline");
         this.unbindPresenceLifecycleEvents();
         this.unbindSharedOnlineUsersListener();
 
@@ -2644,37 +3800,57 @@ export default {
             this.activityRefreshTimer = null;
         }
 
-        window.removeEventListener('popstate', this.handleBrowserNavigation);
-        window.removeEventListener('click', this.handleGlobalClick);
+        window.removeEventListener("popstate", this.handleBrowserNavigation);
+        window.removeEventListener("click", this.handleGlobalClick);
         this.destroyImageGallery();
     },
     methods: {
         normalizedMessagesBaseUrl() {
-            const fallbackPath = `${window.location.origin}${window.location.pathname}`.replace(/\/+$/, '');
-            return String(this.messagesBaseUrl || fallbackPath).replace(/\/+$/, '');
+            const fallbackPath =
+                `${window.location.origin}${window.location.pathname}`.replace(
+                    /\/+$/,
+                    "",
+                );
+            return String(this.messagesBaseUrl || fallbackPath).replace(
+                /\/+$/,
+                "",
+            );
         },
         buildConversationUrl(conversation = null) {
             const baseUrl = this.normalizedMessagesBaseUrl();
-            const token = String(conversation?.conversation_token || '').trim();
+            const token = String(conversation?.conversation_token || "").trim();
 
             return token ? `${baseUrl}/${encodeURIComponent(token)}` : baseUrl;
         },
         currentConversationTokenFromLocation() {
-            const basePath = new URL(this.normalizedMessagesBaseUrl(), window.location.origin).pathname.replace(/\/+$/, '');
-            const currentPath = window.location.pathname.replace(/\/+$/, '');
+            const basePath = new URL(
+                this.normalizedMessagesBaseUrl(),
+                window.location.origin,
+            ).pathname.replace(/\/+$/, "");
+            const currentPath = window.location.pathname.replace(/\/+$/, "");
 
-            if (currentPath === basePath || !currentPath.startsWith(`${basePath}/`)) {
+            if (
+                currentPath === basePath ||
+                !currentPath.startsWith(`${basePath}/`)
+            ) {
                 return null;
             }
 
-            return decodeURIComponent(currentPath.slice(basePath.length + 1)) || null;
+            return (
+                decodeURIComponent(currentPath.slice(basePath.length + 1)) ||
+                null
+            );
         },
-        updateConversationUrl(conversation = null, historyMode = 'push') {
+        updateConversationUrl(conversation = null, historyMode = "push") {
             const nextUrl = this.buildConversationUrl(conversation);
-            const nextPathname = new URL(nextUrl, window.location.origin).pathname;
-            const currentPathname = window.location.pathname.replace(/\/+$/, '');
+            const nextPathname = new URL(nextUrl, window.location.origin)
+                .pathname;
+            const currentPathname = window.location.pathname.replace(
+                /\/+$/,
+                "",
+            );
 
-            if (currentPathname === nextPathname.replace(/\/+$/, '')) {
+            if (currentPathname === nextPathname.replace(/\/+$/, "")) {
                 return;
             }
 
@@ -2682,12 +3858,12 @@ export default {
                 conversation_key: conversation?.conversation_key || null,
             };
 
-            if (historyMode === 'replace') {
-                window.history.replaceState(state, '', nextUrl);
+            if (historyMode === "replace") {
+                window.history.replaceState(state, "", nextUrl);
                 return;
             }
 
-            window.history.pushState(state, '', nextUrl);
+            window.history.pushState(state, "", nextUrl);
         },
         resolveConversationFromLocation() {
             const token = this.currentConversationTokenFromLocation();
@@ -2696,12 +3872,20 @@ export default {
                 return this.users[0] || null;
             }
 
-            return this.users.find((user) => user.conversation_token === token) || this.users[0] || null;
+            return (
+                this.users.find((user) => user.conversation_token === token) ||
+                this.users[0] ||
+                null
+            );
         },
         handleBrowserNavigation() {
             const targetConversation = this.resolveConversationFromLocation();
 
-            if (!targetConversation || targetConversation.conversation_key === this.selectedConversationKey) {
+            if (
+                !targetConversation ||
+                targetConversation.conversation_key ===
+                    this.selectedConversationKey
+            ) {
                 return;
             }
 
@@ -2725,7 +3909,7 @@ export default {
             this.closeComposerEmojiPicker();
         },
         ensureAuthHeaders() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem("auth_token");
 
             if (token) {
                 axios.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -2741,7 +3925,9 @@ export default {
         },
         getMessagesCacheKey() {
             const authUserId = Number(this.authUser?.id || 0);
-            return authUserId ? `employee-messages-cache:${this.cacheVersion}:${authUserId}` : '';
+            return authUserId
+                ? `employee-messages-cache:${this.cacheVersion}:${authUserId}`
+                : "";
         },
         hydrateMessagesCache() {
             const cacheKey = this.getMessagesCacheKey();
@@ -2757,43 +3943,74 @@ export default {
                 }
 
                 const parsed = JSON.parse(raw);
-                const cachedUsers = Array.isArray(parsed?.users) ? parsed.users : [];
-                const cachedSelectedConversationKey = parsed?.selectedConversationKey || null;
+                const cachedUsers = Array.isArray(parsed?.users)
+                    ? parsed.users
+                    : [];
+                const cachedSelectedConversationKey =
+                    parsed?.selectedConversationKey || null;
                 const cachedConversation = parsed?.activeConversation || null;
 
                 if (cachedUsers.length) {
-                    const userMap = new Map(cachedUsers.map((user) => [user.conversation_key, user]));
+                    const userMap = new Map(
+                        cachedUsers.map((user) => [
+                            user.conversation_key,
+                            user,
+                        ]),
+                    );
                     this.users = this.users.map((user) => {
                         const cachedUser = userMap.get(user.conversation_key);
                         return cachedUser ? { ...user, ...cachedUser } : user;
                     });
                 }
 
-                const locationConversationToken = this.currentConversationTokenFromLocation();
+                const locationConversationToken =
+                    this.currentConversationTokenFromLocation();
 
-                if (cachedSelectedConversationKey && !locationConversationToken) {
-                    const exists = this.users.some((user) => user.conversation_key === cachedSelectedConversationKey);
+                if (
+                    cachedSelectedConversationKey &&
+                    !locationConversationToken
+                ) {
+                    const exists = this.users.some(
+                        (user) =>
+                            user.conversation_key ===
+                            cachedSelectedConversationKey,
+                    );
                     if (exists) {
-                        this.selectedConversationKey = cachedSelectedConversationKey;
+                        this.selectedConversationKey =
+                            cachedSelectedConversationKey;
                     }
                 }
 
                 if (
-                    cachedConversation
-                    && cachedConversation.conversation_key === this.selectedConversationKey
+                    cachedConversation &&
+                    cachedConversation.conversation_key ===
+                        this.selectedConversationKey
                 ) {
                     this.messages = Array.isArray(cachedConversation.messages)
-                        ? cachedConversation.messages.map((message) => this.normalizeMessage(message))
+                        ? cachedConversation.messages.map((message) =>
+                              this.normalizeMessage(message),
+                          )
                         : [];
-                    this.pinnedMessages = Array.isArray(cachedConversation.pinnedMessages)
+                    this.pinnedMessages = Array.isArray(
+                        cachedConversation.pinnedMessages,
+                    )
                         ? cachedConversation.pinnedMessages
                         : [];
-                    this.conversationPage = Number(cachedConversation.conversationPage || 1);
-                    this.conversationLastPage = Number(cachedConversation.conversationLastPage || 1);
-                    this.conversationHasMore = Boolean(cachedConversation.conversationHasMore);
+                    this.conversationPage = Number(
+                        cachedConversation.conversationPage || 1,
+                    );
+                    this.conversationLastPage = Number(
+                        cachedConversation.conversationLastPage || 1,
+                    );
+                    this.conversationHasMore = Boolean(
+                        cachedConversation.conversationHasMore,
+                    );
                 }
 
-                return Boolean(cachedUsers.length || (cachedConversation && this.messages.length));
+                return Boolean(
+                    cachedUsers.length ||
+                    (cachedConversation && this.messages.length),
+                );
             } catch (error) {
                 return false;
             }
@@ -2817,30 +4034,33 @@ export default {
             try {
                 const activeConversation = this.activeUser?.conversation_key
                     ? {
-                        conversation_key: this.activeUser.conversation_key,
-                        messages: this.messages.slice(-40),
-                        pinnedMessages: this.pinnedMessages.slice(0, 10),
-                        conversationPage: this.conversationPage,
-                        conversationLastPage: this.conversationLastPage,
-                        conversationHasMore: this.conversationHasMore,
-                    }
+                          conversation_key: this.activeUser.conversation_key,
+                          messages: this.messages.slice(-40),
+                          pinnedMessages: this.pinnedMessages.slice(0, 10),
+                          conversationPage: this.conversationPage,
+                          conversationLastPage: this.conversationLastPage,
+                          conversationHasMore: this.conversationHasMore,
+                      }
                     : null;
 
-                localStorage.setItem(cacheKey, JSON.stringify({
-                    savedAt: Date.now(),
-                    selectedConversationKey: this.selectedConversationKey,
-                    users: this.users.slice(0, 40).map((user) => ({
-                        conversation_key: user.conversation_key,
-                        preview: user.preview || '',
-                        latest_at: user.latest_at || null,
-                        unread_count: Number(user.unread_count || 0),
-                        is_unread: Boolean(user.is_unread),
-                        active_label: user.active_label || '',
-                        is_active: Boolean(user.is_active),
-                        last_seen_at: user.last_seen_at || null,
-                    })),
-                    activeConversation,
-                }));
+                localStorage.setItem(
+                    cacheKey,
+                    JSON.stringify({
+                        savedAt: Date.now(),
+                        selectedConversationKey: this.selectedConversationKey,
+                        users: this.users.slice(0, 40).map((user) => ({
+                            conversation_key: user.conversation_key,
+                            preview: user.preview || "",
+                            latest_at: user.latest_at || null,
+                            unread_count: Number(user.unread_count || 0),
+                            is_unread: Boolean(user.is_unread),
+                            active_label: user.active_label || "",
+                            is_active: Boolean(user.is_active),
+                            last_seen_at: user.last_seen_at || null,
+                        })),
+                        activeConversation,
+                    }),
+                );
             } catch (error) {
                 // Ignore cache write failures.
             }
@@ -2850,18 +4070,23 @@ export default {
                 return;
             }
 
-            this.messageChannel = window.Echo.private(`direct-messages.${this.authUser.id}`)
-                .listen('.direct-message.sent', (event) => {
+            this.messageChannel = window.Echo.private(
+                `direct-messages.${this.authUser.id}`,
+            )
+                .listen(".direct-message.sent", (event) => {
                     const message = event?.message;
                     if (!message) return;
 
-                    if (Number(message.sender_id || 0) !== Number(this.authUser?.id || 0)) {
+                    if (
+                        Number(message.sender_id || 0) !==
+                        Number(this.authUser?.id || 0)
+                    ) {
                         this.playReceiveSound();
                     }
 
                     this.handleIncomingDirectMessage(message);
                 })
-                .listen('.direct-message.updated', (event) => {
+                .listen(".direct-message.updated", (event) => {
                     const payload = event?.payload || {};
                     const message = payload.message || null;
                     if (!message) return;
@@ -2872,14 +4097,18 @@ export default {
                         payload.conversation_preview || null,
                     );
                 })
-                .listen('.direct-message.typing', (event) => {
+                .listen(".direct-message.typing", (event) => {
                     const payload = event?.payload || {};
                     const activeUserId = Number(this.activeUser?.id || 0);
                     const senderId = Number(payload.sender_id || 0);
 
-                    if (!payload.is_typing || !activeUserId || senderId !== activeUserId) {
+                    if (
+                        !payload.is_typing ||
+                        !activeUserId ||
+                        senderId !== activeUserId
+                    ) {
                         this.typingIndicator = false;
-                        this.typingIndicatorSenderName = '';
+                        this.typingIndicatorSenderName = "";
 
                         if (this.typingIndicatorTimer) {
                             window.clearTimeout(this.typingIndicatorTimer);
@@ -2890,7 +4119,7 @@ export default {
                     }
 
                     this.typingIndicator = true;
-                    this.typingIndicatorSenderName = '';
+                    this.typingIndicatorSenderName = "";
 
                     if (this.typingIndicatorTimer) {
                         window.clearTimeout(this.typingIndicatorTimer);
@@ -2902,7 +4131,9 @@ export default {
                     }, 2500);
 
                     this.$nextTick(() => {
-                        const bodyEl = this.$refs.conversationBody || this.$el.querySelector('.conversation-panel__body');
+                        const bodyEl =
+                            this.$refs.conversationBody ||
+                            this.$el.querySelector(".conversation-panel__body");
                         if (!bodyEl) {
                             return;
                         }
@@ -2915,9 +4146,11 @@ export default {
                         this.updateScrollToBottomButton(bodyEl);
                     });
                 })
-                .listen('.group-chat.typing', (event) => {
+                .listen(".group-chat.typing", (event) => {
                     const payload = event?.payload || {};
-                    const activeGroupId = this.activeConversationIsGroup ? Number(this.activeUser?.id || 0) : 0;
+                    const activeGroupId = this.activeConversationIsGroup
+                        ? Number(this.activeUser?.id || 0)
+                        : 0;
                     const senderId = Number(payload.sender_id || 0);
                     const groupChatId = Number(payload.group_chat_id || 0);
 
@@ -2928,7 +4161,7 @@ export default {
                         senderId === Number(this.authUser?.id || 0)
                     ) {
                         this.typingIndicator = false;
-                        this.typingIndicatorSenderName = '';
+                        this.typingIndicatorSenderName = "";
 
                         if (this.typingIndicatorTimer) {
                             window.clearTimeout(this.typingIndicatorTimer);
@@ -2939,7 +4172,9 @@ export default {
                     }
 
                     this.typingIndicator = true;
-                    this.typingIndicatorSenderName = String(payload.sender_name || '').trim();
+                    this.typingIndicatorSenderName = String(
+                        payload.sender_name || "",
+                    ).trim();
 
                     if (this.typingIndicatorTimer) {
                         window.clearTimeout(this.typingIndicatorTimer);
@@ -2947,12 +4182,14 @@ export default {
 
                     this.typingIndicatorTimer = window.setTimeout(() => {
                         this.typingIndicator = false;
-                        this.typingIndicatorSenderName = '';
+                        this.typingIndicatorSenderName = "";
                         this.typingIndicatorTimer = null;
                     }, 2500);
 
                     this.$nextTick(() => {
-                        const bodyEl = this.$refs.conversationBody || this.$el.querySelector('.conversation-panel__body');
+                        const bodyEl =
+                            this.$refs.conversationBody ||
+                            this.$el.querySelector(".conversation-panel__body");
                         if (!bodyEl) {
                             return;
                         }
@@ -2965,10 +4202,14 @@ export default {
                         this.updateScrollToBottomButton(bodyEl);
                     });
                 })
-                .listen('.direct-message.seen', (event) => {
+                .listen(".direct-message.seen", (event) => {
                     const payload = event?.payload || {};
-                    const threadUserId = Number(payload.reader_id || payload.partner_id || 0);
-                    const selectedUserId = this.activeConversationIsGroup ? 0 : Number(this.activeUser?.id || 0);
+                    const threadUserId = Number(
+                        payload.reader_id || payload.partner_id || 0,
+                    );
+                    const selectedUserId = this.activeConversationIsGroup
+                        ? 0
+                        : Number(this.activeUser?.id || 0);
 
                     if (!threadUserId || selectedUserId !== threadUserId) {
                         return;
@@ -2983,38 +4224,50 @@ export default {
                         return;
                     }
 
-                    this.applySeenReceipt(threadUserId, readAt, [...messageIds]);
+                    this.applySeenReceipt(threadUserId, readAt, [
+                        ...messageIds,
+                    ]);
                 })
-                .listen('.group-chat.seen', (event) => {
+                .listen(".group-chat.seen", (event) => {
                     const payload = event?.payload || {};
                     const groupChatId = Number(payload.group_chat_id || 0);
-                    const readerId = Number(payload.reader_id || payload.reader?.id || 0);
-                    const readAt = payload.read_at || payload.reader?.last_read_at || null;
+                    const readerId = Number(
+                        payload.reader_id || payload.reader?.id || 0,
+                    );
+                    const readAt =
+                        payload.read_at || payload.reader?.last_read_at || null;
 
                     if (!groupChatId || !readerId || !readAt) {
                         return;
                     }
 
-                    this.applyGroupSeenReceipt(groupChatId, payload.reader || null, readAt);
+                    this.applyGroupSeenReceipt(
+                        groupChatId,
+                        payload.reader || null,
+                        readAt,
+                    );
                 })
-                .listen('.group-chat.created', (event) => {
+                .listen(".group-chat.created", (event) => {
                     if (!event?.conversation) {
                         return;
                     }
 
                     this.upsertConversation({
                         ...event.conversation,
-                        conversation_type: 'group',
+                        conversation_type: "group",
                     });
                 })
-                .listen('.group-chat.message-sent', (event) => {
+                .listen(".group-chat.message-sent", (event) => {
                     if (!event?.message || !event?.conversation) {
                         return;
                     }
 
-                    this.handleIncomingGroupMessage(event.message, event.conversation);
+                    this.handleIncomingGroupMessage(
+                        event.message,
+                        event.conversation,
+                    );
                 })
-                .listen('.group-chat.message-updated', (event) => {
+                .listen(".group-chat.message-updated", (event) => {
                     if (!event?.message || !event?.conversation) {
                         return;
                     }
@@ -3025,33 +4278,45 @@ export default {
                         event.pinned_messages || null,
                     );
                 })
-                .listen('.group-chat.updated', (event) => {
+                .listen(".group-chat.updated", (event) => {
                     this.handleGroupConversationUpdated(event);
                 })
-                .listen('.group-chat.request-updated', (event) => {
+                .listen(".group-chat.request-updated", (event) => {
                     if (!event?.request) {
                         return;
                     }
 
                     if (!this.isAdmin) {
-                        if (['approved', 'rejected'].includes(event.action) && Number(event.request?.creator?.id || 0) === Number(this.authUser?.id || 0)) {
+                        if (
+                            ["approved", "rejected"].includes(event.action) &&
+                            Number(event.request?.creator?.id || 0) ===
+                                Number(this.authUser?.id || 0)
+                        ) {
                             this.upsertGroupChatRequestHistory(event.request);
                         }
 
-                        if (event.action === 'approved' && Number(event.request?.creator?.id || 0) === Number(this.authUser?.id || 0)) {
+                        if (
+                            event.action === "approved" &&
+                            Number(event.request?.creator?.id || 0) ===
+                                Number(this.authUser?.id || 0)
+                        ) {
                             this.notify({
-                                type: 'success',
-                                title: 'Group chat approved',
-                                message: `"${event.request?.name || 'Your group chat'}" is now available in your messages.`,
+                                type: "success",
+                                title: "Group chat approved",
+                                message: `"${event.request?.name || "Your group chat"}" is now available in your messages.`,
                                 duration: 4200,
                             });
                         }
 
-                        if (event.action === 'rejected' && Number(event.request?.creator?.id || 0) === Number(this.authUser?.id || 0)) {
+                        if (
+                            event.action === "rejected" &&
+                            Number(event.request?.creator?.id || 0) ===
+                                Number(this.authUser?.id || 0)
+                        ) {
                             this.notify({
-                                type: 'error',
-                                title: 'Group chat request declined',
-                                message: `"${event.request?.name || 'Your group chat'}" was declined by an admin.`,
+                                type: "error",
+                                title: "Group chat request declined",
+                                message: `"${event.request?.name || "Your group chat"}" was declined by an admin.`,
                                 duration: 4200,
                             });
                         }
@@ -3059,7 +4324,10 @@ export default {
                         return;
                     }
 
-                    this.handlePendingGroupChatRequestUpdate(event.action, event.request);
+                    this.handlePendingGroupChatRequestUpdate(
+                        event.action,
+                        event.request,
+                    );
                 });
         },
         bindPresenceLifecycleEvents() {
@@ -3068,15 +4336,18 @@ export default {
             }
 
             this.handlePresencePageHide = () => {
-                this.announcePresence('offline', true);
+                this.announcePresence("offline", true);
             };
 
             this.handlePresenceBeforeUnload = () => {
-                this.announcePresence('offline', true);
+                this.announcePresence("offline", true);
             };
 
-            window.addEventListener('pagehide', this.handlePresencePageHide);
-            window.addEventListener('beforeunload', this.handlePresenceBeforeUnload);
+            window.addEventListener("pagehide", this.handlePresencePageHide);
+            window.addEventListener(
+                "beforeunload",
+                this.handlePresenceBeforeUnload,
+            );
             this.presenceLifecycleBound = true;
         },
         unbindPresenceLifecycleEvents() {
@@ -3085,38 +4356,44 @@ export default {
             }
 
             if (this.handlePresencePageHide) {
-                window.removeEventListener('pagehide', this.handlePresencePageHide);
+                window.removeEventListener(
+                    "pagehide",
+                    this.handlePresencePageHide,
+                );
             }
 
             if (this.handlePresenceBeforeUnload) {
-                window.removeEventListener('beforeunload', this.handlePresenceBeforeUnload);
+                window.removeEventListener(
+                    "beforeunload",
+                    this.handlePresenceBeforeUnload,
+                );
             }
 
             this.handlePresencePageHide = null;
             this.handlePresenceBeforeUnload = null;
             this.presenceLifecycleBound = false;
         },
-        async announcePresence(status = 'online', useKeepAlive = false) {
+        async announcePresence(status = "online", useKeepAlive = false) {
             try {
-                const token = localStorage.getItem('auth_token');
+                const token = localStorage.getItem("auth_token");
                 const headers = {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
                 };
 
                 if (token) {
                     headers.Authorization = `Bearer ${token}`;
                 }
 
-                await fetch('/api/presence', {
-                    method: 'POST',
+                await fetch("/api/presence", {
+                    method: "POST",
                     headers,
-                    credentials: 'same-origin',
+                    credentials: "same-origin",
                     keepalive: useKeepAlive,
                     body: JSON.stringify({ status }),
                 });
             } catch (error) {
-                console.error('Failed to announce presence:', error);
+                console.error("Failed to announce presence:", error);
             }
         },
         playReceiveSound() {
@@ -3125,7 +4402,7 @@ export default {
             this.receiveSound.currentTime = 0;
             const played = this.receiveSound.play();
 
-            if (played && typeof played.catch === 'function') {
+            if (played && typeof played.catch === "function") {
                 played.catch(() => {});
             }
         },
@@ -3135,11 +4412,15 @@ export default {
             this.sendSound.currentTime = 0;
             const played = this.sendSound.play();
 
-            if (played && typeof played.catch === 'function') {
+            if (played && typeof played.catch === "function") {
                 played.catch(() => {});
             }
         },
-        handleIncomingDirectMessage(message, pinnedMessages = null, conversationPreview = null) {
+        handleIncomingDirectMessage(
+            message,
+            pinnedMessages = null,
+            conversationPreview = null,
+        ) {
             if (!message?.id) {
                 return;
             }
@@ -3148,21 +4429,29 @@ export default {
             const senderId = Number(message.sender_id || 0);
             const recipientId = Number(message.recipient_id || 0);
             const partnerId = senderId === authUserId ? recipientId : senderId;
-            const activeConversationKey = this.activeUser?.conversation_key || null;
+            const activeConversationKey =
+                this.activeUser?.conversation_key || null;
             const targetConversationKey = `direct:${partnerId}`;
-            const isActiveConversation = activeConversationKey === targetConversationKey;
-            const targetUser = this.users.find((user) => user.conversation_key === targetConversationKey);
+            const isActiveConversation =
+                activeConversationKey === targetConversationKey;
+            const targetUser = this.users.find(
+                (user) => user.conversation_key === targetConversationKey,
+            );
             const snippet = this.getMessageSnippet(message);
             const hasExistingMessage = this.messages.some(
                 (item) => Number(item.id) === Number(message.id),
             );
 
             if (targetUser) {
-                targetUser.latest_at = message.created_at || new Date().toISOString();
+                targetUser.latest_at =
+                    message.created_at || new Date().toISOString();
                 targetUser.preview = snippet;
-                targetUser.unread_count = senderId === authUserId
-                    ? 0
-                    : (isActiveConversation ? 0 : Number(targetUser.unread_count || 0) + 1);
+                targetUser.unread_count =
+                    senderId === authUserId
+                        ? 0
+                        : isActiveConversation
+                          ? 0
+                          : Number(targetUser.unread_count || 0) + 1;
                 targetUser.is_unread = Number(targetUser.unread_count || 0) > 0;
             }
 
@@ -3170,7 +4459,10 @@ export default {
                 this.upsertLocalMessage({
                     ...message,
                     is_mine: senderId === authUserId,
-                    read_at: senderId === authUserId ? null : message.read_at ?? null,
+                    read_at:
+                        senderId === authUserId
+                            ? null
+                            : (message.read_at ?? null),
                 });
 
                 if (message.is_unsent) {
@@ -3182,17 +4474,23 @@ export default {
                 }
 
                 if (conversationPreview?.preview && targetUser) {
-                    this.applyConversationPreview(targetUser, conversationPreview);
+                    this.applyConversationPreview(
+                        targetUser,
+                        conversationPreview,
+                    );
                 }
 
                 if (!hasExistingMessage) {
-                    if (message?.attachment?.type === 'image') {
+                    if (message?.attachment?.type === "image") {
                         this.pendingImageAutoScrollCount += 1;
                     }
                     this.scrollConversationToBottom();
                 }
 
-                if (senderId !== authUserId && this.isConversationPanelVisible()) {
+                if (
+                    senderId !== authUserId &&
+                    this.isConversationPanelVisible()
+                ) {
                     this.markConversationSeen(partnerId);
                 }
                 return;
@@ -3200,31 +4498,50 @@ export default {
 
             if (targetUser) {
                 if (conversationPreview?.preview) {
-                    this.applyConversationPreview(targetUser, conversationPreview);
+                    this.applyConversationPreview(
+                        targetUser,
+                        conversationPreview,
+                    );
                 }
                 this.syncUsersOnlineState();
             }
         },
-        handleIncomingGroupMessage(message, conversation, pinnedMessages = null) {
-            const conversationKey = conversation?.conversation_key || `group:${conversation?.id || message?.group_chat_id}`;
-            const isActiveConversation = this.selectedConversationKey === conversationKey;
-            const hasExistingMessage = this.messages.some((item) => Number(item.id) === Number(message.id));
+        handleIncomingGroupMessage(
+            message,
+            conversation,
+            pinnedMessages = null,
+        ) {
+            const conversationKey =
+                conversation?.conversation_key ||
+                `group:${conversation?.id || message?.group_chat_id}`;
+            const isActiveConversation =
+                this.selectedConversationKey === conversationKey;
+            const hasExistingMessage = this.messages.some(
+                (item) => Number(item.id) === Number(message.id),
+            );
             const authUserId = Number(this.authUser?.id || 0);
             const senderId = Number(message?.sender_id || 0);
 
             this.upsertConversation({
                 ...conversation,
-                conversation_type: 'group',
+                conversation_type: "group",
             });
 
-            const targetConversation = this.users.find((user) => user.conversation_key === conversationKey);
+            const targetConversation = this.users.find(
+                (user) => user.conversation_key === conversationKey,
+            );
             if (targetConversation) {
-                targetConversation.latest_at = message?.created_at || new Date().toISOString();
+                targetConversation.latest_at =
+                    message?.created_at || new Date().toISOString();
                 targetConversation.preview = this.getMessageSnippet(message);
-                targetConversation.unread_count = senderId === authUserId
-                    ? 0
-                    : (isActiveConversation ? 0 : Number(targetConversation.unread_count || 0) + 1);
-                targetConversation.is_unread = Number(targetConversation.unread_count || 0) > 0;
+                targetConversation.unread_count =
+                    senderId === authUserId
+                        ? 0
+                        : isActiveConversation
+                          ? 0
+                          : Number(targetConversation.unread_count || 0) + 1;
+                targetConversation.is_unread =
+                    Number(targetConversation.unread_count || 0) > 0;
             }
 
             if (!isActiveConversation) {
@@ -3245,7 +4562,7 @@ export default {
             }
 
             if (!hasExistingMessage) {
-                if (message?.attachment?.type === 'image') {
+                if (message?.attachment?.type === "image") {
                     this.pendingImageAutoScrollCount += 1;
                 }
                 this.scrollConversationToBottom();
@@ -3261,7 +4578,9 @@ export default {
             const authUserId = Number(this.authUser?.id || 0);
 
             if (removedUserId && removedUserId === authUserId) {
-                const conversationKey = conversation?.conversation_key || `group:${conversation?.id || this.activeUser?.id || 0}`;
+                const conversationKey =
+                    conversation?.conversation_key ||
+                    `group:${conversation?.id || this.activeUser?.id || 0}`;
                 this.removeConversation(conversationKey);
                 return;
             }
@@ -3269,7 +4588,7 @@ export default {
             if (conversation?.conversation_key) {
                 this.upsertConversation({
                     ...conversation,
-                    conversation_type: 'group',
+                    conversation_type: "group",
                 });
             }
         },
@@ -3278,9 +4597,11 @@ export default {
                 ...request,
                 id: Number(request.id),
             };
-            const existingIndex = this.pendingGroupChatApprovals.findIndex((item) => Number(item.id) === Number(normalizedRequest.id));
+            const existingIndex = this.pendingGroupChatApprovals.findIndex(
+                (item) => Number(item.id) === Number(normalizedRequest.id),
+            );
 
-            if (action === 'created') {
+            if (action === "created") {
                 if (existingIndex === -1) {
                     this.pendingGroupChatApprovals.unshift(normalizedRequest);
                     return;
@@ -3306,7 +4627,9 @@ export default {
                 ...request,
                 id: Number(request.id),
             };
-            const existingIndex = this.groupChatRequestHistory.findIndex((item) => Number(item.id) === Number(normalizedRequest.id));
+            const existingIndex = this.groupChatRequestHistory.findIndex(
+                (item) => Number(item.id) === Number(normalizedRequest.id),
+            );
 
             if (existingIndex >= 0) {
                 this.groupChatRequestHistory.splice(existingIndex, 1, {
@@ -3317,25 +4640,31 @@ export default {
                 this.groupChatRequestHistory.unshift(normalizedRequest);
             }
 
-            this.groupChatRequestHistory = [...this.groupChatRequestHistory].sort((left, right) => {
-                const leftAt = new Date(left.processed_at || left.created_at || 0).getTime();
-                const rightAt = new Date(right.processed_at || right.created_at || 0).getTime();
+            this.groupChatRequestHistory = [
+                ...this.groupChatRequestHistory,
+            ].sort((left, right) => {
+                const leftAt = new Date(
+                    left.processed_at || left.created_at || 0,
+                ).getTime();
+                const rightAt = new Date(
+                    right.processed_at || right.created_at || 0,
+                ).getTime();
 
                 return rightAt - leftAt;
             });
         },
         formatRequestStatus(status) {
-            const normalizedStatus = String(status || '').toLowerCase();
+            const normalizedStatus = String(status || "").toLowerCase();
 
-            if (normalizedStatus === 'approved') {
-                return 'Approved';
+            if (normalizedStatus === "approved") {
+                return "Approved";
             }
 
-            if (normalizedStatus === 'rejected') {
-                return 'Rejected';
+            if (normalizedStatus === "rejected") {
+                return "Rejected";
             }
 
-            return 'Pending';
+            return "Pending";
         },
         openApprovedRequestConversation(request) {
             if (!request?.id) {
@@ -3343,13 +4672,16 @@ export default {
             }
 
             const targetConversationKey = `group:${Number(request.id)}`;
-            const targetConversation = this.users.find((user) => user.conversation_key === targetConversationKey);
+            const targetConversation = this.users.find(
+                (user) => user.conversation_key === targetConversationKey,
+            );
 
             if (!targetConversation) {
                 this.notify({
-                    type: 'error',
-                    title: 'Conversation unavailable',
-                    message: 'This approved group chat is not ready in your current conversation list yet.',
+                    type: "error",
+                    title: "Conversation unavailable",
+                    message:
+                        "This approved group chat is not ready in your current conversation list yet.",
                     duration: 3600,
                 });
                 return;
@@ -3386,7 +4718,9 @@ export default {
             this.onlineUsersLeavingListener = (user) => {
                 const userId = Number(user.id);
 
-                this.onlineUserIds = this.onlineUserIds.filter((id) => id !== userId);
+                this.onlineUserIds = this.onlineUserIds.filter(
+                    (id) => id !== userId,
+                );
                 this.markUserSeen(userId);
                 this.syncUsersOnlineState();
             };
@@ -3394,31 +4728,36 @@ export default {
             this.onlineUsersUpdatedListener = (event) => {
                 const payload = event?.payload || event || {};
                 const presenceUser = payload.user || null;
-                const status = payload.status || '';
+                const status = payload.status || "";
                 const userId = Number(presenceUser?.id || 0);
 
                 if (!userId) {
                     return;
                 }
 
-                if (status === 'online') {
+                if (status === "online") {
                     if (!this.onlineUserIds.includes(userId)) {
                         this.onlineUserIds.push(userId);
                     }
-                } else if (status === 'offline') {
-                    this.onlineUserIds = this.onlineUserIds.filter((id) => id !== userId);
+                } else if (status === "offline") {
+                    this.onlineUserIds = this.onlineUserIds.filter(
+                        (id) => id !== userId,
+                    );
                 }
 
                 this.markUserSeen(userId);
                 this.syncUsersOnlineState();
             };
 
-            this.onlineUsersChannel = window.Echo.join('online-users')
+            this.onlineUsersChannel = window.Echo.join("online-users")
                 .here(this.onlineUsersHereListener)
                 .joining(this.onlineUsersJoiningListener)
                 .leaving(this.onlineUsersLeavingListener);
 
-            this.onlineUsersChannel.listen('.online-users.updated', this.onlineUsersUpdatedListener);
+            this.onlineUsersChannel.listen(
+                ".online-users.updated",
+                this.onlineUsersUpdatedListener,
+            );
         },
         hydrateOnlineUsersFromSharedState() {
             const sharedIds = window.__onlineUsersPresence?.onlineUserIds || [];
@@ -3427,7 +4766,9 @@ export default {
                 return;
             }
 
-            this.onlineUserIds = [...new Set(sharedIds.map((id) => Number(id)))];
+            this.onlineUserIds = [
+                ...new Set(sharedIds.map((id) => Number(id))),
+            ];
             this.onlineUsersResolved = true;
             this.syncUsersOnlineState();
         },
@@ -3443,19 +4784,27 @@ export default {
                     return;
                 }
 
-                this.onlineUserIds = [...new Set(sharedIds.map((id) => Number(id)))];
+                this.onlineUserIds = [
+                    ...new Set(sharedIds.map((id) => Number(id))),
+                ];
                 this.onlineUsersResolved = true;
                 this.syncUsersOnlineState();
             };
 
-            window.addEventListener('online-users:updated', this.sharedOnlineUsersListener);
+            window.addEventListener(
+                "online-users:updated",
+                this.sharedOnlineUsersListener,
+            );
         },
         unbindSharedOnlineUsersListener() {
             if (!this.sharedOnlineUsersListener) {
                 return;
             }
 
-            window.removeEventListener('online-users:updated', this.sharedOnlineUsersListener);
+            window.removeEventListener(
+                "online-users:updated",
+                this.sharedOnlineUsersListener,
+            );
             this.sharedOnlineUsersListener = null;
         },
         teardownOnlineUsersListeners() {
@@ -3464,22 +4813,34 @@ export default {
             }
 
             if (this.onlineUsersHereListener) {
-                this.onlineUsersChannel.stopListening('pusher:subscription_succeeded', this.onlineUsersHereListener);
+                this.onlineUsersChannel.stopListening(
+                    "pusher:subscription_succeeded",
+                    this.onlineUsersHereListener,
+                );
                 this.onlineUsersHereListener = null;
             }
 
             if (this.onlineUsersJoiningListener) {
-                this.onlineUsersChannel.stopListening('pusher:member_added', this.onlineUsersJoiningListener);
+                this.onlineUsersChannel.stopListening(
+                    "pusher:member_added",
+                    this.onlineUsersJoiningListener,
+                );
                 this.onlineUsersJoiningListener = null;
             }
 
             if (this.onlineUsersLeavingListener) {
-                this.onlineUsersChannel.stopListening('pusher:member_removed', this.onlineUsersLeavingListener);
+                this.onlineUsersChannel.stopListening(
+                    "pusher:member_removed",
+                    this.onlineUsersLeavingListener,
+                );
                 this.onlineUsersLeavingListener = null;
             }
 
             if (this.onlineUsersUpdatedListener) {
-                this.onlineUsersChannel.stopListening('.online-users.updated', this.onlineUsersUpdatedListener);
+                this.onlineUsersChannel.stopListening(
+                    ".online-users.updated",
+                    this.onlineUsersUpdatedListener,
+                );
                 this.onlineUsersUpdatedListener = null;
             }
 
@@ -3487,7 +4848,9 @@ export default {
         },
         getLastSeenStore() {
             try {
-                return JSON.parse(localStorage.getItem('online-users-last-seen') || '{}');
+                return JSON.parse(
+                    localStorage.getItem("online-users-last-seen") || "{}",
+                );
             } catch (error) {
                 return {};
             }
@@ -3500,12 +4863,18 @@ export default {
                 store[Number(id)] = now;
             });
 
-            localStorage.setItem('online-users-last-seen', JSON.stringify(store));
+            localStorage.setItem(
+                "online-users-last-seen",
+                JSON.stringify(store),
+            );
         },
         markUserSeen(userId) {
             const store = this.getLastSeenStore();
             store[Number(userId)] = Date.now();
-            localStorage.setItem('online-users-last-seen', JSON.stringify(store));
+            localStorage.setItem(
+                "online-users-last-seen",
+                JSON.stringify(store),
+            );
         },
         getLastSeen(userId) {
             const store = this.getLastSeenStore();
@@ -3513,7 +4882,7 @@ export default {
         },
         syncUsersOnlineState() {
             this.users = this.users.map((user) => {
-                if (user.conversation_type === 'group') {
+                if (user.conversation_type === "group") {
                     const activityState = this.getGroupActivityState(user);
 
                     return {
@@ -3528,7 +4897,10 @@ export default {
                     return user;
                 }
 
-                const activityState = this.getActivityState(user.id, user.latest_at);
+                const activityState = this.getActivityState(
+                    user.id,
+                    user.latest_at,
+                );
 
                 return {
                     ...user,
@@ -3539,16 +4911,29 @@ export default {
             });
         },
         getGroupActivityState(user) {
-            const memberIds = Array.isArray(user?.member_ids) ? user.member_ids.map((id) => Number(id)) : [];
+            const memberIds = Array.isArray(user?.member_ids)
+                ? user.member_ids.map((id) => Number(id))
+                : [];
             const authUserId = Number(this.authUser?.id || 0);
-            const otherMemberIds = memberIds.filter((id) => id && id !== authUserId);
-            const onlineUserIds = Array.isArray(this.onlineUserIds) ? this.onlineUserIds : [];
-            const onlineOthers = otherMemberIds.filter((id) => onlineUserIds.includes(id));
-            const totalMembers = Number(user?.member_count || memberIds.length || 0);
+            const otherMemberIds = memberIds.filter(
+                (id) => id && id !== authUserId,
+            );
+            const onlineUserIds = Array.isArray(this.onlineUserIds)
+                ? this.onlineUserIds
+                : [];
+            const onlineOthers = otherMemberIds.filter((id) =>
+                onlineUserIds.includes(id),
+            );
+            const totalMembers = Number(
+                user?.member_count || memberIds.length || 0,
+            );
 
             if (onlineOthers.length > 0) {
                 return {
-                    label: onlineOthers.length === 1 ? '1 member online' : `${onlineOthers.length} members online`,
+                    label:
+                        onlineOthers.length === 1
+                            ? "1 member online"
+                            : `${onlineOthers.length} members online`,
                     isActive: true,
                     lastSeenAt: Date.now(),
                 };
@@ -3565,24 +4950,29 @@ export default {
                 return false;
             }
 
-            if (user.conversation_type === 'group') {
+            if (user.conversation_type === "group") {
                 return this.getGroupActivityState(user).isActive;
             }
 
-            const onlineUserIds = Array.isArray(this.onlineUserIds) ? this.onlineUserIds : [];
-            return onlineUserIds.includes(Number(user.id)) || Boolean(user.is_active);
+            const onlineUserIds = Array.isArray(this.onlineUserIds)
+                ? this.onlineUserIds
+                : [];
+            return (
+                onlineUserIds.includes(Number(user.id)) ||
+                Boolean(user.is_active)
+            );
         },
         getConversationStatusLabel(user) {
             if (!user) {
-                return 'Offline';
+                return "Offline";
             }
 
-            if (user.conversation_type === 'group') {
+            if (user.conversation_type === "group") {
                 return this.getGroupActivityState(user).label;
             }
 
             if (this.isConversationOnline(user)) {
-                return 'Online';
+                return "Online";
             }
 
             return this.getActivityState(user.id).label;
@@ -3592,18 +4982,24 @@ export default {
                 return member.profile;
             }
 
-            const name = member?.name || 'User';
+            const name = member?.name || "User";
             return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true`;
         },
         getRequestMemberPreview(members = []) {
             return members.slice(0, 10);
         },
         toggleGroupRequestTooltip(requestId) {
-            this.activeGroupRequestTooltipId = this.activeGroupRequestTooltipId === requestId ? null : requestId;
+            this.activeGroupRequestTooltipId =
+                this.activeGroupRequestTooltipId === requestId
+                    ? null
+                    : requestId;
         },
-        selectUser(user, { updateHistory = true, historyMode = 'push' } = {}) {
+        selectUser(user, { updateHistory = true, historyMode = "push" } = {}) {
             this.contactActionMenuKey = null;
-            if (!user || user.conversation_key === this.selectedConversationKey) {
+            if (
+                !user ||
+                user.conversation_key === this.selectedConversationKey
+            ) {
                 this.closeMobileUsersPanel();
                 return;
             }
@@ -3612,7 +5008,7 @@ export default {
             this.clearTypingTimers();
             this.typingIndicator = false;
             this.selectedConversationKey = user.conversation_key;
-            this.conversationError = '';
+            this.conversationError = "";
             this.resetConversationState();
             this.showPinnedMessagesPanel = false;
             this.showComposerEmojiPicker = false;
@@ -3656,9 +5052,10 @@ export default {
                 return;
             }
 
-            this.contactActionMenuKey = this.contactActionMenuKey === conversationKey
-                ? null
-                : conversationKey;
+            this.contactActionMenuKey =
+                this.contactActionMenuKey === conversationKey
+                    ? null
+                    : conversationKey;
         },
         openConversationDeleteModal(user) {
             if (!user?.conversation_key) {
@@ -3666,7 +5063,7 @@ export default {
             }
 
             this.contactActionTarget = user;
-            this.conversationDeleteError = '';
+            this.conversationDeleteError = "";
             this.conversationDeleteModalVisible = true;
             this.contactActionMenuKey = null;
         },
@@ -3676,7 +5073,7 @@ export default {
             }
 
             this.conversationDeleteModalVisible = false;
-            this.conversationDeleteError = '';
+            this.conversationDeleteError = "";
             this.contactActionTarget = null;
         },
         applyConversationClear(targetConversation, conversationPreview = null) {
@@ -3684,15 +5081,23 @@ export default {
                 return;
             }
 
-            const preview = conversationPreview?.preview
-                || (targetConversation.conversation_type === 'group'
-                    ? 'Group chat is ready'
-                    : 'Start a conversation');
-            const latestAt = Object.prototype.hasOwnProperty.call(conversationPreview || {}, 'latest_at')
+            const preview =
+                conversationPreview?.preview ||
+                (targetConversation.conversation_type === "group"
+                    ? "Group chat is ready"
+                    : "Start a conversation");
+            const latestAt = Object.prototype.hasOwnProperty.call(
+                conversationPreview || {},
+                "latest_at",
+            )
                 ? conversationPreview.latest_at
                 : null;
 
-            const targetUser = this.users.find((item) => item.conversation_key === targetConversation.conversation_key);
+            const targetUser = this.users.find(
+                (item) =>
+                    item.conversation_key ===
+                    targetConversation.conversation_key,
+            );
 
             if (targetUser) {
                 targetUser.preview = preview;
@@ -3701,11 +5106,14 @@ export default {
                 targetUser.is_unread = false;
             }
 
-            if (this.selectedConversationKey === targetConversation.conversation_key) {
+            if (
+                this.selectedConversationKey ===
+                targetConversation.conversation_key
+            ) {
                 this.messages = [];
                 this.pinnedMessages = [];
                 this.typingIndicator = false;
-                this.typingIndicatorSenderName = '';
+                this.typingIndicatorSenderName = "";
                 this.clearSelectedMessage();
                 this.clearReplyTarget();
                 this.showPinnedMessagesPanel = false;
@@ -3715,44 +5123,66 @@ export default {
             this.scheduleMessagesCachePersist();
         },
         async confirmDeleteConversationMessages() {
-            if (!this.contactActionTarget?.id || this.conversationDeleteSubmitting) {
+            if (
+                !this.contactActionTarget?.id ||
+                this.conversationDeleteSubmitting
+            ) {
                 return;
             }
 
             this.conversationDeleteSubmitting = true;
-            this.conversationDeleteError = '';
+            this.conversationDeleteError = "";
 
             try {
                 const target = this.contactActionTarget;
-                const endpoint = target.conversation_type === 'group'
-                    ? `/api/group-chats/${target.id}/messages`
-                    : `/api/direct-messages/conversation/${target.id}`;
+                const endpoint =
+                    target.conversation_type === "group"
+                        ? `/api/group-chats/${target.id}/messages`
+                        : `/api/direct-messages/conversation/${target.id}`;
                 const { data } = await axios.delete(endpoint, {
                     headers: this.buildAuthHeaders(),
                 });
 
-                this.applyConversationClear(target, data?.conversation_preview || null);
+                this.applyConversationClear(
+                    target,
+                    data?.conversation_preview || null,
+                );
                 this.conversationDeleteSubmitting = false;
                 this.closeConversationDeleteModal();
             } catch (error) {
-                this.conversationDeleteError = error?.response?.data?.message || 'Unable to delete your copy of this conversation.';
+                this.conversationDeleteError =
+                    error?.response?.data?.message ||
+                    "Unable to delete your copy of this conversation.";
                 this.conversationDeleteSubmitting = false;
             }
         },
-        async loadConversation(conversationOrId, { page = 1, preserveScroll = false, preserveVisibleState = false } = {}) {
+        async loadConversation(
+            conversationOrId,
+            {
+                page = 1,
+                preserveScroll = false,
+                preserveVisibleState = false,
+            } = {},
+        ) {
             this.ensureAuthHeaders();
 
-            const user = typeof conversationOrId === 'object'
-                ? conversationOrId
-                : this.users.find((item) => Number(item.id) === Number(conversationOrId));
+            const user =
+                typeof conversationOrId === "object"
+                    ? conversationOrId
+                    : this.users.find(
+                          (item) =>
+                              Number(item.id) === Number(conversationOrId),
+                      );
             if (!user) return;
 
             this.clearTypingTimers();
             this.typingIndicator = false;
             const isOlderLoad = page > 1;
             const bodyEl = this.$refs.conversationBody;
-            const previousScrollHeight = preserveScroll && bodyEl ? bodyEl.scrollHeight : 0;
-            const previousScrollTop = preserveScroll && bodyEl ? bodyEl.scrollTop : 0;
+            const previousScrollHeight =
+                preserveScroll && bodyEl ? bodyEl.scrollHeight : 0;
+            const previousScrollTop =
+                preserveScroll && bodyEl ? bodyEl.scrollTop : 0;
 
             if (isOlderLoad) {
                 this.loadingOlderConversation = true;
@@ -3761,7 +5191,7 @@ export default {
                 this.loadingOlderConversation = false;
             }
 
-            this.conversationError = '';
+            this.conversationError = "";
             if (page === 1) {
                 if (!preserveVisibleState) {
                     this.messages = [];
@@ -3779,16 +5209,17 @@ export default {
             this.clearSelectedMessage();
 
             try {
-                const url = user.conversation_type === 'group'
-                    ? `/api/group-chats/${user.id}`
-                    : `/api/direct-messages/${user.id}`;
+                const url =
+                    user.conversation_type === "group"
+                        ? `/api/group-chats/${user.id}`
+                        : `/api/direct-messages/${user.id}`;
                 const { data } = await axios.get(url, {
                     params: {
                         page,
                         per_page: 20,
                     },
                     headers: {
-                        Accept: 'application/json',
+                        Accept: "application/json",
                     },
                 });
 
@@ -3797,7 +5228,9 @@ export default {
                 }
 
                 const messages = Array.isArray(data.messages)
-                    ? data.messages.map((message) => this.normalizeMessage(message))
+                    ? data.messages.map((message) =>
+                          this.normalizeMessage(message),
+                      )
                     : [];
                 const pagination = data.pagination ?? {};
                 this.conversationPage = pagination.current_page ?? page;
@@ -3807,32 +5240,61 @@ export default {
                 if (page === 1) {
                     this.messages = messages;
                 } else if (messages.length > 0) {
-                    const existingIds = new Set(this.messages.map((item) => Number(item.id)));
-                    const olderMessages = messages.filter((message) => !existingIds.has(Number(message.id)));
+                    const existingIds = new Set(
+                        this.messages.map((item) => Number(item.id)),
+                    );
+                    const olderMessages = messages.filter(
+                        (message) => !existingIds.has(Number(message.id)),
+                    );
                     this.messages = [...olderMessages, ...this.messages];
                 }
 
-                this.pinnedMessages = Array.isArray(data.pinned_messages) ? data.pinned_messages : [];
+                this.pinnedMessages = Array.isArray(data.pinned_messages)
+                    ? data.pinned_messages
+                    : [];
                 user.unread_count = 0;
                 user.is_unread = false;
-                user.preview = this.messages.length > 0
-                    ? this.getMessageSnippet(this.messages[this.messages.length - 1] || null)
-                    : (user.conversation_type === 'group' ? 'Group chat is ready' : 'Start a conversation');
-                if (user.conversation_type === 'group') {
-                    user.members = Array.isArray(data?.conversation?.members) ? data.conversation.members : [];
+                user.preview =
+                    this.messages.length > 0
+                        ? this.getMessageSnippet(
+                              this.messages[this.messages.length - 1] || null,
+                          )
+                        : user.conversation_type === "group"
+                          ? "Group chat is ready"
+                          : "Start a conversation";
+                if (user.conversation_type === "group") {
+                    user.members = Array.isArray(data?.conversation?.members)
+                        ? data.conversation.members
+                        : [];
                     const activityState = this.getGroupActivityState({
                         ...user,
-                        member_count: Number(user.member_count || data?.conversation?.member_count || 0),
-                        member_ids: Array.isArray(data?.conversation?.member_ids) ? data.conversation.member_ids : user.member_ids,
+                        member_count: Number(
+                            user.member_count ||
+                                data?.conversation?.member_count ||
+                                0,
+                        ),
+                        member_ids: Array.isArray(
+                            data?.conversation?.member_ids,
+                        )
+                            ? data.conversation.member_ids
+                            : user.member_ids,
                     });
-                    user.member_count = Number(user.member_count || data?.conversation?.member_count || 0);
-                    user.member_ids = Array.isArray(data?.conversation?.member_ids)
+                    user.member_count = Number(
+                        user.member_count ||
+                            data?.conversation?.member_count ||
+                            0,
+                    );
+                    user.member_ids = Array.isArray(
+                        data?.conversation?.member_ids,
+                    )
                         ? data.conversation.member_ids.map((id) => Number(id))
-                        : (Array.isArray(user.member_ids) ? user.member_ids : []);
+                        : Array.isArray(user.member_ids)
+                          ? user.member_ids
+                          : [];
                     if (data?.conversation?.conversation_key) {
                         this.upsertConversation({
                             ...data.conversation,
-                            conversation_type: 'group',
+                            conversation_type: "group",
                         });
                     }
                     user.active_label = activityState.label;
@@ -3852,9 +5314,9 @@ export default {
                         {},
                         {
                             headers: {
-                            Accept: 'application/json',
+                                Accept: "application/json",
                             },
-                        }
+                        },
                     );
                 }
 
@@ -3866,7 +5328,10 @@ export default {
 
                     if (isOlderLoad && preserveScroll) {
                         const nextScrollHeight = bodyEl.scrollHeight;
-                        bodyEl.scrollTop = nextScrollHeight - previousScrollHeight + previousScrollTop;
+                        bodyEl.scrollTop =
+                            nextScrollHeight -
+                            previousScrollHeight +
+                            previousScrollTop;
                         this.updateScrollToBottomButton(bodyEl);
                         return;
                     }
@@ -3882,7 +5347,8 @@ export default {
                     }
                 });
             } catch (error) {
-                this.conversationError = error?.response?.data?.message || 'Please try again later.';
+                this.conversationError =
+                    error?.response?.data?.message || "Please try again later.";
                 this.showInitialCacheLoader = false;
             } finally {
                 this.loadingConversation = false;
@@ -3936,15 +5402,15 @@ export default {
                 return;
             }
 
-            this.groupInfoError = '';
-            this.groupInfoPhotoPreview = '';
+            this.groupInfoError = "";
+            this.groupInfoPhotoPreview = "";
             this.groupInfoForm = {
                 name: this.activeConversationIsGroup
-                    ? (this.activeUser.name || '')
-                    : (this.activeUser.actual_name || this.activeUser.name || ''),
+                    ? this.activeUser.name || ""
+                    : this.activeUser.actual_name || this.activeUser.name || "",
                 nickname: this.activeConversationIsGroup
-                    ? (this.activeGroupSelfMember?.nickname || '')
-                    : (this.activeUser.nickname || ''),
+                    ? this.activeGroupSelfMember?.nickname || ""
+                    : this.activeUser.nickname || "",
                 photo: null,
             };
             this.showGroupInfoModal = true;
@@ -3957,7 +5423,7 @@ export default {
             }
 
             this.showGroupInfoModal = false;
-            this.groupInfoError = '';
+            this.groupInfoError = "";
             this.clearGroupInfoPhotoSelection();
             this.resetConversationInfoMedia();
         },
@@ -3967,15 +5433,20 @@ export default {
             this.conversationInfoMediaHasMore = true;
             this.conversationInfoMediaLoading = false;
             this.conversationInfoMediaLoaded = false;
-            this.conversationInfoTab = 'media';
+            this.conversationInfoTab = "media";
         },
         handleConversationInfoScroll(event) {
             const body = event?.target;
-            if (!body || this.conversationInfoMediaLoading || !this.conversationInfoMediaHasMore) {
+            if (
+                !body ||
+                this.conversationInfoMediaLoading ||
+                !this.conversationInfoMediaHasMore
+            ) {
                 return;
             }
 
-            const distanceFromBottom = body.scrollHeight - body.scrollTop - body.clientHeight;
+            const distanceFromBottom =
+                body.scrollHeight - body.scrollTop - body.clientHeight;
             if (distanceFromBottom > 140) {
                 return;
             }
@@ -4006,21 +5477,33 @@ export default {
                 const items = Array.isArray(data?.items)
                     ? data.items.filter((item) => item?.attachment?.url)
                     : [];
-                const existingIds = new Set(this.conversationInfoMediaItems.map((item) => Number(item.message_id)));
+                const existingIds = new Set(
+                    this.conversationInfoMediaItems.map((item) =>
+                        Number(item.message_id),
+                    ),
+                );
                 const normalizedItems = items
                     .map((item) => ({
                         ...item,
                         message_id: Number(item.message_id),
                     }))
-                    .filter((item) => !append || !existingIds.has(Number(item.message_id)));
+                    .filter(
+                        (item) =>
+                            !append ||
+                            !existingIds.has(Number(item.message_id)),
+                    );
 
                 this.conversationInfoMediaItems = append
                     ? [...this.conversationInfoMediaItems, ...normalizedItems]
                     : normalizedItems;
-                this.conversationInfoMediaPage = Number(data?.pagination?.current_page || page);
-                this.conversationInfoMediaHasMore = Boolean(data?.pagination?.has_more);
+                this.conversationInfoMediaPage = Number(
+                    data?.pagination?.current_page || page,
+                );
+                this.conversationInfoMediaHasMore = Boolean(
+                    data?.pagination?.has_more,
+                );
             } catch (error) {
-                console.error('Failed to load shared media:', error);
+                console.error("Failed to load shared media:", error);
                 this.conversationInfoMediaHasMore = false;
             } finally {
                 this.conversationInfoMediaLoading = false;
@@ -4038,13 +5521,14 @@ export default {
                 return;
             }
 
-            if (!file.type?.startsWith('image/')) {
-                this.groupInfoError = 'Please choose an image file for the group photo.';
+            if (!file.type?.startsWith("image/")) {
+                this.groupInfoError =
+                    "Please choose an image file for the group photo.";
                 this.clearGroupInfoPhotoSelection();
                 return;
             }
 
-            this.groupInfoError = '';
+            this.groupInfoError = "";
             this.clearGroupInfoPhotoSelection(false);
             this.groupInfoForm.photo = file;
             this.groupInfoPhotoPreview = URL.createObjectURL(file);
@@ -4052,7 +5536,7 @@ export default {
         clearGroupInfoPhotoSelection(resetInput = true) {
             if (this.groupInfoPhotoPreview) {
                 URL.revokeObjectURL(this.groupInfoPhotoPreview);
-                this.groupInfoPhotoPreview = '';
+                this.groupInfoPhotoPreview = "";
             }
 
             this.groupInfoForm.photo = null;
@@ -4060,31 +5544,38 @@ export default {
             if (resetInput) {
                 const input = this.$refs.groupInfoPhotoInput;
                 if (input) {
-                    input.value = '';
+                    input.value = "";
                 }
             }
         },
         async submitConversationInfo() {
-            if (!this.activeUser?.id || !this.canSubmitGroupInfo || this.groupInfoSubmitting) {
+            if (
+                !this.activeUser?.id ||
+                !this.canSubmitGroupInfo ||
+                this.groupInfoSubmitting
+            ) {
                 return;
             }
 
             this.groupInfoSubmitting = true;
-            this.groupInfoError = '';
+            this.groupInfoError = "";
 
             try {
                 let data = null;
 
                 if (this.activeConversationIsGroup) {
                     const formData = new FormData();
-                    formData.append('name', this.groupInfoForm.name.trim());
+                    formData.append("name", this.groupInfoForm.name.trim());
 
                     if (this.groupInfoForm.nickname.trim()) {
-                        formData.append('nickname', this.groupInfoForm.nickname.trim());
+                        formData.append(
+                            "nickname",
+                            this.groupInfoForm.nickname.trim(),
+                        );
                     }
 
                     if (this.groupInfoForm.photo) {
-                        formData.append('photo', this.groupInfoForm.photo);
+                        formData.append("photo", this.groupInfoForm.photo);
                     }
 
                     ({ data } = await axios.post(
@@ -4098,7 +5589,8 @@ export default {
                     ({ data } = await axios.post(
                         `/api/direct-messages/${this.activeUser.id}/info`,
                         {
-                            nickname: this.groupInfoForm.nickname.trim() || null,
+                            nickname:
+                                this.groupInfoForm.nickname.trim() || null,
                         },
                         {
                             headers: this.buildAuthHeaders(),
@@ -4109,12 +5601,16 @@ export default {
                 const selectedConversation = this.activeUser;
 
                 if (data?.conversation) {
-                    this.upsertConversation(this.activeConversationIsGroup
-                        ? {
-                            ...data.conversation,
-                            members: Array.isArray(data?.members) ? data.members : data.conversation.members,
-                        }
-                        : data.conversation);
+                    this.upsertConversation(
+                        this.activeConversationIsGroup
+                            ? {
+                                  ...data.conversation,
+                                  members: Array.isArray(data?.members)
+                                      ? data.members
+                                      : data.conversation.members,
+                              }
+                            : data.conversation,
+                    );
                 }
 
                 this.groupInfoSubmitting = false;
@@ -4125,13 +5621,17 @@ export default {
                         {
                             ...selectedConversation,
                             ...(data?.conversation || {}),
-                            members: Array.isArray(data?.members) ? data.members : selectedConversation.members,
+                            members: Array.isArray(data?.members)
+                                ? data.members
+                                : selectedConversation.members,
                         },
                         { page: 1 },
                     );
                 }
             } catch (error) {
-                this.groupInfoError = error?.response?.data?.message || 'Unable to update conversation info.';
+                this.groupInfoError =
+                    error?.response?.data?.message ||
+                    "Unable to update conversation info.";
             } finally {
                 this.groupInfoSubmitting = false;
             }
@@ -4141,8 +5641,8 @@ export default {
                 return;
             }
 
-            this.groupInviteError = '';
-            this.groupInviteSearch = '';
+            this.groupInviteError = "";
+            this.groupInviteSearch = "";
             this.groupInviteMemberIds = [];
             this.showInviteMembersModal = true;
         },
@@ -4152,8 +5652,8 @@ export default {
             }
 
             this.showInviteMembersModal = false;
-            this.groupInviteError = '';
-            this.groupInviteSearch = '';
+            this.groupInviteError = "";
+            this.groupInviteSearch = "";
             this.groupInviteMemberIds = [];
         },
         openLeaveGroupModal() {
@@ -4161,7 +5661,7 @@ export default {
                 return;
             }
 
-            this.leaveGroupError = '';
+            this.leaveGroupError = "";
             this.showLeaveGroupModal = true;
         },
         closeLeaveGroupModal() {
@@ -4170,25 +5670,35 @@ export default {
             }
 
             this.showLeaveGroupModal = false;
-            this.leaveGroupError = '';
+            this.leaveGroupError = "";
         },
         toggleInviteMember(userId) {
             const normalizedId = Number(userId);
 
             if (this.groupInviteMemberIds.includes(normalizedId)) {
-                this.groupInviteMemberIds = this.groupInviteMemberIds.filter((id) => id !== normalizedId);
+                this.groupInviteMemberIds = this.groupInviteMemberIds.filter(
+                    (id) => id !== normalizedId,
+                );
                 return;
             }
 
-            this.groupInviteMemberIds = [...this.groupInviteMemberIds, normalizedId];
+            this.groupInviteMemberIds = [
+                ...this.groupInviteMemberIds,
+                normalizedId,
+            ];
         },
         async submitInviteMembers() {
-            if (!this.activeConversationIsGroup || !this.activeUser?.id || this.groupInviteMemberIds.length === 0 || this.groupInviteSubmitting) {
+            if (
+                !this.activeConversationIsGroup ||
+                !this.activeUser?.id ||
+                this.groupInviteMemberIds.length === 0 ||
+                this.groupInviteSubmitting
+            ) {
                 return;
             }
 
             this.groupInviteSubmitting = true;
-            this.groupInviteError = '';
+            this.groupInviteError = "";
 
             try {
                 const { data } = await axios.post(
@@ -4208,7 +5718,9 @@ export default {
                 this.groupInviteSubmitting = false;
                 this.closeInviteMembersModal();
             } catch (error) {
-                this.groupInviteError = error?.response?.data?.message || 'Unable to invite members.';
+                this.groupInviteError =
+                    error?.response?.data?.message ||
+                    "Unable to invite members.";
             } finally {
                 this.groupInviteSubmitting = false;
             }
@@ -4222,7 +5734,7 @@ export default {
             }
 
             this.leaveGroupSubmitting = true;
-            this.leaveGroupError = '';
+            this.leaveGroupError = "";
 
             try {
                 const { data } = await axios.post(
@@ -4236,9 +5748,13 @@ export default {
                 this.closeGroupMembersModal();
                 this.closeInviteMembersModal();
                 this.closeLeaveGroupModal();
-                this.removeConversation(data?.conversation_key || this.activeUser.conversation_key);
+                this.removeConversation(
+                    data?.conversation_key || this.activeUser.conversation_key,
+                );
             } catch (error) {
-                this.leaveGroupError = error?.response?.data?.message || 'Unable to leave group chat.';
+                this.leaveGroupError =
+                    error?.response?.data?.message ||
+                    "Unable to leave group chat.";
             } finally {
                 this.leaveGroupSubmitting = false;
             }
@@ -4255,7 +5771,7 @@ export default {
             }
 
             this.typingIndicator = false;
-            this.typingIndicatorSenderName = '';
+            this.typingIndicatorSenderName = "";
             this.typingStateActive = false;
         },
         sendTypingState(isTyping) {
@@ -4281,15 +5797,17 @@ export default {
                     return;
                 }
 
-                axios.post(
-                    endpoint,
-                    { is_typing: true },
-                    {
-                        headers: this.buildAuthHeaders(),
-                    }
-                ).catch((error) => {
-                    console.error('Failed to send typing state:', error);
-                });
+                axios
+                    .post(
+                        endpoint,
+                        { is_typing: true },
+                        {
+                            headers: this.buildAuthHeaders(),
+                        },
+                    )
+                    .catch((error) => {
+                        console.error("Failed to send typing state:", error);
+                    });
 
                 this.typingStateActive = true;
 
@@ -4315,21 +5833,27 @@ export default {
 
             this.typingStateActive = false;
 
-            axios.post(
-                endpoint,
-                { is_typing: false },
-                {
-                    headers: this.buildAuthHeaders(),
-                }
-            ).catch((error) => {
-                console.error('Failed to clear typing state:', error);
-            });
+            axios
+                .post(
+                    endpoint,
+                    { is_typing: false },
+                    {
+                        headers: this.buildAuthHeaders(),
+                    },
+                )
+                .catch((error) => {
+                    console.error("Failed to clear typing state:", error);
+                });
         },
         async sendMessage() {
             this.ensureAuthHeaders();
 
             const body = this.draftMessage.trim();
-            if ((!body && !this.selectedAttachment) || !this.activeUser || this.sendingMessage) {
+            if (
+                (!body && !this.selectedAttachment) ||
+                !this.activeUser ||
+                this.sendingMessage
+            ) {
                 return;
             }
 
@@ -4343,15 +5867,18 @@ export default {
                     const formData = new FormData();
 
                     if (body) {
-                        formData.append('body', body);
+                        formData.append("body", body);
                     }
 
                     if (this.replyTargetMessage?.id) {
-                        formData.append('reply_to_id', this.replyTargetMessage.id);
+                        formData.append(
+                            "reply_to_id",
+                            this.replyTargetMessage.id,
+                        );
                     }
 
                     if (this.selectedAttachment) {
-                        formData.append('attachment', this.selectedAttachment);
+                        formData.append("attachment", this.selectedAttachment);
                     }
 
                     ({ data } = await axios.post(
@@ -4363,27 +5890,34 @@ export default {
                     ));
                 } else {
                     const formData = new FormData();
-                    formData.append('recipient_id', this.activeUser.id);
+                    formData.append("recipient_id", this.activeUser.id);
 
                     if (body) {
-                        formData.append('body', body);
+                        formData.append("body", body);
                     }
 
                     if (this.replyTargetMessage?.id) {
-                        formData.append('reply_to_id', this.replyTargetMessage.id);
+                        formData.append(
+                            "reply_to_id",
+                            this.replyTargetMessage.id,
+                        );
                     }
 
                     if (this.selectedAttachment) {
-                        formData.append('attachment', this.selectedAttachment);
+                        formData.append("attachment", this.selectedAttachment);
                     }
 
-                    ({ data } = await axios.post('/api/direct-messages', formData, {
-                        headers: this.buildAuthHeaders(),
-                    }));
+                    ({ data } = await axios.post(
+                        "/api/direct-messages",
+                        formData,
+                        {
+                            headers: this.buildAuthHeaders(),
+                        },
+                    ));
                 }
 
                 const message = data?.message;
-                this.draftMessage = '';
+                this.draftMessage = "";
                 this.composerSelectionStart = 0;
                 this.composerSelectionEnd = 0;
 
@@ -4393,7 +5927,7 @@ export default {
                         is_mine: true,
                         read_at: null,
                     });
-                    if (message?.attachment?.type === 'image') {
+                    if (message?.attachment?.type === "image") {
                         this.pendingImageAutoScrollCount += 1;
                     }
                     this.playSendSound();
@@ -4429,10 +5963,11 @@ export default {
                     });
                 }
             } catch (error) {
-                const message = error?.response?.data?.message || 'Unable to send message.';
+                const message =
+                    error?.response?.data?.message || "Unable to send message.";
                 this.notify({
-                    type: 'error',
-                    title: 'Message not sent',
+                    type: "error",
+                    title: "Message not sent",
                     message,
                 });
             } finally {
@@ -4477,43 +6012,53 @@ export default {
             this.activeMessageActionsId = null;
         },
         async editMessage(message) {
-            if (!message?.id || !message.is_mine || message.is_unsent || message.is_system) {
+            if (
+                !message?.id ||
+                !message.is_mine ||
+                message.is_unsent ||
+                message.is_system
+            ) {
                 return;
             }
 
-            const currentBody = message.body || '';
+            const currentBody = message.body || "";
             if (!currentBody.trim()) {
                 return;
             }
 
-            this.openMessageActionModal(message, 'edit');
+            this.openMessageActionModal(message, "edit");
         },
         async unsendMessage(message) {
-            if (!message?.id || !message.is_mine || message.is_unsent || message.is_system) {
+            if (
+                !message?.id ||
+                !message.is_mine ||
+                message.is_unsent ||
+                message.is_system
+            ) {
                 return;
             }
 
-            this.openMessageActionModal(message, 'delete');
+            this.openMessageActionModal(message, "delete");
         },
-        openMessageActionModal(message, mode = 'edit') {
+        openMessageActionModal(message, mode = "edit") {
             this.activeMessageActionsId = null;
             this.clearReactionPicker();
-            this.messageActionModalMode = mode === 'delete' ? 'delete' : 'edit';
+            this.messageActionModalMode = mode === "delete" ? "delete" : "edit";
             this.messageActionModalMessage = message || null;
-            this.messageActionModalBody = message?.body || '';
-            this.messageActionModalError = '';
+            this.messageActionModalBody = message?.body || "";
+            this.messageActionModalError = "";
             this.messageActionModalSaving = false;
             this.messageActionModalVisible = true;
 
             this.$nextTick(() => {
                 const input = this.$refs.messageActionModalInput;
 
-                if (this.messageActionModalMode === 'edit' && input?.focus) {
+                if (this.messageActionModalMode === "edit" && input?.focus) {
                     input.focus();
 
                     if (
-                        this.messageActionModalMode === 'edit'
-                        && typeof input.setSelectionRange === 'function'
+                        this.messageActionModalMode === "edit" &&
+                        typeof input.setSelectionRange === "function"
                     ) {
                         const length = input.value?.length || 0;
                         input.setSelectionRange(length, length);
@@ -4527,40 +6072,53 @@ export default {
             }
 
             this.messageActionModalVisible = false;
-            this.messageActionModalMode = 'edit';
+            this.messageActionModalMode = "edit";
             this.messageActionModalMessage = null;
-            this.messageActionModalBody = '';
-            this.messageActionModalError = '';
+            this.messageActionModalBody = "";
+            this.messageActionModalError = "";
             this.messageActionModalSaving = false;
         },
-        openAlertModal({ type = 'error', title = 'Notice', message = '' } = {}) {
-            this.alertModalType = type === 'success' ? 'success' : 'error';
-            this.alertModalTitle = title || 'Notice';
-            this.alertModalMessage = message || '';
+        openAlertModal({
+            type = "error",
+            title = "Notice",
+            message = "",
+        } = {}) {
+            this.alertModalType = type === "success" ? "success" : "error";
+            this.alertModalTitle = title || "Notice";
+            this.alertModalMessage = message || "";
             this.alertModalVisible = true;
         },
         closeAlertModal() {
             this.alertModalVisible = false;
-            this.alertModalType = 'error';
-            this.alertModalTitle = '';
-            this.alertModalMessage = '';
+            this.alertModalType = "error";
+            this.alertModalTitle = "";
+            this.alertModalMessage = "";
         },
-        notify({ type = 'info', title = 'Notice', message = '', duration = 3600 } = {}) {
-            const id = `toast-${Date.now()}-${this.notificationIdCounter += 1}`;
+        notify({
+            type = "info",
+            title = "Notice",
+            message = "",
+            duration = 3600,
+        } = {}) {
+            const id = `toast-${Date.now()}-${(this.notificationIdCounter += 1)}`;
             const timeout = window.setTimeout(() => {
                 this.dismissNotification(id);
             }, duration);
 
             this.notifications.push({
                 id,
-                type: ['success', 'error', 'info'].includes(type) ? type : 'info',
+                type: ["success", "error", "info"].includes(type)
+                    ? type
+                    : "info",
                 title,
                 message,
                 timeout,
             });
         },
         dismissNotification(notificationId) {
-            const index = this.notifications.findIndex((item) => item.id === notificationId);
+            const index = this.notifications.findIndex(
+                (item) => item.id === notificationId,
+            );
 
             if (index === -1) {
                 return;
@@ -4575,31 +6133,36 @@ export default {
             this.notifications.splice(index, 1);
         },
         getNotificationIcon(type) {
-            if (type === 'success') {
-                return 'fa-solid fa-check';
+            if (type === "success") {
+                return "fa-solid fa-check";
             }
 
-            if (type === 'error') {
-                return 'fa-solid fa-triangle-exclamation';
+            if (type === "error") {
+                return "fa-solid fa-triangle-exclamation";
             }
 
-            return 'fa-solid fa-circle-info';
+            return "fa-solid fa-circle-info";
         },
         async submitMessageActionModal() {
-            if (!this.messageActionModalMessage?.id || this.messageActionModalSaving) {
+            if (
+                !this.messageActionModalMessage?.id ||
+                this.messageActionModalSaving
+            ) {
                 return;
             }
 
-            if (this.messageActionModalMode === 'edit') {
+            if (this.messageActionModalMode === "edit") {
                 const trimmedBody = this.messageActionModalBody.trim();
-                const originalBody = (this.messageActionModalMessage.body || '').trim();
+                const originalBody = (
+                    this.messageActionModalMessage.body || ""
+                ).trim();
 
                 if (!trimmedBody || trimmedBody === originalBody) {
                     return;
                 }
 
                 this.messageActionModalSaving = true;
-                this.messageActionModalError = '';
+                this.messageActionModalError = "";
 
                 try {
                     const endpoint = this.activeConversationIsGroup
@@ -4617,13 +6180,21 @@ export default {
                         this.upsertLocalMessage(data.message);
                     }
 
-                    if (data?.conversation_preview?.preview && this.activeUser) {
-                        this.applyConversationPreview(this.activeUser, data.conversation_preview);
+                    if (
+                        data?.conversation_preview?.preview &&
+                        this.activeUser
+                    ) {
+                        this.applyConversationPreview(
+                            this.activeUser,
+                            data.conversation_preview,
+                        );
                     }
 
                     this.closeMessageActionModal(true);
                 } catch (error) {
-                    this.messageActionModalError = error?.response?.data?.message || 'Unable to edit message.';
+                    this.messageActionModalError =
+                        error?.response?.data?.message ||
+                        "Unable to edit message.";
                 } finally {
                     this.messageActionModalSaving = false;
                 }
@@ -4632,7 +6203,7 @@ export default {
             }
 
             this.messageActionModalSaving = true;
-            this.messageActionModalError = '';
+            this.messageActionModalError = "";
 
             try {
                 const endpoint = this.activeConversationIsGroup
@@ -4652,7 +6223,10 @@ export default {
                 this.clearSelectedMessage();
 
                 if (data?.conversation_preview?.preview && this.activeUser) {
-                    this.applyConversationPreview(this.activeUser, data.conversation_preview);
+                    this.applyConversationPreview(
+                        this.activeUser,
+                        data.conversation_preview,
+                    );
                 } else {
                     await this.loadConversation(this.activeUser, { page: 1 });
                 }
@@ -4663,7 +6237,9 @@ export default {
 
                 this.closeMessageActionModal(true);
             } catch (error) {
-                this.messageActionModalError = error?.response?.data?.message || 'Unable to unsend message.';
+                this.messageActionModalError =
+                    error?.response?.data?.message ||
+                    "Unable to unsend message.";
             } finally {
                 this.messageActionModalSaving = false;
             }
@@ -4689,7 +6265,7 @@ export default {
             if (!emoji) return;
 
             const textarea = this.$refs.composerInput;
-            const current = textarea?.value ?? this.draftMessage ?? '';
+            const current = textarea?.value ?? this.draftMessage ?? "";
 
             if (!textarea) {
                 this.draftMessage = `${current}${emoji}`;
@@ -4708,7 +6284,7 @@ export default {
             this.draftMessage = nextMessage;
             textarea.value = nextMessage;
             this.showComposerEmojiPicker = false;
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            textarea.dispatchEvent(new Event("input", { bubbles: true }));
 
             this.$nextTick(() => {
                 textarea.focus();
@@ -4733,7 +6309,7 @@ export default {
 
                 textarea.focus();
                 const caret = this.draftMessage.length;
-                if (typeof textarea.setSelectionRange === 'function') {
+                if (typeof textarea.setSelectionRange === "function") {
                     textarea.setSelectionRange(caret, caret);
                 }
                 this.resizeComposer();
@@ -4742,11 +6318,12 @@ export default {
         clearReplyTarget() {
             this.replyTargetMessage = null;
         },
-        triggerAttachmentPicker(mode = 'file') {
+        triggerAttachmentPicker(mode = "file") {
             this.attachmentMode = mode;
-            this.attachmentAccept = mode === 'image'
-                ? 'image/*'
-                : '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xlsx,.txt';
+            this.attachmentAccept =
+                mode === "image"
+                    ? "image/*"
+                    : ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xlsx,.txt";
 
             this.$nextTick(() => {
                 const input = this.$refs.attachmentInput;
@@ -4762,22 +6339,24 @@ export default {
                 return;
             }
 
-            const isImage = file.type?.startsWith('image/');
-            if (this.attachmentMode === 'image' && !isImage) {
+            const isImage = file.type?.startsWith("image/");
+            if (this.attachmentMode === "image" && !isImage) {
                 this.notify({
-                    type: 'error',
-                    title: 'Image required',
-                    message: 'Please choose an image file for this action.',
+                    type: "error",
+                    title: "Image required",
+                    message: "Please choose an image file for this action.",
                     duration: 3200,
                 });
-                event.target.value = '';
+                event.target.value = "";
                 return;
             }
 
             this.clearSelectedAttachment(false);
             this.selectedAttachment = file;
-            this.selectedAttachmentPreviewType = isImage ? 'image' : 'file';
-            this.selectedAttachmentPreviewUrl = isImage ? URL.createObjectURL(file) : null;
+            this.selectedAttachmentPreviewType = isImage ? "image" : "file";
+            this.selectedAttachmentPreviewUrl = isImage
+                ? URL.createObjectURL(file)
+                : null;
         },
         clearSelectedAttachment(resetInput = true) {
             if (this.selectedAttachmentPreviewUrl) {
@@ -4786,14 +6365,15 @@ export default {
             }
 
             this.selectedAttachment = null;
-            this.selectedAttachmentPreviewType = 'file';
-            this.attachmentMode = 'file';
-            this.attachmentAccept = '.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xlsx,.txt';
+            this.selectedAttachmentPreviewType = "file";
+            this.attachmentMode = "file";
+            this.attachmentAccept =
+                ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xlsx,.txt";
 
             if (resetInput) {
                 const input = this.$refs.attachmentInput;
                 if (input) {
-                    input.value = '';
+                    input.value = "";
                 }
             }
         },
@@ -4809,7 +6389,8 @@ export default {
             this.selectedMessage = message;
             this.selectedMessageId = message.id;
             this.clearReactionPicker();
-            this.activeMessageActionsId = this.activeMessageActionsId === message.id ? null : message.id;
+            this.activeMessageActionsId =
+                this.activeMessageActionsId === message.id ? null : message.id;
         },
         toggleReactionPicker(message) {
             if (!message?.id || message.is_unsent || message.is_system) return;
@@ -4818,9 +6399,10 @@ export default {
             this.selectedMessageId = message.id;
             this.reactionTargetId = message.id;
             this.activeMessageActionsId = null;
-            this.showReactionPicker = this.showReactionPicker && this.reactionTargetId === message.id
-                ? !this.showReactionPicker
-                : true;
+            this.showReactionPicker =
+                this.showReactionPicker && this.reactionTargetId === message.id
+                    ? !this.showReactionPicker
+                    : true;
         },
         async togglePinMessage(message) {
             if (!message?.id || message.is_unsent || message.is_system) return;
@@ -4833,11 +6415,15 @@ export default {
             const isPinningMessage = !message.pinned_at;
             const maxPinnedMessagesPerConversation = 10;
 
-            if (isPinningMessage && this.pinnedMessages.length >= maxPinnedMessagesPerConversation) {
+            if (
+                isPinningMessage &&
+                this.pinnedMessages.length >= maxPinnedMessagesPerConversation
+            ) {
                 this.notify({
-                    type: 'error',
-                    title: 'Pin limit reached',
-                    message: 'Maximum pinned messages is 10 for each direct message or group chat.',
+                    type: "error",
+                    title: "Pin limit reached",
+                    message:
+                        "Maximum pinned messages is 10 for each direct message or group chat.",
                     duration: 4000,
                 });
                 return;
@@ -4854,7 +6440,7 @@ export default {
                     },
                     {
                         headers: this.buildAuthHeaders(),
-                    }
+                    },
                 );
 
                 if (data?.message) {
@@ -4869,19 +6455,23 @@ export default {
                     this.showPinnedMessagesPanel = false;
                 }
             } catch (error) {
-                console.error('Failed to toggle pin:', error);
+                console.error("Failed to toggle pin:", error);
             }
         },
         async unpinPinnedMessage(pin) {
             if (!pin?.message_id) return;
 
-            const message = this.messages.find((item) => Number(item.id) === Number(pin.message_id))
-                || { id: pin.message_id, pinned_at: pin.pinned_at || new Date().toISOString() };
+            const message = this.messages.find(
+                (item) => Number(item.id) === Number(pin.message_id),
+            ) || {
+                id: pin.message_id,
+                pinned_at: pin.pinned_at || new Date().toISOString(),
+            };
 
             await this.togglePinMessage(message);
         },
         buildAuthHeaders() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem("auth_token");
             return token ? { Authorization: `Bearer ${token}` } : {};
         },
         normalizeMessage(message) {
@@ -4896,18 +6486,26 @@ export default {
                 ...message,
                 id: Number(message.id),
                 sender_id: senderId || null,
-                recipient_id: message.recipient_id != null ? Number(message.recipient_id) : null,
-                group_chat_id: message.group_chat_id != null ? Number(message.group_chat_id) : null,
+                recipient_id:
+                    message.recipient_id != null
+                        ? Number(message.recipient_id)
+                        : null,
+                group_chat_id:
+                    message.group_chat_id != null
+                        ? Number(message.group_chat_id)
+                        : null,
                 is_mine: senderId === authUserId,
-                is_system: Boolean(message.is_system || message.message_type === 'system'),
+                is_system: Boolean(
+                    message.is_system || message.message_type === "system",
+                ),
                 is_unsent: Boolean(message.is_unsent),
             };
         },
         openGroupChatModal() {
-            this.groupChatError = '';
-            this.groupChatUserSearch = '';
+            this.groupChatError = "";
+            this.groupChatUserSearch = "";
             this.groupChatForm = {
-                name: '',
+                name: "",
                 member_ids: [],
             };
             this.showGroupChatModal = true;
@@ -4918,18 +6516,24 @@ export default {
             }
 
             this.showGroupChatModal = false;
-            this.groupChatError = '';
-            this.groupChatUserSearch = '';
+            this.groupChatError = "";
+            this.groupChatUserSearch = "";
         },
         toggleGroupChatMember(userId) {
             const normalizedId = Number(userId);
 
             if (this.groupChatForm.member_ids.includes(normalizedId)) {
-                this.groupChatForm.member_ids = this.groupChatForm.member_ids.filter((id) => id !== normalizedId);
+                this.groupChatForm.member_ids =
+                    this.groupChatForm.member_ids.filter(
+                        (id) => id !== normalizedId,
+                    );
                 return;
             }
 
-            this.groupChatForm.member_ids = [...this.groupChatForm.member_ids, normalizedId];
+            this.groupChatForm.member_ids = [
+                ...this.groupChatForm.member_ids,
+                normalizedId,
+            ];
         },
         async submitGroupChat() {
             if (!this.canSubmitGroupChat || this.groupChatSubmitting) {
@@ -4937,11 +6541,11 @@ export default {
             }
 
             this.groupChatSubmitting = true;
-            this.groupChatError = '';
+            this.groupChatError = "";
 
             try {
                 const { data } = await axios.post(
-                    '/api/group-chats',
+                    "/api/group-chats",
                     {
                         name: this.groupChatForm.name.trim(),
                         member_ids: this.groupChatForm.member_ids,
@@ -4953,22 +6557,25 @@ export default {
 
                 if (data?.conversation) {
                     this.upsertConversation(data.conversation);
-                    this.selectedConversationKey = data.conversation.conversation_key;
-                    this.updateConversationUrl(data.conversation, 'push');
+                    this.selectedConversationKey =
+                        data.conversation.conversation_key;
+                    this.updateConversationUrl(data.conversation, "push");
                     this.resetConversationState();
                     await this.loadConversation(data.conversation, { page: 1 });
                 }
 
                 this.showGroupChatModal = false;
-                this.groupChatError = '';
+                this.groupChatError = "";
                 this.notify({
-                    type: 'success',
-                    title: 'Group chat',
-                    message: data?.message || 'Saved successfully.',
+                    type: "success",
+                    title: "Group chat",
+                    message: data?.message || "Saved successfully.",
                     duration: 3000,
                 });
             } catch (error) {
-                this.groupChatError = error?.response?.data?.message || 'Unable to create group chat.';
+                this.groupChatError =
+                    error?.response?.data?.message ||
+                    "Unable to create group chat.";
             } finally {
                 this.groupChatSubmitting = false;
             }
@@ -4987,13 +6594,16 @@ export default {
                     },
                 );
 
-                this.pendingGroupChatApprovals = this.pendingGroupChatApprovals.filter((item) => item.id !== request.id);
+                this.pendingGroupChatApprovals =
+                    this.pendingGroupChatApprovals.filter(
+                        (item) => item.id !== request.id,
+                    );
 
                 if (data?.conversation) {
                     this.upsertConversation(data.conversation);
                 }
             } catch (error) {
-                console.error('Failed to approve group chat request:', error);
+                console.error("Failed to approve group chat request:", error);
             }
         },
         async rejectGroupChatRequest(request) {
@@ -5010,9 +6620,12 @@ export default {
                     },
                 );
 
-                this.pendingGroupChatApprovals = this.pendingGroupChatApprovals.filter((item) => item.id !== request.id);
+                this.pendingGroupChatApprovals =
+                    this.pendingGroupChatApprovals.filter(
+                        (item) => item.id !== request.id,
+                    );
             } catch (error) {
-                console.error('Failed to reject group chat request:', error);
+                console.error("Failed to reject group chat request:", error);
             }
         },
         upsertConversation(conversation) {
@@ -5020,47 +6633,85 @@ export default {
                 return;
             }
 
-            const existingConversation = this.users.find((item) => item.conversation_key === conversation.conversation_key) || null;
+            const existingConversation =
+                this.users.find(
+                    (item) =>
+                        item.conversation_key === conversation.conversation_key,
+                ) || null;
             const incomingUnreadCount = Number(conversation.unread_count || 0);
-            const existingUnreadCount = Number(existingConversation?.unread_count || 0);
+            const existingUnreadCount = Number(
+                existingConversation?.unread_count || 0,
+            );
             const shouldPreserveUnreadCount = Boolean(
-                existingConversation
-                && existingUnreadCount > 0
-                && incomingUnreadCount === 0
-                && this.selectedConversationKey !== conversation.conversation_key,
+                existingConversation &&
+                existingUnreadCount > 0 &&
+                incomingUnreadCount === 0 &&
+                this.selectedConversationKey !== conversation.conversation_key,
             );
 
             const nextConversation = {
                 ...conversation,
                 id: Number(conversation.id),
                 conversation_key: conversation.conversation_key,
-                conversation_token: conversation.conversation_token || existingConversation?.conversation_token || null,
-                conversation_type: conversation.conversation_type || 'direct',
-                member_ids: Array.isArray(conversation.member_ids) ? conversation.member_ids.map((id) => Number(id)) : [],
-                members: Array.isArray(conversation.members) ? conversation.members.map((member) => ({
-                    ...member,
-                    id: Number(member.id),
-                    last_read_at: member.last_read_at || null,
-                    display_name: member.display_name || member.nickname || member.name || 'User',
-                })) : [],
-                actual_name: conversation.actual_name || existingConversation?.actual_name || conversation.name,
-                nickname: Object.prototype.hasOwnProperty.call(conversation, 'nickname')
+                conversation_token:
+                    conversation.conversation_token ||
+                    existingConversation?.conversation_token ||
+                    null,
+                conversation_type: conversation.conversation_type || "direct",
+                member_ids: Array.isArray(conversation.member_ids)
+                    ? conversation.member_ids.map((id) => Number(id))
+                    : [],
+                members: Array.isArray(conversation.members)
+                    ? conversation.members.map((member) => ({
+                          ...member,
+                          id: Number(member.id),
+                          last_read_at: member.last_read_at || null,
+                          display_name:
+                              member.display_name ||
+                              member.nickname ||
+                              member.name ||
+                              "User",
+                      }))
+                    : [],
+                actual_name:
+                    conversation.actual_name ||
+                    existingConversation?.actual_name ||
+                    conversation.name,
+                nickname: Object.prototype.hasOwnProperty.call(
+                    conversation,
+                    "nickname",
+                )
                     ? conversation.nickname
-                    : (existingConversation?.nickname || null),
-                unread_count: shouldPreserveUnreadCount ? existingUnreadCount : incomingUnreadCount,
-                is_unread: shouldPreserveUnreadCount ? true : Boolean(incomingUnreadCount > 0 || conversation.is_unread),
-                active_label: conversation.conversation_type === 'group'
-                    ? (conversation.active_label || `${Number(conversation.member_count || 0)} members`)
-                    : conversation.active_label,
+                    : existingConversation?.nickname || null,
+                unread_count: shouldPreserveUnreadCount
+                    ? existingUnreadCount
+                    : incomingUnreadCount,
+                is_unread: shouldPreserveUnreadCount
+                    ? true
+                    : Boolean(
+                          incomingUnreadCount > 0 || conversation.is_unread,
+                      ),
+                active_label:
+                    conversation.conversation_type === "group"
+                        ? conversation.active_label ||
+                          `${Number(conversation.member_count || 0)} members`
+                        : conversation.active_label,
             };
 
-            if (nextConversation.conversation_type === 'direct') {
-                const nickname = String(nextConversation.nickname || '').trim();
-                const actualName = String(nextConversation.actual_name || nextConversation.name || 'User').trim();
-                nextConversation.name = nickname || actualName || 'User';
+            if (nextConversation.conversation_type === "direct") {
+                const nickname = String(nextConversation.nickname || "").trim();
+                const actualName = String(
+                    nextConversation.actual_name ||
+                        nextConversation.name ||
+                        "User",
+                ).trim();
+                nextConversation.name = nickname || actualName || "User";
             }
 
-            const existingIndex = this.users.findIndex((item) => item.conversation_key === nextConversation.conversation_key);
+            const existingIndex = this.users.findIndex(
+                (item) =>
+                    item.conversation_key === nextConversation.conversation_key,
+            );
 
             if (existingIndex === -1) {
                 this.users.push(nextConversation);
@@ -5079,7 +6730,9 @@ export default {
 
             const normalizedMessage = this.normalizeMessage(message);
 
-            const existingIndex = this.messages.findIndex((item) => Number(item.id) === Number(normalizedMessage.id));
+            const existingIndex = this.messages.findIndex(
+                (item) => Number(item.id) === Number(normalizedMessage.id),
+            );
             if (existingIndex === -1) {
                 this.messages.push(normalizedMessage);
                 this.scheduleMessagesCachePersist();
@@ -5093,7 +6746,9 @@ export default {
             this.scheduleMessagesCachePersist();
         },
         removeConversation(conversationKey) {
-            const index = this.users.findIndex((item) => item.conversation_key === conversationKey);
+            const index = this.users.findIndex(
+                (item) => item.conversation_key === conversationKey,
+            );
 
             if (index >= 0) {
                 this.users.splice(index, 1);
@@ -5101,14 +6756,15 @@ export default {
 
             if (this.selectedConversationKey === conversationKey) {
                 const nextConversation = this.users[0] || null;
-                this.selectedConversationKey = nextConversation?.conversation_key || null;
+                this.selectedConversationKey =
+                    nextConversation?.conversation_key || null;
                 this.resetConversationState();
 
                 if (nextConversation) {
-                    this.updateConversationUrl(nextConversation, 'replace');
+                    this.updateConversationUrl(nextConversation, "replace");
                     this.loadConversation(nextConversation, { page: 1 });
                 } else {
-                    this.updateConversationUrl(null, 'replace');
+                    this.updateConversationUrl(null, "replace");
                 }
             }
 
@@ -5116,13 +6772,18 @@ export default {
         },
         removeLocalMessage(messageId) {
             const normalizedId = Number(messageId);
-            const existingIndex = this.messages.findIndex((item) => Number(item.id) === normalizedId);
+            const existingIndex = this.messages.findIndex(
+                (item) => Number(item.id) === normalizedId,
+            );
 
             if (existingIndex >= 0) {
                 this.messages.splice(existingIndex, 1);
             }
 
-            if (this.selectedMessageId && Number(this.selectedMessageId) === normalizedId) {
+            if (
+                this.selectedMessageId &&
+                Number(this.selectedMessageId) === normalizedId
+            ) {
                 this.clearSelectedMessage();
             }
 
@@ -5133,18 +6794,33 @@ export default {
                 return;
             }
 
-            if (Object.prototype.hasOwnProperty.call(conversationPreview, 'latest_at')) {
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    conversationPreview,
+                    "latest_at",
+                )
+            ) {
                 user.latest_at = conversationPreview.latest_at;
             }
 
-            if (Object.prototype.hasOwnProperty.call(conversationPreview, 'preview')) {
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    conversationPreview,
+                    "preview",
+                )
+            ) {
                 user.preview = conversationPreview.preview;
             }
 
-            if (conversationPreview.latest_message?.id && this.selectedConversationKey === user.conversation_key) {
+            if (
+                conversationPreview.latest_message?.id &&
+                this.selectedConversationKey === user.conversation_key
+            ) {
                 this.upsertLocalMessage({
                     ...conversationPreview.latest_message,
-                    is_mine: Number(conversationPreview.latest_message.sender_id) === Number(this.authUser?.id),
+                    is_mine:
+                        Number(conversationPreview.latest_message.sender_id) ===
+                        Number(this.authUser?.id),
                 });
             }
 
@@ -5152,17 +6828,21 @@ export default {
             this.scheduleMessagesCachePersist();
         },
         isConversationPanelVisible() {
-            if (typeof window === 'undefined') {
+            if (typeof window === "undefined") {
                 return false;
             }
 
-            const panel = this.$el?.querySelector('.conversation-panel');
+            const panel = this.$el?.querySelector(".conversation-panel");
             if (!panel) {
                 return false;
             }
 
             const styles = window.getComputedStyle(panel);
-            return styles.display !== 'none' && styles.visibility !== 'hidden' && panel.getClientRects().length > 0;
+            return (
+                styles.display !== "none" &&
+                styles.visibility !== "hidden" &&
+                panel.getClientRects().length > 0
+            );
         },
         async markConversationSeen(userId = null) {
             const activeUser = this.activeUser;
@@ -5175,7 +6855,11 @@ export default {
                 return;
             }
 
-            if (!this.messages.some((message) => !message.is_mine && !message.read_at)) {
+            if (
+                !this.messages.some(
+                    (message) => !message.is_mine && !message.read_at,
+                )
+            ) {
                 return;
             }
 
@@ -5185,13 +6869,15 @@ export default {
                     {},
                     {
                         headers: {
-                            Accept: 'application/json',
+                            Accept: "application/json",
                         },
-                    }
+                    },
                 );
 
                 const readAt = data?.read_at ?? null;
-                const messageIds = new Set((data?.message_ids ?? []).map((id) => Number(id)));
+                const messageIds = new Set(
+                    (data?.message_ids ?? []).map((id) => Number(id)),
+                );
 
                 if (!readAt || messageIds.size === 0) return;
 
@@ -5206,7 +6892,7 @@ export default {
                     };
                 });
             } catch (error) {
-                console.error('Failed to mark conversation as seen:', error);
+                console.error("Failed to mark conversation as seen:", error);
             }
         },
         async markGroupConversationSeen() {
@@ -5214,7 +6900,11 @@ export default {
             if (!activeUser || !this.activeConversationIsGroup) return;
             if (!this.isConversationPanelVisible()) return;
 
-            if (!this.messages.some((message) => !message.is_mine && !message.is_system)) {
+            if (
+                !this.messages.some(
+                    (message) => !message.is_mine && !message.is_system,
+                )
+            ) {
                 return;
             }
 
@@ -5224,57 +6914,81 @@ export default {
                     {},
                     {
                         headers: {
-                            Accept: 'application/json',
+                            Accept: "application/json",
                         },
-                    }
+                    },
                 );
 
-                const targetConversation = this.users.find((user) => user.conversation_key === activeUser.conversation_key);
+                const targetConversation = this.users.find(
+                    (user) =>
+                        user.conversation_key === activeUser.conversation_key,
+                );
                 if (targetConversation) {
                     targetConversation.unread_count = 0;
                     targetConversation.is_unread = false;
                 }
 
-                this.applyGroupSeenReceipt(activeUser.id, {
-                    id: Number(this.authUser?.id || 0),
-                    name: this.authUser?.name || 'User',
-                    nickname: this.activeGroupSelfMember?.nickname || null,
-                    display_name: this.activeGroupSelfMember?.display_name || this.authUser?.name || 'User',
-                }, data?.read_at || new Date().toISOString());
+                this.applyGroupSeenReceipt(
+                    activeUser.id,
+                    {
+                        id: Number(this.authUser?.id || 0),
+                        name: this.authUser?.name || "User",
+                        nickname: this.activeGroupSelfMember?.nickname || null,
+                        display_name:
+                            this.activeGroupSelfMember?.display_name ||
+                            this.authUser?.name ||
+                            "User",
+                    },
+                    data?.read_at || new Date().toISOString(),
+                );
             } catch (error) {
-                console.error('Failed to mark group conversation as seen:', error);
+                console.error(
+                    "Failed to mark group conversation as seen:",
+                    error,
+                );
             }
         },
         async scrollToPinnedMessage(pin) {
             if (!pin?.message_id) return;
 
             this.showPinnedMessagesPanel = false;
-            this.selectedMessage = this.messages.find((message) => Number(message.id) === Number(pin.message_id)) || null;
+            this.selectedMessage =
+                this.messages.find(
+                    (message) => Number(message.id) === Number(pin.message_id),
+                ) || null;
             this.selectedMessageId = this.selectedMessage?.id || null;
 
             await this.scrollToMessageById(pin.message_id, {
-                flashClass: 'message-row--highlighted',
+                flashClass: "message-row--highlighted",
             });
         },
         async scrollToReplyMessage(message) {
             const replyTargetId = message?.reply_to?.id || message?.reply_to_id;
             if (!replyTargetId) return;
 
-            this.selectedMessage = this.messages.find((item) => Number(item.id) === Number(replyTargetId)) || null;
+            this.selectedMessage =
+                this.messages.find(
+                    (item) => Number(item.id) === Number(replyTargetId),
+                ) || null;
             this.selectedMessageId = this.selectedMessage?.id || null;
 
             await this.scrollToMessageById(replyTargetId, {
-                flashClass: 'message-row--highlighted',
-                shakeClass: 'message-row--reply-target',
+                flashClass: "message-row--highlighted",
+                shakeClass: "message-row--reply-target",
             });
         },
-        async scrollToMessageById(messageId, { flashClass = null, shakeClass = null } = {}) {
+        async scrollToMessageById(
+            messageId,
+            { flashClass = null, shakeClass = null } = {},
+        ) {
             if (!messageId) return;
 
             await this.$nextTick();
 
-            const body = this.$el.querySelector('.conversation-panel__body');
-            const target = this.$el.querySelector(`[data-message-id="${messageId}"]`);
+            const body = this.$el.querySelector(".conversation-panel__body");
+            const target = this.$el.querySelector(
+                `[data-message-id="${messageId}"]`,
+            );
 
             if (!body || !target) {
                 return;
@@ -5282,13 +6996,19 @@ export default {
 
             const bodyRect = body.getBoundingClientRect();
             const targetRect = target.getBoundingClientRect();
-            const nextTop = body.scrollTop + targetRect.top - bodyRect.top - body.clientHeight / 2 + target.clientHeight / 2;
+            const nextTop =
+                body.scrollTop +
+                targetRect.top -
+                bodyRect.top -
+                body.clientHeight / 2 +
+                target.clientHeight / 2;
             body.scrollTo({
                 top: nextTop,
-                behavior: 'smooth',
+                behavior: "smooth",
             });
 
-            const timers = target.__messageTimers || (target.__messageTimers = {});
+            const timers =
+                target.__messageTimers || (target.__messageTimers = {});
 
             if (timers.flash) {
                 window.clearTimeout(timers.flash);
@@ -5300,23 +7020,33 @@ export default {
 
             if (flashClass) {
                 target.classList.add(flashClass);
-                timers.flash = window.setTimeout(() => target.classList.remove(flashClass), 900);
+                timers.flash = window.setTimeout(
+                    () => target.classList.remove(flashClass),
+                    900,
+                );
             }
 
             if (shakeClass) {
                 timers.shake = window.setTimeout(() => {
                     target.classList.add(shakeClass);
-                    window.setTimeout(() => target.classList.remove(shakeClass), 650);
+                    window.setTimeout(
+                        () => target.classList.remove(shakeClass),
+                        650,
+                    );
                 }, 420);
             } else if (flashClass) {
-                timers.flash = window.setTimeout(() => target.classList.remove(flashClass), 900);
+                timers.flash = window.setTimeout(
+                    () => target.classList.remove(flashClass),
+                    900,
+                );
             }
         },
         async setReaction(message, reactionKey) {
             if (!message?.id || message.is_unsent || message.is_system) return;
 
             this.clearReactionPicker();
-            const nextReaction = message.reaction === reactionKey ? null : reactionKey;
+            const nextReaction =
+                message.reaction === reactionKey ? null : reactionKey;
 
             try {
                 const endpoint = this.activeConversationIsGroup
@@ -5327,14 +7057,14 @@ export default {
                     { reaction: nextReaction },
                     {
                         headers: this.buildAuthHeaders(),
-                    }
+                    },
                 );
 
                 if (data?.message) {
                     this.upsertLocalMessage(data.message);
                 }
             } catch (error) {
-                console.error('Failed to set reaction:', error);
+                console.error("Failed to set reaction:", error);
             }
         },
         openImageGallery(attachment) {
@@ -5343,13 +7073,13 @@ export default {
             }
 
             if (!window.lightGallery) {
-                window.open(attachment.url, '_blank', 'noopener');
+                window.open(attachment.url, "_blank", "noopener");
                 return;
             }
 
             const galleryContainer = this.$refs.imageGalleryContainer;
             if (!galleryContainer) {
-                window.open(attachment.url, '_blank', 'noopener');
+                window.open(attachment.url, "_blank", "noopener");
                 return;
             }
 
@@ -5361,11 +7091,11 @@ export default {
                     {
                         src: attachment.url,
                         thumb: attachment.url,
-                        subHtml: attachment.name || 'Attachment',
+                        subHtml: attachment.name || "Attachment",
                     },
                 ],
                 plugins: [window.lgThumbnail, window.lgZoom].filter(Boolean),
-                licenseKey: '0000-0000-000-0000',
+                licenseKey: "0000-0000-000-0000",
                 speed: 300,
             });
 
@@ -5378,50 +7108,54 @@ export default {
             }
         },
         getMessageSnippet(message) {
-            if (!message) return '';
+            if (!message) return "";
 
-            if (message.is_unsent) return 'Unsent Message';
+            if (message.is_unsent) return "Unsent Message";
 
             if (message.body) return message.body;
 
             if (message.attachment?.name) return message.attachment.name;
 
-            return 'Attachment';
+            return "Attachment";
         },
         getReactionEmoji(reactionKey) {
-            return this.reactionOptions.find((reaction) => reaction.key === reactionKey)?.emoji || '';
+            return (
+                this.reactionOptions.find(
+                    (reaction) => reaction.key === reactionKey,
+                )?.emoji || ""
+            );
         },
         downloadAttachment(attachment) {
             if (!attachment?.url) return;
 
-            const link = document.createElement('a');
+            const link = document.createElement("a");
             link.href = attachment.url;
-            link.download = attachment.name || 'attachment';
-            link.target = '_blank';
-            link.rel = 'noopener';
+            link.download = attachment.name || "attachment";
+            link.target = "_blank";
+            link.rel = "noopener";
             document.body.appendChild(link);
             link.click();
             link.remove();
         },
         formatPinnedAt(timestamp) {
-            if (!timestamp) return 'just now';
+            if (!timestamp) return "just now";
 
             try {
                 return new Intl.DateTimeFormat([], {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
                 }).format(new Date(timestamp));
             } catch (error) {
-                return 'just now';
+                return "just now";
             }
         },
         formatFileSize(bytes) {
             const value = Number(bytes || 0);
-            if (!value) return 'Unknown size';
+            if (!value) return "Unknown size";
 
-            const units = ['B', 'KB', 'MB', 'GB'];
+            const units = ["B", "KB", "MB", "GB"];
             let size = value;
             let unitIndex = 0;
 
@@ -5433,25 +7167,34 @@ export default {
             return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
         },
         updateContactPreview(message, clearUnread = false) {
-            const user = this.users.find((item) => item.conversation_key === this.activeUser?.conversation_key);
+            const user = this.users.find(
+                (item) =>
+                    item.conversation_key === this.activeUser?.conversation_key,
+            );
             if (!user) return;
 
             user.latest_at = message.created_at || new Date().toISOString();
             user.preview = this.getMessageSnippet(message);
-            user.unread_count = clearUnread ? 0 : Number(user.unread_count || 0);
+            user.unread_count = clearUnread
+                ? 0
+                : Number(user.unread_count || 0);
             user.is_unread = Number(user.unread_count || 0) > 0;
             this.scheduleMessagesCachePersist();
         },
         applySeenReceipt(partnerId, readAt, messageIds = []) {
             const normalizedPartnerId = Number(partnerId || 0);
-            const normalizedReadAt = readAt ? new Date(readAt).toISOString() : null;
+            const normalizedReadAt = readAt
+                ? new Date(readAt).toISOString()
+                : null;
 
             if (!normalizedPartnerId || !normalizedReadAt) {
                 return;
             }
 
             const normalizedMessageIds = new Set(
-                Array.isArray(messageIds) ? messageIds.map((id) => Number(id)) : [],
+                Array.isArray(messageIds)
+                    ? messageIds.map((id) => Number(id))
+                    : [],
             );
 
             if (normalizedMessageIds.size > 0) {
@@ -5466,21 +7209,26 @@ export default {
                     };
                 });
             }
-
         },
         getSeenMemberName(member) {
-            const nickname = String(member?.nickname || '').trim();
-            const realName = String(member?.name || '').trim();
+            const nickname = String(member?.nickname || "").trim();
+            const realName = String(member?.name || "").trim();
 
-            return nickname || realName || 'User';
+            return nickname || realName || "User";
         },
         getGroupSeenUsers(message) {
-            if (!this.activeConversationIsGroup || !message?.is_mine || !message?.created_at) {
+            if (
+                !this.activeConversationIsGroup ||
+                !message?.is_mine ||
+                !message?.created_at
+            ) {
                 return [];
             }
 
             const messageCreatedAt = Date.parse(message.created_at);
-            const senderId = Number(message.sender_id || this.authUser?.id || 0);
+            const senderId = Number(
+                message.sender_id || this.authUser?.id || 0,
+            );
 
             if (Number.isNaN(messageCreatedAt)) {
                 return [];
@@ -5489,10 +7237,17 @@ export default {
             return this.activeGroupMembers
                 .filter((member) => Number(member.id) !== senderId)
                 .filter((member) => {
-                    const lastReadAt = Date.parse(member.last_read_at || '');
-                    return !Number.isNaN(lastReadAt) && lastReadAt >= messageCreatedAt;
+                    const lastReadAt = Date.parse(member.last_read_at || "");
+                    return (
+                        !Number.isNaN(lastReadAt) &&
+                        lastReadAt >= messageCreatedAt
+                    );
                 })
-                .sort((left, right) => Date.parse(right.last_read_at || '') - Date.parse(left.last_read_at || ''));
+                .sort(
+                    (left, right) =>
+                        Date.parse(right.last_read_at || "") -
+                        Date.parse(left.last_read_at || ""),
+                );
         },
         getSeenReceiptPreviewUsers(message) {
             return this.getGroupSeenUsers(message).slice(0, 10);
@@ -5504,7 +7259,7 @@ export default {
             const seenUsers = this.getGroupSeenUsers(message);
 
             if (!seenUsers.length) {
-                return 'Seen';
+                return "Seen";
             }
 
             return `Seen ${this.formatSeenDateTime(seenUsers[0]?.last_read_at)}`;
@@ -5525,32 +7280,55 @@ export default {
         },
         applyGroupSeenReceipt(groupChatId, reader, readAt) {
             const normalizedGroupChatId = Number(groupChatId || 0);
-            const normalizedReaderId = Number(reader?.id || reader?.user_id || 0);
-            const normalizedReadAt = readAt ? new Date(readAt).toISOString() : null;
+            const normalizedReaderId = Number(
+                reader?.id || reader?.user_id || 0,
+            );
+            const normalizedReadAt = readAt
+                ? new Date(readAt).toISOString()
+                : null;
 
-            if (!normalizedGroupChatId || !normalizedReaderId || !normalizedReadAt) {
+            if (
+                !normalizedGroupChatId ||
+                !normalizedReaderId ||
+                !normalizedReadAt
+            ) {
                 return;
             }
 
             const conversationKey = `group:${normalizedGroupChatId}`;
-            const conversation = this.users.find((user) => user.conversation_key === conversationKey);
+            const conversation = this.users.find(
+                (user) => user.conversation_key === conversationKey,
+            );
 
             if (!conversation) {
                 return;
             }
 
-            const existingMembers = Array.isArray(conversation.members) ? conversation.members : [];
-            const existingIndex = existingMembers.findIndex((member) => Number(member.id) === normalizedReaderId);
+            const existingMembers = Array.isArray(conversation.members)
+                ? conversation.members
+                : [];
+            const existingIndex = existingMembers.findIndex(
+                (member) => Number(member.id) === normalizedReaderId,
+            );
             const nextMember = {
                 ...(existingIndex >= 0 ? existingMembers[existingIndex] : {}),
                 ...(reader || {}),
                 id: normalizedReaderId,
-                name: reader?.name || existingMembers[existingIndex]?.name || 'User',
-                nickname: Object.prototype.hasOwnProperty.call(reader || {}, 'nickname')
+                name:
+                    reader?.name ||
+                    existingMembers[existingIndex]?.name ||
+                    "User",
+                nickname: Object.prototype.hasOwnProperty.call(
+                    reader || {},
+                    "nickname",
+                )
                     ? reader.nickname
-                    : (existingMembers[existingIndex]?.nickname || null),
-                display_name: reader?.display_name
-                    || this.getSeenMemberName(reader || existingMembers[existingIndex] || {}),
+                    : existingMembers[existingIndex]?.nickname || null,
+                display_name:
+                    reader?.display_name ||
+                    this.getSeenMemberName(
+                        reader || existingMembers[existingIndex] || {},
+                    ),
                 last_read_at: normalizedReadAt,
             };
 
@@ -5564,17 +7342,26 @@ export default {
 
             if (this.showSeenByModal) {
                 this.seenByModalUsers = this.seenByModalUsers
-                    .map((member) => (Number(member.id) === normalizedReaderId ? { ...member, ...nextMember } : member))
-                    .sort((left, right) => Date.parse(right.last_read_at || '') - Date.parse(left.last_read_at || ''));
+                    .map((member) =>
+                        Number(member.id) === normalizedReaderId
+                            ? { ...member, ...nextMember }
+                            : member,
+                    )
+                    .sort(
+                        (left, right) =>
+                            Date.parse(right.last_read_at || "") -
+                            Date.parse(left.last_read_at || ""),
+                    );
             }
 
             this.scheduleMessagesCachePersist();
         },
         refreshUserActivityLabels() {
             this.users.forEach((user) => {
-                const activityState = user.conversation_type === 'group'
-                    ? this.getGroupActivityState(user)
-                    : this.getActivityState(user.id);
+                const activityState =
+                    user.conversation_type === "group"
+                        ? this.getGroupActivityState(user)
+                        : this.getActivityState(user.id);
                 user.active_label = activityState.label;
                 user.is_active = activityState.isActive;
                 user.last_seen_at = activityState.lastSeenAt;
@@ -5588,7 +7375,7 @@ export default {
 
             if (isOnline) {
                 return {
-                    label: 'Online',
+                    label: "Online",
                     isActive: true,
                     lastSeenAt: lastSeenAt || Date.now(),
                 };
@@ -5596,7 +7383,7 @@ export default {
 
             if (!fallbackAt) {
                 return {
-                    label: 'Offline',
+                    label: "Offline",
                     isActive: false,
                     lastSeenAt: null,
                 };
@@ -5607,7 +7394,7 @@ export default {
 
             if (Number.isNaN(diffMs) || diffMs < 0) {
                 return {
-                    label: 'Offline',
+                    label: "Offline",
                     isActive: false,
                     lastSeenAt: null,
                 };
@@ -5642,7 +7429,9 @@ export default {
         },
         scrollConversationToBottom() {
             this.$nextTick(() => {
-                const body = this.$refs.conversationBody || this.$el.querySelector('.conversation-panel__body');
+                const body =
+                    this.$refs.conversationBody ||
+                    this.$el.querySelector(".conversation-panel__body");
                 if (!body) return;
 
                 body.scrollTop = body.scrollHeight;
@@ -5677,29 +7466,31 @@ export default {
         updateScrollToBottomButton(bodyEl) {
             if (!bodyEl) return;
 
-            const distanceFromBottom = bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight;
+            const distanceFromBottom =
+                bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight;
             this.showScrollToBottomButton = distanceFromBottom > 220;
         },
         isConversationNearBottom(bodyEl, threshold = 220) {
             if (!bodyEl) return true;
 
-            const distanceFromBottom = bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight;
+            const distanceFromBottom =
+                bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight;
             return distanceFromBottom <= threshold;
         },
         resizeComposer() {
             const textarea = this.$refs.composerInput;
             if (!textarea) return;
 
-            textarea.style.height = 'auto';
+            textarea.style.height = "auto";
             textarea.style.height = `${Math.min(textarea.scrollHeight, 140)}px`;
         },
         formatTime(value) {
-            if (!value) return '';
+            if (!value) return "";
 
             try {
                 const date = new Date(value);
                 if (Number.isNaN(date.getTime())) {
-                    return '';
+                    return "";
                 }
 
                 const diffMs = Date.now() - date.getTime();
@@ -5707,70 +7498,70 @@ export default {
 
                 if (diffMs >= oneDayMs) {
                     const datePart = new Intl.DateTimeFormat([], {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
                     }).format(date);
 
                     const timePart = new Intl.DateTimeFormat([], {
-                        hour: 'numeric',
-                        minute: '2-digit',
+                        hour: "numeric",
+                        minute: "2-digit",
                     }).format(date);
 
                     return `${datePart} ${timePart}`;
                 }
 
                 return new Intl.DateTimeFormat([], {
-                    hour: 'numeric',
-                    minute: '2-digit',
+                    hour: "numeric",
+                    minute: "2-digit",
                 }).format(date);
             } catch (error) {
-                return '';
+                return "";
             }
         },
         formatSeenReceiptTooltip(value) {
             if (!value) {
-                return '';
+                return "";
             }
 
             try {
                 const date = new Date(value);
 
                 if (Number.isNaN(date.getTime())) {
-                    return '';
+                    return "";
                 }
 
                 return `Seen ${this.formatSeenDateTime(date)}`;
             } catch (error) {
-                return '';
+                return "";
             }
         },
         formatSeenDateTime(value) {
             if (!value) {
-                return '';
+                return "";
             }
 
             try {
                 const date = value instanceof Date ? value : new Date(value);
 
                 if (Number.isNaN(date.getTime())) {
-                    return '';
+                    return "";
                 }
 
-                const datePart = new Intl.DateTimeFormat('en-US', {
-                    month: 'long',
-                    day: '2-digit',
-                    year: 'numeric',
+                const datePart = new Intl.DateTimeFormat("en-US", {
+                    month: "long",
+                    day: "2-digit",
+                    year: "numeric",
                 }).format(date);
-                const timePart = new Intl.DateTimeFormat('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
+                const timePart = new Intl.DateTimeFormat("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
                     hour12: true,
                 }).format(date);
 
                 return `${datePart} at ${timePart}`;
             } catch (error) {
-                return '';
+                return "";
             }
         },
         getSeenReceiptAvatar() {
@@ -5782,7 +7573,9 @@ export default {
             }
 
             if (this.activeConversationIsGroup) {
-                return Number(message.id) === this.latestGroupSeenReceiptMessageId;
+                return (
+                    Number(message.id) === this.latestGroupSeenReceiptMessageId
+                );
             }
 
             if (!message?.read_at) {
@@ -5793,23 +7586,23 @@ export default {
         },
         formatConversationTimestamp(value) {
             if (!value) {
-                return '';
+                return "";
             }
 
             try {
                 const date = new Date(value);
 
                 if (Number.isNaN(date.getTime())) {
-                    return '';
+                    return "";
                 }
 
                 const now = this.now;
                 const isSameDay = date.toDateString() === now.toDateString();
 
                 if (isSameDay) {
-                    return new Intl.DateTimeFormat('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
+                    return new Intl.DateTimeFormat("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
                     }).format(date);
                 }
 
@@ -5817,39 +7610,39 @@ export default {
                 yesterday.setDate(now.getDate() - 1);
 
                 if (date.toDateString() === yesterday.toDateString()) {
-                    return 'Yesterday';
+                    return "Yesterday";
                 }
 
-                return new Intl.DateTimeFormat('en-US', {
-                    month: 'short',
-                    day: 'numeric',
+                return new Intl.DateTimeFormat("en-US", {
+                    month: "short",
+                    day: "numeric",
                 }).format(date);
             } catch (error) {
-                return '';
+                return "";
             }
         },
         formatUnreadCount(value) {
             const count = Number(value || 0);
             if (count <= 0) {
-                return '';
+                return "";
             }
 
-            return count >= 10 ? '10+' : String(count);
+            return count >= 10 ? "10+" : String(count);
         },
         formatGroupMemberDate(value) {
             if (!value) {
-                return '';
+                return "";
             }
 
             try {
                 const date = new Date(value);
                 if (Number.isNaN(date.getTime())) {
-                    return '';
+                    return "";
                 }
 
                 return this.formatSeenDateTime(date);
             } catch (error) {
-                return '';
+                return "";
             }
         },
     },
@@ -5863,8 +7656,16 @@ export default {
     padding: 26px 24px;
     overflow: hidden;
     background:
-        radial-gradient(circle at top left, rgba(31, 91, 255, 0.15), transparent 24%),
-        radial-gradient(circle at top right, rgba(99, 102, 241, 0.08), transparent 22%),
+        radial-gradient(
+            circle at top left,
+            rgba(31, 91, 255, 0.15),
+            transparent 24%
+        ),
+        radial-gradient(
+            circle at top right,
+            rgba(99, 102, 241, 0.08),
+            transparent 22%
+        ),
         linear-gradient(180deg, #22272e 0%, #1e2329 100%);
     color: #f3f6fb;
 }
@@ -5911,11 +7712,15 @@ export default {
     width: clamp(380px, 32vw, 460px);
     display: flex;
     flex-direction: column;
-    transition: 
-      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      visibility 0s linear 0.3s;
-    background: linear-gradient(180deg, rgba(52, 58, 66, 0.96), rgba(43, 49, 56, 0.98));
+    transition:
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s linear 0.3s;
+    background: linear-gradient(
+        180deg,
+        rgba(52, 58, 66, 0.96),
+        rgba(43, 49, 56, 0.98)
+    );
 }
 
 .conversation-panel {
@@ -5925,7 +7730,11 @@ export default {
     position: relative;
     z-index: 1;
     background:
-        radial-gradient(circle at top right, rgba(33, 91, 246, 0.14), transparent 24%),
+        radial-gradient(
+            circle at top right,
+            rgba(33, 91, 246, 0.14),
+            transparent 24%
+        ),
         linear-gradient(180deg, rgba(49, 55, 63, 0.96), rgba(40, 45, 52, 0.98));
 }
 
@@ -6004,7 +7813,11 @@ export default {
     font-weight: 800;
     text-decoration: none;
     white-space: nowrap;
-    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .contacts-panel__utility-link i,
@@ -6033,7 +7846,11 @@ export default {
 
 .contacts-panel__utility-badge {
     border: 0;
-    background: linear-gradient(135deg, rgba(28, 88, 246, 0.24), rgba(67, 122, 255, 0.18));
+    background: linear-gradient(
+        135deg,
+        rgba(28, 88, 246, 0.24),
+        rgba(67, 122, 255, 0.18)
+    );
     color: #dfe9ff;
     letter-spacing: 0.02em;
     box-shadow: inset 0 0 0 1px rgba(142, 181, 255, 0.16);
@@ -6041,7 +7858,9 @@ export default {
 
 .contacts-panel__utility-badge:hover {
     transform: translateY(-1px);
-    box-shadow: inset 0 0 0 1px rgba(142, 181, 255, 0.24), 0 10px 24px rgba(28, 88, 246, 0.18);
+    box-shadow:
+        inset 0 0 0 1px rgba(142, 181, 255, 0.24),
+        0 10px 24px rgba(28, 88, 246, 0.18);
 }
 
 .contacts-panel__actions,
@@ -6069,7 +7888,9 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.18s ease, background 0.18s ease;
+    transition:
+        transform 0.18s ease,
+        background 0.18s ease;
 }
 
 .icon-chip:hover {
@@ -6132,7 +7953,9 @@ export default {
     color: #f3f6fb;
     border: 1px solid rgba(255, 255, 255, 0.05);
     text-align: left;
-    transition: background 0.18s ease, transform 0.18s ease;
+    transition:
+        background 0.18s ease,
+        transform 0.18s ease;
     position: relative;
     cursor: pointer;
     z-index: 1;
@@ -6185,8 +8008,14 @@ export default {
 }
 
 .contact-card.is-active {
-    background: linear-gradient(135deg, rgba(28, 88, 246, 0.96), rgba(19, 67, 201, 0.98));
-    box-shadow: 0 14px 30px rgba(13, 59, 176, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    background: linear-gradient(
+        135deg,
+        rgba(28, 88, 246, 0.96),
+        rgba(19, 67, 201, 0.98)
+    );
+    box-shadow:
+        0 14px 30px rgba(13, 59, 176, 0.28),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     z-index: 2;
 }
 
@@ -6320,7 +8149,10 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
 }
 
 .contact-card__more:hover {
@@ -6353,7 +8185,9 @@ export default {
     align-items: center;
     gap: 10px;
     text-align: left;
-    transition: background 0.18s ease, color 0.18s ease;
+    transition:
+        background 0.18s ease,
+        color 0.18s ease;
     white-space: nowrap;
     flex-wrap: nowrap;
 }
@@ -6397,7 +8231,11 @@ export default {
     gap: 16px;
     padding: 18px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.01)
+    );
 }
 
 .conversation-user {
@@ -6455,7 +8293,9 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.18s ease, filter 0.18s ease;
+    transition:
+        transform 0.18s ease,
+        filter 0.18s ease;
 }
 
 .conversation-info-btn:hover {
@@ -6578,7 +8418,11 @@ export default {
     overflow: hidden;
     border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(180deg, rgba(24, 14, 30, 0.98), rgba(14, 9, 18, 0.98));
+    background: linear-gradient(
+        180deg,
+        rgba(24, 14, 30, 0.98),
+        rgba(14, 9, 18, 0.98)
+    );
     box-shadow: 0 28px 70px rgba(0, 0, 0, 0.4);
 }
 
@@ -6632,7 +8476,9 @@ export default {
     background: rgba(255, 255, 255, 0.06);
     color: #fff;
     text-align: left;
-    transition: background 0.16s ease, transform 0.16s ease;
+    transition:
+        background 0.16s ease,
+        transform 0.16s ease;
 }
 
 .pinned-modal__item-body:hover {
@@ -6693,7 +8539,11 @@ export default {
     flex-direction: column;
     border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(180deg, rgba(27, 16, 31, 0.98), rgba(14, 9, 18, 0.99));
+    background: linear-gradient(
+        180deg,
+        rgba(27, 16, 31, 0.98),
+        rgba(14, 9, 18, 0.99)
+    );
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.48);
     overflow: hidden;
 }
@@ -6886,7 +8736,11 @@ export default {
     padding: 14px 22px 22px;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.02),
+            rgba(255, 255, 255, 0.01)
+        ),
         linear-gradient(180deg, rgba(49, 55, 63, 0.96), rgba(37, 42, 49, 0.99));
     position: relative;
     z-index: 1;
@@ -6983,7 +8837,10 @@ export default {
     background: rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.7);
     font-weight: 700;
-    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
 }
 
 .conversation-info-media__tab:hover {
@@ -7071,8 +8928,16 @@ export default {
     overflow-x: clip;
     padding: 18px 22px 18px;
     background:
-        radial-gradient(circle at 20% 20%, rgba(255, 102, 179, 0.08), transparent 18%),
-        radial-gradient(circle at 80% 30%, rgba(138, 92, 255, 0.08), transparent 20%),
+        radial-gradient(
+            circle at 20% 20%,
+            rgba(255, 102, 179, 0.08),
+            transparent 18%
+        ),
+        radial-gradient(
+            circle at 80% 30%,
+            rgba(138, 92, 255, 0.08),
+            transparent 20%
+        ),
         linear-gradient(180deg, rgba(25, 15, 31, 0.98), rgba(18, 10, 24, 0.98));
 }
 
@@ -7155,7 +9020,12 @@ export default {
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.12),
+        transparent
+    );
     animation: skeletonShimmer 1.25s ease-in-out infinite;
 }
 
@@ -7249,7 +9119,9 @@ export default {
 }
 
 .message-row--highlighted .message-bubble {
-    box-shadow: 0 0 0 2px rgba(255, 77, 136, 0.22), 0 16px 30px rgba(0, 0, 0, 0.18);
+    box-shadow:
+        0 0 0 2px rgba(255, 77, 136, 0.22),
+        0 16px 30px rgba(0, 0, 0, 0.18);
     transform: translateY(-1px);
     animation: messageFlash 0.8s ease-in-out;
 }
@@ -7357,7 +9229,9 @@ export default {
     pointer-events: auto;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.16s ease, visibility 0.16s ease;
+    transition:
+        opacity 0.16s ease,
+        visibility 0.16s ease;
 }
 
 .message-row:hover .message-bubble__floating-actions {
@@ -7412,7 +9286,9 @@ export default {
     align-items: center;
     justify-content: center;
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
-    transition: transform 0.16s ease, background 0.16s ease;
+    transition:
+        transform 0.16s ease,
+        background 0.16s ease;
 }
 
 .bubble-action:hover {
@@ -7546,7 +9422,10 @@ export default {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+    transition:
+        transform 0.16s ease,
+        background 0.16s ease,
+        border-color 0.16s ease;
 }
 
 .reaction-modal__option:hover {
@@ -7555,7 +9434,11 @@ export default {
 }
 
 .reaction-modal__option.is-active {
-    background: linear-gradient(135deg, rgba(255, 77, 136, 0.22), rgba(184, 61, 230, 0.22));
+    background: linear-gradient(
+        135deg,
+        rgba(255, 77, 136, 0.22),
+        rgba(184, 61, 230, 0.22)
+    );
     border-color: rgba(255, 140, 196, 0.48);
 }
 
@@ -7673,7 +9556,11 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.18));
+    background: linear-gradient(
+        180deg,
+        rgba(15, 23, 42, 0.08),
+        rgba(15, 23, 42, 0.18)
+    );
     color: #fff;
     opacity: 0;
     transition: opacity 0.18s ease;
@@ -7750,7 +9637,9 @@ export default {
     transition: transform 0.16s ease;
 }
 
-.message-bubble__seen-group .message-bubble__seen-avatar + .message-bubble__seen-avatar {
+.message-bubble__seen-group
+    .message-bubble__seen-avatar
+    + .message-bubble__seen-avatar {
     margin-left: -0.3rem;
 }
 
@@ -7908,7 +9797,11 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    transition:
+        transform 0.16s ease,
+        background 0.16s ease,
+        color 0.16s ease,
+        box-shadow 0.16s ease;
 }
 
 .composer__button:hover {
@@ -8016,7 +9909,11 @@ export default {
     border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025)),
+        linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.05),
+            rgba(255, 255, 255, 0.025)
+        ),
         rgba(11, 15, 26, 0.88);
     box-shadow: 0 18px 38px rgba(4, 8, 20, 0.24);
 }
@@ -8067,7 +9964,10 @@ export default {
     background: rgba(104, 149, 253, 0.14);
     color: #dbe7ff;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .group-chat-approval-card__open-btn:hover {
@@ -8416,7 +10316,9 @@ export default {
     align-items: center;
     justify-content: center;
     font-size: 1.1rem;
-    transition: transform 0.15s ease, background 0.15s ease;
+    transition:
+        transform 0.15s ease,
+        background 0.15s ease;
 }
 
 .composer-emoji-picker__btn:hover {
@@ -8448,10 +10350,14 @@ export default {
 
 @keyframes messageFlash {
     0% {
-        box-shadow: 0 0 0 0 rgba(255, 77, 136, 0.45), 0 16px 30px rgba(0, 0, 0, 0.18);
+        box-shadow:
+            0 0 0 0 rgba(255, 77, 136, 0.45),
+            0 16px 30px rgba(0, 0, 0, 0.18);
     }
     100% {
-        box-shadow: 0 0 0 12px rgba(255, 77, 136, 0), 0 16px 30px rgba(0, 0, 0, 0.18);
+        box-shadow:
+            0 0 0 12px rgba(255, 77, 136, 0),
+            0 16px 30px rgba(0, 0, 0, 0.18);
     }
 }
 
@@ -8522,7 +10428,11 @@ export default {
 .reaction-modal {
     border-color: rgba(255, 255, 255, 0.08);
     background:
-        radial-gradient(circle at top right, rgba(28, 88, 246, 0.12), transparent 26%),
+        radial-gradient(
+            circle at top right,
+            rgba(28, 88, 246, 0.12),
+            transparent 26%
+        ),
         linear-gradient(180deg, rgba(49, 55, 63, 0.98), rgba(37, 42, 49, 0.99));
     box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
 }
@@ -8661,7 +10571,11 @@ export default {
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background:
-        radial-gradient(circle at top right, rgba(28, 88, 246, 0.1), transparent 32%),
+        radial-gradient(
+            circle at top right,
+            rgba(28, 88, 246, 0.1),
+            transparent 32%
+        ),
         linear-gradient(180deg, rgba(52, 58, 66, 0.98), rgba(40, 45, 52, 0.99));
     color: #f3f6fb;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.24);
@@ -8736,8 +10650,16 @@ export default {
 .conversation-panel__body {
     padding: 22px 24px 18px;
     background:
-        radial-gradient(circle at 15% 15%, rgba(28, 88, 246, 0.08), transparent 18%),
-        radial-gradient(circle at 85% 25%, rgba(99, 102, 241, 0.06), transparent 20%),
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(28, 88, 246, 0.08),
+            transparent 18%
+        ),
+        radial-gradient(
+            circle at 85% 25%,
+            rgba(99, 102, 241, 0.06),
+            transparent 20%
+        ),
         linear-gradient(180deg, rgba(43, 49, 57, 0.98), rgba(37, 42, 49, 0.98));
 }
 
@@ -8761,7 +10683,9 @@ export default {
 }
 
 .message-row--highlighted .message-bubble {
-    box-shadow: 0 0 0 2px rgba(28, 88, 246, 0.24), 0 16px 30px rgba(0, 0, 0, 0.18);
+    box-shadow:
+        0 0 0 2px rgba(28, 88, 246, 0.24),
+        0 16px 30px rgba(0, 0, 0, 0.18);
 }
 
 .message-bubble {
@@ -8910,10 +10834,14 @@ export default {
 
 @keyframes messageFlash {
     0% {
-        box-shadow: 0 0 0 0 rgba(28, 88, 246, 0.45), 0 16px 30px rgba(0, 0, 0, 0.18);
+        box-shadow:
+            0 0 0 0 rgba(28, 88, 246, 0.45),
+            0 16px 30px rgba(0, 0, 0, 0.18);
     }
     100% {
-        box-shadow: 0 0 0 12px rgba(28, 88, 246, 0), 0 16px 30px rgba(0, 0, 0, 0.18);
+        box-shadow:
+            0 0 0 12px rgba(28, 88, 246, 0),
+            0 16px 30px rgba(0, 0, 0, 0.18);
     }
 }
 
