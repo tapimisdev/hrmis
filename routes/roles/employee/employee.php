@@ -25,7 +25,9 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
 
     # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
-    Route::get('messages', [MessagesController::class, 'index'])->name('employee.messages');
+    Route::get('messages/{conversationToken?}', [MessagesController::class, 'index'])
+        ->where('conversationToken', '.*')
+        ->name('employee.messages');
     Route::get('get-stats', [EmployeeDashboardController::class, 'get_stats']);
     Route::get('get-pendings', [EmployeeDashboardController::class, 'get_pending_applications']);
     Route::get('get-announcements', [EmployeeDashboardController::class, 'get_announcements']);

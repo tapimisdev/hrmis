@@ -10,76 +10,87 @@
                     :mobile-users-panel-closing="mobileUsersPanelClosing"
                 >
                     <template #header>
-                    <div class="contacts-panel__header">
-                        <div>
-                            <div class="contacts-panel__eyebrow">Conversations</div>
-                            <div class="contacts-panel__title-row">
-                                <h2>Inbox</h2>
-                                <span class="contacts-panel__count-badge">{{ visibleUsers.length }}</span>
+                    <div class="contacts-panel__header-block">
+                        <div class="contacts-panel__header">
+                            <div>
+                                <div class="contacts-panel__eyebrow">Conversations</div>
+                                <div class="contacts-panel__title-row">
+                                    <h2>Inbox</h2>
+                                    <span class="contacts-panel__count-badge">{{ visibleUsers.length }}</span>
+                                </div>
+                                <p class="contacts-panel__subtitle">
+                                    Direct and group chats synced with your HRIS workspace.
+                                </p>
                             </div>
-                            <p class="contacts-panel__subtitle">
-                                Direct and group chats synced with your HRIS workspace.
-                            </p>
-                            <div class="contacts-panel__utility-row">
-                                <a href="/employee/dashboard" class="contacts-panel__utility-link">
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                    <span>Dashboard</span>
-                                </a>
+
+                            <div class="contacts-panel__actions">
                                 <button
                                     type="button"
-                                    class="contacts-panel__utility-badge"
-                                    @click="showBetaInfoModal = true"
+                                    class="icon-chip contacts-panel__mobile-close"
+                                    aria-label="Close user list"
+                                    title="Close user list"
+                                    @click="closeMobileUsersPanel"
                                 >
-                                    <i class="fa-solid fa-flask"></i>
-                                    <span>Beta</span>
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="icon-chip"
+                                    aria-label="Create group chat"
+                                    title="Create group chat"
+                                    @click="openGroupChatModal"
+                                >
+                                    <i class="fa-solid fa-people-group"></i>
+                                </button>
+                                <button
+                                    v-if="groupChatRequestHistory.length"
+                                    type="button"
+                                    class="icon-chip"
+                                    aria-label="Request history"
+                                    title="Request history"
+                                    @click="showGroupChatRequestsModal = true"
+                                >
+                                    <i class="fa-solid fa-list-check"></i>
+                                    <span class="contacts-panel__action-badge">
+                                        {{ groupChatRequestHistory.length }}
+                                    </span>
+                                </button>
+                                <button
+                                    v-if="isAdmin"
+                                    type="button"
+                                    class="icon-chip"
+                                    aria-label="Pending approvals"
+                                    title="Pending approvals"
+                                    @click="showApprovalModal = true"
+                                >
+                                    <i class="fa-solid fa-user-check"></i>
+                                    <span v-if="pendingGroupChatApprovals.length" class="contacts-panel__action-badge">
+                                        {{ pendingGroupChatApprovals.length }}
+                                    </span>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="contacts-panel__actions">
+                        <div class="contacts-panel__utility-row">
+                            <a href="/employee/dashboard" class="contacts-panel__utility-link">
+                                <i class="fa-solid fa-arrow-left"></i>
+                                <span>Dashboard</span>
+                            </a>
                             <button
                                 type="button"
-                                class="icon-chip contacts-panel__mobile-close"
-                                aria-label="Close user list"
-                                title="Close user list"
-                                @click="closeMobileUsersPanel"
+                                class="contacts-panel__utility-badge"
+                                @click="showBetaInfoModal = true"
                             >
-                                <i class="fa-solid fa-xmark"></i>
+                                <i class="fa-solid fa-flask"></i>
+                                <span>Beta</span>
                             </button>
                             <button
                                 type="button"
-                                class="icon-chip"
-                                aria-label="Create group chat"
-                                title="Create group chat"
-                                @click="openGroupChatModal"
+                                class="contacts-panel__utility-badge"
+                                @click="showPrivacyInfoModal = true"
                             >
-                                <i class="fa-solid fa-people-group"></i>
-                            </button>
-                            <button
-                                v-if="groupChatRequestHistory.length"
-                                type="button"
-                                class="icon-chip"
-                                aria-label="Request history"
-                                title="Request history"
-                                @click="showGroupChatRequestsModal = true"
-                            >
-                                <i class="fa-solid fa-list-check"></i>
-                                <span class="contacts-panel__action-badge">
-                                    {{ groupChatRequestHistory.length }}
-                                </span>
-                            </button>
-                            <button
-                                v-if="isAdmin"
-                                type="button"
-                                class="icon-chip"
-                                aria-label="Pending approvals"
-                                title="Pending approvals"
-                                @click="showApprovalModal = true"
-                            >
-                                <i class="fa-solid fa-user-check"></i>
-                                <span v-if="pendingGroupChatApprovals.length" class="contacts-panel__action-badge">
-                                    {{ pendingGroupChatApprovals.length }}
-                                </span>
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span>Privacy</span>
                             </button>
                         </div>
                     </div>
@@ -444,141 +455,142 @@
                         <div v-if="message.is_system" class="message-system-note">
                             {{ message.body }}
                         </div>
-                        <div v-else class="message-bubble" :class="{ 'message-bubble--unsent': message.is_unsent }">
-                            <div
-                                class="message-bubble__floating-actions"
-                                :class="{ 'is-open': activeMessageActionsId === message.id }"
-                            >
-                                <div v-if="message.is_mine && !message.is_unsent" class="bubble-action-group">
+                        <div v-else class="message-bubble-wrap">
+                            <div class="message-bubble" :class="{ 'message-bubble--unsent': message.is_unsent }">
+                                <div
+                                    class="message-bubble__floating-actions"
+                                    :class="{ 'is-open': activeMessageActionsId === message.id }"
+                                >
+                                    <div v-if="message.is_mine && !message.is_unsent" class="bubble-action-group">
+                                        <button
+                                            type="button"
+                                            class="bubble-action"
+                                            :class="{ 'is-active': activeMessageActionsId === message.id }"
+                                            @click.stop="toggleMessageActions(message)"
+                                            title="More actions"
+                                            :aria-label="`More actions for ${message.body || message.attachment?.name || 'message'}`"
+                                            :aria-expanded="activeMessageActionsId === message.id"
+                                        >
+                                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                                        </button>
+                                        <div v-if="activeMessageActionsId === message.id" class="bubble-action-menu">
+                                            <button
+                                                v-if="message.is_mine && message.body"
+                                                type="button"
+                                                class="bubble-action bubble-action--menu"
+                                                @click.stop="editMessage(message)"
+                                                title="Edit message"
+                                                :aria-label="`Edit message ${message.body}`"
+                                            >
+                                                <span class="bubble-action__icon">
+                                                    <i class="fa-regular fa-pen-to-square"></i>
+                                                </span>
+                                                <span>Edit</span>
+                                            </button>
+                                            <button
+                                                v-if="message.is_mine"
+                                                type="button"
+                                                class="bubble-action bubble-action--menu bubble-action--danger"
+                                                @click.stop="unsendMessage(message)"
+                                                title="Unsend message"
+                                                :aria-label="`Unsend message ${message.body || message.attachment?.name || 'message'}`"
+                                            >
+                                                <span class="bubble-action__icon">
+                                                    <i class="fa-regular fa-trash-can"></i>
+                                                </span>
+                                                <span>Unsend</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="bubble-action bubble-action--menu"
+                                                :class="{ 'is-active': Boolean(message.pinned_at) }"
+                                                @click.stop="togglePinMessage(message)"
+                                                :title="message.pinned_at ? 'Unpin message' : 'Pin message'"
+                                                :aria-label="message.pinned_at ? 'Unpin message' : 'Pin message'"
+                                            >
+                                                <span class="bubble-action__icon">
+                                                    <i :class="message.pinned_at ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
+                                                </span>
+                                                <span>{{ message.pinned_at ? 'Unpin' : 'Pin' }}</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                     <button
+                                        v-else-if="!message.is_unsent"
                                         type="button"
                                         class="bubble-action"
-                                        :class="{ 'is-active': activeMessageActionsId === message.id }"
-                                        @click.stop="toggleMessageActions(message)"
-                                        title="More actions"
-                                        :aria-label="`More actions for ${message.body || message.attachment?.name || 'message'}`"
-                                        :aria-expanded="activeMessageActionsId === message.id"
+                                        :class="{ 'is-active': Boolean(message.pinned_at) }"
+                                        @click.stop="togglePinMessage(message)"
+                                        :title="message.pinned_at ? 'Unpin message' : 'Pin message'"
+                                        :aria-label="message.pinned_at ? 'Unpin message' : 'Pin message'"
                                     >
-                                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                                        <span class="bubble-action__icon">
+                                            <i :class="message.pinned_at ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
+                                        </span>
                                     </button>
-                                    <div v-if="activeMessageActionsId === message.id" class="bubble-action-menu">
-                                        <button
-                                            v-if="message.is_mine && message.body"
-                                            type="button"
-                                            class="bubble-action bubble-action--menu"
-                                            @click.stop="editMessage(message)"
-                                            title="Edit message"
-                                            :aria-label="`Edit message ${message.body}`"
-                                        >
-                                            <span class="bubble-action__icon">
-                                                <i class="fa-regular fa-pen-to-square"></i>
-                                            </span>
-                                            <span>Edit</span>
-                                        </button>
-                                        <button
-                                            v-if="message.is_mine"
-                                            type="button"
-                                            class="bubble-action bubble-action--menu bubble-action--danger"
-                                            @click.stop="unsendMessage(message)"
-                                            title="Unsend message"
-                                            :aria-label="`Unsend message ${message.body || message.attachment?.name || 'message'}`"
-                                        >
-                                            <span class="bubble-action__icon">
-                                                <i class="fa-regular fa-trash-can"></i>
-                                            </span>
-                                            <span>Unsend</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="bubble-action bubble-action--menu"
-                                            :class="{ 'is-active': Boolean(message.pinned_at) }"
-                                            @click.stop="togglePinMessage(message)"
-                                            :title="message.pinned_at ? 'Unpin message' : 'Pin message'"
-                                            :aria-label="message.pinned_at ? 'Unpin message' : 'Pin message'"
-                                        >
-                                            <span class="bubble-action__icon">
-                                                <i :class="message.pinned_at ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
-                                            </span>
-                                            <span>{{ message.pinned_at ? 'Unpin' : 'Pin' }}</span>
-                                        </button>
+                                    <button
+                                        v-if="!message.is_unsent"
+                                        type="button"
+                                        class="bubble-action"
+                                        @click.stop="startReply(message)"
+                                    >
+                                        <i class="fa-solid fa-reply"></i>
+                                    </button>
+                                    <button
+                                        v-if="!message.is_unsent"
+                                        type="button"
+                                        class="bubble-action"
+                                        :class="{ 'is-active': selectedMessageId === message.id && showReactionPicker }"
+                                        @click.stop="toggleReactionPicker(message)"
+                                        :aria-pressed="selectedMessageId === message.id && showReactionPicker"
+                                    >
+                                        <i class="fa-regular fa-face-smile"></i>
+                                    </button>
+                                    <button
+                                        v-if="message.attachment"
+                                        type="button"
+                                        class="bubble-action"
+                                        @click.stop="downloadAttachment(message.attachment)"
+                                    >
+                                        <i class="fa-solid fa-download"></i>
+                                    </button>
+                                </div>
+                                <button
+                                    v-if="message.reply_preview"
+                                    type="button"
+                                    class="message-bubble__reply message-bubble__reply--link"
+                                    @click.stop="scrollToReplyMessage(message)"
+                                    :aria-label="`Jump to replied message for ${message.reply_preview}`"
+                                >
+                                    <div class="message-bubble__reply-label">
+                                        <i class="fa-solid fa-reply"></i>
+                                        Replied to this message
                                     </div>
-                                </div>
-                                <button
-                                    v-else-if="!message.is_unsent"
-                                    type="button"
-                                    class="bubble-action"
-                                    :class="{ 'is-active': Boolean(message.pinned_at) }"
-                                    @click.stop="togglePinMessage(message)"
-                                    :title="message.pinned_at ? 'Unpin message' : 'Pin message'"
-                                    :aria-label="message.pinned_at ? 'Unpin message' : 'Pin message'"
-                                >
-                                    <span class="bubble-action__icon">
-                                        <i :class="message.pinned_at ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
-                                    </span>
+                                    <div>{{ message.reply_preview }}</div>
                                 </button>
-                                <button
-                                    v-if="!message.is_unsent"
-                                    type="button"
-                                    class="bubble-action"
-                                    @click.stop="startReply(message)"
-                                >
-                                    <i class="fa-solid fa-reply"></i>
-                                </button>
-                                <button
-                                    v-if="!message.is_unsent"
-                                    type="button"
-                                    class="bubble-action"
-                                    :class="{ 'is-active': selectedMessageId === message.id && showReactionPicker }"
-                                    @click.stop="toggleReactionPicker(message)"
-                                    :aria-pressed="selectedMessageId === message.id && showReactionPicker"
-                                >
-                                    <i class="fa-regular fa-face-smile"></i>
-                                </button>
-                                <button
-                                    v-if="message.attachment"
-                                    type="button"
-                                    class="bubble-action"
-                                    @click.stop="downloadAttachment(message.attachment)"
-                                >
-                                    <i class="fa-solid fa-download"></i>
-                                </button>
-                            </div>
-                            <button
-                                v-if="message.reply_preview"
-                                type="button"
-                                class="message-bubble__reply message-bubble__reply--link"
-                                @click.stop="scrollToReplyMessage(message)"
-                                :aria-label="`Jump to replied message for ${message.reply_preview}`"
-                            >
-                                <div class="message-bubble__reply-label">
-                                    <i class="fa-solid fa-reply"></i>
-                                    Replied to this message
-                                </div>
-                                <div>{{ message.reply_preview }}</div>
-                            </button>
 
-                                        <div
-                                            v-if="activeConversationIsGroup && !message.is_mine"
-                                            class="message-bubble__sender"
-                                        >
-                                            {{ message.sender_name || 'User' }}
-                                        </div>
-                                        <div
-                                            v-if="message.body"
-                                            class="message-bubble__text"
-                                        >
-                                            {{ message.body }}
-                                        </div>
-                                        <div
-                                            v-if="message.is_unsent"
-                                            class="message-bubble__text message-bubble__text--unsent"
-                                        >
-                                            Unsent Message
-                                        </div>
+                                <div
+                                    v-if="activeConversationIsGroup && !message.is_mine"
+                                    class="message-bubble__sender"
+                                >
+                                    {{ message.sender_name || 'User' }}
+                                </div>
+                                <div
+                                    v-if="message.body"
+                                    class="message-bubble__text"
+                                >
+                                    {{ message.body }}
+                                </div>
+                                <div
+                                    v-if="message.is_unsent"
+                                    class="message-bubble__text message-bubble__text--unsent"
+                                >
+                                    Unsent Message
+                                </div>
 
-                                        <div
-                                            v-if="message.pinned_at"
-                                            class="message-pin-chip message-pin-chip--floating"
+                                <div
+                                    v-if="message.pinned_at"
+                                    class="message-pin-chip message-pin-chip--floating"
                                     :class="message.is_mine ? 'message-pin-chip--mine' : 'message-pin-chip--theirs'"
                                     title="Pinned message"
                                 >
@@ -596,10 +608,10 @@
                                     <span class="message-reaction-badge__glyph">{{ getReactionEmoji(message.reaction) }}</span>
                                 </div>
 
-                                    <div
-                                        v-if="message.attachment && message.attachment.type === 'image' && !message.is_unsent"
-                                        class="message-bubble__attachment message-bubble__attachment--image"
-                                    >
+                                <div
+                                    v-if="message.attachment && message.attachment.type === 'image' && !message.is_unsent"
+                                    class="message-bubble__attachment message-bubble__attachment--image"
+                                >
                                     <button
                                         type="button"
                                         class="message-bubble__image-link"
@@ -640,14 +652,60 @@
                                 <div class="message-bubble__time">
                                     {{ formatTime(message.created_at) }}
                                 </div>
-                                <div
-                                    v-if="message.is_mine"
-                                    class="message-bubble__status"
-                                    :class="message.read_at ? 'message-bubble__status--seen' : 'message-bubble__status--sent'"
+                            </div>
+                            <div
+                                v-if="message.is_mine && (shouldShowSeenReceipt(message) || !message.read_at || message.edited_at)"
+                                class="message-bubble__status"
+                                :class="shouldShowSeenReceipt(message) ? 'message-bubble__status--seen' : 'message-bubble__status--sent'"
+                            >
+                                <template v-if="shouldShowSeenReceipt(message)">
+                                    <template v-if="activeConversationIsGroup">
+                                        <button
+                                            type="button"
+                                            class="message-bubble__seen-group"
+                                            :title="formatGroupSeenReceiptTooltip(message)"
+                                            :aria-label="formatGroupSeenReceiptTooltip(message)"
+                                            @click.stop="openSeenByModal(message)"
+                                        >
+                                            <span
+                                                v-for="user in getSeenReceiptPreviewUsers(message)"
+                                                :key="`seen-preview-${message.id}-${user.id}`"
+                                                class="message-bubble__seen-avatar"
+                                            >
+                                                <img
+                                                    :src="getMemberProfile(user)"
+                                                    :alt="`${getSeenMemberName(user)} profile`"
+                                                />
+                                            </span>
+                                            <span
+                                                v-if="getSeenReceiptOverflowCount(message) > 0"
+                                                class="message-bubble__seen-overflow"
+                                            >
+                                                +{{ getSeenReceiptOverflowCount(message) }}
+                                            </span>
+                                        </button>
+                                    </template>
+                                    <template v-else>
+                                        <span
+                                            class="message-bubble__seen-avatar"
+                                            :title="formatSeenReceiptTooltip(message.read_at)"
+                                            :aria-label="formatSeenReceiptTooltip(message.read_at)"
+                                        >
+                                            <img
+                                                :src="getSeenReceiptAvatar()"
+                                                :alt="`${activeUserName} profile`"
+                                            />
+                                        </span>
+                                    </template>
+                                </template>
+                                <template v-else>Sent</template>
+                                <span
+                                    v-if="message.edited_at"
+                                    class="message-bubble__status-edit"
+                                    :class="{ 'message-bubble__status-edit--stacked': message.read_at }"
                                 >
-                                    {{ message.read_at ? `Seen at ${formatSeenAt(message.read_at)}` : 'Sent' }}
-                                    <span v-if="message.edited_at" class="message-bubble__status-edit">· Edited</span>
-                                </div>
+                                    · Edited
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -812,6 +870,7 @@
                         <i class="fa-solid fa-arrow-down"></i>
                     </button>
                 </transition>
+                </div>
                     </template>
                 </ConversationWorkspace>
             </div>
@@ -830,7 +889,7 @@
                                 <i class="fa-solid fa-flask"></i>
                             </div>
                             <div class="message-action-modal__eyebrow">Beta release</div>
-                            <h3 class="message-action-modal__title">About the Messages beta</h3>
+                            <h3 class="message-action-modal__title">About the BETA release</h3>
                             <p class="message-action-modal__subtitle">
                                 This module is aimed at giving HRIS users one built-in space for direct messages,
                                 group coordination, approvals, and quick internal communication without leaving the portal.
@@ -861,6 +920,58 @@
                             type="button"
                             class="message-action-modal__btn message-action-modal__btn--primary"
                             @click="showBetaInfoModal = false"
+                        >
+                            Understood
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+            <div
+                v-if="showPrivacyInfoModal"
+                class="message-action-modal-backdrop"
+                @click.self="showPrivacyInfoModal = false"
+            >
+                <div class="message-action-modal" role="dialog" aria-modal="true">
+                    <div class="message-action-modal__header">
+                        <div class="message-action-modal__headline">
+                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div class="message-action-modal__eyebrow">Privacy notice</div>
+                            <h3 class="message-action-modal__title">About message privacy</h3>
+                            <p class="message-action-modal__subtitle">
+                                Your conversations are handled with privacy controls designed to protect exchanged messages inside the portal.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            class="message-action-modal__close"
+                            @click="showPrivacyInfoModal = false"
+                            aria-label="Close dialog"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="message-action-modal__body">
+                        <div class="message-action-modal__context">
+                            <div class="message-action-modal__context-label">How your messages are protected</div>
+                            <div class="message-action-modal__preview message-action-modal__preview--stacked">
+                                <p>All exchanged messages are encrypted on the server and stored in a form that is not readable to the human eye.</p>
+                                <p>To help protect privacy over time, messages older than 3 months are included in a scheduled permanent deletion process.</p>
+                                <p>Once they pass the 3-month retention window, those older messages are permanently removed from the system.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="message-action-modal__footer">
+                        <button
+                            type="button"
+                            class="message-action-modal__btn message-action-modal__btn--primary"
+                            @click="showPrivacyInfoModal = false"
                         >
                             Understood
                         </button>
@@ -1587,6 +1698,67 @@
 
         <transition name="fade">
             <div
+                v-if="showSeenByModal"
+                class="message-action-modal-backdrop"
+                @click.self="closeSeenByModal"
+            >
+                <div class="message-action-modal" role="dialog" aria-modal="true">
+                    <div class="message-action-modal__header">
+                        <div class="message-action-modal__headline">
+                            <div class="message-action-modal__badge message-action-modal__badge--edit">
+                                <i class="fa-regular fa-eye"></i>
+                            </div>
+                            <div class="message-action-modal__eyebrow">Seen by</div>
+                            <h3 class="message-action-modal__title">{{ seenByModalUsers.length }} members</h3>
+                            <p class="message-action-modal__subtitle">
+                                People who have seen this message.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            class="message-action-modal__close"
+                            @click="closeSeenByModal"
+                            aria-label="Close dialog"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="message-action-modal__body">
+                        <div v-if="seenByModalUsers.length" class="group-chat-member-list">
+                            <div
+                                v-for="member in seenByModalUsers"
+                                :key="`seen-modal-${member.id}`"
+                                class="group-chat-member-item group-chat-member-item--static"
+                            >
+                                <img :src="getMemberProfile(member)" :alt="getSeenMemberName(member)">
+                                <div class="group-chat-member-item__content">
+                                    <div class="group-chat-member-item__headline">
+                                        <span>{{ getSeenMemberName(member) }}</span>
+                                        <small v-if="Number(member.id) === Number(authUser?.id || 0)" class="text-white-50">(You)</small>
+                                    </div>
+                                    <small
+                                        v-if="member.nickname && member.name && member.nickname !== member.name"
+                                        class="text-white-50"
+                                    >
+                                        {{ member.name }}
+                                    </small>
+                                </div>
+                                <div v-if="member.last_read_at" class="group-chat-member-item__date">
+                                    Seen {{ formatGroupMemberDate(member.last_read_at) }}
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-white-50">
+                            No members have seen this message yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+            <div
                 v-if="showApprovalModal"
                 class="message-action-modal-backdrop"
                 @click.self="showApprovalModal = false"
@@ -1928,6 +2100,10 @@ export default {
             type: String,
             default: null,
         },
+        messagesBaseUrl: {
+            type: String,
+            default: '',
+        },
         csrfToken: {
             type: String,
             default: '',
@@ -2011,6 +2187,7 @@ export default {
                 ...user,
                 id: normalizeUserId(user.id),
                 conversation_key: user.conversation_key || `direct:${normalizeUserId(user.id)}`,
+                conversation_token: user.conversation_token || null,
                 conversation_type: user.conversation_type || 'direct',
                 member_ids: Array.isArray(user.member_ids) ? user.member_ids.map((id) => Number(id)) : [],
                 active_label: user.active_label || activityState.label,
@@ -2140,7 +2317,10 @@ export default {
             groupInviteError: '',
             groupInviteSearch: '',
             groupInviteMemberIds: [],
+            showSeenByModal: false,
+            seenByModalUsers: [],
             showBetaInfoModal: false,
+            showPrivacyInfoModal: false,
             showGroupChatRequestsModal: false,
             activeGroupRequestTooltipId: null,
             showLeaveGroupModal: false,
@@ -2219,6 +2399,36 @@ export default {
 
             return this.getConversationStatusLabel(this.activeUser);
         },
+        latestSeenReceiptMessageId() {
+            for (let index = this.messages.length - 1; index >= 0; index -= 1) {
+                const message = this.messages[index];
+
+                if (message?.is_mine && message?.read_at) {
+                    return Number(message.id);
+                }
+            }
+
+            return null;
+        },
+        latestGroupSeenReceiptMessageId() {
+            if (!this.activeConversationIsGroup) {
+                return null;
+            }
+
+            for (let index = this.messages.length - 1; index >= 0; index -= 1) {
+                const message = this.messages[index];
+
+                if (!message?.is_mine || message?.is_system) {
+                    continue;
+                }
+
+                if (this.getGroupSeenUsers(message).length > 0) {
+                    return Number(message.id);
+                }
+            }
+
+            return null;
+        },
         activeGroupMembers() {
             if (!this.activeConversationIsGroup) {
                 return [];
@@ -2228,6 +2438,7 @@ export default {
             return members.map((member) => ({
                 ...member,
                 id: Number(member.id),
+                last_read_at: member.last_read_at || null,
             }));
         },
         activeGroupSelfMember() {
@@ -2393,6 +2604,7 @@ export default {
         }
 
         this.initializeDirectMessageListener();
+        window.addEventListener('popstate', this.handleBrowserNavigation);
         window.addEventListener('click', this.handleGlobalClick);
     },
     beforeUnmount() {
@@ -2432,10 +2644,69 @@ export default {
             this.activityRefreshTimer = null;
         }
 
+        window.removeEventListener('popstate', this.handleBrowserNavigation);
         window.removeEventListener('click', this.handleGlobalClick);
         this.destroyImageGallery();
     },
     methods: {
+        normalizedMessagesBaseUrl() {
+            const fallbackPath = `${window.location.origin}${window.location.pathname}`.replace(/\/+$/, '');
+            return String(this.messagesBaseUrl || fallbackPath).replace(/\/+$/, '');
+        },
+        buildConversationUrl(conversation = null) {
+            const baseUrl = this.normalizedMessagesBaseUrl();
+            const token = String(conversation?.conversation_token || '').trim();
+
+            return token ? `${baseUrl}/${encodeURIComponent(token)}` : baseUrl;
+        },
+        currentConversationTokenFromLocation() {
+            const basePath = new URL(this.normalizedMessagesBaseUrl(), window.location.origin).pathname.replace(/\/+$/, '');
+            const currentPath = window.location.pathname.replace(/\/+$/, '');
+
+            if (currentPath === basePath || !currentPath.startsWith(`${basePath}/`)) {
+                return null;
+            }
+
+            return decodeURIComponent(currentPath.slice(basePath.length + 1)) || null;
+        },
+        updateConversationUrl(conversation = null, historyMode = 'push') {
+            const nextUrl = this.buildConversationUrl(conversation);
+            const nextPathname = new URL(nextUrl, window.location.origin).pathname;
+            const currentPathname = window.location.pathname.replace(/\/+$/, '');
+
+            if (currentPathname === nextPathname.replace(/\/+$/, '')) {
+                return;
+            }
+
+            const state = {
+                conversation_key: conversation?.conversation_key || null,
+            };
+
+            if (historyMode === 'replace') {
+                window.history.replaceState(state, '', nextUrl);
+                return;
+            }
+
+            window.history.pushState(state, '', nextUrl);
+        },
+        resolveConversationFromLocation() {
+            const token = this.currentConversationTokenFromLocation();
+
+            if (!token) {
+                return this.users[0] || null;
+            }
+
+            return this.users.find((user) => user.conversation_token === token) || this.users[0] || null;
+        },
+        handleBrowserNavigation() {
+            const targetConversation = this.resolveConversationFromLocation();
+
+            if (!targetConversation || targetConversation.conversation_key === this.selectedConversationKey) {
+                return;
+            }
+
+            this.selectUser(targetConversation, { updateHistory: false });
+        },
         handleGlobalClick(event) {
             this.contactActionMenuKey = null;
 
@@ -2498,7 +2769,9 @@ export default {
                     });
                 }
 
-                if (cachedSelectedConversationKey) {
+                const locationConversationToken = this.currentConversationTokenFromLocation();
+
+                if (cachedSelectedConversationKey && !locationConversationToken) {
                     const exists = this.users.some((user) => user.conversation_key === cachedSelectedConversationKey);
                     if (exists) {
                         this.selectedConversationKey = cachedSelectedConversationKey;
@@ -2711,6 +2984,18 @@ export default {
                     }
 
                     this.applySeenReceipt(threadUserId, readAt, [...messageIds]);
+                })
+                .listen('.group-chat.seen', (event) => {
+                    const payload = event?.payload || {};
+                    const groupChatId = Number(payload.group_chat_id || 0);
+                    const readerId = Number(payload.reader_id || payload.reader?.id || 0);
+                    const readAt = payload.read_at || payload.reader?.last_read_at || null;
+
+                    if (!groupChatId || !readerId || !readAt) {
+                        return;
+                    }
+
+                    this.applyGroupSeenReceipt(groupChatId, payload.reader || null, readAt);
                 })
                 .listen('.group-chat.created', (event) => {
                     if (!event?.conversation) {
@@ -3316,7 +3601,7 @@ export default {
         toggleGroupRequestTooltip(requestId) {
             this.activeGroupRequestTooltipId = this.activeGroupRequestTooltipId === requestId ? null : requestId;
         },
-        selectUser(user) {
+        selectUser(user, { updateHistory = true, historyMode = 'push' } = {}) {
             this.contactActionMenuKey = null;
             if (!user || user.conversation_key === this.selectedConversationKey) {
                 this.closeMobileUsersPanel();
@@ -3334,6 +3619,9 @@ export default {
             this.clearSelectedMessage();
             this.clearReplyTarget();
             this.clearSelectedAttachment();
+            if (updateHistory) {
+                this.updateConversationUrl(user, historyMode);
+            }
             this.scheduleMessagesCachePersist();
             this.loadConversation(user, { page: 1 });
         },
@@ -3348,6 +3636,7 @@ export default {
             this.showGroupInfoModal = false;
             this.showGroupMembersModal = false;
             this.showInviteMembersModal = false;
+            this.closeSeenByModal();
             this.showLeaveGroupModal = false;
             this.resetConversationInfoMedia();
         },
@@ -4541,6 +4830,19 @@ export default {
             this.clearReactionPicker();
             this.activeMessageActionsId = null;
 
+            const isPinningMessage = !message.pinned_at;
+            const maxPinnedMessagesPerConversation = 10;
+
+            if (isPinningMessage && this.pinnedMessages.length >= maxPinnedMessagesPerConversation) {
+                this.notify({
+                    type: 'error',
+                    title: 'Pin limit reached',
+                    message: 'Maximum pinned messages is 10 for each direct message or group chat.',
+                    duration: 4000,
+                });
+                return;
+            }
+
             try {
                 const endpoint = this.activeConversationIsGroup
                     ? `/api/group-messages/${message.id}/pin`
@@ -4548,7 +4850,7 @@ export default {
                 const { data } = await axios.patch(
                     endpoint,
                     {
-                        is_pinned: !message.pinned_at,
+                        is_pinned: isPinningMessage,
                     },
                     {
                         headers: this.buildAuthHeaders(),
@@ -4652,6 +4954,7 @@ export default {
                 if (data?.conversation) {
                     this.upsertConversation(data.conversation);
                     this.selectedConversationKey = data.conversation.conversation_key;
+                    this.updateConversationUrl(data.conversation, 'push');
                     this.resetConversationState();
                     await this.loadConversation(data.conversation, { page: 1 });
                 }
@@ -4731,11 +5034,14 @@ export default {
                 ...conversation,
                 id: Number(conversation.id),
                 conversation_key: conversation.conversation_key,
+                conversation_token: conversation.conversation_token || existingConversation?.conversation_token || null,
                 conversation_type: conversation.conversation_type || 'direct',
                 member_ids: Array.isArray(conversation.member_ids) ? conversation.member_ids.map((id) => Number(id)) : [],
                 members: Array.isArray(conversation.members) ? conversation.members.map((member) => ({
                     ...member,
                     id: Number(member.id),
+                    last_read_at: member.last_read_at || null,
+                    display_name: member.display_name || member.nickname || member.name || 'User',
                 })) : [],
                 actual_name: conversation.actual_name || existingConversation?.actual_name || conversation.name,
                 nickname: Object.prototype.hasOwnProperty.call(conversation, 'nickname')
@@ -4799,7 +5105,10 @@ export default {
                 this.resetConversationState();
 
                 if (nextConversation) {
+                    this.updateConversationUrl(nextConversation, 'replace');
                     this.loadConversation(nextConversation, { page: 1 });
+                } else {
+                    this.updateConversationUrl(null, 'replace');
                 }
             }
 
@@ -4910,7 +5219,7 @@ export default {
             }
 
             try {
-                await axios.post(
+                const { data } = await axios.post(
                     `/api/group-chats/${activeUser.id}/seen`,
                     {},
                     {
@@ -4925,6 +5234,13 @@ export default {
                     targetConversation.unread_count = 0;
                     targetConversation.is_unread = false;
                 }
+
+                this.applyGroupSeenReceipt(activeUser.id, {
+                    id: Number(this.authUser?.id || 0),
+                    name: this.authUser?.name || 'User',
+                    nickname: this.activeGroupSelfMember?.nickname || null,
+                    display_name: this.activeGroupSelfMember?.display_name || this.authUser?.name || 'User',
+                }, data?.read_at || new Date().toISOString());
             } catch (error) {
                 console.error('Failed to mark group conversation as seen:', error);
             }
@@ -5152,6 +5468,108 @@ export default {
             }
 
         },
+        getSeenMemberName(member) {
+            const nickname = String(member?.nickname || '').trim();
+            const realName = String(member?.name || '').trim();
+
+            return nickname || realName || 'User';
+        },
+        getGroupSeenUsers(message) {
+            if (!this.activeConversationIsGroup || !message?.is_mine || !message?.created_at) {
+                return [];
+            }
+
+            const messageCreatedAt = Date.parse(message.created_at);
+            const senderId = Number(message.sender_id || this.authUser?.id || 0);
+
+            if (Number.isNaN(messageCreatedAt)) {
+                return [];
+            }
+
+            return this.activeGroupMembers
+                .filter((member) => Number(member.id) !== senderId)
+                .filter((member) => {
+                    const lastReadAt = Date.parse(member.last_read_at || '');
+                    return !Number.isNaN(lastReadAt) && lastReadAt >= messageCreatedAt;
+                })
+                .sort((left, right) => Date.parse(right.last_read_at || '') - Date.parse(left.last_read_at || ''));
+        },
+        getSeenReceiptPreviewUsers(message) {
+            return this.getGroupSeenUsers(message).slice(0, 10);
+        },
+        getSeenReceiptOverflowCount(message) {
+            return Math.max(this.getGroupSeenUsers(message).length - 10, 0);
+        },
+        formatGroupSeenReceiptTooltip(message) {
+            const seenUsers = this.getGroupSeenUsers(message);
+
+            if (!seenUsers.length) {
+                return 'Seen';
+            }
+
+            return `Seen ${this.formatSeenDateTime(seenUsers[0]?.last_read_at)}`;
+        },
+        openSeenByModal(message) {
+            const seenUsers = this.getGroupSeenUsers(message);
+
+            if (!this.activeConversationIsGroup || !seenUsers.length) {
+                return;
+            }
+
+            this.seenByModalUsers = seenUsers;
+            this.showSeenByModal = true;
+        },
+        closeSeenByModal() {
+            this.showSeenByModal = false;
+            this.seenByModalUsers = [];
+        },
+        applyGroupSeenReceipt(groupChatId, reader, readAt) {
+            const normalizedGroupChatId = Number(groupChatId || 0);
+            const normalizedReaderId = Number(reader?.id || reader?.user_id || 0);
+            const normalizedReadAt = readAt ? new Date(readAt).toISOString() : null;
+
+            if (!normalizedGroupChatId || !normalizedReaderId || !normalizedReadAt) {
+                return;
+            }
+
+            const conversationKey = `group:${normalizedGroupChatId}`;
+            const conversation = this.users.find((user) => user.conversation_key === conversationKey);
+
+            if (!conversation) {
+                return;
+            }
+
+            const existingMembers = Array.isArray(conversation.members) ? conversation.members : [];
+            const existingIndex = existingMembers.findIndex((member) => Number(member.id) === normalizedReaderId);
+            const nextMember = {
+                ...(existingIndex >= 0 ? existingMembers[existingIndex] : {}),
+                ...(reader || {}),
+                id: normalizedReaderId,
+                name: reader?.name || existingMembers[existingIndex]?.name || 'User',
+                nickname: Object.prototype.hasOwnProperty.call(reader || {}, 'nickname')
+                    ? reader.nickname
+                    : (existingMembers[existingIndex]?.nickname || null),
+                display_name: reader?.display_name
+                    || this.getSeenMemberName(reader || existingMembers[existingIndex] || {}),
+                last_read_at: normalizedReadAt,
+            };
+
+            if (existingIndex >= 0) {
+                existingMembers.splice(existingIndex, 1, nextMember);
+            } else {
+                existingMembers.push(nextMember);
+            }
+
+            conversation.members = [...existingMembers];
+
+            if (this.showSeenByModal) {
+                this.seenByModalUsers = this.seenByModalUsers
+                    .map((member) => (Number(member.id) === normalizedReaderId ? { ...member, ...nextMember } : member))
+                    .sort((left, right) => Date.parse(right.last_read_at || '') - Date.parse(left.last_read_at || ''));
+            }
+
+            this.scheduleMessagesCachePersist();
+        },
         refreshUserActivityLabels() {
             this.users.forEach((user) => {
                 const activityState = user.conversation_type === 'group'
@@ -5310,8 +5728,68 @@ export default {
                 return '';
             }
         },
-        formatSeenAt(value) {
-            return this.formatTime(value);
+        formatSeenReceiptTooltip(value) {
+            if (!value) {
+                return '';
+            }
+
+            try {
+                const date = new Date(value);
+
+                if (Number.isNaN(date.getTime())) {
+                    return '';
+                }
+
+                return `Seen ${this.formatSeenDateTime(date)}`;
+            } catch (error) {
+                return '';
+            }
+        },
+        formatSeenDateTime(value) {
+            if (!value) {
+                return '';
+            }
+
+            try {
+                const date = value instanceof Date ? value : new Date(value);
+
+                if (Number.isNaN(date.getTime())) {
+                    return '';
+                }
+
+                const datePart = new Intl.DateTimeFormat('en-US', {
+                    month: 'long',
+                    day: '2-digit',
+                    year: 'numeric',
+                }).format(date);
+                const timePart = new Intl.DateTimeFormat('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true,
+                }).format(date);
+
+                return `${datePart} at ${timePart}`;
+            } catch (error) {
+                return '';
+            }
+        },
+        getSeenReceiptAvatar() {
+            return this.activeUserAvatar;
+        },
+        shouldShowSeenReceipt(message) {
+            if (!message?.is_mine) {
+                return false;
+            }
+
+            if (this.activeConversationIsGroup) {
+                return Number(message.id) === this.latestGroupSeenReceiptMessageId;
+            }
+
+            if (!message?.read_at) {
+                return false;
+            }
+
+            return Number(message.id) === this.latestSeenReceiptMessageId;
         },
         formatConversationTimestamp(value) {
             if (!value) {
@@ -5369,11 +5847,7 @@ export default {
                     return '';
                 }
 
-                return new Intl.DateTimeFormat([], {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                }).format(date);
+                return this.formatSeenDateTime(date);
             } catch (error) {
                 return '';
             }
@@ -5433,8 +5907,8 @@ export default {
 }
 
 .contacts-panel {
-    flex: 0 0 clamp(320px, 28vw, 370px);
-    width: clamp(320px, 28vw, 370px);
+    flex: 0 0 clamp(380px, 32vw, 460px);
+    width: clamp(380px, 32vw, 460px);
     display: flex;
     flex-direction: column;
     transition: 
@@ -5455,12 +5929,15 @@ export default {
         linear-gradient(180deg, rgba(49, 55, 63, 0.96), rgba(40, 45, 52, 0.98));
 }
 
+.contacts-panel__header-block {
+    padding: 18px 18px 10px;
+}
+
 .contacts-panel__header {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: start;
     gap: 12px;
-    padding: 18px 18px 10px;
 }
 
 .contacts-panel__header > div:first-child {
@@ -5503,26 +5980,43 @@ export default {
 
 .contacts-panel__utility-row {
     display: flex;
-    align-items: center;
     flex-wrap: nowrap;
-    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
     margin-top: 14px;
-    min-width: 0;
+    width: 100%;
+    padding-right: 10px;
 }
 
 .contacts-panel__utility-link,
 .contacts-panel__utility-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 0 14px;
-    border-radius: 14px;
-    font-size: 0.8rem;
-    font-weight: 700;
+    justify-content: center;
+    gap: 6px;
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 13px;
+    border-radius: 16px;
+    font-size: 0.82rem;
+    font-weight: 800;
     text-decoration: none;
     white-space: nowrap;
     transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contacts-panel__utility-link i,
+.contacts-panel__utility-badge i {
+    font-size: 0.9rem;
+    flex: 0 0 auto;
+}
+
+.contacts-panel__utility-link span,
+.contacts-panel__utility-badge span {
+    min-width: 0;
+    line-height: 1;
 }
 
 .contacts-panel__utility-link {
@@ -5541,8 +6035,7 @@ export default {
     border: 0;
     background: linear-gradient(135deg, rgba(28, 88, 246, 0.24), rgba(67, 122, 255, 0.18));
     color: #dfe9ff;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.02em;
     box-shadow: inset 0 0 0 1px rgba(142, 181, 255, 0.16);
 }
 
@@ -6776,6 +7269,23 @@ export default {
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
 }
 
+.message-bubble-wrap {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    max-width: min(76%, 640px);
+    min-width: 0;
+}
+
+.message-row--theirs .message-bubble-wrap {
+    align-items: flex-start;
+}
+
+.message-bubble-wrap .message-bubble {
+    width: 100%;
+    max-width: 100%;
+}
+
 .message-bubble__text {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -7182,9 +7692,15 @@ export default {
 }
 
 .message-bubble__status {
-    margin-top: 2px;
+    margin-top: 6px;
     font-size: 0.72rem;
     text-align: right;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 4px;
+    width: 100%;
 }
 
 .message-bubble__status--sent {
@@ -7197,7 +7713,70 @@ export default {
 
 .message-bubble__status-edit {
     color: rgba(255, 255, 255, 0.74);
+}
+
+.message-bubble__status-edit--stacked {
     margin-left: 3px;
+}
+
+.message-bubble__seen-group {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.message-bubble__seen-group:hover .message-bubble__seen-avatar,
+.message-bubble__seen-group:hover .message-bubble__seen-overflow {
+    transform: translateY(-1px);
+}
+
+.message-bubble__seen-avatar {
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 999px;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 8px 16px rgba(2, 6, 23, 0.18);
+    cursor: default;
+    transition: transform 0.16s ease;
+}
+
+.message-bubble__seen-group .message-bubble__seen-avatar + .message-bubble__seen-avatar {
+    margin-left: -0.3rem;
+}
+
+.message-bubble__seen-overflow {
+    min-width: 1.5rem;
+    height: 1.2rem;
+    margin-left: 0.3rem;
+    padding: 0 0.38rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: transform 0.16s ease;
+}
+
+.message-bubble__seen-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .message-pin-chip--floating,
@@ -8365,8 +8944,8 @@ export default {
     }
 
     .contacts-panel {
-        flex-basis: clamp(300px, 29vw, 340px);
-        width: clamp(300px, 29vw, 340px);
+        flex-basis: clamp(360px, 33vw, 420px);
+        width: clamp(360px, 33vw, 420px);
     }
 
     .conversation-panel__top {
@@ -8394,11 +8973,15 @@ export default {
     }
 
     .contacts-panel {
-        flex-basis: clamp(280px, 38vw, 320px);
-        width: clamp(280px, 38vw, 320px);
+        flex-basis: clamp(340px, 42vw, 400px);
+        width: clamp(340px, 42vw, 400px);
     }
 
     .contacts-panel__header {
+        padding: 0;
+    }
+
+    .contacts-panel__header-block {
         padding: 16px 16px 10px;
     }
 
@@ -8407,14 +8990,14 @@ export default {
     }
 
     .contacts-panel__utility-row {
-        flex-wrap: wrap;
+        gap: 8px;
     }
 
     .contacts-panel__utility-link,
     .contacts-panel__utility-badge {
-        min-height: 36px;
+        min-height: 42px;
         padding: 0 12px;
-        font-size: 0.78rem;
+        font-size: 0.76rem;
     }
 
     .contact-card {
@@ -8464,15 +9047,16 @@ export default {
     }
 
     .contacts-panel__utility-row {
-        gap: 8px;
-        flex-wrap: nowrap;
+        gap: 6px;
+        padding-right: 4px;
     }
 
     .contacts-panel__utility-link,
     .contacts-panel__utility-badge {
-        min-height: 36px;
-        padding: 0 12px;
-        font-size: 0.76rem;
+        min-height: 38px;
+        padding: 0 10px;
+        gap: 5px;
+        font-size: 0.7rem;
     }
 
     .group-chat-approval-card__topline {
@@ -8573,8 +9157,12 @@ export default {
         display: none;
     }
 
-    .contacts-panel__header {
+    .contacts-panel__header-block {
         padding: 14px 14px 8px;
+    }
+
+    .contacts-panel__header {
+        padding: 0;
     }
 
     .contacts-panel__search {
@@ -8710,6 +9298,10 @@ export default {
         max-width: 92%;
         padding: 10px 12px;
         border-radius: 16px;
+    }
+
+    .message-bubble-wrap {
+        max-width: 92%;
     }
 
     .message-bubble__time,

@@ -9,6 +9,7 @@ use App\Events\DirectMessageTyping;
 use App\Http\Controllers\Controller;
 use App\Models\DirectMessage;
 use App\Models\User;
+use App\Services\MessagesPageService;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,11 @@ use Illuminate\Support\Facades\Storage;
 class DirectMessageController extends Controller
 {
     private const REACTION_KEYS = ['like', 'number-one', 'love', 'haha', 'sad', 'angry'];
+
+    public function __construct(
+        protected MessagesPageService $messagesPageService
+    ) {
+    }
 
     public function index(Request $request, User $user)
     {
@@ -751,6 +757,7 @@ class DirectMessageController extends Controller
         return [
             'id' => (int) $user->id,
             'conversation_key' => 'direct:' . $user->id,
+            'conversation_token' => $this->messagesPageService->conversationToken('direct', (int) $user->id),
             'conversation_type' => 'direct',
             'actual_name' => $user->name,
             'nickname' => filled($nickname) ? (string) $nickname : null,

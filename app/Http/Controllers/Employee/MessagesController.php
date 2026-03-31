@@ -13,10 +13,11 @@ class MessagesController extends Controller
     ) {
     }
 
-    public function index(Request $request)
+    public function index(Request $request, ?string $conversationToken = null)
     {
         $authUser = $request->user();
-        $selectedConversationKey = $request->query('conversation');
+        $selectedConversationKey = $this->messagesPageService->conversationKeyFromToken($conversationToken)
+            ?? $request->query('conversation');
 
         if (!$selectedConversationKey && $request->filled('user')) {
             $selectedConversationKey = 'direct:' . (int) $request->query('user');

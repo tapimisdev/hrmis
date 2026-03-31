@@ -8,6 +8,7 @@ use App\Events\GroupChatMessageUpdated;
 use App\Events\GroupChatUpdated;
 use App\Events\GroupChatRequestUpdated;
 use App\Events\GroupChatTyping;
+use App\Events\GroupChatSeen;
 use App\Http\Controllers\Controller;
 use App\Models\GroupChat;
 use App\Models\GroupChatMember;
@@ -183,6 +184,31 @@ class GroupChatController extends Controller
                 'last_read_at' => $readAt,
                 'updated_at' => $readAt,
             ]);
+
+        $reader = GroupChatMember::query()
+            ->with(['user:id,name'])
+            ->where('group_chat_id', $groupChat->id)
+            ->where('user_id', $authUser->id)
+            ->first();
+
+        event(new GroupChatSeen([
+            'group_chat_id' => (int) $groupChat->id,
+            'conversation_key' => 'group:' . $groupChat->id,
+            'reader_id' => (int) $authUser->id,
+            'read_at' => $readAt->toIso8601String(),
+            'reader' => $reader ? $this->formatConversationMemberRecord($reader) : [
+                'id' => (int) $authUser->id,
+                'name' => $authUser->name,
+                'nickname' => null,
+                'display_name' => $authUser->name,
+                'profile' => null,
+                'joined_at' => null,
+                'last_read_at' => $readAt->toIso8601String(),
+                'added_by_id' => null,
+                'added_by_name' => null,
+                'added_by' => null,
+            ],
+        ], $this->groupRecipientIds($groupChat)));
 
         return response()->json([
             'read_at' => $readAt->toIso8601String(),
@@ -848,6 +874,7 @@ class GroupChatController extends Controller
                     . '&background=1f6feb&color=fff&font-size=0.36&bold=true',
             'conversation_type' => 'group',
             'conversation_key' => 'group:' . $groupChat->id,
+            'conversation_token' => $this->messagesPageService->conversationToken('group', (int) $groupChat->id),
             'preview' => $groupChat->last_message_preview ?: 'Group chat is ready',
             'preview_time' => $latestAt?->diffForHumans(),
             'latest_at' => $latestAt?->toIso8601String(),
@@ -1024,23 +1051,30 @@ class GroupChatController extends Controller
             ->where('group_chat_id', $groupChat->id)
             ->orderBy('id')
             ->get()
-            ->map(fn (GroupChatMember $member) => [
-                'id' => (int) $member->user_id,
-                'name' => $member->user?->name ?? 'User',
-                'nickname' => $member->nickname,
-                'display_name' => filled($member->nickname) ? $member->nickname : ($member->user?->name ?? 'User'),
-                'joined_at' => $member->joined_at?->toIso8601String(),
-                'added_by_id' => $member->added_by_id ? (int) $member->added_by_id : null,
-                'added_by_name' => $member->addedBy?->name,
-                'added_by' => $member->addedBy
-                    ? [
-                        'id' => (int) $member->addedBy->id,
-                        'name' => $member->addedBy->name,
-                    ]
-                    : null,
-            ])
+            ->map(fn (GroupChatMember $member) => $this->formatConversationMemberRecord($member))
             ->values()
             ->all();
+    }
+
+    protected function formatConversationMemberRecord(GroupChatMember $member): array
+    {
+        return [
+            'id' => (int) $member->user_id,
+            'name' => $member->user?->name ?? 'User',
+            'nickname' => $member->nickname,
+            'display_name' => filled($member->nickname) ? $member->nickname : ($member->user?->name ?? 'User'),
+            'profile' => null,
+            'joined_at' => $member->joined_at?->toIso8601String(),
+            'last_read_at' => $member->last_read_at?->toIso8601String(),
+            'added_by_id' => $member->added_by_id ? (int) $member->added_by_id : null,
+            'added_by_name' => $member->addedBy?->name,
+            'added_by' => $member->addedBy
+                ? [
+                    'id' => (int) $member->addedBy->id,
+                    'name' => $member->addedBy->name,
+                ]
+                : null,
+        ];
     }
 
     protected function groupMemberDisplayName(int $groupChatId, int $userId, string $fallbackName): string

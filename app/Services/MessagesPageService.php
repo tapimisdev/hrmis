@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\DirectMessage;
 use App\Models\GroupChat;
 use App\Models\User;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -30,6 +32,7 @@ class MessagesPageService
                 })
                 ->values(),
             'selectedConversationKey' => $selectedConversationKey,
+            'selectedConversationToken' => $this->conversationTokenFromKey($selectedConversationKey),
             'pendingGroupChatApprovals' => $this->buildPendingGroupChatApprovals($authUser),
             'groupChatRequestHistory' => $this->buildGroupChatRequestHistory($authUser),
             'authUser' => [
@@ -40,6 +43,47 @@ class MessagesPageService
                 'is_admin' => $this->isAdmin($authUser),
             ],
         ];
+    }
+
+    public function conversationToken(string $conversationType, int $conversationId): string
+    {
+        return Crypt::encryptString($conversationType . ':' . $conversationId);
+    }
+
+    public function conversationTokenFromKey(?string $conversationKey): ?string
+    {
+        if (!filled($conversationKey)) {
+            return null;
+        }
+
+        [$conversationType, $conversationId] = array_pad(explode(':', $conversationKey, 2), 2, null);
+
+        if (!in_array($conversationType, ['direct', 'group'], true) || !is_numeric($conversationId)) {
+            return null;
+        }
+
+        return $this->conversationToken($conversationType, (int) $conversationId);
+    }
+
+    public function conversationKeyFromToken(?string $conversationToken): ?string
+    {
+        if (!filled($conversationToken)) {
+            return null;
+        }
+
+        try {
+            $decryptedValue = Crypt::decryptString($conversationToken);
+        } catch (DecryptException) {
+            return null;
+        }
+
+        [$conversationType, $conversationId] = array_pad(explode(':', $decryptedValue, 2), 2, null);
+
+        if (!in_array($conversationType, ['direct', 'group'], true) || !is_numeric($conversationId)) {
+            return null;
+        }
+
+        return $conversationType . ':' . (int) $conversationId;
     }
 
     public function isAdmin(User $user): bool
@@ -214,6 +258,7 @@ class MessagesPageService
                     'nickname' => $nickname !== '' ? $nickname : null,
                     'conversation_type' => 'direct',
                     'conversation_key' => 'direct:' . $user['id'],
+                    'conversation_token' => $this->conversationToken('direct', (int) $user['id']),
                     'preview' => $this->directMessagePreview($latestMessage),
                     'preview_time' => $latestAt?->diffForHumans(),
                     'latest_at' => $latestAt?->toIso8601String(),
@@ -259,6 +304,7 @@ class MessagesPageService
                     'profile' => $this->groupAvatarUrl($displayName, $groupChat->photo_path),
                     'conversation_type' => 'group',
                     'conversation_key' => 'group:' . $groupChat->id,
+                    'conversation_token' => $this->conversationToken('group', (int) $groupChat->id),
                     'preview' => $latestVisibleMessage
                         ? $this->groupMessagePreview($latestVisibleMessage)
                         : 'Group chat is ready',
