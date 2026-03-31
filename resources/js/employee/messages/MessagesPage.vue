@@ -1222,85 +1222,74 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div
-                                v-if="replyTargetMessage"
-                                class="composer-reply"
-                            >
-                                <div class="composer-reply__meta">
-                                    <strong
-                                        >Replying to
-                                        {{ replyTargetLabel }}</strong
-                                    >
-                                    <button
-                                        type="button"
-                                        class="composer-reply__close"
-                                        @click="clearReplyTarget"
-                                    >
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
-                                <div class="composer-reply__preview">
-                                    {{ getMessageSnippet(replyTargetMessage) }}
-                                </div>
-                            </div>
-
-                            <div
-                                v-if="selectedAttachment"
-                                class="attachment-preview"
-                            >
-                                <div class="attachment-preview__meta">
-                                    <span
-                                        v-if="
-                                            selectedAttachmentPreviewType ===
-                                                'image' &&
-                                            selectedAttachmentPreviewUrl
-                                        "
-                                        class="attachment-preview__thumb"
-                                    >
-                                        <img
-                                            :src="selectedAttachmentPreviewUrl"
-                                            :alt="selectedAttachment.name"
-                                        />
-                                    </span>
-                                    <span
-                                        v-else
-                                        class="attachment-preview__icon"
-                                    >
-                                        <i class="fa-regular fa-file-lines"></i>
-                                    </span>
-                                    <div class="attachment-preview__body">
-                                        <div class="attachment-preview__name">
-                                            {{ selectedAttachment.name }}
-                                        </div>
-                                        <small class="text-white-50">{{
-                                            formatFileSize(
-                                                selectedAttachment.size,
-                                            )
-                                        }}</small>
-                                    </div>
-                                </div>
+                        </div>
+                        <transition name="fade">
+                          <button
+                              v-if="showScrollToBottomButton"
+                              type="button"
+                              class="message-scroll-bottom"
+                              @click="scrollConversationToBottom"
+                              title="Scroll to bottom"
+                              aria-label="Scroll to bottom"
+                          >
+                              <i class="fa-solid fa-arrow-down"></i>
+                          </button>
+                      </transition>
+                        <div v-if="replyTargetMessage" class="composer-reply">
+                            <div class="composer-reply__meta">
+                                <strong
+                                    >Replying to {{ replyTargetLabel }}</strong
+                                >
                                 <button
                                     type="button"
-                                    class="attachment-preview__remove"
-                                    @click="clearSelectedAttachment"
+                                    class="composer-reply__close"
+                                    @click="clearReplyTarget"
                                 >
                                     <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
+                            <div class="composer-reply__preview">
+                                {{ getMessageSnippet(replyTargetMessage) }}
+                            </div>
+                        </div>
 
-                            <transition name="fade">
-                                <button
-                                    v-if="showScrollToBottomButton"
-                                    type="button"
-                                    class="message-scroll-bottom"
-                                    @click="scrollConversationToBottom"
-                                    title="Scroll to bottom"
-                                    aria-label="Scroll to bottom"
+                        <div
+                            v-if="selectedAttachment"
+                            class="attachment-preview"
+                        >
+                            <div class="attachment-preview__meta">
+                                <span
+                                    v-if="
+                                        selectedAttachmentPreviewType ===
+                                            'image' &&
+                                        selectedAttachmentPreviewUrl
+                                    "
+                                    class="attachment-preview__thumb"
                                 >
-                                    <i class="fa-solid fa-arrow-down"></i>
-                                </button>
-                            </transition>
+                                    <img
+                                        :src="selectedAttachmentPreviewUrl"
+                                        :alt="selectedAttachment.name"
+                                    />
+                                </span>
+                                <span v-else class="attachment-preview__icon">
+                                    <i class="fa-regular fa-file-lines"></i>
+                                </span>
+                                <div class="attachment-preview__body">
+                                    <div class="attachment-preview__name">
+                                        {{ selectedAttachment.name }}
+                                    </div>
+                                    <small class="text-white-50">{{
+                                        formatFileSize(selectedAttachment.size)
+                                    }}</small>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                class="attachment-preview__remove"
+                                @click="clearSelectedAttachment"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
                         </div>
                         <form class="composer" @submit.prevent="sendMessage">
                             <input
@@ -8926,7 +8915,7 @@ export default {
     flex: 1;
     overflow-y: auto;
     overflow-x: clip;
-    padding: 18px 22px 18px;
+    // padding: 18px 22px 18px;
     background:
         radial-gradient(
             circle at 20% 20%,
@@ -8945,7 +8934,7 @@ export default {
     width: 100%;
     min-width: 0;
     overflow: hidden;
-    padding-bottom: 20px;
+    padding: 18px 22px 18px;
 }
 
 .chat-empty,
@@ -10183,7 +10172,7 @@ export default {
 
 .composer-reply,
 .attachment-preview {
-    margin: 0 16px 10px;
+    margin: 10px 16px 10px;
     padding: 12px 14px;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.06);
@@ -10648,7 +10637,7 @@ export default {
 }
 
 .conversation-panel__body {
-    padding: 22px 24px 18px;
+    // padding: 22px 24px 18px;
     background:
         radial-gradient(
             circle at 15% 15%,
@@ -11337,6 +11326,7 @@ export default {
         margin-left: 12px;
         margin-right: 12px;
         margin-bottom: 8px;
+        margin-top: 8px;
         padding: 10px 12px;
     }
 
