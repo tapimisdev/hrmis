@@ -5,13 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DirectMessage extends Model
+class GroupMessage extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'group_chat_id',
         'sender_id',
-        'recipient_id',
+        'message_type',
         'body',
         'reply_to_id',
         'attachment_path',
@@ -23,7 +24,6 @@ class DirectMessage extends Model
         'reaction',
         'pinned_at',
         'pinned_by_id',
-        'read_at',
         'edited_at',
         'unsent_at',
         'unsent_by_id',
@@ -32,21 +32,20 @@ class DirectMessage extends Model
 
     protected $casts = [
         'body' => 'encrypted',
-        'read_at' => 'datetime',
         'pinned_at' => 'datetime',
         'edited_at' => 'datetime',
         'unsent_at' => 'datetime',
         'is_unsent' => 'boolean',
     ];
 
+    public function groupChat()
+    {
+        return $this->belongsTo(GroupChat::class);
+    }
+
     public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id');
-    }
-
-    public function recipient()
-    {
-        return $this->belongsTo(User::class, 'recipient_id');
     }
 
     public function replyTo()
@@ -54,8 +53,8 @@ class DirectMessage extends Model
         return $this->belongsTo(self::class, 'reply_to_id');
     }
 
-    public function unsentBy()
+    public function pinnedBy()
     {
-        return $this->belongsTo(User::class, 'unsent_by_id');
+        return $this->belongsTo(User::class, 'pinned_by_id');
     }
 }

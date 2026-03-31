@@ -170,6 +170,9 @@
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm theme-button" @click.stop="openMessagesPage">
+                                Open Messages
+                            </button>
                             <button class="btn btn-sm theme-button" @click="closeMessageBox">
                                 Close
                             </button>
@@ -198,6 +201,13 @@
 
                         <div v-else class="message-panel__messages d-flex flex-column gap-2">
                             <div
+                                v-if="!conversationHasMore || conversationPage >= conversationLastPage"
+                                class="conversation-start-marker"
+                            >
+                                Your conversation starts here
+                            </div>
+
+                            <div
                                 v-if="loadingOlderConversation"
                                 class="message-panel__older-loading"
                             >
@@ -212,24 +222,66 @@
                                 :class="[
                                     message.is_mine ? 'message-row--mine' : 'message-row--theirs',
                                     highlightedMessageId === message.id ? 'message-row--highlighted' : '',
+                                    highlightedMessageId === message.id ? `message-row--pulse-${highlightPulseToken}` : '',
                                 ]"
                                 :data-message-id="message.id"
                             >
                                 <div class="message-bubble-shell">
                                     <div
                                         class="message-actions"
-                                        :class="{ 'is-open': activeReactionPickerId === message.id }"
+                                        :class="{ 'is-open': activeReactionPickerId === message.id || activeMessageActionsId === message.id }"
                                     >
+                                        <div v-if="message.is_mine && !message.is_unsent" class="message-action-group">
+                                            <button
+                                                type="button"
+                                                class="message-action-button message-action-button--more"
+                                                :class="{ 'is-active': activeMessageActionsId === message.id }"
+                                                @click.stop="toggleMessageActions(message)"
+                                                title="More actions"
+                                                :aria-label="`More actions for ${message.body || message.attachment?.name || 'message'}`"
+                                                :aria-expanded="activeMessageActionsId === message.id"
+                                            >
+                                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                            </button>
+                                            <div v-if="activeMessageActionsId === message.id" class="message-action-menu">
+                                                <button
+                                                    v-if="message.is_mine && message.body"
+                                                    type="button"
+                                                    class="message-action-menu__item"
+                                                    @click.stop="editMessage(message)"
+                                                >
+                                                    <span class="message-action-menu__icon">
+                                                        <i class="fa-regular fa-pen-to-square"></i>
+                                                    </span>
+                                                    <span>Edit</span>
+                                                </button>
+                                                <button
+                                                    v-if="message.is_mine"
+                                                    type="button"
+                                                    class="message-action-menu__item message-action-menu__item--danger"
+                                                    @click.stop="unsendMessage(message)"
+                                                >
+                                                    <span class="message-action-menu__icon">
+                                                        <i class="fa-regular fa-trash-can"></i>
+                                                    </span>
+                                                    <span>Unsend</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="message-action-menu__item"
+                                                    :class="{ 'is-active': isMessagePinned(message.id) }"
+                                                    @click.stop="togglePinMessage(message)"
+                                                    :disabled="!isMessagePinned(message.id) && pinnedMessages.length >= pinnedMessageLimit"
+                                                >
+                                                    <span class="message-action-menu__icon">
+                                                        <i :class="isMessagePinned(message.id) ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
+                                                    </span>
+                                                    <span>{{ isMessagePinned(message.id) ? 'Unpin' : 'Pin' }}</span>
+                                                </button>
+                                            </div>
+                                        </div>
                                         <button
-                                            type="button"
-                                            class="message-action-button message-action-button--reply"
-                                            @click="startReply(message)"
-                                            title="Reply"
-                                            :aria-label="`Reply to ${message.body || message.attachment?.name || 'message'}`"
-                                        >
-                                            <i class="fa-solid fa-reply"></i>
-                                        </button>
-                                        <button
+                                            v-else-if="!message.is_unsent"
                                             type="button"
                                             class="message-action-button message-action-button--pin"
                                             :class="{ 'is-active': isMessagePinned(message.id) }"
@@ -247,6 +299,17 @@
                                             </span>
                                         </button>
                                         <button
+                                            v-if="!message.is_unsent"
+                                            type="button"
+                                            class="message-action-button message-action-button--reply"
+                                            @click="startReply(message)"
+                                            title="Reply"
+                                            :aria-label="`Reply to ${message.body || message.attachment?.name || 'message'}`"
+                                        >
+                                            <i class="fa-solid fa-reply"></i>
+                                        </button>
+                                        <button
+                                            v-if="!message.is_unsent"
                                             type="button"
                                             class="message-action-button message-action-button--react"
                                             @click.stop="toggleReactionPicker(message)"
@@ -255,24 +318,6 @@
                                         >
                                             <i class="fa-regular fa-face-smile"></i>
                                         </button>
-                                        <div
-                                            v-if="activeReactionPickerId === message.id"
-                                            class="reaction-picker"
-                                            @click.stop
-                                        >
-                                            <button
-                                                v-for="reaction in reactionOptions"
-                                                :key="reaction.key"
-                                                type="button"
-                                                class="reaction-picker__btn"
-                                                :style="{ color: reaction.color, backgroundColor: reaction.bg }"
-                                                :title="reaction.label"
-                                                :aria-label="reaction.label"
-                                                @click="setReaction(message, reaction.key)"
-                                            >
-                                                <span class="reaction-picker__glyph">{{ reaction.glyph }}</span>
-                                            </button>
-                                        </div>
                                     </div>
                                     <div
                                         class="message-bubble"
@@ -369,6 +414,12 @@
                                         >
                                             {{ message.body }}
                                         </div>
+                                        <div
+                                            v-if="message.is_unsent"
+                                            class="message-bubble__body message-bubble__body--unsent"
+                                        >
+                                            Unsent Message
+                                        </div>
                                         <span
                                             v-if="getReactionMeta(message)"
                                             class="message-reaction-badge message-reaction-badge--float"
@@ -431,7 +482,7 @@
                                 <div class="reply-composer__meta">
                                 <small class="reply-composer__label">Replying</small>
                                 <div class="reply-composer__body">
-                                        {{ getReplyPreview(replyTargetMessage) }}
+                                        {{ getMessagePreview(replyTargetMessage) }}
                                     </div>
                                 </div>
                                 <button
@@ -584,7 +635,6 @@
                             Message is too long.
                         </small>
                     </form>
-
                     <transition name="fade">
                         <div
                             v-if="showPinnedMessagesPanel"
@@ -651,6 +701,28 @@
                                 class="pinned-messages-panel__empty theme-muted"
                             >
                                 No pinned messages yet.
+                            </div>
+                        </div>
+                    </transition>
+                    <transition name="fade">
+                        <div
+                            v-if="activeReactionTargetMessage"
+                            class="reaction-overlay reaction-overlay--panel"
+                            @click.self="activeReactionPickerId = null"
+                        >
+                            <div class="reaction-picker reaction-picker--centered" @click.stop>
+                                <button
+                                    v-for="reaction in reactionOptions"
+                                    :key="reaction.key"
+                                    type="button"
+                                    class="reaction-picker__btn"
+                                    :style="{ color: reaction.color, backgroundColor: reaction.bg }"
+                                    :title="reaction.label"
+                                    :aria-label="reaction.label"
+                                    @click="setReaction(activeReactionTargetMessage, reaction.key)"
+                                >
+                                    <span class="reaction-picker__glyph">{{ reaction.glyph }}</span>
+                                </button>
                             </div>
                         </div>
                     </transition>
@@ -724,6 +796,10 @@ export default {
             type: Number,
             default: null,
         },
+        userRole: {
+            type: String,
+            default: "employee",
+        },
     },
     data() {
         const token = localStorage.getItem("auth_token");
@@ -766,6 +842,8 @@ export default {
             imageGalleryInstance: null,
             replyTargetMessage: null,
             receiveSound: null,
+            sendSound: null,
+            sharedOnlineUsersListener: null,
             reactionOptions: [
                 {
                     key: "like",
@@ -773,6 +851,13 @@ export default {
                     glyph: "👍",
                     color: "#1877f2",
                     bg: "rgba(24, 119, 242, 0.12)",
+                },
+                {
+                    key: "number-one",
+                    label: "One DOST",
+                    glyph: "☝️",
+                    color: "#ff9f1c",
+                    bg: "rgba(255, 159, 28, 0.14)",
                 },
                 {
                     key: "love",
@@ -809,7 +894,9 @@ export default {
             typingIndicatorTimer: null,
             showScrollToBottomButton: false,
             highlightedMessageId: null,
+            highlightPulseToken: 0,
             highlightMessageTimer: null,
+            highlightAnimationTimer: null,
             pinnedMessages: [],
             showPinnedMessagesPanel: false,
             pinnedMessageLimit: 10,
@@ -818,10 +905,13 @@ export default {
             showPinLimitPopup: false,
             pinLimitPopupTimer: null,
             activeReactionPickerId: null,
+            activeMessageActionsId: null,
             messageReactionsKey: `direct_message_reactions_${localStorage.getItem("auth_user_id") || "guest"}`,
             messageReactions: {},
             pinnedMessagesKey: null,
             dockStateKey: `message_dock_state_${localStorage.getItem("auth_user_id") || "guest"}`,
+            isInitialized: false,
+            pageLoadListener: null,
         };
     },
     computed: {
@@ -911,6 +1001,17 @@ export default {
             const extension = this.getFileExtension(this.selectedAttachment.name);
             return this.getAttachmentIconClass({ extension });
         },
+        activeReactionTargetMessage() {
+            if (!this.activeReactionPickerId) {
+                return null;
+            }
+
+            return (
+                this.conversationMessages.find(
+                    (message) => message.id === this.activeReactionPickerId,
+                ) || null
+            );
+        },
         unreadMessageCount() {
             if (this.messagePanelOpen && this.selectedUserState) {
                 return 0;
@@ -934,38 +1035,31 @@ export default {
         },
     },
     mounted() {
-        window.Echo.join("online-users")
-            .here((users) => {
-                this.onlineUserIds = users.map((user) => user.id);
-                this.saveLastSeen(users.map((user) => user.id));
-                this.syncUsersOnlineState();
-            })
-            .joining((user) => {
-                if (!this.onlineUserIds.includes(user.id)) {
-                    this.onlineUserIds.push(user.id);
-                }
-                this.markUserSeen(user.id);
-                this.syncUsersOnlineState();
-            })
-            .leaving((user) => {
-                this.onlineUserIds = this.onlineUserIds.filter(
-                    (id) => id !== user.id,
-                );
-                this.markUserSeen(user.id);
-                this.syncUsersOnlineState();
-            });
+        this.hydrateOnlineUsersFromSharedState();
+        this.bindSharedOnlineUsersListener();
+        this.sendSound = new Audio("/sounds/sent.mp3");
+        this.sendSound.preload = "auto";
 
-        this.loadUsers();
-        this.restoreDockState();
-        this.loadMessageReactions();
-        this.statusInterval = setInterval(() => {
-            this.syncUsersOnlineState();
-        }, 60000);
+        this.pageLoadListener = () => {
+            this.initializeOnlineUsers();
+        };
 
-        this.subscribeToDirectMessages();
+        if (document.readyState === "complete") {
+            this.initializeOnlineUsers();
+            return;
+        }
+
+        window.addEventListener("load", this.pageLoadListener, { once: true });
     },
-        beforeUnmount() {
-            window.Echo.leave("online-users");
+    beforeUnmount() {
+        this.unbindSharedOnlineUsersListener();
+
+        if (this.pageLoadListener) {
+            window.removeEventListener("load", this.pageLoadListener);
+            this.pageLoadListener = null;
+        }
+
+        if (this.isInitialized) {
             this.leaveDirectMessageChannel();
             if (this.statusInterval) {
                 clearInterval(this.statusInterval);
@@ -976,8 +1070,112 @@ export default {
             this.clearPinLimitPopupTimer();
             this.clearSelectedAttachment(false);
             this.destroyImageGallery();
-        },
+        }
+    },
     methods: {
+        initializeOnlineUsers() {
+            if (this.isInitialized) {
+                return;
+            }
+
+            this.isInitialized = true;
+
+            this.hydrateOnlineUsersFromSharedState();
+
+            const onlineUsersChannel = window.Echo.join("online-users")
+                .here((users) => {
+                    this.onlineUserIds = users.map((user) => Number(user.id));
+                    this.saveLastSeen(this.onlineUserIds);
+                    this.syncUsersOnlineState();
+                })
+                .joining((user) => {
+                    const userId = Number(user.id);
+
+                    if (!this.onlineUserIds.includes(userId)) {
+                        this.onlineUserIds.push(userId);
+                    }
+                    this.markUserSeen(userId);
+                    this.syncUsersOnlineState();
+                })
+                .leaving((user) => {
+                    const userId = Number(user.id);
+
+                    this.onlineUserIds = this.onlineUserIds.filter(
+                        (id) => id !== userId,
+                    );
+                    this.markUserSeen(userId);
+                    this.syncUsersOnlineState();
+                });
+
+            onlineUsersChannel.listen(".online-users.updated", (event) => {
+                const payload = event?.payload || event || {};
+                const presenceUser = payload.user || null;
+                const status = payload.status || "";
+                const userId = Number(presenceUser?.id || 0);
+
+                if (!userId) {
+                    return;
+                }
+
+                if (status === "online") {
+                    if (!this.onlineUserIds.includes(userId)) {
+                        this.onlineUserIds.push(userId);
+                    }
+                } else if (status === "offline") {
+                    this.onlineUserIds = this.onlineUserIds.filter(
+                        (id) => id !== userId,
+                    );
+                }
+
+                this.markUserSeen(userId);
+                this.syncUsersOnlineState();
+            });
+
+            this.loadUsers();
+            this.restoreDockState();
+            this.loadMessageReactions();
+            this.statusInterval = setInterval(() => {
+                this.syncUsersOnlineState();
+            }, 60000);
+
+            this.subscribeToDirectMessages();
+        },
+        hydrateOnlineUsersFromSharedState() {
+            const sharedIds = window.__onlineUsersPresence?.onlineUserIds || [];
+
+            if (!Array.isArray(sharedIds) || sharedIds.length === 0) {
+                return;
+            }
+
+            this.onlineUserIds = [...new Set(sharedIds.map((id) => Number(id)))];
+            this.syncUsersOnlineState();
+        },
+        bindSharedOnlineUsersListener() {
+            if (this.sharedOnlineUsersListener) {
+                return;
+            }
+
+            this.sharedOnlineUsersListener = (event) => {
+                const sharedIds = event?.detail?.onlineUserIds || [];
+
+                if (!Array.isArray(sharedIds)) {
+                    return;
+                }
+
+                this.onlineUserIds = [...new Set(sharedIds.map((id) => Number(id)))];
+                this.syncUsersOnlineState();
+            };
+
+            window.addEventListener("online-users:updated", this.sharedOnlineUsersListener);
+        },
+        unbindSharedOnlineUsersListener() {
+            if (!this.sharedOnlineUsersListener) {
+                return;
+            }
+
+            window.removeEventListener("online-users:updated", this.sharedOnlineUsersListener);
+            this.sharedOnlineUsersListener = null;
+        },
         async loadUsers() {
             this.loadingUsers = true;
 
@@ -988,13 +1186,17 @@ export default {
                         : {},
                 });
 
-                this.users = data.map((user) => ({
-                    ...user,
-                    isSelf: this.userId ? user.id === this.userId : false,
-                    isOnline: this.onlineUserIds.includes(user.id),
-                    lastSeenAt: this.getLastSeen(user.id),
-                    statusLabel: this.getStatusLabel(user.id),
-                }))
+                this.users = data.map((user) => {
+                    const activityState = this.getActivityState(user.id);
+
+                    return {
+                        ...user,
+                        isSelf: this.userId ? user.id === this.userId : false,
+                        isOnline: activityState.isOnline,
+                        lastSeenAt: activityState.lastSeenAt,
+                        statusLabel: activityState.label,
+                    };
+                })
                 .filter((user) => !user.isSelf);
             } catch (error) {
                 console.error("Failed to load online users list:", error);
@@ -1004,12 +1206,16 @@ export default {
             }
         },
         syncUsersOnlineState() {
-            this.users = this.users.map((user) => ({
-                ...user,
-                isOnline: this.onlineUserIds.includes(user.id),
-                lastSeenAt: this.getLastSeen(user.id),
-                statusLabel: this.getStatusLabel(user.id),
-            }));
+            this.users = this.users.map((user) => {
+                const activityState = this.getActivityState(user.id);
+
+                return {
+                    ...user,
+                    isOnline: activityState.isOnline,
+                    lastSeenAt: activityState.lastSeenAt,
+                    statusLabel: activityState.label,
+                };
+            });
         },
         async openMessageBox(user) {
             this.hideUsersDropdown();
@@ -1025,6 +1231,7 @@ export default {
             this.clearSelectedAttachment();
             this.attachmentError = "";
             this.activeReactionPickerId = null;
+            this.activeMessageActionsId = null;
             this.clearHighlightTimer();
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
@@ -1034,13 +1241,16 @@ export default {
             this.pinnedMessages = [];
             await this.loadConversation({ page: 1, reset: true });
             this.scrollConversationToBottom();
-            this.markConversationSeen(user.id);
+            if (this.canMarkConversationSeen(user.id)) {
+                this.markConversationSeen(user.id);
+            }
         },
         closeMessageBox() {
             this.messagePanelOpen = false;
             this.clearTypingTimers();
             this.typingIndicator = false;
             this.activeReactionPickerId = null;
+            this.activeMessageActionsId = null;
             this.clearHighlightTimer();
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
@@ -1051,6 +1261,10 @@ export default {
             this.saveDockState();
             this.attachmentError = "";
         },
+        openMessagesPage() {
+            this.closeMessageBox();
+            window.location.href = this.userRole === "admin" ? "/admin/messages" : "/employee/messages";
+        },
         hideChatDock() {
             this.messagePanelOpen = false;
             this.chatDockVisible = false;
@@ -1058,6 +1272,7 @@ export default {
             this.clearTypingTimers();
             this.typingIndicator = false;
             this.activeReactionPickerId = null;
+            this.activeMessageActionsId = null;
             this.clearHighlightTimer();
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
@@ -1118,7 +1333,9 @@ export default {
             this.pinnedMessages = [];
             this.loadConversation({ page: 1, reset: true }).then(() => {
                 this.scrollConversationToBottom();
-                this.markConversationSeen(this.selectedUserState?.id);
+                if (this.canMarkConversationSeen(this.selectedUserState?.id)) {
+                    this.markConversationSeen(this.selectedUserState?.id);
+                }
             });
         },
         resetConversationState() {
@@ -1273,7 +1490,9 @@ export default {
                     this.upsertConversationMessage({
                         ...data.message,
                         is_mine: true,
+                        read_at: null,
                     });
+                    this.playSendSound();
                     this.messageDraft = "";
                     this.replyTargetMessage = null;
                     this.clearSelectedAttachment();
@@ -1317,6 +1536,7 @@ export default {
                             this.applyServerMessageUpdate({
                                 ...message,
                                 is_mine: true,
+                                read_at: null,
                             });
 
                             this.$nextTick(() => {
@@ -1376,18 +1596,11 @@ export default {
                     });
                     this.loadingConversation = false;
 
-                    this.$nextTick(() => {
-                        const bodyEl = this.$el.querySelector(".message-panel__body");
-                        if (bodyEl) {
-                            if (this.isConversationNearBottom(bodyEl)) {
-                                bodyEl.scrollTop = bodyEl.scrollHeight;
-                                this.showScrollToBottomButton = false;
-                                return;
-                            }
+                    if (this.canMarkConversationSeen(partnerId)) {
+                        this.markConversationSeen(partnerId);
+                    }
 
-                            this.updateScrollToBottomButton(bodyEl);
-                        }
-                    });
+                    this.scrollConversationToBottom();
                 })
                 .listen(".direct-message.seen", (event) => {
                     const payload = event?.payload;
@@ -1404,10 +1617,10 @@ export default {
                     }
 
                     const readAt = payload.read_at ?? null;
-                    const messageIds = new Set(payload.message_ids);
+                    const messageIds = new Set(payload.message_ids.map((id) => Number(id)));
 
                     this.conversationMessages = this.conversationMessages.map((message) => {
-                        if (!messageIds.has(message.id)) {
+                        if (!messageIds.has(Number(message.id))) {
                             return message;
                         }
 
@@ -1451,14 +1664,19 @@ export default {
                         this.typingIndicatorTimer = null;
                     }, 2500);
 
-                    const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
-                    if (bodyEl && this.messagePanelOpen) {
-                        this.updateScrollToBottomButton(bodyEl);
-
-                        if (!this.showScrollToBottomButton) {
-                            this.scrollConversationToBottom();
+                    this.$nextTick(() => {
+                        const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
+                        if (!bodyEl) {
+                            return;
                         }
-                    }
+
+                        if (this.isConversationNearBottom(bodyEl, 100)) {
+                            this.scrollConversationToBottom();
+                            return;
+                        }
+
+                        this.updateScrollToBottomButton(bodyEl);
+                    });
                 });
         },
         leaveDirectMessageChannel() {
@@ -1518,6 +1736,10 @@ export default {
             return distanceFromBottom <= threshold;
         },
         handleInterfaceClick() {
+            if (!this.canMarkConversationSeen()) {
+                return;
+            }
+
             this.activeReactionPickerId = null;
             this.showPinnedMessagesPanel = false;
             this.markConversationSeen();
@@ -1660,7 +1882,7 @@ export default {
         playReceiveSound() {
             try {
                 if (!this.receiveSound) {
-                    this.receiveSound = new Audio("/sounds/message.mp3");
+                    this.receiveSound = new Audio("/sounds/receive.mp3");
                     this.receiveSound.preload = "auto";
                 }
 
@@ -1672,6 +1894,23 @@ export default {
                 }
             } catch (error) {
                 console.error("Failed to play receive sound:", error);
+            }
+        },
+        playSendSound() {
+            try {
+                if (!this.sendSound) {
+                    this.sendSound = new Audio("/sounds/sent.mp3");
+                    this.sendSound.preload = "auto";
+                }
+
+                this.sendSound.currentTime = 0;
+                const played = this.sendSound.play();
+
+                if (played && typeof played.catch === "function") {
+                    played.catch(() => {});
+                }
+            } catch (error) {
+                console.error("Failed to play send sound:", error);
             }
         },
         destroyImageGallery() {
@@ -1755,9 +1994,21 @@ export default {
 
             this.showPinnedMessagesPanel = !this.showPinnedMessagesPanel;
         },
+        toggleMessageActions(message) {
+            if (!message?.id || message.is_unsent) {
+                return;
+            }
+
+            this.activeReactionPickerId = null;
+            this.activeMessageActionsId = this.activeMessageActionsId === message.id ? null : message.id;
+        },
         getMessageSnippet(message) {
             if (!message) {
                 return "Attachment";
+            }
+
+            if (message.is_unsent) {
+                return "Unsent Message";
             }
 
             if (message.body) {
@@ -1776,10 +2027,11 @@ export default {
             );
         },
         async togglePinMessage(message) {
-            if (!message?.id) return;
+            if (!message?.id || message.is_unsent) return;
 
             this.clearPinErrorTimer();
             this.pinError = "";
+            this.activeMessageActionsId = null;
 
             const isPinned = Boolean(message.pinned_at);
 
@@ -1835,10 +2087,94 @@ export default {
             const message = this.conversationMessages.find((item) => item.id === pin.message_id);
             if (!message) return;
 
+            if (message.is_unsent) {
+                return;
+            }
+
             await this.togglePinMessage({
                 ...message,
                 pinned_at: message.pinned_at || pin.pinned_at || null,
             });
+        },
+        async editMessage(message) {
+            if (!message?.id || !message.is_mine || message.is_unsent) {
+                return;
+            }
+
+            this.activeMessageActionsId = null;
+
+            const currentBody = message.body || "";
+            if (!currentBody.trim()) {
+                return;
+            }
+
+            const nextBody = await this.promptForMessageEdit(currentBody);
+            if (nextBody === null) {
+                return;
+            }
+
+            const trimmedBody = nextBody.trim();
+            if (!trimmedBody || trimmedBody === currentBody.trim()) {
+                return;
+            }
+
+            try {
+                const { data } = await axios.patch(
+                    `/api/direct-messages/${message.id}`,
+                    { body: trimmedBody },
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                );
+
+                this.applyServerMessageUpdate(data?.message ?? null, data?.pinned_messages ?? null);
+            } catch (error) {
+                const responseMessage = error?.response?.data?.message || "Unable to edit message.";
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: "error",
+                        title: "Edit failed",
+                        text: responseMessage,
+                    });
+                } else {
+                    window.alert(responseMessage);
+                }
+            }
+        },
+        async unsendMessage(message) {
+            if (!message?.id || !message.is_mine || message.is_unsent) {
+                return;
+            }
+
+            this.activeMessageActionsId = null;
+
+            const confirmed = await this.confirmUnsendMessage();
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const { data } = await axios.delete(`/api/direct-messages/${message.id}`, {
+                    headers: this.token
+                        ? { Authorization: `Bearer ${this.token}` }
+                        : {},
+                });
+
+                this.applyServerMessageUpdate(data?.message ?? null, data?.pinned_messages ?? null);
+            } catch (error) {
+                const responseMessage = error?.response?.data?.message || "Unable to unsend message.";
+                if (window.Swal) {
+                    window.Swal.fire({
+                        icon: "error",
+                        title: "Unsend failed",
+                        text: responseMessage,
+                    });
+                } else {
+                    window.alert(responseMessage);
+                }
+            }
         },
         getReactionMeta(message) {
             const reactionKey = message?.reaction ?? null;
@@ -1848,10 +2184,65 @@ export default {
             return this.reactionOptions.find((reaction) => reaction.key === reactionKey) || null;
         },
         toggleReactionPicker(message) {
+            if (message?.is_unsent) {
+                return;
+            }
+
+            this.activeMessageActionsId = null;
             this.activeReactionPickerId = this.activeReactionPickerId === message.id ? null : message.id;
         },
+        async promptForMessageEdit(currentBody) {
+            if (!window.Swal) {
+                return window.prompt("Edit message", currentBody);
+            }
+
+            const result = await window.Swal.fire({
+                title: "Edit message",
+                input: "textarea",
+                inputValue: currentBody,
+                inputAttributes: {
+                    "aria-label": "Edit message body",
+                },
+                showCancelButton: true,
+                confirmButtonText: "Save",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#2f80ed",
+                cancelButtonColor: "#6c757d",
+                inputValidator: (value) => {
+                    if (!value || !value.trim()) {
+                        return "Message cannot be empty.";
+                    }
+
+                    return null;
+                },
+            });
+
+            if (!result.isConfirmed) {
+                return null;
+            }
+
+            return result.value;
+        },
+        async confirmUnsendMessage() {
+            if (!window.Swal) {
+                return window.confirm("Unsend this message for everyone?");
+            }
+
+            const result = await window.Swal.fire({
+                icon: "warning",
+                title: "Unsend message?",
+                text: "This will remove the message for both sides.",
+                showCancelButton: true,
+                confirmButtonText: "Unsend",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6c757d",
+            });
+
+            return result.isConfirmed;
+        },
         async setReaction(message, reactionKey) {
-            if (!message?.id) return;
+            if (!message?.id || message.is_unsent) return;
 
             const existingReaction = message.reaction ?? null;
             const nextReaction = existingReaction === reactionKey ? null : reactionKey;
@@ -1909,9 +2300,40 @@ export default {
 
             this.imageGalleryInstance.openGallery();
         },
+        canMarkConversationSeen(userId = null) {
+            const activeUser = this.selectedUserState;
+            const selectedUserId = userId ?? activeUser?.id ?? null;
+
+            if (!activeUser || !selectedUserId) {
+                return false;
+            }
+
+            if (!this.chatDockVisible || !this.messagePanelOpen) {
+                return false;
+            }
+
+            if (!this.isMessagePanelVisible()) {
+                return false;
+            }
+
+            return Number(activeUser.id) === Number(selectedUserId);
+        },
+        isMessagePanelVisible() {
+            if (typeof window === "undefined") {
+                return false;
+            }
+
+            const panel = this.$el?.querySelector(".message-panel");
+            if (!panel) {
+                return false;
+            }
+
+            const styles = window.getComputedStyle(panel);
+            return styles.display !== "none" && styles.visibility !== "hidden" && panel.getClientRects().length > 0;
+        },
         async markConversationSeen(userId = null) {
             const activeUser = this.selectedUserState;
-            if (!activeUser || !this.messagePanelOpen) return;
+            if (!this.canMarkConversationSeen(userId)) return;
             if (!this.conversationMessages.some((message) => !message.is_mine && !message.read_at)) {
                 return;
             }
@@ -1938,12 +2360,12 @@ export default {
                 }
 
                 const readAt = data?.read_at ?? null;
-                const messageIds = new Set(data?.message_ids ?? []);
+                const messageIds = new Set((data?.message_ids ?? []).map((id) => Number(id)));
 
                 if (!readAt || messageIds.size === 0) return;
 
                 this.conversationMessages = this.conversationMessages.map((message) => {
-                    if (!messageIds.has(message.id)) {
+                    if (!messageIds.has(Number(message.id))) {
                         return message;
                     }
 
@@ -1957,7 +2379,11 @@ export default {
             }
         },
         startReply(message) {
-            this.replyTargetMessage = message;
+            if (!message || message.is_unsent) {
+                return;
+            }
+
+            this.replyTargetMessage = this.normalizeReplyTarget(message);
             this.messageDraft = "";
         },
         cancelReply() {
@@ -2002,40 +2428,132 @@ export default {
                 return;
             }
 
-            this.$nextTick(() => {
-                const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
-                const targetEl = bodyEl?.querySelector(`[data-message-id="${messageId}"]`)
+            await this.$nextTick();
+
+            const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
+            let targetEl = bodyEl?.querySelector(`[data-message-id="${messageId}"]`)
+                || this.$el.querySelector(`[data-message-id="${messageId}"]`);
+
+            if (!targetEl) {
+                await this.$nextTick();
+                targetEl = bodyEl?.querySelector(`[data-message-id="${messageId}"]`)
                     || this.$el.querySelector(`[data-message-id="${messageId}"]`);
+            }
 
-                if (targetEl) {
-                    targetEl.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                    });
-                } else if (bodyEl) {
-                    bodyEl.scrollTop = bodyEl.scrollHeight;
-                }
+            if (targetEl) {
+                targetEl.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+            } else if (bodyEl) {
+                bodyEl.scrollTop = bodyEl.scrollHeight;
+            }
 
-                this.highlightedMessageId = messageId;
-                this.clearHighlightTimer();
-                this.highlightMessageTimer = setTimeout(() => {
-                    this.highlightedMessageId = null;
-                    this.highlightMessageTimer = null;
-                }, 2200);
+            await this.waitForMessageInView(targetEl, bodyEl);
+            await this.pulseHighlightedMessage(messageId, targetEl);
 
-                if (bodyEl) {
-                    this.updateScrollToBottomButton(bodyEl);
-                }
-            });
+            if (bodyEl) {
+                this.updateScrollToBottomButton(bodyEl);
+            }
         },
         async scrollToReplyMessage(message) {
-            const replyId = message?.reply_to_id || null;
+            const replyId = message?.reply_to?.id || message?.reply_to_id || null;
             if (!replyId) return;
 
             await this.scrollToMessage(replyId);
         },
+        async waitForMessageInView(targetEl, bodyEl, timeoutMs = 1400) {
+            if (!targetEl) {
+                return;
+            }
+
+            const startedAt = Date.now();
+
+            while (Date.now() - startedAt < timeoutMs) {
+                await this.$nextTick();
+
+                if (this.isMessageInView(targetEl, bodyEl)) {
+                    await new Promise((resolve) => setTimeout(resolve, 60));
+                    if (this.isMessageInView(targetEl, bodyEl)) {
+                        return;
+                    }
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, 40));
+            }
+        },
+        isMessageInView(targetEl, bodyEl) {
+            if (!targetEl) {
+                return false;
+            }
+
+            const targetRect = targetEl.getBoundingClientRect();
+
+            if (!bodyEl) {
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+                return targetRect.top < viewportHeight && targetRect.bottom > 0;
+            }
+
+            const bodyRect = bodyEl.getBoundingClientRect();
+            return targetRect.top < bodyRect.bottom && targetRect.bottom > bodyRect.top;
+        },
+        clearHighlightAnimationTimer() {
+            if (this.highlightAnimationTimer) {
+                clearTimeout(this.highlightAnimationTimer);
+                this.highlightAnimationTimer = null;
+            }
+        },
+        async pulseHighlightedMessage(messageId, targetEl = null) {
+            if (!messageId) {
+                return;
+            }
+
+            if (this.highlightedMessageId === messageId) {
+                this.highlightedMessageId = null;
+                await this.$nextTick();
+                await new Promise((resolve) => requestAnimationFrame(resolve));
+                await new Promise((resolve) => requestAnimationFrame(resolve));
+            }
+
+            this.highlightedMessageId = messageId;
+            this.highlightPulseToken += 1;
+            this.clearHighlightTimer();
+            this.clearHighlightAnimationTimer();
+
+            const bubbleEl = targetEl?.querySelector(".message-bubble")
+                || this.$el.querySelector(`[data-message-id="${messageId}"] .message-bubble`);
+
+            if (bubbleEl) {
+                bubbleEl.style.animation = "none";
+                bubbleEl.offsetHeight;
+                await this.$nextTick();
+
+                requestAnimationFrame(() => {
+                    if (!bubbleEl.isConnected || this.highlightedMessageId !== messageId) {
+                        return;
+                    }
+
+                    bubbleEl.style.animation = "messageShake 0.55s ease-in-out";
+                    this.highlightAnimationTimer = setTimeout(() => {
+                        if (bubbleEl.isConnected && this.highlightedMessageId === messageId) {
+                            bubbleEl.style.animation = "";
+                        }
+                        this.highlightAnimationTimer = null;
+                    }, 650);
+                });
+            }
+
+            this.highlightMessageTimer = setTimeout(() => {
+                this.highlightedMessageId = null;
+                this.highlightMessageTimer = null;
+            }, 2200);
+        },
         getReplyPreview(message) {
             if (!message?.reply_to_id && !message?.reply_to && !message?.reply_preview) {
+                if (message?.is_unsent) {
+                    return "Unsent Message";
+                }
+
                 if (message?.body) {
                     return message.body;
                 }
@@ -2057,6 +2575,10 @@ export default {
 
             if (!replyTarget) return "Original message not available";
 
+            if (replyTarget.is_unsent) {
+                return "Unsent Message";
+            }
+
             if (replyTarget.body) {
                 return replyTarget.body;
             }
@@ -2066,6 +2588,41 @@ export default {
             }
 
             return "Attachment";
+        },
+        getMessagePreview(message) {
+            if (!message) {
+                return "Attachment";
+            }
+
+            if (message.is_unsent) {
+                return "Unsent Message";
+            }
+
+            if (message.body) {
+                return message.body;
+            }
+
+            if (message.attachment?.name) {
+                return message.attachment.name;
+            }
+
+            return "Attachment";
+        },
+        normalizeReplyTarget(message) {
+            if (!message) {
+                return null;
+            }
+
+            return {
+                id: message.id,
+                body: message.body || "",
+                attachment: message.attachment
+                    ? { ...message.attachment }
+                    : null,
+                sender_id: message.sender_id,
+                recipient_id: message.recipient_id,
+                created_at: message.created_at || null,
+            };
         },
         triggerAttachmentPicker() {
             const input = this.$refs.attachmentInput;
@@ -2213,49 +2770,97 @@ export default {
             const now = Date.now();
 
             userIds.forEach((id) => {
-                store[id] = now;
+                store[Number(id)] = now;
             });
 
             localStorage.setItem("online-users-last-seen", JSON.stringify(store));
         },
         markUserSeen(userId) {
             const store = this.getLastSeenStore();
-            store[userId] = Date.now();
+            store[Number(userId)] = Date.now();
             localStorage.setItem("online-users-last-seen", JSON.stringify(store));
         },
         getLastSeen(userId) {
             const store = this.getLastSeenStore();
-            return store[userId] ?? null;
+            return store[Number(userId)] ?? null;
         },
-        getStatusLabel(userId) {
-            const isOnline = this.onlineUserIds.includes(userId);
+        getActivityState(userId) {
+            const normalizedUserId = Number(userId);
+            const isOnline = this.onlineUserIds.includes(normalizedUserId);
 
             if (isOnline) {
-                return "Online";
+                return {
+                    isOnline: true,
+                    lastSeenAt: this.getLastSeen(normalizedUserId),
+                    label: "Online",
+                };
             }
 
-            const lastSeenAt = this.getLastSeen(userId);
+            const lastSeenAt = this.getLastSeen(normalizedUserId);
 
             if (!lastSeenAt) {
-                return "Offline";
+                return {
+                    isOnline: false,
+                    lastSeenAt: null,
+                    label: "Offline",
+                };
             }
 
             const mins = Math.max(1, Math.floor((Date.now() - lastSeenAt) / 60000));
 
-            if (mins < 60) return `Active ${mins} min ago`;
-            if (mins < 1440) return `Active ${Math.floor(mins / 60)} hrs ago`;
-            return `Active ${Math.floor(mins / 1440)} days ago`;
+            if (mins < 60) {
+                return {
+                    isOnline: false,
+                    lastSeenAt,
+                    label: `Active ${mins} min ago`,
+                };
+            }
+
+            if (mins < 1440) {
+                return {
+                    isOnline: false,
+                    lastSeenAt,
+                    label: `Active ${Math.floor(mins / 60)} hrs ago`,
+                };
+            }
+
+            return {
+                isOnline: false,
+                lastSeenAt,
+                label: `Active ${Math.floor(mins / 1440)} days ago`,
+            };
+        },
+        getStatusLabel(userId) {
+            return this.getActivityState(userId).label;
         },
         formatMessageTime(timestamp) {
             if (!timestamp) return "";
 
             const date = new Date(timestamp);
-            const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+            if (Number.isNaN(date.getTime())) return "";
 
-            if (mins < 1) return "just now";
-            if (mins < 60) return `${mins} min ago`;
-            if (mins < 1440) return `${Math.floor(mins / 60)} hrs ago`;
-            return `${Math.floor(mins / 1440)} days ago`;
+            const diffMs = Date.now() - date.getTime();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+
+            if (diffMs >= oneDayMs) {
+                const datePart = new Intl.DateTimeFormat(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                }).format(date);
+
+                const timePart = new Intl.DateTimeFormat(undefined, {
+                    hour: "numeric",
+                    minute: "2-digit",
+                }).format(date);
+
+                return `${datePart} ${timePart}`;
+            }
+
+            return new Intl.DateTimeFormat(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+            }).format(date);
         },
         formatSeenAt(timestamp) {
             if (!timestamp) return "";
@@ -2672,6 +3277,34 @@ img {
     min-height: 0;
 }
 
+.conversation-start-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px 0 16px;
+    color: rgba(var(--bs-body-color-rgb), 0.58);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.conversation-start-marker::before,
+.conversation-start-marker::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(var(--bs-body-color-rgb), 0.18));
+}
+
+.conversation-start-marker::before {
+    margin-right: 12px;
+}
+
+.conversation-start-marker::after {
+    margin-left: 12px;
+    background: linear-gradient(90deg, rgba(var(--bs-body-color-rgb), 0.18), transparent);
+}
+
 .message-panel__older-loading {
     min-height: 3rem;
     padding: 0.5rem 0 0.75rem;
@@ -2772,6 +3405,11 @@ img {
     pointer-events: none;
     transition: opacity 0.16s ease, transform 0.16s ease;
     position: relative;
+    z-index: 80;
+}
+
+.message-row--theirs .message-actions {
+    flex-direction: row-reverse;
 }
 
 .message-row:hover .message-actions,
@@ -2780,6 +3418,41 @@ img {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+}
+
+.message-action-group {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.message-action-menu {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 158px;
+    padding: 8px;
+    border: 0;
+    border-radius: 18px;
+    background: rgba(33, 31, 39, 0.98);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+    z-index: 120;
+}
+
+.message-action-menu::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    width: 14px;
+    height: 14px;
+    background: rgba(33, 31, 39, 0.98);
+    transform: translateX(-50%) rotate(45deg);
+    border-radius: 2px;
+    z-index: -1;
 }
 
 .message-action-button {
@@ -2806,6 +3479,10 @@ img {
 }
 
 .message-action-button--react {
+    font-size: 0.95rem;
+}
+
+.message-action-button--more {
     font-size: 0.95rem;
 }
 
@@ -2845,28 +3522,87 @@ img {
     opacity: 0.95;
 }
 
+.message-action-menu__item {
+    width: 100%;
+    min-height: 2.2rem;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #e7e7ea;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 0.7rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.message-action-menu__item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.message-action-menu__item.is-active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.message-action-menu__item--danger:hover {
+    background: rgba(255, 82, 113, 0.16);
+    color: #fff;
+}
+
+.message-action-menu__icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 22px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f5f5f7;
+}
+
+.message-action-menu__icon i {
+    font-size: 0.74rem;
+}
+
+.message-action-menu__item--danger .message-action-menu__icon {
+    background: rgba(255, 82, 113, 0.18);
+    color: #fff;
+}
+
 .reaction-picker {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.28rem 0.35rem;
+    gap: 0.6rem;
+    padding: 0.80rem 0.35rem;
     border-radius: 999px;
     border: 1px solid var(--bs-border-color);
-    background: var(--bs-body-bg);
+    background: rgb(47, 53, 61);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
-    position: absolute;
-    top: 50%;
-    left: calc(100% + 0.45rem);
-    transform: translateY(-50%);
-    max-width: min(100vw - 2rem, 14rem);
-    flex-wrap: wrap;
+    position: relative;
+    max-width: min(100% - 1.5rem, 22rem);
+    flex-wrap: nowrap;
+    overflow-x: auto;
     justify-content: center;
-    z-index: 4;
+    z-index: 12;
+    isolation: isolate;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.reaction-picker--centered {
+    min-width: min(92%, 18rem);
 }
 
 .reaction-picker__btn {
-    width: 2rem;
-    height: 2rem;
+    width: 2.35rem;
+    height: 2.35rem;
     border: 0;
     border-radius: 999px;
     background: transparent;
@@ -2884,7 +3620,7 @@ img {
 
 .reaction-picker__glyph {
     display: inline-block;
-    font-size: 1.15rem;
+    font-size: 1.35rem;
     line-height: 1;
     animation: reactionPop 0.22s ease-out;
 }
@@ -2902,18 +3638,18 @@ img {
 
 .message-reaction-badge--float {
     position: absolute;
-    bottom: -0.58rem;
+    bottom: 0.35rem;
     z-index: 2;
     box-shadow: 0 8px 14px rgba(0, 0, 0, 0.18);
     animation: reactionPop 0.22s ease-out;
 }
 
 .message-reaction-badge--theirs {
-    right: -0.52rem;
+    right: 0.35rem;
 }
 
 .message-reaction-badge--mine {
-    left: -0.52rem;
+    left: 0.35rem;
 }
 
 .message-row--mine .message-action-button,
@@ -2923,30 +3659,66 @@ img {
     border-color: rgba(255, 255, 255, 0.18);
 }
 
-.message-row--mine .reaction-picker {
-    left: auto;
-    right: calc(100% + 0.45rem);
-    max-width: min(100vw - 2rem, 14rem);
-}
-
-.message-row--theirs .reaction-picker {
-    left: calc(100% + 0.45rem);
-    right: auto;
-    max-width: min(100vw - 2rem, 14rem);
-}
-
 .message-row--mine .message-action-button:hover,
 .message-row--mine .reaction-picker__btn:hover {
     color: var(--bs-white);
 }
 
+.reaction-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(1px);
+    z-index: 24;
+}
+
+.reaction-overlay--panel {
+    pointer-events: auto;
+}
+
 .message-row--highlighted .message-bubble {
     box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.18), 0 14px 26px rgba(0, 0, 0, 0.16);
     transform: translateY(-1px);
+    animation: messageShake 0.55s ease-in-out;
+    will-change: transform;
+}
+
+[class*="message-row--pulse-"].message-row--highlighted .message-bubble {
+    animation: messageShake 0.55s ease-in-out;
 }
 
 .message-bubble small {
     opacity: 1;
+}
+
+@keyframes messageShake {
+    0% {
+        transform: translateY(-1px) translateX(0);
+    }
+    15% {
+        transform: translateY(-1px) translateX(-4px);
+    }
+    30% {
+        transform: translateY(-1px) translateX(4px);
+    }
+    45% {
+        transform: translateY(-1px) translateX(-3px);
+    }
+    60% {
+        transform: translateY(-1px) translateX(3px);
+    }
+    75% {
+        transform: translateY(-1px) translateX(-2px);
+    }
+    90% {
+        transform: translateY(-1px) translateX(2px);
+    }
+    100% {
+        transform: translateY(-1px) translateX(0);
+    }
 }
 
 @keyframes reactionPop {
@@ -3019,6 +3791,11 @@ img {
 .message-bubble__body {
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.message-bubble__body--unsent {
+    font-style: italic;
+    opacity: 0.78;
 }
 
 .message-status {
@@ -3483,38 +4260,35 @@ img {
 
 .message-pin-chip {
     position: absolute;
-    top: -0.7rem;
+    top: -0.4rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 999px;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0;
     color: #dc3545;
     z-index: 3;
+    pointer-events: none;
 }
 
 .message-pin-chip--theirs {
-    right: -5px;
-    top: -10px;
-    transform: rotate(40deg);
+    right: -0.15rem;
+    transform: rotate(45deg);
 }
 
 .message-pin-chip--mine {
-    left: -5px;
-    top: -10px;
-    transform: rotate(-40deg);
+    left: -0.15rem;
+    transform: rotate(-45deg);
 }
 
 
 .message-pin-chip__icon {
-    width: 0.88rem;
-    height: 0.88rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: #dc3545;
-    font-size: 0.62rem;
+    font-size: 0.66rem;
     line-height: 1;
 
     i {
@@ -3667,8 +4441,7 @@ img {
     }
 
     .message-dock__head {
-        padding: 0.3rem 0.55rem 0.3rem 0.32rem;
-        max-width: calc(100vw - 1rem);
+        display: none;
     }
 
     .message-dock__avatar,
@@ -3686,11 +4459,13 @@ img {
         width: calc(100vw - 1rem);
         right: 0;
         left: auto;
-        bottom: 4.15rem;
+        bottom: 10px;
+        height: 95vh;
+        max-height: 95vh;
     }
 
     .message-panel__header {
-        padding: 0.8rem 0.9rem;
+        padding: 0.8rem 0.9rem 10px;
         gap: 0.75rem;
         flex-wrap: wrap;
     }
@@ -3701,7 +4476,8 @@ img {
 
     .message-panel__header > .d-flex:last-child {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: center;
+        padding-bottom: 10px;
     }
 
     .message-panel__body,
@@ -3713,6 +4489,10 @@ img {
     .message-panel__composer-tools,
     .message-panel__composer-bottom {
         width: 100%;
+    }
+
+    .message-panel__composer-tools {
+        justify-content: center;
     }
 
     .message-panel__composer-status {
@@ -3732,23 +4512,25 @@ img {
     }
 
     .message-panel__attach-btn {
-        width: 100%;
+        width: auto;
         justify-content: center;
+        padding-left: 0.72rem;
+        padding-right: 0.72rem;
     }
 
     .message-panel__pins-btn {
-        width: 100%;
+        width: auto;
         justify-content: center;
+        padding-left: 0.72rem;
+        padding-right: 0.72rem;
     }
 
     .message-panel__attach-btn-text {
-        flex: 1;
-        text-align: center;
+        display: none;
     }
 
     .message-panel__pins-btn-text {
-        flex: 1;
-        text-align: center;
+        display: none;
     }
 
     .message-panel__composer-count {
