@@ -11,12 +11,13 @@ use App\Models\DirectMessage;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class DirectMessageController extends Controller
 {
-    private const REACTION_KEYS = ['like', 'love', 'haha', 'sad', 'angry'];
+    private const REACTION_KEYS = ['like', 'number-one', 'love', 'haha', 'sad', 'angry'];
 
     public function index(Request $request, User $user)
     {
@@ -187,6 +188,71 @@ class DirectMessageController extends Controller
         return response()->json([
             'message' => $payload,
         ], 201);
+    }
+
+    public function info(Request $request, User $user)
+    {
+        $authUser = $request->user();
+
+        return response()->json([
+            'conversation' => $this->formatConversationInfo($authUser, $user),
+        ]);
+    }
+
+    public function updateInfo(Request $request, User $user)
+    {
+        $authUser = $request->user();
+        abort_unless(Schema::hasTable('direct_conversation_settings'), 422, 'Direct conversation nicknames are not available yet.');
+        $validated = $request->validate([
+            'nickname' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $nickname = trim((string) ($validated['nickname'] ?? ''));
+        $now = Carbon::now();
+
+        DB::table('direct_conversation_settings')->updateOrInsert(
+            [
+                'user_id' => $authUser->id,
+                'partner_id' => $user->id,
+            ],
+            [
+                'nickname' => $nickname !== '' ? $nickname : null,
+                'updated_at' => $now,
+                'created_at' => $now,
+            ],
+        );
+
+        return response()->json([
+            'message' => 'Conversation info updated successfully.',
+            'conversation' => $this->formatConversationInfo($authUser, $user),
+        ]);
+    }
+
+    public function media(Request $request, User $user)
+    {
+        $authUser = $request->user();
+        $perPage = max(12, min((int) $request->input('per_page', 24), 60));
+        $page = max(1, (int) $request->input('page', 1));
+
+        $paginator = $this->conversationQuery($authUser, $user)
+            ->with(['sender:id,name'])
+            ->whereNotNull('attachment_path')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'items' => $paginator->getCollection()
+                ->map(fn (DirectMessage $message) => $this->formatMediaItem($message))
+                ->values(),
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'has_more' => $paginator->hasMorePages(),
+            ],
+        ]);
     }
 
     public function update(Request $request, DirectMessage $message)
@@ -373,11 +439,13 @@ class DirectMessageController extends Controller
     {
         $authUser = $request->user();
         $readAt = Carbon::now();
+        $clearedBeforeMessageId = $this->conversationClearMarker($authUser, $user);
 
         $messageIds = DirectMessage::query()
             ->where('sender_id', $user->id)
             ->where('recipient_id', $authUser->id)
             ->whereNull('read_at')
+            ->when($clearedBeforeMessageId, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId))
             ->pluck('id')
             ->all();
 
@@ -397,6 +465,37 @@ class DirectMessageController extends Controller
         return response()->json([
             'message_ids' => $messageIds,
             'read_at' => $readAt->toIso8601String(),
+        ]);
+    }
+
+    public function destroyConversation(Request $request, User $user)
+    {
+        $authUser = $request->user();
+        $latestVisibleMessageId = $this->conversationQuery($authUser, $user)
+            ->orderByDesc('id')
+            ->value('id');
+        $clearedAt = Carbon::now();
+
+        DB::table('direct_conversation_clears')->updateOrInsert(
+            [
+                'user_id' => $authUser->id,
+                'partner_id' => $user->id,
+            ],
+            [
+                'cleared_before_message_id' => $latestVisibleMessageId ? (int) $latestVisibleMessageId : null,
+                'cleared_at' => $clearedAt,
+                'updated_at' => $clearedAt,
+                'created_at' => $clearedAt,
+            ],
+        );
+
+        return response()->json([
+            'message' => 'Conversation cleared for you.',
+            'conversation_preview' => [
+                'preview' => 'Start a conversation',
+                'latest_at' => null,
+            ],
+            'conversation_key' => 'direct:' . $user->id,
         ]);
     }
 
@@ -448,10 +547,12 @@ class DirectMessageController extends Controller
 
     protected function markConversationAsSeen(User $authUser, User $user): void
     {
+        $clearedBeforeMessageId = $this->conversationClearMarker($authUser, $user);
         $messageIds = DirectMessage::query()
             ->where('sender_id', $user->id)
             ->where('recipient_id', $authUser->id)
             ->whereNull('read_at')
+            ->when($clearedBeforeMessageId, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId))
             ->pluck('id')
             ->all();
 
@@ -475,6 +576,8 @@ class DirectMessageController extends Controller
 
     protected function conversationQuery(User $authUser, User $user)
     {
+        $clearedBeforeMessageId = $this->conversationClearMarker($authUser, $user);
+
         return DirectMessage::query()
             ->with('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type')
             ->where(function ($query) use ($authUser, $user) {
@@ -485,7 +588,18 @@ class DirectMessageController extends Controller
                     $query->where('sender_id', $user->id)
                         ->where('recipient_id', $authUser->id);
                 });
-            });
+            })
+            ->when($clearedBeforeMessageId, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId));
+    }
+
+    protected function conversationClearMarker(User $authUser, User $user): ?int
+    {
+        $clearMarker = DB::table('direct_conversation_clears')
+            ->where('user_id', $authUser->id)
+            ->where('partner_id', $user->id)
+            ->value('cleared_before_message_id');
+
+        return $clearMarker ? (int) $clearMarker : null;
     }
 
     protected function pinnedMessagesForConversation(User $authUser, DirectMessage $message): array
@@ -622,6 +736,36 @@ class DirectMessageController extends Controller
             'size' => $message->attachment_size,
             'extension' => $message->attachment_extension,
             'type' => $message->attachment_type ?: (str_starts_with((string) $message->attachment_mime, 'image/') ? 'image' : 'file'),
+        ];
+    }
+
+    protected function formatConversationInfo(User $authUser, User $user): array
+    {
+        $nickname = Schema::hasTable('direct_conversation_settings')
+            ? DB::table('direct_conversation_settings')
+                ->where('user_id', $authUser->id)
+                ->where('partner_id', $user->id)
+                ->value('nickname')
+            : null;
+
+        return [
+            'id' => (int) $user->id,
+            'conversation_key' => 'direct:' . $user->id,
+            'conversation_type' => 'direct',
+            'actual_name' => $user->name,
+            'nickname' => filled($nickname) ? (string) $nickname : null,
+            'name' => filled($nickname) ? (string) $nickname : $user->name,
+        ];
+    }
+
+    protected function formatMediaItem(DirectMessage $message): array
+    {
+        return [
+            'message_id' => (int) $message->id,
+            'sender_id' => (int) $message->sender_id,
+            'sender_name' => $message->sender?->name ?? 'User',
+            'created_at' => $message->created_at?->toIso8601String(),
+            'attachment' => $this->formatAttachment($message),
         ];
     }
 }

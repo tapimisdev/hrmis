@@ -853,6 +853,13 @@ export default {
                     bg: "rgba(24, 119, 242, 0.12)",
                 },
                 {
+                    key: "number-one",
+                    label: "One DOST",
+                    glyph: "☝️",
+                    color: "#ff9f1c",
+                    bg: "rgba(255, 159, 28, 0.14)",
+                },
+                {
                     key: "love",
                     label: "Love",
                     glyph: "❤️",
@@ -3576,14 +3583,17 @@ img {
     padding: 0.80rem 0.35rem;
     border-radius: 999px;
     border: 1px solid var(--bs-border-color);
-    background: var(--bs-body-bg);
+    background: rgb(47, 53, 61);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
     position: relative;
     max-width: min(100% - 1.5rem, 22rem);
     flex-wrap: nowrap;
     overflow-x: auto;
     justify-content: center;
-    z-index: 2;
+    z-index: 12;
+    isolation: isolate;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .reaction-picker--centered {
@@ -3662,7 +3672,7 @@ img {
     justify-content: center;
     background: rgba(0, 0, 0, 0.08);
     backdrop-filter: blur(1px);
-    z-index: 4;
+    z-index: 24;
 }
 
 .reaction-overlay--panel {

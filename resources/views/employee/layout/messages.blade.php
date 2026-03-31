@@ -43,10 +43,10 @@
             margin: 0;
             overflow: hidden;
             background:
-                radial-gradient(circle at 20% 20%, rgba(255, 44, 131, 0.16), transparent 28%),
-                radial-gradient(circle at 80% 30%, rgba(139, 37, 169, 0.2), transparent 26%),
-                linear-gradient(145deg, #120913 0%, #1d1120 35%, #2a1030 100%);
-            color: #f7edf8;
+                radial-gradient(circle at 20% 12%, rgba(28, 88, 246, 0.16), transparent 24%),
+                radial-gradient(circle at 80% 22%, rgba(96, 165, 250, 0.1), transparent 26%),
+                linear-gradient(145deg, #232930 0%, #1f252b 45%, #1b2026 100%);
+            color: #f3f6fb;
         }
 
         #app {
@@ -66,7 +66,7 @@
             @yield('content')
         </div>
 
-        <push-notification :user-role="'employee'" :user-id='@json(Auth::id())'></push-notification>
+        <push-notification :user-role='@json($messageUserRole ?? "employee")' :user-id='@json(Auth::id())'></push-notification>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
