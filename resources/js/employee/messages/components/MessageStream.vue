@@ -79,7 +79,7 @@
                 @click="message.is_system ? null : $emit('select-message', message)"
             >
                 <div v-if="message.is_system" class="message-system-note">
-                    {{ message.body }}
+                    {{ getSystemMessageBody(message) }}
                 </div>
                 <div v-else class="message-bubble-wrap">
                     <div
@@ -88,7 +88,12 @@
                     >
                         <div
                             class="message-bubble__floating-actions"
-                            :class="{ 'is-open': activeMessageActionsId === message.id }"
+                            :class="{
+                                'is-open': activeMessageActionsId === message.id,
+                                'is-hidden-for-reaction':
+                                    selectedMessageId === message.id &&
+                                    showReactionPicker,
+                            }"
                         >
                             <div
                                 v-if="message.is_mine && !message.is_unsent"
@@ -589,6 +594,10 @@ export default {
             type: Function,
             default: null,
         },
+        formatSystemMessage: {
+            type: Function,
+            default: null,
+        },
     },
     emits: [
         "scroll",
@@ -663,6 +672,11 @@ export default {
         },
         getSeenReceiptAvatarUrl() {
             return this.getSeenReceiptAvatar ? this.getSeenReceiptAvatar() : "";
+        },
+        getSystemMessageBody(message) {
+            return this.formatSystemMessage
+                ? this.formatSystemMessage(message)
+                : message?.body || "";
         },
     },
 };

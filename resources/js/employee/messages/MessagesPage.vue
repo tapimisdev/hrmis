@@ -21,6 +21,9 @@
                     :format-conversation-timestamp="
                         formatConversationTimestamp
                     "
+                    :format-conversation-preview="
+                        formatConversationPreview
+                    "
                     :is-conversation-online="isConversationOnline"
                     @close-mobile-users-panel="closeMobileUsersPanel"
                     @open-group-chat-modal="openGroupChatModal"
@@ -155,6 +158,7 @@
                             :get-seen-receipt-avatar="
                                 getSeenReceiptAvatar
                             "
+                            :format-system-message="formatSystemMessage"
                             @scroll="handleConversationScroll"
                             @select-message="selectMessage"
                             @toggle-message-actions="toggleMessageActions"
@@ -577,8 +581,17 @@
             :title="activeUserName"
             :avatar="activeUserAvatar"
             :display-name="activeUser?.actual_name || activeUserName"
+            :current-user-name="authUser?.actual_name || authUser?.name || 'Me'"
+            :direct-partner-nickname="
+                activeConversationIsGroup ? '' : activeUser?.nickname || ''
+            "
             :initial-form="groupInfoForm"
             :is-group="activeConversationIsGroup"
+            :owner="activeGroupOwner"
+            :members="activeGroupMembers"
+            :current-user-id="authUser?.id"
+            :can-manage-members="canManageActiveGroupMembers"
+            :removing-member-id="groupMemberRemovalTarget?.id"
             :media-items="conversationInfoImageItems.concat(conversationInfoFileItems)"
             :media-loading="conversationInfoMediaLoading"
             :media-loaded="conversationInfoMediaLoaded"
@@ -587,13 +600,86 @@
             :error="groupInfoError"
             :initial-active-tab="groupInfoModalRestoreActiveTab"
             :restore-scroll-top="groupInfoModalRestoreScrollTop"
+            :reset-editor-view-key="groupInfoModalResetViewKey"
             @close="closeGroupInfoModal"
             @submit="submitConversationInfo"
+            @clear-nickname="clearDirectConversationNickname"
             @scroll="loadConversationInfoMedia"
             @photo-change="handleGroupInfoPhotoChange"
             @open-gallery="openImageGallery"
             @download="downloadAttachment"
+            @remove-member="openRemoveGroupMemberModal"
         />
+
+        <transition name="fade">
+            <div
+                v-if="showRemoveGroupMemberModal"
+                class="message-action-modal-backdrop"
+                @click.self="closeRemoveGroupMemberModal"
+            >
+                <div class="message-action-modal" role="dialog" aria-modal="true">
+                    <div class="message-action-modal__header">
+                        <div class="message-action-modal__headline">
+                            <div class="message-action-modal__badge message-action-modal__badge--danger">
+                                <i class="fa-solid fa-user-minus"></i>
+                            </div>
+                            <div class="message-action-modal__eyebrow">Remove member</div>
+                            <h3 class="message-action-modal__title">
+                                Remove {{ groupMemberRemovalTarget?.display_name || groupMemberRemovalTarget?.name || "member" }}?
+                            </h3>
+                            <p class="message-action-modal__subtitle">
+                                This will remove them from the group and post a chat update for everyone.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            class="message-action-modal__close"
+                            :disabled="groupMemberRemovalSubmitting"
+                            @click="closeRemoveGroupMemberModal"
+                            aria-label="Close dialog"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="message-action-modal__body">
+                        <div class="message-action-modal__context">
+                            <div class="message-action-modal__context-label">Member</div>
+                            <div class="message-action-modal__preview">
+                                {{ groupMemberRemovalTarget?.display_name || groupMemberRemovalTarget?.name || "User" }}
+                            </div>
+                        </div>
+                        <p v-if="groupMemberRemovalError" class="message-action-modal__error">
+                            {{ groupMemberRemovalError }}
+                        </p>
+                    </div>
+
+                    <div class="message-action-modal__footer">
+                        <button
+                            type="button"
+                            class="message-action-modal__btn message-action-modal__btn--ghost"
+                            :disabled="groupMemberRemovalSubmitting"
+                            @click="closeRemoveGroupMemberModal"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            class="message-action-modal__btn message-action-modal__btn--danger"
+                            :disabled="groupMemberRemovalSubmitting || !groupMemberRemovalTarget?.id"
+                            @click="confirmRemoveGroupMember"
+                        >
+                            <span
+                                v-if="groupMemberRemovalSubmitting"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
+                            <span v-else>Remove member</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
 
         <LeaveGroupModal
             :is-open="showLeaveGroupModal"
@@ -609,6 +695,7 @@
             :members="groupMembersModalMembers"
             :group-name="groupMembersModalTitle"
             :current-user-id="authUser?.id"
+            :owner-id="activeGroupOwner?.id"
             @close="closeGroupMembersModal"
         />
 
@@ -628,6 +715,13 @@
             :current-user-id="authUser?.id"
             :reaction-options="reactionOptions"
             @close="closeReactionsModal"
+        />
+
+        <SeenByModal
+            :is-open="showSeenByModal"
+            :users="seenByModalUsers"
+            :current-user-id="authUser?.id"
+            @close="closeSeenByModal"
         />
 
         <transition name="fade">
@@ -1381,13 +1475,20 @@ export default {
             reopenGroupInfoModalAfterGallery: false,
             groupInfoModalRestoreScrollTop: 0,
             groupInfoModalRestoreActiveTab: "media",
+            groupInfoModalResetViewKey: 0,
             groupInfoSubmitting: false,
             groupInfoError: "",
             groupInfoForm: {
                 name: "",
                 nickname: "",
+                partner_nickname: "",
+                member_nicknames: {},
                 photo: null,
             },
+            showRemoveGroupMemberModal: false,
+            groupMemberRemovalTarget: null,
+            groupMemberRemovalSubmitting: false,
+            groupMemberRemovalError: "",
             conversationInfoMediaItems: [],
             conversationInfoMediaPage: 1,
             conversationInfoMediaHasMore: true,
@@ -1565,6 +1666,20 @@ export default {
                 this.activeGroupMembers.find(
                     (member) => Number(member.id) === authUserId,
                 ) || null
+            );
+        },
+        activeGroupOwner() {
+            if (!this.activeConversationIsGroup) {
+                return null;
+            }
+
+            return this.activeUser?.owner || null;
+        },
+        canManageActiveGroupMembers() {
+            return (
+                this.activeConversationIsGroup &&
+                Number(this.activeGroupOwner?.id || 0) ===
+                    Number(this.authUser?.id || 0)
             );
         },
         replyTargetLabel() {
@@ -2072,6 +2187,29 @@ export default {
                         payload.conversation_preview || null,
                     );
                 })
+                .listen(".direct-conversation.info-updated", (event) => {
+                    const payload = event?.payload || {};
+                    const conversations = payload.conversations || {};
+                    const systemMessages = payload.system_messages || {};
+                    const authUserId = Number(this.authUser?.id || 0);
+                    const conversation = conversations?.[authUserId] || null;
+
+                    if (!conversation?.conversation_key) {
+                        return;
+                    }
+
+                    this.upsertConversation(conversation);
+
+                    if (
+                        this.selectedConversationKey ===
+                        conversation.conversation_key
+                    ) {
+                        const notes = Array.isArray(systemMessages?.[authUserId])
+                            ? systemMessages[authUserId]
+                            : [];
+                        notes.forEach((message) => this.upsertLocalMessage(message));
+                    }
+                })
                 .listen(".direct-message.typing", (event) => {
                     const payload = event?.payload || {};
                     const activeUserId = Number(this.activeUser?.id || 0);
@@ -2577,6 +2715,7 @@ export default {
         },
         handleGroupConversationUpdated(event) {
             const conversation = event?.conversation || null;
+            const action = String(event?.action || "").trim();
             const removedUserId = Number(event?.removed_user_id || 0);
             const authUserId = Number(this.authUser?.id || 0);
 
@@ -2593,6 +2732,29 @@ export default {
                     ...conversation,
                     conversation_type: "group",
                 });
+
+                if (
+                    this.selectedConversationKey ===
+                        conversation.conversation_key &&
+                    ["settings_updated", "members_updated", "member_removed"].includes(
+                        action,
+                    )
+                ) {
+                    const activeConversation =
+                        this.users.find(
+                            (user) =>
+                                user.conversation_key ===
+                                conversation.conversation_key,
+                        ) || {
+                            ...conversation,
+                            conversation_type: "group",
+                        };
+
+                    this.loadConversation(activeConversation, {
+                        page: 1,
+                        preserveVisibleState: true,
+                    });
+                }
             }
         },
         handlePendingGroupChatRequestUpdate(action, request) {
@@ -3303,6 +3465,7 @@ export default {
                             conversation_type: "group",
                         });
                     }
+                    this.applyActiveGroupMemberNamesToMessages();
                     user.active_label = activityState.label;
                     user.is_active = activityState.isActive;
                     user.last_seen_at = activityState.lastSeenAt;
@@ -3449,9 +3612,16 @@ export default {
             this.selectedApprovalMembersRequest = null;
             this.showApprovalModal = false;
         },
-        openConversationInfoModal() {
+        async openConversationInfoModal() {
             if (!this.activeUser) {
                 return;
+            }
+
+            if (this.activeConversationIsGroup) {
+                await this.loadConversation(this.activeUser, {
+                    page: 1,
+                    preserveVisibleState: true,
+                });
             }
 
             this.groupInfoError = "";
@@ -3461,7 +3631,16 @@ export default {
                     : this.activeUser.actual_name || this.activeUser.name || "",
                 nickname: this.activeConversationIsGroup
                     ? this.activeGroupSelfMember?.nickname || ""
+                    : this.activeUser.self_nickname || "",
+                partner_nickname: this.activeConversationIsGroup
+                    ? ""
                     : this.activeUser.nickname || "",
+                member_nicknames: this.activeConversationIsGroup
+                    ? this.activeGroupMembers.reduce((carry, member) => {
+                          carry[Number(member.id)] = member?.nickname || "";
+                          return carry;
+                      }, {})
+                    : {},
                 photo: null,
             };
             this.groupInfoModalRestoreScrollTop = 0;
@@ -3475,6 +3654,7 @@ export default {
                 return;
             }
 
+            this.closeRemoveGroupMemberModal();
             this.reopenGroupInfoModalAfterGallery = false;
             this.groupInfoModalRestoreScrollTop = 0;
             this.groupInfoModalRestoreActiveTab = "media";
@@ -3569,13 +3749,128 @@ export default {
         clearGroupInfoPhotoSelection() {
             this.groupInfoForm.photo = null;
         },
-        async submitConversationInfo() {
+        clearDirectConversationNickname() {
+            if (this.activeConversationIsGroup || !this.activeUser?.id) {
+                return;
+            }
+
+            this.groupInfoForm.nickname = "";
+            this.groupInfoForm.partner_nickname = "";
+            this.submitConversationInfo({ clearNickname: true });
+        },
+        openRemoveGroupMemberModal(member) {
+            if (
+                !this.canManageActiveGroupMembers ||
+                !member?.id ||
+                Number(member.id) === Number(this.activeGroupOwner?.id || 0)
+            ) {
+                return;
+            }
+
+            this.groupMemberRemovalTarget = member;
+            this.groupMemberRemovalError = "";
+            this.showRemoveGroupMemberModal = true;
+        },
+        closeRemoveGroupMemberModal() {
+            if (this.groupMemberRemovalSubmitting) {
+                return;
+            }
+
+            this.showRemoveGroupMemberModal = false;
+            this.groupMemberRemovalTarget = null;
+            this.groupMemberRemovalError = "";
+        },
+        async confirmRemoveGroupMember() {
+            if (
+                !this.activeConversationIsGroup ||
+                !this.activeUser?.id ||
+                !this.groupMemberRemovalTarget?.id ||
+                this.groupMemberRemovalSubmitting
+            ) {
+                return;
+            }
+
+            this.groupMemberRemovalSubmitting = true;
+            this.groupMemberRemovalError = "";
+
+            try {
+                const { data } = await axios.delete(
+                    `/api/group-chats/${this.activeUser.id}/members/${this.groupMemberRemovalTarget.id}`,
+                    {
+                        headers: this.buildAuthHeaders(),
+                    },
+                );
+
+                if (data?.conversation) {
+                    this.upsertConversation({
+                        ...data.conversation,
+                        members: Array.isArray(data?.members)
+                            ? data.members
+                            : data.conversation.members,
+                    });
+                }
+
+                if (data?.system_message) {
+                    this.upsertLocalMessage(data.system_message);
+                }
+
+                this.groupMemberRemovalSubmitting = false;
+                this.closeRemoveGroupMemberModal();
+                this.closeGroupInfoModal();
+            } catch (error) {
+                this.groupMemberRemovalError =
+                    error?.response?.data?.message ||
+                    "Unable to remove member.";
+            } finally {
+                this.groupMemberRemovalSubmitting = false;
+            }
+        },
+        async submitConversationInfo(submittedForm = null) {
             if (
                 !this.activeUser?.id ||
                 !this.canSubmitGroupInfo ||
                 this.groupInfoSubmitting
             ) {
                 return;
+            }
+
+            const options =
+                submittedForm &&
+                typeof submittedForm === "object" &&
+                !Array.isArray(submittedForm) &&
+                !Object.prototype.hasOwnProperty.call(submittedForm, "clearNickname")
+                    ? {}
+                    : submittedForm || {};
+
+            const normalizedForm =
+                submittedForm &&
+                typeof submittedForm === "object" &&
+                !Array.isArray(submittedForm) &&
+                !Object.prototype.hasOwnProperty.call(submittedForm, "clearNickname")
+                    ? submittedForm
+                    : null;
+
+            if (normalizedForm) {
+                this.groupInfoForm = {
+                    ...this.groupInfoForm,
+                    name:
+                        typeof normalizedForm.name === "string"
+                            ? normalizedForm.name
+                            : this.groupInfoForm.name,
+                    nickname:
+                        typeof normalizedForm.nickname === "string"
+                            ? normalizedForm.nickname
+                            : this.groupInfoForm.nickname,
+                    partner_nickname:
+                        typeof normalizedForm.partner_nickname === "string"
+                            ? normalizedForm.partner_nickname
+                            : this.groupInfoForm.partner_nickname,
+                    member_nicknames:
+                        normalizedForm.member_nicknames &&
+                        typeof normalizedForm.member_nicknames === "object"
+                            ? { ...normalizedForm.member_nicknames }
+                            : this.groupInfoForm.member_nicknames,
+                };
             }
 
             this.groupInfoSubmitting = true;
@@ -3585,33 +3880,65 @@ export default {
                 let data = null;
 
                 if (this.activeConversationIsGroup) {
-                    const formData = new FormData();
-                    formData.append("name", this.groupInfoForm.name.trim());
-
-                    if (this.groupInfoForm.nickname.trim()) {
-                        formData.append(
-                            "nickname",
-                            this.groupInfoForm.nickname.trim(),
-                        );
-                    }
+                    const normalizedMemberNicknames = Object.entries(
+                        this.groupInfoForm.member_nicknames || {},
+                    ).reduce((carry, [memberId, nickname]) => {
+                        carry[Number(memberId)] =
+                            String(nickname || "").trim() || null;
+                        return carry;
+                    }, {});
+                    const normalizedGroupPayload = {
+                        name: this.groupInfoForm.name.trim(),
+                        nickname: this.groupInfoForm.nickname.trim() || null,
+                        member_nicknames: normalizedMemberNicknames,
+                    };
 
                     if (this.groupInfoForm.photo) {
+                        const formData = new FormData();
+                        formData.append("name", normalizedGroupPayload.name);
+                        formData.append(
+                            "nickname",
+                            normalizedGroupPayload.nickname || "",
+                        );
+                        Object.entries(
+                            normalizedGroupPayload.member_nicknames || {},
+                        ).forEach(([memberId, nickname]) => {
+                            formData.append(
+                                `member_nicknames[${memberId}]`,
+                                nickname || "",
+                            );
+                        });
                         formData.append("photo", this.groupInfoForm.photo);
-                    }
 
-                    ({ data } = await axios.post(
-                        `/api/group-chats/${this.activeUser.id}/settings`,
-                        formData,
-                        {
-                            headers: this.buildAuthHeaders(),
-                        },
-                    ));
+                        ({ data } = await axios.post(
+                            `/api/group-chats/${this.activeUser.id}/settings`,
+                            formData,
+                            {
+                                headers: this.buildAuthHeaders(),
+                            },
+                        ));
+                    } else {
+                        ({ data } = await axios.post(
+                            `/api/group-chats/${this.activeUser.id}/settings`,
+                            normalizedGroupPayload,
+                            {
+                                headers: this.buildAuthHeaders(),
+                            },
+                        ));
+                    }
                 } else {
+                    const nickname = options.clearNickname
+                        ? null
+                        : this.groupInfoForm.partner_nickname.trim() || null;
+                    const selfNickname = options.clearNickname
+                        ? null
+                        : this.groupInfoForm.nickname.trim() || null;
+
                     ({ data } = await axios.post(
                         `/api/direct-messages/${this.activeUser.id}/info`,
                         {
-                            nickname:
-                                this.groupInfoForm.nickname.trim() || null,
+                            nickname,
+                            self_nickname: selfNickname,
                         },
                         {
                             headers: this.buildAuthHeaders(),
@@ -3634,8 +3961,13 @@ export default {
                     );
                 }
 
+                if (Array.isArray(data?.system_messages)) {
+                    data.system_messages.forEach((message) =>
+                        this.upsertLocalMessage(message),
+                    );
+                }
+
                 this.groupInfoSubmitting = false;
-                this.closeGroupInfoModal();
 
                 if (selectedConversation && this.activeConversationIsGroup) {
                     await this.loadConversation(
@@ -3648,6 +3980,25 @@ export default {
                         },
                         { page: 1 },
                     );
+
+                    this.groupInfoForm = {
+                        name: this.activeUser?.name || "",
+                        nickname: this.activeGroupSelfMember?.nickname || "",
+                        partner_nickname: "",
+                        member_nicknames: this.activeGroupMembers.reduce(
+                            (carry, member) => {
+                                carry[Number(member.id)] =
+                                    member?.nickname || "";
+                                return carry;
+                            },
+                            {},
+                        ),
+                        photo: null,
+                    };
+                    this.groupInfoModalResetViewKey += 1;
+                    this.clearGroupInfoPhotoSelection();
+                } else {
+                    this.closeGroupInfoModal();
                 }
             } catch (error) {
                 this.groupInfoError =
@@ -4485,6 +4836,19 @@ export default {
 
             const authUserId = Number(this.authUser?.id || 0);
             const senderId = Number(message.sender_id || 0);
+            const normalizedGroupChatId =
+                message.group_chat_id != null
+                    ? Number(message.group_chat_id)
+                    : null;
+            const normalizedSenderName =
+                normalizedGroupChatId &&
+                this.activeConversationIsGroup &&
+                Number(this.activeUser?.id || 0) === normalizedGroupChatId
+                    ? this.getGroupMemberDisplayName(
+                          senderId,
+                          message.sender_name || "User",
+                      )
+                    : message.sender_name || "";
 
             return {
                 ...message,
@@ -4494,10 +4858,8 @@ export default {
                     message.recipient_id != null
                         ? Number(message.recipient_id)
                         : null,
-                group_chat_id:
-                    message.group_chat_id != null
-                        ? Number(message.group_chat_id)
-                        : null,
+                group_chat_id: normalizedGroupChatId,
+                sender_name: normalizedSenderName,
                 is_mine: senderId === authUserId,
                 is_system: Boolean(
                     message.is_system || message.message_type === "system",
@@ -4804,6 +5166,17 @@ export default {
                               "User",
                       }))
                     : [],
+                owner: conversation.owner
+                    ? {
+                          ...conversation.owner,
+                          id: Number(conversation.owner.id),
+                          display_name:
+                              conversation.owner.display_name ||
+                              conversation.owner.nickname ||
+                              conversation.owner.name ||
+                              "User",
+                      }
+                    : existingConversation?.owner || null,
                 actual_name:
                     conversation.actual_name ||
                     existingConversation?.actual_name ||
@@ -4814,6 +5187,12 @@ export default {
                 )
                     ? conversation.nickname
                     : existingConversation?.nickname || null,
+                self_nickname: Object.prototype.hasOwnProperty.call(
+                    conversation,
+                    "self_nickname",
+                )
+                    ? conversation.self_nickname
+                    : existingConversation?.self_nickname || null,
                 unread_count: shouldPreserveUnreadCount
                     ? existingUnreadCount
                     : incomingUnreadCount,
@@ -4846,6 +5225,16 @@ export default {
 
             if (existingIndex === -1) {
                 this.users.push(nextConversation);
+                if (
+                    this.selectedConversationKey ===
+                    nextConversation.conversation_key
+                ) {
+                    this.activeUser = {
+                        ...this.activeUser,
+                        ...nextConversation,
+                    };
+                    this.applyActiveGroupMemberNamesToMessages();
+                }
                 this.scheduleMessagesCachePersist();
                 return;
             }
@@ -4854,12 +5243,22 @@ export default {
                 ...this.users[existingIndex],
                 ...nextConversation,
             });
+            if (
+                this.selectedConversationKey === nextConversation.conversation_key
+            ) {
+                this.activeUser = {
+                    ...this.activeUser,
+                    ...this.users[existingIndex],
+                };
+                this.applyActiveGroupMemberNamesToMessages();
+            }
             this.scheduleMessagesCachePersist();
         },
         upsertLocalMessage(message) {
             if (!message?.id) return;
 
             const normalizedMessage = this.normalizeMessage(message);
+            const shouldScrollToBottom = Boolean(normalizedMessage.is_system);
 
             const existingIndex = this.messages.findIndex(
                 (item) => Number(item.id) === Number(normalizedMessage.id),
@@ -4867,6 +5266,11 @@ export default {
             if (existingIndex === -1) {
                 this.messages.push(normalizedMessage);
                 this.scheduleMessagesCachePersist();
+                if (shouldScrollToBottom) {
+                    this.$nextTick(() => {
+                        this.scrollConversationToBottom();
+                    });
+                }
                 return;
             }
 
@@ -4875,6 +5279,11 @@ export default {
                 ...normalizedMessage,
             });
             this.scheduleMessagesCachePersist();
+            if (shouldScrollToBottom) {
+                this.$nextTick(() => {
+                    this.scrollConversationToBottom();
+                });
+            }
         },
         removeConversation(conversationKey) {
             const index = this.users.findIndex(
@@ -4940,7 +5349,10 @@ export default {
                     "preview",
                 )
             ) {
-                user.preview = conversationPreview.preview;
+                user.preview = this.formatGroupPreviewFromCurrentUser(
+                    conversationPreview.preview,
+                    user,
+                );
             }
 
             if (
@@ -5091,6 +5503,7 @@ export default {
 
             await this.scrollToMessageById(pin.message_id, {
                 flashClass: "message-row--highlighted",
+                shakeClass: "message-row--reply-target",
             });
         },
         async scrollToReplyMessage(message) {
@@ -5149,28 +5562,33 @@ export default {
                 window.clearTimeout(timers.shake);
             }
 
-            if (flashClass) {
-                target.classList.add(flashClass);
-                timers.flash = window.setTimeout(
-                    () => target.classList.remove(flashClass),
-                    900,
-                );
+            if (timers.animate) {
+                window.clearTimeout(timers.animate);
             }
 
-            if (shakeClass) {
-                timers.shake = window.setTimeout(() => {
+            const runJumpAnimation = () => {
+                if (flashClass) {
+                    target.classList.remove(flashClass);
+                    void target.offsetWidth;
+                    target.classList.add(flashClass);
+                    timers.flash = window.setTimeout(
+                        () => target.classList.remove(flashClass),
+                        900,
+                    );
+                }
+
+                if (shakeClass) {
+                    target.classList.remove(shakeClass);
+                    void target.offsetWidth;
                     target.classList.add(shakeClass);
-                    window.setTimeout(
+                    timers.shake = window.setTimeout(
                         () => target.classList.remove(shakeClass),
                         650,
                     );
-                }, 420);
-            } else if (flashClass) {
-                timers.flash = window.setTimeout(
-                    () => target.classList.remove(flashClass),
-                    900,
-                );
-            }
+                }
+            };
+
+            timers.animate = window.setTimeout(runJumpAnimation, 420);
         },
         async setReaction(message, reactionKey) {
             if (!message?.id || message.is_unsent || message.is_system) return;
@@ -5276,6 +5694,10 @@ export default {
         getMessageSnippet(message) {
             if (!message) return "";
 
+            if (message.is_system) {
+                return this.formatSystemMessage(message);
+            }
+
             if (message.is_unsent) return "Unsent Message";
 
             if (message.body) return message.body;
@@ -5283,6 +5705,92 @@ export default {
             if (message.attachment?.name) return message.attachment.name;
 
             return "Attachment";
+        },
+        escapeRegExp(value) {
+            return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        },
+        getConversationActorNames(conversation) {
+            const names = new Set();
+
+            if (conversation?.conversation_type === "group") {
+                const selfMember = Array.isArray(conversation?.members)
+                    ? conversation.members.find(
+                          (member) =>
+                              Number(member?.id || 0) ===
+                              Number(this.authUser?.id || 0),
+                      )
+                    : null;
+
+                [
+                    selfMember?.display_name,
+                    selfMember?.nickname,
+                    selfMember?.name,
+                    this.authUser?.actual_name,
+                    this.authUser?.name,
+                ]
+                    .map((name) => String(name || "").trim())
+                    .filter(Boolean)
+                    .forEach((name) => names.add(name));
+            }
+
+            return Array.from(names).sort((left, right) => right.length - left.length);
+        },
+        formatGroupPreviewFromCurrentUser(preview, conversation) {
+            const text = String(preview || "").trim();
+
+            if (!text || conversation?.conversation_type !== "group") {
+                return text;
+            }
+
+            const actorNames = this.getConversationActorNames(conversation);
+
+            for (const actorName of actorNames) {
+                const escapedActor = this.escapeRegExp(actorName);
+
+                if (new RegExp(`^${escapedActor} joined the chat$`, "i").test(text)) {
+                    return "You joined the chat";
+                }
+
+                if (new RegExp(`^${escapedActor} left the chat$`, "i").test(text)) {
+                    return "You left the chat";
+                }
+
+                if (
+                    new RegExp(`^${escapedActor} changed the group photo$`, "i").test(
+                        text,
+                    )
+                ) {
+                    return "You changed the group photo";
+                }
+
+                const setNicknameMatch = text.match(
+                    new RegExp(
+                        `^${escapedActor} set nickname for (.+) to (.+)$`,
+                        "i",
+                    ),
+                );
+                if (setNicknameMatch) {
+                    return `You set nickname for ${setNicknameMatch[1]} to ${setNicknameMatch[2]}`;
+                }
+
+                const clearNicknameMatch = text.match(
+                    new RegExp(`^${escapedActor} cleared nickname for (.+)$`, "i"),
+                );
+                if (clearNicknameMatch) {
+                    return `You cleared nickname for ${clearNicknameMatch[1]}`;
+                }
+            }
+
+            return text;
+        },
+        formatConversationPreview(user) {
+            const preview = String(user?.preview || "").trim();
+
+            if (!preview) {
+                return this.getConversationStatusLabel(user);
+            }
+
+            return this.formatGroupPreviewFromCurrentUser(preview, user);
         },
         getReactionEmoji(reactionKey) {
             return (
@@ -5415,6 +5923,81 @@ export default {
             const realName = String(member?.name || "").trim();
 
             return nickname || realName || "User";
+        },
+        formatSystemMessage(message) {
+            const body = String(message?.body || "").trim();
+
+            if (!body) {
+                return "";
+            }
+
+            if (
+                !this.activeConversationIsGroup ||
+                Number(message?.sender_id || 0) !== Number(this.authUser?.id || 0)
+            ) {
+                return body;
+            }
+
+            if (/^.+ joined the chat$/i.test(body)) {
+                return "You joined the chat";
+            }
+
+            if (/^.+ left the chat$/i.test(body)) {
+                return "You left the chat";
+            }
+
+            if (/^.+ changed the group photo$/i.test(body)) {
+                return "You changed the group photo";
+            }
+
+            const setNicknameMatch = body.match(/^.+ set nickname for (.+) to (.+)$/i);
+            if (setNicknameMatch) {
+                return `You set nickname for ${setNicknameMatch[1]} to ${setNicknameMatch[2]}`;
+            }
+
+            const clearNicknameMatch = body.match(/^.+ cleared nickname for (.+)$/i);
+            if (clearNicknameMatch) {
+                return `You cleared nickname for ${clearNicknameMatch[1]}`;
+            }
+
+            return body;
+        },
+        getGroupMemberDisplayName(memberId, fallbackName = "User") {
+            if (!this.activeConversationIsGroup) {
+                return fallbackName || "User";
+            }
+
+            const member = this.activeGroupMembers.find(
+                (item) => Number(item.id) === Number(memberId),
+            );
+
+            return (
+                String(member?.display_name || member?.nickname || member?.name || "")
+                    .trim() ||
+                fallbackName ||
+                "User"
+            );
+        },
+        applyActiveGroupMemberNamesToMessages() {
+            if (!this.activeConversationIsGroup || !Array.isArray(this.messages)) {
+                return;
+            }
+
+            const activeGroupId = Number(this.activeUser?.id || 0);
+
+            this.messages = this.messages.map((message) => {
+                if (Number(message.group_chat_id || 0) !== activeGroupId) {
+                    return message;
+                }
+
+                return {
+                    ...message,
+                    sender_name: this.getGroupMemberDisplayName(
+                        message.sender_id,
+                        message.sender_name || "User",
+                    ),
+                };
+            });
         },
         getGroupSeenUsers(message) {
             if (
@@ -7181,6 +7764,8 @@ export default {
 
 .message-system-note {
     max-width: min(100%, 420px);
+    width: auto;
+    display: inline-block;
     padding: 8px 14px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.08);
@@ -7188,6 +7773,9 @@ export default {
     font-size: 0.84rem;
     text-align: center;
     letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .message-row--highlighted .message-bubble {
@@ -7270,9 +7858,12 @@ export default {
 
 .message-bubble--typing {
     display: inline-flex;
+    flex-direction: row;
     align-items: center;
     gap: 10px;
     min-width: 0;
+    width: fit-content;
+    max-width: min(76%, 360px);
     padding: 12px 16px;
 }
 
@@ -7299,6 +7890,12 @@ export default {
 }
 
 .typing-indicator__label {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: rgba(255, 255, 255, 0.9);
     white-space: nowrap;
 }
@@ -7327,6 +7924,12 @@ export default {
 .message-bubble__floating-actions.is-open {
     opacity: 1;
     visibility: visible;
+}
+
+.message-bubble__floating-actions.is-hidden-for-reaction {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .message-row--mine .message-bubble__floating-actions {
@@ -7941,10 +8544,10 @@ export default {
 
 .message-scroll-bottom {
     position: absolute;
-    right: 50px;
+    left: 50%;
     bottom: 140px;
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
     border: 0;
     border-radius: 50%;
     background: linear-gradient(135deg, #ff4d88, #b83de6);
@@ -7954,10 +8557,11 @@ export default {
     justify-content: center;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
     z-index: 6;
+    transform: translateX(-50%);
 }
 
 .message-scroll-bottom:hover {
-    transform: translateY(-1px);
+    transform: translateX(-50%) translateY(-1px);
 }
 
 .composer {
@@ -8930,7 +9534,7 @@ export default {
 
 .message-row--highlighted .message-bubble {
     box-shadow:
-        0 0 0 2px rgba(28, 88, 246, 0.24),
+        0 0 0 2px rgba(255, 77, 136, 0.24),
         0 16px 30px rgba(0, 0, 0, 0.18);
 }
 
@@ -8998,7 +9602,7 @@ export default {
 .message-bubble__sender,
 .message-pin-chip__icon,
 .attachment-preview__icon {
-    color: #a7c2ff;
+    color: #ff7b8d;
 }
 
 .message-bubble__status--seen {
@@ -9012,7 +9616,8 @@ export default {
 }
 
 .message-scroll-bottom {
-    border-radius: 18px;
+    border-radius: 50%;
+    background: rgba(120, 114, 103, 0.92);
 }
 
 .message-reaction-badge {
@@ -9533,10 +10138,10 @@ export default {
     }
 
     .message-scroll-bottom {
-        right: 16px;
+        left: 50%;
         bottom: 114px;
-        width: 46px;
-        height: 46px;
+        width: 40px;
+        height: 40px;
     }
 
     .composer {

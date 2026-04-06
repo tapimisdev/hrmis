@@ -29,6 +29,7 @@ Route::prefix('group-chats')->group(function () {
     Route::delete('{groupChat}/messages', [GroupChatController::class, 'destroyConversationMessages']);
     Route::post('{groupChat}/settings', [GroupChatController::class, 'updateSettings']);
     Route::post('{groupChat}/members', [GroupChatController::class, 'addMembers']);
+    Route::delete('{groupChat}/members/{userId}', [GroupChatController::class, 'removeMember']);
     Route::post('{groupChat}/leave', [GroupChatController::class, 'leave']);
     Route::post('{groupChat}/typing', [GroupChatController::class, 'typing']);
     Route::post('{groupChat}/approve', [GroupChatController::class, 'approve']);

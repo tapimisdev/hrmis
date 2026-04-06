@@ -26,8 +26,8 @@
                         <p class="group-info-modal__subtitle">
                             {{
                                 isGroup
-                                    ? "Update the group name, photo, your nickname, and browse shared media."
-                                    : "Set a nickname for this conversation and browse shared media."
+                                    ? "View the member list and open the nickname editor when you need to update names."
+                                    : "View both nicknames for this conversation and update your own nickname."
                             }}
                         </p>
                     </div>
@@ -47,11 +47,16 @@
                     ref="bodyScroll"
                     @scroll.passive="handleScroll"
                 >
-                    <div class="group-info-modal__editor">
-                        <div class="group-info-modal__avatar">
+                    <div
+                        v-if="!isGroup || groupViewMode === 'overview'"
+                        class="group-info-modal__editor"
+                    >
+                        <div
+                            v-if="isGroup"
+                            class="group-info-modal__avatar group-info-modal__avatar--group"
+                        >
                             <img :src="photoPreview || avatar" :alt="title" />
                             <button
-                                v-if="isGroup"
                                 type="button"
                                 class="group-info-modal__btn group-info-modal__btn--ghost"
                                 :disabled="isSubmitting"
@@ -60,7 +65,6 @@
                                 Change photo
                             </button>
                             <input
-                                v-if="isGroup"
                                 ref="photoInput"
                                 type="file"
                                 class="d-none"
@@ -69,16 +73,20 @@
                             />
                         </div>
 
+                        <div v-else class="group-info-modal__avatar">
+                            <img :src="photoPreview || avatar" :alt="title" />
+                        </div>
+
                         <div v-if="isGroup" class="mb-3">
-                            <label class="form-label text-white-50 small"
-                                >Group name</label
-                            >
+                            <label class="form-label text-white-50 small">
+                                Group name
+                            </label>
                             <input
                                 v-model="form.name"
                                 type="text"
                                 class="group-info-modal__input"
                                 maxlength="120"
-                                placeholder="Enter group name"
+                                placeholder="Set group name"
                             />
                         </div>
 
@@ -91,25 +99,270 @@
                             </div>
                         </div>
 
-                        <div class="mb-2">
+                        <div v-if="!isGroup" class="mb-2">
                             <label class="form-label text-white-50 small">
-                                {{ isGroup ? "Your nickname" : "Nickname" }}
-                            </label>
-                            <input
-                                v-model="form.nickname"
-                                type="text"
-                                class="group-info-modal__input"
-                                maxlength="120"
-                                :placeholder="
+                                {{
                                     isGroup
-                                        ? 'Set your nickname in this group'
-                                        : 'Set a nickname for this conversation'
-                                "
-                            />
+                                        ? "Your nickname"
+                                        : directSelfNicknameLabel
+                                }}
+                            </label>
+                            <div class="group-info-modal__input-row">
+                                <input
+                                    v-model="form.nickname"
+                                    type="text"
+                                    class="group-info-modal__input"
+                                    maxlength="120"
+                                    :placeholder="
+                                        isGroup
+                                            ? 'Set your nickname in this group'
+                                            : 'Set the nickname they will see for you'
+                                    "
+                                />
+                                <button
+                                    v-if="!isGroup && canClearDirectField('nickname')"
+                                    type="button"
+                                    class="group-info-modal__field-action"
+                                    :disabled="isSubmitting"
+                                    @click="clearDirectField('nickname')"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-if="!isGroup" class="mb-3">
+                            <label class="form-label text-white-50 small"
+                                >{{ directPartnerNicknameLabel }}</label
+                            >
+                            <div class="group-info-modal__input-row">
+                                <input
+                                    v-model="form.partner_nickname"
+                                    type="text"
+                                    class="group-info-modal__input"
+                                    maxlength="120"
+                                    :placeholder="`Set ${displayName || 'user'} nickname`"
+                                />
+                                <button
+                                    v-if="canClearDirectField('partner_nickname')"
+                                    type="button"
+                                    class="group-info-modal__field-action"
+                                    :disabled="isSubmitting"
+                                    @click="clearDirectField('partner_nickname')"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-if="isGroup" class="group-info-modal__members">
+                            <div class="group-info-modal__members-header">
+                                <div>
+                                    <div class="group-info-modal__context-label">
+                                        Group owner
+                                    </div>
+                                    <div class="text-white-50 small">
+                                        The owner can manage group members.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="owner?.id" class="group-info-modal__owner-card">
+                                <img
+                                    class="group-info-modal__member-avatar"
+                                    :src="getMemberProfile(owner)"
+                                    :alt="owner.display_name || owner.nickname || owner.name || 'Owner'"
+                                />
+                                <div class="group-info-modal__member-copy">
+                                    <div class="group-info-modal__member-name">
+                                        <span>{{ owner.display_name || owner.nickname || owner.name || "User" }}</span>
+                                        <small class="group-info-modal__member-badge">
+                                            Owner
+                                        </small>
+                                    </div>
+                                    <small
+                                        v-if="
+                                            owner.nickname &&
+                                            owner.name &&
+                                            owner.nickname !== owner.name
+                                        "
+                                        class="text-white-50"
+                                    >
+                                        {{ owner.name }}
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="group-info-modal__members-divider"></div>
+
+                            <div class="group-info-modal__members-header">
+                                <div>
+                                    <div class="group-info-modal__context-label">
+                                        Members
+                                    </div>
+                                    <div class="text-white-50 small">
+                                        {{ members.length }} people in this group.
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="group-info-modal__member-action"
+                                    :disabled="isSubmitting"
+                                    @click="openGroupNicknameEditor"
+                                >
+                                    Nicknames
+                                </button>
+                            </div>
+
+                            <div
+                                v-if="groupOverviewMembers.length"
+                                class="group-info-modal__member-list"
+                            >
+                                <div
+                                    v-for="member in groupOverviewMembers"
+                                    :key="`group-info-member-${member.id}`"
+                                    class="group-info-modal__member-item"
+                                >
+                                    <img
+                                        class="group-info-modal__member-avatar"
+                                        :src="getMemberProfile(member)"
+                                        :alt="member.display_name || member.name"
+                                    />
+                                    <div class="group-info-modal__member-copy">
+                                        <div class="group-info-modal__member-name">
+                                            <span>{{ member.display_name || member.name }}</span>
+                                            <small
+                                                v-if="Number(member.id) === Number(owner?.id)"
+                                                class="group-info-modal__member-badge"
+                                            >
+                                                Owner
+                                            </small>
+                                            <small
+                                                v-else-if="Number(member.id) === Number(currentUserId)"
+                                                class="group-info-modal__member-badge group-info-modal__member-badge--muted"
+                                            >
+                                                You
+                                            </small>
+                                        </div>
+                                        <small
+                                            v-if="
+                                                member.nickname &&
+                                                member.nickname !== member.name
+                                            "
+                                            class="text-white-50"
+                                        >
+                                            {{ member.name }}
+                                        </small>
+                                        <small
+                                            v-if="
+                                                Number(member.id) !== Number(owner?.id) &&
+                                                member.added_by_name
+                                            "
+                                            class="text-white-50"
+                                        >
+                                            Added by {{ member.added_by_name }}
+                                        </small>
+                                    </div>
+                                    <button
+                                        v-if="
+                                            canManageMembers &&
+                                            Number(member.id) !== Number(owner?.id) &&
+                                            Number(member.id) !== Number(currentUserId)
+                                        "
+                                        type="button"
+                                        class="group-info-modal__member-remove"
+                                        :disabled="
+                                            isSubmitting ||
+                                            Number(removingMemberId) === Number(member.id)
+                                        "
+                                        @click="$emit('remove-member', member)"
+                                    >
+                                        <span
+                                            v-if="Number(removingMemberId) === Number(member.id)"
+                                            class="spinner-border spinner-border-sm"
+                                            aria-hidden="true"
+                                        ></span>
+                                        <span v-else>Remove</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="group-info-modal__media">
+                    <div
+                        v-else
+                        class="group-info-modal__editor group-info-modal__editor--nickname-view"
+                    >
+                        <div class="group-info-modal__members-header">
+                            <div>
+                                <div class="group-info-modal__context-label">
+                                    Edit nicknames
+                                </div>
+                                <div class="text-white-50 small">
+                                    Update member nicknames, then save to return to the member list.
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                class="group-info-modal__member-action group-info-modal__member-action--ghost"
+                                :disabled="isSubmitting"
+                                @click="showGroupOverview"
+                            >
+                                Go back
+                            </button>
+                        </div>
+
+                        <div class="group-info-modal__member-list">
+                            <div
+                                v-for="member in members"
+                                :key="`group-info-nickname-${member.id}`"
+                                class="group-info-modal__member-item group-info-modal__member-item--editor"
+                            >
+                                <img
+                                    class="group-info-modal__member-avatar"
+                                    :src="getMemberProfile(member)"
+                                    :alt="member.display_name || member.name"
+                                />
+                                <div class="group-info-modal__member-copy">
+                                    <div class="group-info-modal__member-name">
+                                        <span>{{ member.display_name || member.name }}</span>
+                                        <small
+                                            v-if="Number(member.id) === Number(owner?.id)"
+                                            class="group-info-modal__member-badge"
+                                        >
+                                            Owner
+                                        </small>
+                                        <small
+                                            v-else-if="Number(member.id) === Number(currentUserId)"
+                                            class="group-info-modal__member-badge group-info-modal__member-badge--muted"
+                                        >
+                                            You
+                                        </small>
+                                    </div>
+                                    <small class="text-white-50">
+                                        {{ member.name || "User" }}
+                                    </small>
+                                    <div class="group-info-modal__member-nickname-editor">
+                                        <label class="form-label text-white-50 small mb-1">
+                                            Nickname
+                                        </label>
+                                        <input
+                                            v-model="form.member_nicknames[member.id]"
+                                            type="text"
+                                            class="group-info-modal__input group-info-modal__input--member"
+                                            maxlength="120"
+                                            :placeholder="`Set nickname for ${member.name || 'member'}`"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="!isGroup"
+                        class="group-info-modal__media"
+                    >
                         <div class="group-info-modal__media-header">
                             <div>
                                 <div class="group-info-modal__context-label">
@@ -290,13 +543,50 @@ export default {
             type: String,
             default: "",
         },
+        resetEditorViewKey: {
+            type: [String, Number],
+            default: 0,
+        },
+        currentUserName: {
+            type: String,
+            default: "",
+        },
+        directPartnerNickname: {
+            type: String,
+            default: "",
+        },
         initialForm: {
             type: Object,
-            default: () => ({ name: "", nickname: "" }),
+            default: () => ({
+                name: "",
+                nickname: "",
+                partner_nickname: "",
+                member_nicknames: {},
+            }),
         },
         isGroup: {
             type: Boolean,
             default: true,
+        },
+        owner: {
+            type: Object,
+            default: () => null,
+        },
+        members: {
+            type: Array,
+            default: () => [],
+        },
+        currentUserId: {
+            type: [String, Number],
+            default: null,
+        },
+        canManageMembers: {
+            type: Boolean,
+            default: false,
+        },
+        removingMemberId: {
+            type: [String, Number],
+            default: null,
         },
         mediaItems: {
             type: Array,
@@ -331,15 +621,18 @@ export default {
             default: 0,
         },
     },
-    emits: ["close", "submit", "scroll", "photo-change", "open-gallery", "download"],
+    emits: ["close", "submit", "scroll", "photo-change", "open-gallery", "download", "remove-member", "clear-nickname"],
     data() {
         return {
             form: {
                 name: "",
                 nickname: "",
+                partner_nickname: "",
+                member_nicknames: {},
             },
             photoPreview: "",
             activeTab: this.initialActiveTab || "media",
+            groupViewMode: "overview",
         };
     },
     computed: {
@@ -357,23 +650,75 @@ export default {
         filteredItems() {
             return this.activeTab === "media" ? this.imageItems : this.fileItems;
         },
-        canSubmit() {
+        hasDirectNicknameChanges() {
             return (
-                this.form.name?.trim() || 
-                this.form.nickname?.trim() ||
-                this.photoPreview
+                String(this.form.nickname || "").trim() !==
+                    String(this.initialForm?.nickname || "").trim() ||
+                String(this.form.partner_nickname || "").trim() !==
+                    String(this.initialForm?.partner_nickname || "").trim()
+            );
+        },
+        hasGroupNicknameChanges() {
+            const current = this.form.member_nicknames || {};
+            const initial = this.initialForm?.member_nicknames || {};
+            const memberIds = new Set([
+                ...Object.keys(current),
+                ...Object.keys(initial),
+            ]);
+
+            for (const memberId of memberIds) {
+                if (
+                    String(current[memberId] || "").trim() !==
+                    String(initial[memberId] || "").trim()
+                ) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+        hasGroupInfoChanges() {
+            return (
+                String(this.form.name || "").trim() !==
+                    String(this.initialForm?.name || "").trim() ||
+                Boolean(this.photoPreview) ||
+                this.hasGroupNicknameChanges
+            );
+        },
+        canSubmit() {
+            if (!this.isGroup) {
+                return this.hasDirectNicknameChanges;
+            }
+
+            return this.hasGroupInfoChanges;
+        },
+        directPartnerNicknameLabel() {
+            return `Nickname for ${this.displayName || "User"}`;
+        },
+        directSelfNicknameLabel() {
+            return "Nickname for you";
+        },
+        groupOverviewMembers() {
+            return this.members.filter(
+                (member) => Number(member.id) !== Number(this.owner?.id),
             );
         },
     },
     watch: {
         initialForm(newVal) {
             if (newVal) {
-                this.form = { ...newVal };
+                this.form = {
+                    ...newVal,
+                    member_nicknames: {
+                        ...(newVal.member_nicknames || {}),
+                    },
+                };
             }
         },
         isOpen(newVal) {
             if (newVal) {
                 this.activeTab = this.initialActiveTab || "media";
+                this.groupViewMode = "overview";
                 return;
             }
 
@@ -387,6 +732,11 @@ export default {
         initialActiveTab(newVal) {
             if (this.isOpen && newVal) {
                 this.activeTab = newVal;
+            }
+        },
+        resetEditorViewKey() {
+            if (this.isOpen && this.isGroup) {
+                this.groupViewMode = "overview";
             }
         },
     },
@@ -424,6 +774,40 @@ export default {
                     this.$emit("scroll");
                 }
             }
+        },
+        getMemberProfile(member) {
+            return member?.profile || member?.avatar || "";
+        },
+        canClearDirectField(field) {
+            return Boolean(
+                String(this.initialForm?.[field] || "").trim() ||
+                    String(this.form?.[field] || "").trim(),
+            );
+        },
+        clearDirectField(field) {
+            this.form[field] = "";
+        },
+        openGroupNicknameEditor() {
+            if (!this.isGroup) {
+                return;
+            }
+
+            this.groupViewMode = "nicknames";
+            this.$nextTick(() => {
+                const body = this.$refs.bodyScroll;
+                if (body) {
+                    body.scrollTop = 0;
+                }
+            });
+        },
+        showGroupOverview() {
+            this.groupViewMode = "overview";
+            this.$nextTick(() => {
+                const body = this.$refs.bodyScroll;
+                if (body) {
+                    body.scrollTop = 0;
+                }
+            });
         },
         handleSubmit() {
             this.$emit("submit", this.form);
@@ -603,6 +987,28 @@ export default {
     box-shadow: 0 0 0 4px rgba(28, 88, 246, 0.14);
 }
 
+.group-info-modal__input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.group-info-modal__input-row .group-info-modal__input {
+    flex: 1 1 auto;
+}
+
+.group-info-modal__field-action {
+    flex: 0 0 auto;
+    min-width: 84px;
+    height: 54px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 18px;
+    background: rgba(220, 53, 69, 0.08);
+    color: #ffd7dd;
+    font-weight: 700;
+}
+
 .group-info-modal__preview {
     padding: 14px 16px;
     border-radius: 16px;
@@ -615,6 +1021,133 @@ export default {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: grid;
     gap: 16px;
+}
+
+.group-info-modal__members {
+    margin-top: 8px;
+    display: grid;
+    gap: 12px;
+}
+
+.group-info-modal__members-divider {
+    margin: 12px 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.group-info-modal__members-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.group-info-modal__member-action {
+    flex: 0 0 auto;
+    min-width: 120px;
+    height: 38px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(28, 88, 246, 0.18);
+    color: #cfe0ff;
+    font-weight: 700;
+}
+
+.group-info-modal__member-action--ghost {
+    background: rgba(255, 255, 255, 0.08);
+    color: #f3f6fb;
+}
+
+.group-info-modal__owner-card,
+.group-info-modal__member-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.group-info-modal__member-list {
+    display: grid;
+    gap: 10px;
+}
+
+.group-info-modal__member-item--editor {
+    align-items: flex-start;
+}
+
+.group-info-modal__member-avatar {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    border-radius: 14px;
+    object-fit: cover;
+}
+
+.group-info-modal__member-copy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+    flex: 1;
+}
+
+.group-info-modal__member-nickname-editor {
+    margin-top: 8px;
+    display: grid;
+    gap: 4px;
+}
+
+.group-info-modal__input--member {
+    height: 44px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+}
+
+.group-info-modal__member-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f3f6fb;
+    font-weight: 700;
+    min-width: 0;
+}
+
+.group-info-modal__member-name span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.group-info-modal__member-badge {
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(28, 88, 246, 0.18);
+    color: #aecdff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.group-info-modal__member-badge--muted {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.group-info-modal__member-remove {
+    min-width: 90px;
+    height: 38px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(220, 53, 69, 0.12);
+    color: #ffd7dd;
+    font-weight: 700;
 }
 
 .group-info-modal__media-header {
@@ -765,8 +1298,51 @@ export default {
 }
 
 .group-info-modal__close:disabled,
-.group-info-modal__btn:disabled {
+.group-info-modal__btn:disabled,
+.group-info-modal__field-action:disabled,
+.group-info-modal__member-action:disabled,
+.group-info-modal__member-remove:disabled {
     opacity: 0.65;
     cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+    .group-info-modal__input-row {
+        align-items: stretch;
+    }
+
+    .group-info-modal__field-action {
+        min-width: 74px;
+        padding: 0 14px;
+    }
+
+    .group-info-modal__members-header {
+        flex-direction: column;
+    }
+
+    .group-info-modal__owner-card,
+    .group-info-modal__member-item {
+        align-items: flex-start;
+    }
+
+    .group-info-modal__member-item {
+        flex-wrap: wrap;
+    }
+
+    .group-info-modal__member-name {
+        flex-wrap: wrap;
+    }
+
+    .group-info-modal__member-name span {
+        white-space: normal;
+    }
+
+    .group-info-modal__member-remove {
+        margin-left: 56px;
+    }
+
+    .group-info-modal__member-action {
+        width: 100%;
+    }
 }
 </style>

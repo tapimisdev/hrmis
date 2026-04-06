@@ -14,6 +14,8 @@ class DirectMessage extends Model
     protected $fillable = [
         'sender_id',
         'recipient_id',
+        'visible_to_user_id',
+        'message_type',
         'body',
         'reply_to_id',
         'attachment_path',
@@ -49,6 +51,11 @@ class DirectMessage extends Model
     public function recipient()
     {
         return $this->belongsTo(User::class, 'recipient_id');
+    }
+
+    public function visibleToUser()
+    {
+        return $this->belongsTo(User::class, 'visible_to_user_id');
     }
 
     public function replyTo()
