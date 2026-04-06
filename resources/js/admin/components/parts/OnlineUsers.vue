@@ -239,13 +239,22 @@
                                 :key="message.id"
                                 class="message-row"
                                 :class="[
-                                    message.is_mine ? 'message-row--mine' : 'message-row--theirs',
+                                    message.is_system
+                                        ? 'message-row--system'
+                                        : message.is_mine
+                                            ? 'message-row--mine'
+                                            : 'message-row--theirs',
                                     highlightedMessageId === message.id ? 'message-row--highlighted' : '',
                                     highlightedMessageId === message.id ? `message-row--pulse-${highlightPulseToken}` : '',
                                 ]"
                                 :data-message-id="message.id"
                             >
-                                <div class="message-bubble-shell">
+                                <div v-if="message.is_system" class="message-system-note">
+                                    <div class="message-system-note__body">
+                                        {{ formatSystemMessage(message) }}
+                                    </div>
+                                </div>
+                                <div v-else class="message-bubble-shell">
                                     <div
                                         v-if="!message.is_unsent"
                                         class="message-actions"
@@ -1749,7 +1758,11 @@ export default {
                     return;
                 }
 
-                const messages = data.messages ?? [];
+                const messages = Array.isArray(data.messages)
+                    ? data.messages.map((message) =>
+                          this.normalizeConversationMessage(message),
+                      )
+                    : [];
                 const pagination = data.pagination ?? {};
                 const pinnedMessages = data.pinned_messages ?? [];
                 this.conversationPage = pagination.current_page ?? page;
@@ -2294,7 +2307,7 @@ export default {
             const recipientId = message?.recipient_id ?? existingMessage?.recipient_id ?? null;
             const isUnsent = Boolean(message?.is_unsent);
 
-            const normalizedMessage = {
+            const normalizedMessage = this.normalizeConversationMessage({
                 ...existingMessage,
                 ...message,
                 sender_id: senderId,
@@ -2316,7 +2329,7 @@ export default {
                 is_mine: senderId !== null
                     ? Number(senderId) === Number(this.userId)
                     : Boolean(existingMessage?.is_mine),
-            };
+            });
 
             this.upsertConversationMessage(normalizedMessage);
 
@@ -2374,7 +2387,7 @@ export default {
             this.showPinnedMessagesPanel = !this.showPinnedMessagesPanel;
         },
         toggleMessageActions(message, event = null) {
-            if (!message?.id || message.is_unsent) {
+            if (!message?.id || message.is_unsent || message.is_system) {
                 return;
             }
 
@@ -2413,6 +2426,10 @@ export default {
                 return "Attachment";
             }
 
+            if (message.is_system) {
+                return this.formatSystemMessage(message);
+            }
+
             if (message.is_unsent) {
                 return "Unsent Message";
             }
@@ -2433,7 +2450,7 @@ export default {
             );
         },
         async togglePinMessage(message) {
-            if (!message?.id || message.is_unsent) return;
+            if (!message?.id || message.is_unsent || message.is_system) return;
 
             this.clearPinErrorTimer();
             this.pinError = "";
@@ -2493,7 +2510,7 @@ export default {
             const message = this.conversationMessages.find((item) => item.id === pin.message_id);
             if (!message) return;
 
-            if (message.is_unsent) {
+            if (message.is_unsent || message.is_system) {
                 return;
             }
 
@@ -2503,7 +2520,7 @@ export default {
             });
         },
         async editMessage(message) {
-            if (!message?.id || !message.is_mine || message.is_unsent) {
+            if (!message?.id || !message.is_mine || message.is_unsent || message.is_system) {
                 return;
             }
 
@@ -2515,7 +2532,7 @@ export default {
             this.openMessageActionModal("edit", message);
         },
         async unsendMessage(message) {
-            if (!message?.id || !message.is_mine || message.is_unsent) {
+            if (!message?.id || !message.is_mine || message.is_unsent || message.is_system) {
                 return;
             }
 
@@ -2679,7 +2696,7 @@ export default {
             this.reactionsModalData = [];
         },
         toggleReactionPicker(message) {
-            if (message?.is_unsent) {
+            if (message?.is_unsent || message?.is_system) {
                 return;
             }
 
@@ -2737,7 +2754,7 @@ export default {
             return result.isConfirmed;
         },
         async setReaction(message, reactionKey) {
-            if (!message?.id || message.is_unsent) return;
+            if (!message?.id || message.is_unsent || message.is_system) return;
 
             const existingReaction = Array.isArray(message.reactions)
                 ? message.reactions.find(
@@ -2878,7 +2895,7 @@ export default {
             }
         },
         startReply(message) {
-            if (!message || message.is_unsent) {
+            if (!message || message.is_unsent || message.is_system) {
                 return;
             }
 
@@ -3093,6 +3110,10 @@ export default {
                 return "Attachment";
             }
 
+            if (message.is_system) {
+                return this.formatSystemMessage(message);
+            }
+
             if (message.is_unsent) {
                 return "Unsent Message";
             }
@@ -3122,6 +3143,40 @@ export default {
                 recipient_id: message.recipient_id,
                 created_at: message.created_at || null,
             };
+        },
+        normalizeConversationMessage(message) {
+            if (!message) {
+                return message;
+            }
+
+            const senderId =
+                message.sender_id != null ? Number(message.sender_id) : null;
+            const recipientId =
+                message.recipient_id != null ? Number(message.recipient_id) : null;
+
+            return {
+                ...message,
+                id: message.id != null ? Number(message.id) : message.id,
+                sender_id: senderId,
+                recipient_id: recipientId,
+                is_mine:
+                    senderId !== null
+                        ? Number(senderId) === Number(this.userId || 0)
+                        : Boolean(message.is_mine),
+                is_system: Boolean(
+                    message.is_system || message.message_type === "system",
+                ),
+                is_unsent: Boolean(message.is_unsent),
+                reaction: message.is_unsent ? null : message.reaction || null,
+                reactions: message.is_unsent
+                    ? []
+                    : Array.isArray(message.reactions)
+                        ? message.reactions
+                        : [],
+            };
+        },
+        formatSystemMessage(message) {
+            return String(message?.body || "").trim();
         },
         triggerAttachmentPicker() {
             const input = this.$refs.attachmentInput;
@@ -3992,6 +4047,10 @@ img {
     justify-content: flex-end;
 }
 
+.message-row--system {
+    justify-content: center;
+}
+
 .message-bubble-shell {
     display: inline-flex;
     align-items: center;
@@ -4017,6 +4076,32 @@ img {
 
 .message-row--theirs .message-bubble-stack {
     align-items: flex-start;
+}
+
+.message-system-note {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    max-width: min(100%, 32rem);
+    margin: 0 auto;
+    padding: 0.48rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.015);
+    text-align: center;
+}
+
+.message-system-note__body {
+    display: block;
+    max-width: 100%;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .message-actions {
