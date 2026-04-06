@@ -175,7 +175,13 @@
                                 />
                                 <div class="group-info-modal__member-copy">
                                     <div class="group-info-modal__member-name">
-                                        <span>{{ owner.display_name || owner.nickname || owner.name || "User" }}</span>
+                                        <span>
+                                            {{ owner.display_name || owner.nickname || owner.name || "User" }}<template
+                                                v-if="Number(owner.id) === Number(currentUserId)"
+                                            >
+                                                (You)
+                                            </template>
+                                        </span>
                                         <small class="group-info-modal__member-badge">
                                             Owner
                                         </small>
@@ -230,18 +236,18 @@
                                     />
                                     <div class="group-info-modal__member-copy">
                                         <div class="group-info-modal__member-name">
-                                            <span>{{ member.display_name || member.name }}</span>
+                                            <span>
+                                                {{ member.display_name || member.name }}<template
+                                                    v-if="Number(member.id) === Number(currentUserId)"
+                                                >
+                                                    (You)
+                                                </template>
+                                            </span>
                                             <small
                                                 v-if="Number(member.id) === Number(owner?.id)"
                                                 class="group-info-modal__member-badge"
                                             >
                                                 Owner
-                                            </small>
-                                            <small
-                                                v-else-if="Number(member.id) === Number(currentUserId)"
-                                                class="group-info-modal__member-badge group-info-modal__member-badge--muted"
-                                            >
-                                                You
                                             </small>
                                         </div>
                                         <small
