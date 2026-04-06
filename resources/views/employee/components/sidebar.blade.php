@@ -74,6 +74,16 @@
                     </a>
                 </li>
 
+                <!-- Messages -->
+                <li class="side-items {{ request()->routeIs('employee.messages') ? 'active' : '' }}">
+                    <a href="{{ route('employee.messages') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-comments"></i>
+                        </span>
+                        <span class="side-text">Messages</span>
+                    </a>
+                </li>
+
                 <li class="side-items">
                     <a class="side-link text-body dropdown-toggle 
                         {{ Str::contains(request()->path(), 'credits/leave') || Str::contains(request()->path(), 'credits/offset') ? '' : 'collapsed' }}"

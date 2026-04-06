@@ -1,7 +1,7 @@
 <template>
     <!-- Notification Component -->
     <li class="nav-item">
-      <online-users :user-id="userId"/>      
+      <online-users :user-id="userId" :user-role="userRole"/>      
     </li>
     <li class="nav-item">
       <notification :username="username" :user-role="userRole" :user-id="userId" />    
@@ -154,6 +154,10 @@ export default {
         },
         userId: {
             type: Number,
+            required: true,
+        },
+        userRole: {
+            type: String,
             required: true,
         },
     },

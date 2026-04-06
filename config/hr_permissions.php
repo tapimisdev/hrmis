@@ -61,6 +61,13 @@ return [
         'save',
     ],
 
+    'suspensions' => [
+        'view',
+        'create',
+        'edit',
+        'delete',
+    ],
+
     // Core Entities
     'organization' => [
         'view',

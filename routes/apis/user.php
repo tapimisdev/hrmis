@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Api\PresenceController;
 
 Route::get('/users', function () {
     $users = DB::table('users')
@@ -43,3 +44,5 @@ Route::get('/users', function () {
 
     return response()->json($users);
 });
+
+Route::post('/presence', [PresenceController::class, 'update']);
