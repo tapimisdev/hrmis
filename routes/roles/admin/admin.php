@@ -9,7 +9,9 @@ use App\Http\Controllers\Admin\TrailsController;
 Route::prefix('admin')->middleware(['auth'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/messages', [MessagesController::class, 'index'])->name('admin.messages');
+    Route::get('/messages/{conversationToken?}', [MessagesController::class, 'index'])
+        ->where('conversationToken', '.*')
+        ->name('admin.messages');
     Route::get('id-maker', [IDMakerController::class, 'index']);
     Route::post('id-maker', [IDMakerController::class, 'save_configuration'])
         ->name('id-maker.save_configuration');

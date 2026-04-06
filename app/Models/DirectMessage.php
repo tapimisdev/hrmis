@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class DirectMessage extends Model
 {
@@ -57,5 +59,58 @@ class DirectMessage extends Model
     public function unsentBy()
     {
         return $this->belongsTo(User::class, 'unsent_by_id');
+    }
+
+    public function reactions()
+    {
+        return $this->hasMany(DirectMessageReaction::class);
+    }
+
+    /**
+     * Get reactions with user information formatted for frontend
+     */
+    public function getReactionsWithUsers()
+    {
+        return $this->reactions()
+            ->with('user')
+            ->get()
+            ->map(function ($reaction) {
+                $user = $reaction->user;
+                $profile = $this->getUserProfileImageUrl($user);
+                return [
+                    'user_id' => $reaction->user_id,
+                    'user_name' => $user->name,
+                    'profile' => $profile,
+                    'reaction' => $reaction->reaction,
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
+
+    protected function getUserProfileImageUrl($user)
+    {
+        // Try to get profile from employee_personal table
+        if ($user && $user->id) {
+            $employeeInfo = DB::table('employee_information')
+                ->where('user_id', $user->id)
+                ->first();
+            
+            if ($employeeInfo) {
+                $employeePersonal = DB::table('employee_personal')
+                    ->where('employee_no', $employeeInfo->employee_no)
+                    ->first();
+                
+                if ($employeePersonal && $employeePersonal->profile) {
+                    return Storage::url(
+                        'public/users/' . $employeeInfo->employee_no . '/profile-image/' . $employeePersonal->profile
+                    );
+                }
+            }
+        }
+        
+        // Fallback to default avatar
+        $name = $user->name ?? 'User';
+        return 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
     }
 }

@@ -5,408 +5,54 @@
                 class="messenger-shell"
                 :class="{ 'is-mobile-users-open': showMobileUsersPanel }"
             >
-                <MessagesSidebar
+                <ConversationsPanel
                     :show-mobile-users-panel="showMobileUsersPanel"
                     :mobile-users-panel-closing="mobileUsersPanelClosing"
-                >
-                    <template #header>
-                        <div class="contacts-panel__header-block">
-                            <div class="contacts-panel__header">
-                                <div>
-                                    <div class="contacts-panel__eyebrow">
-                                        Conversations
-                                    </div>
-                                    <div class="contacts-panel__title-row">
-                                        <h2>Inbox</h2>
-                                        <span
-                                            class="contacts-panel__count-badge"
-                                            >{{ visibleUsers.length }}</span
-                                        >
-                                    </div>
-                                    <p class="contacts-panel__subtitle">
-                                        Direct and group chats synced with your
-                                        HRIS workspace.
-                                    </p>
-                                </div>
-
-                                <div class="contacts-panel__actions">
-                                    <button
-                                        type="button"
-                                        class="icon-chip contacts-panel__mobile-close"
-                                        aria-label="Close user list"
-                                        title="Close user list"
-                                        @click="closeMobileUsersPanel"
-                                    >
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="icon-chip"
-                                        aria-label="Create group chat"
-                                        title="Create group chat"
-                                        @click="openGroupChatModal"
-                                    >
-                                        <i class="fa-solid fa-people-group"></i>
-                                    </button>
-                                    <button
-                                        v-if="groupChatRequestHistory.length"
-                                        type="button"
-                                        class="icon-chip"
-                                        aria-label="Request history"
-                                        title="Request history"
-                                        @click="
-                                            showGroupChatRequestsModal = true
-                                        "
-                                    >
-                                        <i class="fa-solid fa-list-check"></i>
-                                        <span
-                                            class="contacts-panel__action-badge"
-                                        >
-                                            {{ groupChatRequestHistory.length }}
-                                        </span>
-                                    </button>
-                                    <button
-                                        v-if="isAdmin"
-                                        type="button"
-                                        class="icon-chip"
-                                        aria-label="Pending approvals"
-                                        title="Pending approvals"
-                                        @click="showApprovalModal = true"
-                                    >
-                                        <i class="fa-solid fa-user-check"></i>
-                                        <span
-                                            v-if="
-                                                pendingGroupChatApprovals.length
-                                            "
-                                            class="contacts-panel__action-badge"
-                                        >
-                                            {{
-                                                pendingGroupChatApprovals.length
-                                            }}
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="contacts-panel__utility-row">
-                                <a
-                                    href="/employee/dashboard"
-                                    class="contacts-panel__utility-link"
-                                >
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                    <span>Dashboard</span>
-                                </a>
-                                <button
-                                    type="button"
-                                    class="contacts-panel__utility-badge"
-                                    @click="showBetaInfoModal = true"
-                                >
-                                    <i class="fa-solid fa-flask"></i>
-                                    <span>Beta</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    class="contacts-panel__utility-badge"
-                                    @click="showPrivacyInfoModal = true"
-                                >
-                                    <i class="fa-solid fa-shield-halved"></i>
-                                    <span>Privacy</span>
-                                </button>
-                            </div>
-                        </div>
-                    </template>
-
-                    <template #search>
-                        <div class="contacts-panel__search">
-                            <div class="search-shell">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                                <input
-                                    v-model="searchQuery"
-                                    type="text"
-                                    placeholder="Search conversations"
-                                />
-                            </div>
-                        </div>
-                    </template>
-
-                    <template #list>
-                        <div class="contacts-list">
-                            <template v-if="showInitialPageSkeleton">
-                                <div
-                                    v-for="index in 7"
-                                    :key="`contact-skeleton-${index}`"
-                                    class="contact-card contact-card--skeleton"
-                                >
-                                    <span
-                                        class="contact-card__avatar contact-card__avatar--skeleton skeleton-shimmer"
-                                    ></span>
-                                    <span class="contact-card__body">
-                                        <span
-                                            class="contact-card__skeleton-line contact-card__skeleton-line--name skeleton-shimmer"
-                                        ></span>
-                                        <span
-                                            class="contact-card__skeleton-line contact-card__skeleton-line--preview skeleton-shimmer"
-                                        ></span>
-                                        <span
-                                            class="contact-card__skeleton-line contact-card__skeleton-line--status skeleton-shimmer"
-                                        ></span>
-                                    </span>
-                                    <span class="contact-card__meta">
-                                        <span
-                                            class="contact-card__skeleton-time skeleton-shimmer"
-                                        ></span>
-                                    </span>
-                                </div>
-                            </template>
-
-                            <template v-else>
-                                <div
-                                    v-for="user in visibleUsers"
-                                    :key="user.conversation_key || user.id"
-                                    class="contact-card"
-                                    :class="{
-                                        'is-active':
-                                            user.conversation_key ===
-                                            selectedConversationKey,
-                                    }"
-                                    role="button"
-                                    tabindex="0"
-                                    @click="selectUser(user)"
-                                    @keydown.enter.prevent="selectUser(user)"
-                                    @keydown.space.prevent="selectUser(user)"
-                                >
-                                    <span class="contact-card__avatar">
-                                        <img
-                                            :src="user.profile"
-                                            alt="profile"
-                                        />
-                                        <span
-                                            class="contact-card__status-dot"
-                                            :class="
-                                                isConversationOnline(user)
-                                                    ? 'contact-card__status-dot--active'
-                                                    : 'contact-card__status-dot--inactive'
-                                            "
-                                        ></span>
-                                    </span>
-
-                                    <span class="contact-card__body">
-                                        <span class="contact-card__name-row">
-                                            <span class="contact-card__name">{{
-                                                user.name
-                                            }}</span>
-                                            <span
-                                                v-if="user.unread_count > 0"
-                                                class="unread-pill contact-card__name-unread"
-                                            >
-                                                {{
-                                                    formatUnreadCount(
-                                                        user.unread_count,
-                                                    )
-                                                }}
-                                            </span>
-                                        </span>
-                                        <span class="contact-card__preview">
-                                            {{
-                                                user.preview ||
-                                                getConversationStatusLabel(user)
-                                            }}
-                                        </span>
-                                        <span class="contact-card__status">
-                                            <i
-                                                v-if="
-                                                    user.conversation_type ===
-                                                    'group'
-                                                "
-                                                class="fa-solid fa-people-group me-1"
-                                            ></i>
-                                            {{
-                                                getConversationStatusLabel(user)
-                                            }}
-                                        </span>
-                                    </span>
-
-                                    <span class="contact-card__meta">
-                                        <span class="contact-card__time">
-                                            {{
-                                                formatConversationTimestamp(
-                                                    user.latest_at,
-                                                )
-                                            }}
-                                        </span>
-                                        <span class="contact-card__actions">
-                                            <button
-                                                type="button"
-                                                class="contact-card__more"
-                                                :aria-expanded="
-                                                    contactActionMenuKey ===
-                                                    user.conversation_key
-                                                "
-                                                aria-label="More conversation actions"
-                                                @click.stop="
-                                                    toggleContactActionMenu(
-                                                        user,
-                                                    )
-                                                "
-                                            >
-                                                <i
-                                                    class="fa-solid fa-ellipsis"
-                                                ></i>
-                                            </button>
-                                            <transition name="fade">
-                                                <div
-                                                    v-if="
-                                                        contactActionMenuKey ===
-                                                        user.conversation_key
-                                                    "
-                                                    class="contact-card__menu"
-                                                    @click.stop
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        class="contact-card__menu-item contact-card__menu-item--danger"
-                                                        @click.stop="
-                                                            openConversationDeleteModal(
-                                                                user,
-                                                            )
-                                                        "
-                                                    >
-                                                        <i
-                                                            class="fa-regular fa-trash-can"
-                                                        ></i>
-                                                        <span
-                                                            >Delete
-                                                            messages</span
-                                                        >
-                                                    </button>
-                                                </div>
-                                            </transition>
-                                        </span>
-                                    </span>
-                                </div>
-
-                                <div
-                                    v-if="visibleUsers.length === 0"
-                                    class="chat-empty mt-4"
-                                >
-                                    <div class="chat-empty__icon">
-                                        <i
-                                            class="fa-regular fa-comment-dots"
-                                        ></i>
-                                    </div>
-                                    <div class="fw-semibold">
-                                        No conversations match
-                                    </div>
-                                    <div class="text-white-50 small">
-                                        Try a different search or filter.
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                </MessagesSidebar>
+                    :visible-users="visibleUsers"
+                    :show-initial-page-skeleton="showInitialPageSkeleton"
+                    :selected-conversation-key="selectedConversationKey"
+                    :contact-action-menu-key="contactActionMenuKey"
+                    :search-query="searchQuery"
+                    :group-chat-request-history="groupChatRequestHistory"
+                    :pending-group-chat-approvals="pendingGroupChatApprovals"
+                    :is-admin="isAdmin"
+                    :format-unread-count="formatUnreadCount"
+                    :get-conversation-status-label="getConversationStatusLabel"
+                    :format-conversation-timestamp="
+                        formatConversationTimestamp
+                    "
+                    :is-conversation-online="isConversationOnline"
+                    @close-mobile-users-panel="closeMobileUsersPanel"
+                    @open-group-chat-modal="openGroupChatModal"
+                    @open-group-chat-requests-modal="
+                        showGroupChatRequestsModal = true
+                    "
+                    @open-approval-modal="showApprovalModal = true"
+                    @open-beta-info-modal="showBetaInfoModal = true"
+                    @open-privacy-info-modal="showPrivacyInfoModal = true"
+                    @update:search-query="searchQuery = $event"
+                    @select-user="selectUser"
+                    @toggle-contact-action-menu="toggleContactActionMenu"
+                    @delete-conversation="openConversationDeleteModal"
+                />
 
                 <ConversationWorkspace
                     :show-mobile-users-panel="showMobileUsersPanel"
                 >
                     <template #header>
-                        <div class="conversation-panel__top">
-                            <div class="conversation-user">
-                                <span class="conversation-user__avatar">
-                                    <img
-                                        :src="activeUserAvatar"
-                                        alt="profile"
-                                    />
-                                    <span
-                                        class="conversation-user__status-dot"
-                                        :class="
-                                            isConversationOnline(activeUser)
-                                                ? 'conversation-user__status-dot--active'
-                                                : 'conversation-user__status-dot--inactive'
-                                        "
-                                    ></span>
-                                </span>
-                                <div
-                                    class="conversation-user__text text-truncate"
-                                >
-                                    <div class="conversation-user__eyebrow">
-                                        {{
-                                            activeConversationIsGroup
-                                                ? "Group conversation"
-                                                : "Direct message"
-                                        }}
-                                    </div>
-                                    <h2 class="conversation-user__name">
-                                        {{ activeUserName }}
-                                    </h2>
-                                    <div class="conversation-user__status">
-                                        {{ activeUserStatus }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="conversation-actions">
-                                <template v-if="activeConversationIsGroup">
-                                    <button
-                                        type="button"
-                                        class="conversation-info-btn"
-                                        aria-label="Invite users"
-                                        title="Invite users"
-                                        @click="openInviteMembersModal"
-                                    >
-                                        <i class="fa-solid fa-user-plus"></i>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="conversation-info-btn"
-                                        aria-label="See members"
-                                        title="See members"
-                                        @click="openGroupMembersModal"
-                                    >
-                                        <i class="fa-solid fa-users"></i>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="conversation-info-btn conversation-info-btn--danger"
-                                        aria-label="Leave group"
-                                        title="Leave group"
-                                        @click="leaveActiveGroup"
-                                    >
-                                        <i
-                                            class="fa-solid fa-right-from-bracket"
-                                        ></i>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="conversation-info-btn conversation-info-btn--info"
-                                        aria-label="Group info"
-                                        title="Group info"
-                                        @click="openConversationInfoModal"
-                                    >
-                                        <i class="fa-solid fa-circle-info"></i>
-                                    </button>
-                                </template>
-                                <button
-                                    v-else-if="activeUser"
-                                    type="button"
-                                    class="conversation-info-btn conversation-info-btn--info"
-                                    aria-label="Conversation info"
-                                    title="Conversation info"
-                                    @click="openConversationInfoModal"
-                                >
-                                    <i class="fa-solid fa-circle-info"></i>
-                                </button>
-                                <button
-                                    type="button"
-                                    class="icon-chip contacts-panel__mobile-close"
-                                    aria-label="Open user list"
-                                    title="Open user list"
-                                    @click="openMobileUsersPanel"
-                                >
-                                    <i class="fa-solid fa-user-group"></i>
-                                </button>
-                            </div>
-                        </div>
+                        <ConversationHeaderBar
+                            :active-user="activeUser"
+                            :active-user-name="activeUserName"
+                            :active-user-avatar="activeUserAvatar"
+                            :active-user-status="activeUserStatus"
+                            :is-online="isConversationOnline(activeUser)"
+                            :is-group="activeConversationIsGroup"
+                            @invite-members="openInviteMembersModal"
+                            @show-members="openGroupMembersModal"
+                            @leave-group="leaveActiveGroup"
+                            @show-info="openConversationInfoModal"
+                            @open-users-panel="openMobileUsersPanel"
+                        />
                     </template>
 
                     <template #pinned-banner>
@@ -441,1159 +87,205 @@
                     </template>
 
                     <template #pinned-panel>
-                        <transition name="fade">
-                            <div
-                                v-if="showPinnedMessagesPanel"
-                                class="pinned-modal-backdrop"
-                                @click.self="showPinnedMessagesPanel = false"
-                            >
-                                <div class="pinned-modal">
-                                    <div class="pinned-modal__header">
-                                        <div>
-                                            <div class="pinned-modal__title">
-                                                Pinned messages
-                                            </div>
-                                            <small class="text-white-50">
-                                                {{ pinnedMessages.length }}
-                                                pinned
-                                            </small>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            class="pinned-modal__close"
-                                            @click="
-                                                showPinnedMessagesPanel = false
-                                            "
-                                            aria-label="Close pinned messages"
-                                        >
-                                            <i class="fa-solid fa-xmark"></i>
-                                        </button>
-                                    </div>
-
-                                    <div
-                                        v-if="pinnedMessages.length"
-                                        class="pinned-modal__list"
-                                    >
-                                        <div
-                                            v-for="pin in pinnedMessages"
-                                            :key="pin.message_id"
-                                            class="pinned-modal__item"
-                                        >
-                                            <button
-                                                type="button"
-                                                class="pinned-modal__item-body"
-                                                @click="
-                                                    scrollToPinnedMessage(pin)
-                                                "
-                                            >
-                                                <div
-                                                    class="pinned-modal__item-preview"
-                                                >
-                                                    {{ pin.preview }}
-                                                </div>
-                                                <small
-                                                    class="pinned-modal__item-date"
-                                                >
-                                                    Pinned
-                                                    {{
-                                                        formatPinnedAt(
-                                                            pin.pinned_at ||
-                                                                pin.created_at,
-                                                        )
-                                                    }}
-                                                </small>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                class="pinned-modal__item-unpin"
-                                                @click.stop="
-                                                    unpinPinnedMessage(pin)
-                                                "
-                                                aria-label="Unpin message"
-                                                title="Unpin"
-                                            >
-                                                <i
-                                                    class="fa-solid fa-thumbtack-slash"
-                                                ></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div
-                                        v-else
-                                        class="pinned-modal__empty text-white-50"
-                                    >
-                                        Currently no pinned messages yet.
-                                    </div>
-                                </div>
-                            </div>
-                        </transition>
+                        <teleport to="body">
+                            <PinnedMessagesPanel
+                                :show="showPinnedMessagesPanel"
+                                :pinned-messages="pinnedMessages"
+                                @close="showPinnedMessagesPanel = false"
+                                @scroll-to="scrollToPinnedMessage"
+                                @unpin="unpinPinnedMessage"
+                            />
+                        </teleport>
                     </template>
 
                     <template #body>
-                        <div
-                            class="conversation-panel__body"
-                            ref="conversationBody"
-                            @scroll.passive="handleConversationScroll"
-                        >
-                            <div
-                                v-if="showInitialPageSkeleton"
-                                class="chat-skeleton"
-                            >
-                                <div
-                                    class="chat-skeleton__date skeleton-shimmer"
-                                ></div>
-                                <div
-                                    v-for="index in 6"
-                                    :key="`message-skeleton-${index}`"
-                                    class="chat-skeleton__row"
-                                    :class="
-                                        index % 2 === 0
-                                            ? 'chat-skeleton__row--mine'
-                                            : 'chat-skeleton__row--theirs'
-                                    "
-                                >
-                                    <div
-                                        class="chat-skeleton__bubble skeleton-shimmer"
-                                    ></div>
-                                </div>
-                            </div>
+                        <MessageStream
+                            ref="messageStream"
+                            :show-initial-page-skeleton="showInitialPageSkeleton"
+                            :loading-conversation="loadingConversation"
+                            :active-user="activeUser"
+                            :active-user-name="activeUserName"
+                            :conversation-error="conversationError"
+                            :messages="messages"
+                            :conversation-has-more="conversationHasMore"
+                            :conversation-page="conversationPage"
+                            :conversation-last-page="conversationLastPage"
+                            :loading-older-conversation="
+                                loadingOlderConversation
+                            "
+                            :active-conversation-is-group="
+                                activeConversationIsGroup
+                            "
+                            :active-message-actions-id="
+                                activeMessageActionsId
+                            "
+                            :selected-message-id="selectedMessageId"
+                            :show-reaction-picker="showReactionPicker"
+                            :typing-indicator="typingIndicator"
+                            :typing-indicator-label="typingIndicatorLabel"
+                            :show-scroll-to-bottom-button="
+                                showScrollToBottomButton
+                            "
+                            :format-time="formatTime"
+                            :format-file-size="formatFileSize"
+                            :format-reactions-tooltip="
+                                formatReactionsTooltip
+                            "
+                            :get-unique-reaction-emojis="
+                                getUniqueReactionEmojis
+                            "
+                            :get-reaction-emoji="getReactionEmoji"
+                            :should-show-seen-receipt="
+                                shouldShowSeenReceipt
+                            "
+                            :format-group-seen-receipt-tooltip="
+                                formatGroupSeenReceiptTooltip
+                            "
+                            :format-seen-receipt-tooltip="
+                                formatSeenReceiptTooltip
+                            "
+                            :get-seen-receipt-preview-users="
+                                getSeenReceiptPreviewUsers
+                            "
+                            :get-seen-receipt-overflow-count="
+                                getSeenReceiptOverflowCount
+                            "
+                            :get-member-profile="getMemberProfile"
+                            :get-seen-member-name="getSeenMemberName"
+                            :get-seen-receipt-avatar="
+                                getSeenReceiptAvatar
+                            "
+                            @scroll="handleConversationScroll"
+                            @select-message="selectMessage"
+                            @toggle-message-actions="toggleMessageActions"
+                            @edit-message="editMessage"
+                            @unsend-message="unsendMessage"
+                            @toggle-pin-message="togglePinMessage"
+                            @start-reply="startReply"
+                            @toggle-reaction-picker="
+                                toggleReactionPicker
+                            "
+                            @download-attachment="downloadAttachment"
+                            @scroll-to-reply-message="
+                                scrollToReplyMessage
+                            "
+                            @open-reactions-modal="openReactionsModal"
+                            @attachment-image-load="
+                                handleAttachmentImageLoad
+                            "
+                            @open-image-gallery="openImageGallery"
+                            @open-seen-by-modal="openSeenByModal"
+                            @scroll-to-bottom="
+                                scrollConversationToBottom
+                            "
+                        />
 
-                            <div
-                                v-else-if="loadingConversation"
-                                class="chat-loading"
-                            >
-                                <span class="loader-dot"></span>
-                                <div class="fw-semibold">
-                                    Loading messages...
-                                </div>
-                            </div>
-
-                            <div v-else-if="!activeUser" class="chat-empty">
-                                <div class="chat-empty__icon">
-                                    <i class="fa-regular fa-comments"></i>
-                                </div>
-                                <div class="fw-semibold">
-                                    Choose a chat on the left
-                                </div>
-                            </div>
-
-                            <div
-                                v-else-if="conversationError"
-                                class="chat-empty"
-                            >
-                                <div class="chat-empty__icon">
-                                    <i
-                                        class="fa-regular fa-triangle-exclamation"
-                                    ></i>
-                                </div>
-                                <div class="fw-semibold">
-                                    Conversation unavailable
-                                </div>
-                                <div class="text-white-50 small">
-                                    {{ conversationError }}
-                                </div>
-                            </div>
-
-                            <div
-                                v-else-if="messages.length === 0"
-                                class="chat-empty"
-                            >
-                                <div class="chat-empty__icon">
-                                    <i class="fa-regular fa-message"></i>
-                                </div>
-                                <div class="fw-semibold">No messages yet</div>
-                                <div class="text-white-50 small">
-                                    Send the first message to start the
-                                    conversation.
-                                </div>
-                            </div>
-
-                            <div v-else class="message-stream">
-                                <div
-                                    v-if="
-                                        !conversationHasMore ||
-                                        conversationPage >= conversationLastPage
-                                    "
-                                    class="conversation-start-marker mt-4 mb-4"
-                                >
-                                    Your conversation starts here
-                                </div>
-
-                                <div
-                                    v-if="loadingOlderConversation"
-                                    class="chat-loading chat-loading--inline"
-                                >
-                                    <span class="loader-dot"></span>
-                                    <div class="fw-semibold">
-                                        Loading messages...
-                                    </div>
-                                </div>
-
-                                <div
-                                    v-for="message in messages"
-                                    :key="message.id"
-                                    class="message-row"
-                                    :class="[
-                                        message.is_system
-                                            ? 'message-row--system'
-                                            : '',
-                                        message.is_mine
-                                            ? 'message-row--mine'
-                                            : 'message-row--theirs',
-                                        message.is_unsent
-                                            ? 'message-row--unsent'
-                                            : '',
-                                    ]"
-                                    :data-message-id="message.id"
-                                    @click="
-                                        message.is_system
-                                            ? null
-                                            : selectMessage(message)
-                                    "
-                                >
-                                    <div
-                                        v-if="message.is_system"
-                                        class="message-system-note"
-                                    >
-                                        {{ message.body }}
-                                    </div>
-                                    <div v-else class="message-bubble-wrap">
-                                        <div
-                                            class="message-bubble"
-                                            :class="{
-                                                'message-bubble--unsent':
-                                                    message.is_unsent,
-                                            }"
-                                        >
-                                            <div
-                                                class="message-bubble__floating-actions"
-                                                :class="{
-                                                    'is-open':
-                                                        activeMessageActionsId ===
-                                                        message.id,
-                                                }"
-                                            >
-                                                <div
-                                                    v-if="
-                                                        message.is_mine &&
-                                                        !message.is_unsent
-                                                    "
-                                                    class="bubble-action-group"
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        class="bubble-action"
-                                                        :class="{
-                                                            'is-active':
-                                                                activeMessageActionsId ===
-                                                                message.id,
-                                                        }"
-                                                        @click.stop="
-                                                            toggleMessageActions(
-                                                                message,
-                                                            )
-                                                        "
-                                                        title="More actions"
-                                                        :aria-label="`More actions for ${message.body || message.attachment?.name || 'message'}`"
-                                                        :aria-expanded="
-                                                            activeMessageActionsId ===
-                                                            message.id
-                                                        "
-                                                    >
-                                                        <i
-                                                            class="fa-solid fa-ellipsis-vertical"
-                                                        ></i>
-                                                    </button>
-                                                    <div
-                                                        v-if="
-                                                            activeMessageActionsId ===
-                                                            message.id
-                                                        "
-                                                        class="bubble-action-menu"
-                                                    >
-                                                        <button
-                                                            v-if="
-                                                                message.is_mine &&
-                                                                message.body
-                                                            "
-                                                            type="button"
-                                                            class="bubble-action bubble-action--menu"
-                                                            @click.stop="
-                                                                editMessage(
-                                                                    message,
-                                                                )
-                                                            "
-                                                            title="Edit message"
-                                                            :aria-label="`Edit message ${message.body}`"
-                                                        >
-                                                            <span
-                                                                class="bubble-action__icon"
-                                                            >
-                                                                <i
-                                                                    class="fa-regular fa-pen-to-square"
-                                                                ></i>
-                                                            </span>
-                                                            <span>Edit</span>
-                                                        </button>
-                                                        <button
-                                                            v-if="
-                                                                message.is_mine
-                                                            "
-                                                            type="button"
-                                                            class="bubble-action bubble-action--menu bubble-action--danger"
-                                                            @click.stop="
-                                                                unsendMessage(
-                                                                    message,
-                                                                )
-                                                            "
-                                                            title="Unsend message"
-                                                            :aria-label="`Unsend message ${message.body || message.attachment?.name || 'message'}`"
-                                                        >
-                                                            <span
-                                                                class="bubble-action__icon"
-                                                            >
-                                                                <i
-                                                                    class="fa-regular fa-trash-can"
-                                                                ></i>
-                                                            </span>
-                                                            <span>Unsend</span>
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            class="bubble-action bubble-action--menu"
-                                                            :class="{
-                                                                'is-active':
-                                                                    Boolean(
-                                                                        message.pinned_at,
-                                                                    ),
-                                                            }"
-                                                            @click.stop="
-                                                                togglePinMessage(
-                                                                    message,
-                                                                )
-                                                            "
-                                                            :title="
-                                                                message.pinned_at
-                                                                    ? 'Unpin message'
-                                                                    : 'Pin message'
-                                                            "
-                                                            :aria-label="
-                                                                message.pinned_at
-                                                                    ? 'Unpin message'
-                                                                    : 'Pin message'
-                                                            "
-                                                        >
-                                                            <span
-                                                                class="bubble-action__icon"
-                                                            >
-                                                                <i
-                                                                    :class="
-                                                                        message.pinned_at
-                                                                            ? 'fa-solid fa-thumbtack-slash'
-                                                                            : 'fa-solid fa-thumbtack'
-                                                                    "
-                                                                ></i>
-                                                            </span>
-                                                            <span>{{
-                                                                message.pinned_at
-                                                                    ? "Unpin"
-                                                                    : "Pin"
-                                                            }}</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    v-else-if="
-                                                        !message.is_unsent
-                                                    "
-                                                    type="button"
-                                                    class="bubble-action"
-                                                    :class="{
-                                                        'is-active': Boolean(
-                                                            message.pinned_at,
-                                                        ),
-                                                    }"
-                                                    @click.stop="
-                                                        togglePinMessage(
-                                                            message,
-                                                        )
-                                                    "
-                                                    :title="
-                                                        message.pinned_at
-                                                            ? 'Unpin message'
-                                                            : 'Pin message'
-                                                    "
-                                                    :aria-label="
-                                                        message.pinned_at
-                                                            ? 'Unpin message'
-                                                            : 'Pin message'
-                                                    "
-                                                >
-                                                    <span
-                                                        class="bubble-action__icon"
-                                                    >
-                                                        <i
-                                                            :class="
-                                                                message.pinned_at
-                                                                    ? 'fa-solid fa-thumbtack-slash'
-                                                                    : 'fa-solid fa-thumbtack'
-                                                            "
-                                                        ></i>
-                                                    </span>
-                                                </button>
-                                                <button
-                                                    v-if="!message.is_unsent"
-                                                    type="button"
-                                                    class="bubble-action"
-                                                    @click.stop="
-                                                        startReply(message)
-                                                    "
-                                                >
-                                                    <i
-                                                        class="fa-solid fa-reply"
-                                                    ></i>
-                                                </button>
-                                                <button
-                                                    v-if="!message.is_unsent"
-                                                    type="button"
-                                                    class="bubble-action"
-                                                    :class="{
-                                                        'is-active':
-                                                            selectedMessageId ===
-                                                                message.id &&
-                                                            showReactionPicker,
-                                                    }"
-                                                    @click.stop="
-                                                        toggleReactionPicker(
-                                                            message,
-                                                        )
-                                                    "
-                                                    :aria-pressed="
-                                                        selectedMessageId ===
-                                                            message.id &&
-                                                        showReactionPicker
-                                                    "
-                                                >
-                                                    <i
-                                                        class="fa-regular fa-face-smile"
-                                                    ></i>
-                                                </button>
-                                                <button
-                                                    v-if="message.attachment"
-                                                    type="button"
-                                                    class="bubble-action"
-                                                    @click.stop="
-                                                        downloadAttachment(
-                                                            message.attachment,
-                                                        )
-                                                    "
-                                                >
-                                                    <i
-                                                        class="fa-solid fa-download"
-                                                    ></i>
-                                                </button>
-                                            </div>
-                                            <button
-                                                v-if="message.reply_preview"
-                                                type="button"
-                                                class="message-bubble__reply message-bubble__reply--link"
-                                                @click.stop="
-                                                    scrollToReplyMessage(
-                                                        message,
-                                                    )
-                                                "
-                                                :aria-label="`Jump to replied message for ${message.reply_preview}`"
-                                            >
-                                                <div
-                                                    class="message-bubble__reply-label"
-                                                >
-                                                    <i
-                                                        class="fa-solid fa-reply"
-                                                    ></i>
-                                                    Replied to this message
-                                                </div>
-                                                <div>
-                                                    {{ message.reply_preview }}
-                                                </div>
-                                            </button>
-
-                                            <div
-                                                v-if="
-                                                    activeConversationIsGroup &&
-                                                    !message.is_mine
-                                                "
-                                                class="message-bubble__sender"
-                                            >
-                                                {{
-                                                    message.sender_name ||
-                                                    "User"
-                                                }}
-                                            </div>
-                                            <div
-                                                v-if="message.body"
-                                                class="message-bubble__text"
-                                            >
-                                                {{ message.body }}
-                                            </div>
-                                            <div
-                                                v-if="message.is_unsent"
-                                                class="message-bubble__text message-bubble__text--unsent"
-                                            >
-                                                Unsent Message
-                                            </div>
-
-                                            <div
-                                                v-if="message.pinned_at"
-                                                class="message-pin-chip message-pin-chip--floating"
-                                                :class="
-                                                    message.is_mine
-                                                        ? 'message-pin-chip--mine'
-                                                        : 'message-pin-chip--theirs'
-                                                "
-                                                title="Pinned message"
-                                            >
-                                                <span
-                                                    class="message-pin-chip__icon"
-                                                >
-                                                    <i
-                                                        class="fa-solid fa-thumbtack"
-                                                    ></i>
-                                                </span>
-                                            </div>
-
-                                            <div
-                                                v-if="message.reaction"
-                                                class="message-reaction-badge message-reaction-badge--floating"
-                                                :class="
-                                                    message.is_mine
-                                                        ? 'message-reaction-badge--mine'
-                                                        : 'message-reaction-badge--theirs'
-                                                "
-                                                :title="
-                                                    getReactionEmoji(
-                                                        message.reaction,
-                                                    )
-                                                "
-                                            >
-                                                <span
-                                                    class="message-reaction-badge__glyph"
-                                                    >{{
-                                                        getReactionEmoji(
-                                                            message.reaction,
-                                                        )
-                                                    }}</span
-                                                >
-                                            </div>
-
-                                            <div
-                                                v-if="
-                                                    message.attachment &&
-                                                    message.attachment.type ===
-                                                        'image' &&
-                                                    !message.is_unsent
-                                                "
-                                                class="message-bubble__attachment message-bubble__attachment--image"
-                                            >
-                                                <button
-                                                    type="button"
-                                                    class="message-bubble__image-link"
-                                                    @click.stop="
-                                                        openImageGallery(
-                                                            message.attachment,
-                                                        )
-                                                    "
-                                                    :aria-label="`Open ${message.attachment.name || 'attachment'} in gallery`"
-                                                >
-                                                    <img
-                                                        :src="
-                                                            message.attachment
-                                                                .url
-                                                        "
-                                                        :alt="
-                                                            message.attachment
-                                                                .name
-                                                        "
-                                                        @load="
-                                                            handleAttachmentImageLoad
-                                                        "
-                                                    />
-                                                    <span
-                                                        class="message-bubble__attachment-overlay"
-                                                    >
-                                                        <i
-                                                            class="fa-solid fa-magnifying-glass-plus"
-                                                        ></i>
-                                                    </span>
-                                                </button>
-                                            </div>
-
-                                            <a
-                                                v-else-if="
-                                                    message.attachment &&
-                                                    !message.is_unsent
-                                                "
-                                                class="message-bubble__attachment message-bubble__attachment--file"
-                                                :href="message.attachment.url"
-                                                target="_blank"
-                                                rel="noopener"
-                                                :download="
-                                                    message.attachment.name
-                                                "
-                                            >
-                                                <span
-                                                    class="message-bubble__attachment-icon"
-                                                >
-                                                    <i
-                                                        class="fa-regular fa-file-lines"
-                                                    ></i>
-                                                </span>
-                                                <span
-                                                    class="message-bubble__attachment-meta"
-                                                >
-                                                    <span
-                                                        class="message-bubble__attachment-name"
-                                                        >{{
-                                                            message.attachment
-                                                                .name
-                                                        }}</span
-                                                    >
-                                                    <small
-                                                        class="text-white-50"
-                                                        >{{
-                                                            formatFileSize(
-                                                                message
-                                                                    .attachment
-                                                                    .size,
-                                                            )
-                                                        }}</small
-                                                    >
-                                                </span>
-                                                <span
-                                                    class="message-bubble__attachment-download"
-                                                >
-                                                    <i
-                                                        class="fa-solid fa-download"
-                                                    ></i>
-                                                </span>
-                                            </a>
-
-                                            <div class="message-bubble__time">
-                                                {{
-                                                    formatTime(
-                                                        message.created_at,
-                                                    )
-                                                }}
-                                            </div>
-                                        </div>
-                                        <div
-                                            v-if="
-                                                message.is_mine &&
-                                                (shouldShowSeenReceipt(
-                                                    message,
-                                                ) ||
-                                                    !message.read_at ||
-                                                    message.edited_at)
-                                            "
-                                            class="message-bubble__status"
-                                            :class="
-                                                shouldShowSeenReceipt(message)
-                                                    ? 'message-bubble__status--seen'
-                                                    : 'message-bubble__status--sent'
-                                            "
-                                        >
-                                            <template
-                                                v-if="
-                                                    shouldShowSeenReceipt(
-                                                        message,
-                                                    )
-                                                "
-                                            >
-                                                <template
-                                                    v-if="
-                                                        activeConversationIsGroup
-                                                    "
-                                                >
-                                                    <button
-                                                        type="button"
-                                                        class="message-bubble__seen-group"
-                                                        :title="
-                                                            formatGroupSeenReceiptTooltip(
-                                                                message,
-                                                            )
-                                                        "
-                                                        :aria-label="
-                                                            formatGroupSeenReceiptTooltip(
-                                                                message,
-                                                            )
-                                                        "
-                                                        @click.stop="
-                                                            openSeenByModal(
-                                                                message,
-                                                            )
-                                                        "
-                                                    >
-                                                        <span
-                                                            v-for="user in getSeenReceiptPreviewUsers(
-                                                                message,
-                                                            )"
-                                                            :key="`seen-preview-${message.id}-${user.id}`"
-                                                            class="message-bubble__seen-avatar"
-                                                        >
-                                                            <img
-                                                                :src="
-                                                                    getMemberProfile(
-                                                                        user,
-                                                                    )
-                                                                "
-                                                                :alt="`${getSeenMemberName(user)} profile`"
-                                                            />
-                                                        </span>
-                                                        <span
-                                                            v-if="
-                                                                getSeenReceiptOverflowCount(
-                                                                    message,
-                                                                ) > 0
-                                                            "
-                                                            class="message-bubble__seen-overflow"
-                                                        >
-                                                            +{{
-                                                                getSeenReceiptOverflowCount(
-                                                                    message,
-                                                                )
-                                                            }}
-                                                        </span>
-                                                    </button>
-                                                </template>
-                                                <template v-else>
-                                                    <span
-                                                        class="message-bubble__seen-avatar"
-                                                        :title="
-                                                            formatSeenReceiptTooltip(
-                                                                message.read_at,
-                                                            )
-                                                        "
-                                                        :aria-label="
-                                                            formatSeenReceiptTooltip(
-                                                                message.read_at,
-                                                            )
-                                                        "
-                                                    >
-                                                        <img
-                                                            :src="
-                                                                getSeenReceiptAvatar()
-                                                            "
-                                                            :alt="`${activeUserName} profile`"
-                                                        />
-                                                    </span>
-                                                </template>
-                                            </template>
-                                            <template v-else>Sent</template>
-                                            <span
-                                                v-if="message.edited_at"
-                                                class="message-bubble__status-edit"
-                                                :class="{
-                                                    'message-bubble__status-edit--stacked':
-                                                        message.read_at,
-                                                }"
-                                            >
-                                                · Edited
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div
-                                    v-if="typingIndicator && activeUser"
-                                    class="message-row message-row--theirs message-row--typing"
-                                >
-                                    <div
-                                        class="message-bubble message-bubble--typing"
-                                    >
-                                        <span
-                                            class="typing-indicator__dots"
-                                            aria-hidden="true"
-                                        >
-                                            <span></span><span></span
-                                            ><span></span>
-                                        </span>
-                                        <span class="typing-indicator__label">{{
-                                            typingIndicatorLabel
-                                        }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <transition name="fade">
-                          <button
-                              v-if="showScrollToBottomButton"
-                              type="button"
-                              class="message-scroll-bottom"
-                              @click="scrollConversationToBottom"
-                              title="Scroll to bottom"
-                              aria-label="Scroll to bottom"
-                          >
-                              <i class="fa-solid fa-arrow-down"></i>
-                          </button>
-                      </transition>
-                        <div v-if="replyTargetMessage" class="composer-reply">
-                            <div class="composer-reply__meta">
-                                <strong
-                                    >Replying to {{ replyTargetLabel }}</strong
-                                >
-                                <button
-                                    type="button"
-                                    class="composer-reply__close"
-                                    @click="clearReplyTarget"
-                                >
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-                            <div class="composer-reply__preview">
-                                {{ getMessageSnippet(replyTargetMessage) }}
-                            </div>
-                        </div>
-
-                        <div
-                            v-if="selectedAttachment"
-                            class="attachment-preview"
-                        >
-                            <div class="attachment-preview__meta">
-                                <span
-                                    v-if="
-                                        selectedAttachmentPreviewType ===
-                                            'image' &&
-                                        selectedAttachmentPreviewUrl
-                                    "
-                                    class="attachment-preview__thumb"
-                                >
-                                    <img
-                                        :src="selectedAttachmentPreviewUrl"
-                                        :alt="selectedAttachment.name"
-                                    />
-                                </span>
-                                <span v-else class="attachment-preview__icon">
-                                    <i class="fa-regular fa-file-lines"></i>
-                                </span>
-                                <div class="attachment-preview__body">
-                                    <div class="attachment-preview__name">
-                                        {{ selectedAttachment.name }}
-                                    </div>
-                                    <small class="text-white-50">{{
-                                        formatFileSize(selectedAttachment.size)
-                                    }}</small>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                class="attachment-preview__remove"
-                                @click="clearSelectedAttachment"
-                            >
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                        <form class="composer" @submit.prevent="sendMessage">
-                            <input
-                                ref="attachmentInput"
-                                type="file"
-                                class="d-none"
-                                :accept="attachmentAccept"
-                                @change="handleAttachmentChange"
-                            />
-                            <button
-                                type="button"
-                                class="composer__button"
-                                :class="{
-                                    'is-active': showPinnedMessagesPanel,
-                                }"
-                                aria-label="Pinned messages"
-                                title="View pinned messages"
-                                @click.stop="togglePinnedMessagesPanel"
-                            >
-                                <i class="fa-solid fa-thumbtack"></i>
-                            </button>
-                            <button
-                                type="button"
-                                class="composer__button"
-                                ref="composerEmojiButton"
-                                aria-label="Insert emoji"
-                                @click="toggleComposerEmojiPicker"
-                            >
-                                <i class="fa-regular fa-face-smile"></i>
-                            </button>
-                            <button
-                                type="button"
-                                class="composer__button"
-                                aria-label="Attach file"
-                                @click="triggerAttachmentPicker('file')"
-                            >
-                                <i class="fa-regular fa-file-lines"></i>
-                            </button>
-                            <div class="composer__field">
-                                <div class="composer__input-shell">
-                                    <textarea
-                                        ref="composerInput"
-                                        v-model="draftMessage"
-                                        class="composer__input"
-                                        rows="1"
-                                        :placeholder="
-                                            activeConversationIsGroup
-                                                ? 'Message the group'
-                                                : 'Aa'
-                                        "
-                                        :maxlength="messageCharacterLimit"
-                                        :disabled="
-                                            !activeUser || sendingMessage
-                                        "
-                                        @input="handleComposerInput"
-                                        @blur="handleComposerBlur"
-                                        @focus="captureComposerSelection"
-                                        @click="captureComposerSelection"
-                                        @keyup="captureComposerSelection"
-                                        @select="captureComposerSelection"
-                                        @keydown.enter.exact.prevent="
-                                            sendMessage
-                                        "
-                                        @keydown.enter.shift.exact.stop
-                                    ></textarea>
-                                </div>
-                                <div class="composer__meta mt-2">
-                                    <small class="composer__hint"
-                                        >Shift+Enter for a new line</small
-                                    >
-                                    <small
-                                        class="composer__counter"
-                                        :class="{
-                                            'is-near-limit':
-                                                messageCharactersRemaining <=
-                                                200,
-                                        }"
-                                    >
-                                        {{ messageCharacterCount }}/{{
-                                            messageCharacterLimit
-                                        }}
-                                    </small>
-                                </div>
-                            </div>
-                            <button
-                                v-if="showScrollToBottomButton"
-                                type="button"
-                                class="composer__scroll-bottom"
-                                @click="scrollConversationToBottom"
-                                title="Scroll to bottom"
-                                aria-label="Scroll to bottom"
-                            >
-                                <i class="fa-solid fa-arrow-down"></i>
-                            </button>
-                            <button
-                                type="submit"
-                                class="composer__send"
-                                :disabled="
-                                    !activeUser ||
-                                    sendingMessage ||
-                                    (!draftMessage.trim() &&
-                                        !selectedAttachment)
-                                "
-                            >
-                                <i
-                                    v-if="!sendingMessage"
-                                    class="fa-regular fa-paper-plane"
-                                ></i>
-                                <span
-                                    v-else
-                                    class="spinner-border spinner-border-sm"
-                                    aria-hidden="true"
-                                ></span>
-                            </button>
-
-                            <transition name="fade">
-                                <div
-                                    v-if="showComposerEmojiPicker"
-                                    ref="composerEmojiOverlay"
-                                    class="composer-emoji-overlay"
-                                    @click.stop
-                                >
-                                    <div class="composer-emoji-picker">
-                                        <button
-                                            v-for="emoji in composerEmojiOptions"
-                                            :key="emoji"
-                                            type="button"
-                                            class="composer-emoji-picker__btn"
-                                            @pointerdown.prevent.stop="
-                                                insertComposerEmoji(emoji)
-                                            "
-                                        >
-                                            {{ emoji }}
-                                        </button>
-                                    </div>
-                                </div>
-                            </transition>
-                        </form>
+                        <ComposerArea
+                            ref="composerArea"
+                            :reply-target-message="replyTargetMessage"
+                            :reply-target-label="replyTargetLabel"
+                            :get-message-snippet="getMessageSnippet"
+                            :selected-attachment="selectedAttachment"
+                            :selected-attachment-preview-url="
+                                selectedAttachmentPreviewUrl
+                            "
+                            :selected-attachment-preview-type="
+                                selectedAttachmentPreviewType
+                            "
+                            :format-file-size="formatFileSize"
+                            :attachment-accept="attachmentAccept"
+                            :show-pinned-messages-panel="
+                                showPinnedMessagesPanel
+                            "
+                            :show-composer-emoji-picker="
+                                showComposerEmojiPicker
+                            "
+                            :composer-emoji-options="
+                                composerEmojiOptions
+                            "
+                            :active-user="activeUser"
+                            :sending-message="sendingMessage"
+                            :draft-message="draftMessage"
+                            :active-conversation-is-group="
+                                activeConversationIsGroup
+                            "
+                            :message-character-limit="
+                                messageCharacterLimit
+                            "
+                            :message-character-count="
+                                messageCharacterCount
+                            "
+                            :message-characters-remaining="
+                                messageCharactersRemaining
+                            "
+                            :show-scroll-to-bottom-button="
+                                showScrollToBottomButton
+                            "
+                            @send-message="sendMessage"
+                            @clear-reply-target="clearReplyTarget"
+                            @clear-selected-attachment="
+                                clearSelectedAttachment
+                            "
+                            @toggle-pinned-messages-panel="
+                                togglePinnedMessagesPanel
+                            "
+                            @toggle-composer-emoji-picker="
+                                toggleComposerEmojiPicker
+                            "
+                            @trigger-attachment-picker="
+                                triggerAttachmentPicker
+                            "
+                            @update:draft-message="draftMessage = $event"
+                            @composer-input="handleComposerInput"
+                            @composer-blur="handleComposerBlur"
+                            @capture-selection="captureComposerSelection"
+                            @scroll-to-bottom="
+                                scrollConversationToBottom
+                            "
+                            @insert-composer-emoji="
+                                insertComposerEmoji
+                            "
+                            @attachment-change="handleAttachmentChange"
+                        />
                     </template>
                 </ConversationWorkspace>
             </div>
         </div>
 
-        <transition name="fade">
-            <div
-                v-if="showBetaInfoModal"
-                class="message-action-modal-backdrop"
-                @click.self="showBetaInfoModal = false"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--edit"
-                            >
-                                <i class="fa-solid fa-flask"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                Beta release
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                About the BETA release
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                This module is aimed at giving HRIS users one
-                                built-in space for direct messages, group
-                                coordination, approvals, and quick internal
-                                communication without leaving the portal.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            @click="showBetaInfoModal = false"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
+        <InfoNoticeModal
+            :is-open="showBetaInfoModal"
+            icon-class="fa-solid fa-flask"
+            eyebrow="Beta release"
+            title="About the BETA release"
+            subtitle="This module is aimed at giving HRIS users one built-in space for direct messages, group coordination, approvals, and quick internal communication without leaving the portal."
+            context-label="What this beta is for"
+            :paragraphs="[
+                'The goal is to make messaging feel native to the HRIS Portal instead of a separate tool.',
+                'It is designed for employee-to-employee chat, team group chats, coordination with admins, and faster in-system updates tied to daily HR workflows.',
+            ]"
+            @close="showBetaInfoModal = false"
+        />
 
-                    <div class="message-action-modal__body">
-                        <div class="message-action-modal__context">
-                            <div class="message-action-modal__context-label">
-                                What this beta is for
-                            </div>
-                            <div
-                                class="message-action-modal__preview message-action-modal__preview--stacked"
-                            >
-                                <p>
-                                    The goal is to make messaging feel native to
-                                    the HRIS Portal instead of a separate tool.
-                                </p>
-                                <p>
-                                    It is designed for employee-to-employee
-                                    chat, team group chats, coordination with
-                                    admins, and faster in-system updates tied to
-                                    daily HR workflows.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="message-action-modal__footer">
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--primary"
-                            @click="showBetaInfoModal = false"
-                        >
-                            Understood
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="fade">
-            <div
-                v-if="showPrivacyInfoModal"
-                class="message-action-modal-backdrop"
-                @click.self="showPrivacyInfoModal = false"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--edit"
-                            >
-                                <i class="fa-solid fa-shield-halved"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                Privacy notice
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                About message privacy
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                Your conversations are handled with privacy
-                                controls designed to protect exchanged messages
-                                inside the portal.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            @click="showPrivacyInfoModal = false"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    <div class="message-action-modal__body">
-                        <div class="message-action-modal__context">
-                            <div class="message-action-modal__context-label">
-                                How your messages are protected
-                            </div>
-                            <div
-                                class="message-action-modal__preview message-action-modal__preview--stacked"
-                            >
-                                <p>
-                                    All exchanged messages are encrypted on the
-                                    server and stored in a form that is not
-                                    readable to the human eye.
-                                </p>
-                                <p>
-                                    To help protect privacy over time, messages
-                                    older than 3 months are included in a
-                                    scheduled permanent deletion process.
-                                </p>
-                                <p>
-                                    Once they pass the 3-month retention window,
-                                    those older messages are permanently removed
-                                    from the system.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="message-action-modal__footer">
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--primary"
-                            @click="showPrivacyInfoModal = false"
-                        >
-                            Understood
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
+        <InfoNoticeModal
+            :is-open="showPrivacyInfoModal"
+            icon-class="fa-solid fa-shield-halved"
+            eyebrow="Privacy notice"
+            title="About message privacy"
+            subtitle="Your conversations are handled with privacy controls designed to protect exchanged messages inside the portal."
+            context-label="How your messages are protected"
+            :paragraphs="[
+                'All exchanged messages are encrypted on the server and stored in a form that is not readable to the human eye.',
+                'To help protect privacy over time, messages older than 3 months are included in a scheduled permanent deletion process.',
+                'Once they pass the 3-month retention window, those older messages are permanently removed from the system.',
+            ]"
+            @close="showPrivacyInfoModal = false"
+        />
 
         <transition name="fade">
             <div
                 v-if="showGroupChatRequestsModal"
                 class="message-action-modal-backdrop"
-                @click.self="showGroupChatRequestsModal = false"
+                @click.self="closeGroupChatRequestsModal"
             >
                 <div
                     class="message-action-modal"
@@ -1614,14 +306,14 @@
                                 Group chat request updates
                             </h3>
                             <p class="message-action-modal__subtitle">
-                                Review all of your approved and rejected group
-                                chat requests.
+                                Review your pending, approved, and rejected
+                                group chat requests.
                             </p>
                         </div>
                         <button
                             type="button"
                             class="message-action-modal__close"
-                            @click="showGroupChatRequestsModal = false"
+                            @click="closeGroupChatRequestsModal"
                             aria-label="Close dialog"
                         >
                             <i class="fa-solid fa-xmark"></i>
@@ -1630,7 +322,52 @@
 
                     <div class="message-action-modal__body">
                         <div
-                            v-if="groupChatRequestHistory.length"
+                            v-if="selectedHistoryMembersRequest"
+                            class="approval-members-view"
+                        >
+                            <button
+                                type="button"
+                                class="approval-members-view__back"
+                                @click="closeHistoryMembersView"
+                            >
+                                <i class="fa-solid fa-arrow-left"></i>
+                                Go back
+                            </button>
+
+                            <div class="approval-members-view__list">
+                                <div
+                                    v-for="member in selectedHistoryMembersRequest.members || []"
+                                    :key="`history-member-${selectedHistoryMembersRequest.id}-${member.id || member.name}`"
+                                    class="approval-members-view__item"
+                                >
+                                    <img
+                                        :src="getMemberProfile(member)"
+                                        :alt="member.display_name || member.name"
+                                    />
+                                    <div class="approval-members-view__content">
+                                        <div
+                                            class="approval-members-view__name"
+                                        >
+                                            {{
+                                                member.display_name ||
+                                                member.name
+                                            }}
+                                        </div>
+                                        <div
+                                            v-if="
+                                                member.nickname &&
+                                                member.nickname !== member.name
+                                            "
+                                            class="approval-members-view__meta"
+                                        >
+                                            {{ member.name }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            v-else-if="groupChatRequestHistory.length"
                             class="group-chat-approval-list"
                         >
                             <div
@@ -1650,26 +387,34 @@
                                         <div
                                             class="group-chat-approval-card__meta"
                                         >
-                                            {{
-                                                request.approval_status ===
-                                                "approved"
-                                                    ? "Approved"
-                                                    : "Rejected"
-                                            }}
-                                            · Bctioned By
-                                            {{
-                                                request.processed_by?.name ||
-                                                "Admin"
-                                            }}
+                                            <span>
+                                                {{
+                                                    formatRequestStatus(
+                                                        request.approval_status,
+                                                    )
+                                                }}
+                                                <template
+                                                    v-if="
+                                                        request.approval_status !==
+                                                        'pending'
+                                                    "
+                                                >
+                                                    · Actioned by
+                                                    {{
+                                                        request.processed_by
+                                                            ?.name || "Admin"
+                                                    }}
+                                                </template>
+                                            </span>
                                             <span
                                                 v-if="
                                                     request.processed_at ||
                                                     request.created_at
                                                 "
+                                                class="group-chat-approval-card__meta-date"
                                             >
-                                                •
                                                 {{
-                                                    formatConversationTimestamp(
+                                                    formatSeenDateTime(
                                                         request.processed_at ||
                                                             request.created_at,
                                                     )
@@ -1712,22 +457,39 @@
                                     </div>
                                 </div>
                                 <div
+                                    v-if="
+                                        request.approval_status === 'pending'
+                                    "
+                                    class="group-chat-approval-card__actions"
+                                >
+                                    <button
+                                        type="button"
+                                        class="message-action-modal__btn message-action-modal__btn--ghost"
+                                        :disabled="
+                                            cancelGroupChatRequestSubmitting &&
+                                            Number(
+                                                selectedCancelGroupChatRequest
+                                                    ?.id || 0,
+                                            ) === Number(request.id)
+                                        "
+                                        @click="
+                                            promptCancelGroupChatRequest(
+                                                request,
+                                            )
+                                        "
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                                <div
                                     v-if="(request.members || []).length"
                                     class="group-chat-approval-card__members"
                                 >
                                     <button
                                         type="button"
                                         class="group-chat-approval-card__member-trigger"
-                                        :aria-expanded="
-                                            activeGroupRequestTooltipId ===
-                                            request.id
-                                        "
                                         :aria-label="`Show members for ${request.name}`"
-                                        @click.stop="
-                                            toggleGroupRequestTooltip(
-                                                request.id,
-                                            )
-                                        "
+                                        @click.stop="openHistoryMembersView(request)"
                                     >
                                         <span
                                             class="group-chat-approval-card__member-stack"
@@ -1748,39 +510,26 @@
                                             </span>
                                             <span
                                                 v-if="
-                                                    request.members.length > 10
+                                                    getRequestMemberOverflowCount(
+                                                        request.members,
+                                                    ) > 0
                                                 "
                                                 class="group-chat-approval-card__member-avatar group-chat-approval-card__member-avatar--more"
                                             >
                                                 +{{
-                                                    request.members.length - 10
+                                                    getRequestMemberOverflowCount(
+                                                        request.members,
+                                                    )
                                                 }}
                                             </span>
                                         </span>
-                                    </button>
-
-                                    <transition name="fade">
-                                        <div
-                                            v-if="
-                                                activeGroupRequestTooltipId ===
-                                                request.id
-                                            "
-                                            class="group-chat-approval-card__tooltip"
-                                            @click.stop
+                                        <span
+                                            class="group-chat-approval-card__member-summary"
                                         >
-                                            <div
-                                                class="group-chat-approval-card__tooltip-list"
-                                            >
-                                                <span
-                                                    v-for="member in request.members"
-                                                    :key="`request-member-name-${request.id}-${member.id || member.name}`"
-                                                    class="group-chat-approval-card__tooltip-chip"
-                                                >
-                                                    {{ member.name }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </transition>
+                                            {{ request.members.length }}
+                                            members
+                                        </span>
+                                    </button>
                                 </div>
                                 <div
                                     v-if="
@@ -1795,954 +544,97 @@
                             </div>
                         </div>
                         <div v-else class="text-white-50">
-                            No approved or rejected group chat requests yet.
+                            No group chat requests yet.
                         </div>
                     </div>
                 </div>
             </div>
         </transition>
 
-        <transition name="fade">
-            <div
-                v-if="conversationDeleteModalVisible"
-                class="message-action-modal-backdrop"
-                @click.self="closeConversationDeleteModal"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--danger"
-                            >
-                                <i class="fa-regular fa-trash-can"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                Delete for you
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                Delete your copy of this chat?
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                This clears the messages only for you. Other
-                                participants will still be able to see them.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            :disabled="conversationDeleteSubmitting"
-                            @click="closeConversationDeleteModal"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
+        <ConversationDeleteModal
+            :is-open="conversationDeleteModalVisible"
+            :conversation-name="contactActionTarget?.name || ''"
+            :submitting="conversationDeleteSubmitting"
+            :error="conversationDeleteError"
+            @close="closeConversationDeleteModal"
+            @confirm="confirmDeleteConversationMessages"
+        />
 
-                    <div class="message-action-modal__body">
-                        <div class="message-action-modal__context">
-                            <div class="message-action-modal__context-label">
-                                Conversation
-                            </div>
-                            <div class="message-action-modal__preview">
-                                {{ contactActionTarget?.name || "This chat" }}
-                            </div>
-                        </div>
+        <GroupChatModal
+            :is-open="showGroupChatModal"
+            :available-users="availableUsers"
+            :is-admin="isAdmin"
+            :is-submitting="groupChatSubmitting"
+            :error="groupChatError"
+            :pending-request-count="pendingGroupChatRequestCount"
+            :request-limit="groupChatRequestLimit"
+            @close="closeGroupChatModal"
+            @submit="submitGroupChat"
+        />
 
-                        <p
-                            v-if="conversationDeleteError"
-                            class="message-action-modal__error"
-                        >
-                            {{ conversationDeleteError }}
-                        </p>
-                    </div>
+        <GroupInfoModal
+            :is-open="showGroupInfoModal"
+            :title="activeUserName"
+            :avatar="activeUserAvatar"
+            :display-name="activeUser?.actual_name || activeUserName"
+            :initial-form="groupInfoForm"
+            :is-group="activeConversationIsGroup"
+            :media-items="conversationInfoImageItems.concat(conversationInfoFileItems)"
+            :media-loading="conversationInfoMediaLoading"
+            :media-loaded="conversationInfoMediaLoaded"
+            :has-more="conversationInfoMediaHasMore"
+            :is-submitting="groupInfoSubmitting"
+            :error="groupInfoError"
+            :initial-active-tab="groupInfoModalRestoreActiveTab"
+            :restore-scroll-top="groupInfoModalRestoreScrollTop"
+            @close="closeGroupInfoModal"
+            @submit="submitConversationInfo"
+            @scroll="loadConversationInfoMedia"
+            @photo-change="handleGroupInfoPhotoChange"
+            @open-gallery="openImageGallery"
+            @download="downloadAttachment"
+        />
 
-                    <div class="message-action-modal__footer">
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--ghost"
-                            :disabled="conversationDeleteSubmitting"
-                            @click="closeConversationDeleteModal"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--danger"
-                            :disabled="
-                                conversationDeleteSubmitting ||
-                                !contactActionTarget
-                            "
-                            @click="confirmDeleteConversationMessages"
-                        >
-                            <span
-                                v-if="conversationDeleteSubmitting"
-                                class="spinner-border spinner-border-sm"
-                                aria-hidden="true"
-                            ></span>
-                            <span v-else>Delete for me</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
+        <LeaveGroupModal
+            :is-open="showLeaveGroupModal"
+            :group-name="activeUserName"
+            :is-submitting="leaveGroupSubmitting"
+            :error="leaveGroupError"
+            @close="closeLeaveGroupModal"
+            @confirm="confirmLeaveActiveGroup"
+        />
 
-        <transition name="fade">
-            <div
-                v-if="showGroupChatModal"
-                class="message-action-modal-backdrop"
-                @click.self="closeGroupChatModal"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--edit"
-                            >
-                                <i class="fa-solid fa-people-group"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                Create group chat
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                Start a shared conversation
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                {{
-                                    isAdmin
-                                        ? "Admins can create a group chat immediately."
-                                        : "Your request will be sent to admins for approval first."
-                                }}
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            :disabled="groupChatSubmitting"
-                            @click="closeGroupChatModal"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
+        <GroupMembersModal
+            :is-open="showGroupMembersModal"
+            :members="groupMembersModalMembers"
+            :group-name="groupMembersModalTitle"
+            :current-user-id="authUser?.id"
+            @close="closeGroupMembersModal"
+        />
 
-                    <div class="message-action-modal__body">
-                        <div class="mb-3">
-                            <label class="form-label text-white-50 small"
-                                >Group name</label
-                            >
-                            <input
-                                v-model="groupChatForm.name"
-                                type="text"
-                                class="message-action-modal__textarea"
-                                style="min-height: 52px"
-                                maxlength="120"
-                                placeholder="Enter group name"
-                            />
-                        </div>
+        <InviteMembersModal
+            :is-open="showInviteMembersModal"
+            :group-name="activeUserName"
+            :available-users="filteredInvitableUsers"
+            :is-submitting="groupInviteSubmitting"
+            :error="groupInviteError"
+            @close="closeInviteMembersModal"
+            @submit="submitInviteMembers"
+        />
 
-                        <div class="mb-3">
-                            <label class="form-label text-white-50 small"
-                                >Members</label
-                            >
-                            <div class="mb-3">
-                                <input
-                                    v-model="groupChatUserSearch"
-                                    type="text"
-                                    class="message-action-modal__input"
-                                    placeholder="Search user to add"
-                                />
-                            </div>
-                            <div class="group-chat-member-list">
-                                <label
-                                    v-for="user in filteredGroupChatUsers"
-                                    :key="user.id"
-                                    class="group-chat-member-item"
-                                >
-                                    <input
-                                        :checked="
-                                            groupChatForm.member_ids.includes(
-                                                user.id,
-                                            )
-                                        "
-                                        type="checkbox"
-                                        @change="toggleGroupChatMember(user.id)"
-                                    />
-                                    <img :src="user.profile" :alt="user.name" />
-                                    <span>{{ user.name }}</span>
-                                </label>
-                            </div>
-                            <div
-                                v-if="filteredGroupChatUsers.length === 0"
-                                class="text-white-50 small mt-2"
-                            >
-                                No users match your search.
-                            </div>
-                        </div>
-
-                        <p
-                            v-if="groupChatError"
-                            class="message-action-modal__error"
-                        >
-                            {{ groupChatError }}
-                        </p>
-                    </div>
-
-                    <div class="message-action-modal__footer">
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--ghost"
-                            :disabled="groupChatSubmitting"
-                            @click="closeGroupChatModal"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--primary"
-                            :disabled="
-                                groupChatSubmitting || !canSubmitGroupChat
-                            "
-                            @click="submitGroupChat"
-                        >
-                            <span
-                                v-if="groupChatSubmitting"
-                                class="spinner-border spinner-border-sm"
-                                aria-hidden="true"
-                            ></span>
-                            <span v-else>Create</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="fade">
-            <div
-                v-if="showGroupInfoModal"
-                class="message-action-modal-backdrop"
-                @click.self="closeGroupInfoModal"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--edit"
-                            >
-                                <i class="fa-solid fa-circle-info"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                {{
-                                    activeConversationIsGroup
-                                        ? "Group info"
-                                        : "Conversation info"
-                                }}
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                Edit {{ activeUserName }}
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                {{
-                                    activeConversationIsGroup
-                                        ? "Update the group name, photo, your nickname, and browse shared media."
-                                        : "Set a nickname for this conversation and browse shared media."
-                                }}
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            :disabled="groupInfoSubmitting"
-                            @click="closeGroupInfoModal"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    <div
-                        class="message-action-modal__body"
-                        ref="conversationInfoBody"
-                        @scroll.passive="handleConversationInfoScroll"
-                    >
-                        <div class="group-info-editor">
-                            <div class="group-info-editor__avatar">
-                                <img
-                                    :src="
-                                        groupInfoPhotoPreview ||
-                                        activeUserAvatar
-                                    "
-                                    :alt="activeUserName"
-                                />
-                                <button
-                                    v-if="activeConversationIsGroup"
-                                    type="button"
-                                    class="message-action-modal__btn message-action-modal__btn--ghost"
-                                    :disabled="groupInfoSubmitting"
-                                    @click="$refs.groupInfoPhotoInput?.click()"
-                                >
-                                    Change photo
-                                </button>
-                                <input
-                                    v-if="activeConversationIsGroup"
-                                    ref="groupInfoPhotoInput"
-                                    type="file"
-                                    class="d-none"
-                                    accept="image/*"
-                                    @change="handleGroupInfoPhotoChange"
-                                />
-                            </div>
-
-                            <div v-if="activeConversationIsGroup" class="mb-3">
-                                <label class="form-label text-white-50 small"
-                                    >Group name</label
-                                >
-                                <input
-                                    v-model="groupInfoForm.name"
-                                    type="text"
-                                    class="message-action-modal__input"
-                                    maxlength="120"
-                                    placeholder="Enter group name"
-                                />
-                            </div>
-
-                            <div v-else class="mb-3">
-                                <label class="form-label text-white-50 small"
-                                    >Name</label
-                                >
-                                <div class="message-action-modal__preview">
-                                    {{
-                                        activeUser?.actual_name ||
-                                        activeUserName
-                                    }}
-                                </div>
-                            </div>
-
-                            <div class="mb-2">
-                                <label class="form-label text-white-50 small">
-                                    {{
-                                        activeConversationIsGroup
-                                            ? "Your nickname"
-                                            : "Nickname"
-                                    }}
-                                </label>
-                                <input
-                                    v-model="groupInfoForm.nickname"
-                                    type="text"
-                                    class="message-action-modal__input"
-                                    maxlength="120"
-                                    :placeholder="
-                                        activeConversationIsGroup
-                                            ? 'Set your nickname in this group'
-                                            : 'Set a nickname for this conversation'
-                                    "
-                                />
-                            </div>
-                        </div>
-
-                        <div class="conversation-info-media">
-                            <div class="conversation-info-media__header">
-                                <div>
-                                    <div
-                                        class="message-action-modal__context-label"
-                                    >
-                                        Shared media
-                                    </div>
-                                    <div class="text-white-50 small">
-                                        Images and files from this conversation.
-                                    </div>
-                                </div>
-                                <div
-                                    v-if="
-                                        conversationInfoMediaLoading &&
-                                        conversationInfoMediaItems.length
-                                    "
-                                    class="text-white-50 small"
-                                >
-                                    Loading...
-                                </div>
-                            </div>
-
-                            <div class="conversation-info-media__tabs">
-                                <button
-                                    type="button"
-                                    class="conversation-info-media__tab"
-                                    :class="{
-                                        'is-active':
-                                            conversationInfoTab === 'media',
-                                    }"
-                                    @click="conversationInfoTab = 'media'"
-                                >
-                                    Media
-                                </button>
-                                <button
-                                    type="button"
-                                    class="conversation-info-media__tab"
-                                    :class="{
-                                        'is-active':
-                                            conversationInfoTab === 'files',
-                                    }"
-                                    @click="conversationInfoTab = 'files'"
-                                >
-                                    Files
-                                </button>
-                            </div>
-
-                            <div
-                                v-if="
-                                    conversationInfoTab === 'media' &&
-                                    conversationInfoImageItems.length
-                                "
-                                class="conversation-info-media__section"
-                            >
-                                <div class="conversation-info-media__grid">
-                                    <button
-                                        v-for="item in conversationInfoImageItems"
-                                        :key="`image-${item.message_id}`"
-                                        type="button"
-                                        class="conversation-info-media__image"
-                                        @click="
-                                            openImageGallery(item.attachment)
-                                        "
-                                    >
-                                        <img
-                                            :src="item.attachment.url"
-                                            :alt="
-                                                item.attachment.name || 'Image'
-                                            "
-                                        />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div
-                                v-if="
-                                    conversationInfoTab === 'files' &&
-                                    conversationInfoFileItems.length
-                                "
-                                class="conversation-info-media__section"
-                            >
-                                <button
-                                    v-for="item in conversationInfoFileItems"
-                                    :key="`file-${item.message_id}`"
-                                    type="button"
-                                    class="conversation-info-media__file"
-                                    @click="downloadAttachment(item.attachment)"
-                                >
-                                    <span
-                                        class="conversation-info-media__file-icon"
-                                    >
-                                        <i class="fa-regular fa-file-lines"></i>
-                                    </span>
-                                    <span
-                                        class="conversation-info-media__file-body"
-                                    >
-                                        <span
-                                            class="conversation-info-media__file-name"
-                                            >{{ item.attachment.name }}</span
-                                        >
-                                        <small class="text-white-50">
-                                            {{
-                                                formatFileSize(
-                                                    item.attachment.size,
-                                                )
-                                            }}
-                                            · {{ formatTime(item.created_at) }}
-                                        </small>
-                                    </span>
-                                </button>
-                            </div>
-
-                            <div
-                                v-if="
-                                    conversationInfoMediaLoaded &&
-                                    !activeConversationInfoItems.length &&
-                                    !conversationInfoMediaLoading
-                                "
-                                class="text-white-50 small"
-                            >
-                                {{
-                                    conversationInfoTab === "files"
-                                        ? "No shared files yet."
-                                        : "No shared media yet."
-                                }}
-                            </div>
-
-                            <div
-                                v-if="
-                                    conversationInfoMediaLoading &&
-                                    !conversationInfoMediaItems.length
-                                "
-                                class="chat-loading chat-loading--inline"
-                            >
-                                <span class="loader-dot"></span>
-                                <div class="fw-semibold">
-                                    Loading shared media...
-                                </div>
-                            </div>
-
-                            <div
-                                v-if="
-                                    conversationInfoMediaLoaded &&
-                                    conversationInfoMediaHasMore &&
-                                    !conversationInfoMediaLoading
-                                "
-                                class="conversation-info-media__hint"
-                            >
-                                Scroll to load more
-                            </div>
-                        </div>
-
-                        <p
-                            v-if="groupInfoError"
-                            class="message-action-modal__error"
-                        >
-                            {{ groupInfoError }}
-                        </p>
-                    </div>
-
-                    <div class="message-action-modal__footer">
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--ghost"
-                            :disabled="groupInfoSubmitting"
-                            @click="closeGroupInfoModal"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--primary"
-                            :disabled="
-                                groupInfoSubmitting || !canSubmitGroupInfo
-                            "
-                            @click="submitConversationInfo"
-                        >
-                            <span
-                                v-if="groupInfoSubmitting"
-                                class="spinner-border spinner-border-sm"
-                                aria-hidden="true"
-                            ></span>
-                            <span v-else>Save changes</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="fade">
-            <div
-                v-if="showGroupMembersModal"
-                class="message-action-modal-backdrop"
-                @click.self="closeGroupMembersModal"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--edit"
-                            >
-                                <i class="fa-solid fa-users"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                Group members
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                {{ activeUserName }}
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                {{ activeGroupMembers.length }} members in this
-                                chat.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            @click="closeGroupMembersModal"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    <div class="message-action-modal__body">
-                        <div
-                            v-if="activeGroupMembers.length"
-                            class="group-chat-member-list"
-                        >
-                            <div
-                                v-for="member in activeGroupMembers"
-                                :key="member.id"
-                                class="group-chat-member-item group-chat-member-item--static"
-                            >
-                                <img
-                                    :src="getMemberProfile(member)"
-                                    :alt="member.display_name || member.name"
-                                />
-                                <div class="group-chat-member-item__content">
-                                    <div
-                                        class="group-chat-member-item__headline"
-                                    >
-                                        <span>{{
-                                            member.display_name || member.name
-                                        }}</span>
-                                        <small
-                                            v-if="
-                                                Number(member.id) ===
-                                                Number(authUser?.id || 0)
-                                            "
-                                            class="text-white-50"
-                                            >(You)</small
-                                        >
-                                    </div>
-                                    <small
-                                        v-if="
-                                            member.nickname &&
-                                            member.nickname !== member.name
-                                        "
-                                        class="text-white-50"
-                                    >
-                                        {{ member.name }}
-                                    </small>
-                                    <small
-                                        v-if="member.added_by_name"
-                                        class="text-white-50"
-                                        >Added by
-                                        {{ member.added_by_name }}</small
-                                    >
-                                </div>
-                                <div
-                                    v-if="member.joined_at"
-                                    class="group-chat-member-item__date"
-                                >
-                                    Added
-                                    {{
-                                        formatGroupMemberDate(member.joined_at)
-                                    }}
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else class="text-white-50">
-                            No members found for this group.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="fade">
-            <div
-                v-if="showInviteMembersModal"
-                class="message-action-modal-backdrop"
-                @click.self="closeInviteMembersModal"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--edit"
-                            >
-                                <i class="fa-solid fa-user-plus"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                Invite members
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                Add users to {{ activeUserName }}
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                Invite more people into this group conversation.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            :disabled="groupInviteSubmitting"
-                            @click="closeInviteMembersModal"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    <div class="message-action-modal__body">
-                        <div class="mb-3">
-                            <input
-                                v-model="groupInviteSearch"
-                                type="text"
-                                class="message-action-modal__input"
-                                placeholder="Search user to invite"
-                            />
-                        </div>
-                        <div class="group-chat-member-list">
-                            <label
-                                v-for="user in filteredInvitableUsers"
-                                :key="user.id"
-                                class="group-chat-member-item"
-                            >
-                                <input
-                                    :checked="
-                                        groupInviteMemberIds.includes(user.id)
-                                    "
-                                    type="checkbox"
-                                    @change="toggleInviteMember(user.id)"
-                                />
-                                <img :src="user.profile" :alt="user.name" />
-                                <span>{{ user.name }}</span>
-                            </label>
-                        </div>
-                        <div
-                            v-if="filteredInvitableUsers.length === 0"
-                            class="text-white-50 small mt-2"
-                        >
-                            No more users available to invite.
-                        </div>
-                        <p
-                            v-if="groupInviteError"
-                            class="message-action-modal__error"
-                        >
-                            {{ groupInviteError }}
-                        </p>
-                    </div>
-
-                    <div class="message-action-modal__footer">
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--ghost"
-                            :disabled="groupInviteSubmitting"
-                            @click="closeInviteMembersModal"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--primary"
-                            :disabled="
-                                groupInviteSubmitting ||
-                                groupInviteMemberIds.length === 0
-                            "
-                            @click="submitInviteMembers"
-                        >
-                            <span
-                                v-if="groupInviteSubmitting"
-                                class="spinner-border spinner-border-sm"
-                                aria-hidden="true"
-                            ></span>
-                            <span v-else>Invite</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="fade">
-            <div
-                v-if="showLeaveGroupModal"
-                class="message-action-modal-backdrop"
-                @click.self="closeLeaveGroupModal"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--danger"
-                            >
-                                <i class="fa-solid fa-right-from-bracket"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                Leave group
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                Leave {{ activeUserName }}?
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                You will stop receiving messages from this group
-                                unless someone invites you again.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            :disabled="leaveGroupSubmitting"
-                            @click="closeLeaveGroupModal"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    <div class="message-action-modal__body">
-                        <div class="message-action-modal__context">
-                            <div class="message-action-modal__context-label">
-                                Group
-                            </div>
-                            <div class="message-action-modal__preview">
-                                {{ activeUserName }}
-                            </div>
-                        </div>
-                        <p
-                            v-if="leaveGroupError"
-                            class="message-action-modal__error"
-                        >
-                            {{ leaveGroupError }}
-                        </p>
-                    </div>
-
-                    <div class="message-action-modal__footer">
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--ghost"
-                            :disabled="leaveGroupSubmitting"
-                            @click="closeLeaveGroupModal"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            class="message-action-modal__btn message-action-modal__btn--danger"
-                            :disabled="leaveGroupSubmitting"
-                            @click="confirmLeaveActiveGroup"
-                        >
-                            <span
-                                v-if="leaveGroupSubmitting"
-                                class="spinner-border spinner-border-sm"
-                                aria-hidden="true"
-                            ></span>
-                            <span v-else>Leave group</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
-
-        <transition name="fade">
-            <div
-                v-if="showSeenByModal"
-                class="message-action-modal-backdrop"
-                @click.self="closeSeenByModal"
-            >
-                <div
-                    class="message-action-modal"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div class="message-action-modal__header">
-                        <div class="message-action-modal__headline">
-                            <div
-                                class="message-action-modal__badge message-action-modal__badge--edit"
-                            >
-                                <i class="fa-regular fa-eye"></i>
-                            </div>
-                            <div class="message-action-modal__eyebrow">
-                                Seen by
-                            </div>
-                            <h3 class="message-action-modal__title">
-                                {{ seenByModalUsers.length }} members
-                            </h3>
-                            <p class="message-action-modal__subtitle">
-                                People who have seen this message.
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="message-action-modal__close"
-                            @click="closeSeenByModal"
-                            aria-label="Close dialog"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    <div class="message-action-modal__body">
-                        <div
-                            v-if="seenByModalUsers.length"
-                            class="group-chat-member-list"
-                        >
-                            <div
-                                v-for="member in seenByModalUsers"
-                                :key="`seen-modal-${member.id}`"
-                                class="group-chat-member-item group-chat-member-item--static"
-                            >
-                                <img
-                                    :src="getMemberProfile(member)"
-                                    :alt="getSeenMemberName(member)"
-                                />
-                                <div class="group-chat-member-item__content">
-                                    <div
-                                        class="group-chat-member-item__headline"
-                                    >
-                                        <span>{{
-                                            getSeenMemberName(member)
-                                        }}</span>
-                                        <small
-                                            v-if="
-                                                Number(member.id) ===
-                                                Number(authUser?.id || 0)
-                                            "
-                                            class="text-white-50"
-                                            >(You)</small
-                                        >
-                                    </div>
-                                    <small
-                                        v-if="
-                                            member.nickname &&
-                                            member.name &&
-                                            member.nickname !== member.name
-                                        "
-                                        class="text-white-50"
-                                    >
-                                        {{ member.name }}
-                                    </small>
-                                </div>
-                                <div
-                                    v-if="member.last_read_at"
-                                    class="group-chat-member-item__date"
-                                >
-                                    Seen
-                                    {{
-                                        formatGroupMemberDate(
-                                            member.last_read_at,
-                                        )
-                                    }}
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else class="text-white-50">
-                            No members have seen this message yet.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </transition>
+        <ReactionModal
+            :is-open="showReactionsModal"
+            :reactions="reactionsModalData"
+            :current-user-id="authUser?.id"
+            :reaction-options="reactionOptions"
+            @close="closeReactionsModal"
+        />
 
         <transition name="fade">
             <div
                 v-if="showApprovalModal"
                 class="message-action-modal-backdrop"
-                @click.self="showApprovalModal = false"
+                @click.self="closeApprovalModal"
             >
                 <div
                     class="message-action-modal"
@@ -2760,16 +652,24 @@
                                 Admin approvals
                             </div>
                             <h3 class="message-action-modal__title">
-                                Pending group chat requests
+                                {{
+                                    selectedApprovalMembersRequest
+                                        ? selectedApprovalMembersRequest.name
+                                        : "Pending group chat requests"
+                                }}
                             </h3>
                             <p class="message-action-modal__subtitle">
-                                Review and approve employee-created group chats.
+                                {{
+                                    selectedApprovalMembersRequest
+                                        ? "Review all members included in this requested group chat."
+                                        : "Review and approve employee-created group chats."
+                                }}
                             </p>
                         </div>
                         <button
                             type="button"
                             class="message-action-modal__close"
-                            @click="showApprovalModal = false"
+                            @click="closeApprovalModal"
                             aria-label="Close dialog"
                         >
                             <i class="fa-solid fa-xmark"></i>
@@ -2778,7 +678,52 @@
 
                     <div class="message-action-modal__body">
                         <div
-                            v-if="pendingGroupChatApprovals.length"
+                            v-if="selectedApprovalMembersRequest"
+                            class="approval-members-view"
+                        >
+                            <button
+                                type="button"
+                                class="approval-members-view__back"
+                                @click="closeApprovalMembersView"
+                            >
+                                <i class="fa-solid fa-arrow-left"></i>
+                                Go back
+                            </button>
+
+                            <div class="approval-members-view__list">
+                                <div
+                                    v-for="member in selectedApprovalMembersRequest.members || []"
+                                    :key="`approval-member-${selectedApprovalMembersRequest.id}-${member.id || member.name}`"
+                                    class="approval-members-view__item"
+                                >
+                                    <img
+                                        :src="getMemberProfile(member)"
+                                        :alt="member.display_name || member.name"
+                                    />
+                                    <div class="approval-members-view__content">
+                                        <div
+                                            class="approval-members-view__name"
+                                        >
+                                            {{
+                                                member.display_name ||
+                                                member.name
+                                            }}
+                                        </div>
+                                        <div
+                                            v-if="
+                                                member.nickname &&
+                                                member.nickname !== member.name
+                                            "
+                                            class="approval-members-view__meta"
+                                        >
+                                            {{ member.name }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            v-else-if="pendingGroupChatApprovals.length"
                             class="group-chat-approval-list"
                         >
                             <div
@@ -2789,15 +734,68 @@
                                 <div class="group-chat-approval-card__title">
                                     {{ request.name }}
                                 </div>
+                                <div class="group-chat-approval-card__members">
+                                    <button
+                                        type="button"
+                                        class="group-chat-approval-card__member-trigger"
+                                        :aria-label="`Show members for ${request.name}`"
+                                        @click="
+                                            openRequestMembersModal(request)
+                                        "
+                                    >
+                                        <span
+                                            class="group-chat-approval-card__member-stack"
+                                        >
+                                            <span
+                                                v-for="member in getRequestMemberPreview(
+                                                    request.members,
+                                                )"
+                                                :key="`pending-request-member-${request.id}-${member.id || member.name}`"
+                                                class="group-chat-approval-card__member-avatar"
+                                            >
+                                                <img
+                                                    :src="
+                                                        getMemberProfile(member)
+                                                    "
+                                                    :alt="member.name || 'User'"
+                                                />
+                                            </span>
+                                            <span
+                                                v-if="
+                                                    getRequestMemberOverflowCount(
+                                                        request.members,
+                                                    ) > 0
+                                                "
+                                                class="group-chat-approval-card__member-avatar group-chat-approval-card__member-avatar--more"
+                                            >
+                                                +{{
+                                                    getRequestMemberOverflowCount(
+                                                        request.members,
+                                                    )
+                                                }}
+                                            </span>
+                                        </span>
+                                        <span
+                                            class="group-chat-approval-card__member-summary"
+                                        >
+                                            {{ request.members.length }}
+                                            members
+                                        </span>
+                                    </button>
+                                </div>
                                 <div class="group-chat-approval-card__meta">
                                     Requested by
                                     {{ request.creator?.name || "User" }}
                                 </div>
-                                <div class="group-chat-approval-card__members">
+                                <div
+                                    v-if="request.created_at"
+                                    class="group-chat-approval-card__timestamp"
+                                >
+                                    Requested
                                     {{
-                                        request.members
-                                            .map((member) => member.name)
-                                            .join(", ")
+                                        formatSeenDateTime(
+                                            request.created_at,
+                                        )
                                     }}
                                 </div>
                                 <div class="group-chat-approval-card__actions">
@@ -2828,66 +826,14 @@
             </div>
         </transition>
 
-        <transition name="fade">
-            <div
-                v-if="showReactionPicker && selectedMessage"
-                class="reaction-modal-backdrop"
-                @click.self="clearReactionPicker"
-            >
-                <div
-                    class="reaction-modal"
-                    role="dialog"
-                    aria-modal="true"
-                    tabindex="-1"
-                    @keydown.esc.prevent="clearReactionPicker"
-                >
-                    <div class="reaction-modal__header">
-                        <div>
-                            <div class="reaction-modal__eyebrow">
-                                Emoji reaction
-                            </div>
-                            <h3 class="reaction-modal__title">
-                                React to this message
-                            </h3>
-                            <p class="reaction-modal__subtitle">
-                                {{ reactionTargetPreview }}
-                            </p>
-                        </div>
-                        <button
-                            type="button"
-                            class="reaction-modal__close"
-                            @click="clearReactionPicker"
-                            aria-label="Close reaction picker"
-                        >
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    <div class="reaction-modal__body">
-                        <button
-                            v-for="reaction in reactionOptions"
-                            :key="reaction.key"
-                            type="button"
-                            class="reaction-modal__option"
-                            :class="{
-                                'is-active':
-                                    selectedMessage?.reaction === reaction.key,
-                            }"
-                            :title="reaction.label"
-                            :aria-label="reaction.label"
-                            @click="setReaction(selectedMessage, reaction.key)"
-                        >
-                            <span class="reaction-modal__emoji">{{
-                                reaction.emoji
-                            }}</span>
-                            <span class="reaction-modal__label">{{
-                                reaction.label
-                            }}</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </transition>
+        <ReactionPickerModal
+            :is-open="showReactionPicker"
+            :selected-message="selectedMessage"
+            :reaction-options="reactionOptions"
+            :current-user-id="authUser?.id"
+            @close="clearReactionPicker"
+            @set-reaction="setReaction"
+        />
 
         <transition name="fade">
             <div
@@ -3039,11 +985,19 @@
                 </div>
             </div>
         </transition>
+        <AlertModal
+            :is-open="alertModalVisible"
+            :type="alertModalType"
+            :title="alertModalTitle"
+            :message="alertModalMessage"
+            @close="closeAlertModal"
+        />
+
         <transition name="fade">
             <div
-                v-if="alertModalVisible"
+                v-if="cancelGroupChatRequestModalVisible"
                 class="message-action-modal-backdrop"
-                @click.self="closeAlertModal"
+                @click.self="closeCancelGroupChatRequestModal"
             >
                 <div
                     class="message-action-modal"
@@ -3053,103 +1007,124 @@
                     <div class="message-action-modal__header">
                         <div class="message-action-modal__headline">
                             <div
-                                class="message-action-modal__badge"
-                                :class="
-                                    alertModalType === 'success'
-                                        ? 'message-action-modal__badge--edit'
-                                        : 'message-action-modal__badge--danger'
-                                "
+                                class="message-action-modal__badge message-action-modal__badge--danger"
                             >
-                                <i
-                                    :class="
-                                        alertModalType === 'success'
-                                            ? 'fa-solid fa-check'
-                                            : 'fa-solid fa-triangle-exclamation'
-                                    "
-                                ></i>
+                                <i class="fa-regular fa-trash-can"></i>
                             </div>
                             <div class="message-action-modal__eyebrow">
-                                Notice
+                                Confirmation
                             </div>
                             <h3 class="message-action-modal__title">
-                                {{ alertModalTitle }}
+                                Cancel group chat request?
                             </h3>
                             <p class="message-action-modal__subtitle">
-                                {{ alertModalMessage }}
+                                This will remove the pending request and admins
+                                will no longer be able to approve it.
                             </p>
                         </div>
                         <button
                             type="button"
                             class="message-action-modal__close"
-                            @click="closeAlertModal"
+                            :disabled="cancelGroupChatRequestSubmitting"
+                            @click="closeCancelGroupChatRequestModal"
                             aria-label="Close dialog"
                         >
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
 
+                    <div class="message-action-modal__body">
+                        <div class="message-action-modal__context">
+                            <div class="message-action-modal__context-label">
+                                Request to cancel
+                            </div>
+                            <div class="message-action-modal__preview">
+                                {{
+                                    selectedCancelGroupChatRequest?.name ||
+                                    "Pending group chat request"
+                                }}
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="message-action-modal__footer">
                         <button
                             type="button"
-                            class="message-action-modal__btn"
-                            :class="
-                                alertModalType === 'success'
-                                    ? 'message-action-modal__btn--primary'
-                                    : 'message-action-modal__btn--danger'
-                            "
-                            @click="closeAlertModal"
+                            class="message-action-modal__btn message-action-modal__btn--ghost"
+                            :disabled="cancelGroupChatRequestSubmitting"
+                            @click="closeCancelGroupChatRequestModal"
                         >
-                            OK
+                            Keep request
+                        </button>
+                        <button
+                            type="button"
+                            class="message-action-modal__btn message-action-modal__btn--danger"
+                            :disabled="cancelGroupChatRequestSubmitting"
+                            @click="confirmCancelGroupChatRequest"
+                        >
+                            <span
+                                v-if="cancelGroupChatRequestSubmitting"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
+                            <span v-else>Cancel request</span>
                         </button>
                     </div>
                 </div>
             </div>
         </transition>
 
-        <transition-group name="toast" tag="div" class="messages-toast-stack">
-            <div
-                v-for="notification in notifications"
-                :key="notification.id"
-                class="messages-toast"
-                :class="`messages-toast--${notification.type}`"
-                role="status"
-                aria-live="polite"
-            >
-                <div class="messages-toast__icon">
-                    <i :class="getNotificationIcon(notification.type)"></i>
-                </div>
-                <div class="messages-toast__content">
-                    <div class="messages-toast__title">
-                        {{ notification.title }}
-                    </div>
-                    <div class="messages-toast__message">
-                        {{ notification.message }}
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    class="messages-toast__close"
-                    aria-label="Dismiss notification"
-                    @click="dismissNotification(notification.id)"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-        </transition-group>
+        <NotificationStack
+            :notifications="notifications"
+            :get-notification-icon="getNotificationIcon"
+            @dismiss="dismissNotification"
+        />
         <div ref="imageGalleryContainer" class="d-none"></div>
     </div>
 </template>
 
 <script>
 import axios from "axios";
+import AlertModal from "./components/AlertModal.vue";
+import ComposerArea from "./components/ComposerArea.vue";
+import ConversationDeleteModal from "./components/ConversationDeleteModal.vue";
+import ConversationHeaderBar from "./components/ConversationHeaderBar.vue";
 import ConversationWorkspace from "./components/ConversationWorkspace.vue";
-import MessagesSidebar from "./components/MessagesSidebar.vue";
+import ConversationsPanel from "./components/ConversationsPanel.vue";
+import MessageStream from "./components/MessageStream.vue";
+import ReactionPickerModal from "./components/ReactionPickerModal.vue";
+import ReactionModal from "./components/ReactionModal.vue";
+import SeenByModal from "./components/SeenByModal.vue";
+import GroupMembersModal from "./components/GroupMembersModal.vue";
+import InviteMembersModal from "./components/InviteMembersModal.vue";
+import GroupChatModal from "./components/GroupChatModal.vue";
+import GroupInfoModal from "./components/GroupInfoModal.vue";
+import InfoNoticeModal from "./components/InfoNoticeModal.vue";
+import LeaveGroupModal from "./components/LeaveGroupModal.vue";
+import NotificationStack from "./components/NotificationStack.vue";
+import PinnedMessagesPanel from "./components/PinnedMessagesPanel.vue";
 
 export default {
     name: "MessagesPage",
     components: {
+        AlertModal,
+        ComposerArea,
+        ConversationDeleteModal,
+        ConversationHeaderBar,
         ConversationWorkspace,
-        MessagesSidebar,
+        ConversationsPanel,
+        MessageStream,
+        ReactionPickerModal,
+        ReactionModal,
+        SeenByModal,
+        GroupMembersModal,
+        InviteMembersModal,
+        GroupChatModal,
+        GroupInfoModal,
+        InfoNoticeModal,
+        LeaveGroupModal,
+        NotificationStack,
+        PinnedMessagesPanel,
     },
     props: {
         initialUsers: {
@@ -3394,15 +1369,20 @@ export default {
             showGroupChatModal: false,
             groupChatSubmitting: false,
             groupChatError: "",
+            groupChatRequestLimit: 5,
+            cancelGroupChatRequestModalVisible: false,
+            cancelGroupChatRequestSubmitting: false,
+            selectedCancelGroupChatRequest: null,
             groupChatForm: {
                 name: "",
                 member_ids: [],
             },
-            groupChatUserSearch: "",
             showGroupInfoModal: false,
+            reopenGroupInfoModalAfterGallery: false,
+            groupInfoModalRestoreScrollTop: 0,
+            groupInfoModalRestoreActiveTab: "media",
             groupInfoSubmitting: false,
             groupInfoError: "",
-            groupInfoPhotoPreview: "",
             groupInfoForm: {
                 name: "",
                 nickname: "",
@@ -3413,23 +1393,26 @@ export default {
             conversationInfoMediaHasMore: true,
             conversationInfoMediaLoading: false,
             conversationInfoMediaLoaded: false,
-            conversationInfoTab: "media",
             showGroupMembersModal: false,
+            groupMembersModalTitleOverride: "",
+            groupMembersModalMembersOverride: [],
             showInviteMembersModal: false,
             groupInviteSubmitting: false,
             groupInviteError: "",
-            groupInviteSearch: "",
-            groupInviteMemberIds: [],
             showSeenByModal: false,
             seenByModalUsers: [],
+            showReactionsModal: false,
+            reactionsModalData: [],
             showBetaInfoModal: false,
             showPrivacyInfoModal: false,
             showGroupChatRequestsModal: false,
+            selectedHistoryMembersRequest: null,
             activeGroupRequestTooltipId: null,
             showLeaveGroupModal: false,
             leaveGroupSubmitting: false,
             leaveGroupError: "",
             showApprovalModal: false,
+            selectedApprovalMembersRequest: null,
             contactActionMenuKey: null,
             contactActionTarget: null,
             conversationDeleteModalVisible: false,
@@ -3446,6 +1429,11 @@ export default {
         };
     },
     computed: {
+        pendingGroupChatRequestCount() {
+            return this.groupChatRequestHistory.filter(
+                (request) => request.approval_status === "pending",
+            ).length;
+        },
         greetingLabel() {
             const hour = this.now.getHours();
 
@@ -3561,6 +1549,16 @@ export default {
                 last_read_at: member.last_read_at || null,
             }));
         },
+        groupMembersModalMembers() {
+            if (this.groupMembersModalMembersOverride.length > 0) {
+                return this.groupMembersModalMembersOverride;
+            }
+
+            return this.activeGroupMembers;
+        },
+        groupMembersModalTitle() {
+            return this.groupMembersModalTitleOverride || this.activeUserName;
+        },
         activeGroupSelfMember() {
             const authUserId = Number(this.authUser?.id || 0);
             return (
@@ -3652,12 +1650,6 @@ export default {
                 this.messageCharacterLimit - this.messageCharacterCount,
             );
         },
-        canSubmitGroupChat() {
-            return (
-                this.groupChatForm.name.trim() !== "" &&
-                this.groupChatForm.member_ids.length >= 2
-            );
-        },
         canSubmitGroupInfo() {
             if (!this.activeUser) {
                 return false;
@@ -3679,13 +1671,7 @@ export default {
                 (item) => item?.attachment?.type !== "image",
             );
         },
-        activeConversationInfoItems() {
-            return this.conversationInfoTab === "files"
-                ? this.conversationInfoFileItems
-                : this.conversationInfoImageItems;
-        },
         filteredInvitableUsers() {
-            const search = this.groupInviteSearch.trim().toLowerCase();
             const memberIds = new Set(
                 (Array.isArray(this.activeUser?.member_ids)
                     ? this.activeUser.member_ids
@@ -3698,22 +1684,7 @@ export default {
                     return false;
                 }
 
-                const haystack =
-                    `${user.name || ""} ${user.email || ""}`.toLowerCase();
-                return !search || haystack.includes(search);
-            });
-        },
-        filteredGroupChatUsers() {
-            const search = this.groupChatUserSearch.trim().toLowerCase();
-
-            return this.availableUsers.filter((user) => {
-                if (!search) {
-                    return true;
-                }
-
-                const haystack =
-                    `${user.name || ""} ${user.email || ""}`.toLowerCase();
-                return haystack.includes(search);
+                return true;
             });
         },
     },
@@ -3887,8 +1858,8 @@ export default {
                 return;
             }
 
-            const overlay = this.$refs.composerEmojiOverlay;
-            const button = this.$refs.composerEmojiButton;
+            const overlay = this.getComposerEmojiOverlayElement();
+            const button = this.getComposerEmojiButtonElement();
             const target = event?.target || null;
 
             if (overlay?.contains?.(target) || button?.contains?.(target)) {
@@ -3911,6 +1882,21 @@ export default {
                     };
                 }
             }
+        },
+        getConversationBodyElement() {
+            return this.$refs.messageStream?.getBodyElement?.() || null;
+        },
+        getComposerInputElement() {
+            return this.$refs.composerArea?.getInputElement?.() || null;
+        },
+        getAttachmentInputElement() {
+            return this.$refs.composerArea?.getAttachmentInputElement?.() || null;
+        },
+        getComposerEmojiButtonElement() {
+            return this.$refs.composerArea?.getEmojiButtonElement?.() || null;
+        },
+        getComposerEmojiOverlayElement() {
+            return this.$refs.composerArea?.getEmojiOverlayElement?.() || null;
         },
         getMessagesCacheKey() {
             const authUserId = Number(this.authUser?.id || 0);
@@ -4121,7 +2107,7 @@ export default {
 
                     this.$nextTick(() => {
                         const bodyEl =
-                            this.$refs.conversationBody ||
+                            this.getConversationBodyElement() ||
                             this.$el.querySelector(".conversation-panel__body");
                         if (!bodyEl) {
                             return;
@@ -4177,7 +2163,7 @@ export default {
 
                     this.$nextTick(() => {
                         const bodyEl =
-                            this.$refs.conversationBody ||
+                            this.getConversationBodyElement() ||
                             this.$el.querySelector(".conversation-panel__body");
                         if (!bodyEl) {
                             return;
@@ -4251,6 +2237,13 @@ export default {
                         return;
                     }
 
+                    if (
+                        Number(event.message.sender_id || 0) !==
+                        Number(this.authUser?.id || 0)
+                    ) {
+                        this.playReceiveSound();
+                    }
+
                     this.handleIncomingGroupMessage(
                         event.message,
                         event.conversation,
@@ -4276,6 +2269,27 @@ export default {
                     }
 
                     if (!this.isAdmin) {
+                        if (
+                            event.action === "created" &&
+                            Number(event.request?.creator?.id || 0) ===
+                                Number(this.authUser?.id || 0)
+                        ) {
+                            this.upsertGroupChatRequestHistory(event.request);
+                        }
+
+                        if (
+                            event.action === "cancelled" &&
+                            Number(event.request?.creator?.id || 0) ===
+                                Number(this.authUser?.id || 0)
+                        ) {
+                            this.groupChatRequestHistory =
+                                this.groupChatRequestHistory.filter(
+                                    (item) =>
+                                        Number(item.id) !==
+                                        Number(event.request?.id || 0),
+                                );
+                        }
+
                         if (
                             ["approved", "rejected"].includes(event.action) &&
                             Number(event.request?.creator?.id || 0) ===
@@ -4676,7 +2690,7 @@ export default {
                 return;
             }
 
-            this.showGroupChatRequestsModal = false;
+            this.closeGroupChatRequestsModal();
             this.selectUser(targetConversation);
         },
         initializeOnlineUsers() {
@@ -4977,6 +2991,9 @@ export default {
         getRequestMemberPreview(members = []) {
             return members.slice(0, 10);
         },
+        getRequestMemberOverflowCount(members = []) {
+            return Math.max(members.length - 10, 0);
+        },
         toggleGroupRequestTooltip(requestId) {
             this.activeGroupRequestTooltipId =
                 this.activeGroupRequestTooltipId === requestId
@@ -5167,7 +3184,7 @@ export default {
             this.clearTypingTimers();
             this.typingIndicator = false;
             const isOlderLoad = page > 1;
-            const bodyEl = this.$refs.conversationBody;
+            const bodyEl = this.getConversationBodyElement();
             const previousScrollHeight =
                 preserveScroll && bodyEl ? bodyEl.scrollHeight : 0;
             const previousScrollTop =
@@ -5364,7 +3381,7 @@ export default {
             this.sendTypingState(false);
         },
         captureComposerSelection() {
-            const textarea = this.$refs.composerInput;
+            const textarea = this.getComposerInputElement();
             if (!textarea) {
                 return;
             }
@@ -5384,7 +3401,53 @@ export default {
                 return;
             }
 
+            this.groupMembersModalTitleOverride = "";
+            this.groupMembersModalMembersOverride = [];
             this.showGroupMembersModal = true;
+        },
+        openRequestMembersModal(request) {
+            const members = Array.isArray(request?.members) ? request.members : [];
+
+            if (!members.length) {
+                return;
+            }
+
+            this.selectedApprovalMembersRequest = {
+                ...request,
+                members: members.map((member) => ({
+                    ...member,
+                    id: Number(member.id),
+                })),
+            };
+        },
+        closeApprovalMembersView() {
+            this.selectedApprovalMembersRequest = null;
+        },
+        openHistoryMembersView(request) {
+            const members = Array.isArray(request?.members) ? request.members : [];
+
+            if (!members.length) {
+                return;
+            }
+
+            this.selectedHistoryMembersRequest = {
+                ...request,
+                members: members.map((member) => ({
+                    ...member,
+                    id: Number(member.id),
+                })),
+            };
+        },
+        closeHistoryMembersView() {
+            this.selectedHistoryMembersRequest = null;
+        },
+        closeGroupChatRequestsModal() {
+            this.selectedHistoryMembersRequest = null;
+            this.showGroupChatRequestsModal = false;
+        },
+        closeApprovalModal() {
+            this.selectedApprovalMembersRequest = null;
+            this.showApprovalModal = false;
         },
         openConversationInfoModal() {
             if (!this.activeUser) {
@@ -5392,7 +3455,6 @@ export default {
             }
 
             this.groupInfoError = "";
-            this.groupInfoPhotoPreview = "";
             this.groupInfoForm = {
                 name: this.activeConversationIsGroup
                     ? this.activeUser.name || ""
@@ -5402,6 +3464,8 @@ export default {
                     : this.activeUser.nickname || "",
                 photo: null,
             };
+            this.groupInfoModalRestoreScrollTop = 0;
+            this.groupInfoModalRestoreActiveTab = "media";
             this.showGroupInfoModal = true;
             this.resetConversationInfoMedia();
             this.loadConversationInfoMedia({ page: 1 });
@@ -5411,6 +3475,9 @@ export default {
                 return;
             }
 
+            this.reopenGroupInfoModalAfterGallery = false;
+            this.groupInfoModalRestoreScrollTop = 0;
+            this.groupInfoModalRestoreActiveTab = "media";
             this.showGroupInfoModal = false;
             this.groupInfoError = "";
             this.clearGroupInfoPhotoSelection();
@@ -5422,28 +3489,6 @@ export default {
             this.conversationInfoMediaHasMore = true;
             this.conversationInfoMediaLoading = false;
             this.conversationInfoMediaLoaded = false;
-            this.conversationInfoTab = "media";
-        },
-        handleConversationInfoScroll(event) {
-            const body = event?.target;
-            if (
-                !body ||
-                this.conversationInfoMediaLoading ||
-                !this.conversationInfoMediaHasMore
-            ) {
-                return;
-            }
-
-            const distanceFromBottom =
-                body.scrollHeight - body.scrollTop - body.clientHeight;
-            if (distanceFromBottom > 140) {
-                return;
-            }
-
-            this.loadConversationInfoMedia({
-                page: this.conversationInfoMediaPage + 1,
-                append: true,
-            });
         },
         async loadConversationInfoMedia({ page = 1, append = false } = {}) {
             if (!this.activeUser || this.conversationInfoMediaLoading) {
@@ -5501,12 +3546,12 @@ export default {
         },
         closeGroupMembersModal() {
             this.showGroupMembersModal = false;
+            this.groupMembersModalTitleOverride = "";
+            this.groupMembersModalMembersOverride = [];
         },
-        handleGroupInfoPhotoChange(event) {
-            const file = event?.target?.files?.[0] ?? null;
-
+        handleGroupInfoPhotoChange(file) {
             if (!file) {
-                this.clearGroupInfoPhotoSelection(false);
+                this.clearGroupInfoPhotoSelection();
                 return;
             }
 
@@ -5518,24 +3563,11 @@ export default {
             }
 
             this.groupInfoError = "";
-            this.clearGroupInfoPhotoSelection(false);
+            this.clearGroupInfoPhotoSelection();
             this.groupInfoForm.photo = file;
-            this.groupInfoPhotoPreview = URL.createObjectURL(file);
         },
-        clearGroupInfoPhotoSelection(resetInput = true) {
-            if (this.groupInfoPhotoPreview) {
-                URL.revokeObjectURL(this.groupInfoPhotoPreview);
-                this.groupInfoPhotoPreview = "";
-            }
-
+        clearGroupInfoPhotoSelection() {
             this.groupInfoForm.photo = null;
-
-            if (resetInput) {
-                const input = this.$refs.groupInfoPhotoInput;
-                if (input) {
-                    input.value = "";
-                }
-            }
         },
         async submitConversationInfo() {
             if (
@@ -5631,8 +3663,6 @@ export default {
             }
 
             this.groupInviteError = "";
-            this.groupInviteSearch = "";
-            this.groupInviteMemberIds = [];
             this.showInviteMembersModal = true;
         },
         closeInviteMembersModal() {
@@ -5642,8 +3672,6 @@ export default {
 
             this.showInviteMembersModal = false;
             this.groupInviteError = "";
-            this.groupInviteSearch = "";
-            this.groupInviteMemberIds = [];
         },
         openLeaveGroupModal() {
             if (!this.activeConversationIsGroup) {
@@ -5661,26 +3689,13 @@ export default {
             this.showLeaveGroupModal = false;
             this.leaveGroupError = "";
         },
-        toggleInviteMember(userId) {
-            const normalizedId = Number(userId);
+        async submitInviteMembers(selectedUserIds = []) {
+            const memberIds = selectedUserIds.map((id) => Number(id));
 
-            if (this.groupInviteMemberIds.includes(normalizedId)) {
-                this.groupInviteMemberIds = this.groupInviteMemberIds.filter(
-                    (id) => id !== normalizedId,
-                );
-                return;
-            }
-
-            this.groupInviteMemberIds = [
-                ...this.groupInviteMemberIds,
-                normalizedId,
-            ];
-        },
-        async submitInviteMembers() {
             if (
                 !this.activeConversationIsGroup ||
                 !this.activeUser?.id ||
-                this.groupInviteMemberIds.length === 0 ||
+                memberIds.length === 0 ||
                 this.groupInviteSubmitting
             ) {
                 return;
@@ -5693,7 +3708,7 @@ export default {
                 const { data } = await axios.post(
                     `/api/group-chats/${this.activeUser.id}/members`,
                     {
-                        member_ids: this.groupInviteMemberIds,
+                        member_ids: memberIds,
                     },
                     {
                         headers: this.buildAuthHeaders(),
@@ -5927,7 +3942,7 @@ export default {
                     this.showPinnedMessagesPanel = false;
                     this.showComposerEmojiPicker = false;
                     this.$nextTick(() => {
-                        const textarea = this.$refs.composerInput;
+                        const textarea = this.getComposerInputElement();
                         if (textarea) {
                             textarea.focus();
                             textarea.value = this.draftMessage;
@@ -5942,7 +3957,7 @@ export default {
                 } else {
                     await this.loadConversation(this.activeUser, { page: 1 });
                     this.$nextTick(() => {
-                        const textarea = this.$refs.composerInput;
+                        const textarea = this.getComposerInputElement();
                         if (textarea) {
                             textarea.focus();
                             textarea.value = this.draftMessage;
@@ -6253,7 +4268,7 @@ export default {
         insertComposerEmoji(emoji) {
             if (!emoji) return;
 
-            const textarea = this.$refs.composerInput;
+            const textarea = this.getComposerInputElement();
             const current = textarea?.value ?? this.draftMessage ?? "";
 
             if (!textarea) {
@@ -6291,7 +4306,7 @@ export default {
             this.clearReactionPicker();
             this.activeMessageActionsId = null;
             this.$nextTick(() => {
-                const textarea = this.$refs.composerInput;
+                const textarea = this.getComposerInputElement();
                 if (!textarea) {
                     return;
                 }
@@ -6315,7 +4330,7 @@ export default {
                     : ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xlsx,.txt";
 
             this.$nextTick(() => {
-                const input = this.$refs.attachmentInput;
+                const input = this.getAttachmentInputElement();
                 if (input) {
                     input.click();
                 }
@@ -6360,7 +4375,7 @@ export default {
                 ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xlsx,.txt";
 
             if (resetInput) {
-                const input = this.$refs.attachmentInput;
+                const input = this.getAttachmentInputElement();
                 if (input) {
                     input.value = "";
                 }
@@ -6488,11 +4503,28 @@ export default {
                     message.is_system || message.message_type === "system",
                 ),
                 is_unsent: Boolean(message.is_unsent),
+                reaction: message.is_unsent ? null : message.reaction || null,
+                reactions: message.is_unsent
+                    ? []
+                    : Array.isArray(message.reactions)
+                        ? message.reactions
+                        : [],
             };
         },
         openGroupChatModal() {
+            if (
+                !this.isAdmin &&
+                this.pendingGroupChatRequestCount >= this.groupChatRequestLimit
+            ) {
+                this.openAlertModal({
+                    type: "error",
+                    title: "Unable to create more group requests",
+                    message: `You already reached the limit of ${this.groupChatRequestLimit} pending group chat requests. Please cancel one request before creating another.`,
+                });
+                return;
+            }
+
             this.groupChatError = "";
-            this.groupChatUserSearch = "";
             this.groupChatForm = {
                 name: "",
                 member_ids: [],
@@ -6506,26 +4538,32 @@ export default {
 
             this.showGroupChatModal = false;
             this.groupChatError = "";
-            this.groupChatUserSearch = "";
         },
-        toggleGroupChatMember(userId) {
-            const normalizedId = Number(userId);
+        async submitGroupChat(form = { name: "", member_ids: [] }) {
+            const normalizedForm = {
+                name: String(form?.name || "").trim(),
+                member_ids: Array.isArray(form?.member_ids)
+                    ? form.member_ids.map((id) => Number(id))
+                    : [],
+            };
 
-            if (this.groupChatForm.member_ids.includes(normalizedId)) {
-                this.groupChatForm.member_ids =
-                    this.groupChatForm.member_ids.filter(
-                        (id) => id !== normalizedId,
-                    );
+            if (
+                !normalizedForm.name ||
+                normalizedForm.member_ids.length === 0 ||
+                this.groupChatSubmitting
+            ) {
                 return;
             }
 
-            this.groupChatForm.member_ids = [
-                ...this.groupChatForm.member_ids,
-                normalizedId,
-            ];
-        },
-        async submitGroupChat() {
-            if (!this.canSubmitGroupChat || this.groupChatSubmitting) {
+            if (
+                !this.isAdmin &&
+                this.pendingGroupChatRequestCount >= this.groupChatRequestLimit
+            ) {
+                this.openAlertModal({
+                    type: "error",
+                    title: "Unable to create more group requests",
+                    message: `You already reached the limit of ${this.groupChatRequestLimit} pending group chat requests. Please cancel one request before creating another.`,
+                });
                 return;
             }
 
@@ -6536,8 +4574,8 @@ export default {
                 const { data } = await axios.post(
                     "/api/group-chats",
                     {
-                        name: this.groupChatForm.name.trim(),
-                        member_ids: this.groupChatForm.member_ids,
+                        name: normalizedForm.name,
+                        member_ids: normalizedForm.member_ids,
                     },
                     {
                         headers: this.buildAuthHeaders(),
@@ -6553,6 +4591,48 @@ export default {
                     await this.loadConversation(data.conversation, { page: 1 });
                 }
 
+                if (data?.group_chat?.approval_status === "pending") {
+                    const selectedMembers = normalizedForm.member_ids
+                        .map((memberId) =>
+                            this.availableUsers.find(
+                                (user) =>
+                                    Number(user.id) === Number(memberId),
+                            ),
+                        )
+                        .filter(Boolean)
+                        .map((member) => ({
+                            id: Number(member.id),
+                            name: member.name,
+                            profile: member.profile || null,
+                        }));
+
+                    this.upsertGroupChatRequestHistory({
+                        id: Number(data.group_chat.id),
+                        name: data.group_chat.name,
+                        approval_status: data.group_chat.approval_status,
+                        approval_level: data.group_chat.approval_level,
+                        created_at: new Date().toISOString(),
+                        processed_at: new Date().toISOString(),
+                        rejection_reason: null,
+                        creator: {
+                            id: Number(this.authUser?.id || 0),
+                            name: this.authUser?.name || "User",
+                        },
+                        processed_by: {
+                            id: null,
+                            name: null,
+                        },
+                        members: [
+                            ...selectedMembers,
+                            {
+                                id: Number(this.authUser?.id || 0),
+                                name: this.authUser?.name || "You",
+                                profile: this.authUser?.profile || null,
+                            },
+                        ],
+                    });
+                }
+
                 this.showGroupChatModal = false;
                 this.groupChatError = "";
                 this.notify({
@@ -6563,10 +4643,72 @@ export default {
                 });
             } catch (error) {
                 this.groupChatError =
+                    error?.response?.data?.errors?.name?.[0] ||
                     error?.response?.data?.message ||
                     "Unable to create group chat.";
             } finally {
                 this.groupChatSubmitting = false;
+            }
+        },
+        promptCancelGroupChatRequest(request) {
+            if (!request?.id || this.cancelGroupChatRequestSubmitting) {
+                return;
+            }
+
+            this.selectedCancelGroupChatRequest = request;
+            this.cancelGroupChatRequestModalVisible = true;
+        },
+        closeCancelGroupChatRequestModal() {
+            if (this.cancelGroupChatRequestSubmitting) {
+                return;
+            }
+
+            this.cancelGroupChatRequestModalVisible = false;
+            this.selectedCancelGroupChatRequest = null;
+        },
+        async confirmCancelGroupChatRequest() {
+            const request = this.selectedCancelGroupChatRequest;
+
+            if (!request?.id) {
+                return;
+            }
+
+            this.cancelGroupChatRequestSubmitting = true;
+
+            try {
+                const { data } = await axios.delete(
+                    `/api/group-chats/${request.id}`,
+                    {
+                        headers: this.buildAuthHeaders(),
+                    },
+                );
+
+                this.groupChatRequestHistory =
+                    this.groupChatRequestHistory.filter(
+                        (item) => Number(item.id) !== Number(request.id),
+                    );
+                this.cancelGroupChatRequestModalVisible = false;
+                this.selectedCancelGroupChatRequest = null;
+
+                this.notify({
+                    type: "success",
+                    title: "Request cancelled",
+                    message:
+                        data?.message ||
+                        "Your group chat request was cancelled.",
+                    duration: 3000,
+                });
+            } catch (error) {
+                this.notify({
+                    type: "error",
+                    title: "Unable to cancel request",
+                    message:
+                        error?.response?.data?.message ||
+                        "Unable to cancel this group chat request.",
+                    duration: 3600,
+                });
+            } finally {
+                this.cancelGroupChatRequestSubmitting = false;
             }
         },
         async approveGroupChatRequest(request) {
@@ -7034,8 +5176,15 @@ export default {
             if (!message?.id || message.is_unsent || message.is_system) return;
 
             this.clearReactionPicker();
+            const currentUserReaction = Array.isArray(message.reactions)
+                ? message.reactions.find(
+                      (reaction) =>
+                          Number(reaction.user_id) ===
+                          Number(this.authUser?.id || 0),
+                  )?.reaction || null
+                : message.reaction || null;
             const nextReaction =
-                message.reaction === reactionKey ? null : reactionKey;
+                currentUserReaction === reactionKey ? null : reactionKey;
 
             try {
                 const endpoint = this.activeConversationIsGroup
@@ -7056,9 +5205,24 @@ export default {
                 console.error("Failed to set reaction:", error);
             }
         },
-        openImageGallery(attachment) {
+        openImageGallery(payload) {
+            const attachment = payload?.attachment || payload;
             if (!attachment?.url) {
                 return;
+            }
+
+            const shouldRestoreGroupInfoModal = this.showGroupInfoModal;
+            if (shouldRestoreGroupInfoModal) {
+                this.groupInfoModalRestoreScrollTop = Math.max(
+                    0,
+                    Number(payload?.scrollTop || 0),
+                );
+                this.groupInfoModalRestoreActiveTab =
+                    payload?.activeTab || "media";
+                this.reopenGroupInfoModalAfterGallery = true;
+                this.showGroupInfoModal = false;
+            } else {
+                this.reopenGroupInfoModalAfterGallery = false;
             }
 
             if (!window.lightGallery) {
@@ -7074,21 +5238,34 @@ export default {
 
             this.destroyImageGallery();
 
-            this.imageGalleryInstance = window.lightGallery(galleryContainer, {
-                dynamic: true,
-                dynamicEl: [
-                    {
-                        src: attachment.url,
-                        thumb: attachment.url,
-                        subHtml: attachment.name || "Attachment",
-                    },
-                ],
-                plugins: [window.lgThumbnail, window.lgZoom].filter(Boolean),
-                licenseKey: "0000-0000-000-0000",
-                speed: 300,
-            });
+            this.$nextTick(() => {
+                this.imageGalleryInstance = window.lightGallery(galleryContainer, {
+                    dynamic: true,
+                    dynamicEl: [
+                        {
+                            src: attachment.url,
+                            thumb: attachment.url,
+                            subHtml: attachment.name || "Attachment",
+                        },
+                    ],
+                    plugins: [window.lgThumbnail, window.lgZoom].filter(Boolean),
+                    licenseKey: "0000-0000-000-0000",
+                    speed: 300,
+                    container: document.body,
+                    addClass: "messages-lightgallery",
+                });
 
-            this.imageGalleryInstance.openGallery();
+                this.imageGalleryInstance?.LGel?.on("lgAfterClose", () => {
+                    if (this.reopenGroupInfoModalAfterGallery) {
+                        window.setTimeout(() => {
+                            this.showGroupInfoModal = true;
+                            this.reopenGroupInfoModalAfterGallery = false;
+                        }, 90);
+                    }
+                });
+
+                this.imageGalleryInstance.openGallery();
+            });
         },
         destroyImageGallery() {
             if (this.imageGalleryInstance) {
@@ -7113,6 +5290,40 @@ export default {
                     (reaction) => reaction.key === reactionKey,
                 )?.emoji || ""
             );
+        },
+        getUniqueReactionEmojis(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return [];
+            }
+            const uniqueReactions = new Set();
+            reactions.forEach((reaction) => {
+                if (reaction && reaction.reaction) {
+                    uniqueReactions.add(reaction.reaction);
+                }
+            });
+            return Array.from(uniqueReactions).map((reactionKey) =>
+                this.getReactionEmoji(reactionKey)
+            );
+        },
+        formatReactionsTooltip(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return "";
+            }
+            const grouped = {};
+            reactions.forEach((r) => {
+                if (r && r.reaction && r.user_name) {
+                    if (!grouped[r.reaction]) {
+                        grouped[r.reaction] = [];
+                    }
+                    grouped[r.reaction].push(r.user_name);
+                }
+            });
+            return Object.entries(grouped)
+                .map(([reactionKey, names]) => {
+                    const emoji = this.getReactionEmoji(reactionKey);
+                    return `${emoji}: ${names.join(", ")}`;
+                })
+                .join("\n");
         },
         downloadAttachment(attachment) {
             if (!attachment?.url) return;
@@ -7267,6 +5478,18 @@ export default {
             this.showSeenByModal = false;
             this.seenByModalUsers = [];
         },
+        openReactionsModal(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return;
+            }
+
+            this.reactionsModalData = reactions;
+            this.showReactionsModal = true;
+        },
+        closeReactionsModal() {
+            this.showReactionsModal = false;
+            this.reactionsModalData = [];
+        },
         applyGroupSeenReceipt(groupChatId, reader, readAt) {
             const normalizedGroupChatId = Number(groupChatId || 0);
             const normalizedReaderId = Number(
@@ -7419,7 +5642,7 @@ export default {
         scrollConversationToBottom() {
             this.$nextTick(() => {
                 const body =
-                    this.$refs.conversationBody ||
+                    this.getConversationBodyElement() ||
                     this.$el.querySelector(".conversation-panel__body");
                 if (!body) return;
 
@@ -7467,7 +5690,7 @@ export default {
             return distanceFromBottom <= threshold;
         },
         resizeComposer() {
-            const textarea = this.$refs.composerInput;
+            const textarea = this.getComposerInputElement();
             if (!textarea) return;
 
             textarea.style.height = "auto";
@@ -7638,7 +5861,7 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .messages-page {
     width: 100%;
     min-height: 100dvh;
@@ -8770,146 +6993,6 @@ export default {
     cursor: not-allowed;
 }
 
-.group-info-editor {
-    display: grid;
-    gap: 16px;
-}
-
-.group-info-editor__avatar {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-
-.group-info-editor__avatar img {
-    width: 96px;
-    height: 96px;
-    border-radius: 24px;
-    object-fit: cover;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
-}
-
-.conversation-info-media {
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    display: grid;
-    gap: 16px;
-}
-
-.conversation-info-media__header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.conversation-info-media__section {
-    display: grid;
-    gap: 12px;
-}
-
-.conversation-info-media__tabs {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.conversation-info-media__tab {
-    min-width: 84px;
-    height: 38px;
-    padding: 0 16px;
-    border: 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 700;
-    transition:
-        background 0.18s ease,
-        color 0.18s ease,
-        transform 0.18s ease;
-}
-
-.conversation-info-media__tab:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-}
-
-.conversation-info-media__tab.is-active {
-    background: linear-gradient(135deg, #5f8bff, #4b63ff);
-    color: #fff;
-}
-
-.conversation-info-media__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 12px;
-}
-
-.conversation-info-media__image {
-    border: 0;
-    padding: 0;
-    border-radius: 16px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.06);
-    aspect-ratio: 1 / 1;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
-}
-
-.conversation-info-media__image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.conversation-info-media__file {
-    width: 100%;
-    border: 0;
-    border-radius: 16px;
-    padding: 12px 14px;
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-align: left;
-}
-
-.conversation-info-media__file-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: rgba(95, 139, 255, 0.16);
-    color: #aecdff;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 40px;
-}
-
-.conversation-info-media__file-body {
-    min-width: 0;
-    display: grid;
-    gap: 2px;
-}
-
-.conversation-info-media__file-name {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-weight: 700;
-}
-
-.conversation-info-media__hint {
-    text-align: center;
-    color: rgba(255, 255, 255, 0.52);
-    font-size: 0.82rem;
-}
-
 .conversation-panel__body {
     position: relative;
     flex: 1;
@@ -8934,7 +7017,7 @@ export default {
     width: 100%;
     min-width: 0;
     overflow: hidden;
-    padding: 18px 22px 18px;
+    padding: 18px 22px 30px 22px;
 }
 
 .chat-empty,
@@ -9121,8 +7204,11 @@ export default {
 
 .message-bubble {
     position: relative;
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     max-width: min(76%, 640px);
+    width: fit-content;
     border-radius: 18px;
     padding: 12px 14px;
     background: rgba(255, 255, 255, 0.16);
@@ -9135,16 +7221,20 @@ export default {
     flex-direction: column;
     align-items: flex-end;
     max-width: min(76%, 640px);
+    width: fit-content;
+    flex: 0 1 auto;
     min-width: 0;
 }
 
 .message-row--theirs .message-bubble-wrap {
     align-items: flex-start;
+    align-self: flex-start;
 }
 
 .message-bubble-wrap .message-bubble {
-    width: 100%;
+    width: fit-content;
     max-width: 100%;
+    align-self: flex-start;
 }
 
 .message-bubble__text {
@@ -9166,6 +7256,12 @@ export default {
 .message-row--theirs .message-bubble {
     background: rgba(255, 255, 255, 0.08);
     border-bottom-left-radius: 6px;
+}
+
+.message-row--theirs .message-bubble__time {
+    position: static;
+    margin-top: 8px;
+    white-space: nowrap;
 }
 
 .message-bubble--unsent {
@@ -9254,14 +7350,15 @@ export default {
     right: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    min-width: 148px;
-    padding: 8px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(24, 20, 30, 0.96);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+    gap: 8px;
+    min-width: 180px;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(36, 42, 51, 0.98);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
     z-index: 120;
+    backdrop-filter: blur(10px);
 }
 
 .bubble-action {
@@ -9297,35 +7394,85 @@ export default {
 
 .bubble-action--menu {
     width: 100%;
-    min-height: 36px;
-    border-radius: 10px;
+    min-height: 52px;
+    border-radius: 14px;
     justify-content: flex-start;
-    padding: 0 10px 0 8px;
-    gap: 10px;
-    font-size: 0.95rem;
+    padding: 0.72rem 0.9rem;
+    gap: 12px;
+    font-size: 1rem;
     white-space: nowrap;
     font-weight: 600;
     border: 0;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.04);
+    transition:
+        transform 0.18s ease,
+        background-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.bubble-action--menu:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
+}
+
+.bubble-action--menu-primary {
+    background: linear-gradient(180deg, #3563f0 0%, #2d55da 100%);
+    color: #fff;
+}
+
+.bubble-action--menu-primary:hover {
+    background: linear-gradient(180deg, #3d6cfa 0%, #315ce7 100%);
+    color: #fff;
 }
 
 .bubble-action__icon {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 22px;
+    flex: 0 0 24px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: #f5f5f7;
 }
 
 .bubble-action__icon i {
-    font-size: 0.74rem;
+    font-size: 0.78rem;
 }
 
 .bubble-action--danger .bubble-action__icon {
     color: #fff;
+}
+
+.bubble-action--menu-primary .bubble-action__icon {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.bubble-action__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-width: 0;
+}
+
+.bubble-action__label {
+    line-height: 1.1;
+}
+
+.bubble-action__hint {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.15;
+}
+
+.bubble-action--menu-primary .bubble-action__hint {
+    color: rgba(255, 255, 255, 0.78);
 }
 
 .reaction-modal-backdrop {
@@ -9565,6 +7712,15 @@ export default {
     font-size: 0.72rem;
     color: rgba(255, 255, 255, 0.72);
     text-align: right;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+}
+
+.message-bubble__time-edit {
+    color: rgba(255, 255, 255, 0.74);
 }
 
 .message-bubble__status {
@@ -9585,14 +7741,6 @@ export default {
 
 .message-bubble__status--seen {
     color: rgba(149, 255, 200, 0.92);
-}
-
-.message-bubble__status-edit {
-    color: rgba(255, 255, 255, 0.74);
-}
-
-.message-bubble__status-edit--stacked {
-    margin-left: 3px;
 }
 
 .message-bubble__seen-group {
@@ -9742,6 +7890,55 @@ export default {
     font-size: 1rem;
 }
 
+.message-reaction-badges {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.3rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.message-reaction-badges:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: scale(1.05);
+}
+
+.message-reaction-badges--floating {
+    position: absolute;
+    bottom: -0.9rem;
+    z-index: 4;
+}
+
+.message-row--mine .message-reaction-badges--floating {
+    left: -0.5rem;
+}
+
+.message-row--theirs .message-reaction-badges--floating {
+    right: -0.5rem;
+}
+
+.message-reaction-badge__glyph {
+    display: inline-block;
+    line-height: 1;
+    font-size: 0.9rem;
+}
+
+.message-reaction-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.1rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-left: 2px;
+}
+
 .message-scroll-bottom {
     position: absolute;
     right: 50px;
@@ -9835,61 +8032,16 @@ export default {
     letter-spacing: 0.08em;
 }
 
-.group-chat-member-list,
 .group-chat-approval-list {
     display: grid;
     gap: 10px;
     padding-bottom: 4px;
 }
 
-.group-chat-member-item,
 .group-chat-approval-card {
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.04);
     border-radius: 16px;
-}
-
-.group-chat-member-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    cursor: pointer;
-    position: relative;
-}
-
-.group-chat-member-item--static {
-    cursor: default;
-}
-
-.group-chat-member-item img {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.group-chat-member-item__content {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    padding-right: 110px;
-}
-
-.group-chat-member-item__headline {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.group-chat-member-item__date {
-    position: absolute;
-    right: 12px;
-    bottom: 10px;
-    font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.56);
-    text-align: right;
 }
 
 .group-chat-approval-card {
@@ -9905,6 +8057,8 @@ export default {
         ),
         rgba(11, 15, 26, 0.88);
     box-shadow: 0 18px 38px rgba(4, 8, 20, 0.24);
+    display: flex;
+    flex-direction: column;
 }
 
 .group-chat-approval-card__title {
@@ -9924,15 +8078,25 @@ export default {
     gap: 14px;
 }
 
-.group-chat-approval-card__meta,
-.group-chat-approval-card__members {
-    margin-top: 4px;
+.group-chat-approval-card__meta {
+    margin-top: 14px;
+    line-height: 1.45;
     color: rgba(255, 255, 255, 0.72);
     font-size: 0.9rem;
 }
 
-.group-chat-approval-card__meta {
-    line-height: 1.45;
+.group-chat-approval-card__meta-date {
+    display: block;
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.56);
+    font-size: 0.82rem;
+}
+
+.group-chat-approval-card__timestamp {
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.56);
+    font-size: 0.82rem;
+    line-height: 1.4;
 }
 
 .group-chat-approval-card__top-actions {
@@ -9967,9 +8131,11 @@ export default {
 
 .group-chat-approval-card__members {
     position: relative;
-    margin-top: 12px;
-    padding-top: 12px;
+    margin-top: 16px;
+    padding-top: 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.9rem;
 }
 
 .group-chat-approval-card__member-trigger {
@@ -9980,6 +8146,12 @@ export default {
     border: 0;
     background: transparent;
     color: inherit;
+    cursor: pointer;
+    transition: transform 0.18s ease;
+}
+
+.group-chat-approval-card__member-trigger:hover {
+    transform: translateY(-1px);
 }
 
 .group-chat-approval-card__member-stack {
@@ -10015,6 +8187,95 @@ export default {
     font-weight: 800;
     color: #f7fbff;
     background: rgba(104, 149, 253, 0.32);
+}
+
+.group-chat-approval-card__member-summary {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.84rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.group-chat-approval-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 2px;
+}
+
+.group-chat-approval-card__actions .message-action-modal__btn {
+    flex: 1 1 0;
+}
+
+.approval-members-view {
+    display: grid;
+    gap: 14px;
+}
+
+.approval-members-view__back {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #f3f6fb;
+    font-weight: 700;
+    transition:
+        transform 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease;
+}
+
+.approval-members-view__back:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.approval-members-view__list {
+    display: grid;
+    gap: 10px;
+}
+
+.approval-members-view__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.approval-members-view__item img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 42px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.approval-members-view__content {
+    min-width: 0;
+}
+
+.approval-members-view__name {
+    color: #f3f6fb;
+    font-size: 0.95rem;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.approval-members-view__meta {
+    margin-top: 2px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.82rem;
 }
 
 .group-chat-approval-card__tooltip {
@@ -10444,17 +8705,14 @@ export default {
 .message-action-modal__textarea,
 .message-action-modal__preview,
 .reaction-modal__option,
-.group-chat-member-item,
-.group-chat-approval-card,
-.conversation-info-media__file {
+.group-chat-approval-card {
     background: rgb(56, 62, 72);
     border-color: rgba(255, 255, 255, 0.06);
     color: #f3f6fb;
 }
 
 .pinned-modal__item-body:hover,
-.reaction-modal__option:hover,
-.group-chat-member-item:hover {
+.reaction-modal__option:hover {
     background: rgb(67, 74, 85);
 }
 
@@ -10500,8 +8758,7 @@ export default {
 }
 
 .message-action-modal__preview,
-.message-action-modal__context,
-.conversation-info-media__file {
+.message-action-modal__context {
     border: 1px solid rgba(255, 255, 255, 0.06);
     padding: 20px;
 }
@@ -10723,6 +8980,19 @@ export default {
 .bubble-action:hover,
 .bubble-action.is-active {
     background: rgba(28, 88, 246, 0.9);
+}
+
+.bubble-action--menu {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.bubble-action--menu:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.bubble-action--menu-primary,
+.bubble-action--menu-primary:hover {
+    background: linear-gradient(180deg, #3563f0 0%, #2d55da 100%);
 }
 
 .message-bubble__sender,

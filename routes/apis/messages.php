@@ -21,6 +21,7 @@ Route::prefix('direct-messages')->group(function () {
 
 Route::prefix('group-chats')->group(function () {
     Route::post('/', [GroupChatController::class, 'store']);
+    Route::delete('{groupChat}', [GroupChatController::class, 'destroy']);
     Route::get('{groupChat}', [GroupChatController::class, 'show']);
     Route::get('{groupChat}/media', [GroupChatController::class, 'media']);
     Route::post('{groupChat}/messages', [GroupChatController::class, 'storeMessage']);

@@ -25,6 +25,16 @@ class MessagesController extends Controller
 
         $pageData = $this->messagesPageService->build($authUser, $selectedConversationKey);
 
+        if (!$conversationToken && !$request->filled('conversation') && !$request->filled('user')) {
+            $selectedConversationToken = $pageData['selectedConversationToken'] ?? null;
+
+            if ($selectedConversationToken) {
+                return redirect()->route('employee.messages', [
+                    'conversationToken' => $selectedConversationToken,
+                ]);
+            }
+        }
+
         return view('employee.pages.messages.index', $pageData);
     }
 }

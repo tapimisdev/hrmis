@@ -13,6 +13,7 @@ use App\Http\Controllers\Controller;
 use App\Models\GroupChat;
 use App\Models\GroupChatMember;
 use App\Models\GroupMessage;
+use App\Models\GroupMessageReaction;
 use App\Models\User;
 use App\Services\EventService;
 use App\Services\MessagesPageService;
@@ -59,6 +60,21 @@ class GroupChatController extends Controller
             ->unique()
             ->values();
         $isAdmin = $this->messagesPageService->isAdmin($authUser);
+
+        if (!$isAdmin) {
+            $pendingRequestCount = GroupChat::query()
+                ->where('created_by_id', $authUser->id)
+                ->where('approval_status', 'pending')
+                ->count();
+
+            if ($pendingRequestCount >= GroupChat::MAX_PENDING_REQUESTS_PER_USER) {
+                throw ValidationException::withMessages([
+                    'name' => [
+                        'You can only keep up to ' . GroupChat::MAX_PENDING_REQUESTS_PER_USER . ' pending group chat requests at a time. Cancel one before submitting another.',
+                    ],
+                ]);
+            }
+        }
 
         $groupChat = DB::transaction(function () use ($authUser, $validated, $memberIds, $isAdmin) {
             $groupChat = GroupChat::create([
@@ -137,6 +153,34 @@ class GroupChatController extends Controller
         ], 201);
     }
 
+    public function destroy(Request $request, GroupChat $groupChat)
+    {
+        $authUser = $request->user();
+
+        abort_unless((int) $groupChat->created_by_id === (int) $authUser->id, 403);
+
+        if ($groupChat->approval_status !== 'pending') {
+            return response()->json([
+                'message' => 'Only pending group chat requests can be cancelled.',
+            ], 422);
+        }
+
+        $formattedRequest = $this->formatPendingRequest($groupChat);
+        $recipientIds = $this->requestUpdateRecipientIds($groupChat);
+
+        $groupChat->delete();
+
+        event(new GroupChatRequestUpdated(
+            'cancelled',
+            $formattedRequest,
+            $recipientIds
+        ));
+
+        return response()->json([
+            'message' => 'Group chat request cancelled.',
+        ]);
+    }
+
     public function show(Request $request, GroupChat $groupChat)
     {
         $authUser = $request->user();
@@ -148,6 +192,7 @@ class GroupChatController extends Controller
             ->with([
                 'sender:id,name',
                 'replyTo:id,group_chat_id,body,reply_to_id,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type,reaction,pinned_at,pinned_by_id,edited_at,unsent_at,unsent_by_id,is_unsent,created_at',
+                'reactions.user:id,name',
             ])
             ->where('group_chat_id', $groupChat->id)
             ->when($clearedBeforeMessageId > 0, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId))
@@ -310,6 +355,7 @@ class GroupChatController extends Controller
         $message->load([
             'sender:id,name',
             'replyTo:id,group_chat_id,body,reply_to_id,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type,reaction,pinned_at,pinned_by_id,edited_at,unsent_at,unsent_by_id,is_unsent,created_at',
+            'reactions.user:id,name',
         ]);
 
         $this->refreshConversationLastMessage($groupChat);
@@ -570,6 +616,7 @@ class GroupChatController extends Controller
         $message->load([
             'sender:id,name',
             'replyTo:id,group_chat_id,body,reply_to_id,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type,reaction,pinned_at,pinned_by_id,edited_at,unsent_at,unsent_by_id,is_unsent,created_at',
+            'reactions.user:id,name',
         ]);
 
         $this->refreshConversationLastMessage($groupChat);
@@ -623,9 +670,14 @@ class GroupChatController extends Controller
         $message->pinned_at = null;
         $message->pinned_by_id = null;
         $message->save();
+
+        // Delete all reactions when message is unsent
+        GroupMessageReaction::where('group_message_id', $message->id)->delete();
+
         $message->load([
             'sender:id,name',
             'replyTo:id,group_chat_id,body,reply_to_id,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type,reaction,pinned_at,pinned_by_id,edited_at,unsent_at,unsent_by_id,is_unsent,created_at',
+            'reactions.user:id,name',
         ]);
 
         $this->refreshConversationLastMessage($groupChat);
@@ -658,8 +710,27 @@ class GroupChatController extends Controller
             ], 422);
         }
 
-        $message->reaction = $validated['reaction'] ?? null;
-        $message->save();
+        // Handle multiple reactions for group chats
+        $reactionValue = $validated['reaction'] ?? null;
+
+        if ($reactionValue) {
+            // Add or update user's reaction
+            $reaction = GroupMessageReaction::updateOrCreate(
+                [
+                    'group_message_id' => $message->id,
+                    'user_id' => $authUser->id,
+                ],
+                [
+                    'reaction' => $reactionValue,
+                ]
+            );
+        } else {
+            // Remove user's reaction
+            GroupMessageReaction::where('group_message_id', $message->id)
+                ->where('user_id', $authUser->id)
+                ->delete();
+        }
+
         $message->load([
             'sender:id,name',
             'replyTo:id,group_chat_id,body,reply_to_id,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type,reaction,pinned_at,pinned_by_id,edited_at,unsent_at,unsent_by_id,is_unsent,created_at',
@@ -904,6 +975,7 @@ class GroupChatController extends Controller
             'reply_preview' => $this->formatReplyPreview($message->replyTo),
             'attachment' => $this->formatAttachment($message),
             'reaction' => $message->reaction,
+            'reactions' => $message->getReactionsWithUsers(),
             'pinned_at' => $message->pinned_at?->toIso8601String(),
             'pinned_by_id' => $message->pinned_by_id,
             'is_pinned' => (bool) $message->pinned_at,
@@ -1209,10 +1281,14 @@ class GroupChatController extends Controller
             'processed_by' => [
                 'id' => $groupChat->approval_status === 'approved'
                     ? $groupChat->approver?->id
-                    : $groupChat->rejector?->id,
+                    : ($groupChat->approval_status === 'rejected'
+                        ? $groupChat->rejector?->id
+                        : null),
                 'name' => $groupChat->approval_status === 'approved'
                     ? ($groupChat->approver?->name ?? 'Admin')
-                    : ($groupChat->rejector?->name ?? 'Admin'),
+                    : ($groupChat->approval_status === 'rejected'
+                        ? ($groupChat->rejector?->name ?? 'Admin')
+                        : null),
             ],
             'members' => $groupChat->members
                 ->map(function ($member) {
