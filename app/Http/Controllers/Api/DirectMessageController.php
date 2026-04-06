@@ -8,6 +8,7 @@ use App\Events\DirectMessageSent;
 use App\Events\DirectMessageTyping;
 use App\Http\Controllers\Controller;
 use App\Models\DirectMessage;
+use App\Models\DirectMessageReaction;
 use App\Models\User;
 use App\Services\MessagesPageService;
 use Illuminate\Support\Carbon;
@@ -50,6 +51,7 @@ class DirectMessageController extends Controller
                     'reply_preview' => $this->formatReplyPreview($message->replyTo),
                     'attachment' => $this->formatAttachment($message),
                     'reaction' => $message->reaction,
+                    'reactions' => $message->getReactionsWithUsers(),
                     'pinned_at' => $message->pinned_at?->toIso8601String(),
                     'pinned_by_id' => $message->pinned_by_id,
                     'is_pinned' => (bool) $message->pinned_at,
@@ -361,9 +363,31 @@ class DirectMessageController extends Controller
         $authUser = $request->user();
         $this->authorizeMessageParticipant($authUser, $message);
 
-        $message->reaction = $validated['reaction'] ?? null;
-        $message->save();
-        $message->load('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type');
+        // Handle multiple reactions for direct messages
+        $reactionValue = $validated['reaction'] ?? null;
+        
+        if ($reactionValue) {
+            // Add or update user's reaction
+            DirectMessageReaction::updateOrCreate(
+                [
+                    'direct_message_id' => $message->id,
+                    'user_id' => $authUser->id,
+                ],
+                [
+                    'reaction' => $reactionValue,
+                ]
+            );
+        } else {
+            // Remove user's reaction
+            DirectMessageReaction::where('direct_message_id', $message->id)
+                ->where('user_id', $authUser->id)
+                ->delete();
+        }
+
+        $message->load([
+            'replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type',
+            'reactions.user:id,name',
+        ]);
 
         $payload = $this->formatMessage($message, $authUser, true);
 
@@ -585,7 +609,10 @@ class DirectMessageController extends Controller
         $clearedBeforeMessageId = $this->conversationClearMarkerByPartnerId((int) $authUser->id, $partnerId);
 
         return DirectMessage::query()
-            ->with('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type')
+            ->with([
+                'replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type',
+                'reactions.user:id,name',
+            ])
             ->where(function ($query) use ($authUser, $partnerId) {
                 $query->where(function ($query) use ($authUser, $partnerId) {
                     $query->where('sender_id', $authUser->id)
@@ -692,6 +719,7 @@ class DirectMessageController extends Controller
             'reply_preview' => $this->formatReplyPreview($message->replyTo),
             'attachment' => $this->formatAttachment($message),
             'reaction' => $message->reaction,
+            'reactions' => $message->getReactionsWithUsers(),
             'pinned_at' => $message->pinned_at?->toIso8601String(),
             'pinned_by_id' => $message->pinned_by_id,
             'is_pinned' => (bool) $message->pinned_at,

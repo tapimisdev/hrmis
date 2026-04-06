@@ -13,9 +13,10 @@ class MessagesController extends Controller
     ) {
     }
 
-    public function index(Request $request)
+    public function index(Request $request, ?string $conversationToken = null)
     {
-        $selectedConversationKey = $request->query('conversation');
+        $selectedConversationKey = $this->messagesPageService->conversationKeyFromToken($conversationToken)
+            ?? $request->query('conversation');
 
         if (!$selectedConversationKey && $request->filled('user')) {
             $selectedConversationKey = 'direct:' . (int) $request->query('user');
@@ -23,6 +24,16 @@ class MessagesController extends Controller
 
         $pageData = $this->messagesPageService->build($request->user(), $selectedConversationKey);
         $pageData['messageUserRole'] = 'admin';
+
+        if (!$conversationToken && !$request->filled('conversation') && !$request->filled('user')) {
+            $selectedConversationToken = $pageData['selectedConversationToken'] ?? null;
+
+            if ($selectedConversationToken) {
+                return redirect()->route('admin.messages', [
+                    'conversationToken' => $selectedConversationToken,
+                ]);
+            }
+        }
 
         return view('admin.pages.messages.index', $pageData);
     }

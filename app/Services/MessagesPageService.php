@@ -167,7 +167,7 @@ class MessagesPageService
                 'members.user:id,name',
             ])
             ->where('created_by_id', $authUser->id)
-            ->whereIn('approval_status', ['approved', 'rejected'])
+            ->whereIn('approval_status', ['pending', 'approved', 'rejected'])
             ->orderByRaw('COALESCE(approved_at, rejected_at, created_at) DESC')
             ->orderByDesc('id')
             ->get()
@@ -189,10 +189,14 @@ class MessagesPageService
                     'processed_by' => [
                         'id' => $groupChat->approval_status === 'approved'
                             ? $groupChat->approver?->id
-                            : $groupChat->rejector?->id,
+                            : ($groupChat->approval_status === 'rejected'
+                                ? $groupChat->rejector?->id
+                                : null),
                         'name' => $groupChat->approval_status === 'approved'
                             ? ($groupChat->approver?->name ?? 'Admin')
-                            : ($groupChat->rejector?->name ?? 'Admin'),
+                            : ($groupChat->approval_status === 'rejected'
+                                ? ($groupChat->rejector?->name ?? 'Admin')
+                                : null),
                     ],
                     'members' => $groupChat->members
                         ->map(function ($member) {

@@ -9,6 +9,8 @@ class GroupChat extends Model
 {
     use HasFactory;
 
+    public const MAX_PENDING_REQUESTS_PER_USER = 5;
+
     protected $fillable = [
         'name',
         'photo_path',

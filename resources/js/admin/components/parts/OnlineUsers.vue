@@ -33,9 +33,28 @@
             >
             <!-- Header -->
             <li class="px-4 py-3 border-bottom bg-body online-users-menu__header">
-                <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
-                    <h6 class="mb-0 fw-semibold text-uppercase">Online Users</h6>
-                    <small class="theme-muted">{{ onlineCount }} online</small>
+                <div class="online-users-menu__hero">
+                    <div class="online-users-menu__topline">
+                        <div class="online-users-menu__title-block">
+                            <span class="online-users-menu__eyebrow">Team Presence</span>
+                            <h6 class="mb-0 fw-semibold">Online Users</h6>
+                            <div class="online-users-menu__subline">
+                                <span class="online-users-menu__count-dot"></span>
+                                <span>{{ onlineCount }} online</span>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn btn-sm theme-button online-users-menu__messenger-btn"
+                            @click.stop="openMessagesPage"
+                        >
+                            <i class="fa-regular fa-paper-plane"></i>
+                            <span>Messenger</span>
+                        </button>
+                    </div>
+                    <p class="online-users-menu__description mb-0">
+                        See who is active right now and jump straight into a conversation.
+                    </p>
                 </div>
                 <div class="search-shell">
                     <i class="fa-solid fa-magnifying-glass search-shell__icon"></i>
@@ -228,6 +247,7 @@
                             >
                                 <div class="message-bubble-shell">
                                     <div
+                                        v-if="!message.is_unsent"
                                         class="message-actions"
                                         :class="{ 'is-open': activeReactionPickerId === message.id || activeMessageActionsId === message.id }"
                                     >
@@ -247,13 +267,16 @@
                                                 <button
                                                     v-if="message.is_mine && message.body"
                                                     type="button"
-                                                    class="message-action-menu__item"
+                                                    class="message-action-menu__item message-action-menu__item--primary"
                                                     @click.stop="editMessage(message)"
                                                 >
                                                     <span class="message-action-menu__icon">
                                                         <i class="fa-regular fa-pen-to-square"></i>
                                                     </span>
-                                                    <span>Edit</span>
+                                                    <span class="message-action-menu__content">
+                                                        <span class="message-action-menu__label">Edit</span>
+                                                        <small class="message-action-menu__hint">Edit message</small>
+                                                    </span>
                                                 </button>
                                                 <button
                                                     v-if="message.is_mine"
@@ -264,7 +287,10 @@
                                                     <span class="message-action-menu__icon">
                                                         <i class="fa-regular fa-trash-can"></i>
                                                     </span>
-                                                    <span>Unsend</span>
+                                                    <span class="message-action-menu__content">
+                                                        <span class="message-action-menu__label">Unsend</span>
+                                                        <small class="message-action-menu__hint">Remove for everyone</small>
+                                                    </span>
                                                 </button>
                                                 <button
                                                     type="button"
@@ -276,7 +302,12 @@
                                                     <span class="message-action-menu__icon">
                                                         <i :class="isMessagePinned(message.id) ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
                                                     </span>
-                                                    <span>{{ isMessagePinned(message.id) ? 'Unpin' : 'Pin' }}</span>
+                                                    <span class="message-action-menu__content">
+                                                        <span class="message-action-menu__label">{{ isMessagePinned(message.id) ? 'Unpin' : 'Pin' }}</span>
+                                                        <small class="message-action-menu__hint">
+                                                            {{ isMessagePinned(message.id) ? 'Remove from pinned' : 'Keep it easy to find' }}
+                                                        </small>
+                                                    </span>
                                                 </button>
                                             </div>
                                         </div>
@@ -319,12 +350,13 @@
                                             <i class="fa-regular fa-face-smile"></i>
                                         </button>
                                     </div>
+                                    <div class="message-bubble-stack">
                                     <div
                                         class="message-bubble"
                                         :class="message.is_mine ? 'message-bubble--mine' : 'message-bubble--theirs'"
                                     >
                                         <div
-                                            v-if="message.reply_to_id"
+                                            v-if="message.reply_to_id && !message.is_unsent"
                                             class="reply-preview reply-preview--linked"
                                             role="button"
                                             tabindex="0"
@@ -341,7 +373,7 @@
                                             </div>
                                         </div>
                                         <div
-                                            v-if="isMessagePinned(message.id)"
+                                            v-if="!message.is_unsent && isMessagePinned(message.id)"
                                             class="message-pin-chip"
                                             :class="message.is_mine ? 'message-pin-chip--mine' : 'message-pin-chip--theirs'"
                                         >
@@ -351,7 +383,7 @@
                                             </span>
                                         </div>
                                         <div
-                                            v-if="message.attachment"
+                                            v-if="message.attachment && !message.is_unsent"
                                             class="message-attachment"
                                             :class="message.attachment.type === 'image' ? 'message-attachment--image' : 'message-attachment--file'"
                                         >
@@ -409,7 +441,7 @@
                                             </div>
                                         </div>
                                         <div
-                                            v-if="message.body"
+                                            v-if="message.body && !message.is_unsent"
                                             class="message-bubble__body"
                                         >
                                             {{ message.body }}
@@ -420,9 +452,38 @@
                                         >
                                             Unsent Message
                                         </div>
+                                        <div
+                                            v-if="!message.is_unsent && message.reactions && message.reactions.length > 0"
+                                            class="message-reaction-badges message-reaction-badges--floating"
+                                            :class="
+                                                message.is_mine
+                                                    ? 'message-reaction-badges--mine'
+                                                    : 'message-reaction-badges--theirs'
+                                            "
+                                            :title="formatReactionsTooltip(message.reactions)"
+                                            @click="openReactionsModal(message.reactions)"
+                                            @keydown.enter="openReactionsModal(message.reactions)"
+                                            @keydown.space="openReactionsModal(message.reactions)"
+                                            role="button"
+                                            tabindex="0"
+                                        >
+                                            <span
+                                                v-for="emoji in getUniqueReactionEmojis(message.reactions).slice(0, 3)"
+                                                :key="emoji"
+                                                class="message-reaction-badge__glyph"
+                                            >
+                                                {{ emoji }}
+                                            </span>
+                                            <span
+                                                v-if="getUniqueReactionEmojis(message.reactions).length > 3"
+                                                class="message-reaction-count"
+                                            >
+                                                +{{ getUniqueReactionEmojis(message.reactions).length - 3 }}
+                                            </span>
+                                        </div>
                                         <span
-                                            v-if="getReactionMeta(message)"
-                                            class="message-reaction-badge message-reaction-badge--float"
+                                            v-else-if="!message.is_unsent && getReactionMeta(message)"
+                                            class="message-reaction-badge message-reaction-badge--floating"
                                             :class="message.is_mine ? 'message-reaction-badge--mine' : 'message-reaction-badge--theirs'"
                                             :style="{
                                                 color: getReactionMeta(message).color,
@@ -433,16 +494,47 @@
                                             <span class="message-reaction-badge__glyph">{{ getReactionMeta(message).glyph }}</span>
                                         </span>
                                         <div class="w-100">
-                                            <small>{{ formatMessageTime(message.created_at) }}</small>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <small
-                                                    v-if="message.is_mine"
-                                                    class="message-status"
-                                                    :class="message.read_at ? 'message-status--seen' : 'message-status--sent'"
+                                            <div class="message-bubble__time">
+                                                <span>{{ formatMessageTime(message.created_at) }}</span>
+                                                <span
+                                                    v-if="message.edited_at && !message.is_unsent"
+                                                    class="message-bubble__time-edit"
                                                 >
-                                                    {{ message.read_at ? `Seen at ${formatSeenAt(message.read_at)}` : 'Sent' }}
-                                                </small>
+                                                    · Edited
+                                                </span>
                                             </div>
+                                        </div>
+                                    </div>
+                                        <div
+                                            v-if="
+                                                message.is_mine &&
+                                                (shouldShowSeenReceipt(message) ||
+                                                    !message.read_at)
+                                            "
+                                            class="message-bubble__status"
+                                            :class="
+                                                shouldShowSeenReceipt(message)
+                                                    ? 'message-bubble__status--seen'
+                                                    : 'message-bubble__status--sent'
+                                            "
+                                        >
+                                            <template v-if="shouldShowSeenReceipt(message)">
+                                                <span
+                                                    class="message-bubble__seen-avatar"
+                                                    :title="formatSeenReceiptTooltip(message.read_at)"
+                                                    :aria-label="formatSeenReceiptTooltip(message.read_at)"
+                                                >
+                                                    <img
+                                                        v-if="getSeenReceiptAvatar()"
+                                                        :src="getSeenReceiptAvatar()"
+                                                        :alt="`${selectedUserState?.name || 'User'} profile`"
+                                                    />
+                                                    <span v-else>
+                                                        {{ selectedUserState?.name?.charAt(0)?.toUpperCase() || 'U' }}
+                                                    </span>
+                                                </span>
+                                            </template>
+                                            <template v-else>Sent</template>
                                         </div>
                                     </div>
                                 </div>
@@ -782,15 +874,202 @@
                 </button>
             </div>
         </div>
+        <ReactionModal
+            :is-open="showReactionsModal"
+            :reactions="reactionsModalData"
+            :current-user-id="userId"
+            :reaction-options="reactionOptions.map((reaction) => ({ ...reaction, emoji: reaction.glyph }))"
+            @close="closeReactionsModal"
+        />
+        <transition name="fade">
+            <div
+                v-if="messageActionModalVisible"
+                class="message-action-modal-backdrop"
+                @click.self="closeMessageActionModal"
+            >
+                <div
+                    class="message-action-modal"
+                    :class="{
+                        'message-action-modal--edit':
+                            messageActionModalMode === 'edit',
+                        'message-action-modal--confirm':
+                            messageActionModalMode === 'unsend',
+                    }"
+                    role="dialog"
+                    aria-modal="true"
+                    tabindex="-1"
+                    @keydown.esc.prevent="closeMessageActionModal"
+                >
+                    <div
+                        class="message-action-modal__header"
+                        :class="{
+                            'message-action-modal__header--edit':
+                                messageActionModalMode === 'edit',
+                            'message-action-modal__header--confirm':
+                                messageActionModalMode === 'unsend',
+                        }"
+                    >
+                        <div class="message-action-modal__headline">
+                            <div
+                                class="message-action-modal__badge"
+                                :class="
+                                    messageActionModalMode === 'edit'
+                                        ? 'message-action-modal__badge--edit'
+                                        : 'message-action-modal__badge--danger'
+                                "
+                            >
+                                <i
+                                    :class="
+                                        messageActionModalMode === 'edit'
+                                            ? 'fa-regular fa-pen-to-square'
+                                            : 'fa-regular fa-trash-can'
+                                    "
+                                ></i>
+                            </div>
+                            <div class="message-action-modal__eyebrow">
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Custom editor"
+                                        : "Confirmation"
+                                }}
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Edit this message"
+                                        : "Unsend this message?"
+                                }}
+                            </h3>
+                            <p class="message-action-modal__subtitle">
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Update the message text below and save when you are ready."
+                                        : "This removes the message for everyone in this conversation."
+                                }}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            class="message-action-modal__close"
+                            :disabled="messageActionModalSaving"
+                            @click="closeMessageActionModal"
+                            aria-label="Close dialog"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div
+                        class="message-action-modal__body"
+                        :class="{
+                            'message-action-modal__body--edit':
+                                messageActionModalMode === 'edit',
+                            'message-action-modal__body--confirm':
+                                messageActionModalMode === 'unsend',
+                        }"
+                    >
+                        <template v-if="messageActionModalMode === 'edit'">
+                            <textarea
+                                ref="messageActionModalInput"
+                                v-model="messageActionModalBody"
+                                class="message-action-modal__textarea"
+                                rows="6"
+                                :disabled="messageActionModalSaving"
+                                maxlength="2000"
+                                @keydown.ctrl.enter.prevent="submitMessageActionModal"
+                                @keydown.meta.enter.prevent="submitMessageActionModal"
+                            ></textarea>
+                            <div class="message-action-modal__meta">
+                                <small class="message-action-modal__count">
+                                    {{ messageActionModalBody.length }}/2000
+                                </small>
+                            </div>
+                        </template>
+
+                        <template v-else>
+                            <div
+                                class="message-action-modal__context"
+                                :class="{
+                                    'message-action-modal__context--confirm':
+                                        messageActionModalMode === 'unsend',
+                                }"
+                            >
+                                <div class="message-action-modal__context-label">
+                                    Message to unsend
+                                </div>
+                                <div class="message-action-modal__preview">
+                                    {{ messageActionModalMessagePreview }}
+                                </div>
+                            </div>
+                        </template>
+
+                        <p
+                            v-if="messageActionModalError"
+                            class="message-action-modal__error"
+                        >
+                            {{ messageActionModalError }}
+                        </p>
+                    </div>
+
+                    <div
+                        class="message-action-modal__footer"
+                        :class="{
+                            'message-action-modal__footer--edit':
+                                messageActionModalMode === 'edit',
+                            'message-action-modal__footer--confirm':
+                                messageActionModalMode === 'unsend',
+                        }"
+                    >
+                        <button
+                            type="button"
+                            class="message-action-modal__btn message-action-modal__btn--ghost"
+                            :disabled="messageActionModalSaving"
+                            @click="closeMessageActionModal"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            type="button"
+                            class="message-action-modal__btn"
+                            :class="
+                                messageActionModalMode === 'edit'
+                                    ? 'message-action-modal__btn--primary'
+                                    : 'message-action-modal__btn--danger'
+                            "
+                            :disabled="messageActionModalSaving || messageActionModalSubmitDisabled"
+                            @click="submitMessageActionModal"
+                        >
+                            <span
+                                v-if="messageActionModalSaving"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
+                            <span v-else>
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Save changes"
+                                        : "Unsend message"
+                                }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
         <div ref="imageGalleryContainer" class="d-none"></div>
     </div>
 </template>
 
 <script>
 import axios from "axios";
+import ReactionModal from "../../../employee/messages/components/ReactionModal.vue";
 
 export default {
     name: "OnlineUsers",
+    components: {
+        ReactionModal,
+    },
     props: {
         userId: {
             type: Number,
@@ -910,6 +1189,14 @@ export default {
             messageReactions: {},
             pinnedMessagesKey: null,
             dockStateKey: `message_dock_state_${localStorage.getItem("auth_user_id") || "guest"}`,
+            showReactionsModal: false,
+            reactionsModalData: [],
+            messageActionModalVisible: false,
+            messageActionModalMode: "edit",
+            messageActionModalMessage: null,
+            messageActionModalBody: "",
+            messageActionModalError: "",
+            messageActionModalSaving: false,
             isInitialized: false,
             pageLoadListener: null,
         };
@@ -1021,6 +1308,17 @@ export default {
                 (message) => !message.is_mine && !message.read_at,
             ).length;
         },
+        latestSeenReceiptMessageId() {
+            for (let index = this.conversationMessages.length - 1; index >= 0; index -= 1) {
+                const message = this.conversationMessages[index];
+
+                if (message?.is_mine && message?.read_at) {
+                    return Number(message.id);
+                }
+            }
+
+            return null;
+        },
         sortedPinnedMessages() {
             return [...this.pinnedMessages].sort((a, b) => {
                 const aPinnedAt = new Date(a?.pinned_at || a?.created_at || 0).getTime();
@@ -1032,6 +1330,18 @@ export default {
 
                 return (b?.message_id || 0) - (a?.message_id || 0);
             });
+        },
+        messageActionModalMessagePreview() {
+            return this.getMessageSnippet(this.messageActionModalMessage);
+        },
+        messageActionModalSubmitDisabled() {
+            if (this.messageActionModalMode === "edit") {
+                const trimmedBody = this.messageActionModalBody.trim();
+                const originalBody = (this.messageActionModalMessage?.body || "").trim();
+                return !trimmedBody || trimmedBody === originalBody;
+            }
+
+            return false;
         },
     },
     mounted() {
@@ -1938,15 +2248,46 @@ export default {
                 return;
             }
 
+            const existingMessage = this.conversationMessages.find(
+                (item) => Number(item.id) === Number(message.id),
+            );
+
+            const senderId = message?.sender_id ?? existingMessage?.sender_id ?? null;
+            const recipientId = message?.recipient_id ?? existingMessage?.recipient_id ?? null;
+            const isUnsent = Boolean(message?.is_unsent);
+
             const normalizedMessage = {
+                ...existingMessage,
                 ...message,
-                is_mine: Number(message.sender_id) === Number(this.userId),
+                sender_id: senderId,
+                recipient_id: recipientId,
+                body: isUnsent ? null : message?.body ?? existingMessage?.body ?? null,
+                attachment: isUnsent ? null : message?.attachment ?? existingMessage?.attachment ?? null,
+                edited_at: isUnsent ? null : message?.edited_at ?? existingMessage?.edited_at ?? null,
+                pinned_at: isUnsent ? null : message?.pinned_at ?? existingMessage?.pinned_at ?? null,
+                pinned_by_id: isUnsent ? null : message?.pinned_by_id ?? existingMessage?.pinned_by_id ?? null,
+                is_pinned: isUnsent ? false : Boolean(message?.is_pinned ?? existingMessage?.is_pinned),
+                reaction: isUnsent ? null : message?.reaction ?? existingMessage?.reaction ?? null,
+                reactions: isUnsent
+                    ? []
+                    : Array.isArray(message?.reactions)
+                        ? message.reactions
+                        : Array.isArray(existingMessage?.reactions)
+                            ? existingMessage.reactions
+                            : [],
+                is_mine: senderId !== null
+                    ? Number(senderId) === Number(this.userId)
+                    : Boolean(existingMessage?.is_mine),
             };
 
             this.upsertConversationMessage(normalizedMessage);
 
             if (Array.isArray(pinnedMessages)) {
                 this.pinnedMessages = pinnedMessages;
+            } else if (isUnsent) {
+                this.pinnedMessages = this.pinnedMessages.filter(
+                    (pin) => Number(pin?.message_id) !== Number(message.id),
+                );
             }
         },
         getPinStorageKey(userId = null) {
@@ -2102,26 +2443,100 @@ export default {
             }
 
             this.activeMessageActionsId = null;
-
-            const currentBody = message.body || "";
-            if (!currentBody.trim()) {
+            if (!(message.body || "").trim()) {
                 return;
             }
 
-            const nextBody = await this.promptForMessageEdit(currentBody);
-            if (nextBody === null) {
+            this.openMessageActionModal("edit", message);
+        },
+        async unsendMessage(message) {
+            if (!message?.id || !message.is_mine || message.is_unsent) {
                 return;
             }
 
-            const trimmedBody = nextBody.trim();
-            if (!trimmedBody || trimmedBody === currentBody.trim()) {
+            this.activeMessageActionsId = null;
+            this.openMessageActionModal("unsend", message);
+        },
+        openMessageActionModal(mode, message) {
+            if (!message?.id) {
                 return;
             }
+
+            this.messageActionModalMode = mode === "unsend" ? "unsend" : "edit";
+            this.messageActionModalMessage = message;
+            this.messageActionModalBody = message.body || "";
+            this.messageActionModalError = "";
+            this.messageActionModalSaving = false;
+            this.messageActionModalVisible = true;
+
+            this.$nextTick(() => {
+                const input = this.$refs.messageActionModalInput;
+                if (this.messageActionModalMode === "edit" && input?.focus) {
+                    input.focus();
+                    if (typeof input.setSelectionRange === "function") {
+                        const length = input.value?.length || 0;
+                        input.setSelectionRange(length, length);
+                    }
+                }
+            });
+        },
+        closeMessageActionModal(force = false) {
+            if (this.messageActionModalSaving && !force) {
+                return;
+            }
+
+            this.messageActionModalVisible = false;
+            this.messageActionModalMode = "edit";
+            this.messageActionModalMessage = null;
+            this.messageActionModalBody = "";
+            this.messageActionModalError = "";
+            this.messageActionModalSaving = false;
+        },
+        async submitMessageActionModal() {
+            if (!this.messageActionModalMessage?.id || this.messageActionModalSaving) {
+                return;
+            }
+
+            if (this.messageActionModalMode === "edit") {
+                const trimmedBody = this.messageActionModalBody.trim();
+                const originalBody = (this.messageActionModalMessage.body || "").trim();
+
+                if (!trimmedBody || trimmedBody === originalBody) {
+                    return;
+                }
+
+                this.messageActionModalSaving = true;
+                this.messageActionModalError = "";
+
+                try {
+                    const { data } = await axios.patch(
+                        `/api/direct-messages/${this.messageActionModalMessage.id}`,
+                        { body: trimmedBody },
+                        {
+                            headers: this.token
+                                ? { Authorization: `Bearer ${this.token}` }
+                                : {},
+                        },
+                    );
+
+                    this.applyServerMessageUpdate(data?.message ?? null, data?.pinned_messages ?? null);
+                    this.closeMessageActionModal(true);
+                } catch (error) {
+                    this.messageActionModalError =
+                        error?.response?.data?.message || "Unable to edit message.";
+                } finally {
+                    this.messageActionModalSaving = false;
+                }
+
+                return;
+            }
+
+            this.messageActionModalSaving = true;
+            this.messageActionModalError = "";
 
             try {
-                const { data } = await axios.patch(
-                    `/api/direct-messages/${message.id}`,
-                    { body: trimmedBody },
+                const { data } = await axios.delete(
+                    `/api/direct-messages/${this.messageActionModalMessage.id}`,
                     {
                         headers: this.token
                             ? { Authorization: `Bearer ${this.token}` }
@@ -2130,50 +2545,12 @@ export default {
                 );
 
                 this.applyServerMessageUpdate(data?.message ?? null, data?.pinned_messages ?? null);
+                this.closeMessageActionModal(true);
             } catch (error) {
-                const responseMessage = error?.response?.data?.message || "Unable to edit message.";
-                if (window.Swal) {
-                    window.Swal.fire({
-                        icon: "error",
-                        title: "Edit failed",
-                        text: responseMessage,
-                    });
-                } else {
-                    window.alert(responseMessage);
-                }
-            }
-        },
-        async unsendMessage(message) {
-            if (!message?.id || !message.is_mine || message.is_unsent) {
-                return;
-            }
-
-            this.activeMessageActionsId = null;
-
-            const confirmed = await this.confirmUnsendMessage();
-            if (!confirmed) {
-                return;
-            }
-
-            try {
-                const { data } = await axios.delete(`/api/direct-messages/${message.id}`, {
-                    headers: this.token
-                        ? { Authorization: `Bearer ${this.token}` }
-                        : {},
-                });
-
-                this.applyServerMessageUpdate(data?.message ?? null, data?.pinned_messages ?? null);
-            } catch (error) {
-                const responseMessage = error?.response?.data?.message || "Unable to unsend message.";
-                if (window.Swal) {
-                    window.Swal.fire({
-                        icon: "error",
-                        title: "Unsend failed",
-                        text: responseMessage,
-                    });
-                } else {
-                    window.alert(responseMessage);
-                }
+                this.messageActionModalError =
+                    error?.response?.data?.message || "Unable to unsend message.";
+            } finally {
+                this.messageActionModalSaving = false;
             }
         },
         getReactionMeta(message) {
@@ -2182,6 +2559,59 @@ export default {
                 return null;
             }
             return this.reactionOptions.find((reaction) => reaction.key === reactionKey) || null;
+        },
+        getReactionEmoji(reactionKey) {
+            return (
+                this.reactionOptions.find((reaction) => reaction.key === reactionKey)?.glyph || ""
+            );
+        },
+        getUniqueReactionEmojis(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return [];
+            }
+
+            const uniqueReactions = new Set();
+            reactions.forEach((reaction) => {
+                if (reaction?.reaction) {
+                    uniqueReactions.add(reaction.reaction);
+                }
+            });
+
+            return Array.from(uniqueReactions).map((reactionKey) => this.getReactionEmoji(reactionKey));
+        },
+        formatReactionsTooltip(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return "";
+            }
+
+            const grouped = {};
+            reactions.forEach((reaction) => {
+                if (reaction?.reaction && reaction?.user_name) {
+                    if (!grouped[reaction.reaction]) {
+                        grouped[reaction.reaction] = [];
+                    }
+                    grouped[reaction.reaction].push(reaction.user_name);
+                }
+            });
+
+            return Object.entries(grouped)
+                .map(([reactionKey, names]) => {
+                    const emoji = this.getReactionEmoji(reactionKey);
+                    return `${emoji}: ${names.join(", ")}`;
+                })
+                .join("\n");
+        },
+        openReactionsModal(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return;
+            }
+
+            this.reactionsModalData = reactions;
+            this.showReactionsModal = true;
+        },
+        closeReactionsModal() {
+            this.showReactionsModal = false;
+            this.reactionsModalData = [];
         },
         toggleReactionPicker(message) {
             if (message?.is_unsent) {
@@ -2244,7 +2674,11 @@ export default {
         async setReaction(message, reactionKey) {
             if (!message?.id || message.is_unsent) return;
 
-            const existingReaction = message.reaction ?? null;
+            const existingReaction = Array.isArray(message.reactions)
+                ? message.reactions.find(
+                      (reaction) => Number(reaction.user_id) === Number(this.userId || 0),
+                  )?.reaction || null
+                : message.reaction || null;
             const nextReaction = existingReaction === reactionKey ? null : reactionKey;
 
             try {
@@ -2871,6 +3305,22 @@ export default {
                 minute: "2-digit",
             }).format(date);
         },
+        formatSeenReceiptTooltip(value) {
+            if (!value) return "";
+
+            const seenAt = this.formatSeenAt(value);
+            return seenAt ? `Seen at ${seenAt}` : "";
+        },
+        getSeenReceiptAvatar() {
+            return this.selectedUserState?.profile || null;
+        },
+        shouldShowSeenReceipt(message) {
+            if (!message?.is_mine || !message?.read_at) {
+                return false;
+            }
+
+            return Number(message.id) === Number(this.latestSeenReceiptMessageId || 0);
+        },
         formatPinnedAt(timestamp) {
             if (!timestamp) return "";
 
@@ -2947,6 +3397,91 @@ img {
     top: 0;
     z-index: 99999;
     background: var(--bs-body-bg);
+    backdrop-filter: blur(12px);
+}
+
+.online-users-menu__hero {
+    margin-bottom: 0.9rem;
+    padding: 1rem 1rem 0.95rem;
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at top left, rgba(var(--bs-primary-rgb), 0.16), transparent 58%),
+        linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-primary-rgb), 0.02));
+}
+
+.online-users-menu__topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.65rem;
+}
+
+.online-users-menu__title-block {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.online-users-menu__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0.45rem;
+    color: rgba(var(--bs-primary-rgb), 0.9);
+    font-size: 0.69rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.online-users-menu__title-block h6 {
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+}
+
+.online-users-menu__subline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.08);
+    color: #15803d;
+    font-size: 0.79rem;
+    font-weight: 600;
+}
+
+.online-users-menu__count-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.14);
+    flex: 0 0 auto;
+}
+
+.online-users-menu__messenger-btn {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+.online-users-menu__description {
+    color: var(--bs-secondary-color);
+    font-size: 0.82rem;
+    line-height: 1.5;
 }
 
 .online-users-list {
@@ -2961,7 +3496,8 @@ img {
     border: 1px solid var(--bs-border-color);
     border-radius: 12px;
     background: var(--bs-secondary-bg);
-    padding: 0.2rem 0.65rem;
+    min-height: 2.5rem;
+    padding: 0 0.7rem;
     transition:
         border-color 0.15s ease,
         box-shadow 0.15s ease,
@@ -2976,7 +3512,7 @@ img {
 
 .search-shell__icon {
     color: var(--bs-secondary-color);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     margin-right: 0.55rem;
     flex-shrink: 0;
 }
@@ -2986,9 +3522,14 @@ img {
     box-shadow: none !important;
     background: transparent !important;
     color: var(--bs-body-color);
+    min-height: 2.1rem;
+    padding-top: 0;
+    padding-bottom: 0;
     padding-left: 0;
     padding-right: 0;
     min-width: 0;
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
 }
 
 .search-shell__input::placeholder {
@@ -3371,6 +3912,11 @@ img {
 .message-row {
     display: flex;
     width: 100%;
+    margin-bottom: 0.85rem;
+}
+
+.message-row:last-child {
+    margin-bottom: 0;
 }
 
 .message-row--theirs {
@@ -3388,12 +3934,24 @@ img {
     max-width: 100%;
 }
 
+.message-bubble-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
+    max-width: 100%;
+}
+
 .message-row--theirs .message-bubble-shell {
     flex-direction: row-reverse;
 }
 
 .message-row--mine .message-bubble-shell {
     flex-direction: row;
+}
+
+.message-row--theirs .message-bubble-stack {
+    align-items: flex-start;
 }
 
 .message-actions {
@@ -3432,14 +3990,15 @@ img {
     right: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    min-width: 158px;
-    padding: 8px;
-    border: 0;
-    border-radius: 18px;
-    background: rgba(33, 31, 39, 0.98);
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+    gap: 8px;
+    min-width: 180px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    background: rgba(36, 42, 51, 0.98);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
     z-index: 120;
+    backdrop-filter: blur(10px);
 }
 
 .message-action-menu::after {
@@ -3449,7 +4008,7 @@ img {
     bottom: -7px;
     width: 14px;
     height: 14px;
-    background: rgba(33, 31, 39, 0.98);
+    background: rgba(36, 42, 51, 0.98);
     transform: translateX(-50%) rotate(45deg);
     border-radius: 2px;
     z-index: -1;
@@ -3524,24 +4083,27 @@ img {
 
 .message-action-menu__item {
     width: 100%;
-    min-height: 2.2rem;
+    min-height: 3.25rem;
     border: 0;
-    border-radius: 10px;
-    background: transparent;
-    color: #e7e7ea;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #f3f4f6;
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 10px;
-    padding: 0 0.7rem;
-    font-size: 0.95rem;
+    gap: 12px;
+    padding: 0.72rem 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
     white-space: nowrap;
     text-align: left;
+    transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .message-action-menu__item:hover {
+    transform: translateY(-1px);
     background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
 }
 
 .message-action-menu__item.is-active {
@@ -3549,31 +4111,314 @@ img {
     color: #fff;
 }
 
-.message-action-menu__item--danger:hover {
-    background: rgba(255, 82, 113, 0.16);
+.message-action-menu__item--primary {
+    background: linear-gradient(180deg, #3563f0 0%, #2d55da 100%);
     color: #fff;
 }
 
+.message-action-menu__item--primary:hover {
+    background: linear-gradient(180deg, #3d6cfa 0%, #315ce7 100%);
+    color: #fff;
+}
+
+.message-action-menu__item--danger {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.message-action-menu__item--danger:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.message-action-menu__item:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
 .message-action-menu__icon {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 22px;
+    flex: 0 0 24px;
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: #f5f5f7;
 }
 
 .message-action-menu__icon i {
-    font-size: 0.74rem;
+    font-size: 0.78rem;
+}
+
+.message-action-menu__item--primary .message-action-menu__icon {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .message-action-menu__item--danger .message-action-menu__icon {
-    background: rgba(255, 82, 113, 0.18);
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
+}
+
+.message-action-menu__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-width: 0;
+}
+
+.message-action-menu__label {
+    line-height: 1.1;
+}
+
+.message-action-menu__hint {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.15;
+}
+
+.message-action-menu__item--primary .message-action-menu__hint {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.message-action-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.54);
+    backdrop-filter: blur(6px);
+}
+
+.message-action-modal {
+    width: min(100%, 520px);
+    max-height: min(100vh - 40px, 680px);
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgb(30, 36, 45), rgb(23, 28, 36));
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.36);
+    color: #fff;
+}
+
+.message-action-modal--edit,
+.message-action-modal--confirm {
+    width: min(100%, 780px);
+    border-radius: 28px;
+    border-color: rgba(118, 137, 175, 0.18);
+    background:
+        radial-gradient(circle at top right, rgba(73, 102, 173, 0.14), transparent 34%),
+        linear-gradient(180deg, rgb(46, 52, 62), rgb(37, 42, 50));
+    box-shadow: 0 28px 60px rgba(8, 15, 28, 0.42);
+}
+
+.message-action-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 24px 18px;
+}
+
+.message-action-modal__header--edit,
+.message-action-modal__header--confirm {
+    padding: 26px 26px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.message-action-modal__headline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message-action-modal__badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.message-action-modal__badge--edit {
+    background: rgba(59, 130, 246, 0.18);
+    color: #8ec5ff;
+}
+
+.message-action-modal__badge--danger {
+    background: rgba(239, 68, 68, 0.18);
+    color: #ff9b9b;
+}
+
+.message-action-modal__eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.message-action-modal__title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.message-action-modal__subtitle {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.55;
+}
+
+.message-action-modal__close {
+    width: 46px;
+    height: 46px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 46px;
+    font-size: 1.15rem;
+}
+
+.message-action-modal__close:disabled {
+    opacity: 0.55;
+}
+
+.message-action-modal__body {
+    padding: 0 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.message-action-modal__body--edit,
+.message-action-modal__body--confirm {
+    padding: 24px 26px;
+}
+
+.message-action-modal__textarea {
+    min-height: 212px;
+    resize: vertical;
+}
+
+.message-action-modal__textarea,
+.message-action-modal__preview {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    padding: 14px 16px;
+    outline: none;
+}
+
+.message-action-modal__textarea:focus {
+    border-color: rgba(52, 102, 230, 0.88);
+    box-shadow:
+        0 0 0 3px rgba(45, 85, 218, 0.7),
+        0 0 0 7px rgba(45, 85, 218, 0.18);
+}
+
+.message-action-modal__meta {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.message-action-modal__count,
+.message-action-modal__context-label {
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.78rem;
+}
+
+.message-action-modal__context {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message-action-modal__context--confirm {
+    padding: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.message-action-modal__preview {
+    line-height: 1.55;
+    word-break: break-word;
+    min-height: 82px;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+}
+
+.message-action-modal__error {
+    margin: 0;
+    color: #ffb4b4;
+    font-size: 0.88rem;
+}
+
+.message-action-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 0 24px 24px;
+}
+
+.message-action-modal__footer--edit,
+.message-action-modal__footer--confirm {
+    padding: 20px 26px 28px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.message-action-modal__btn {
+    min-width: 182px;
+    min-height: 54px;
+    border: 0;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 24px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.message-action-modal__btn--ghost {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.message-action-modal__btn--primary {
+    background: linear-gradient(180deg, #3563f0 0%, #2d55da 100%);
+    color: #fff;
+}
+
+.message-action-modal__btn--danger {
+    background: linear-gradient(180deg, #e25264 0%, #cf3e52 100%);
+    color: #fff;
+}
+
+.message-action-modal__btn:disabled {
+    opacity: 0.6;
 }
 
 .reaction-picker {
@@ -3629,27 +4474,62 @@ img {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    min-width: 1.6rem;
+    min-height: 1.6rem;
+    padding: 0.2rem 0.45rem;
     border-radius: 999px;
-    background: rgba(var(--bs-body-color-rgb), 0.06);
+    background: rgba(255, 255, 255, 0.12);
     font-size: 0.95rem;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 
-.message-reaction-badge--float {
+.message-reaction-badges {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.3rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.message-reaction-badge--floating,
+.message-reaction-badges--floating {
     position: absolute;
-    bottom: 0.35rem;
-    z-index: 2;
+    bottom: -0.9rem;
+    z-index: 4;
     box-shadow: 0 8px 14px rgba(0, 0, 0, 0.18);
     animation: reactionPop 0.22s ease-out;
 }
 
 .message-reaction-badge--theirs {
-    right: 0.35rem;
+    right: -0.5rem;
 }
 
 .message-reaction-badge--mine {
-    left: 0.35rem;
+    left: -0.5rem;
+}
+
+.message-reaction-badges--mine {
+    left: -0.5rem;
+}
+
+.message-reaction-badges--theirs {
+    right: -0.5rem;
+}
+
+.message-reaction-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.message-reaction-badges:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: scale(1.05);
 }
 
 .message-row--mine .message-action-button,
@@ -3798,21 +4678,62 @@ img {
     opacity: 0.78;
 }
 
-.message-status {
-    font-size: 11px;
-    letter-spacing: 0.02em;
+.message-bubble__time {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    color: rgba(var(--bs-body-color-rgb), 0.72);
 }
 
-.message-status--sent {
-    color: rgba(var(--bs-body-color), 0.55);
+.message-bubble__time-edit {
+    color: rgba(var(--bs-body-color-rgb), 0.74);
 }
 
-.message-status--seen {
-    font-style: italic;
-    font-size: 10px;
-    position: relative;
-    top: 0.5px;
-    color: rgba(var(--bs-body-color), 1);
+.message-bubble__status {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    text-align: right;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 4px;
+    width: 100%;
+    color: rgba(var(--bs-body-color-rgb), 0.52);
+}
+
+.message-bubble__status--sent {
+    color: rgba(var(--bs-body-color-rgb), 0.52);
+}
+
+.message-bubble__status--seen {
+    color: rgba(149, 255, 200, 0.92);
+}
+
+.message-bubble__seen-avatar {
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 999px;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--bs-body-color);
+    font-size: 0.62rem;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+}
+
+.message-bubble__seen-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    object-fit: cover;
 }
 
 .message-attachment {
@@ -4417,7 +5338,7 @@ img {
 }
 
 .dropdown-menu {
-    max-height: 400px;
+    max-height: 600px;
     overflow-y: auto;
     background: var(--bs-body-bg);
     color: var(--bs-body-color);
@@ -4434,6 +5355,20 @@ img {
 }
 
 @media (max-width: 576px) {
+    .online-users-menu {
+        min-width: min(360px, calc(100vw - 1rem));
+    }
+
+    .online-users-menu__header {
+        padding-left: 0.9rem !important;
+        padding-right: 0.9rem !important;
+    }
+
+    .online-users-menu__hero {
+        padding: 0.9rem;
+        border-radius: 16px;
+    }
+
     .message-dock {
         right: 0.5rem;
         bottom: 0.5rem;
