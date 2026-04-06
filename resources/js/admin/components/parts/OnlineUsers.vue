@@ -190,7 +190,7 @@
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <button class="btn btn-sm theme-button" @click.stop="openMessagesPage">
-                                Open Messages
+                                Open Messenger
                             </button>
                             <button class="btn btn-sm theme-button" @click="closeMessageBox">
                                 Close
@@ -249,67 +249,23 @@
                                     <div
                                         v-if="!message.is_unsent"
                                         class="message-actions"
-                                        :class="{ 'is-open': activeReactionPickerId === message.id || activeMessageActionsId === message.id }"
+                                        :class="{
+                                            'is-open': activeReactionPickerId === message.id || activeMessageActionsId === message.id,
+                                            'is-hidden-for-reaction': activeReactionPickerId === message.id,
+                                        }"
                                     >
                                         <div v-if="message.is_mine && !message.is_unsent" class="message-action-group">
                                             <button
                                                 type="button"
                                                 class="message-action-button message-action-button--more"
                                                 :class="{ 'is-active': activeMessageActionsId === message.id }"
-                                                @click.stop="toggleMessageActions(message)"
+                                                @click.stop="toggleMessageActions(message, $event)"
                                                 title="More actions"
                                                 :aria-label="`More actions for ${message.body || message.attachment?.name || 'message'}`"
                                                 :aria-expanded="activeMessageActionsId === message.id"
                                             >
                                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                                             </button>
-                                            <div v-if="activeMessageActionsId === message.id" class="message-action-menu">
-                                                <button
-                                                    v-if="message.is_mine && message.body"
-                                                    type="button"
-                                                    class="message-action-menu__item message-action-menu__item--primary"
-                                                    @click.stop="editMessage(message)"
-                                                >
-                                                    <span class="message-action-menu__icon">
-                                                        <i class="fa-regular fa-pen-to-square"></i>
-                                                    </span>
-                                                    <span class="message-action-menu__content">
-                                                        <span class="message-action-menu__label">Edit</span>
-                                                        <small class="message-action-menu__hint">Edit message</small>
-                                                    </span>
-                                                </button>
-                                                <button
-                                                    v-if="message.is_mine"
-                                                    type="button"
-                                                    class="message-action-menu__item message-action-menu__item--danger"
-                                                    @click.stop="unsendMessage(message)"
-                                                >
-                                                    <span class="message-action-menu__icon">
-                                                        <i class="fa-regular fa-trash-can"></i>
-                                                    </span>
-                                                    <span class="message-action-menu__content">
-                                                        <span class="message-action-menu__label">Unsend</span>
-                                                        <small class="message-action-menu__hint">Remove for everyone</small>
-                                                    </span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    class="message-action-menu__item"
-                                                    :class="{ 'is-active': isMessagePinned(message.id) }"
-                                                    @click.stop="togglePinMessage(message)"
-                                                    :disabled="!isMessagePinned(message.id) && pinnedMessages.length >= pinnedMessageLimit"
-                                                >
-                                                    <span class="message-action-menu__icon">
-                                                        <i :class="isMessagePinned(message.id) ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
-                                                    </span>
-                                                    <span class="message-action-menu__content">
-                                                        <span class="message-action-menu__label">{{ isMessagePinned(message.id) ? 'Unpin' : 'Pin' }}</span>
-                                                        <small class="message-action-menu__hint">
-                                                            {{ isMessagePinned(message.id) ? 'Remove from pinned' : 'Keep it easy to find' }}
-                                                        </small>
-                                                    </span>
-                                                </button>
-                                            </div>
                                         </div>
                                         <button
                                             v-else-if="!message.is_unsent"
@@ -818,6 +774,67 @@
                             </div>
                         </div>
                     </transition>
+                    <teleport to="body">
+                        <transition name="fade">
+                            <div
+                                v-if="activeMessageActionTargetMessage"
+                                class="message-action-menu-layer"
+                                @click="activeMessageActionsId = null"
+                            >
+                                <div
+                                    class="message-action-menu message-action-menu--floating"
+                                    :style="messageActionMenuStyle"
+                                    @click.stop
+                                >
+                                    <button
+                                        v-if="activeMessageActionTargetMessage.is_mine && activeMessageActionTargetMessage.body"
+                                        type="button"
+                                        class="message-action-menu__item message-action-menu__item--primary"
+                                        @click.stop="editMessage(activeMessageActionTargetMessage)"
+                                    >
+                                        <span class="message-action-menu__icon">
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </span>
+                                        <span class="message-action-menu__content">
+                                            <span class="message-action-menu__label">Edit</span>
+                                            <small class="message-action-menu__hint">Edit message</small>
+                                        </span>
+                                    </button>
+                                    <button
+                                        v-if="activeMessageActionTargetMessage.is_mine"
+                                        type="button"
+                                        class="message-action-menu__item message-action-menu__item--danger"
+                                        @click.stop="unsendMessage(activeMessageActionTargetMessage)"
+                                    >
+                                        <span class="message-action-menu__icon">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </span>
+                                        <span class="message-action-menu__content">
+                                            <span class="message-action-menu__label">Unsend</span>
+                                            <small class="message-action-menu__hint">Remove for everyone</small>
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="message-action-menu__item"
+                                        :class="{ 'is-active': isMessagePinned(activeMessageActionTargetMessage.id) }"
+                                        @click.stop="togglePinMessage(activeMessageActionTargetMessage)"
+                                        :disabled="!isMessagePinned(activeMessageActionTargetMessage.id) && pinnedMessages.length >= pinnedMessageLimit"
+                                    >
+                                        <span class="message-action-menu__icon">
+                                            <i :class="isMessagePinned(activeMessageActionTargetMessage.id) ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
+                                        </span>
+                                        <span class="message-action-menu__content">
+                                            <span class="message-action-menu__label">{{ isMessagePinned(activeMessageActionTargetMessage.id) ? 'Unpin' : 'Pin' }}</span>
+                                            <small class="message-action-menu__hint">
+                                                {{ isMessagePinned(activeMessageActionTargetMessage.id) ? 'Remove from pinned' : 'Keep it easy to find' }}
+                                            </small>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </transition>
+                    </teleport>
                 </div>
             </transition>
 
@@ -1185,6 +1202,10 @@ export default {
             pinLimitPopupTimer: null,
             activeReactionPickerId: null,
             activeMessageActionsId: null,
+            messageActionMenuPosition: {
+                top: 0,
+                left: 0,
+            },
             messageReactionsKey: `direct_message_reactions_${localStorage.getItem("auth_user_id") || "guest"}`,
             messageReactions: {},
             pinnedMessagesKey: null,
@@ -1298,6 +1319,23 @@ export default {
                     (message) => message.id === this.activeReactionPickerId,
                 ) || null
             );
+        },
+        activeMessageActionTargetMessage() {
+            if (!this.activeMessageActionsId) {
+                return null;
+            }
+
+            return (
+                this.conversationMessages.find(
+                    (message) => message.id === this.activeMessageActionsId,
+                ) || null
+            );
+        },
+        messageActionMenuStyle() {
+            return {
+                top: `${this.messageActionMenuPosition.top}px`,
+                left: `${this.messageActionMenuPosition.left}px`,
+            };
         },
         unreadMessageCount() {
             if (this.messagePanelOpen && this.selectedUserState) {
@@ -2335,13 +2373,40 @@ export default {
 
             this.showPinnedMessagesPanel = !this.showPinnedMessagesPanel;
         },
-        toggleMessageActions(message) {
+        toggleMessageActions(message, event = null) {
             if (!message?.id || message.is_unsent) {
                 return;
             }
 
             this.activeReactionPickerId = null;
-            this.activeMessageActionsId = this.activeMessageActionsId === message.id ? null : message.id;
+
+            if (this.activeMessageActionsId === message.id) {
+                this.activeMessageActionsId = null;
+                return;
+            }
+
+            this.positionMessageActionMenu(event?.currentTarget || event?.target);
+            this.activeMessageActionsId = message.id;
+        },
+        positionMessageActionMenu(triggerElement) {
+            if (!triggerElement?.getBoundingClientRect) {
+                return;
+            }
+
+            const rect = triggerElement.getBoundingClientRect();
+            const menuWidth = 200;
+            const sidePadding = 16;
+            const minLeft = sidePadding + menuWidth / 2;
+            const maxLeft = Math.max(
+                minLeft,
+                window.innerWidth - sidePadding - menuWidth / 2,
+            );
+            const centeredLeft = rect.left + rect.width / 2;
+
+            this.messageActionMenuPosition = {
+                top: Math.max(12, rect.top - 10),
+                left: Math.min(maxLeft, Math.max(minLeft, centeredLeft)),
+            };
         },
         getMessageSnippet(message) {
             if (!message) {
@@ -3978,10 +4043,23 @@ img {
     pointer-events: auto;
 }
 
+.message-actions.is-hidden-for-reaction {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .message-action-group {
     position: relative;
     display: inline-flex;
     align-items: center;
+}
+
+.message-action-menu-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    pointer-events: auto;
 }
 
 .message-action-menu {
@@ -3999,6 +4077,16 @@ img {
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
     z-index: 120;
     backdrop-filter: blur(10px);
+}
+
+.message-action-menu--floating {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, calc(-100% - 8px));
+    z-index: 2501;
 }
 
 .message-action-menu::after {
@@ -4443,6 +4531,7 @@ img {
 
 .reaction-picker--centered {
     min-width: min(92%, 18rem);
+    background: rgb(47, 53, 61);
 }
 
 .reaction-picker__btn {
@@ -4537,6 +4626,11 @@ img {
     background: rgba(255, 255, 255, 0.16);
     color: var(--bs-white);
     border-color: rgba(255, 255, 255, 0.18);
+}
+
+.message-row--mine .reaction-picker--centered {
+    background: rgba(32, 37, 43, 0.94);
+    border-color: rgba(255, 255, 255, 0.24);
 }
 
 .message-row--mine .message-action-button:hover,

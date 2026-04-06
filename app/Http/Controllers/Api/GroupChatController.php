@@ -38,6 +38,7 @@ class GroupChatController extends Controller
 
     protected array $groupMemberNameCache = [];
     protected array $groupRecipientIdCache = [];
+    protected array $groupMemberProfileCache = [];
 
     public function __construct(
         protected MessagesPageService $messagesPageService,
@@ -249,7 +250,8 @@ class GroupChatController extends Controller
                 'name' => $authUser->name,
                 'nickname' => null,
                 'display_name' => $authUser->name,
-                'profile' => null,
+                'profile' => $this->defaultMemberAvatarUrl($authUser->name),
+                'avatar' => $this->defaultMemberAvatarUrl($authUser->name),
                 'joined_at' => null,
                 'last_read_at' => $readAt->toIso8601String(),
                 'added_by_id' => null,
@@ -485,6 +487,65 @@ class GroupChatController extends Controller
         ]);
     }
 
+    public function removeMember(Request $request, GroupChat $groupChat, int $userId)
+    {
+        $authUser = $request->user();
+        $this->authorizeMember($authUser->id, $groupChat, true);
+
+        abort_unless((int) $groupChat->created_by_id === (int) $authUser->id, 403);
+
+        $normalizedUserId = (int) $userId;
+
+        if ($normalizedUserId === (int) $groupChat->created_by_id) {
+            return response()->json([
+                'message' => 'The group owner cannot be removed.',
+            ], 422);
+        }
+
+        $member = GroupChatMember::query()
+            ->with('user:id,name')
+            ->where('group_chat_id', $groupChat->id)
+            ->where('user_id', $normalizedUserId)
+            ->first();
+
+        if (!$member) {
+            return response()->json([
+                'message' => 'Member not found in this group.',
+            ], 404);
+        }
+
+        $actorName = $this->groupMemberDisplayName((int) $groupChat->id, (int) $authUser->id, $authUser->name);
+        $removedMemberName = $this->groupMemberDisplayName((int) $groupChat->id, (int) $member->user_id, $member->user?->name ?? 'User');
+
+        GroupChatMember::query()
+            ->where('group_chat_id', $groupChat->id)
+            ->where('user_id', $normalizedUserId)
+            ->delete();
+
+        $groupChat = $groupChat->fresh();
+        $systemMessage = $this->createSystemMessage(
+            $groupChat,
+            (int) $authUser->id,
+            $actorName . ' removed ' . $removedMemberName
+        );
+        $remainingRecipientIds = $this->groupRecipientIds($groupChat);
+        $conversation = $this->formatConversation($groupChat->fresh()->loadCount('members'));
+
+        event(new GroupChatUpdated([
+            'action' => 'member_removed',
+            'conversation' => $conversation,
+            'removed_user_id' => $normalizedUserId,
+        ], array_merge($remainingRecipientIds, [$normalizedUserId])));
+
+        return response()->json([
+            'message' => 'Member removed successfully.',
+            'removed_user_id' => $normalizedUserId,
+            'conversation' => $conversation,
+            'members' => $this->formatConversationMembers($groupChat),
+            'system_message' => $systemMessage,
+        ]);
+    }
+
     public function updateSettings(Request $request, GroupChat $groupChat)
     {
         $authUser = $request->user();
@@ -493,11 +554,16 @@ class GroupChatController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'nickname' => ['nullable', 'string', 'max:120'],
+            'member_nicknames' => ['nullable', 'array'],
+            'member_nicknames.*' => ['nullable', 'string', 'max:120'],
             'photo' => ['nullable', 'image', 'max:5120'],
         ]);
 
         $photoChanged = $request->hasFile('photo');
-        $groupChat->name = trim((string) $validated['name']);
+        $previousGroupName = trim((string) ($groupChat->name ?? ''));
+        $nextGroupName = trim((string) $validated['name']);
+        $nameChanged = $previousGroupName !== $nextGroupName;
+        $groupChat->name = $nextGroupName;
 
         if ($photoChanged) {
             if ($groupChat->photo_path) {
@@ -509,26 +575,99 @@ class GroupChatController extends Controller
 
         $groupChat->save();
 
-        GroupChatMember::query()
-            ->where('group_chat_id', $groupChat->id)
-            ->where('user_id', $authUser->id)
-            ->update([
-                'nickname' => filled($validated['nickname'] ?? null)
+        $memberNicknames = collect($validated['member_nicknames'] ?? [])
+            ->mapWithKeys(function ($nickname, $userId) {
+                return [
+                    (int) $userId => filled($nickname)
+                        ? trim((string) $nickname)
+                        : null,
+                ];
+            });
+
+        if ($memberNicknames->isEmpty()) {
+            $memberNicknames = collect([
+                (int) $authUser->id => filled($validated['nickname'] ?? null)
                     ? trim((string) $validated['nickname'])
                     : null,
-                'updated_at' => now(),
             ]);
+        }
+
+        $existingMembers = GroupChatMember::query()
+            ->with('user:id,name')
+            ->where('group_chat_id', $groupChat->id)
+            ->get()
+            ->keyBy(fn (GroupChatMember $member) => (int) $member->user_id);
+        $groupMemberIds = $existingMembers
+            ->keys()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $invalidUserIds = $memberNicknames
+            ->keys()
+            ->filter(fn ($userId) => !in_array((int) $userId, $groupMemberIds, true))
+            ->values();
+
+        if ($invalidUserIds->isNotEmpty()) {
+            abort(422, 'One or more group member nicknames are invalid.');
+        }
+
+        $nicknameChanges = [];
+
+        foreach ($memberNicknames as $userId => $nickname) {
+            $memberRecord = $existingMembers->get((int) $userId);
+            $previousNickname = filled($memberRecord?->nickname)
+                ? trim((string) $memberRecord->nickname)
+                : null;
+            $normalizedNickname = filled($nickname) ? trim((string) $nickname) : null;
+
+            if ($previousNickname === $normalizedNickname) {
+                continue;
+            }
+
+            GroupChatMember::query()
+                ->where('group_chat_id', $groupChat->id)
+                ->where('user_id', (int) $userId)
+                ->update([
+                    'nickname' => $normalizedNickname,
+                    'updated_at' => now(),
+                ]);
+
+            $nicknameChanges[] = [
+                'user_id' => (int) $userId,
+                'name' => $memberRecord?->user?->name ?? 'User',
+                'nickname' => $normalizedNickname,
+            ];
+        }
 
         $groupChat = $groupChat->fresh();
-        $systemMessage = null;
+        unset($this->groupMemberNameCache[(int) $groupChat->id]);
+        $systemMessages = collect();
+        $actorName = $this->groupMemberDisplayName((int) $groupChat->id, (int) $authUser->id, $authUser->name);
+
+        if ($nameChanged) {
+            $systemMessages->push($this->createSystemMessage(
+                $groupChat,
+                (int) $authUser->id,
+                $previousGroupName . ' was renamed to ' . $nextGroupName
+            ));
+        }
 
         if ($photoChanged) {
-            $actorName = $this->groupMemberDisplayName((int) $groupChat->id, (int) $authUser->id, $authUser->name);
-            $systemMessage = $this->createSystemMessage(
+            $systemMessages->push($this->createSystemMessage(
                 $groupChat,
                 (int) $authUser->id,
                 $actorName . ' changed the group photo'
-            );
+            ));
+        }
+
+        foreach ($nicknameChanges as $change) {
+            $systemMessages->push($this->createSystemMessage(
+                $groupChat,
+                (int) $authUser->id,
+                filled($change['nickname'])
+                    ? $actorName . ' set nickname for ' . $change['name'] . ' to ' . $change['nickname']
+                    : $actorName . ' cleared nickname for ' . $change['name']
+            ));
         }
 
         $conversation = $this->formatConversation($groupChat->fresh()->loadCount('members'));
@@ -543,7 +682,8 @@ class GroupChatController extends Controller
             'message' => 'Group info updated successfully.',
             'conversation' => $conversation,
             'members' => $this->formatConversationMembers($groupChat),
-            'system_message' => $systemMessage,
+            'system_message' => $systemMessages->last(),
+            'system_messages' => $systemMessages->values()->all(),
         ]);
     }
 
@@ -930,6 +1070,16 @@ class GroupChatController extends Controller
             ? $groupChat->members->pluck('user_id')
             : $groupChat->members()->pluck('user_id');
         $memberCount = (int) ($groupChat->members_count ?? $memberIds->count());
+        $ownerMember = GroupChatMember::query()
+            ->with('user:id,name')
+            ->where('group_chat_id', $groupChat->id)
+            ->where('user_id', (int) ($groupChat->created_by_id ?? 0))
+            ->first();
+        $ownerName = $groupChat->creator?->name ?? $ownerMember?->user?->name ?? 'User';
+        $ownerNickname = filled($ownerMember?->nickname)
+            ? trim((string) $ownerMember->nickname)
+            : null;
+        $ownerDisplayName = $ownerNickname ?: $ownerName;
 
         return [
             'id' => (int) $groupChat->id,
@@ -954,6 +1104,16 @@ class GroupChatController extends Controller
                 ->map(fn ($id) => (int) $id)
                 ->values()
                 ->all(),
+            'owner' => [
+                'id' => (int) ($groupChat->created_by_id ?? 0),
+                'name' => $ownerName,
+                'nickname' => $ownerNickname,
+                'display_name' => $ownerDisplayName,
+                'profile' => $this->resolveMemberProfileUrl(
+                    (int) ($groupChat->created_by_id ?? 0),
+                    $ownerDisplayName,
+                ),
+            ],
             'members' => $this->formatConversationMembers($groupChat),
             'is_active' => false,
             'active_label' => $memberCount . ' members',
@@ -1132,12 +1292,17 @@ class GroupChatController extends Controller
 
     protected function formatConversationMemberRecord(GroupChatMember $member): array
     {
+        $defaultName = $member->user?->name ?? 'User';
+        $displayName = filled($member->nickname) ? $member->nickname : $defaultName;
+        $profile = $this->resolveMemberProfileUrl((int) $member->user_id, $displayName);
+
         return [
             'id' => (int) $member->user_id,
-            'name' => $member->user?->name ?? 'User',
+            'name' => $defaultName,
             'nickname' => $member->nickname,
-            'display_name' => filled($member->nickname) ? $member->nickname : ($member->user?->name ?? 'User'),
-            'profile' => null,
+            'display_name' => $displayName,
+            'profile' => $profile,
+            'avatar' => $this->defaultMemberAvatarUrl($displayName),
             'joined_at' => $member->joined_at?->toIso8601String(),
             'last_read_at' => $member->last_read_at?->toIso8601String(),
             'added_by_id' => $member->added_by_id ? (int) $member->added_by_id : null,
@@ -1169,6 +1334,34 @@ class GroupChatController extends Controller
         }
 
         return $this->groupMemberNameCache[$groupChatId][$userId] ?? $fallbackName;
+    }
+
+    protected function resolveMemberProfileUrl(int $userId, string $displayName): string
+    {
+        if (array_key_exists($userId, $this->groupMemberProfileCache)) {
+            return $this->groupMemberProfileCache[$userId];
+        }
+
+        $employee = DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->select('ei.employee_no', 'ep.profile')
+            ->where('ei.user_id', $userId)
+            ->first();
+
+        $profile = ($employee?->employee_no && $employee?->profile)
+            ? Storage::url('public/users/' . $employee->employee_no . '/profile/' . $employee->profile)
+            : $this->defaultMemberAvatarUrl($displayName);
+
+        $this->groupMemberProfileCache[$userId] = $profile;
+
+        return $profile;
+    }
+
+    protected function defaultMemberAvatarUrl(string $name): string
+    {
+        return 'https://ui-avatars.com/api/?name='
+            . urlencode($name ?: 'User')
+            . '&background=random&color=fff&font-size=0.4&font-weight:bold&bold=true';
     }
 
     protected function formatGroupMessageUpdatePayload(GroupChat $groupChat, GroupMessage $message, int $authUserId): array

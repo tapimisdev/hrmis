@@ -39,6 +39,7 @@ class MessagesPageService
             'authUser' => [
                 'id' => $authUser->id,
                 'name' => $authUser->name,
+                'actual_name' => $this->resolveUserDisplayName($authUser),
                 'email' => $authUser->email,
                 'role_names' => $authUser->getRoleNames()->values(),
                 'is_admin' => $this->isAdmin($authUser),
@@ -216,6 +217,11 @@ class MessagesPageService
     {
         $directNicknames = Schema::hasTable('direct_conversation_settings')
             ? DB::table('direct_conversation_settings')
+                ->where('partner_id', $authUser->id)
+                ->pluck('nickname', 'user_id')
+            : collect();
+        $directSelfNicknames = Schema::hasTable('direct_conversation_settings')
+            ? DB::table('direct_conversation_settings')
                 ->where('user_id', $authUser->id)
                 ->pluck('nickname', 'partner_id')
             : collect();
@@ -227,10 +233,11 @@ class MessagesPageService
             ->keyBy('id');
 
         $directConversations = $availableUsers
-            ->map(function (array $user) use ($directStats, $directNicknames, $latestDirectMessages) {
+            ->map(function (array $user) use ($directStats, $directNicknames, $directSelfNicknames, $latestDirectMessages) {
                 $stats = $directStats->get($user['id']);
                 $nickname = trim((string) ($directNicknames[$user['id']] ?? ''));
                 $displayName = $nickname !== '' ? $nickname : $user['name'];
+                $selfNickname = trim((string) ($directSelfNicknames[$user['id']] ?? ''));
                 $latestMessage = $stats?->latest_message_id
                     ? $latestDirectMessages->get((int) $stats->latest_message_id)
                     : null;
@@ -242,6 +249,7 @@ class MessagesPageService
                     'name' => $displayName,
                     'actual_name' => $user['name'],
                     'nickname' => $nickname !== '' ? $nickname : null,
+                    'self_nickname' => $selfNickname !== '' ? $selfNickname : null,
                     'conversation_type' => 'direct',
                     'conversation_key' => 'direct:' . $user['id'],
                     'conversation_token' => $this->conversationToken('direct', (int) $user['id']),
@@ -328,6 +336,21 @@ class MessagesPageService
         return $fullName !== '' ? $fullName : ($fallback ?? 'User');
     }
 
+    protected function resolveUserDisplayName(User $user): string
+    {
+        $profile = DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->select('ep.firstname', 'ep.lastname')
+            ->where('ei.user_id', $user->id)
+            ->first();
+
+        return $this->displayName(
+            $profile?->firstname,
+            $profile?->lastname,
+            $user->name,
+        );
+    }
+
     protected function profileUrl(?string $employeeNo, ?string $profile, string $displayName): string
     {
         if ($employeeNo && $profile) {
@@ -354,6 +377,10 @@ class MessagesPageService
     {
         if (!$message) {
             return 'Start a conversation';
+        }
+
+        if (($message->message_type ?: 'user') !== 'user') {
+            return trim((string) $message->body) !== '' ? trim((string) $message->body) : 'Conversation activity';
         }
 
         if ((bool) ($message->is_unsent ?? $message->unsent_at)) {
@@ -398,6 +425,13 @@ class MessagesPageService
                 $query->where('direct_messages.sender_id', $authUser->id)
                     ->orWhere('direct_messages.recipient_id', $authUser->id);
             })
+            ->when(
+                Schema::hasColumn('direct_messages', 'visible_to_user_id'),
+                fn ($query) => $query->where(function ($visibilityQuery) use ($authUser) {
+                    $visibilityQuery->whereNull('direct_messages.visible_to_user_id')
+                        ->orWhere('direct_messages.visible_to_user_id', $authUser->id);
+                })
+            )
             ->whereRaw('direct_messages.id > COALESCE(dcc.cleared_before_message_id, 0)')
             ->selectRaw(
                 'CASE WHEN direct_messages.sender_id = ? THEN direct_messages.recipient_id ELSE direct_messages.sender_id END as partner_id',

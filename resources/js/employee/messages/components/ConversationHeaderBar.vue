@@ -42,21 +42,21 @@
                 </button>
                 <button
                     type="button"
-                    class="conversation-info-btn conversation-info-btn--danger"
-                    aria-label="Leave group"
-                    title="Leave group"
-                    @click="$emit('leave-group')"
-                >
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </button>
-                <button
-                    type="button"
                     class="conversation-info-btn conversation-info-btn--info"
                     aria-label="Group info"
                     title="Group info"
                     @click="$emit('show-info')"
                 >
                     <i class="fa-solid fa-circle-info"></i>
+                </button>
+                <button
+                    type="button"
+                    class="conversation-info-btn conversation-info-btn--danger"
+                    aria-label="Leave group"
+                    title="Leave group"
+                    @click="$emit('leave-group')"
+                >
+                    <i class="fa-solid fa-right-from-bracket"></i>
                 </button>
             </template>
             <button

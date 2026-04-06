@@ -119,7 +119,7 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 5000;
     backdrop-filter: blur(4px);
 
     @media (max-width: 768px) {
@@ -128,6 +128,8 @@ export default {
 }
 
 .reaction-modal {
+    position: relative;
+    z-index: 5001;
     background: rgba(34, 39, 46, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
