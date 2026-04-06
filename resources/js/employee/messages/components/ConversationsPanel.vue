@@ -174,7 +174,7 @@
                                 </span>
                             </span>
                             <span class="contact-card__preview">
-                                {{ user.preview || getConversationStatusLabel(user) }}
+                                {{ getPreviewText(user) }}
                             </span>
                             <span class="contact-card__status">
                                 <i
@@ -295,6 +295,10 @@ export default {
             type: Function,
             required: true,
         },
+        formatConversationPreview: {
+            type: Function,
+            default: null,
+        },
         isConversationOnline: {
             type: Function,
             required: true,
@@ -312,5 +316,14 @@ export default {
         "toggle-contact-action-menu",
         "delete-conversation",
     ],
+    methods: {
+        getPreviewText(user) {
+            if (this.formatConversationPreview) {
+                return this.formatConversationPreview(user);
+            }
+
+            return user?.preview || this.getConversationStatusLabel(user);
+        },
+    },
 };
 </script>

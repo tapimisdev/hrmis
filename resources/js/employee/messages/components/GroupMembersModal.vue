@@ -47,6 +47,7 @@
                             <img
                                 :src="getMemberProfile(member)"
                                 :alt="member.display_name || member.name"
+                                @error="handleImageError($event, member)"
                             />
                             <div class="group-members-modal__content">
                                 <div class="group-members-modal__item-headline">
@@ -72,7 +73,13 @@
                                     {{ member.name }}
                                 </small>
                                 <small
-                                    v-if="member.added_by_name"
+                                    v-if="Number(member.id) === Number(ownerId)"
+                                    class="text-white-50"
+                                >
+                                    Owner
+                                </small>
+                                <small
+                                    v-else-if="member.added_by_name"
                                     class="text-white-50"
                                     >Added by {{ member.added_by_name }}</small
                                 >
@@ -114,6 +121,10 @@ export default {
             type: [String, Number],
             required: true,
         },
+        ownerId: {
+            type: [String, Number],
+            default: null,
+        },
     },
     emits: ["close"],
     methods: {
@@ -122,6 +133,16 @@ export default {
         },
         getMemberProfile(member) {
             return member.profile || member.avatar || "";
+        },
+        handleImageError(event, member) {
+            const fallback = member.avatar || "";
+
+            if (!fallback || event.target.src === fallback) {
+                return;
+            }
+
+            event.target.onerror = null;
+            event.target.src = fallback;
         },
         formatDate(date) {
             if (!date) return "";

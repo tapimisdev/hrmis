@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\DirectConversationInfoUpdated;
 use App\Events\DirectMessageSeen;
 use App\Events\DirectMessageUpdated;
 use App\Events\DirectMessageSent;
@@ -46,6 +47,8 @@ class DirectMessageController extends Controller
                     'id' => $message->id,
                     'sender_id' => $message->sender_id,
                     'recipient_id' => $message->recipient_id,
+                    'message_type' => $message->message_type ?: 'user',
+                    'is_system' => ($message->message_type ?: 'user') !== 'user',
                     'body' => $message->body,
                     'reply_to_id' => $message->reply_to_id,
                     'reply_preview' => $this->formatReplyPreview($message->replyTo),
@@ -196,27 +199,155 @@ class DirectMessageController extends Controller
         abort_unless(Schema::hasTable('direct_conversation_settings'), 422, 'Direct conversation nicknames are not available yet.');
         $validated = $request->validate([
             'nickname' => ['nullable', 'string', 'max:120'],
+            'self_nickname' => ['nullable', 'string', 'max:120'],
         ]);
 
         $nickname = trim((string) ($validated['nickname'] ?? ''));
+        $selfNickname = trim((string) ($validated['self_nickname'] ?? ''));
         $now = Carbon::now();
+        $existingNickname = $this->existingDirectConversationNickname((int) $user->id, (int) $authUser->id);
+        $existingSelfNickname = $this->existingDirectConversationNickname((int) $authUser->id, (int) $user->id);
+        $systemMessages = [
+            (int) $authUser->id => [],
+            (int) $user->id => [],
+        ];
+        $authActualName = $this->resolveDirectConversationActualName($authUser);
+        $partnerActualName = $this->resolveDirectConversationActualName($user);
+        DB::transaction(function () use (
+            $authUser,
+            $user,
+            $nickname,
+            $selfNickname,
+            $now,
+            $authActualName,
+            $partnerActualName,
+            $existingNickname,
+            $existingSelfNickname,
+            &$systemMessages
+        ) {
+            $this->persistDirectConversationNickname(
+                (int) $user->id,
+                (int) $authUser->id,
+                $nickname,
+                $now,
+            );
+
+            $this->persistDirectConversationNickname(
+                (int) $authUser->id,
+                (int) $user->id,
+                $selfNickname,
+                $now,
+            );
+
+            if ($nickname !== $existingNickname) {
+                $systemMessages[(int) $authUser->id][] = $this->createDirectConversationSystemMessage(
+                    $authUser,
+                    $user,
+                    filled($nickname)
+                        ? 'You set nickname for ' . $partnerActualName . ' to ' . $nickname
+                        : 'You cleared nickname for ' . $partnerActualName,
+                    (int) $authUser->id,
+                );
+                $systemMessages[(int) $user->id][] = $this->createDirectConversationSystemMessage(
+                    $authUser,
+                    $user,
+                    filled($nickname)
+                        ? $authActualName . ' set your nickname to ' . $nickname
+                        : $authActualName . ' cleared your nickname',
+                    (int) $user->id,
+                );
+            }
+
+            if ($selfNickname !== $existingSelfNickname) {
+                $systemMessages[(int) $authUser->id][] = $this->createDirectConversationSystemMessage(
+                    $authUser,
+                    $user,
+                    filled($selfNickname)
+                        ? 'You set your nickname to ' . $selfNickname
+                        : 'You cleared your nickname',
+                    (int) $authUser->id,
+                );
+                $systemMessages[(int) $user->id][] = $this->createDirectConversationSystemMessage(
+                    $authUser,
+                    $user,
+                    filled($selfNickname)
+                        ? $authActualName . ' set your nickname to ' . $selfNickname
+                        : $authActualName . ' cleared your nickname',
+                    (int) $user->id,
+                );
+            }
+        });
+
+        $authConversation = $this->formatConversationInfo($authUser, $user);
+        $partnerConversation = $this->formatConversationInfo($user, $authUser);
+
+        event(new DirectConversationInfoUpdated([
+            'participants' => [(int) $authUser->id, (int) $user->id],
+            'conversations' => [
+                (int) $authUser->id => $authConversation,
+                (int) $user->id => $partnerConversation,
+            ],
+            'system_messages' => $systemMessages,
+        ]));
+
+        return response()->json([
+            'message' => 'Conversation info updated successfully.',
+            'conversation' => $authConversation,
+            'system_messages' => $systemMessages[(int) $authUser->id] ?? [],
+        ]);
+    }
+
+    protected function existingDirectConversationNickname(int $userId, int $partnerId): string
+    {
+        return trim((string) (
+            DB::table('direct_conversation_settings')
+                ->where('user_id', $userId)
+                ->where('partner_id', $partnerId)
+                ->value('nickname') ?? ''
+        ));
+    }
+
+    protected function persistDirectConversationNickname(int $userId, int $partnerId, string $nickname, Carbon $now): void
+    {
+        $settingsQuery = DB::table('direct_conversation_settings')
+            ->where('user_id', $userId)
+            ->where('partner_id', $partnerId);
+
+        if ($nickname === '') {
+            $settingsQuery->delete();
+            return;
+        }
 
         DB::table('direct_conversation_settings')->updateOrInsert(
             [
-                'user_id' => $authUser->id,
-                'partner_id' => $user->id,
+                'user_id' => $userId,
+                'partner_id' => $partnerId,
             ],
             [
-                'nickname' => $nickname !== '' ? $nickname : null,
+                'nickname' => $nickname,
                 'updated_at' => $now,
                 'created_at' => $now,
             ],
         );
+    }
 
-        return response()->json([
-            'message' => 'Conversation info updated successfully.',
-            'conversation' => $this->formatConversationInfo($authUser, $user),
+    protected function createDirectConversationSystemMessage(User $authUser, User $user, string $body, int $visibleToUserId): array
+    {
+        $message = DirectMessage::create([
+            'sender_id' => (int) $authUser->id,
+            'recipient_id' => (int) $user->id,
+            'visible_to_user_id' => $visibleToUserId,
+            'message_type' => 'system',
+            'body' => $body,
+            'is_unsent' => false,
         ]);
+        $viewer = (int) $authUser->id === $visibleToUserId ? $authUser : $user;
+
+        return $this->formatMessage(
+            $message->load('replyTo:id,body,sender_id,recipient_id,created_at,attachment_path,attachment_name,attachment_mime,attachment_size,attachment_extension,attachment_type'),
+            $viewer,
+            true,
+        );
     }
 
     public function media(Request $request, User $user)
@@ -622,6 +753,12 @@ class DirectMessageController extends Controller
                         ->where('recipient_id', $authUser->id);
                 });
             })
+            ->when($this->supportsDirectSystemMessages(), function ($query) use ($authUser) {
+                $query->where(function ($visibilityQuery) use ($authUser) {
+                    $visibilityQuery->whereNull('visible_to_user_id')
+                        ->orWhere('visible_to_user_id', $authUser->id);
+                });
+            })
             ->when($clearedBeforeMessageId, fn ($query) => $query->where('id', '>', $clearedBeforeMessageId));
     }
 
@@ -693,6 +830,12 @@ class DirectMessageController extends Controller
             Schema::hasColumn('direct_messages', 'pinned_by_id');
     }
 
+    protected function supportsDirectSystemMessages(): bool
+    {
+        return Schema::hasColumn('direct_messages', 'message_type') &&
+            Schema::hasColumn('direct_messages', 'visible_to_user_id');
+    }
+
     protected function supportsReactionFeatures(): bool
     {
         return Schema::hasColumn('direct_messages', 'reaction');
@@ -714,6 +857,8 @@ class DirectMessageController extends Controller
             'id' => $message->id,
             'sender_id' => $message->sender_id,
             'recipient_id' => $message->recipient_id,
+            'message_type' => $message->message_type ?: 'user',
+            'is_system' => ($message->message_type ?: 'user') !== 'user',
             'body' => $message->body,
             'reply_to_id' => $message->reply_to_id,
             'reply_preview' => $this->formatReplyPreview($message->replyTo),
@@ -737,6 +882,10 @@ class DirectMessageController extends Controller
     {
         if (!$message) {
             return null;
+        }
+
+        if (($message->message_type ?: 'user') !== 'user') {
+            return trim((string) $message->body) !== '' ? trim((string) $message->body) : 'Conversation activity';
         }
 
         if (filled($message->body)) {
@@ -798,20 +947,50 @@ class DirectMessageController extends Controller
     {
         $nickname = Schema::hasTable('direct_conversation_settings')
             ? DB::table('direct_conversation_settings')
+                ->where('user_id', $user->id)
+                ->where('partner_id', $authUser->id)
+                ->value('nickname')
+            : null;
+        $selfNickname = Schema::hasTable('direct_conversation_settings')
+            ? DB::table('direct_conversation_settings')
                 ->where('user_id', $authUser->id)
                 ->where('partner_id', $user->id)
                 ->value('nickname')
             : null;
+        $actualName = $this->resolveDirectConversationActualName($user);
 
         return [
             'id' => (int) $user->id,
             'conversation_key' => 'direct:' . $user->id,
             'conversation_token' => $this->messagesPageService->conversationToken('direct', (int) $user->id),
             'conversation_type' => 'direct',
-            'actual_name' => $user->name,
+            'actual_name' => $actualName,
             'nickname' => filled($nickname) ? (string) $nickname : null,
-            'name' => filled($nickname) ? (string) $nickname : $user->name,
+            'self_nickname' => filled($selfNickname) ? (string) $selfNickname : null,
+            'name' => filled($nickname) ? (string) $nickname : $actualName,
         ];
+    }
+
+    protected function resolveDirectConversationActualName(User $user): string
+    {
+        $profile = DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->select('ep.firstname', 'ep.lastname')
+            ->where('ei.user_id', $user->id)
+            ->first();
+
+        return $this->displayName(
+            $profile?->firstname,
+            $profile?->lastname,
+            $user->name,
+        );
+    }
+
+    protected function displayName(?string $firstname, ?string $lastname, ?string $fallback): string
+    {
+        $fullName = trim(($firstname ?? '') . ' ' . ($lastname ?? ''));
+
+        return $fullName !== '' ? $fullName : ($fallback ?? 'User');
     }
 
     protected function formatMediaItem(DirectMessage $message): array
