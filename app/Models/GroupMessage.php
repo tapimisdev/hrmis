@@ -16,6 +16,10 @@ class GroupMessage extends Model
         'group_chat_id',
         'sender_id',
         'message_type',
+        'system_key',
+        'system_actor_label',
+        'system_target_label',
+        'system_target_user_id',
         'body',
         'reply_to_id',
         'attachment_path',
@@ -49,6 +53,11 @@ class GroupMessage extends Model
     public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function systemTargetUser()
+    {
+        return $this->belongsTo(User::class, 'system_target_user_id');
     }
 
     public function replyTo()

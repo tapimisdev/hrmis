@@ -39,6 +39,7 @@ class GroupChatController extends Controller
     protected array $groupMemberNameCache = [];
     protected array $groupRecipientIdCache = [];
     protected array $groupMemberProfileCache = [];
+    protected array $groupMemberActualNameCache = [];
 
     public function __construct(
         protected MessagesPageService $messagesPageService,
@@ -612,6 +613,9 @@ class GroupChatController extends Controller
         }
 
         $nicknameChanges = [];
+        $actorPreviousNickname = filled($existingMembers->get((int) $authUser->id)?->nickname)
+            ? trim((string) $existingMembers->get((int) $authUser->id)?->nickname)
+            : null;
 
         foreach ($memberNicknames as $userId => $nickname) {
             $memberRecord = $existingMembers->get((int) $userId);
@@ -634,7 +638,8 @@ class GroupChatController extends Controller
 
             $nicknameChanges[] = [
                 'user_id' => (int) $userId,
-                'name' => $memberRecord?->user?->name ?? 'User',
+                'name' => $this->resolveGroupConversationActualName($memberRecord?->user, (int) $userId),
+                'reference_name' => $previousNickname ?: $this->resolveGroupConversationActualName($memberRecord?->user, (int) $userId),
                 'nickname' => $normalizedNickname,
             ];
         }
@@ -643,6 +648,8 @@ class GroupChatController extends Controller
         unset($this->groupMemberNameCache[(int) $groupChat->id]);
         $systemMessages = collect();
         $actorName = $this->groupMemberDisplayName((int) $groupChat->id, (int) $authUser->id, $authUser->name);
+        $actorActualName = $this->resolveGroupConversationActualName($authUser);
+        $actorReferenceName = $actorPreviousNickname ?: $actorActualName;
 
         if ($nameChanged) {
             $systemMessages->push($this->createSystemMessage(
@@ -661,12 +668,35 @@ class GroupChatController extends Controller
         }
 
         foreach ($nicknameChanges as $change) {
+            $usesStructuredSystemMessage = $this->supportsStructuredGroupSystemMessages();
+
             $systemMessages->push($this->createSystemMessage(
                 $groupChat,
                 (int) $authUser->id,
-                filled($change['nickname'])
-                    ? $actorName . ' set nickname for ' . $change['name'] . ' to ' . $change['nickname']
-                    : $actorName . ' cleared nickname for ' . $change['name']
+                $usesStructuredSystemMessage
+                    ? (string) ($change['nickname'] ?? '')
+                    : (
+                        filled($change['nickname'])
+                            ? (
+                                (int) $change['user_id'] === (int) $authUser->id
+                                    ? $actorActualName . ' set their own nickname to ' . $change['nickname']
+                                    : $actorActualName . ' set ' . $change['name'] . ' nickname to ' . $change['nickname']
+                            )
+                            : (
+                                (int) $change['user_id'] === (int) $authUser->id
+                                    ? $actorActualName . ' cleared their own nickname'
+                                    : $actorActualName . ' cleared ' . $change['name'] . ' nickname'
+                            )
+                    ),
+                true,
+                [
+                    'system_key' => filled($change['nickname'])
+                        ? 'group_nickname_set'
+                        : 'group_nickname_cleared',
+                    'system_actor_label' => $actorReferenceName,
+                    'system_target_label' => (string) ($change['reference_name'] ?? $change['name']),
+                    'system_target_user_id' => (int) $change['user_id'],
+                ]
             ));
         }
 
@@ -1122,6 +1152,8 @@ class GroupChatController extends Controller
 
     protected function formatMessage(GroupMessage $message, int $authUserId): array
     {
+        $body = $this->resolveFormattedMessageBody($message, $authUserId);
+
         return [
             'id' => $message->id,
             'group_chat_id' => $message->group_chat_id,
@@ -1130,7 +1162,7 @@ class GroupChatController extends Controller
             'message_type' => $message->message_type ?: 'user',
             'is_system' => ($message->message_type ?: 'user') !== 'user',
             'recipient_id' => null,
-            'body' => $message->body,
+            'body' => $body,
             'reply_to_id' => $message->reply_to_id,
             'reply_preview' => $this->formatReplyPreview($message->replyTo),
             'attachment' => $this->formatAttachment($message),
@@ -1147,6 +1179,55 @@ class GroupChatController extends Controller
             'is_mine' => (int) $message->sender_id === $authUserId,
             'created_at' => $message->created_at?->toIso8601String(),
         ];
+    }
+
+    protected function resolveFormattedMessageBody(GroupMessage $message, int $authUserId): string
+    {
+        $body = (string) ($message->body ?? '');
+
+        if (($message->message_type ?: 'user') !== 'system' || !$this->supportsStructuredGroupSystemMessages()) {
+            return $body;
+        }
+
+        $systemKey = (string) ($message->system_key ?? '');
+        $targetUserId = (int) ($message->system_target_user_id ?? 0);
+        $senderId = (int) $message->sender_id;
+
+        if (!in_array($systemKey, ['group_nickname_set', 'group_nickname_cleared'], true) || $targetUserId <= 0) {
+            return $body;
+        }
+
+        $targetName = (string) ($message->system_target_label ?: $this->resolveGroupConversationActualName($message->systemTargetUser, $targetUserId));
+
+        if ($authUserId === $senderId) {
+            if ($targetUserId === $senderId) {
+                return $systemKey === 'group_nickname_set'
+                    ? 'You set your own nickname to ' . $body
+                    : 'You cleared your own nickname';
+            }
+
+            return $systemKey === 'group_nickname_set'
+                ? 'You set ' . $targetName . ' nickname to ' . $body
+                : 'You cleared ' . $targetName . ' nickname';
+        }
+
+        $actorName = (string) ($message->system_actor_label ?: $this->resolveGroupConversationActualName($message->sender, $senderId));
+
+        if ($targetUserId === $authUserId) {
+            return $systemKey === 'group_nickname_set'
+                ? $actorName . ' set your nickname to ' . $body
+                : $actorName . ' cleared your nickname';
+        }
+
+        if ($targetUserId === $senderId) {
+            return $systemKey === 'group_nickname_set'
+                ? $actorName . ' set their own nickname to ' . $body
+                : $actorName . ' cleared their own nickname';
+        }
+
+        return $systemKey === 'group_nickname_set'
+            ? $actorName . ' set ' . $targetName . ' nickname to ' . $body
+            : $actorName . ' cleared ' . $targetName . ' nickname';
     }
 
     protected function messagePreview(GroupMessage $message): string
@@ -1336,6 +1417,42 @@ class GroupChatController extends Controller
         return $this->groupMemberNameCache[$groupChatId][$userId] ?? $fallbackName;
     }
 
+    protected function resolveGroupConversationActualName(?User $user, ?int $userId = null, ?string $fallbackName = null): string
+    {
+        $resolvedUserId = (int) ($user?->id ?? $userId ?? 0);
+
+        if ($resolvedUserId <= 0) {
+            return $fallbackName ?? $user?->name ?? 'User';
+        }
+
+        if (array_key_exists($resolvedUserId, $this->groupMemberActualNameCache)) {
+            return $this->groupMemberActualNameCache[$resolvedUserId];
+        }
+
+        $profile = DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->select('ep.firstname', 'ep.lastname')
+            ->where('ei.user_id', $resolvedUserId)
+            ->first();
+
+        $actualName = $this->displayName(
+            $profile?->firstname,
+            $profile?->lastname,
+            $fallbackName ?? $user?->name,
+        );
+
+        $this->groupMemberActualNameCache[$resolvedUserId] = $actualName;
+
+        return $actualName;
+    }
+
+    protected function displayName(?string $firstname, ?string $lastname, ?string $fallback): string
+    {
+        $fullName = trim(($firstname ?? '') . ' ' . ($lastname ?? ''));
+
+        return $fullName !== '' ? $fullName : ($fallback ?? 'User');
+    }
+
     protected function resolveMemberProfileUrl(int $userId, string $displayName): string
     {
         if (array_key_exists($userId, $this->groupMemberProfileCache)) {
@@ -1413,30 +1530,63 @@ class GroupChatController extends Controller
             ->first();
     }
 
-    protected function createSystemMessage(GroupChat $groupChat, int $senderId, string $body, bool $broadcast = true): array
+    protected function createSystemMessage(
+        GroupChat $groupChat,
+        int $senderId,
+        string $body,
+        bool $broadcast = true,
+        array $attributes = []
+    ): array
     {
-        $message = GroupMessage::create([
+        $payload = [
             'group_chat_id' => $groupChat->id,
             'sender_id' => $senderId,
             'message_type' => 'system',
             'body' => $body,
             'is_unsent' => false,
-        ]);
+        ];
 
-        $message->load('sender:id,name');
+        if ($this->supportsStructuredGroupSystemMessages()) {
+            $payload = array_merge($payload, array_intersect_key($attributes, array_flip([
+                'system_key',
+                'system_actor_label',
+                'system_target_label',
+                'system_target_user_id',
+            ])));
+        }
+
+        $message = GroupMessage::create($payload);
+
+        $message->load(['sender:id,name', 'systemTargetUser:id,name']);
         $this->refreshConversationLastMessage($groupChat);
         $conversation = $this->formatConversation($groupChat->fresh()->loadCount('members'));
         $formattedMessage = $this->formatMessage($message, $senderId);
 
         if ($broadcast && count($this->groupRecipientIds($groupChat)) > 0) {
-            event(new GroupChatMessageSent(
-                $formattedMessage,
-                $conversation,
-                $this->groupRecipientIds($groupChat)
-            ));
+            foreach ($this->groupRecipientIds($groupChat) as $recipientId) {
+                event(new GroupChatMessageSent(
+                    $this->formatMessage($message, (int) $recipientId),
+                    $conversation,
+                    [(int) $recipientId]
+                ));
+            }
         }
 
         return $formattedMessage;
+    }
+
+    protected function supportsStructuredGroupSystemMessages(): bool
+    {
+        static $supported = null;
+
+        if ($supported === null) {
+            $supported = Schema::hasColumn('group_messages', 'system_key')
+                && Schema::hasColumn('group_messages', 'system_actor_label')
+                && Schema::hasColumn('group_messages', 'system_target_label')
+                && Schema::hasColumn('group_messages', 'system_target_user_id');
+        }
+
+        return $supported;
     }
 
     protected function broadcastConversationUpsert(GroupChat $groupChat): void

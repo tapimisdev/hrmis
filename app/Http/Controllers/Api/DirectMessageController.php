@@ -244,8 +244,8 @@ class DirectMessageController extends Controller
                     $authUser,
                     $user,
                     filled($nickname)
-                        ? 'You set nickname for ' . $partnerActualName . ' to ' . $nickname
-                        : 'You cleared nickname for ' . $partnerActualName,
+                        ? 'You set ' . $partnerActualName . ' nickname to ' . $nickname
+                        : 'You cleared ' . $partnerActualName . ' nickname',
                     (int) $authUser->id,
                 );
                 $systemMessages[(int) $user->id][] = $this->createDirectConversationSystemMessage(
@@ -271,8 +271,8 @@ class DirectMessageController extends Controller
                     $authUser,
                     $user,
                     filled($selfNickname)
-                        ? $authActualName . ' set your nickname to ' . $selfNickname
-                        : $authActualName . ' cleared your nickname',
+                        ? $authActualName . ' set their own nickname to ' . $selfNickname
+                        : $authActualName . ' cleared their own nickname',
                     (int) $user->id,
                 );
             }
