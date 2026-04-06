@@ -1349,7 +1349,7 @@ class GroupChatController extends Controller
             ->first();
 
         $profile = ($employee?->employee_no && $employee?->profile)
-            ? Storage::url('public/users/' . $employee->employee_no . '/profile/' . $employee->profile)
+            ? Storage::url('public/users/' . $employee->employee_no . '/profile-image/' . $employee->profile)
             : $this->defaultMemberAvatarUrl($displayName);
 
         $this->groupMemberProfileCache[$userId] = $profile;
