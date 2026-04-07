@@ -10,9 +10,11 @@
                 :filtered-count="filteredRows.length"
                 :total-count="body.length"
                 :has-active-filters="hasActiveFilters"
+                :is-applying="isApplyingToPayroll"
                 @update:search="search = $event"
                 @update:selectedDivision="selectedDivision = $event"
                 @update:selectedUnit="selectedUnit = $event"
+                @apply-to-tax="$emit('apply-to-tax')"
                 @pull-reconcile="pullFromPayrollAndReconcile"
                 @clear="clearFilters"
             />
@@ -83,6 +85,7 @@ export default {
     },
     props: {
         body: { type: Array, required: true },
+        isApplyingToPayroll: { type: Boolean, default: false },
     },
     data() {
         return {

@@ -4,7 +4,7 @@
             <!-- LEFT -->
             <div class="fb-left">
                 <div class="fb-breadcrumb">
-                    <h3 class="fb-title">Yearly Employee Tax Forecast</h3>
+                    <h3 class="fb-title">Employee Tax Computation</h3>
                 </div>
 
                 <select v-model="selectedYear" class="fb-select">

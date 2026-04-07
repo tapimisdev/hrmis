@@ -32,6 +32,8 @@
         <IndexForecast 
             v-if="activeTab === 'forecast'" 
             :body="body"
+            :is-applying-to-payroll="isApplyingToPayroll"
+            @apply-to-tax="$emit('apply-to-tax')"
             @refresh-forecast="$emit('refresh-forecast', $event)"
             />
             
@@ -57,6 +59,10 @@ export default {
         disable_recon: {
             type: Boolean,
             default: true
+        },
+        isApplyingToPayroll: {
+            type: Boolean,
+            default: false
         }
     },
     data() {

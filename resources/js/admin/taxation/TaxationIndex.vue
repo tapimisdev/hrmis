@@ -22,6 +22,8 @@
             <TaxationBody
                 :body="taxationData.body"
                 :disable_recon="!has_taxation_record"
+                :is-applying-to-payroll="is_applying_to_payroll"
+                @apply-to-tax="applyToPayroll"
                 @refresh-forecast="handleForecastRefresh"
             />
             <TaxSettings :settings="taxationData.settings" />
@@ -68,6 +70,7 @@ export default {
             has_taxation_record: null,
             taxation_id: null,
             is_loading: false,
+            is_applying_to_payroll: false,
 
             batch_data: [],
         };
@@ -204,6 +207,44 @@ export default {
             const hasTaxationRecord = data.id != null;
             this.has_taxation_record = hasTaxationRecord;
             this.taxation_id = hasTaxationRecord ? data.id : null;
+        },
+
+        async applyToPayroll() {
+            if (!this.taxation_id) {
+                await Swal.fire({
+                    title: "No Taxation Selected",
+                    text: "There is no saved taxation record to apply.",
+                    icon: "info",
+                });
+                return;
+            }
+
+            this.is_applying_to_payroll = true;
+
+            try {
+                const response = await axios.post(
+                    "/admin/taxation/apply-to-payroll",
+                    { taxation_id: this.taxation_id },
+                );
+
+                await Swal.fire({
+                    title: "Applied",
+                    text:
+                        response?.data?.message ||
+                        "Forecast tax allocations have been applied to Payroll.",
+                    icon: "success",
+                });
+            } catch (error) {
+                await Swal.fire({
+                    title: "Error",
+                    text:
+                        error?.response?.data?.message ||
+                        "Failed to apply forecast to Payroll.",
+                    icon: "error",
+                });
+            } finally {
+                this.is_applying_to_payroll = false;
+            }
         },
 
         async handleDelete() {

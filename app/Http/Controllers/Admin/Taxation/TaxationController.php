@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin\Taxation;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Taxation\ApplyForecastToPayrollRequest;
+use App\Services\Taxation\ApplyForecastToPayrollService;
 use App\Services\Taxation\Parts\TaxationBodyService;
 use App\Services\Taxation\Parts\TaxationSettingsService;
 use App\Services\Taxation\Parts\TaxationCardsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class TaxationController extends Controller
 {
@@ -15,6 +18,7 @@ class TaxationController extends Controller
         private readonly TaxationSettingsService $taxationSettingsService,
         private readonly TaxationCardsService $taxationCardsService,
         private readonly TaxationBodyService $taxationBodyService,
+        private readonly ApplyForecastToPayrollService $applyForecastToPayrollService,
     ) {}
 
     public function index(Request $request)
@@ -115,5 +119,23 @@ class TaxationController extends Controller
         return response()->json([
             'message' => 'Record deleted successfully.'
         ]);
+    }
+
+    public function applyToPayroll(ApplyForecastToPayrollRequest $request)
+    {
+        try {
+            $result = $this->applyForecastToPayrollService->handle(
+                (int) $request->validated('taxation_id')
+            );
+
+            return response()->json([
+                'message' => "Payroll tax tables updated for {$result['employee_count']} employee(s) using taxation year {$result['year']}.",
+                'data' => $result,
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage() ?: 'Failed to apply forecast to Payroll.',
+            ], 500);
+        }
     }
 }

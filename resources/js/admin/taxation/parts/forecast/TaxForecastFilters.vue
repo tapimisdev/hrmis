@@ -41,6 +41,18 @@
                     {{ u }}
                 </option>
             </select>
+
+            <div class="d-flex justify-content-end align-items-center gap-2 ms-auto">
+                <button
+                    class="fb-btn bg-success"
+                    @click="confirmApplyToPayroll"
+                    :disabled="isApplying"
+                >
+                    <i class="fa-solid fa-check me-1"></i>
+                    {{ isApplying ? "Applying..." : "Apply to Payroll" }}
+                </button>
+            </div>
+            
         </div>
     </div>
 </template>
@@ -60,6 +72,47 @@ export default {
         totalCount: { type: Number, default: 0 },
 
         hasActiveFilters: { type: Boolean, default: false },
+        isApplying: { type: Boolean, default: false },
+    },
+    methods: {
+        async confirmApplyToPayroll() {
+            if (this.isApplying) return;
+
+            const result = await Swal.fire({
+                title: "Apply Forecast to Payroll?",
+                html: `
+                    <div class="text-start">
+                        <div>This will update the Payroll tax tables used for employee tax computation.</div>
+                        <div class="mt-2">This action will apply the selected taxation setup from <b class="text-primary">January to December</b>.</div>
+                        <div class="mt-2">If Payroll tax data already exists for those months, it will be <b class="text-danger">overridden</b> by this action.</div>
+                        <div class="mt-2">To continue, type <b>Apply</b> below.</div>
+                    </div>
+                `,
+                icon: "warning",
+                input: "text",
+                inputPlaceholder: "Type Apply to confirm",
+                inputAttributes: { autocapitalize: "off" },
+                showCancelButton: true,
+                confirmButtonText: "Apply to Payroll",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#198754",
+                reverseButtons: true,
+                preConfirm: (value) => {
+                    if (String(value || "").trim() !== "Apply") {
+                        Swal.showValidationMessage(
+                            'Confirmation text must be "Apply".',
+                        );
+                        return false;
+                    }
+
+                    return true;
+                },
+            });
+
+            if (!result.isConfirmed) return;
+
+            this.$emit("apply-to-tax");
+        },
     },
 };
 </script>
