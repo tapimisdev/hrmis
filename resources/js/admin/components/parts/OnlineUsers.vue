@@ -33,9 +33,28 @@
             >
             <!-- Header -->
             <li class="px-4 py-3 border-bottom bg-body online-users-menu__header">
-                <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
-                    <h6 class="mb-0 fw-semibold text-uppercase">Online Users</h6>
-                    <small class="theme-muted">{{ onlineCount }} online</small>
+                <div class="online-users-menu__hero">
+                    <div class="online-users-menu__topline">
+                        <div class="online-users-menu__title-block">
+                            <span class="online-users-menu__eyebrow">Team Presence</span>
+                            <h6 class="mb-0 fw-semibold">Online Users</h6>
+                            <div class="online-users-menu__subline">
+                                <span class="online-users-menu__count-dot"></span>
+                                <span>{{ onlineCount }} online</span>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn btn-sm theme-button online-users-menu__messenger-btn"
+                            @click.stop="openMessagesPage"
+                        >
+                            <i class="fa-regular fa-paper-plane"></i>
+                            <span>Messenger</span>
+                        </button>
+                    </div>
+                    <p class="online-users-menu__description mb-0">
+                        See who is active right now and jump straight into a conversation.
+                    </p>
                 </div>
                 <div class="search-shell">
                     <i class="fa-solid fa-magnifying-glass search-shell__icon"></i>
@@ -170,6 +189,9 @@
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm theme-button" @click.stop="openMessagesPage">
+                                Open Messenger
+                            </button>
                             <button class="btn btn-sm theme-button" @click="closeMessageBox">
                                 Close
                             </button>
@@ -198,6 +220,13 @@
 
                         <div v-else class="message-panel__messages d-flex flex-column gap-2">
                             <div
+                                v-if="!conversationHasMore || conversationPage >= conversationLastPage"
+                                class="conversation-start-marker"
+                            >
+                                Your conversation starts here
+                            </div>
+
+                            <div
                                 v-if="loadingOlderConversation"
                                 class="message-panel__older-loading"
                             >
@@ -210,26 +239,45 @@
                                 :key="message.id"
                                 class="message-row"
                                 :class="[
-                                    message.is_mine ? 'message-row--mine' : 'message-row--theirs',
+                                    message.is_system
+                                        ? 'message-row--system'
+                                        : message.is_mine
+                                            ? 'message-row--mine'
+                                            : 'message-row--theirs',
                                     highlightedMessageId === message.id ? 'message-row--highlighted' : '',
+                                    highlightedMessageId === message.id ? `message-row--pulse-${highlightPulseToken}` : '',
                                 ]"
                                 :data-message-id="message.id"
                             >
-                                <div class="message-bubble-shell">
+                                <div v-if="message.is_system" class="message-system-note">
+                                    <div class="message-system-note__body">
+                                        {{ formatSystemMessage(message) }}
+                                    </div>
+                                </div>
+                                <div v-else class="message-bubble-shell">
                                     <div
+                                        v-if="!message.is_unsent"
                                         class="message-actions"
-                                        :class="{ 'is-open': activeReactionPickerId === message.id }"
+                                        :class="{
+                                            'is-open': activeReactionPickerId === message.id || activeMessageActionsId === message.id,
+                                            'is-hidden-for-reaction': activeReactionPickerId === message.id,
+                                        }"
                                     >
+                                        <div v-if="message.is_mine && !message.is_unsent" class="message-action-group">
+                                            <button
+                                                type="button"
+                                                class="message-action-button message-action-button--more"
+                                                :class="{ 'is-active': activeMessageActionsId === message.id }"
+                                                @click.stop="toggleMessageActions(message, $event)"
+                                                title="More actions"
+                                                :aria-label="`More actions for ${message.body || message.attachment?.name || 'message'}`"
+                                                :aria-expanded="activeMessageActionsId === message.id"
+                                            >
+                                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                            </button>
+                                        </div>
                                         <button
-                                            type="button"
-                                            class="message-action-button message-action-button--reply"
-                                            @click="startReply(message)"
-                                            title="Reply"
-                                            :aria-label="`Reply to ${message.body || message.attachment?.name || 'message'}`"
-                                        >
-                                            <i class="fa-solid fa-reply"></i>
-                                        </button>
-                                        <button
+                                            v-else-if="!message.is_unsent"
                                             type="button"
                                             class="message-action-button message-action-button--pin"
                                             :class="{ 'is-active': isMessagePinned(message.id) }"
@@ -247,6 +295,17 @@
                                             </span>
                                         </button>
                                         <button
+                                            v-if="!message.is_unsent"
+                                            type="button"
+                                            class="message-action-button message-action-button--reply"
+                                            @click="startReply(message)"
+                                            title="Reply"
+                                            :aria-label="`Reply to ${message.body || message.attachment?.name || 'message'}`"
+                                        >
+                                            <i class="fa-solid fa-reply"></i>
+                                        </button>
+                                        <button
+                                            v-if="!message.is_unsent"
                                             type="button"
                                             class="message-action-button message-action-button--react"
                                             @click.stop="toggleReactionPicker(message)"
@@ -255,31 +314,14 @@
                                         >
                                             <i class="fa-regular fa-face-smile"></i>
                                         </button>
-                                        <div
-                                            v-if="activeReactionPickerId === message.id"
-                                            class="reaction-picker"
-                                            @click.stop
-                                        >
-                                            <button
-                                                v-for="reaction in reactionOptions"
-                                                :key="reaction.key"
-                                                type="button"
-                                                class="reaction-picker__btn"
-                                                :style="{ color: reaction.color, backgroundColor: reaction.bg }"
-                                                :title="reaction.label"
-                                                :aria-label="reaction.label"
-                                                @click="setReaction(message, reaction.key)"
-                                            >
-                                                <span class="reaction-picker__glyph">{{ reaction.glyph }}</span>
-                                            </button>
-                                        </div>
                                     </div>
+                                    <div class="message-bubble-stack">
                                     <div
                                         class="message-bubble"
                                         :class="message.is_mine ? 'message-bubble--mine' : 'message-bubble--theirs'"
                                     >
                                         <div
-                                            v-if="message.reply_to_id"
+                                            v-if="message.reply_to_id && !message.is_unsent"
                                             class="reply-preview reply-preview--linked"
                                             role="button"
                                             tabindex="0"
@@ -296,7 +338,7 @@
                                             </div>
                                         </div>
                                         <div
-                                            v-if="isMessagePinned(message.id)"
+                                            v-if="!message.is_unsent && isMessagePinned(message.id)"
                                             class="message-pin-chip"
                                             :class="message.is_mine ? 'message-pin-chip--mine' : 'message-pin-chip--theirs'"
                                         >
@@ -306,7 +348,7 @@
                                             </span>
                                         </div>
                                         <div
-                                            v-if="message.attachment"
+                                            v-if="message.attachment && !message.is_unsent"
                                             class="message-attachment"
                                             :class="message.attachment.type === 'image' ? 'message-attachment--image' : 'message-attachment--file'"
                                         >
@@ -364,14 +406,49 @@
                                             </div>
                                         </div>
                                         <div
-                                            v-if="message.body"
+                                            v-if="message.body && !message.is_unsent"
                                             class="message-bubble__body"
                                         >
                                             {{ message.body }}
                                         </div>
+                                        <div
+                                            v-if="message.is_unsent"
+                                            class="message-bubble__body message-bubble__body--unsent"
+                                        >
+                                            Unsent Message
+                                        </div>
+                                        <div
+                                            v-if="!message.is_unsent && message.reactions && message.reactions.length > 0"
+                                            class="message-reaction-badges message-reaction-badges--floating"
+                                            :class="
+                                                message.is_mine
+                                                    ? 'message-reaction-badges--mine'
+                                                    : 'message-reaction-badges--theirs'
+                                            "
+                                            :title="formatReactionsTooltip(message.reactions)"
+                                            @click="openReactionsModal(message.reactions)"
+                                            @keydown.enter="openReactionsModal(message.reactions)"
+                                            @keydown.space="openReactionsModal(message.reactions)"
+                                            role="button"
+                                            tabindex="0"
+                                        >
+                                            <span
+                                                v-for="emoji in getUniqueReactionEmojis(message.reactions).slice(0, 3)"
+                                                :key="emoji"
+                                                class="message-reaction-badge__glyph"
+                                            >
+                                                {{ emoji }}
+                                            </span>
+                                            <span
+                                                v-if="getUniqueReactionEmojis(message.reactions).length > 3"
+                                                class="message-reaction-count"
+                                            >
+                                                +{{ getUniqueReactionEmojis(message.reactions).length - 3 }}
+                                            </span>
+                                        </div>
                                         <span
-                                            v-if="getReactionMeta(message)"
-                                            class="message-reaction-badge message-reaction-badge--float"
+                                            v-else-if="!message.is_unsent && getReactionMeta(message)"
+                                            class="message-reaction-badge message-reaction-badge--floating"
                                             :class="message.is_mine ? 'message-reaction-badge--mine' : 'message-reaction-badge--theirs'"
                                             :style="{
                                                 color: getReactionMeta(message).color,
@@ -382,16 +459,47 @@
                                             <span class="message-reaction-badge__glyph">{{ getReactionMeta(message).glyph }}</span>
                                         </span>
                                         <div class="w-100">
-                                            <small>{{ formatMessageTime(message.created_at) }}</small>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <small
-                                                    v-if="message.is_mine"
-                                                    class="message-status"
-                                                    :class="message.read_at ? 'message-status--seen' : 'message-status--sent'"
+                                            <div class="message-bubble__time">
+                                                <span>{{ formatMessageTime(message.created_at) }}</span>
+                                                <span
+                                                    v-if="message.edited_at && !message.is_unsent"
+                                                    class="message-bubble__time-edit"
                                                 >
-                                                    {{ message.read_at ? `Seen at ${formatSeenAt(message.read_at)}` : 'Sent' }}
-                                                </small>
+                                                    · Edited
+                                                </span>
                                             </div>
+                                        </div>
+                                    </div>
+                                        <div
+                                            v-if="
+                                                message.is_mine &&
+                                                (shouldShowSeenReceipt(message) ||
+                                                    !message.read_at)
+                                            "
+                                            class="message-bubble__status"
+                                            :class="
+                                                shouldShowSeenReceipt(message)
+                                                    ? 'message-bubble__status--seen'
+                                                    : 'message-bubble__status--sent'
+                                            "
+                                        >
+                                            <template v-if="shouldShowSeenReceipt(message)">
+                                                <span
+                                                    class="message-bubble__seen-avatar"
+                                                    :title="formatSeenReceiptTooltip(message.read_at)"
+                                                    :aria-label="formatSeenReceiptTooltip(message.read_at)"
+                                                >
+                                                    <img
+                                                        v-if="getSeenReceiptAvatar()"
+                                                        :src="getSeenReceiptAvatar()"
+                                                        :alt="`${selectedUserState?.name || 'User'} profile`"
+                                                    />
+                                                    <span v-else>
+                                                        {{ selectedUserState?.name?.charAt(0)?.toUpperCase() || 'U' }}
+                                                    </span>
+                                                </span>
+                                            </template>
+                                            <template v-else>Sent</template>
                                         </div>
                                     </div>
                                 </div>
@@ -431,7 +539,7 @@
                                 <div class="reply-composer__meta">
                                 <small class="reply-composer__label">Replying</small>
                                 <div class="reply-composer__body">
-                                        {{ getReplyPreview(replyTargetMessage) }}
+                                        {{ getMessagePreview(replyTargetMessage) }}
                                     </div>
                                 </div>
                                 <button
@@ -584,7 +692,6 @@
                             Message is too long.
                         </small>
                     </form>
-
                     <transition name="fade">
                         <div
                             v-if="showPinnedMessagesPanel"
@@ -654,6 +761,89 @@
                             </div>
                         </div>
                     </transition>
+                    <transition name="fade">
+                        <div
+                            v-if="activeReactionTargetMessage"
+                            class="reaction-overlay reaction-overlay--panel"
+                            @click.self="activeReactionPickerId = null"
+                        >
+                            <div class="reaction-picker reaction-picker--centered" @click.stop>
+                                <button
+                                    v-for="reaction in reactionOptions"
+                                    :key="reaction.key"
+                                    type="button"
+                                    class="reaction-picker__btn"
+                                    :style="{ color: reaction.color, backgroundColor: reaction.bg }"
+                                    :title="reaction.label"
+                                    :aria-label="reaction.label"
+                                    @click="setReaction(activeReactionTargetMessage, reaction.key)"
+                                >
+                                    <span class="reaction-picker__glyph">{{ reaction.glyph }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </transition>
+                    <teleport to="body">
+                        <transition name="fade">
+                            <div
+                                v-if="activeMessageActionTargetMessage"
+                                class="message-action-menu-layer"
+                                @click="activeMessageActionsId = null"
+                            >
+                                <div
+                                    class="message-action-menu message-action-menu--floating"
+                                    :style="messageActionMenuStyle"
+                                    @click.stop
+                                >
+                                    <button
+                                        v-if="activeMessageActionTargetMessage.is_mine && activeMessageActionTargetMessage.body"
+                                        type="button"
+                                        class="message-action-menu__item message-action-menu__item--primary"
+                                        @click.stop="editMessage(activeMessageActionTargetMessage)"
+                                    >
+                                        <span class="message-action-menu__icon">
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </span>
+                                        <span class="message-action-menu__content">
+                                            <span class="message-action-menu__label">Edit</span>
+                                            <small class="message-action-menu__hint">Edit message</small>
+                                        </span>
+                                    </button>
+                                    <button
+                                        v-if="activeMessageActionTargetMessage.is_mine"
+                                        type="button"
+                                        class="message-action-menu__item message-action-menu__item--danger"
+                                        @click.stop="unsendMessage(activeMessageActionTargetMessage)"
+                                    >
+                                        <span class="message-action-menu__icon">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </span>
+                                        <span class="message-action-menu__content">
+                                            <span class="message-action-menu__label">Unsend</span>
+                                            <small class="message-action-menu__hint">Remove for everyone</small>
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="message-action-menu__item"
+                                        :class="{ 'is-active': isMessagePinned(activeMessageActionTargetMessage.id) }"
+                                        @click.stop="togglePinMessage(activeMessageActionTargetMessage)"
+                                        :disabled="!isMessagePinned(activeMessageActionTargetMessage.id) && pinnedMessages.length >= pinnedMessageLimit"
+                                    >
+                                        <span class="message-action-menu__icon">
+                                            <i :class="isMessagePinned(activeMessageActionTargetMessage.id) ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
+                                        </span>
+                                        <span class="message-action-menu__content">
+                                            <span class="message-action-menu__label">{{ isMessagePinned(activeMessageActionTargetMessage.id) ? 'Unpin' : 'Pin' }}</span>
+                                            <small class="message-action-menu__hint">
+                                                {{ isMessagePinned(activeMessageActionTargetMessage.id) ? 'Remove from pinned' : 'Keep it easy to find' }}
+                                            </small>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </transition>
+                    </teleport>
                 </div>
             </transition>
 
@@ -710,19 +900,210 @@
                 </button>
             </div>
         </div>
+        <ReactionModal
+            :is-open="showReactionsModal"
+            :reactions="reactionsModalData"
+            :current-user-id="userId"
+            :reaction-options="reactionOptions.map((reaction) => ({ ...reaction, emoji: reaction.glyph }))"
+            @close="closeReactionsModal"
+        />
+        <transition name="fade">
+            <div
+                v-if="messageActionModalVisible"
+                class="message-action-modal-backdrop"
+                @click.self="closeMessageActionModal"
+            >
+                <div
+                    class="message-action-modal"
+                    :class="{
+                        'message-action-modal--edit':
+                            messageActionModalMode === 'edit',
+                        'message-action-modal--confirm':
+                            messageActionModalMode === 'unsend',
+                    }"
+                    role="dialog"
+                    aria-modal="true"
+                    tabindex="-1"
+                    @keydown.esc.prevent="closeMessageActionModal"
+                >
+                    <div
+                        class="message-action-modal__header"
+                        :class="{
+                            'message-action-modal__header--edit':
+                                messageActionModalMode === 'edit',
+                            'message-action-modal__header--confirm':
+                                messageActionModalMode === 'unsend',
+                        }"
+                    >
+                        <div class="message-action-modal__headline">
+                            <div
+                                class="message-action-modal__badge"
+                                :class="
+                                    messageActionModalMode === 'edit'
+                                        ? 'message-action-modal__badge--edit'
+                                        : 'message-action-modal__badge--danger'
+                                "
+                            >
+                                <i
+                                    :class="
+                                        messageActionModalMode === 'edit'
+                                            ? 'fa-regular fa-pen-to-square'
+                                            : 'fa-regular fa-trash-can'
+                                    "
+                                ></i>
+                            </div>
+                            <div class="message-action-modal__eyebrow">
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Custom editor"
+                                        : "Confirmation"
+                                }}
+                            </div>
+                            <h3 class="message-action-modal__title">
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Edit this message"
+                                        : "Unsend this message?"
+                                }}
+                            </h3>
+                            <p class="message-action-modal__subtitle">
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Update the message text below and save when you are ready."
+                                        : "This removes the message for everyone in this conversation."
+                                }}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            class="message-action-modal__close"
+                            :disabled="messageActionModalSaving"
+                            @click="closeMessageActionModal"
+                            aria-label="Close dialog"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div
+                        class="message-action-modal__body"
+                        :class="{
+                            'message-action-modal__body--edit':
+                                messageActionModalMode === 'edit',
+                            'message-action-modal__body--confirm':
+                                messageActionModalMode === 'unsend',
+                        }"
+                    >
+                        <template v-if="messageActionModalMode === 'edit'">
+                            <textarea
+                                ref="messageActionModalInput"
+                                v-model="messageActionModalBody"
+                                class="message-action-modal__textarea"
+                                rows="6"
+                                :disabled="messageActionModalSaving"
+                                maxlength="2000"
+                                @keydown.ctrl.enter.prevent="submitMessageActionModal"
+                                @keydown.meta.enter.prevent="submitMessageActionModal"
+                            ></textarea>
+                            <div class="message-action-modal__meta">
+                                <small class="message-action-modal__count">
+                                    {{ messageActionModalBody.length }}/2000
+                                </small>
+                            </div>
+                        </template>
+
+                        <template v-else>
+                            <div
+                                class="message-action-modal__context"
+                                :class="{
+                                    'message-action-modal__context--confirm':
+                                        messageActionModalMode === 'unsend',
+                                }"
+                            >
+                                <div class="message-action-modal__context-label">
+                                    Message to unsend
+                                </div>
+                                <div class="message-action-modal__preview">
+                                    {{ messageActionModalMessagePreview }}
+                                </div>
+                            </div>
+                        </template>
+
+                        <p
+                            v-if="messageActionModalError"
+                            class="message-action-modal__error"
+                        >
+                            {{ messageActionModalError }}
+                        </p>
+                    </div>
+
+                    <div
+                        class="message-action-modal__footer"
+                        :class="{
+                            'message-action-modal__footer--edit':
+                                messageActionModalMode === 'edit',
+                            'message-action-modal__footer--confirm':
+                                messageActionModalMode === 'unsend',
+                        }"
+                    >
+                        <button
+                            type="button"
+                            class="message-action-modal__btn message-action-modal__btn--ghost"
+                            :disabled="messageActionModalSaving"
+                            @click="closeMessageActionModal"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            type="button"
+                            class="message-action-modal__btn"
+                            :class="
+                                messageActionModalMode === 'edit'
+                                    ? 'message-action-modal__btn--primary'
+                                    : 'message-action-modal__btn--danger'
+                            "
+                            :disabled="messageActionModalSaving || messageActionModalSubmitDisabled"
+                            @click="submitMessageActionModal"
+                        >
+                            <span
+                                v-if="messageActionModalSaving"
+                                class="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                            ></span>
+                            <span v-else>
+                                {{
+                                    messageActionModalMode === "edit"
+                                        ? "Save changes"
+                                        : "Unsend message"
+                                }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
         <div ref="imageGalleryContainer" class="d-none"></div>
     </div>
 </template>
 
 <script>
 import axios from "axios";
+import ReactionModal from "../../../employee/messages/components/ReactionModal.vue";
 
 export default {
     name: "OnlineUsers",
+    components: {
+        ReactionModal,
+    },
     props: {
         userId: {
             type: Number,
             default: null,
+        },
+        userRole: {
+            type: String,
+            default: "employee",
         },
     },
     data() {
@@ -766,6 +1147,8 @@ export default {
             imageGalleryInstance: null,
             replyTargetMessage: null,
             receiveSound: null,
+            sendSound: null,
+            sharedOnlineUsersListener: null,
             reactionOptions: [
                 {
                     key: "like",
@@ -773,6 +1156,13 @@ export default {
                     glyph: "👍",
                     color: "#1877f2",
                     bg: "rgba(24, 119, 242, 0.12)",
+                },
+                {
+                    key: "number-one",
+                    label: "One DOST",
+                    glyph: "☝️",
+                    color: "#ff9f1c",
+                    bg: "rgba(255, 159, 28, 0.14)",
                 },
                 {
                     key: "love",
@@ -809,7 +1199,9 @@ export default {
             typingIndicatorTimer: null,
             showScrollToBottomButton: false,
             highlightedMessageId: null,
+            highlightPulseToken: 0,
             highlightMessageTimer: null,
+            highlightAnimationTimer: null,
             pinnedMessages: [],
             showPinnedMessagesPanel: false,
             pinnedMessageLimit: 10,
@@ -818,10 +1210,25 @@ export default {
             showPinLimitPopup: false,
             pinLimitPopupTimer: null,
             activeReactionPickerId: null,
+            activeMessageActionsId: null,
+            messageActionMenuPosition: {
+                top: 0,
+                left: 0,
+            },
             messageReactionsKey: `direct_message_reactions_${localStorage.getItem("auth_user_id") || "guest"}`,
             messageReactions: {},
             pinnedMessagesKey: null,
             dockStateKey: `message_dock_state_${localStorage.getItem("auth_user_id") || "guest"}`,
+            showReactionsModal: false,
+            reactionsModalData: [],
+            messageActionModalVisible: false,
+            messageActionModalMode: "edit",
+            messageActionModalMessage: null,
+            messageActionModalBody: "",
+            messageActionModalError: "",
+            messageActionModalSaving: false,
+            isInitialized: false,
+            pageLoadListener: null,
         };
     },
     computed: {
@@ -911,6 +1318,34 @@ export default {
             const extension = this.getFileExtension(this.selectedAttachment.name);
             return this.getAttachmentIconClass({ extension });
         },
+        activeReactionTargetMessage() {
+            if (!this.activeReactionPickerId) {
+                return null;
+            }
+
+            return (
+                this.conversationMessages.find(
+                    (message) => message.id === this.activeReactionPickerId,
+                ) || null
+            );
+        },
+        activeMessageActionTargetMessage() {
+            if (!this.activeMessageActionsId) {
+                return null;
+            }
+
+            return (
+                this.conversationMessages.find(
+                    (message) => message.id === this.activeMessageActionsId,
+                ) || null
+            );
+        },
+        messageActionMenuStyle() {
+            return {
+                top: `${this.messageActionMenuPosition.top}px`,
+                left: `${this.messageActionMenuPosition.left}px`,
+            };
+        },
         unreadMessageCount() {
             if (this.messagePanelOpen && this.selectedUserState) {
                 return 0;
@@ -919,6 +1354,17 @@ export default {
             return this.conversationMessages.filter(
                 (message) => !message.is_mine && !message.read_at,
             ).length;
+        },
+        latestSeenReceiptMessageId() {
+            for (let index = this.conversationMessages.length - 1; index >= 0; index -= 1) {
+                const message = this.conversationMessages[index];
+
+                if (message?.is_mine && message?.read_at) {
+                    return Number(message.id);
+                }
+            }
+
+            return null;
         },
         sortedPinnedMessages() {
             return [...this.pinnedMessages].sort((a, b) => {
@@ -932,40 +1378,45 @@ export default {
                 return (b?.message_id || 0) - (a?.message_id || 0);
             });
         },
+        messageActionModalMessagePreview() {
+            return this.getMessageSnippet(this.messageActionModalMessage);
+        },
+        messageActionModalSubmitDisabled() {
+            if (this.messageActionModalMode === "edit") {
+                const trimmedBody = this.messageActionModalBody.trim();
+                const originalBody = (this.messageActionModalMessage?.body || "").trim();
+                return !trimmedBody || trimmedBody === originalBody;
+            }
+
+            return false;
+        },
     },
     mounted() {
-        window.Echo.join("online-users")
-            .here((users) => {
-                this.onlineUserIds = users.map((user) => user.id);
-                this.saveLastSeen(users.map((user) => user.id));
-                this.syncUsersOnlineState();
-            })
-            .joining((user) => {
-                if (!this.onlineUserIds.includes(user.id)) {
-                    this.onlineUserIds.push(user.id);
-                }
-                this.markUserSeen(user.id);
-                this.syncUsersOnlineState();
-            })
-            .leaving((user) => {
-                this.onlineUserIds = this.onlineUserIds.filter(
-                    (id) => id !== user.id,
-                );
-                this.markUserSeen(user.id);
-                this.syncUsersOnlineState();
-            });
+        this.hydrateOnlineUsersFromSharedState();
+        this.bindSharedOnlineUsersListener();
+        this.sendSound = new Audio("/sounds/sent.mp3");
+        this.sendSound.preload = "auto";
 
-        this.loadUsers();
-        this.restoreDockState();
-        this.loadMessageReactions();
-        this.statusInterval = setInterval(() => {
-            this.syncUsersOnlineState();
-        }, 60000);
+        this.pageLoadListener = () => {
+            this.initializeOnlineUsers();
+        };
 
-        this.subscribeToDirectMessages();
+        if (document.readyState === "complete") {
+            this.initializeOnlineUsers();
+            return;
+        }
+
+        window.addEventListener("load", this.pageLoadListener, { once: true });
     },
-        beforeUnmount() {
-            window.Echo.leave("online-users");
+    beforeUnmount() {
+        this.unbindSharedOnlineUsersListener();
+
+        if (this.pageLoadListener) {
+            window.removeEventListener("load", this.pageLoadListener);
+            this.pageLoadListener = null;
+        }
+
+        if (this.isInitialized) {
             this.leaveDirectMessageChannel();
             if (this.statusInterval) {
                 clearInterval(this.statusInterval);
@@ -976,8 +1427,112 @@ export default {
             this.clearPinLimitPopupTimer();
             this.clearSelectedAttachment(false);
             this.destroyImageGallery();
-        },
+        }
+    },
     methods: {
+        initializeOnlineUsers() {
+            if (this.isInitialized) {
+                return;
+            }
+
+            this.isInitialized = true;
+
+            this.hydrateOnlineUsersFromSharedState();
+
+            const onlineUsersChannel = window.Echo.join("online-users")
+                .here((users) => {
+                    this.onlineUserIds = users.map((user) => Number(user.id));
+                    this.saveLastSeen(this.onlineUserIds);
+                    this.syncUsersOnlineState();
+                })
+                .joining((user) => {
+                    const userId = Number(user.id);
+
+                    if (!this.onlineUserIds.includes(userId)) {
+                        this.onlineUserIds.push(userId);
+                    }
+                    this.markUserSeen(userId);
+                    this.syncUsersOnlineState();
+                })
+                .leaving((user) => {
+                    const userId = Number(user.id);
+
+                    this.onlineUserIds = this.onlineUserIds.filter(
+                        (id) => id !== userId,
+                    );
+                    this.markUserSeen(userId);
+                    this.syncUsersOnlineState();
+                });
+
+            onlineUsersChannel.listen(".online-users.updated", (event) => {
+                const payload = event?.payload || event || {};
+                const presenceUser = payload.user || null;
+                const status = payload.status || "";
+                const userId = Number(presenceUser?.id || 0);
+
+                if (!userId) {
+                    return;
+                }
+
+                if (status === "online") {
+                    if (!this.onlineUserIds.includes(userId)) {
+                        this.onlineUserIds.push(userId);
+                    }
+                } else if (status === "offline") {
+                    this.onlineUserIds = this.onlineUserIds.filter(
+                        (id) => id !== userId,
+                    );
+                }
+
+                this.markUserSeen(userId);
+                this.syncUsersOnlineState();
+            });
+
+            this.loadUsers();
+            this.restoreDockState();
+            this.loadMessageReactions();
+            this.statusInterval = setInterval(() => {
+                this.syncUsersOnlineState();
+            }, 60000);
+
+            this.subscribeToDirectMessages();
+        },
+        hydrateOnlineUsersFromSharedState() {
+            const sharedIds = window.__onlineUsersPresence?.onlineUserIds || [];
+
+            if (!Array.isArray(sharedIds) || sharedIds.length === 0) {
+                return;
+            }
+
+            this.onlineUserIds = [...new Set(sharedIds.map((id) => Number(id)))];
+            this.syncUsersOnlineState();
+        },
+        bindSharedOnlineUsersListener() {
+            if (this.sharedOnlineUsersListener) {
+                return;
+            }
+
+            this.sharedOnlineUsersListener = (event) => {
+                const sharedIds = event?.detail?.onlineUserIds || [];
+
+                if (!Array.isArray(sharedIds)) {
+                    return;
+                }
+
+                this.onlineUserIds = [...new Set(sharedIds.map((id) => Number(id)))];
+                this.syncUsersOnlineState();
+            };
+
+            window.addEventListener("online-users:updated", this.sharedOnlineUsersListener);
+        },
+        unbindSharedOnlineUsersListener() {
+            if (!this.sharedOnlineUsersListener) {
+                return;
+            }
+
+            window.removeEventListener("online-users:updated", this.sharedOnlineUsersListener);
+            this.sharedOnlineUsersListener = null;
+        },
         async loadUsers() {
             this.loadingUsers = true;
 
@@ -988,13 +1543,17 @@ export default {
                         : {},
                 });
 
-                this.users = data.map((user) => ({
-                    ...user,
-                    isSelf: this.userId ? user.id === this.userId : false,
-                    isOnline: this.onlineUserIds.includes(user.id),
-                    lastSeenAt: this.getLastSeen(user.id),
-                    statusLabel: this.getStatusLabel(user.id),
-                }))
+                this.users = data.map((user) => {
+                    const activityState = this.getActivityState(user.id);
+
+                    return {
+                        ...user,
+                        isSelf: this.userId ? user.id === this.userId : false,
+                        isOnline: activityState.isOnline,
+                        lastSeenAt: activityState.lastSeenAt,
+                        statusLabel: activityState.label,
+                    };
+                })
                 .filter((user) => !user.isSelf);
             } catch (error) {
                 console.error("Failed to load online users list:", error);
@@ -1004,12 +1563,16 @@ export default {
             }
         },
         syncUsersOnlineState() {
-            this.users = this.users.map((user) => ({
-                ...user,
-                isOnline: this.onlineUserIds.includes(user.id),
-                lastSeenAt: this.getLastSeen(user.id),
-                statusLabel: this.getStatusLabel(user.id),
-            }));
+            this.users = this.users.map((user) => {
+                const activityState = this.getActivityState(user.id);
+
+                return {
+                    ...user,
+                    isOnline: activityState.isOnline,
+                    lastSeenAt: activityState.lastSeenAt,
+                    statusLabel: activityState.label,
+                };
+            });
         },
         async openMessageBox(user) {
             this.hideUsersDropdown();
@@ -1025,6 +1588,7 @@ export default {
             this.clearSelectedAttachment();
             this.attachmentError = "";
             this.activeReactionPickerId = null;
+            this.activeMessageActionsId = null;
             this.clearHighlightTimer();
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
@@ -1034,13 +1598,16 @@ export default {
             this.pinnedMessages = [];
             await this.loadConversation({ page: 1, reset: true });
             this.scrollConversationToBottom();
-            this.markConversationSeen(user.id);
+            if (this.canMarkConversationSeen(user.id)) {
+                this.markConversationSeen(user.id);
+            }
         },
         closeMessageBox() {
             this.messagePanelOpen = false;
             this.clearTypingTimers();
             this.typingIndicator = false;
             this.activeReactionPickerId = null;
+            this.activeMessageActionsId = null;
             this.clearHighlightTimer();
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
@@ -1051,6 +1618,10 @@ export default {
             this.saveDockState();
             this.attachmentError = "";
         },
+        openMessagesPage() {
+            this.closeMessageBox();
+            window.location.href = this.userRole === "admin" ? "/admin/messages" : "/employee/messages";
+        },
         hideChatDock() {
             this.messagePanelOpen = false;
             this.chatDockVisible = false;
@@ -1058,6 +1629,7 @@ export default {
             this.clearTypingTimers();
             this.typingIndicator = false;
             this.activeReactionPickerId = null;
+            this.activeMessageActionsId = null;
             this.clearHighlightTimer();
             this.highlightedMessageId = null;
             this.showPinnedMessagesPanel = false;
@@ -1118,7 +1690,9 @@ export default {
             this.pinnedMessages = [];
             this.loadConversation({ page: 1, reset: true }).then(() => {
                 this.scrollConversationToBottom();
-                this.markConversationSeen(this.selectedUserState?.id);
+                if (this.canMarkConversationSeen(this.selectedUserState?.id)) {
+                    this.markConversationSeen(this.selectedUserState?.id);
+                }
             });
         },
         resetConversationState() {
@@ -1184,7 +1758,11 @@ export default {
                     return;
                 }
 
-                const messages = data.messages ?? [];
+                const messages = Array.isArray(data.messages)
+                    ? data.messages.map((message) =>
+                          this.normalizeConversationMessage(message),
+                      )
+                    : [];
                 const pagination = data.pagination ?? {};
                 const pinnedMessages = data.pinned_messages ?? [];
                 this.conversationPage = pagination.current_page ?? page;
@@ -1273,7 +1851,9 @@ export default {
                     this.upsertConversationMessage({
                         ...data.message,
                         is_mine: true,
+                        read_at: null,
                     });
+                    this.playSendSound();
                     this.messageDraft = "";
                     this.replyTargetMessage = null;
                     this.clearSelectedAttachment();
@@ -1317,6 +1897,7 @@ export default {
                             this.applyServerMessageUpdate({
                                 ...message,
                                 is_mine: true,
+                                read_at: null,
                             });
 
                             this.$nextTick(() => {
@@ -1376,18 +1957,11 @@ export default {
                     });
                     this.loadingConversation = false;
 
-                    this.$nextTick(() => {
-                        const bodyEl = this.$el.querySelector(".message-panel__body");
-                        if (bodyEl) {
-                            if (this.isConversationNearBottom(bodyEl)) {
-                                bodyEl.scrollTop = bodyEl.scrollHeight;
-                                this.showScrollToBottomButton = false;
-                                return;
-                            }
+                    if (this.canMarkConversationSeen(partnerId)) {
+                        this.markConversationSeen(partnerId);
+                    }
 
-                            this.updateScrollToBottomButton(bodyEl);
-                        }
-                    });
+                    this.scrollConversationToBottom();
                 })
                 .listen(".direct-message.seen", (event) => {
                     const payload = event?.payload;
@@ -1404,10 +1978,10 @@ export default {
                     }
 
                     const readAt = payload.read_at ?? null;
-                    const messageIds = new Set(payload.message_ids);
+                    const messageIds = new Set(payload.message_ids.map((id) => Number(id)));
 
                     this.conversationMessages = this.conversationMessages.map((message) => {
-                        if (!messageIds.has(message.id)) {
+                        if (!messageIds.has(Number(message.id))) {
                             return message;
                         }
 
@@ -1451,14 +2025,19 @@ export default {
                         this.typingIndicatorTimer = null;
                     }, 2500);
 
-                    const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
-                    if (bodyEl && this.messagePanelOpen) {
-                        this.updateScrollToBottomButton(bodyEl);
-
-                        if (!this.showScrollToBottomButton) {
-                            this.scrollConversationToBottom();
+                    this.$nextTick(() => {
+                        const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
+                        if (!bodyEl) {
+                            return;
                         }
-                    }
+
+                        if (this.isConversationNearBottom(bodyEl, 100)) {
+                            this.scrollConversationToBottom();
+                            return;
+                        }
+
+                        this.updateScrollToBottomButton(bodyEl);
+                    });
                 });
         },
         leaveDirectMessageChannel() {
@@ -1518,6 +2097,10 @@ export default {
             return distanceFromBottom <= threshold;
         },
         handleInterfaceClick() {
+            if (!this.canMarkConversationSeen()) {
+                return;
+            }
+
             this.activeReactionPickerId = null;
             this.showPinnedMessagesPanel = false;
             this.markConversationSeen();
@@ -1660,7 +2243,7 @@ export default {
         playReceiveSound() {
             try {
                 if (!this.receiveSound) {
-                    this.receiveSound = new Audio("/sounds/message.mp3");
+                    this.receiveSound = new Audio("/sounds/receive.mp3");
                     this.receiveSound.preload = "auto";
                 }
 
@@ -1672,6 +2255,23 @@ export default {
                 }
             } catch (error) {
                 console.error("Failed to play receive sound:", error);
+            }
+        },
+        playSendSound() {
+            try {
+                if (!this.sendSound) {
+                    this.sendSound = new Audio("/sounds/sent.mp3");
+                    this.sendSound.preload = "auto";
+                }
+
+                this.sendSound.currentTime = 0;
+                const played = this.sendSound.play();
+
+                if (played && typeof played.catch === "function") {
+                    played.catch(() => {});
+                }
+            } catch (error) {
+                console.error("Failed to play send sound:", error);
             }
         },
         destroyImageGallery() {
@@ -1699,15 +2299,46 @@ export default {
                 return;
             }
 
-            const normalizedMessage = {
+            const existingMessage = this.conversationMessages.find(
+                (item) => Number(item.id) === Number(message.id),
+            );
+
+            const senderId = message?.sender_id ?? existingMessage?.sender_id ?? null;
+            const recipientId = message?.recipient_id ?? existingMessage?.recipient_id ?? null;
+            const isUnsent = Boolean(message?.is_unsent);
+
+            const normalizedMessage = this.normalizeConversationMessage({
+                ...existingMessage,
                 ...message,
-                is_mine: Number(message.sender_id) === Number(this.userId),
-            };
+                sender_id: senderId,
+                recipient_id: recipientId,
+                body: isUnsent ? null : message?.body ?? existingMessage?.body ?? null,
+                attachment: isUnsent ? null : message?.attachment ?? existingMessage?.attachment ?? null,
+                edited_at: isUnsent ? null : message?.edited_at ?? existingMessage?.edited_at ?? null,
+                pinned_at: isUnsent ? null : message?.pinned_at ?? existingMessage?.pinned_at ?? null,
+                pinned_by_id: isUnsent ? null : message?.pinned_by_id ?? existingMessage?.pinned_by_id ?? null,
+                is_pinned: isUnsent ? false : Boolean(message?.is_pinned ?? existingMessage?.is_pinned),
+                reaction: isUnsent ? null : message?.reaction ?? existingMessage?.reaction ?? null,
+                reactions: isUnsent
+                    ? []
+                    : Array.isArray(message?.reactions)
+                        ? message.reactions
+                        : Array.isArray(existingMessage?.reactions)
+                            ? existingMessage.reactions
+                            : [],
+                is_mine: senderId !== null
+                    ? Number(senderId) === Number(this.userId)
+                    : Boolean(existingMessage?.is_mine),
+            });
 
             this.upsertConversationMessage(normalizedMessage);
 
             if (Array.isArray(pinnedMessages)) {
                 this.pinnedMessages = pinnedMessages;
+            } else if (isUnsent) {
+                this.pinnedMessages = this.pinnedMessages.filter(
+                    (pin) => Number(pin?.message_id) !== Number(message.id),
+                );
             }
         },
         getPinStorageKey(userId = null) {
@@ -1755,9 +2386,52 @@ export default {
 
             this.showPinnedMessagesPanel = !this.showPinnedMessagesPanel;
         },
+        toggleMessageActions(message, event = null) {
+            if (!message?.id || message.is_unsent || message.is_system) {
+                return;
+            }
+
+            this.activeReactionPickerId = null;
+
+            if (this.activeMessageActionsId === message.id) {
+                this.activeMessageActionsId = null;
+                return;
+            }
+
+            this.positionMessageActionMenu(event?.currentTarget || event?.target);
+            this.activeMessageActionsId = message.id;
+        },
+        positionMessageActionMenu(triggerElement) {
+            if (!triggerElement?.getBoundingClientRect) {
+                return;
+            }
+
+            const rect = triggerElement.getBoundingClientRect();
+            const menuWidth = 200;
+            const sidePadding = 16;
+            const minLeft = sidePadding + menuWidth / 2;
+            const maxLeft = Math.max(
+                minLeft,
+                window.innerWidth - sidePadding - menuWidth / 2,
+            );
+            const centeredLeft = rect.left + rect.width / 2;
+
+            this.messageActionMenuPosition = {
+                top: Math.max(12, rect.top - 10),
+                left: Math.min(maxLeft, Math.max(minLeft, centeredLeft)),
+            };
+        },
         getMessageSnippet(message) {
             if (!message) {
                 return "Attachment";
+            }
+
+            if (message.is_system) {
+                return this.formatSystemMessage(message);
+            }
+
+            if (message.is_unsent) {
+                return "Unsent Message";
             }
 
             if (message.body) {
@@ -1776,10 +2450,11 @@ export default {
             );
         },
         async togglePinMessage(message) {
-            if (!message?.id) return;
+            if (!message?.id || message.is_unsent || message.is_system) return;
 
             this.clearPinErrorTimer();
             this.pinError = "";
+            this.activeMessageActionsId = null;
 
             const isPinned = Boolean(message.pinned_at);
 
@@ -1835,10 +2510,130 @@ export default {
             const message = this.conversationMessages.find((item) => item.id === pin.message_id);
             if (!message) return;
 
+            if (message.is_unsent || message.is_system) {
+                return;
+            }
+
             await this.togglePinMessage({
                 ...message,
                 pinned_at: message.pinned_at || pin.pinned_at || null,
             });
+        },
+        async editMessage(message) {
+            if (!message?.id || !message.is_mine || message.is_unsent || message.is_system) {
+                return;
+            }
+
+            this.activeMessageActionsId = null;
+            if (!(message.body || "").trim()) {
+                return;
+            }
+
+            this.openMessageActionModal("edit", message);
+        },
+        async unsendMessage(message) {
+            if (!message?.id || !message.is_mine || message.is_unsent || message.is_system) {
+                return;
+            }
+
+            this.activeMessageActionsId = null;
+            this.openMessageActionModal("unsend", message);
+        },
+        openMessageActionModal(mode, message) {
+            if (!message?.id) {
+                return;
+            }
+
+            this.messageActionModalMode = mode === "unsend" ? "unsend" : "edit";
+            this.messageActionModalMessage = message;
+            this.messageActionModalBody = message.body || "";
+            this.messageActionModalError = "";
+            this.messageActionModalSaving = false;
+            this.messageActionModalVisible = true;
+
+            this.$nextTick(() => {
+                const input = this.$refs.messageActionModalInput;
+                if (this.messageActionModalMode === "edit" && input?.focus) {
+                    input.focus();
+                    if (typeof input.setSelectionRange === "function") {
+                        const length = input.value?.length || 0;
+                        input.setSelectionRange(length, length);
+                    }
+                }
+            });
+        },
+        closeMessageActionModal(force = false) {
+            if (this.messageActionModalSaving && !force) {
+                return;
+            }
+
+            this.messageActionModalVisible = false;
+            this.messageActionModalMode = "edit";
+            this.messageActionModalMessage = null;
+            this.messageActionModalBody = "";
+            this.messageActionModalError = "";
+            this.messageActionModalSaving = false;
+        },
+        async submitMessageActionModal() {
+            if (!this.messageActionModalMessage?.id || this.messageActionModalSaving) {
+                return;
+            }
+
+            if (this.messageActionModalMode === "edit") {
+                const trimmedBody = this.messageActionModalBody.trim();
+                const originalBody = (this.messageActionModalMessage.body || "").trim();
+
+                if (!trimmedBody || trimmedBody === originalBody) {
+                    return;
+                }
+
+                this.messageActionModalSaving = true;
+                this.messageActionModalError = "";
+
+                try {
+                    const { data } = await axios.patch(
+                        `/api/direct-messages/${this.messageActionModalMessage.id}`,
+                        { body: trimmedBody },
+                        {
+                            headers: this.token
+                                ? { Authorization: `Bearer ${this.token}` }
+                                : {},
+                        },
+                    );
+
+                    this.applyServerMessageUpdate(data?.message ?? null, data?.pinned_messages ?? null);
+                    this.closeMessageActionModal(true);
+                } catch (error) {
+                    this.messageActionModalError =
+                        error?.response?.data?.message || "Unable to edit message.";
+                } finally {
+                    this.messageActionModalSaving = false;
+                }
+
+                return;
+            }
+
+            this.messageActionModalSaving = true;
+            this.messageActionModalError = "";
+
+            try {
+                const { data } = await axios.delete(
+                    `/api/direct-messages/${this.messageActionModalMessage.id}`,
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                );
+
+                this.applyServerMessageUpdate(data?.message ?? null, data?.pinned_messages ?? null);
+                this.closeMessageActionModal(true);
+            } catch (error) {
+                this.messageActionModalError =
+                    error?.response?.data?.message || "Unable to unsend message.";
+            } finally {
+                this.messageActionModalSaving = false;
+            }
         },
         getReactionMeta(message) {
             const reactionKey = message?.reaction ?? null;
@@ -1847,13 +2642,125 @@ export default {
             }
             return this.reactionOptions.find((reaction) => reaction.key === reactionKey) || null;
         },
+        getReactionEmoji(reactionKey) {
+            return (
+                this.reactionOptions.find((reaction) => reaction.key === reactionKey)?.glyph || ""
+            );
+        },
+        getUniqueReactionEmojis(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return [];
+            }
+
+            const uniqueReactions = new Set();
+            reactions.forEach((reaction) => {
+                if (reaction?.reaction) {
+                    uniqueReactions.add(reaction.reaction);
+                }
+            });
+
+            return Array.from(uniqueReactions).map((reactionKey) => this.getReactionEmoji(reactionKey));
+        },
+        formatReactionsTooltip(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return "";
+            }
+
+            const grouped = {};
+            reactions.forEach((reaction) => {
+                if (reaction?.reaction && reaction?.user_name) {
+                    if (!grouped[reaction.reaction]) {
+                        grouped[reaction.reaction] = [];
+                    }
+                    grouped[reaction.reaction].push(reaction.user_name);
+                }
+            });
+
+            return Object.entries(grouped)
+                .map(([reactionKey, names]) => {
+                    const emoji = this.getReactionEmoji(reactionKey);
+                    return `${emoji}: ${names.join(", ")}`;
+                })
+                .join("\n");
+        },
+        openReactionsModal(reactions) {
+            if (!Array.isArray(reactions) || reactions.length === 0) {
+                return;
+            }
+
+            this.reactionsModalData = reactions;
+            this.showReactionsModal = true;
+        },
+        closeReactionsModal() {
+            this.showReactionsModal = false;
+            this.reactionsModalData = [];
+        },
         toggleReactionPicker(message) {
+            if (message?.is_unsent || message?.is_system) {
+                return;
+            }
+
+            this.activeMessageActionsId = null;
             this.activeReactionPickerId = this.activeReactionPickerId === message.id ? null : message.id;
         },
-        async setReaction(message, reactionKey) {
-            if (!message?.id) return;
+        async promptForMessageEdit(currentBody) {
+            if (!window.Swal) {
+                return window.prompt("Edit message", currentBody);
+            }
 
-            const existingReaction = message.reaction ?? null;
+            const result = await window.Swal.fire({
+                title: "Edit message",
+                input: "textarea",
+                inputValue: currentBody,
+                inputAttributes: {
+                    "aria-label": "Edit message body",
+                },
+                showCancelButton: true,
+                confirmButtonText: "Save",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#2f80ed",
+                cancelButtonColor: "#6c757d",
+                inputValidator: (value) => {
+                    if (!value || !value.trim()) {
+                        return "Message cannot be empty.";
+                    }
+
+                    return null;
+                },
+            });
+
+            if (!result.isConfirmed) {
+                return null;
+            }
+
+            return result.value;
+        },
+        async confirmUnsendMessage() {
+            if (!window.Swal) {
+                return window.confirm("Unsend this message for everyone?");
+            }
+
+            const result = await window.Swal.fire({
+                icon: "warning",
+                title: "Unsend message?",
+                text: "This will remove the message for both sides.",
+                showCancelButton: true,
+                confirmButtonText: "Unsend",
+                cancelButtonText: "Cancel",
+                confirmButtonColor: "#dc3545",
+                cancelButtonColor: "#6c757d",
+            });
+
+            return result.isConfirmed;
+        },
+        async setReaction(message, reactionKey) {
+            if (!message?.id || message.is_unsent || message.is_system) return;
+
+            const existingReaction = Array.isArray(message.reactions)
+                ? message.reactions.find(
+                      (reaction) => Number(reaction.user_id) === Number(this.userId || 0),
+                  )?.reaction || null
+                : message.reaction || null;
             const nextReaction = existingReaction === reactionKey ? null : reactionKey;
 
             try {
@@ -1909,9 +2816,40 @@ export default {
 
             this.imageGalleryInstance.openGallery();
         },
+        canMarkConversationSeen(userId = null) {
+            const activeUser = this.selectedUserState;
+            const selectedUserId = userId ?? activeUser?.id ?? null;
+
+            if (!activeUser || !selectedUserId) {
+                return false;
+            }
+
+            if (!this.chatDockVisible || !this.messagePanelOpen) {
+                return false;
+            }
+
+            if (!this.isMessagePanelVisible()) {
+                return false;
+            }
+
+            return Number(activeUser.id) === Number(selectedUserId);
+        },
+        isMessagePanelVisible() {
+            if (typeof window === "undefined") {
+                return false;
+            }
+
+            const panel = this.$el?.querySelector(".message-panel");
+            if (!panel) {
+                return false;
+            }
+
+            const styles = window.getComputedStyle(panel);
+            return styles.display !== "none" && styles.visibility !== "hidden" && panel.getClientRects().length > 0;
+        },
         async markConversationSeen(userId = null) {
             const activeUser = this.selectedUserState;
-            if (!activeUser || !this.messagePanelOpen) return;
+            if (!this.canMarkConversationSeen(userId)) return;
             if (!this.conversationMessages.some((message) => !message.is_mine && !message.read_at)) {
                 return;
             }
@@ -1938,12 +2876,12 @@ export default {
                 }
 
                 const readAt = data?.read_at ?? null;
-                const messageIds = new Set(data?.message_ids ?? []);
+                const messageIds = new Set((data?.message_ids ?? []).map((id) => Number(id)));
 
                 if (!readAt || messageIds.size === 0) return;
 
                 this.conversationMessages = this.conversationMessages.map((message) => {
-                    if (!messageIds.has(message.id)) {
+                    if (!messageIds.has(Number(message.id))) {
                         return message;
                     }
 
@@ -1957,7 +2895,11 @@ export default {
             }
         },
         startReply(message) {
-            this.replyTargetMessage = message;
+            if (!message || message.is_unsent || message.is_system) {
+                return;
+            }
+
+            this.replyTargetMessage = this.normalizeReplyTarget(message);
             this.messageDraft = "";
         },
         cancelReply() {
@@ -2002,40 +2944,132 @@ export default {
                 return;
             }
 
-            this.$nextTick(() => {
-                const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
-                const targetEl = bodyEl?.querySelector(`[data-message-id="${messageId}"]`)
+            await this.$nextTick();
+
+            const bodyEl = this.$refs.conversationBody || this.$el.querySelector(".message-panel__body");
+            let targetEl = bodyEl?.querySelector(`[data-message-id="${messageId}"]`)
+                || this.$el.querySelector(`[data-message-id="${messageId}"]`);
+
+            if (!targetEl) {
+                await this.$nextTick();
+                targetEl = bodyEl?.querySelector(`[data-message-id="${messageId}"]`)
                     || this.$el.querySelector(`[data-message-id="${messageId}"]`);
+            }
 
-                if (targetEl) {
-                    targetEl.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                    });
-                } else if (bodyEl) {
-                    bodyEl.scrollTop = bodyEl.scrollHeight;
-                }
+            if (targetEl) {
+                targetEl.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+            } else if (bodyEl) {
+                bodyEl.scrollTop = bodyEl.scrollHeight;
+            }
 
-                this.highlightedMessageId = messageId;
-                this.clearHighlightTimer();
-                this.highlightMessageTimer = setTimeout(() => {
-                    this.highlightedMessageId = null;
-                    this.highlightMessageTimer = null;
-                }, 2200);
+            await this.waitForMessageInView(targetEl, bodyEl);
+            await this.pulseHighlightedMessage(messageId, targetEl);
 
-                if (bodyEl) {
-                    this.updateScrollToBottomButton(bodyEl);
-                }
-            });
+            if (bodyEl) {
+                this.updateScrollToBottomButton(bodyEl);
+            }
         },
         async scrollToReplyMessage(message) {
-            const replyId = message?.reply_to_id || null;
+            const replyId = message?.reply_to?.id || message?.reply_to_id || null;
             if (!replyId) return;
 
             await this.scrollToMessage(replyId);
         },
+        async waitForMessageInView(targetEl, bodyEl, timeoutMs = 1400) {
+            if (!targetEl) {
+                return;
+            }
+
+            const startedAt = Date.now();
+
+            while (Date.now() - startedAt < timeoutMs) {
+                await this.$nextTick();
+
+                if (this.isMessageInView(targetEl, bodyEl)) {
+                    await new Promise((resolve) => setTimeout(resolve, 60));
+                    if (this.isMessageInView(targetEl, bodyEl)) {
+                        return;
+                    }
+                }
+
+                await new Promise((resolve) => setTimeout(resolve, 40));
+            }
+        },
+        isMessageInView(targetEl, bodyEl) {
+            if (!targetEl) {
+                return false;
+            }
+
+            const targetRect = targetEl.getBoundingClientRect();
+
+            if (!bodyEl) {
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+                return targetRect.top < viewportHeight && targetRect.bottom > 0;
+            }
+
+            const bodyRect = bodyEl.getBoundingClientRect();
+            return targetRect.top < bodyRect.bottom && targetRect.bottom > bodyRect.top;
+        },
+        clearHighlightAnimationTimer() {
+            if (this.highlightAnimationTimer) {
+                clearTimeout(this.highlightAnimationTimer);
+                this.highlightAnimationTimer = null;
+            }
+        },
+        async pulseHighlightedMessage(messageId, targetEl = null) {
+            if (!messageId) {
+                return;
+            }
+
+            if (this.highlightedMessageId === messageId) {
+                this.highlightedMessageId = null;
+                await this.$nextTick();
+                await new Promise((resolve) => requestAnimationFrame(resolve));
+                await new Promise((resolve) => requestAnimationFrame(resolve));
+            }
+
+            this.highlightedMessageId = messageId;
+            this.highlightPulseToken += 1;
+            this.clearHighlightTimer();
+            this.clearHighlightAnimationTimer();
+
+            const bubbleEl = targetEl?.querySelector(".message-bubble")
+                || this.$el.querySelector(`[data-message-id="${messageId}"] .message-bubble`);
+
+            if (bubbleEl) {
+                bubbleEl.style.animation = "none";
+                bubbleEl.offsetHeight;
+                await this.$nextTick();
+
+                requestAnimationFrame(() => {
+                    if (!bubbleEl.isConnected || this.highlightedMessageId !== messageId) {
+                        return;
+                    }
+
+                    bubbleEl.style.animation = "messageShake 0.55s ease-in-out";
+                    this.highlightAnimationTimer = setTimeout(() => {
+                        if (bubbleEl.isConnected && this.highlightedMessageId === messageId) {
+                            bubbleEl.style.animation = "";
+                        }
+                        this.highlightAnimationTimer = null;
+                    }, 650);
+                });
+            }
+
+            this.highlightMessageTimer = setTimeout(() => {
+                this.highlightedMessageId = null;
+                this.highlightMessageTimer = null;
+            }, 2200);
+        },
         getReplyPreview(message) {
             if (!message?.reply_to_id && !message?.reply_to && !message?.reply_preview) {
+                if (message?.is_unsent) {
+                    return "Unsent Message";
+                }
+
                 if (message?.body) {
                     return message.body;
                 }
@@ -2057,6 +3091,10 @@ export default {
 
             if (!replyTarget) return "Original message not available";
 
+            if (replyTarget.is_unsent) {
+                return "Unsent Message";
+            }
+
             if (replyTarget.body) {
                 return replyTarget.body;
             }
@@ -2066,6 +3104,79 @@ export default {
             }
 
             return "Attachment";
+        },
+        getMessagePreview(message) {
+            if (!message) {
+                return "Attachment";
+            }
+
+            if (message.is_system) {
+                return this.formatSystemMessage(message);
+            }
+
+            if (message.is_unsent) {
+                return "Unsent Message";
+            }
+
+            if (message.body) {
+                return message.body;
+            }
+
+            if (message.attachment?.name) {
+                return message.attachment.name;
+            }
+
+            return "Attachment";
+        },
+        normalizeReplyTarget(message) {
+            if (!message) {
+                return null;
+            }
+
+            return {
+                id: message.id,
+                body: message.body || "",
+                attachment: message.attachment
+                    ? { ...message.attachment }
+                    : null,
+                sender_id: message.sender_id,
+                recipient_id: message.recipient_id,
+                created_at: message.created_at || null,
+            };
+        },
+        normalizeConversationMessage(message) {
+            if (!message) {
+                return message;
+            }
+
+            const senderId =
+                message.sender_id != null ? Number(message.sender_id) : null;
+            const recipientId =
+                message.recipient_id != null ? Number(message.recipient_id) : null;
+
+            return {
+                ...message,
+                id: message.id != null ? Number(message.id) : message.id,
+                sender_id: senderId,
+                recipient_id: recipientId,
+                is_mine:
+                    senderId !== null
+                        ? Number(senderId) === Number(this.userId || 0)
+                        : Boolean(message.is_mine),
+                is_system: Boolean(
+                    message.is_system || message.message_type === "system",
+                ),
+                is_unsent: Boolean(message.is_unsent),
+                reaction: message.is_unsent ? null : message.reaction || null,
+                reactions: message.is_unsent
+                    ? []
+                    : Array.isArray(message.reactions)
+                        ? message.reactions
+                        : [],
+            };
+        },
+        formatSystemMessage(message) {
+            return String(message?.body || "").trim();
         },
         triggerAttachmentPicker() {
             const input = this.$refs.attachmentInput;
@@ -2213,49 +3324,97 @@ export default {
             const now = Date.now();
 
             userIds.forEach((id) => {
-                store[id] = now;
+                store[Number(id)] = now;
             });
 
             localStorage.setItem("online-users-last-seen", JSON.stringify(store));
         },
         markUserSeen(userId) {
             const store = this.getLastSeenStore();
-            store[userId] = Date.now();
+            store[Number(userId)] = Date.now();
             localStorage.setItem("online-users-last-seen", JSON.stringify(store));
         },
         getLastSeen(userId) {
             const store = this.getLastSeenStore();
-            return store[userId] ?? null;
+            return store[Number(userId)] ?? null;
         },
-        getStatusLabel(userId) {
-            const isOnline = this.onlineUserIds.includes(userId);
+        getActivityState(userId) {
+            const normalizedUserId = Number(userId);
+            const isOnline = this.onlineUserIds.includes(normalizedUserId);
 
             if (isOnline) {
-                return "Online";
+                return {
+                    isOnline: true,
+                    lastSeenAt: this.getLastSeen(normalizedUserId),
+                    label: "Online",
+                };
             }
 
-            const lastSeenAt = this.getLastSeen(userId);
+            const lastSeenAt = this.getLastSeen(normalizedUserId);
 
             if (!lastSeenAt) {
-                return "Offline";
+                return {
+                    isOnline: false,
+                    lastSeenAt: null,
+                    label: "Offline",
+                };
             }
 
             const mins = Math.max(1, Math.floor((Date.now() - lastSeenAt) / 60000));
 
-            if (mins < 60) return `Active ${mins} min ago`;
-            if (mins < 1440) return `Active ${Math.floor(mins / 60)} hrs ago`;
-            return `Active ${Math.floor(mins / 1440)} days ago`;
+            if (mins < 60) {
+                return {
+                    isOnline: false,
+                    lastSeenAt,
+                    label: `Active ${mins} min ago`,
+                };
+            }
+
+            if (mins < 1440) {
+                return {
+                    isOnline: false,
+                    lastSeenAt,
+                    label: `Active ${Math.floor(mins / 60)} hrs ago`,
+                };
+            }
+
+            return {
+                isOnline: false,
+                lastSeenAt,
+                label: `Active ${Math.floor(mins / 1440)} days ago`,
+            };
+        },
+        getStatusLabel(userId) {
+            return this.getActivityState(userId).label;
         },
         formatMessageTime(timestamp) {
             if (!timestamp) return "";
 
             const date = new Date(timestamp);
-            const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+            if (Number.isNaN(date.getTime())) return "";
 
-            if (mins < 1) return "just now";
-            if (mins < 60) return `${mins} min ago`;
-            if (mins < 1440) return `${Math.floor(mins / 60)} hrs ago`;
-            return `${Math.floor(mins / 1440)} days ago`;
+            const diffMs = Date.now() - date.getTime();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+
+            if (diffMs >= oneDayMs) {
+                const datePart = new Intl.DateTimeFormat(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                }).format(date);
+
+                const timePart = new Intl.DateTimeFormat(undefined, {
+                    hour: "numeric",
+                    minute: "2-digit",
+                }).format(date);
+
+                return `${datePart} ${timePart}`;
+            }
+
+            return new Intl.DateTimeFormat(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+            }).format(date);
         },
         formatSeenAt(timestamp) {
             if (!timestamp) return "";
@@ -2265,6 +3424,22 @@ export default {
                 hour: "numeric",
                 minute: "2-digit",
             }).format(date);
+        },
+        formatSeenReceiptTooltip(value) {
+            if (!value) return "";
+
+            const seenAt = this.formatSeenAt(value);
+            return seenAt ? `Seen at ${seenAt}` : "";
+        },
+        getSeenReceiptAvatar() {
+            return this.selectedUserState?.profile || null;
+        },
+        shouldShowSeenReceipt(message) {
+            if (!message?.is_mine || !message?.read_at) {
+                return false;
+            }
+
+            return Number(message.id) === Number(this.latestSeenReceiptMessageId || 0);
         },
         formatPinnedAt(timestamp) {
             if (!timestamp) return "";
@@ -2342,6 +3517,91 @@ img {
     top: 0;
     z-index: 99999;
     background: var(--bs-body-bg);
+    backdrop-filter: blur(12px);
+}
+
+.online-users-menu__hero {
+    margin-bottom: 0.9rem;
+    padding: 1rem 1rem 0.95rem;
+    border: 1px solid rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at top left, rgba(var(--bs-primary-rgb), 0.16), transparent 58%),
+        linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-primary-rgb), 0.02));
+}
+
+.online-users-menu__topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.65rem;
+}
+
+.online-users-menu__title-block {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.online-users-menu__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0.45rem;
+    color: rgba(var(--bs-primary-rgb), 0.9);
+    font-size: 0.69rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.online-users-menu__title-block h6 {
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+}
+
+.online-users-menu__subline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.08);
+    color: #15803d;
+    font-size: 0.79rem;
+    font-weight: 600;
+}
+
+.online-users-menu__count-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.14);
+    flex: 0 0 auto;
+}
+
+.online-users-menu__messenger-btn {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+.online-users-menu__description {
+    color: var(--bs-secondary-color);
+    font-size: 0.82rem;
+    line-height: 1.5;
 }
 
 .online-users-list {
@@ -2356,7 +3616,8 @@ img {
     border: 1px solid var(--bs-border-color);
     border-radius: 12px;
     background: var(--bs-secondary-bg);
-    padding: 0.2rem 0.65rem;
+    min-height: 2.5rem;
+    padding: 0 0.7rem;
     transition:
         border-color 0.15s ease,
         box-shadow 0.15s ease,
@@ -2371,7 +3632,7 @@ img {
 
 .search-shell__icon {
     color: var(--bs-secondary-color);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     margin-right: 0.55rem;
     flex-shrink: 0;
 }
@@ -2381,9 +3642,14 @@ img {
     box-shadow: none !important;
     background: transparent !important;
     color: var(--bs-body-color);
+    min-height: 2.1rem;
+    padding-top: 0;
+    padding-bottom: 0;
     padding-left: 0;
     padding-right: 0;
     min-width: 0;
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
 }
 
 .search-shell__input::placeholder {
@@ -2672,6 +3938,34 @@ img {
     min-height: 0;
 }
 
+.conversation-start-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px 0 16px;
+    color: rgba(var(--bs-body-color-rgb), 0.58);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.conversation-start-marker::before,
+.conversation-start-marker::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(var(--bs-body-color-rgb), 0.18));
+}
+
+.conversation-start-marker::before {
+    margin-right: 12px;
+}
+
+.conversation-start-marker::after {
+    margin-left: 12px;
+    background: linear-gradient(90deg, rgba(var(--bs-body-color-rgb), 0.18), transparent);
+}
+
 .message-panel__older-loading {
     min-height: 3rem;
     padding: 0.5rem 0 0.75rem;
@@ -2738,6 +4032,11 @@ img {
 .message-row {
     display: flex;
     width: 100%;
+    margin-bottom: 0.85rem;
+}
+
+.message-row:last-child {
+    margin-bottom: 0;
 }
 
 .message-row--theirs {
@@ -2748,10 +4047,22 @@ img {
     justify-content: flex-end;
 }
 
+.message-row--system {
+    justify-content: center;
+}
+
 .message-bubble-shell {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+    max-width: 100%;
+}
+
+.message-bubble-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 100%;
     max-width: 100%;
 }
 
@@ -2763,6 +4074,36 @@ img {
     flex-direction: row;
 }
 
+.message-row--theirs .message-bubble-stack {
+    align-items: flex-start;
+}
+
+.message-system-note {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    max-width: min(100%, 32rem);
+    margin: 0 auto;
+    padding: 0.48rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.015);
+    text-align: center;
+}
+
+.message-system-note__body {
+    display: block;
+    max-width: 100%;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
 .message-actions {
     display: inline-flex;
     align-items: center;
@@ -2772,6 +4113,11 @@ img {
     pointer-events: none;
     transition: opacity 0.16s ease, transform 0.16s ease;
     position: relative;
+    z-index: 80;
+}
+
+.message-row--theirs .message-actions {
+    flex-direction: row-reverse;
 }
 
 .message-row:hover .message-actions,
@@ -2780,6 +4126,65 @@ img {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+}
+
+.message-actions.is-hidden-for-reaction {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.message-action-group {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.message-action-menu-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    pointer-events: auto;
+}
+
+.message-action-menu {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 180px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    background: rgba(36, 42, 51, 0.98);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
+    z-index: 120;
+    backdrop-filter: blur(10px);
+}
+
+.message-action-menu--floating {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, calc(-100% - 8px));
+    z-index: 2501;
+}
+
+.message-action-menu::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    width: 14px;
+    height: 14px;
+    background: rgba(36, 42, 51, 0.98);
+    transform: translateX(-50%) rotate(45deg);
+    border-radius: 2px;
+    z-index: -1;
 }
 
 .message-action-button {
@@ -2806,6 +4211,10 @@ img {
 }
 
 .message-action-button--react {
+    font-size: 0.95rem;
+}
+
+.message-action-button--more {
     font-size: 0.95rem;
 }
 
@@ -2845,28 +4254,374 @@ img {
     opacity: 0.95;
 }
 
+.message-action-menu__item {
+    width: 100%;
+    min-height: 3.25rem;
+    border: 0;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #f3f4f6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0.72rem 0.9rem;
+    font-size: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: left;
+    transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.message-action-menu__item:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
+}
+
+.message-action-menu__item.is-active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.message-action-menu__item--primary {
+    background: linear-gradient(180deg, #3563f0 0%, #2d55da 100%);
+    color: #fff;
+}
+
+.message-action-menu__item--primary:hover {
+    background: linear-gradient(180deg, #3d6cfa 0%, #315ce7 100%);
+    color: #fff;
+}
+
+.message-action-menu__item--danger {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.message-action-menu__item--danger:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.message-action-menu__item:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.message-action-menu__icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 24px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #f5f5f7;
+}
+
+.message-action-menu__icon i {
+    font-size: 0.78rem;
+}
+
+.message-action-menu__item--primary .message-action-menu__icon {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.message-action-menu__item--danger .message-action-menu__icon {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.message-action-menu__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-width: 0;
+}
+
+.message-action-menu__label {
+    line-height: 1.1;
+}
+
+.message-action-menu__hint {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.15;
+}
+
+.message-action-menu__item--primary .message-action-menu__hint {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.message-action-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.54);
+    backdrop-filter: blur(6px);
+}
+
+.message-action-modal {
+    width: min(100%, 520px);
+    max-height: min(100vh - 40px, 680px);
+    overflow: hidden;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgb(30, 36, 45), rgb(23, 28, 36));
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.36);
+    color: #fff;
+}
+
+.message-action-modal--edit,
+.message-action-modal--confirm {
+    width: min(100%, 780px);
+    border-radius: 28px;
+    border-color: rgba(118, 137, 175, 0.18);
+    background:
+        radial-gradient(circle at top right, rgba(73, 102, 173, 0.14), transparent 34%),
+        linear-gradient(180deg, rgb(46, 52, 62), rgb(37, 42, 50));
+    box-shadow: 0 28px 60px rgba(8, 15, 28, 0.42);
+}
+
+.message-action-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 24px 18px;
+}
+
+.message-action-modal__header--edit,
+.message-action-modal__header--confirm {
+    padding: 26px 26px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.message-action-modal__headline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message-action-modal__badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.message-action-modal__badge--edit {
+    background: rgba(59, 130, 246, 0.18);
+    color: #8ec5ff;
+}
+
+.message-action-modal__badge--danger {
+    background: rgba(239, 68, 68, 0.18);
+    color: #ff9b9b;
+}
+
+.message-action-modal__eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.message-action-modal__title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.message-action-modal__subtitle {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.55;
+}
+
+.message-action-modal__close {
+    width: 46px;
+    height: 46px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 46px;
+    font-size: 1.15rem;
+}
+
+.message-action-modal__close:disabled {
+    opacity: 0.55;
+}
+
+.message-action-modal__body {
+    padding: 0 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.message-action-modal__body--edit,
+.message-action-modal__body--confirm {
+    padding: 24px 26px;
+}
+
+.message-action-modal__textarea {
+    min-height: 212px;
+    resize: vertical;
+}
+
+.message-action-modal__textarea,
+.message-action-modal__preview {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    padding: 14px 16px;
+    outline: none;
+}
+
+.message-action-modal__textarea:focus {
+    border-color: rgba(52, 102, 230, 0.88);
+    box-shadow:
+        0 0 0 3px rgba(45, 85, 218, 0.7),
+        0 0 0 7px rgba(45, 85, 218, 0.18);
+}
+
+.message-action-modal__meta {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.message-action-modal__count,
+.message-action-modal__context-label {
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.78rem;
+}
+
+.message-action-modal__context {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message-action-modal__context--confirm {
+    padding: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.message-action-modal__preview {
+    line-height: 1.55;
+    word-break: break-word;
+    min-height: 82px;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+}
+
+.message-action-modal__error {
+    margin: 0;
+    color: #ffb4b4;
+    font-size: 0.88rem;
+}
+
+.message-action-modal__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 0 24px 24px;
+}
+
+.message-action-modal__footer--edit,
+.message-action-modal__footer--confirm {
+    padding: 20px 26px 28px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.message-action-modal__btn {
+    min-width: 182px;
+    min-height: 54px;
+    border: 0;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 24px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.message-action-modal__btn--ghost {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.message-action-modal__btn--primary {
+    background: linear-gradient(180deg, #3563f0 0%, #2d55da 100%);
+    color: #fff;
+}
+
+.message-action-modal__btn--danger {
+    background: linear-gradient(180deg, #e25264 0%, #cf3e52 100%);
+    color: #fff;
+}
+
+.message-action-modal__btn:disabled {
+    opacity: 0.6;
+}
+
 .reaction-picker {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.28rem 0.35rem;
+    gap: 0.6rem;
+    padding: 0.80rem 0.35rem;
     border-radius: 999px;
     border: 1px solid var(--bs-border-color);
-    background: var(--bs-body-bg);
+    background: rgb(47, 53, 61);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
-    position: absolute;
-    top: 50%;
-    left: calc(100% + 0.45rem);
-    transform: translateY(-50%);
-    max-width: min(100vw - 2rem, 14rem);
-    flex-wrap: wrap;
+    position: relative;
+    max-width: min(100% - 1.5rem, 22rem);
+    flex-wrap: nowrap;
+    overflow-x: auto;
     justify-content: center;
-    z-index: 4;
+    z-index: 12;
+    isolation: isolate;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.reaction-picker--centered {
+    min-width: min(92%, 18rem);
+    background: rgb(47, 53, 61);
 }
 
 .reaction-picker__btn {
-    width: 2rem;
-    height: 2rem;
+    width: 2.35rem;
+    height: 2.35rem;
     border: 0;
     border-radius: 999px;
     background: transparent;
@@ -2884,7 +4639,7 @@ img {
 
 .reaction-picker__glyph {
     display: inline-block;
-    font-size: 1.15rem;
+    font-size: 1.35rem;
     line-height: 1;
     animation: reactionPop 0.22s ease-out;
 }
@@ -2893,27 +4648,62 @@ img {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    min-width: 1.6rem;
+    min-height: 1.6rem;
+    padding: 0.2rem 0.45rem;
     border-radius: 999px;
-    background: rgba(var(--bs-body-color-rgb), 0.06);
+    background: rgba(255, 255, 255, 0.12);
     font-size: 0.95rem;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 
-.message-reaction-badge--float {
+.message-reaction-badges {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.3rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.message-reaction-badge--floating,
+.message-reaction-badges--floating {
     position: absolute;
-    bottom: -0.58rem;
-    z-index: 2;
+    bottom: -0.9rem;
+    z-index: 4;
     box-shadow: 0 8px 14px rgba(0, 0, 0, 0.18);
     animation: reactionPop 0.22s ease-out;
 }
 
 .message-reaction-badge--theirs {
-    right: -0.52rem;
+    right: -0.5rem;
 }
 
 .message-reaction-badge--mine {
-    left: -0.52rem;
+    left: -0.5rem;
+}
+
+.message-reaction-badges--mine {
+    left: -0.5rem;
+}
+
+.message-reaction-badges--theirs {
+    right: -0.5rem;
+}
+
+.message-reaction-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.message-reaction-badges:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: scale(1.05);
 }
 
 .message-row--mine .message-action-button,
@@ -2923,16 +4713,9 @@ img {
     border-color: rgba(255, 255, 255, 0.18);
 }
 
-.message-row--mine .reaction-picker {
-    left: auto;
-    right: calc(100% + 0.45rem);
-    max-width: min(100vw - 2rem, 14rem);
-}
-
-.message-row--theirs .reaction-picker {
-    left: calc(100% + 0.45rem);
-    right: auto;
-    max-width: min(100vw - 2rem, 14rem);
+.message-row--mine .reaction-picker--centered {
+    background: rgba(32, 37, 43, 0.94);
+    border-color: rgba(255, 255, 255, 0.24);
 }
 
 .message-row--mine .message-action-button:hover,
@@ -2940,13 +4723,61 @@ img {
     color: var(--bs-white);
 }
 
+.reaction-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(1px);
+    z-index: 24;
+}
+
+.reaction-overlay--panel {
+    pointer-events: auto;
+}
+
 .message-row--highlighted .message-bubble {
     box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.18), 0 14px 26px rgba(0, 0, 0, 0.16);
     transform: translateY(-1px);
+    animation: messageShake 0.55s ease-in-out;
+    will-change: transform;
+}
+
+[class*="message-row--pulse-"].message-row--highlighted .message-bubble {
+    animation: messageShake 0.55s ease-in-out;
 }
 
 .message-bubble small {
     opacity: 1;
+}
+
+@keyframes messageShake {
+    0% {
+        transform: translateY(-1px) translateX(0);
+    }
+    15% {
+        transform: translateY(-1px) translateX(-4px);
+    }
+    30% {
+        transform: translateY(-1px) translateX(4px);
+    }
+    45% {
+        transform: translateY(-1px) translateX(-3px);
+    }
+    60% {
+        transform: translateY(-1px) translateX(3px);
+    }
+    75% {
+        transform: translateY(-1px) translateX(-2px);
+    }
+    90% {
+        transform: translateY(-1px) translateX(2px);
+    }
+    100% {
+        transform: translateY(-1px) translateX(0);
+    }
 }
 
 @keyframes reactionPop {
@@ -3021,21 +4852,67 @@ img {
     word-break: break-word;
 }
 
-.message-status {
-    font-size: 11px;
-    letter-spacing: 0.02em;
-}
-
-.message-status--sent {
-    color: rgba(var(--bs-body-color), 0.55);
-}
-
-.message-status--seen {
+.message-bubble__body--unsent {
     font-style: italic;
-    font-size: 10px;
-    position: relative;
-    top: 0.5px;
-    color: rgba(var(--bs-body-color), 1);
+    opacity: 0.78;
+}
+
+.message-bubble__time {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    color: rgba(var(--bs-body-color-rgb), 0.72);
+}
+
+.message-bubble__time-edit {
+    color: rgba(var(--bs-body-color-rgb), 0.74);
+}
+
+.message-bubble__status {
+    margin-top: 6px;
+    font-size: 0.72rem;
+    text-align: right;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 4px;
+    width: 100%;
+    color: rgba(var(--bs-body-color-rgb), 0.52);
+}
+
+.message-bubble__status--sent {
+    color: rgba(var(--bs-body-color-rgb), 0.52);
+}
+
+.message-bubble__status--seen {
+    color: rgba(149, 255, 200, 0.92);
+}
+
+.message-bubble__seen-avatar {
+    width: 1.05rem;
+    height: 1.05rem;
+    border-radius: 999px;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--bs-body-color);
+    font-size: 0.62rem;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+}
+
+.message-bubble__seen-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    object-fit: cover;
 }
 
 .message-attachment {
@@ -3483,38 +5360,35 @@ img {
 
 .message-pin-chip {
     position: absolute;
-    top: -0.7rem;
+    top: -0.4rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 999px;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0;
     color: #dc3545;
     z-index: 3;
+    pointer-events: none;
 }
 
 .message-pin-chip--theirs {
-    right: -5px;
-    top: -10px;
-    transform: rotate(40deg);
+    right: -0.15rem;
+    transform: rotate(45deg);
 }
 
 .message-pin-chip--mine {
-    left: -5px;
-    top: -10px;
-    transform: rotate(-40deg);
+    left: -0.15rem;
+    transform: rotate(-45deg);
 }
 
 
 .message-pin-chip__icon {
-    width: 0.88rem;
-    height: 0.88rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: #dc3545;
-    font-size: 0.62rem;
+    font-size: 0.66rem;
     line-height: 1;
 
     i {
@@ -3643,7 +5517,7 @@ img {
 }
 
 .dropdown-menu {
-    max-height: 400px;
+    max-height: 600px;
     overflow-y: auto;
     background: var(--bs-body-bg);
     color: var(--bs-body-color);
@@ -3660,6 +5534,20 @@ img {
 }
 
 @media (max-width: 576px) {
+    .online-users-menu {
+        min-width: min(360px, calc(100vw - 1rem));
+    }
+
+    .online-users-menu__header {
+        padding-left: 0.9rem !important;
+        padding-right: 0.9rem !important;
+    }
+
+    .online-users-menu__hero {
+        padding: 0.9rem;
+        border-radius: 16px;
+    }
+
     .message-dock {
         right: 0.5rem;
         bottom: 0.5rem;
@@ -3667,8 +5555,7 @@ img {
     }
 
     .message-dock__head {
-        padding: 0.3rem 0.55rem 0.3rem 0.32rem;
-        max-width: calc(100vw - 1rem);
+        display: none;
     }
 
     .message-dock__avatar,
@@ -3686,11 +5573,13 @@ img {
         width: calc(100vw - 1rem);
         right: 0;
         left: auto;
-        bottom: 4.15rem;
+        bottom: 10px;
+        height: 95vh;
+        max-height: 95vh;
     }
 
     .message-panel__header {
-        padding: 0.8rem 0.9rem;
+        padding: 0.8rem 0.9rem 10px;
         gap: 0.75rem;
         flex-wrap: wrap;
     }
@@ -3701,7 +5590,8 @@ img {
 
     .message-panel__header > .d-flex:last-child {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: center;
+        padding-bottom: 10px;
     }
 
     .message-panel__body,
@@ -3713,6 +5603,10 @@ img {
     .message-panel__composer-tools,
     .message-panel__composer-bottom {
         width: 100%;
+    }
+
+    .message-panel__composer-tools {
+        justify-content: center;
     }
 
     .message-panel__composer-status {
@@ -3732,23 +5626,25 @@ img {
     }
 
     .message-panel__attach-btn {
-        width: 100%;
+        width: auto;
         justify-content: center;
+        padding-left: 0.72rem;
+        padding-right: 0.72rem;
     }
 
     .message-panel__pins-btn {
-        width: 100%;
+        width: auto;
         justify-content: center;
+        padding-left: 0.72rem;
+        padding-right: 0.72rem;
     }
 
     .message-panel__attach-btn-text {
-        flex: 1;
-        text-align: center;
+        display: none;
     }
 
     .message-panel__pins-btn-text {
-        flex: 1;
-        text-align: center;
+        display: none;
     }
 
     .message-panel__composer-count {

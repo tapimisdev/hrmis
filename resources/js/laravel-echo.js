@@ -3,6 +3,8 @@ import Pusher from "pusher-js";
 
 window.Pusher = Pusher;
 
+const authToken = localStorage.getItem("auth_token");
+
 window.Echo = new Echo({
   broadcaster: 'reverb',
   key: import.meta.env.VITE_REVERB_APP_KEY,
@@ -16,6 +18,11 @@ window.Echo = new Echo({
 
   authEndpoint: '/broadcasting/auth',
   withCredentials: true,
+  auth: {
+    headers: authToken ? {
+      Authorization: `Bearer ${authToken}`,
+    } : {},
+  },
 });
 
 // Handle Reverb (Pusher-style) connection events

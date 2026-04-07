@@ -13,6 +13,7 @@ use App\Http\Controllers\Employee\AtroApprovalController;
 use App\Http\Controllers\Employee\LeaveApprovalController;
 use App\Http\Controllers\Employee\ObsApprovalController;
 use App\Http\Controllers\Employee\ObsController;
+use App\Http\Controllers\Employee\MessagesController;
 use App\Http\Controllers\Employee\CreditsController;
 use App\Http\Controllers\Employee\PayslipController;
 use App\Http\Controllers\Employee\ProfileController;
@@ -24,6 +25,9 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
 
     # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
+    Route::get('messages/{conversationToken?}', [MessagesController::class, 'index'])
+        ->where('conversationToken', '.*')
+        ->name('employee.messages');
     Route::get('get-stats', [EmployeeDashboardController::class, 'get_stats']);
     Route::get('get-pendings', [EmployeeDashboardController::class, 'get_pending_applications']);
     Route::get('get-announcements', [EmployeeDashboardController::class, 'get_announcements']);

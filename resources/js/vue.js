@@ -13,6 +13,7 @@ import ChangePassword from "./employee/profile/ChangePassword.vue";
 import BirthdayComponent from "./birthday/BirthdayComponent.vue";
 import PushNotification from "./employee/profile/PushNotification.vue";
 import ViewDtr from "./employee/check-in-out/ViewDtr.vue";
+import MessagesPage from "./employee/messages/MessagesPage.vue";
 
 // Admin
 import AdminHeader from "./admin/components/Header.vue";
@@ -124,11 +125,16 @@ const authApp = createApp({
         GovernmentBonusStepper,
         GovernmentBonusView,
         GovernmentBonusTypeIndex,
+        MessagesPage,
     },
 
     data() {
         return {
             showChangePasswordModal: false,
+            presenceOnlineListener: null,
+            presenceOfflineListener: null,
+            presencePageHideListener: null,
+            presenceBeforeUnloadListener: null,
         };
     },
     mounted() {
@@ -136,10 +142,82 @@ const authApp = createApp({
 
         if (!token) return;
 
-        window.Echo.join('online-users')
-            .here(() => {})
-            .joining(() => {})
-            .leaving(() => {});
+        if (window.Echo?.connector?.options?.auth) {
+            window.Echo.connector.options.auth.headers = {
+                ...(window.Echo.connector.options.auth.headers || {}),
+                Authorization: `Bearer ${token}`,
+            };
+        }
+
+        const syncOnlineUsersState = (users = []) => {
+            const onlineUserIds = users.map((user) => Number(user.id));
+
+            window.__onlineUsersPresence = {
+                onlineUserIds,
+                updatedAt: Date.now(),
+            };
+
+            window.dispatchEvent(
+                new CustomEvent("online-users:updated", {
+                    detail: {
+                        onlineUserIds,
+                    },
+                }),
+            );
+        };
+
+        window.__onlineUsersPresence = window.__onlineUsersPresence || {
+            onlineUserIds: [],
+            updatedAt: null,
+        };
+
+        window.Echo.join("online-users")
+            .here((users) => {
+                syncOnlineUsersState(users);
+            })
+            .joining((user) => {
+                const currentIds = window.__onlineUsersPresence?.onlineUserIds || [];
+                const userId = Number(user.id);
+
+                if (!currentIds.includes(userId)) {
+                    syncOnlineUsersState([
+                        ...currentIds.map((id) => ({ id })),
+                        { id: userId },
+                    ]);
+                    return;
+                }
+
+                syncOnlineUsersState(currentIds.map((id) => ({ id })));
+            })
+            .leaving((user) => {
+                const userId = Number(user.id);
+                const currentIds = window.__onlineUsersPresence?.onlineUserIds || [];
+                const nextIds = currentIds.filter((id) => id !== userId);
+
+                syncOnlineUsersState(nextIds.map((id) => ({ id })));
+            });
+
+        this.presenceOnlineListener = () => {
+            this.announcePresence("online");
+        };
+
+        this.presenceOfflineListener = () => {
+            this.announcePresence("offline", true);
+        };
+
+        this.presencePageHideListener = () => {
+            this.announcePresence("offline", true);
+        };
+
+        this.presenceBeforeUnloadListener = () => {
+            this.announcePresence("offline", true);
+        };
+
+        window.addEventListener("online", this.presenceOnlineListener);
+        window.addEventListener("offline", this.presenceOfflineListener);
+        window.addEventListener("pagehide", this.presencePageHideListener);
+        window.addEventListener("beforeunload", this.presenceBeforeUnloadListener);
+        this.announcePresence("online");
 
         axios
             .get("/api/force-update-password", {
@@ -165,9 +243,53 @@ const authApp = createApp({
             });
     },
     methods: {
+        async announcePresence(status = "online", useKeepAlive = false) {
+            try {
+                const token = localStorage.getItem("auth_token");
+                const headers = {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                };
+
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                }
+
+                await fetch("/api/presence", {
+                    method: "POST",
+                    headers,
+                    credentials: "same-origin",
+                    keepalive: useKeepAlive,
+                    body: JSON.stringify({ status }),
+                });
+            } catch (error) {
+                console.error("Failed to announce presence:", error);
+            }
+        },
         handlePasswordChanged() {
             $("#forceChangePasswordModal").modal("hide");
         },
+    },
+    beforeUnmount() {
+        if (this.presenceOnlineListener) {
+            window.removeEventListener("online", this.presenceOnlineListener);
+            this.presenceOnlineListener = null;
+        }
+
+        if (this.presenceOfflineListener) {
+            window.removeEventListener("offline", this.presenceOfflineListener);
+            this.presenceOfflineListener = null;
+        }
+
+        if (this.presencePageHideListener) {
+            window.removeEventListener("pagehide", this.presencePageHideListener);
+            this.presencePageHideListener = null;
+        }
+
+        if (this.presenceBeforeUnloadListener) {
+            window.removeEventListener("beforeunload", this.presenceBeforeUnloadListener);
+            this.presenceBeforeUnloadListener = null;
+        }
     },
 });
 

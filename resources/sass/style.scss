@@ -34,16 +34,14 @@
 }
 
 /* Keep lightGallery above the admin UI, sidebars, and chat dock */
-.lg-backdrop {
-    z-index: 20000 !important;
-}
-
-.lg-outer {
-    z-index: 20001 !important;
-}
-
+.messages-lightgallery,
+.messages-lightgallery .lg-backdrop,
+.messages-lightgallery .lg-outer,
+.messages-lightgallery .lg-container,
+.lg-backdrop,
+.lg-outer,
 .lg-container {
-    z-index: 20002 !important;
+    z-index: 999999 !important;
 }
 
 #calendar {

@@ -2,12 +2,16 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MessagesController;
 use App\Http\Controllers\Admin\IDMakerController;
 use App\Http\Controllers\Admin\TrailsController;
 
 Route::prefix('admin')->middleware(['auth'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/messages/{conversationToken?}', [MessagesController::class, 'index'])
+        ->where('conversationToken', '.*')
+        ->name('admin.messages');
     Route::get('id-maker', [IDMakerController::class, 'index']);
     Route::post('id-maker', [IDMakerController::class, 'save_configuration'])
         ->name('id-maker.save_configuration');
