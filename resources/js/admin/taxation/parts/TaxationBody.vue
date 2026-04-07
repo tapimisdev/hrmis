@@ -15,10 +15,10 @@
                 <button
                     class="fb-tab"
                     :disabled="disable_recon"
-                    :class="{ active: activeTab === 'reconcile' }"
-                    @click="activeTab = 'reconcile'"
+                    :class="{ active: activeTab === 'cumulative' }"
+                    @click="activeTab = 'cumulative'"
                 >
-                    Reconciliation
+                    Cumulative
                 </button>
             </div>
 
@@ -35,19 +35,19 @@
             @refresh-forecast="$emit('refresh-forecast', $event)"
             />
             
-        <IndexReconciliation v-if="activeTab === 'reconcile'" />
+        <IndexCumulative v-if="activeTab === 'cumulative'" />
 
     </div>
 </template>
 
 <script>
 import IndexForecast from "./forecast/IndexForecast.vue";
-import IndexReconciliation from "./Reconcilliation/IndexReconcilliation.vue";
+import IndexCumulative from "./Reconcilliation/IndexComulative.vue";
 
 export default {
     components: {
         IndexForecast,
-        IndexReconciliation
+        IndexCumulative
     },
     props: {
         body: {
