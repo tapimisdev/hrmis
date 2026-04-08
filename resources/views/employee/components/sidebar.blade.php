@@ -136,6 +136,17 @@
                     </a>
                 </li>
                 @endcan
+
+                @if(Auth::user()?->is_division_chief)
+                <li class="side-items {{ request()->routeIs('chief-corner.index') ? 'active' : '' }}">
+                    <a href="{{ route('chief-corner.index') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </span>
+                        <span class="side-text">Chief Corner</span>
+                    </a>
+                </li>
+                @endif
                 
                 <div class="sidebar-seperator"></div>
                 

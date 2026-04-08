@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Employee\AnnouncementsController;
 use App\Http\Controllers\Employee\CalendarController;
 use App\Http\Controllers\Employee\AtroController;
+use App\Http\Controllers\Employee\ChiefCornerController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
 use App\Http\Controllers\Employee\OffsetApplicationController;
@@ -25,6 +26,8 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
 
     # EMPLOYEE DASHBOARD
     Route::resource('dashboard', EmployeeDashboardController::class);
+    Route::get('chief-corner', [ChiefCornerController::class, 'index'])->name('chief-corner.index');
+    Route::get('chief-corner/tab/{tab}', [ChiefCornerController::class, 'tabData'])->name('chief-corner.tab');
     Route::get('messages/{conversationToken?}', [MessagesController::class, 'index'])
         ->where('conversationToken', '.*')
         ->name('employee.messages');

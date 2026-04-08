@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Services\SalaryEmloyeeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
@@ -47,7 +48,7 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    protected $appends = ['employment_type_id'];
+    protected $appends = ['employment_type_id', 'is_division_chief'];
 
 
     protected $employee_no;
@@ -132,5 +133,15 @@ class User extends Authenticatable
     public function notes()
     {
         return $this->hasMany(Note::class);
+    }
+
+    public function managedDivisions(): HasMany
+    {
+        return $this->hasMany(Division::class, 'division_manager_id', 'id');
+    }
+
+    public function getIsDivisionChiefAttribute(): bool
+    {
+        return $this->managedDivisions()->exists();
     }
 }
