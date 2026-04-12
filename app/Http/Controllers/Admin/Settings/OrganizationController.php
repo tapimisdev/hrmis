@@ -10,6 +10,27 @@ use Yajra\DataTables\Facades\DataTables;
 
 class OrganizationController extends Controller
 {
+    protected function divisionManagers()
+    {
+        return DB::table('users')
+            ->leftJoin('employee_information as ei', 'ei.user_id', '=', 'users.id')
+            ->leftJoin('employee_personal as ep', 'ep.employee_no', '=', 'ei.employee_no')
+            ->select(
+                'users.id',
+                'users.name',
+                'ep.firstname',
+                'ep.lastname'
+            )
+            ->orderByRaw('COALESCE(ep.lastname, users.name) asc')
+            ->orderByRaw('COALESCE(ep.firstname, users.name) asc')
+            ->get()
+            ->map(function ($user) {
+                $user->display_name = trim(($user->firstname ?? '') . ' ' . ($user->lastname ?? '')) ?: $user->name;
+
+                return $user;
+            });
+    }
+
     public function __construct()
     {
         $this->middleware('permission:hr.organization.view')->only(['index', 'show']);
@@ -69,7 +90,9 @@ class OrganizationController extends Controller
         $isEdit = false;
 
         if($type === 'division') {
-            return view('admin.pages.settings.organization.division-form', compact('isEdit', 'type'));
+            $divisionManagers = $this->divisionManagers();
+
+            return view('admin.pages.settings.organization.division-form', compact('isEdit', 'type', 'divisionManagers'));
         } elseif($type === 'unit') {
             $divisions = DB::table('divisions')->get();
             return view('admin.pages.settings.organization.unit-form', compact('isEdit', 'type', 'divisions'));
@@ -137,6 +160,7 @@ class OrganizationController extends Controller
                 'name' => 'required|string|max:255',
                 'code' => 'required|string|max:255',
                 'description' => 'nullable|string',
+                'division_manager_id' => 'nullable|exists:users,id',
             ]);
 
             DB::beginTransaction();
@@ -146,6 +170,7 @@ class OrganizationController extends Controller
                     'name' => $request->name,
                     'code' => $request->code,
                     'description' => $request->description,
+                    'division_manager_id' => $request->division_manager_id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -228,7 +253,9 @@ class OrganizationController extends Controller
             $data = DB::table('divisions')
                 ->where('id', $id)
                 ->first() ?? [];
-            return view('admin.pages.settings.organization.division-form', compact('isEdit', 'type', 'id', 'data'));
+            $divisionManagers = $this->divisionManagers();
+
+            return view('admin.pages.settings.organization.division-form', compact('isEdit', 'type', 'id', 'data', 'divisionManagers'));
         } elseif($type === 'unit') {
             $divisions = DB::table('divisions')->get();
             $data = DB::table('units')
@@ -259,6 +286,7 @@ class OrganizationController extends Controller
                 'name' => 'required|string|max:255',
                 'code' => 'required|string|max:255',
                 'description' => 'nullable|string',
+                'division_manager_id' => 'nullable|exists:users,id',
             ]);
 
             DB::beginTransaction();
@@ -270,6 +298,7 @@ class OrganizationController extends Controller
                         'name' => $request->name,
                         'code' => $request->code,
                         'description' => $request->description,
+                        'division_manager_id' => $request->division_manager_id,
                         'updated_at' => now(),
                     ]);
 

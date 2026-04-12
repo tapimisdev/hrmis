@@ -572,13 +572,23 @@ class ModuleTabEmployeeController extends Controller
      */
     private function computePercentageSalary(string $employee_no, float $percentage): float
     {
-        $activeSalary = $this->salaryEmployeeService->activeSalary($employee_no)->value('amount');
+        $salaryRaw = $this->salaryEmployeeService->activeSalary($employee_no)->value('amount');
 
-        if (!$activeSalary || $percentage <= 0) {
+        if (!$salaryRaw || $percentage <= 0) {
             return 0.0;
         }
 
-        return round($activeSalary * ($percentage / 100), 2);
+        $salaryClean = preg_replace('/[^0-9.\-]/', '', (string) $salaryRaw);
+
+        if (!is_numeric($salaryClean)) {
+            throw new \RuntimeException(
+                "Invalid salary format for {$employee_no}: " . var_export($salaryRaw, true)
+            );
+        }
+
+        $salary = (float) $salaryClean;
+
+        return round($salary * ($percentage / 100), 2);
     }
 
 }

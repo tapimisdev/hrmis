@@ -8,6 +8,7 @@ import HeaderVue from "./employee/components/Header.vue";
 import ProfileIndex from "./employee/profile/ProfileIndex.vue";
 import Announcements from "./employee/announcements/Announcements.vue";
 import PayslipIndex from "./employee/payslip/PayslipIndex.vue";
+import ChiefCornerIndex from "./employee/chief-corner/ChiefCornerIndex.vue";
 import Show from "./employee/announcements/Show.vue";
 import ChangePassword from "./employee/profile/ChangePassword.vue";
 import BirthdayComponent from "./birthday/BirthdayComponent.vue";
@@ -77,6 +78,7 @@ const authApp = createApp({
         Announcements,
         Show,
         PayslipIndex,
+        ChiefCornerIndex,
         BirthdayComponent,
         ChangePassword,
         PushNotification,
