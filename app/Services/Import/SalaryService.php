@@ -212,6 +212,7 @@ class SalaryService extends BaseImportService
             'payroll_date' => $payrollDate,
             'processed_by_id' => Auth::id(),
             'status' => 'approved',
+            'is_aut_deducted' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -277,6 +278,7 @@ class SalaryService extends BaseImportService
                 'payroll_date' => $payrollDate,
                 'processed_by_id' => Auth::id(),
                 'status' => 'completed',
+                'is_aut_deducted' => false,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

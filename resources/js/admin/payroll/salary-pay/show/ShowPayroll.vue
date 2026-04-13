@@ -24,6 +24,7 @@
                 :status="status"
                 :payroll_no="payroll_no"
                 :payroll_id="payroll_id"
+                :is_aut_deducted="is_aut_deducted"
                 @fetch_data="fetchRegistry"
                 @delete="deleteEmployeePayroll"
                 :period_covered="period_covered"
@@ -46,6 +47,7 @@ export default {
         payroll_id: Number | String,
         payroll_no: String,
         status: String,
+        is_aut_deducted: Boolean,
         employment_type: String,
         period_covered: String,
     },

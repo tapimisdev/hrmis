@@ -15,6 +15,8 @@
           <PayrollCard
             :url="url"
             :payroll="payroll"
+            :loading="actionPayrollId === payroll.id"
+            :loading-action="actionPayrollId === payroll.id ? actionKey : ''"
             @change-status="handleChangeStatus"
             @cancel="confirmDelete"
           />
@@ -36,6 +38,8 @@
           <PayrollCard
             :url="url"
             :payroll="payroll"
+            :loading="actionPayrollId === payroll.id"
+            :loading-action="actionPayrollId === payroll.id ? actionKey : ''"
             @change-status="handleChangeStatus"
             @cancel="confirmDelete"
           />
@@ -61,6 +65,13 @@ export default {
     url: { type: String, required: true },
   },
 
+  data() {
+    return {
+      actionPayrollId: null,
+      actionKey: "",
+    };
+  },
+
   computed: {
     activePayrolls() {
       return this.payrolls.filter((p) => !INACTIVE_STATUSES.has(p.status));
@@ -71,6 +82,16 @@ export default {
   },
 
   methods: {
+    setActionLoading(id, actionKey) {
+      this.actionPayrollId = id;
+      this.actionKey = actionKey;
+    },
+
+    clearActionLoading() {
+      this.actionPayrollId = null;
+      this.actionKey = "";
+    },
+
     confirmDelete(id) {
       Swal.fire({
         title: "Are you sure?",
@@ -87,6 +108,7 @@ export default {
 
     deletePayroll(id) {
       const token = localStorage.getItem("auth_token");
+      this.setActionLoading(id, "delete");
 
       axios
         .delete(`/api/payroll/${this.url}/${id}/delete`, {
@@ -108,6 +130,9 @@ export default {
             text: error?.response?.data?.message || "Something went wrong.",
             icon: "error",
           });
+        })
+        .finally(() => {
+          this.clearActionLoading();
         });
     },
 
@@ -138,6 +163,7 @@ export default {
 
     changePayrollStatus(id, nextStatus) {
       const token = localStorage.getItem("auth_token");
+      this.setActionLoading(id, nextStatus);
 
       axios
         .patch(
@@ -168,6 +194,9 @@ export default {
             text: error?.response?.data?.message || "Something went wrong.",
             icon: "error",
           });
+        })
+        .finally(() => {
+          this.clearActionLoading();
         });
     },
 
