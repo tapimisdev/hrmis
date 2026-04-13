@@ -62,20 +62,21 @@
 
             <div class="d-flex mb-3 gap-2">
                 <button class="fb-btn fb-secondary">
-                    <i class="fa-solid fa-file-pdf me-1"></i>
-                    Export
+                    <i class="fa-solid fa-calculator me-1"></i>
+                    Compute Cumulative
                 </button>
-                <button class="fb-btn fb-primary">
-                    <i class="fa-solid fa-file-pdf me-1"></i>
-                    Pull from Payroll
-                </button>
+
                 <button
-                    class="fb-btn bg-success"
+                    class="fb-btn fb-secondary"
                     @click="confirmApplyToPayroll"
                     :disabled="isApplying"
                 >
                     <i class="fa-solid fa-check me-1"></i>
-                    {{ isApplying ? "Applying..." : "Apply to Payroll" }}
+                    {{
+                        isApplying
+                            ? "Applying Taxes..."
+                            : "Apply Tax Computation"
+                    }}
                 </button>
             </div>
         </div>
