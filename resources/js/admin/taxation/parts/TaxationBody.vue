@@ -1,5 +1,12 @@
 <template>
     <div class="mt-3 border-bottom pb-3">
+        <ComputeCumulativeModal
+            ref="computeCumulativeModal"
+            :taxation="taxation"
+            :is-submitting="isComputingCumulative"
+            @submit="submitOverrideCumulative"
+        />
+
         <div
             class="border-bottom mb-3 d-flex justify-content-between align-items-center"
         >
@@ -61,9 +68,17 @@
             </div>
 
             <div class="d-flex mb-3 gap-2">
-                <button class="fb-btn fb-secondary">
+                <button
+                    class="fb-btn fb-secondary"
+                    @click="handleComputeCumulative"
+                    :disabled="isComputingCumulative"
+                >
                     <i class="fa-solid fa-calculator me-1"></i>
-                    Compute Cumulative
+                    {{
+                        isComputingCumulative
+                            ? "Computing Cumulative..."
+                            : "Compute Cumulative"
+                    }}
                 </button>
 
                 <button
@@ -92,16 +107,23 @@
 </template>
 
 <script>
+import axios from "axios";
 import IndexForecast from "./forecast/IndexForecast.vue";
+import ComputeCumulativeModal from "../modal/run-forecast/ComputeCumulativeModal.vue";
 
 export default {
     components: {
         IndexForecast,
+        ComputeCumulativeModal,
     },
     props: {
         body: {
             type: Array,
             required: false,
+        },
+        taxation: {
+            type: Object,
+            default: () => ({}),
         },
         disable_recon: {
             type: Boolean,
@@ -119,7 +141,16 @@ export default {
     data() {
         return {
             activeTab: this.selectedType || "forecast",
+            isComputingCumulative: false,
         };
+    },
+    computed: {
+        isApplying() {
+            return this.isApplyingToPayroll;
+        },
+        hasTaxationRecord() {
+            return Boolean(this.taxation?.id);
+        },
     },
     watch: {
         selectedType(newType) {
@@ -134,6 +165,104 @@ export default {
 
             this.activeTab = type;
             this.$emit("type-change", type);
+        },
+        async handleComputeCumulative() {
+            if (this.isComputingCumulative) return;
+
+            if (!this.hasTaxationRecord) {
+                await Swal.fire({
+                    title: "No Taxation Selected",
+                    text: "There is no saved taxation record to use for cumulative computation.",
+                    icon: "info",
+                });
+                return;
+            }
+
+            if (this.activeTab === "forecast") {
+                await Swal.fire({
+                    title: "Select a Cumulative Tab",
+                    text: "Compute Cumulative is only available for Q2, Q3, Q4, Adjustment, or Finalization.",
+                    icon: "info",
+                });
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: "Compute Cumulative Tax",
+                text: "Choose how you want to proceed",
+                icon: "question",
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: "Compute Cumulative and Override",
+                denyButtonText: "Compute Cumulative with Same Configuration",
+                cancelButtonText: "Cancel",
+            });
+
+            if (result.isConfirmed) {
+                this.$refs.computeCumulativeModal?.open?.();
+                return;
+            }
+
+            if (result.isDenied) {
+                await this.computeCumulative({
+                    mode: "same_configuration",
+                });
+            }
+        },
+        async submitOverrideCumulative(form) {
+            await this.computeCumulative({
+                mode: "override",
+                ...form,
+            });
+        },
+        async computeCumulative(payload = {}) {
+            if (this.isComputingCumulative) return;
+
+            this.isComputingCumulative = true;
+            this.$refs.computeCumulativeModal?.setErrors?.({});
+
+            try {
+                const response = await axios.post(
+                    "/admin/taxation/compute-cumulative",
+                    {
+                        taxation_id: this.taxation.id,
+                        type: this.activeTab,
+                        ...payload,
+                    },
+                );
+
+                this.$refs.computeCumulativeModal?.close?.();
+
+                await Swal.fire({
+                    title: "Cumulative Computation Started",
+                    text:
+                        response?.data?.message ||
+                        "The cumulative computation has been queued.",
+                    icon: "success",
+                });
+
+                this.$emit("refresh-forecast", {
+                    source: "compute-cumulative",
+                    type: this.activeTab,
+                });
+            } catch (error) {
+                if (error.response?.status === 422) {
+                    this.$refs.computeCumulativeModal?.setErrors?.(
+                        error.response?.data?.errors || {},
+                    );
+                    return;
+                }
+
+                await Swal.fire({
+                    title: "Error",
+                    text:
+                        error?.response?.data?.message ||
+                        "Failed to compute cumulative tax.",
+                    icon: "error",
+                });
+            } finally {
+                this.isComputingCumulative = false;
+            }
         },
         async confirmApplyToPayroll() {
             if (this.isApplying) return;

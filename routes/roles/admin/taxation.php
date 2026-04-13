@@ -11,6 +11,7 @@ Route::prefix('taxation')->group(function() {
     Route::get('/status', [TaxationController::class, 'status']);
     Route::delete('/{taxation_id}/delete', [TaxationController::class, 'destroy']);
     Route::post('/apply-to-payroll', [TaxationController::class, 'applyToPayroll']);
+    Route::post('/compute-cumulative', [TaxationController::class, 'computeCumulative']);
 
     Route::get('/breakdowns/{taxation_employee_id}', [TaxationEmployeeController::class, 'breakdowns']);
     Route::get('/edit-inputs/{taxation_employee_id}', [TaxationEmployeeController::class, 'edit']);

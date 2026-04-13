@@ -166,6 +166,7 @@ class TaxationEmployeeController extends Controller
             ->select(
                 'te.id',
                 'te.taxation_id',
+                'te.type',
                 'te.employee_no',
                 'te.raw_payload',
                 't.year',
@@ -181,6 +182,7 @@ class TaxationEmployeeController extends Controller
     private function mergeForecastContextIntoPayload(array $payload, object $taxationEmployee): array
     {
         $payload['year'] = $taxationEmployee->year;
+        $payload['type'] = $taxationEmployee->type ?: 'forecast';
         $payload['hazardTaxId'] = $taxationEmployee->hazardTaxId;
         $payload['salaryTaxId'] = $taxationEmployee->salaryTaxId;
         $payload['longevityTaxId'] = $taxationEmployee->longevityTaxId;

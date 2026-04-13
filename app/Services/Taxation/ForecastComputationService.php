@@ -26,11 +26,13 @@ class ForecastComputationService
             DB::table('taxation_employees')
                 ->where('taxation_id', $taxationId)
                 ->where('employee_no', $employeeNo)
+                ->where('type', data_get($payload, 'type', 'forecast'))
                 ->delete();
 
             $taxationEmployeeId = DB::table('taxation_employees')->insertGetId([
             'taxation_id'           => $taxationId,
             'year'                  => data_get($payload, 'year'),
+            'type'                  => data_get($payload, 'type', 'forecast'),
             'employee_no'           => $employeeNo,
 
             // assumptions

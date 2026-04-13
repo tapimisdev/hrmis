@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin\Taxation;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Taxation\ApplyForecastToPayrollRequest;
+use App\Http\Requests\Taxation\ComputeCumulativeRequest;
 use App\Services\Taxation\ApplyForecastToPayrollService;
+use App\Services\Taxation\ComputeCumulativeService;
 use App\Services\Taxation\Parts\TaxationBodyService;
 use App\Services\Taxation\Parts\TaxationSettingsService;
 use App\Services\Taxation\Parts\TaxationCardsService;
@@ -20,6 +22,7 @@ class TaxationController extends Controller
         private readonly TaxationCardsService $taxationCardsService,
         private readonly TaxationBodyService $taxationBodyService,
         private readonly ApplyForecastToPayrollService $applyForecastToPayrollService,
+        private readonly ComputeCumulativeService $computeCumulativeService,
     ) {}
 
     public function index(Request $request)
@@ -136,6 +139,22 @@ class TaxationController extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'message' => $e->getMessage() ?: 'Failed to apply forecast to Payroll.',
+            ], 500);
+        }
+    }
+
+    public function computeCumulative(ComputeCumulativeRequest $request)
+    {
+        try {
+            $result = $this->computeCumulativeService->handle($request->validated());
+
+            return response()->json([
+                'message' => "Cumulative computation for " . strtoupper($result['type']) . " has been queued for {$result['employee_count']} employee(s).",
+                'data' => $result,
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage() ?: 'Failed to compute cumulative tax.',
             ], 500);
         }
     }

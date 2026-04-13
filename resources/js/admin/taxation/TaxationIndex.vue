@@ -21,6 +21,7 @@
             <TaxationCard :cards="taxationData.cards" />
             <TaxationBody
                 :body="taxationData.body"
+                :taxation="taxationData"
                 :disable_recon="!has_taxation_record"
                 :is-applying-to-payroll="is_applying_to_payroll"
                 :selected-type="selectedType"
