@@ -4,6 +4,7 @@ namespace App\Services\SalaryPay;
 
 use App\Enums\EmploymentTypesEnum;
 use App\Enums\LeaveEnum;
+use App\Services\DailyTimeRecordService;
 use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -12,14 +13,15 @@ use Illuminate\Support\Facades\DB;
 class AutDeductionService
 {
     public function __construct(
-        protected SalaryEmloyeeService $salaryEmployeeService
+        protected SalaryEmloyeeService $salaryEmployeeService,
+        protected DailyTimeRecordService $dailyTimeRecordService,
     ) {
     }
 
     public function getRegularPayroll(string $payrollId): object
     {
         $payroll = DB::table('payroll_salary')
-            ->select('id', 'payroll_no', 'payroll_date', 'employment_type_id', 'status')
+            ->select('id', 'payroll_no', 'payroll_date', 'cutoff', 'period_covered', 'employment_type_id', 'status', 'is_aut_deducted')
             ->where('id', $payrollId)
             ->first();
 
@@ -36,19 +38,18 @@ class AutDeductionService
 
     public function buildAutDeductionRows(object $payroll): Collection
     {
+        if (!empty($payroll->is_aut_deducted)) {
+            return $this->buildStoredAutDeductionRows($payroll);
+        }
+
+        return $this->buildLiveAutDeductionRows($payroll);
+    }
+
+    private function buildLiveAutDeductionRows(object $payroll): Collection
+    {
         $employees = DB::table('payroll_salary_permanent_employees as pspe')
-            ->leftJoin(
-                'payroll_salary_aut_leave_credit_deductions as staged',
-                'staged.payroll_salary_permanent_employee_id',
-                '=',
-                'pspe.id'
-            )
+            ->leftJoin('employee_information as ei', 'ei.employee_no', '=', 'pspe.employee_no')
             ->where('pspe.payroll_salary_id', $payroll->id)
-            ->where(function ($query) {
-                $query->whereRaw('(COALESCE(pspe.ut, 0) + COALESCE(pspe.absences, 0)) > 0')
-                    ->orWhereNotNull('staged.id')
-                    ->orWhere('pspe.remarks', 'like', '%AUT % VL%');
-            })
             ->select(
                 'pspe.id',
                 'pspe.employee_no',
@@ -60,44 +61,23 @@ class AutDeductionService
                 'pspe.remarks',
                 'pspe.total_deductions',
                 'pspe.net_pay',
-                'staged.id as staged_id',
-                'staged.applied_at as staged_applied_at',
-                'staged.aut_amount as staged_aut_amount',
-                'staged.equivalent_leave_credits as staged_equivalent_leave_credits',
-                'staged.total_minutes as staged_total_minutes',
-                'staged.remarks as staged_remarks',
-                'staged.daily_rate as staged_daily_rate',
-                'staged.working_hours as staged_working_hours',
-                'staged.as_of as staged_as_of'
+                'ei.user_id'
             )
             ->orderBy('pspe.name')
             ->get();
 
         return $employees->map(function ($employee) use ($payroll) {
             $remarkAut = $this->parseAutRemark($employee->remarks);
-            $autAmount = round((float) ($employee->staged_aut_amount ?? ((float) $employee->ut + (float) $employee->absences)), 2);
+            $computation = $this->computeAutDeductionValues($employee, $payroll);
 
-            $computation = $employee->staged_id
-                ? [
-                    'daily_rate' => (float) $employee->staged_daily_rate,
-                    'working_hours' => (float) $employee->staged_working_hours,
-                    'total_minutes' => (int) $employee->staged_total_minutes,
-                    'equivalent_leave_credits' => round((float) $employee->staged_equivalent_leave_credits, 3),
-                    'remarks' => $employee->staged_remarks,
-                    'as_of' => $employee->staged_as_of,
-                ]
-                : ($remarkAut
-                    ? $this->computeAutDeductionFromRemark(
-                        $employee->employee_no,
-                        $payroll->payroll_date,
-                        $remarkAut,
-                        $autAmount
-                    )
-                    : $this->computeAutDeductionValues(
-                        $employee->employee_no,
-                        $payroll->payroll_date,
-                        $autAmount
-                    ));
+            if ($remarkAut) {
+                $computation['equivalent_leave_credits'] = round((float) $remarkAut['equivalent_leave_credits'], 3);
+                $computation['remarks'] = $remarkAut['remark'];
+            }
+
+            if ((int) $computation['total_minutes'] <= 0 && !$remarkAut) {
+                return null;
+            }
 
             return [
                 'pspe_id' => $employee->id,
@@ -105,21 +85,118 @@ class AutDeductionService
                 'name' => $employee->name,
                 'position' => $employee->position,
                 'monthly_rate' => round((float) $employee->monthly_rate, 2),
-                'aut' => $autAmount,
+                'aut' => round((float) $computation['aut_amount'], 2),
                 'equivalent' => round((float) $computation['equivalent_leave_credits'], 3),
                 'daily_rate' => round((float) $computation['daily_rate'], 4),
                 'working_hours' => (float) $computation['working_hours'],
                 'total_minutes' => (int) $computation['total_minutes'],
                 'remarks' => $computation['remarks'],
                 'as_of' => $computation['as_of'],
-                'already_applied' => !empty($employee->staged_applied_at),
-                'is_saved' => !empty($employee->staged_id),
+                'already_applied' => (bool) ($payroll->is_aut_deducted ?? false),
+                'is_saved' => !empty($remarkAut),
             ];
-        });
+        })->filter()->values();
     }
 
-    public function saveAutDeductions(object $payroll, array $payloadRows = []): int
+    private function buildStoredAutDeductionRows(object $payroll): Collection
     {
+        $rows = DB::table('payroll_salary_aut_deductions as staged')
+            ->where('staged.payroll_salary_id', $payroll->id)
+            ->select(
+                'staged.payroll_salary_permanent_employee_id as pspe_id',
+                'staged.employee_no',
+                'staged.name',
+                'staged.position',
+                'staged.monthly_rate',
+                'staged.aut_amount as aut',
+                'staged.equivalent_leave_credits as equivalent',
+                'staged.daily_rate',
+                'staged.working_hours',
+                'staged.total_minutes',
+                'staged.remarks',
+                'staged.as_of',
+                'staged.applied_at'
+            )
+            ->orderBy('staged.name')
+            ->get()
+            ->map(fn ($row) => [
+                'pspe_id' => $row->pspe_id,
+                'employee_no' => $row->employee_no,
+                'name' => $row->name,
+                'position' => $row->position,
+                'monthly_rate' => round((float) $row->monthly_rate, 2),
+                'aut' => round((float) $row->aut, 2),
+                'equivalent' => round((float) $row->equivalent, 3),
+                'daily_rate' => round((float) $row->daily_rate, 4),
+                'working_hours' => (float) $row->working_hours,
+                'total_minutes' => (int) $row->total_minutes,
+                'remarks' => (string) $row->remarks,
+                'as_of' => $row->as_of,
+                'already_applied' => true,
+                'is_saved' => !is_null($row->applied_at),
+            ])
+            ->values();
+
+        if ($rows->isNotEmpty()) {
+            return $rows;
+        }
+
+        return DB::table('payroll_salary_aut_leave_credit_deductions as staged')
+            ->join('payroll_salary_permanent_employees as pspe', 'pspe.id', '=', 'staged.payroll_salary_permanent_employee_id')
+            ->where('staged.payroll_salary_id', $payroll->id)
+            ->select(
+                'pspe.id as pspe_id',
+                'staged.employee_no',
+                'pspe.name',
+                'pspe.position',
+                'pspe.monthly_rate',
+                'staged.aut_amount as aut',
+                'staged.equivalent_leave_credits as equivalent',
+                'staged.daily_rate',
+                'staged.working_hours',
+                'staged.total_minutes',
+                'staged.remarks',
+                'staged.as_of',
+                'staged.applied_at'
+            )
+            ->orderBy('pspe.name')
+            ->get()
+            ->map(fn ($row) => [
+                'pspe_id' => $row->pspe_id,
+                'employee_no' => $row->employee_no,
+                'name' => $row->name,
+                'position' => $row->position,
+                'monthly_rate' => round((float) $row->monthly_rate, 2),
+                'aut' => round((float) $row->aut, 2),
+                'equivalent' => round((float) $row->equivalent, 3),
+                'daily_rate' => round((float) $row->daily_rate, 4),
+                'working_hours' => (float) $row->working_hours,
+                'total_minutes' => (int) $row->total_minutes,
+                'remarks' => (string) $row->remarks,
+                'as_of' => $row->as_of,
+                'already_applied' => true,
+                'is_saved' => !is_null($row->applied_at),
+            ])
+            ->values();
+    }
+
+    public function getPayrollRangeMeta(object $payroll): array
+    {
+        [$startDate, $endDate] = $this->resolvePayrollRange($payroll);
+
+        return [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'label' => $this->formatPayrollRangeLabel($startDate, $endDate),
+        ];
+    }
+
+    public function applyAutDeductions(object $payroll, array $payloadRows = []): int
+    {
+        if (!empty($payroll->is_aut_deducted)) {
+            abort(422, 'AUT changes have already been processed for this payroll.');
+        }
+
         $overrides = collect($payloadRows)->keyBy(fn ($row) => (int) $row['pspe_id']);
         $rows = $this->buildAutDeductionRows($payroll)
             ->map(function ($row) use ($overrides) {
@@ -142,66 +219,16 @@ class AutDeductionService
 
         DB::transaction(function () use ($payroll, $rows) {
             foreach ($rows as $row) {
-                $this->stageAutDeduction($payroll, $row);
-            }
-        });
-
-        return $rows->count();
-    }
-
-    public function applyPendingAutDeductions(object $payroll): int
-    {
-        $rows = DB::table('payroll_salary_aut_leave_credit_deductions as staged')
-            ->join(
-                'payroll_salary_permanent_employees as pspe',
-                'pspe.id',
-                '=',
-                'staged.payroll_salary_permanent_employee_id'
-            )
-            ->where('staged.payroll_salary_id', $payroll->id)
-            ->whereNull('staged.applied_at')
-            ->select(
-                'pspe.id as pspe_id',
-                'pspe.employee_no',
-                'pspe.ut',
-                'pspe.absences',
-                'pspe.total_deductions',
-                'pspe.net_pay',
-                'pspe.remarks as payroll_remarks',
-                'staged.id as staged_id',
-                'staged.leave_id',
-                'staged.as_of',
-                'staged.aut_amount as aut',
-                'staged.equivalent_leave_credits as equivalent',
-                'staged.total_minutes',
-                'staged.remarks'
-            )
-            ->orderBy('pspe.name')
-            ->get()
-            ->map(fn ($row) => [
-                'pspe_id' => $row->pspe_id,
-                'employee_no' => $row->employee_no,
-                'leave_id' => (int) $row->leave_id,
-                'as_of' => $row->as_of,
-                'aut' => round((float) $row->aut, 3),
-                'equivalent' => round((float) $row->equivalent, 3),
-                'total_minutes' => (int) $row->total_minutes,
-                'remarks' => (string) $row->remarks,
-            ])
-            ->values();
-
-        if ($rows->isEmpty()) {
-            return 0;
-        }
-
-        DB::transaction(function () use ($payroll, $rows) {
-            foreach ($rows as $row) {
-                $this->applyLeaveCreditDeduction($row);
+                $this->storeAutDeduction($payroll, $row);
                 $this->applyPayrollAutAdjustment($row);
-                DB::table('payroll_salary_aut_leave_credit_deductions')
-                    ->where('payroll_salary_permanent_employee_id', $row['pspe_id'])
+                $this->applyLeaveCreditDeduction($row);
+            }
+
+            if ($rows->isNotEmpty()) {
+                DB::table('payroll_salary')
+                    ->where('id', $payroll->id)
                     ->update([
-                        'applied_at' => now(),
+                        'is_aut_deducted' => true,
                         'updated_at' => now(),
                     ]);
             }
@@ -210,62 +237,79 @@ class AutDeductionService
         return $rows->count();
     }
 
-    private function computeAutDeductionFromRemark(
-        string $employeeNo,
-        string $payrollDate,
-        array $remarkAut,
-        float $autAmount
-    ): array {
-        $baseComputation = $this->computeAutDeductionValues($employeeNo, $payrollDate, $autAmount);
+    public function applyPendingAutDeductions(object $payroll): int
+    {
+        $rows = $this->buildAutDeductionRows($payroll)
+            ->filter(fn ($row) => !empty($row['is_saved']))
+            ->values();
 
-        return [
-            'daily_rate' => $baseComputation['daily_rate'],
-            'working_hours' => $baseComputation['working_hours'],
-            'total_minutes' => (int) round(
-                ($remarkAut['days'] * $baseComputation['working_hours'] * 60)
-                + ($remarkAut['hours'] * 60)
-                + $remarkAut['minutes']
-            ),
-            'equivalent_leave_credits' => round((float) $remarkAut['equivalent_leave_credits'], 3),
-            'remarks' => $remarkAut['remark'],
-            'as_of' => Carbon::parse($payrollDate)->format('Y-m'),
-        ];
+        if ($rows->isEmpty()) {
+            return 0;
+        }
+
+        $appliedCount = 0;
+
+        DB::transaction(function () use ($payroll, $rows) {
+            foreach ($rows as $row) {
+                $this->applyLeaveCreditDeduction($row);
+            }
+        });
+
+        foreach ($rows as $row) {
+            if ($this->leaveCreditRemarkExists($row['employee_no'], LeaveEnum::VL->value, $row['as_of'], $row['remarks'])) {
+                $appliedCount++;
+            }
+        }
+
+        return $appliedCount;
     }
 
-    private function computeAutDeductionValues(string $employeeNo, string $payrollDate, float $autAmount): array
+    private function computeAutDeductionValues(object $employee, object $payroll): array
     {
         $shift = $this->salaryEmployeeService
-            ->activeShift($employeeNo, $payrollDate)
+            ->activeShift($employee->employee_no, $payroll->payroll_date)
             ->leftJoin('shifts as s', 'sw1.shift_id', '=', 's.id')
             ->select('s.working_hours')
             ->first();
 
         $salary = $this->salaryEmployeeService
-            ->activeSalary($employeeNo, $payrollDate)
+            ->activeSalary($employee->employee_no, $payroll->payroll_date)
             ->select('daily_rate')
             ->first();
 
-        if (!$shift || !$salary) {
-            abort(422, "Unable to compute AUT deduction for employee {$employeeNo}.");
+        $workingHours = (float) ($shift->working_hours ?? 8);
+        $dailyRate = $salary
+            ? (float) filter_var($salary->daily_rate, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION)
+            : round(((float) $employee->monthly_rate) / 22, 4);
+        $minuteRate = $workingHours > 0 ? ($dailyRate / $workingHours) / 60 : 0;
+        [$startDate, $endDate] = $this->resolvePayrollRange($payroll);
+
+        $summary = [];
+
+        if (!empty($employee->user_id)) {
+            $dtr = $this->dailyTimeRecordService->getDTR([
+                'user_id' => $employee->user_id,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]);
+
+            $summary = $dtr['payroll_value'] ?? [];
         }
 
-        $workingHours = (float) $shift->working_hours;
-        $dailyRate = (float) filter_var(
-            $salary->daily_rate,
-            FILTER_SANITIZE_NUMBER_FLOAT,
-            FILTER_FLAG_ALLOW_FRACTION
-        );
-        $minuteRate = $workingHours > 0 ? ($dailyRate / $workingHours) / 60 : 0;
-        $totalMinutes = $minuteRate > 0 ? (int) round($autAmount / $minuteRate) : 0;
+        $absentDays = (float) ($summary['absent'] ?? 0);
+        $lateUndertime = (int) ($summary['late_undertime'] ?? 0);
+        $totalMinutes = (int) round(($absentDays * $workingHours * 60) + $lateUndertime);
+        $autAmount = round(($absentDays * $dailyRate) + ($lateUndertime * $minuteRate), 2);
         $equivalent = round($totalMinutes / 480, 3);
 
         return [
             'daily_rate' => $dailyRate,
             'working_hours' => $workingHours,
+            'aut_amount' => $autAmount,
             'total_minutes' => $totalMinutes,
             'equivalent_leave_credits' => $equivalent,
             'remarks' => $this->formatAutRemark($totalMinutes, $workingHours, $equivalent),
-            'as_of' => Carbon::parse($payrollDate)->format('Y-m'),
+            'as_of' => Carbon::parse($payroll->payroll_date)->format('Y-m'),
         ];
     }
 
@@ -322,34 +366,17 @@ class AutDeductionService
         return null;
     }
 
-    private function stageAutDeduction(object $payroll, array $row): void
-    {
-        $existingAppliedAt = DB::table('payroll_salary_aut_leave_credit_deductions')
-            ->where('payroll_salary_permanent_employee_id', $row['pspe_id'])
-            ->value('applied_at');
-
-        DB::table('payroll_salary_aut_leave_credit_deductions')->updateOrInsert(
-            ['payroll_salary_permanent_employee_id' => $row['pspe_id']],
-            [
-                'payroll_salary_id' => $payroll->id,
-                'employee_no' => $row['employee_no'],
-                'leave_id' => LeaveEnum::VL->value,
-                'as_of' => $row['as_of'],
-                'daily_rate' => $row['daily_rate'],
-                'working_hours' => $row['working_hours'],
-                'aut_amount' => $row['aut'],
-                'equivalent_leave_credits' => $row['equivalent'],
-                'total_minutes' => $row['total_minutes'],
-                'remarks' => $row['remarks'],
-                'applied_at' => $existingAppliedAt,
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]
-        );
-    }
-
     private function applyLeaveCreditDeduction(array $row): void
     {
+        if ($this->leaveCreditRemarkExists(
+            $row['employee_no'],
+            $row['leave_id'] ?? LeaveEnum::VL->value,
+            $row['as_of'],
+            $row['remarks']
+        )) {
+            return;
+        }
+
         $existing = DB::table('leave_credits')
             ->where('employee_no', $row['employee_no'])
             ->where('leave_id', $row['leave_id'] ?? LeaveEnum::VL->value)
@@ -397,6 +424,33 @@ class AutDeductionService
         );
     }
 
+    private function storeAutDeduction(object $payroll, array $row): void
+    {
+        DB::table('payroll_salary_aut_deductions')->updateOrInsert(
+            [
+                'payroll_salary_id' => $payroll->id,
+                'payroll_salary_permanent_employee_id' => $row['pspe_id'],
+            ],
+            [
+                'employee_no' => $row['employee_no'],
+                'name' => $row['name'],
+                'position' => $row['position'],
+                'monthly_rate' => round((float) $row['monthly_rate'], 2),
+                'leave_id' => $row['leave_id'] ?? LeaveEnum::VL->value,
+                'as_of' => $row['as_of'],
+                'daily_rate' => round((float) $row['daily_rate'], 4),
+                'working_hours' => round((float) $row['working_hours'], 3),
+                'aut_amount' => round((float) $row['aut'], 2),
+                'equivalent_leave_credits' => round((float) $row['equivalent'], 3),
+                'total_minutes' => (int) $row['total_minutes'],
+                'remarks' => $row['remarks'],
+                'applied_at' => now(),
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+    }
+
     private function applyPayrollAutAdjustment(array $row): void
     {
         $employee = DB::table('payroll_salary_permanent_employees')
@@ -408,16 +462,23 @@ class AutDeductionService
             return;
         }
 
+        $existingAutRemark = $this->parseAutRemark($employee->remarks);
+
+        $updates = [
+            'remarks' => $this->replaceAutRemark($employee->remarks, $row['remarks']),
+            'updated_at' => now(),
+        ];
+
+        if (!$existingAutRemark) {
+            $updates['ut'] = 0;
+            $updates['absences'] = 0;
+            $updates['total_deductions'] = round((float) $employee->total_deductions - (float) $row['aut'], 2);
+            $updates['net_pay'] = round((float) $employee->net_pay + (float) $row['aut'], 2);
+        }
+
         DB::table('payroll_salary_permanent_employees')
             ->where('id', $row['pspe_id'])
-            ->update([
-                'ut' => 0,
-                'absences' => 0,
-                'total_deductions' => round((float) $employee->total_deductions - (float) $row['aut'], 2),
-                'net_pay' => round((float) $employee->net_pay + (float) $row['aut'], 2),
-                'remarks' => $this->appendRemark($employee->remarks, $row['remarks']),
-                'updated_at' => now(),
-            ]);
+            ->update($updates);
     }
 
     private function appendRemark(?string $existingRemarks, string $newRemark): string
@@ -436,6 +497,84 @@ class AutDeductionService
         }
 
         return $existingRemarks . PHP_EOL . $newRemark;
+    }
+
+    private function replaceAutRemark(?string $existingRemarks, string $newRemark): string
+    {
+        $existingRemarks = trim((string) $existingRemarks);
+
+        if ($existingRemarks === '') {
+            return $newRemark;
+        }
+
+        $lines = collect(preg_split('/\r\n|\r|\n/', $existingRemarks) ?: [])
+            ->map(fn ($line) => trim($line))
+            ->filter()
+            ->reject(fn ($line) => preg_match('/^AUT\s+\d+\s+days?\s+\d+\s+hours?\s+\d+\s+mins?\s*=\s*[0-9]+(?:\.[0-9]+)?\s+VL$/i', $line))
+            ->values();
+
+        $lines->push($newRemark);
+
+        return $lines->implode(PHP_EOL);
+    }
+
+    private function leaveCreditRemarkExists(string $employeeNo, int $leaveId, string $asOf, string $remark): bool
+    {
+        $remarks = DB::table('leave_credits')
+            ->where('employee_no', $employeeNo)
+            ->where('leave_id', $leaveId)
+            ->where('as_of', $asOf)
+            ->value('remarks');
+
+        if (!$remarks) {
+            return false;
+        }
+
+        return collect(preg_split('/\r\n|\r|\n/', (string) $remarks) ?: [])
+            ->contains(fn ($line) => trim($line) === trim($remark));
+    }
+
+    private function resolvePayrollRange(object $payroll): array
+    {
+        $payrollDate = Carbon::parse($payroll->payroll_date);
+
+        if (($payroll->cutoff ?? null) === 'first_cutoff') {
+            return [
+                $payrollDate->copy()->startOfMonth()->format('Y-m-d'),
+                $payrollDate->copy()->day(15)->format('Y-m-d'),
+            ];
+        }
+
+        return [
+            $payrollDate->copy()->day(16)->format('Y-m-d'),
+            $payrollDate->copy()->endOfMonth()->format('Y-m-d'),
+        ];
+    }
+
+    private function formatPayrollRangeLabel(string $startDate, string $endDate): string
+    {
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+
+        if ($start->isSameMonth($end)) {
+            return sprintf(
+                '%s %d-%d, %d',
+                $start->format('F'),
+                $start->day,
+                $end->day,
+                $start->year
+            );
+        }
+
+        return sprintf(
+            '%s %d, %d - %s %d, %d',
+            $start->format('F'),
+            $start->day,
+            $start->year,
+            $end->format('F'),
+            $end->day,
+            $end->year
+        );
     }
 
     private function recalculateFutureCredits(

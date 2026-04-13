@@ -467,33 +467,6 @@ class ComputationService
                 ]);
             }
 
-            if ($absences > 0 || $late_undertime > 0) {
-                $autComputation = $this->convertToMinutes($absences, $late_undertime);
-                $autAmount = round($absences_amount + $late_undertime_amount, 2);
-
-                DB::table('payroll_salary_aut_leave_credit_deductions')->updateOrInsert(
-                    ['payroll_salary_permanent_employee_id' => $pseId],
-                    [
-                        'payroll_salary_id' => $this->payroll_id,
-                        'employee_no' => $this->employee_no,
-                        'leave_id' => LeaveEnum::VL->value,
-                        'as_of' => Carbon::parse($this->payroll_date)->format('Y-m'),
-                        'daily_rate' => round((float) $this->daily_rate, 4),
-                        'working_hours' => (float) $this->working_hours,
-                        'aut_amount' => $autAmount,
-                        'equivalent_leave_credits' => $autComputation['equivalent_leave_credits'],
-                        'total_minutes' => $autComputation['total_minutes'],
-                        'remarks' => $this->formatAutRemark(
-                            $autComputation['total_minutes'],
-                            (float) $this->working_hours,
-                            $autComputation['equivalent_leave_credits']
-                        ),
-                        'updated_at' => now(),
-                        'created_at' => now(),
-                    ]
-                );
-            }
-
             // Final totals for return payload
             $gross            = $net + $sum_of_deduction;
             $total_deductions = $sum_of_deduction;

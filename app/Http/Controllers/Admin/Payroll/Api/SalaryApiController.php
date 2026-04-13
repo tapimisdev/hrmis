@@ -88,6 +88,7 @@ class SalaryApiController extends Controller
     public function previewAutDeductions(string $payroll_id)
     {
         $payroll = $this->autDeductionService->getRegularPayroll($payroll_id);
+        $range = $this->autDeductionService->getPayrollRangeMeta($payroll);
 
         return response()->json([
             'data' => $this->autDeductionService->buildAutDeductionRows($payroll)->values(),
@@ -96,6 +97,11 @@ class SalaryApiController extends Controller
                 'payroll_no' => $payroll->payroll_no,
                 'as_of' => Carbon::parse($payroll->payroll_date)->format('Y-m'),
                 'status' => $payroll->status,
+                'is_aut_deducted' => (bool) ($payroll->is_aut_deducted ?? false),
+                'period_covered' => $payroll->period_covered,
+                'range_start' => $range['start_date'],
+                'range_end' => $range['end_date'],
+                'range_label' => $range['label'],
             ],
         ]);
     }
@@ -109,14 +115,14 @@ class SalaryApiController extends Controller
             'rows.*.equivalent' => 'required_with:rows|numeric|min:0',
         ]);
 
-        $savedCount = $this->autDeductionService->saveAutDeductions(
+        $savedCount = $this->autDeductionService->applyAutDeductions(
             $payroll,
             $validated['rows'] ?? []
         );
 
         return response()->json([
             'status' => 'success',
-            'message' => 'AUT deductions saved successfully.',
+            'message' => 'AUT changes applied successfully.',
             'saved_count' => $savedCount,
         ]);
     }

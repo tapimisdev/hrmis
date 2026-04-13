@@ -21,6 +21,18 @@
             </button>
         </template>
 
+        <template #summary>
+            <div class="aut-status-banner" :class="autStatusBannerClass">
+                <div class="aut-status-copy">
+                    <span class="aut-status-label">AUT deduction status</span>
+                    <strong>{{ autStatusLabel }}</strong>
+                </div>
+                <div class="aut-status-note">
+                    {{ autStatusDescription }}
+                </div>
+            </div>
+        </template>
+
         <template #sheet-type>( PERMANENT )</template>
         <template #agency
             >TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template
@@ -290,25 +302,50 @@
         <template #default>
             <div class="modal-body">
                 <div class="aut-modal-meta">
-                    <div class="aut-stat-card">
+                    <div
+                        class="aut-stat-card"
+                        :class="{ 'aut-stat-card-loading': autModalLoading }"
+                    >
+                        <div class="aut-stat-label">AUT Range</div>
+                        <div v-if="autModalLoading" class="aut-stat-loading">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Loading...
+                        </div>
+                        <div v-else class="aut-stat-value">{{ autRangeLabel }}</div>
+                    </div>
+                    <div
+                        class="aut-stat-card"
+                        :class="{ 'aut-stat-card-loading': autModalLoading }"
+                    >
                         <div class="aut-stat-label">Employees with AUT</div>
-                        <div class="aut-stat-value">{{ autDeductionRows.length }}</div>
+                        <div v-if="autModalLoading" class="aut-stat-loading">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Loading...
+                        </div>
+                        <div v-else class="aut-stat-value">{{ autDeductionRows.length }}</div>
                     </div>
-                    <div class="aut-stat-card">
+                    <div
+                        class="aut-stat-card"
+                        :class="{ 'aut-stat-card-loading': autModalLoading }"
+                    >
                         <div class="aut-stat-label">Least AUT</div>
-                        <div class="aut-stat-value">{{ leastAutLabel }}</div>
+                        <div v-if="autModalLoading" class="aut-stat-loading">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Loading...
+                        </div>
+                        <div v-else class="aut-stat-value">{{ leastAutLabel }}</div>
                     </div>
-                    <div class="aut-stat-card">
+                    <div
+                        class="aut-stat-card"
+                        :class="{ 'aut-stat-card-loading': autModalLoading }"
+                    >
                         <div class="aut-stat-label">Longest AUT</div>
-                        <div class="aut-stat-value">{{ longestAutLabel }}</div>
+                        <div v-if="autModalLoading" class="aut-stat-loading">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Loading...
+                        </div>
+                        <div v-else class="aut-stat-value">{{ longestAutLabel }}</div>
                     </div>
-                </div>
-
-                <div
-                    v-if="canEditAutRows"
-                    class="alert alert-info aut-modal-note mb-3"
-                >
-                    AUTs will be deducted from leave credits once this payroll is approved.
                 </div>
 
                 <div
@@ -317,12 +354,12 @@
                 >
                     <button
                         type="button"
-                        class="btn btn-outline-secondary"
-                        :disabled="resettingAut || savingAut || autModalLoading || !canEditAutRows || !autDeductionRows.length"
-                        @click="resetAutEquivalents"
+                        class="btn btn-outline-primary"
+                        :disabled="autModalLoading || savingAut"
+                        @click="fetchAutDeductions"
                     >
                         <span
-                            v-if="resettingAut"
+                            v-if="autModalLoading"
                             class="d-inline-flex align-items-center gap-2"
                         >
                             <span
@@ -330,14 +367,15 @@
                                 role="status"
                                 aria-hidden="true"
                             ></span>
-                            Resetting...
+                            Refreshing...
                         </span>
-                        <span v-else>Reset Equivalents</span>
+                        <span v-else>Refresh Data</span>
                     </button>
                 </div>
 
-                <div v-if="autModalLoading" class="py-5 text-center text-body-secondary">
-                    Loading AUT deductions...
+                <div v-if="autModalLoading" class="aut-table-loading text-center text-body-secondary">
+                    <span class="spinner-border text-primary mb-3" role="status" aria-hidden="true"></span>
+                    <div>Loading AUT deduction records...</div>
                 </div>
 
                 <div v-else-if="!autDeductionRows.length" class="py-5 text-center text-body-secondary">
@@ -359,7 +397,7 @@
                             <tr
                                 v-for="row in autDeductionRows"
                                 :key="row.pspe_id"
-                                :class="{ 'table-success-subtle': row.already_applied }"
+                                :class="{ 'table-success-subtle': row.is_saved }"
                             >
                                 <td>{{ row.employee_no }}</td>
                                 <td>
@@ -390,23 +428,23 @@
                 <button
                     type="button"
                     class="btn btn-danger"
-                    :disabled="savingAut || resettingAut"
+                    :disabled="savingAut"
                     @click="closeAutDeductionModal"
                 >
                     Close
                 </button>
                 <button
-                    v-if="canEditAutRows"
+                    v-if="canEditAutRows && !autModalLoading"
                     type="button"
                     class="btn btn-primary"
-                    :disabled="resettingAut || savingAut || autModalLoading || !canSaveAutRows"
-                    @click="saveAutDeductions"
+                    :disabled="savingAut || autModalLoading || !canSaveAutRows"
+                    @click="applyAutDeductions"
                 >
                     <span v-if="savingAut" class="d-inline-flex align-items-center gap-2">
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        Saving...
+                        Applying deductions...
                     </span>
-                    <span v-else>Save</span>
+                    <span v-else>Apply Deductions</span>
                 </button>
             </div>
         </template>
@@ -439,6 +477,10 @@ export default {
             type: [Number, String],
             required: true,
         },
+        is_aut_deducted: {
+            type: Boolean,
+            default: false,
+        },
         period_covered: {
             type: String,
             default: "",
@@ -454,9 +496,10 @@ export default {
             baseColumnCount: 13, // Emp#, Name, Monthly, SG, AUT, Overtime, Holiday, Total Deduction, Adjustment, Net Salary, Remarks + colspan setup
             autModalLoading: false,
             savingAut: false,
-            resettingAut: false,
             autDeductionRows: [],
             autPayrollStatus: this.status,
+            autIsDeducted: this.is_aut_deducted,
+            autRangeLabel: this.period_covered || "N/A",
         };
     },
     computed: {
@@ -511,10 +554,6 @@ export default {
             return Array.from(names).sort((a, b) => a.localeCompare(b));
         },
 
-        hasPendingAutDeductions() {
-            return this.autDeductionRows.some((row) => !row.already_applied);
-        },
-
         leastAutRow() {
             if (!this.autDeductionRows.length) {
                 return null;
@@ -564,13 +603,27 @@ export default {
         },
 
         canEditAutRows() {
-            return !["approved", "for_releasing", "completed"].includes(
-                this.autPayrollStatus,
-            );
+            return !this.autIsDeducted;
         },
 
         canSaveAutRows() {
-            return this.canEditAutRows && this.hasPendingAutDeductions;
+            return this.canEditAutRows && this.autDeductionRows.length > 0;
+        },
+
+        autStatusLabel() {
+            return this.autIsDeducted ? "Applied" : "Not Applied";
+        },
+
+        autStatusDescription() {
+            return this.autIsDeducted
+                ? "AUT values are now using the saved applied snapshot for this payroll."
+                : "AUT values are still using live timelog computation until deductions are applied.";
+        },
+
+        autStatusBannerClass() {
+            return this.autIsDeducted
+                ? "aut-status-banner-applied"
+                : "aut-status-banner-pending";
         },
     },
     methods: {
@@ -612,15 +665,13 @@ export default {
 
         formatAutDuration(totalMinutes) {
             const minutes = Math.max(0, Math.round(this.toNumber(totalMinutes)));
-            const hours = Math.floor(minutes / 60);
+            const totalHours = Math.floor(minutes / 60);
+            const days = Math.floor(totalHours / 24);
+            const hours = totalHours % 24;
             const mins = minutes % 60;
 
-            if (hours === 0) {
-                return `${mins} min${mins === 1 ? "" : "s"}`;
-            }
-
-            if (mins === 0) {
-                return `${hours} hr${hours === 1 ? "" : "s"}`;
+            if (days > 0) {
+                return `${days} day${days === 1 ? "" : "s"} ${hours} hr${hours === 1 ? "" : "s"} ${mins} min${mins === 1 ? "" : "s"}`;
             }
 
             return `${hours} hr${hours === 1 ? "" : "s"} ${mins} min${mins === 1 ? "" : "s"}`;
@@ -671,12 +722,22 @@ export default {
                 );
 
                 this.autPayrollStatus = response.data.meta?.status || this.status;
+                this.autIsDeducted = Boolean(
+                    response.data.meta?.is_aut_deducted ?? this.is_aut_deducted,
+                );
+                this.autRangeLabel =
+                    response.data.meta?.range_label ||
+                    response.data.meta?.period_covered ||
+                    this.period_covered ||
+                    "N/A";
                 this.autDeductionRows = (response.data.data || []).map((row) => ({
                     ...row,
                     equivalent_input: this.formatEditableEquivalent(row.equivalent),
                 }));
             } catch (error) {
                 this.autDeductionRows = [];
+                this.autIsDeducted = this.is_aut_deducted;
+                this.autRangeLabel = this.period_covered || "N/A";
                 Swal.fire({
                     icon: "error",
                     title: "Unable to load AUT deductions",
@@ -689,30 +750,21 @@ export default {
             }
         },
 
-        async resetAutEquivalents() {
-            this.resettingAut = true;
-            await this.$nextTick();
-
-            this.autDeductionRows = this.autDeductionRows.map((row) => {
-                if (!this.isAutRowEditable(row)) {
-                    return row;
-                }
-
-                const equivalent = this.computeEquivalentFromMinutes(
-                    row.total_minutes,
-                );
-
-                return {
-                    ...row,
-                    equivalent,
-                    equivalent_input: this.formatEditableEquivalent(equivalent),
-                };
+        async applyAutDeductions() {
+            const confirmation = await Swal.fire({
+                icon: "warning",
+                title: "Confirm AUT deduction",
+                text: "Once you proceed, the equivalent amount will be deducted from the employees' leave credits and cannot be undone through the system. If a reversal is needed, it must be handled manually.",
+                showCancelButton: true,
+                confirmButtonText: "Apply Deductions",
+                cancelButtonText: "Cancel",
+                reverseButtons: true,
             });
 
-            this.resettingAut = false;
-        },
+            if (!confirmation.isConfirmed) {
+                return;
+            }
 
-        async saveAutDeductions() {
             this.savingAut = true;
 
             try {
@@ -733,20 +785,20 @@ export default {
 
                 await Swal.fire({
                     icon: "success",
-                    title: "AUT deductions saved",
+                    title: "AUT changes applied",
                     text:
                         response.data.message ||
-                        "Equivalent leave-credit deductions have been saved.",
+                        "Equivalent AUT changes have been applied.",
                 });
 
                 await this.fetchAutDeductions();
             } catch (error) {
                 Swal.fire({
                     icon: "error",
-                    title: "AUT deductions failed",
+                    title: "AUT changes failed",
                     text:
                         error.response?.data?.message ||
-                        "An error occurred while saving AUT deductions.",
+                        "An error occurred while applying the AUT changes.",
                 });
             } finally {
                 this.savingAut = false;
@@ -820,9 +872,50 @@ export default {
     font-weight: 700;
 }
 
+.aut-status-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.85rem;
+}
+
+.aut-status-banner-applied {
+    background: #e9f8ef;
+    border-color: #69c18f;
+    color: #1f7a4d;
+}
+
+.aut-status-banner-pending {
+    background: #fff6de;
+    border-color: #efc15a;
+    color: #8a5a00;
+}
+
+.aut-status-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.aut-status-label {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.8;
+}
+
+.aut-status-note {
+    font-size: 0.92rem;
+    line-height: 1.35;
+}
+
 .aut-modal-meta {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
     margin-bottom: 1rem;
 }
@@ -832,6 +925,10 @@ export default {
     border-radius: 0.75rem;
     padding: 0.85rem 1rem;
     background: rgba(var(--bs-secondary-rgb), 0.08);
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .aut-stat-label {
@@ -848,8 +945,30 @@ export default {
     line-height: 1.25;
 }
 
+.aut-stat-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--bs-secondary-color);
+    min-height: 36px;
+}
+
+.aut-stat-card-loading {
+    background: rgba(var(--bs-secondary-rgb), 0.12);
+    border-color: rgba(var(--bs-secondary-rgb), 0.28);
+}
+
 .aut-deduction-table-wrapper {
     max-height: 60vh;
+}
+
+.aut-table-loading {
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .aut-deduction-table thead th {
@@ -857,11 +976,6 @@ export default {
     top: 0;
     background: var(--bs-body-bg);
     z-index: 1;
-}
-
-.aut-modal-note {
-    font-size: 0.9rem;
-    padding: 0.65rem 0.85rem;
 }
 
 .aut-employee-position {
@@ -877,6 +991,11 @@ export default {
 }
 
 @media (max-width: 768px) {
+    .aut-status-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .aut-modal-meta {
         grid-template-columns: 1fr;
     }
