@@ -1,5 +1,6 @@
 <template>
     <div class="own-table-wrapper table-responsive">
+
         <table class="table own-table mb-0 align-middle">
             <thead>
                 <!-- TOP HEADER (row 1) -->
@@ -92,7 +93,7 @@ export default {
         OwnPagination
     },
     props: {
-        rows: { type: Array, required: true },
+        rows: { type: Array, required: false },
         isRecomputing: { type: Boolean, default: false },
         recomputingKey: { type: [String, Number], default: null },
         focusRowKey: { type: [String, Number], default: null },

@@ -2,7 +2,7 @@
     <div>
         <!-- HEADER ACTION BAR -->
         <div class="d-flex justify-content-between align-items-center border-bottom mb-3 pb-3">
-            <div class="fw-semibold">Employee Tax Forecast</div>
+            <div class="fw-semibold">Employee Tax</div>
         </div>
 
         <!-- FILTER BAR -->

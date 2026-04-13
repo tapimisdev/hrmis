@@ -66,9 +66,9 @@ import { markRaw } from "vue";
 import TwoColLayout from "../../components/TwoColLayout .vue";
 import TaxForecastTable from "./TaxForecastTable.vue";
 import TaxForecastFilters from "./TaxForecastFilters.vue";
-import EmptyState from "./components/EmptyState.vue";
+import EmptyState from "../../components/EmptyState.vue";
 
-import ActionEmptyState from "./actions/ActionEmptyState.vue";
+import ActionEmptyState from "../../components/ActionEmptyState.vue";
 import ViewBreakdown from "./actions/breakdown/ViewBreakdown.vue";
 import EditInputs from "./actions/edit-inputs/EditInputs.vue";
 
@@ -84,8 +84,9 @@ export default {
         EditInputs,
     },
     props: {
-        body: { type: Array, required: true },
+        body: { type: Array, required: false },
         isApplyingToPayroll: { type: Boolean, default: false },
+        selectedType: { type: String }
     },
     data() {
         return {

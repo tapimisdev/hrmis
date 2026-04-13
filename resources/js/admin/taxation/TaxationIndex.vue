@@ -23,8 +23,10 @@
                 :body="taxationData.body"
                 :disable_recon="!has_taxation_record"
                 :is-applying-to-payroll="is_applying_to_payroll"
+                :selected-type="selectedType"
                 @apply-to-tax="applyToPayroll"
                 @refresh-forecast="handleForecastRefresh"
+                @type-change="handleTypeChange"
             />
             <TaxSettings :settings="taxationData.settings" />
         </template>
@@ -59,6 +61,7 @@ export default {
 
             is_processing: false,
             selectedYear: null,
+            selectedType: "forecast",
 
             statusPollId: null,
             batch_id: null,
@@ -76,9 +79,14 @@ export default {
         };
     },
 
+    created() {
+        this.initTypeFromUrl();
+    },
+
     methods: {
-        fetchTaxation(year) {
+        fetchTaxation(year, type = this.selectedType) {
             this.selectedYear = year ?? this.selectedYear ?? new Date().getFullYear();
+            this.selectedType = type ?? this.selectedType ?? "forecast";
             this.is_loading = true;
             this.finalized = false;
             this.batch_id = null;
@@ -86,7 +94,12 @@ export default {
             this.stopStatusPolling();
 
             axios
-                .get("/admin/taxation", { params: { year: this.selectedYear } })
+                .get("/admin/taxation", {
+                    params: {
+                        year: this.selectedYear,
+                        type: this.selectedType,
+                    },
+                })
                 .then((response) => {
                     const data = response.data || {};
 
@@ -115,7 +128,12 @@ export default {
             const yearToRefresh = this.selectedYear || new Date().getFullYear();
 
             axios
-                .get("/admin/taxation", { params: { year: yearToRefresh } })
+                .get("/admin/taxation", {
+                    params: {
+                        year: yearToRefresh,
+                        type: this.selectedType,
+                    },
+                })
                 .then((response) => {
                     const data = response.data || {};
 
@@ -166,7 +184,12 @@ export default {
 
         fetchFinalTaxation() {
             axios
-                .get("/admin/taxation", { params: { year: this.selectedYear } })
+                .get("/admin/taxation", {
+                    params: {
+                        year: this.selectedYear,
+                        type: this.selectedType,
+                    },
+                })
                 .then((response) => {
                     const data = response.data || {};
 
@@ -201,6 +224,41 @@ export default {
             if (this.statusPollId) {
                 clearInterval(this.statusPollId);
                 this.statusPollId = null;
+            }
+        },
+        initTypeFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const typeFromUrl = params.get("type");
+            const allowedTypes = ["forecast", "q2", "q3", "nov", "final"];
+
+            if (typeFromUrl && allowedTypes.includes(typeFromUrl)) {
+                this.selectedType = typeFromUrl;
+                return;
+            }
+
+            this.setUrlType(this.selectedType, true);
+        },
+        setUrlType(type, replace = false) {
+            const allowedTypes = ["forecast", "q2", "q3", "nov", "final"];
+            const safeType = allowedTypes.includes(type) ? type : "forecast";
+            const url = new URL(window.location.href);
+
+            url.searchParams.set("type", safeType);
+
+            if (replace) {
+                window.history.replaceState({}, "", url);
+            } else {
+                window.history.pushState({}, "", url);
+            }
+        },
+        handleTypeChange(type) {
+            if (!type || type === this.selectedType) return;
+
+            this.selectedType = type;
+            this.setUrlType(type);
+
+            if (this.selectedYear) {
+                this.fetchTaxation(this.selectedYear, type);
             }
         },
         applyTaxationIdentity(data = {}) {

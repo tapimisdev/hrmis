@@ -8,6 +8,7 @@ use App\Services\Taxation\ApplyForecastToPayrollService;
 use App\Services\Taxation\Parts\TaxationBodyService;
 use App\Services\Taxation\Parts\TaxationSettingsService;
 use App\Services\Taxation\Parts\TaxationCardsService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -24,15 +25,17 @@ class TaxationController extends Controller
     public function index(Request $request)
     {
         $year = $request->query('year', date('Y'));
+        $type = $this->resolveTaxationType($request);
+
+        if(!$this->allowYears($year)) {
+            abort(404);
+        }
 
         if (!$request->wantsJson()) {
             return view('admin.pages.taxation.taxation.index');
         }
 
         $taxation = $this->taxationSettingsService->getActiveTaxationWithSettings((int) $year);
-
-        // dd($taxation);
-
 
         if ($taxation) {
 
@@ -41,10 +44,8 @@ class TaxationController extends Controller
             // }
 
             $taxation->cards = $this->taxationCardsService->getTaxationEmployeesTotalCards($taxation->id ?? 0) ?? [];
-            $taxation->body = $this->taxationBodyService->getEmployees($taxation->id) ?? [];
+            $taxation->body = $this->taxationBodyService->getEmployees($taxation->id, $type) ?? [];
         }
-
-        // dd($taxation);
 
         return response()->json($taxation);
     }
@@ -137,5 +138,30 @@ class TaxationController extends Controller
                 'message' => $e->getMessage() ?: 'Failed to apply forecast to Payroll.',
             ], 500);
         }
+    }
+
+    private function allowYears($year) : bool
+    {
+        $allowed= [];
+        $current_year = Carbon::now()->year + 2;
+
+
+        for($i = 0; $i <= 9; $i++) {
+            $allowed[] = $current_year - $i;
+        }
+
+        if(in_array($year, $allowed)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function resolveTaxationType(Request $request): string
+    {
+        $type = $request->query('type', $request->query('quarter', 'forecast'));
+        $allowedTypes = ['forecast', 'q2', 'q3', 'q4', 'nov', 'final'];
+
+        return in_array($type, $allowedTypes, true) ? $type : 'forecast';
     }
 }

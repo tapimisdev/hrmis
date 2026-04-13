@@ -140,7 +140,7 @@
 </template>
 
 <script>
-import TaxTemplate from "../components/TaxTemplate.vue";
+import TaxTemplate from "../../../../components/TaxTemplate.vue";
 import BasicInformation from "../components/BasicInformation.vue";
 import DynamicRows from "../../../../modal/run-forecast/tabs/partials/DynamicRows.vue";
 import AppTooltip from "../../../../../../components/AppTooltip.vue";

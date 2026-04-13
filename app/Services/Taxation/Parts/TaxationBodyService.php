@@ -11,7 +11,7 @@ class TaxationBodyService
         private readonly ConnectionInterface $db
     ) {}
 
-    public function getEmployees(int $id): ?object
+    public function getEmployees(int $id, string $type): ?object
     {
         $employees = $this->db->table('taxation_employees as te')
 
@@ -102,6 +102,7 @@ class TaxationBodyService
 
             )
             ->where('te.taxation_id', $id)
+            ->where('te.type', $type)
             ->get()
             ->map(function ($employee) {
 
@@ -141,6 +142,7 @@ class TaxationBodyService
                 // Money fields
                 return $employee;
             });
+
         if ($employees->isEmpty()) {
             return null;
         }

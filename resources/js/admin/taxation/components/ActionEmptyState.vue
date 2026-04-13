@@ -21,7 +21,7 @@
 </template>
 
 <script>
-import TaxTemplate from './components/TaxTemplate.vue';
+import TaxTemplate from './TaxTemplate.vue';
 export default {
     name: 'EmptyState',
     components: { TaxTemplate }

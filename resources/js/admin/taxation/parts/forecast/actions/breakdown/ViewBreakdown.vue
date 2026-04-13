@@ -20,7 +20,7 @@
 
 <script>
 import axios from "axios";
-import TaxTemplate from "./../components/TaxTemplate.vue";
+import TaxTemplate from "../../../../components/TaxTemplate.vue";
 import BasicInformation from "../components/BasicInformation.vue";
 import DynamicTabs from "./components/DynamicTabs.vue";
 import BreakdownSkeleton from "./components/BreakdownSkeleton.vue";
