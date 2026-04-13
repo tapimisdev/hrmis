@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Payroll\Salary;
 use App\Enums\EmploymentTypesEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SalaryPay\StoreRequest;
+use App\Services\SalaryPay\AutDeductionService;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,10 +18,15 @@ use Exception;
 class SalaryController extends Controller
 {
     protected $payroll_service;
+    protected $autDeductionService;
 
-    public function __construct(PayrollService $payroll_service)
+    public function __construct(
+        PayrollService $payroll_service,
+        AutDeductionService $autDeductionService
+    )
     {
         $this->payroll_service = $payroll_service;
+        $this->autDeductionService = $autDeductionService;
         $this->middleware('permission:hr.salary_payroll.view')->only(['index', 'show']);
         $this->middleware('permission:hr.salary_payroll.create')->only(['create', 'store']);
         $this->middleware('permission:hr.salary_payroll.delete')->only('destroy');
@@ -265,6 +271,11 @@ class SalaryController extends Controller
                     'status' => $newStatus,
                     'updated_at' => now(),
                 ]);
+
+            if ($newStatus === 'approved') {
+                $refreshedPayroll = $this->autDeductionService->getRegularPayroll((string) $id);
+                $this->autDeductionService->applyPendingAutDeductions($refreshedPayroll);
+            }
 
             DB::commit();
 

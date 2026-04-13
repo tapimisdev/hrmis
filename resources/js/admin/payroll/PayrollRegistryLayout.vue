@@ -10,7 +10,7 @@
         </div>
       </div>
 
-      <div class="toolbar-left d-flex gap-2">
+      <div class="toolbar-left">
         <div class="dropdown">
           <button class="toolbar-btn left dropdown-toggle" type="button" data-bs-toggle="dropdown"
             aria-expanded="false">
@@ -24,6 +24,10 @@
               </a>
             </li>
           </ul>
+        </div>
+
+        <div v-if="$slots.actions" class="toolbar-actions">
+          <slot name="actions"></slot>
         </div>
       </div>
     </div>
@@ -313,6 +317,11 @@ export default {
   font-size: 12px;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  line-height: 1;
 }
 
 .toolbar-btn:hover {
@@ -321,6 +330,43 @@ export default {
 }
 
 .toolbar-btn i {
+  margin-right: 5px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-actions :deep(.toolbar-btn) {
+  background: var(--header-bg);
+  border: 1px solid var(--line-color);
+  color: var(--bs-body-color, #111827);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  line-height: 1;
+}
+
+.toolbar-actions :deep(.toolbar-btn:hover) {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.6);
+}
+
+.toolbar-actions :deep(.toolbar-btn i) {
   margin-right: 5px;
 }
 

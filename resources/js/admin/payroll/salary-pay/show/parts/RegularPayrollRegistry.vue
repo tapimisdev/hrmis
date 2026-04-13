@@ -9,6 +9,18 @@
         ]"
         @print="handlePrint"
     >
+        <template #actions>
+            <button
+                type="button"
+                class="toolbar-btn left"
+                :disabled="loading || autModalLoading || savingAut"
+                @click="openAutDeductionModal"
+            >
+                <i class="fa-solid fa-calculator"></i>
+                Deduct AUTs
+            </button>
+        </template>
+
         <template #sheet-type>( PERMANENT )</template>
         <template #agency
             >TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template
@@ -266,15 +278,149 @@
             </table>
         </template>
     </PayrollRegistryLayout>
+
+    <ModalVue
+        ref="autDeductionModal"
+        id="aut-deduction-modal"
+        title="Deduct AUTs"
+        subtitle="Apply equivalent leave-credit deductions for regular salary payroll."
+        header-icon="fa-solid fa-business-time"
+        size="modal-xl"
+    >
+        <template #default>
+            <div class="modal-body">
+                <div class="aut-modal-meta">
+                    <div class="aut-stat-card">
+                        <div class="aut-stat-label">Employees with AUT</div>
+                        <div class="aut-stat-value">{{ autDeductionRows.length }}</div>
+                    </div>
+                    <div class="aut-stat-card">
+                        <div class="aut-stat-label">Least AUT</div>
+                        <div class="aut-stat-value">{{ leastAutLabel }}</div>
+                    </div>
+                    <div class="aut-stat-card">
+                        <div class="aut-stat-label">Longest AUT</div>
+                        <div class="aut-stat-value">{{ longestAutLabel }}</div>
+                    </div>
+                </div>
+
+                <div
+                    v-if="canEditAutRows"
+                    class="alert alert-info aut-modal-note mb-3"
+                >
+                    AUTs will be deducted from leave credits once this payroll is approved.
+                </div>
+
+                <div
+                    v-if="canEditAutRows"
+                    class="aut-reset-actions mb-3 d-flex justify-content-end"
+                >
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        :disabled="resettingAut || savingAut || autModalLoading || !canEditAutRows || !autDeductionRows.length"
+                        @click="resetAutEquivalents"
+                    >
+                        <span
+                            v-if="resettingAut"
+                            class="d-inline-flex align-items-center gap-2"
+                        >
+                            <span
+                                class="spinner-border spinner-border-sm"
+                                role="status"
+                                aria-hidden="true"
+                            ></span>
+                            Resetting...
+                        </span>
+                        <span v-else>Reset Equivalents</span>
+                    </button>
+                </div>
+
+                <div v-if="autModalLoading" class="py-5 text-center text-body-secondary">
+                    Loading AUT deductions...
+                </div>
+
+                <div v-else-if="!autDeductionRows.length" class="py-5 text-center text-body-secondary">
+                    No AUT deductions available for this payroll.
+                </div>
+
+                <div v-else class="table-responsive aut-deduction-table-wrapper">
+                    <table class="table table-sm table-striped table-bordered align-middle aut-deduction-table">
+                        <thead>
+                            <tr>
+                                <th>Employee No</th>
+                                <th>Name / Position</th>
+                                <th class="text-end">Rate</th>
+                                <th class="text-end">AUT</th>
+                                <th class="text-end">Equivalent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="row in autDeductionRows"
+                                :key="row.pspe_id"
+                                :class="{ 'table-success-subtle': row.already_applied }"
+                            >
+                                <td>{{ row.employee_no }}</td>
+                                <td>
+                                    <div class="employee-name fw-bold">{{ row.name }}</div>
+                                    <div class="aut-employee-position">{{ row.position }}</div>
+                                </td>
+                                <td class="text-end">{{ formatMoney(row.monthly_rate) }}</td>
+                                <td class="text-end">{{ formatAutDuration(row.total_minutes) }}</td>
+                                <td class="text-end">
+                                    <input
+                                        v-if="isAutRowEditable(row)"
+                                        :value="row.equivalent_input"
+                                        type="text"
+                                        inputmode="decimal"
+                                        class="form-control form-control-sm aut-equivalent-input text-end"
+                                        @input="updateEquivalentInput(row, $event.target.value)"
+                                        @blur="normalizeEquivalent(row)"
+                                    />
+                                    <span v-else>{{ formatEquivalent(row.equivalent) }}</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    :disabled="savingAut || resettingAut"
+                    @click="closeAutDeductionModal"
+                >
+                    Close
+                </button>
+                <button
+                    v-if="canEditAutRows"
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="resettingAut || savingAut || autModalLoading || !canSaveAutRows"
+                    @click="saveAutDeductions"
+                >
+                    <span v-if="savingAut" class="d-inline-flex align-items-center gap-2">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Saving...
+                    </span>
+                    <span v-else>Save</span>
+                </button>
+            </div>
+        </template>
+    </ModalVue>
 </template>
 
 <script>
 import axios from "axios";
+import ModalVue from "../../../../../components/ModalVue.vue";
 import PayrollRegistryLayout from "../../../PayrollRegistryLayout.vue";
 
 export default {
     name: "PermanentPayrollRegistry",
-    components: { PayrollRegistryLayout },
+    components: { ModalVue, PayrollRegistryLayout },
     props: {
         employees: {
             type: Array,
@@ -287,6 +433,10 @@ export default {
         },
         payroll_no: {
             type: String,
+            required: true,
+        },
+        payroll_id: {
+            type: [Number, String],
             required: true,
         },
         period_covered: {
@@ -302,6 +452,11 @@ export default {
             selectedPosition: "",
             remarksFilter: "all",
             baseColumnCount: 13, // Emp#, Name, Monthly, SG, AUT, Overtime, Holiday, Total Deduction, Adjustment, Net Salary, Remarks + colspan setup
+            autModalLoading: false,
+            savingAut: false,
+            resettingAut: false,
+            autDeductionRows: [],
+            autPayrollStatus: this.status,
         };
     },
     computed: {
@@ -355,6 +510,68 @@ export default {
 
             return Array.from(names).sort((a, b) => a.localeCompare(b));
         },
+
+        hasPendingAutDeductions() {
+            return this.autDeductionRows.some((row) => !row.already_applied);
+        },
+
+        leastAutRow() {
+            if (!this.autDeductionRows.length) {
+                return null;
+            }
+
+            return this.autDeductionRows.reduce((least, row) => {
+                if (!least) {
+                    return row;
+                }
+
+                return this.toNumber(row.total_minutes) < this.toNumber(least.total_minutes)
+                    ? row
+                    : least;
+            }, null);
+        },
+
+        longestAutRow() {
+            if (!this.autDeductionRows.length) {
+                return null;
+            }
+
+            return this.autDeductionRows.reduce((longest, row) => {
+                if (!longest) {
+                    return row;
+                }
+
+                return this.toNumber(row.total_minutes) > this.toNumber(longest.total_minutes)
+                    ? row
+                    : longest;
+            }, null);
+        },
+
+        leastAutLabel() {
+            if (!this.leastAutRow) {
+                return "N/A";
+            }
+
+            return `${this.leastAutRow.employee_no} • ${this.formatAutDuration(this.leastAutRow.total_minutes)}`;
+        },
+
+        longestAutLabel() {
+            if (!this.longestAutRow) {
+                return "N/A";
+            }
+
+            return `${this.longestAutRow.employee_no} • ${this.formatAutDuration(this.longestAutRow.total_minutes)}`;
+        },
+
+        canEditAutRows() {
+            return !["approved", "for_releasing", "completed"].includes(
+                this.autPayrollStatus,
+            );
+        },
+
+        canSaveAutRows() {
+            return this.canEditAutRows && this.hasPendingAutDeductions;
+        },
     },
     methods: {
         handlePrint() {
@@ -371,6 +588,42 @@ export default {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             }).format(this.toNumber(value));
+        },
+
+        formatEquivalent(value) {
+            return new Intl.NumberFormat("en-PH", {
+                minimumFractionDigits: 3,
+                maximumFractionDigits: 3,
+            }).format(this.toNumber(value));
+        },
+
+        formatEditableEquivalent(value) {
+            return this.toNumber(value).toFixed(3);
+        },
+
+        computeEquivalentFromMinutes(totalMinutes) {
+            const minutes = Math.max(0, this.toNumber(totalMinutes));
+            return Number((minutes / 480).toFixed(3));
+        },
+
+        isAutRowEditable(row) {
+            return this.canEditAutRows && !row.already_applied;
+        },
+
+        formatAutDuration(totalMinutes) {
+            const minutes = Math.max(0, Math.round(this.toNumber(totalMinutes)));
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+
+            if (hours === 0) {
+                return `${mins} min${mins === 1 ? "" : "s"}`;
+            }
+
+            if (mins === 0) {
+                return `${hours} hr${hours === 1 ? "" : "s"}`;
+            }
+
+            return `${hours} hr${hours === 1 ? "" : "s"} ${mins} min${mins === 1 ? "" : "s"}`;
         },
 
         getDeductionAmount(emp, type) {
@@ -393,6 +646,122 @@ export default {
 
                 return total + this.toNumber(emp[field]);
             }, 0);
+        },
+
+        openAutDeductionModal() {
+            this.$refs.autDeductionModal.open();
+            this.fetchAutDeductions();
+        },
+
+        closeAutDeductionModal() {
+            this.$refs.autDeductionModal.close();
+        },
+
+        async fetchAutDeductions() {
+            this.autModalLoading = true;
+
+            try {
+                const response = await axios.get(
+                    `/api/payroll/salary-pay/${this.payroll_id}/aut-deductions/preview`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${this.token}`,
+                        },
+                    },
+                );
+
+                this.autPayrollStatus = response.data.meta?.status || this.status;
+                this.autDeductionRows = (response.data.data || []).map((row) => ({
+                    ...row,
+                    equivalent_input: this.formatEditableEquivalent(row.equivalent),
+                }));
+            } catch (error) {
+                this.autDeductionRows = [];
+                Swal.fire({
+                    icon: "error",
+                    title: "Unable to load AUT deductions",
+                    text:
+                        error.response?.data?.message ||
+                        "An error occurred while loading the AUT deduction preview.",
+                });
+            } finally {
+                this.autModalLoading = false;
+            }
+        },
+
+        async resetAutEquivalents() {
+            this.resettingAut = true;
+            await this.$nextTick();
+
+            this.autDeductionRows = this.autDeductionRows.map((row) => {
+                if (!this.isAutRowEditable(row)) {
+                    return row;
+                }
+
+                const equivalent = this.computeEquivalentFromMinutes(
+                    row.total_minutes,
+                );
+
+                return {
+                    ...row,
+                    equivalent,
+                    equivalent_input: this.formatEditableEquivalent(equivalent),
+                };
+            });
+
+            this.resettingAut = false;
+        },
+
+        async saveAutDeductions() {
+            this.savingAut = true;
+
+            try {
+                const response = await axios.post(
+                    `/api/payroll/salary-pay/${this.payroll_id}/aut-deductions/apply`,
+                    {
+                        rows: this.autDeductionRows.map((row) => ({
+                            pspe_id: row.pspe_id,
+                            equivalent: this.toNumber(row.equivalent),
+                        })),
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${this.token}`,
+                        },
+                    },
+                );
+
+                await Swal.fire({
+                    icon: "success",
+                    title: "AUT deductions saved",
+                    text:
+                        response.data.message ||
+                        "Equivalent leave-credit deductions have been saved.",
+                });
+
+                await this.fetchAutDeductions();
+            } catch (error) {
+                Swal.fire({
+                    icon: "error",
+                    title: "AUT deductions failed",
+                    text:
+                        error.response?.data?.message ||
+                        "An error occurred while saving AUT deductions.",
+                });
+            } finally {
+                this.savingAut = false;
+            }
+        },
+
+        normalizeEquivalent(row) {
+            const parsedValue = this.toNumber(row.equivalent);
+            row.equivalent = Math.max(0, Number(parsedValue.toFixed(3)));
+            row.equivalent_input = this.formatEditableEquivalent(row.equivalent);
+        },
+
+        updateEquivalentInput(row, value) {
+            row.equivalent_input = value;
+            row.equivalent = this.toNumber(value);
         },
 
         async adjustRow(emp) {
@@ -449,5 +818,67 @@ export default {
 
 .grand-total {
     font-weight: 700;
+}
+
+.aut-modal-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.aut-stat-card {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: rgba(var(--bs-secondary-rgb), 0.08);
+}
+
+.aut-stat-label {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.72;
+    margin-bottom: 0.3rem;
+}
+
+.aut-stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.aut-deduction-table-wrapper {
+    max-height: 60vh;
+}
+
+.aut-deduction-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bs-body-bg);
+    z-index: 1;
+}
+
+.aut-modal-note {
+    font-size: 0.9rem;
+    padding: 0.65rem 0.85rem;
+}
+
+.aut-employee-position {
+    font-size: 0.68rem;
+    opacity: 0.8;
+    line-height: 1.2;
+}
+
+.aut-equivalent-input {
+    min-width: 84px;
+    max-width: 110px;
+    margin-left: auto;
+}
+
+@media (max-width: 768px) {
+    .aut-modal-meta {
+        grid-template-columns: 1fr;
+    }
 }
 </style>

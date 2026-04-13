@@ -23,6 +23,7 @@
                 :employees="employees"
                 :status="status"
                 :payroll_no="payroll_no"
+                :payroll_id="payroll_id"
                 @fetch_data="fetchRegistry"
                 @delete="deleteEmployeePayroll"
                 :period_covered="period_covered"
