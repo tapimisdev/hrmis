@@ -14,7 +14,6 @@
                 @update:search="search = $event"
                 @update:selectedDivision="selectedDivision = $event"
                 @update:selectedUnit="selectedUnit = $event"
-                @apply-to-tax="$emit('apply-to-tax')"
                 @pull-reconcile="pullFromPayrollAndReconcile"
                 @clear="clearFilters"
             />
