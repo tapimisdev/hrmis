@@ -43,6 +43,8 @@ Route::prefix('payroll')->group(function() {
         Route::post('check-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
         Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);
         Route::post('processed', [SalaryApiController::class, 'getList']);
+        Route::get('{payroll_id}/aut-deductions/preview', [SalaryApiController::class, 'previewAutDeductions']);
+        Route::post('{payroll_id}/aut-deductions/apply', [SalaryApiController::class, 'applyAutDeductions']);
         Route::get('{payroll_id}', [SalaryApiController::class, 'getPayrollData']);
         Route::post('generate', [SalaryController::class, 'store']);
         Route::delete('{id}/delete', [SalaryController::class, 'destroy']);

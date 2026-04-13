@@ -190,7 +190,7 @@ class ComputationService
             'endDate'   => $this->end_date,
         ];
 
-        $remarks = '';
+        $remarks = null;
 
         /**
          * Salary frequency handling.
@@ -215,8 +215,6 @@ class ComputationService
         $overtime              = $summary['overtime'];       // minutes
         $this->actual_presence = $summary['actual_presence'];
 
-        $leaves_to_deduct = [];
-
         /**
          * ============================================================
          * 4) Base computations for earnings/deductions amounts
@@ -230,47 +228,8 @@ class ComputationService
         $overtime_amount       = round($this->min_rate * $overtime, 4);
         $holiday_excess_amount = round($this->daily_rate * $holiday_excess, 4);
 
-        /**
-         * ============================================================
-         * 5) REGULAR: Deduct absences/undertime on leave credits (AUT)
-         * ============================================================
-         *
-         * If employee is REGULAR and has absences/late-undertime,
-         * convert to leave credits and make salary-side absences/UT zero
-         * to avoid salary deduction.
-         */
-        if ($this->employment_type == (int) EmploymentTypesEnum::REGULAR->value) {
-            if ($absences > 0 || $late_undertime > 0) {
-
-                // Convert absences(days) + late_undertime(mins) to minutes and leave credits
-                $leaves_to_deduct = $this->convertToMinutes($absences, $late_undertime);
-
-                // Convert total minutes to days/hours/mins format for remarks
-                $totalMinutes  = $leaves_to_deduct['total_minutes'];
-                $minutesPerDay = $this->working_hours * 60;
-
-                $days = intdiv($totalMinutes, $minutesPerDay);
-
-                $remainingMinutes = $totalMinutes % $minutesPerDay;
-                $hours            = intdiv($remainingMinutes, 60);
-                $mins             = $remainingMinutes % 60;
-
-                // Remarks used in permanent payroll table
-                $remarks = sprintf(
-                    'AUT %d day%s %d hour%s %d min%s = %.3f VL',
-                    $days,  $days  !== 1 ? 's' : '',
-                    $hours, $hours !== 1 ? 's' : '',
-                    $mins,  $mins  !== 1 ? 's' : '',
-                    $leaves_to_deduct['equivalent_leave_credits']
-                );
-
-                // Making the actual zero so it won't deduct in the salary
-                $absences       = 0;
-                $late_undertime = 0;
-            }
-        }
-
-        // Salary-side computations after AUT adjustment (if any)
+        // Salary-side computations remain untouched during payroll creation.
+        // AUT deduction and remarks are now applied manually from the payroll page.
         $absences_amount       = round($this->daily_rate * $absences, 4);
         $late_undertime_amount = round($this->min_rate * $late_undertime, 4);
 
@@ -508,13 +467,32 @@ class ComputationService
                 ]);
             }
 
-            /**
-             * Post deduction request for leave credits processing.
-             */
-            $this->deductionOnLeaveCredits(
-                $pseId,
-                $leaves_to_deduct['equivalent_leave_credits'] ?? 0
-            );
+            if ($absences > 0 || $late_undertime > 0) {
+                $autComputation = $this->convertToMinutes($absences, $late_undertime);
+                $autAmount = round($absences_amount + $late_undertime_amount, 2);
+
+                DB::table('payroll_salary_aut_leave_credit_deductions')->updateOrInsert(
+                    ['payroll_salary_permanent_employee_id' => $pseId],
+                    [
+                        'payroll_salary_id' => $this->payroll_id,
+                        'employee_no' => $this->employee_no,
+                        'leave_id' => LeaveEnum::VL->value,
+                        'as_of' => Carbon::parse($this->payroll_date)->format('Y-m'),
+                        'daily_rate' => round((float) $this->daily_rate, 4),
+                        'working_hours' => (float) $this->working_hours,
+                        'aut_amount' => $autAmount,
+                        'equivalent_leave_credits' => $autComputation['equivalent_leave_credits'],
+                        'total_minutes' => $autComputation['total_minutes'],
+                        'remarks' => $this->formatAutRemark(
+                            $autComputation['total_minutes'],
+                            (float) $this->working_hours,
+                            $autComputation['equivalent_leave_credits']
+                        ),
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]
+                );
+            }
 
             // Final totals for return payload
             $gross            = $net + $sum_of_deduction;
@@ -809,19 +787,24 @@ class ComputationService
         ];
     }
 
-    /**
-     * Create a pending payroll record to deduct leave credits.
-     * Permanent payroll only.
-     */
-    private function deductionOnLeaveCredits(float $leaves_to_deduct): bool
+    private function formatAutRemark(int $totalMinutes, float $workingHours, float $equivalent): string
     {
-        return DB::table('payroll_pending_data')->insert([
-            'payroll_id'      => $this->payroll_id,
-            'parent'          => 'payroll_salary',
-            'value'           => $leaves_to_deduct,
-            'created_at'      => now(),
-            'updated_at'      => now(),
-        ]);
+        $minutesPerDay = max(1, (int) round($workingHours * 60));
+        $days = intdiv($totalMinutes, $minutesPerDay);
+        $remainingMinutes = $totalMinutes % $minutesPerDay;
+        $hours = intdiv($remainingMinutes, 60);
+        $mins = $remainingMinutes % 60;
+
+        return sprintf(
+            'AUT %d day%s %d hour%s %d min%s = %.3f VL',
+            $days,
+            $days !== 1 ? 's' : '',
+            $hours,
+            $hours !== 1 ? 's' : '',
+            $mins,
+            $mins !== 1 ? 's' : '',
+            $equivalent
+        );
     }
 
     private function getHmo($employee_no)

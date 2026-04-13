@@ -13,6 +13,14 @@
                 Bulk
             </button>
 
+            <button
+                @click="toggleComputationMode"
+                class="btn btn-outline-primary mt-3 ms-2"
+            >
+                <i class="fa-solid fa-calculator me-1"></i>
+                {{ computationMode ? "Close Computations" : "Apply Computations" }}
+            </button>
+
             <!-- Modal -->
             <ModalVue
                 :ref="`addModal_${tab}`"
@@ -73,6 +81,71 @@
     <div
         class="shadow-sm border rounded-3 overflow-hidden modern-card position-relative"
     >
+        <div v-if="computationMode" class="computation-toolbar border-bottom p-3 bg-body-tertiary">
+            <div class="d-flex flex-wrap align-items-end gap-3">
+                <div class="computation-help">
+                    <div class="fw-bold">Computation Mode</div>
+                    <div class="small text-muted">
+                        Select month cells in the table, choose an operation, then apply it to all selected cells.
+                    </div>
+                    <div class="small text-muted">
+                        {{ selectedCells.length }} cell{{ selectedCells.length === 1 ? "" : "s" }} selected
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label small fw-bold mb-1">Operation</label>
+                    <select v-model="computation.operation" class="form-select form-select-sm">
+                        <option value="set">Set (=)</option>
+                        <option value="add">Add (+)</option>
+                        <option value="subtract">Subtract (-)</option>
+                        <option value="multiply">Multiply (x)</option>
+                        <option value="divide">Divide (/)</option>
+                        <option value="percent_add">Increase by %</option>
+                        <option value="percent_subtract">Decrease by %</option>
+                        <option value="power">Power (^)</option>
+                        <option value="round">Round</option>
+                        <option value="ceil">Ceiling</option>
+                        <option value="floor">Floor</option>
+                        <option value="min">Minimum</option>
+                        <option value="max">Maximum</option>
+                        <option value="abs">Absolute</option>
+                        <option value="negate">Negate (+/-)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label small fw-bold mb-1">Value</label>
+                    <input
+                        v-model="computation.value"
+                        type="number"
+                        step="0.01"
+                        class="form-control form-control-sm"
+                        placeholder="Enter value"
+                    />
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button
+                        type="button"
+                        class="btn btn-primary btn-sm"
+                        :disabled="selectedCells.length === 0 || computation.value === ''"
+                        @click="applyComputation"
+                    >
+                        Apply
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        :disabled="selectedCells.length === 0"
+                        @click="clearSelectedCells"
+                    >
+                        Clear Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Table -->
         <div class="table-wrapper custom-scrollbar">
             <LoaderVue
@@ -155,11 +228,14 @@
                             :class="{
                                 'bg-primary fw-bold':
                                     selected_employee === item.employee_no,
+                                'selected-computation-cell': isCellSelected(item.employee_no, monthKey),
                             }"
+                            @click="handleCellSelection(item, monthKey, $event)"
                         >
                             <input
                                 type="number"
                                 v-model="item[monthKey]"
+                                :readonly="computationMode"
                                 @change="
                                     create_update(
                                         item['module_tab_id'],
@@ -252,6 +328,12 @@ export default {
             isFetched: false,
             search: "",
             loading: false,
+            computationMode: false,
+            computation: {
+                operation: "add",
+                value: 0,
+            },
+            selectedCells: [],
         };
     },
     created() {
@@ -270,11 +352,12 @@ export default {
         },
         fetchTable() {
             this.loading = true;
-            axios
+            return axios
                 .get(`employees/${this.slug}/${this.tab}/${this.year}`)
                 .then((res) => {
                     this.items = res.data;
                     this.filtered = res.data;
+                    this.clearSelectedCells();
                     this.filteredItems();
                 })
                 .catch((error) => {
@@ -290,8 +373,11 @@ export default {
                 });
         },
         create_update(id, amount, month, employee_no) {
+            return this.persistCellUpdate(id, amount, month, employee_no, true, true);
+        },
+        persistCellUpdate(id, amount, month, employee_no, shouldRefresh = false, showToast = true) {
             this.loading = true;
-            axios
+            return axios
                 .post(`/admin/modules/store-employees`, {
                     module_tab_id: id,
                     amount: amount,
@@ -300,20 +386,34 @@ export default {
                     employee_no: employee_no,
                 })
                 .then((res) => {
-                    this.fetchTable();
-                    SuccesToast.fire({
-                        title: res.data.message || "successfully added!",
-                    });
+                    if (showToast) {
+                        SuccesToast.fire({
+                            title: res.data.message || "successfully added!",
+                        });
+                    }
+
+                    if (shouldRefresh) {
+                        this.fetchTable();
+                    }
+
+                    return res;
                 })
                 .catch((error) => {
-                    ErrorToast.fire({
-                        title:
-                            error.response?.data?.error ||
-                            error.response?.data?.message ||
-                            "An error occurred",
-                    }).finally(() => {
+                    if (showToast) {
+                        ErrorToast.fire({
+                            title:
+                                error.response?.data?.error ||
+                                error.response?.data?.message ||
+                                "An error occurred",
+                        });
+                    }
+
+                    throw error;
+                })
+                .finally(() => {
+                    if (!shouldRefresh) {
                         this.loading = false;
-                    });
+                    }
                 });
         },
         line_total(employee) {
@@ -365,6 +465,135 @@ export default {
                               .includes(query)
                   );
         },
+        toggleComputationMode() {
+            this.computationMode = !this.computationMode;
+
+            if (!this.computationMode) {
+                this.clearSelectedCells();
+            }
+        },
+        cellSelectionKey(employeeNo, monthKey) {
+            return `${employeeNo}:${monthKey}`;
+        },
+        isCellSelected(employeeNo, monthKey) {
+            return this.selectedCells.some(
+                (cell) => cell.key === this.cellSelectionKey(employeeNo, monthKey)
+            );
+        },
+        handleCellSelection(item, monthKey, event) {
+            if (!this.computationMode) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const key = this.cellSelectionKey(item.employee_no, monthKey);
+            const index = this.selectedCells.findIndex((cell) => cell.key === key);
+
+            if (index >= 0) {
+                this.selectedCells.splice(index, 1);
+                return;
+            }
+
+            this.selectedCells.push({
+                key,
+                employee_no: item.employee_no,
+                module_tab_id: item.module_tab_id,
+                monthKey,
+            });
+        },
+        clearSelectedCells() {
+            this.selectedCells = [];
+        },
+        resetComputationForm() {
+            this.computation.operation = "add";
+            this.computation.value = 0;
+        },
+        computeCellValue(currentValue) {
+            const baseValue = parseFloat(currentValue) || 0;
+            const operand = parseFloat(this.computation.value);
+            const unaryOperations = ["round", "ceil", "floor", "abs", "negate"];
+
+            if (!unaryOperations.includes(this.computation.operation) && !Number.isFinite(operand)) {
+                throw new Error("Please enter a valid computation value.");
+            }
+
+            if (this.computation.operation === "divide" && operand === 0) {
+                throw new Error("Cannot divide by zero.");
+            }
+
+            if (this.computation.operation === "power" && baseValue === 0 && operand < 0) {
+                throw new Error("Cannot raise zero to a negative power.");
+            }
+
+            const nextValue = {
+                set: operand,
+                add: baseValue + operand,
+                subtract: baseValue - operand,
+                multiply: baseValue * operand,
+                divide: baseValue / operand,
+                percent_add: baseValue + (baseValue * (operand / 100)),
+                percent_subtract: baseValue - (baseValue * (operand / 100)),
+                power: baseValue ** operand,
+                round: Math.round(baseValue),
+                ceil: Math.ceil(baseValue),
+                floor: Math.floor(baseValue),
+                min: Math.min(baseValue, operand),
+                max: Math.max(baseValue, operand),
+                abs: Math.abs(baseValue),
+                negate: baseValue * -1,
+            }[this.computation.operation];
+
+            return Number.isFinite(nextValue) ? Number(nextValue.toFixed(2)) : baseValue;
+        },
+        async applyComputation() {
+            if (this.selectedCells.length === 0) {
+                ErrorToast.fire({ title: "Select at least one cell first." });
+                return;
+            }
+
+            this.loading = true;
+
+            try {
+                const updates = this.selectedCells.map((cell) => {
+                    const row = this.items.find((item) => item.employee_no === cell.employee_no);
+
+                    if (!row) {
+                        return Promise.resolve();
+                    }
+
+                    const nextValue = this.computeCellValue(row[cell.monthKey]);
+                    row[cell.monthKey] = nextValue;
+
+                    return this.persistCellUpdate(
+                        row.module_tab_id,
+                        nextValue,
+                        cell.monthKey,
+                        row.employee_no,
+                        false,
+                        false
+                    );
+                });
+
+                await Promise.all(updates);
+                this.clearSelectedCells();
+                this.resetComputationForm();
+                await this.fetchTable();
+                SuccesToast.fire({
+                    title: "Computation applied successfully.",
+                });
+            } catch (error) {
+                ErrorToast.fire({
+                    title:
+                        error?.message ||
+                        error?.response?.data?.error ||
+                        error?.response?.data?.message ||
+                        "Failed to apply computation.",
+                });
+                this.loading = false;
+            }
+        },
         adjustYear(action) {
             this.year += action;
             this.fetchTable();
@@ -390,6 +619,16 @@ export default {
 .search-pill input {
     font-size: 0.75rem;
     color: var(--bs-body-color, #212529);
+}
+
+.computation-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+}
+
+.computation-help {
+    min-width: 220px;
 }
 
 /* Table */
@@ -463,7 +702,7 @@ export default {
 /* Hover effect */
 .row-hover {
     &:hover {
-        background: var(--bs-light);
+        background: transparent;
     }
 }
 
@@ -514,6 +753,19 @@ export default {
 
     /* Firefox */
     -moz-appearance: textfield;
+}
+
+td.selected-computation-cell {
+    background: transparent !important;
+    box-shadow: inset 0 0 0 2px #0d6efd;
+}
+
+.row-hover:hover td.selected-computation-cell {
+    background: transparent !important;
+}
+
+.row-hover:hover td.selected-computation-cell .border-less-input {
+    background-color: transparent !important;
 }
 
 .grand-total {
