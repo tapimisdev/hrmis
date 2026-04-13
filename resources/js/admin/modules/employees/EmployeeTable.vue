@@ -15,10 +15,10 @@
 
             <button
                 @click="toggleComputationMode"
-                class="btn btn-outline-primary mt-3 ms-2"
+                class="btn btn-primary mt-3 ms-2"
             >
                 <i class="fa-solid fa-calculator me-1"></i>
-                {{ computationMode ? "Close Computations" : "Apply Computations" }}
+                {{ computationMode ? "Close" : "Compute" }}
             </button>
 
             <!-- Modal -->

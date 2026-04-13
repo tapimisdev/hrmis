@@ -437,6 +437,7 @@ class PayrollService
             'payroll_date' => $payload['date'],
             'cutoff' => $payload['cutoff'],
             'employment_type_id' => $payload['employment_type_id'],
+            'is_aut_deducted' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

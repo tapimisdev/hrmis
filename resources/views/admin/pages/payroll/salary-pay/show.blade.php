@@ -20,6 +20,7 @@
             :payroll_no="{{ json_encode($payroll->payroll_no) }}"
             :payroll_id="{{ json_encode($payroll->id) }}"
             :status="{{ json_encode($payroll->status) }}"
+            :is_aut_deducted="{{ json_encode((bool) ($payroll->is_aut_deducted ?? false)) }}"
             :employment_type="{{ json_encode($employmentTypeName) }}"
             :period_covered="{{ json_encode($payroll->period_covered) }}"
         ></show-payroll>

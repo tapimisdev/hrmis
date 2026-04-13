@@ -5,28 +5,21 @@ namespace App\Http\Controllers\Admin\Payroll\Salary;
 use App\Enums\EmploymentTypesEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SalaryPay\StoreRequest;
-use App\Services\SalaryPay\AutDeductionService;
+use App\Services\SalaryPay\PayrollService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Services\SalaryPay\PayrollService;
-use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Throwable;
-use Exception;
 
 class SalaryController extends Controller
 {
     protected $payroll_service;
-    protected $autDeductionService;
 
     public function __construct(
-        PayrollService $payroll_service,
-        AutDeductionService $autDeductionService
-    )
-    {
+        PayrollService $payroll_service
+    ) {
         $this->payroll_service = $payroll_service;
-        $this->autDeductionService = $autDeductionService;
         $this->middleware('permission:hr.salary_payroll.view')->only(['index', 'show']);
         $this->middleware('permission:hr.salary_payroll.create')->only(['create', 'store']);
         $this->middleware('permission:hr.salary_payroll.delete')->only('destroy');
@@ -46,7 +39,6 @@ class SalaryController extends Controller
     {
         $batch_id = request()->query('batch_id');
 
-        // Fetch payroll record
         $payroll = DB::table('payroll_salary')->where('payroll_no', $payroll_no)->first();
 
         if (!$payroll) {
@@ -59,11 +51,9 @@ class SalaryController extends Controller
         $batchStatus = $payroll->status === 'failed' ? 'failed' : 'completed';
 
         if ($batch_id) {
-            // Find the batch using Laravel's Bus helper
             $batch = Bus::findBatch($batch_id);
 
             if ($batch) {
-                // Determine the batch status
                 if ($batch->finished()) {
                     $batchStatus = 'completed';
                 } elseif ($batch->cancelled()) {
@@ -81,7 +71,7 @@ class SalaryController extends Controller
         $employymentEnums = collect(EmploymentTypesEnum::cases())
             ->firstWhere('value', $payroll->employment_type_id);
 
-        $employmentTypeName = $employymentEnums->name; // REGULAR or COS
+        $employmentTypeName = $employymentEnums->name;
 
         return view('admin.pages.payroll.salary-pay.show', compact(
             'payroll',
@@ -100,30 +90,26 @@ class SalaryController extends Controller
         Log::info('Creating payroll with data: ', $validatedData);
 
         try {
-            
-            // Wrap only the critical DB operation in a transaction
             $payroll = DB::transaction(function () use ($validatedData) {
                 return $this->payroll_service->createPayroll($validatedData);
             });
 
             $payroll_id = $payroll['payroll_id'];
             $payroll_no = $payroll['payroll_no'];
-
-            // Dispatch the payroll registry generation asynchronously
             $batch_id = $this->payroll_service->generatePayrollRegistryReport($validatedData, $payroll_id);
 
             return response()->json([
                 'batch_id' => $batch_id,
                 'message' => 'Payroll created successfully.',
                 'payroll_id' => $payroll_id,
-                'payroll_no' => $payroll_no
+                'payroll_no' => $payroll_no,
             ], 201);
-
         } catch (\Throwable $e) {
             Log::error('Payroll creation failed: ' . $e->getMessage(), ['exception' => $e]);
+
             return response()->json([
                 'message' => 'An error occurred while processing the request.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -139,14 +125,13 @@ class SalaryController extends Controller
         $isCos = $payroll->employment_type_id == EmploymentTypesEnum::COS->value;
 
         DB::beginTransaction();
-        try {
 
+        try {
             DB::table('payroll_salary_approvers')
                 ->where('payroll_salary_id', $id)
                 ->delete();
 
             if ($isCos) {
-
                 $permanentEmployeeIds = DB::table('payroll_salary_permanent_employees')
                     ->where('payroll_salary_id', $id)
                     ->pluck('id');
@@ -161,7 +146,6 @@ class SalaryController extends Controller
                         ->delete();
                 }
             } else {
-
                 $employeeIds = DB::table('payroll_salary_employee')
                     ->where('payroll_salary_id', $id)
                     ->pluck('id');
@@ -189,14 +173,14 @@ class SalaryController extends Controller
 
             return response()->json([
                 'message' => 'Salary payroll deleted successfully',
-                'status'  => 'success'
+                'status' => 'success',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([
                 'message' => $e->getMessage(),
-                'status'  => 'destroy failed'
+                'status' => 'destroy failed',
             ], 500);
         }
     }
@@ -224,26 +208,24 @@ class SalaryController extends Controller
         if (!$payroll) {
             return response()->json([
                 'message' => 'No Payroll found',
-                'status'  => 'not_found'
+                'status' => 'not_found',
             ], 404);
         }
 
         $oldStatus = $payroll->status;
         $newStatus = $request->status;
 
-        // Optional: avoid doing anything if same status
         if ($oldStatus === $newStatus) {
             return response()->json([
                 'message' => 'Status is already set',
-                'status'  => 'no_change',
-                'data'    => ['id' => $id, 'status' => $newStatus]
+                'status' => 'no_change',
+                'data' => ['id' => $id, 'status' => $newStatus],
             ]);
         }
 
         DB::beginTransaction();
 
         try {
-            // Allowed transitions (your flow)
             $allowedTransitions = [
                 'draft' => ['pending', 'cancelled'],
                 'pending' => ['draft', 'approved', 'cancelled'],
@@ -260,11 +242,10 @@ class SalaryController extends Controller
             ) {
                 return response()->json([
                     'message' => 'Invalid status transition',
-                    'status'  => 'invalid_transition'
+                    'status' => 'invalid_transition',
                 ], 422);
             }
 
-            //  Update first
             DB::table('payroll_salary')
                 ->where('id', $id)
                 ->update([
@@ -272,36 +253,30 @@ class SalaryController extends Controller
                     'updated_at' => now(),
                 ]);
 
-            if ($newStatus === 'approved') {
-                $refreshedPayroll = $this->autDeductionService->getRegularPayroll((string) $id);
-                $this->autDeductionService->applyPendingAutDeductions($refreshedPayroll);
-            }
-
             DB::commit();
 
             return response()->json([
                 'message' => 'Payroll status updated successfully',
-                'status'  => 'success',
-                'data'    => [
+                'status' => 'success',
+                'data' => [
                     'id' => $id,
                     'from' => $oldStatus,
                     'to' => $newStatus,
                     'month' => date('m', strtotime($payroll->payroll_date)) . ' ' . date('Y', strtotime($payroll->payroll_date)),
-                ]
+                ],
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([
                 'message' => $e->getMessage(),
-                'status'  => 'update failed'
+                'status' => 'update failed',
             ], 500);
         }
     }
 
     public function deleteEmployeePayroll($id, $employment_type)
     {
-        // Determine table based on employment type
         $table = match ($employment_type) {
             'REGULAR' => 'payroll_salary_permanent_employees',
             'COS' => 'payroll_salary_employee',
@@ -310,24 +285,22 @@ class SalaryController extends Controller
 
         if (!$table) {
             return response()->json([
-                'message' => 'Invalid employment type.'
+                'message' => 'Invalid employment type.',
             ], 400);
         }
 
-        // Check if record exists
         $exists = DB::table($table)->where('id', $id)->exists();
 
         if (!$exists) {
             return response()->json([
-                'message' => 'Employee payroll not found.'
+                'message' => 'Employee payroll not found.',
             ], 404);
         }
 
-        // Delete record
         DB::table($table)->where('id', $id)->delete();
 
         return response()->json([
-            'message' => 'Employee payroll deleted successfully.'
+            'message' => 'Employee payroll deleted successfully.',
         ]);
     }
 
