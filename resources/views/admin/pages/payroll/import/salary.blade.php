@@ -154,6 +154,30 @@
         line-height: 1.35;
         margin-bottom: 6px;
     }
+
+    .preview-search-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .preview-search-toolbar .input-group {
+        max-width: 440px;
+    }
+
+    .preview-search-count {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--bs-secondary-color);
+    }
+
+    #dynamic-table tbody tr.preview-search-match td {
+        background: #fff3cd !important;
+    }
 </style>
 @endsection
 
@@ -313,7 +337,7 @@ $(function() {
 
     function cleanupPreviewDom() {
         $('#dynamic-table').closest('.table-responsive').remove();
-        $('#parsed-info, #next-import-btn, #go-back-btn, .action-btn').remove();
+        $('#parsed-info, #next-import-btn, #go-back-btn, .action-btn, .preview-search-toolbar').remove();
     }
 
     function resetUI() {
@@ -447,9 +471,61 @@ $(function() {
             .replace(/>/g, '&gt;');
     }
 
-    function createDynamicTable(data, previewHeaders = {}, fieldOrder = null, errors = []) {
+    function getPreviewSearchText($row) {
+        return $row.find('td').map(function() {
+            const $cell = $(this);
+            const $field = $cell.find('input, textarea, select').first();
+            return $field.length ? String($field.val() ?? '').trim() : $cell.text().trim();
+        }).get().join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
 
+    function applyPreviewSearch(term = '') {
+        const query = String(term).trim().toLowerCase();
+        let matches = 0;
+        let $firstMatch = null;
+        const $wrapper = $('#dynamic-table').closest('.excel-table-wrapper');
+
+        $('#dynamic-table tbody tr').each(function() {
+            const $row = $(this);
+            const isMatch = query !== '' && getPreviewSearchText($row).includes(query);
+            $row.toggleClass('preview-search-match', isMatch);
+            if (isMatch) {
+                matches++;
+                if (!$firstMatch) {
+                    $firstMatch = $row;
+                }
+            }
+        });
+
+        $('#preview-search-count').text(query ? `${matches} result${matches === 1 ? '' : 's'} highlighted` : '');
+
+        if (query && $firstMatch && $wrapper.length) {
+            const rowElement = $firstMatch.get(0);
+            const wrapperElement = $wrapper.get(0);
+            const targetScrollTop = rowElement.offsetTop - ((wrapperElement.clientHeight - rowElement.offsetHeight) / 2);
+
+            $wrapper.stop(true).animate({
+                scrollTop: Math.max(targetScrollTop, 0)
+            }, 180);
+        }
+    }
+
+    function createDynamicTable(data, previewHeaders = {}, fieldOrder = null, errors = []) {
         let table = `
+            <div class="preview-search-toolbar">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input
+                        type="search"
+                        id="preview-search-input"
+                        class="form-control"
+                        placeholder="Search preview rows"
+                        autocomplete="off"
+                    >
+                    <button type="button" class="btn btn-outline-secondary" id="preview-search-clear">Clear</button>
+                </div>
+                <div class="preview-search-count" id="preview-search-count"></div>
+            </div>
             <div class="excel-table-wrapper table-responsive">
                 <table id="dynamic-table" class="excel-table" >
                 <thead><tr class="header-labels">`;
@@ -554,6 +630,15 @@ $(function() {
 
     $(document).on('click', '.delete-preview-row', function() {
         $(this).closest('tr').remove();
+        applyPreviewSearch($('#preview-search-input').val());
+    });
+
+    $(document).on('input', '#preview-search-input', function() {
+        applyPreviewSearch($(this).val());
+    });
+
+    $(document).on('click', '#preview-search-clear', function() {
+        $('#preview-search-input').val('').trigger('input').trigger('focus');
     });
 
     $(document).on('click', '.preview-issue-link', function() {

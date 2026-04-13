@@ -163,7 +163,7 @@
                     <div class="row g-3">
                         <div class="col-12 mb-3 col-md-3">
                             <label class="form-label">Previous Balance</label>
-                            <input type="number" step="0.01" class="form-control restricted" name="previous_balance" id="previous_balance" readonly value="0">
+                            <input type="number" step="0.001" class="form-control restricted" name="previous_balance" id="previous_balance" readonly value="0.000">
                         </div>
                         <div class="col-12 mb-3 col-md-9">
                             <label class="form-label">Date</label>
@@ -172,17 +172,17 @@
                         </div>
                         <div class="col-12 mb-3 col-md-4">
                             <label class="form-label">Earned</label>
-                            <input type="number" step="0.01" class="form-control" name="earned" id="earned" value="0">
+                            <input type="number" step="0.001" class="form-control" name="earned" id="earned" value="0.000">
                             <div class="error-field"></div>
                         </div>
                         <div class="col-12 mb-3 col-md-4">
                             <label class="form-label">Deduction</label>
-                            <input type="number" step="0.01" class="form-control" name="deduction" id="deduction" value="0">
+                            <input type="number" step="0.001" class="form-control" name="deduction" id="deduction" value="0.000">
                             <div class="error-field"></div>
                         </div>
                         <div class="col-12 mb-3 col-md-4">
                             <label class="form-label">Balance</label>
-                            <input type="number" step="0.01" class="form-control restricted" name="balance" id="balance" readonly value="0">
+                            <input type="number" step="0.001" class="form-control restricted" name="balance" id="balance" readonly value="0.000">
                             <div class="error-field"></div>
                         </div>
                         <div class="col-12 mb-3">
@@ -210,6 +210,11 @@ $(function() {
     const fetchCreditsURL = @json(route('hris.employee.leave-credits.fetch', ['employee_no' => $employee_no]));
     put(formActionURL);
 
+    function formatThreeDecimals(value) {
+        const numericValue = parseFloat(value);
+        return (Number.isFinite(numericValue) ? numericValue : 0).toFixed(3);
+    }
+
     // Open modal: populate fields based on clicked leave type
     $('.btn-add-credit').on('click', function() {
         const leaveId = $(this).data('leave-id');
@@ -217,11 +222,11 @@ $(function() {
         const asOf = $(this).data('as-of') || new Date().toISOString().slice(0,7);
 
         $('#leave_id').val(leaveId);
-        $('#previous_balance').val(previous);
+        $('#previous_balance').val(formatThreeDecimals(previous));
         $('#as_of').val(asOf);
-        $('#earned').val(0);
-        $('#deduction').val(0);
-        $('#balance').val(previous);
+        $('#earned').val('0.000');
+        $('#deduction').val('0.000');
+        $('#balance').val(formatThreeDecimals(previous));
         $('#remarks').val('');
         $('#action').val('');
 
@@ -234,7 +239,7 @@ $(function() {
         const previous = parseFloat($('#previous_balance').val()) || 0;
         const earned = parseFloat($('#earned').val()) || 0;
         const deduction = parseFloat($('#deduction').val()) || 0;
-        $('#balance').val((previous + earned - deduction).toFixed(2));
+        $('#balance').val((previous + earned - deduction).toFixed(3));
     }
 
     $('#earned, #deduction').on('input', updateBalance);
@@ -264,10 +269,10 @@ $(function() {
             },
             success: function(response) {
                 const res = response.data || {};
-                $('#previous_balance').val(res.previous_balance || 0);
-                $('#earned').val(res.current?.earned || 0);
-                $('#deduction').val(res.current?.deducted || 0);
-                $('#balance').val(res.current?.balance || 0);
+                $('#previous_balance').val(formatThreeDecimals(res.previous_balance || 0));
+                $('#earned').val(formatThreeDecimals(res.current?.earned || 0));
+                $('#deduction').val(formatThreeDecimals(res.current?.deducted || 0));
+                $('#balance').val(formatThreeDecimals(res.current?.balance || 0));
                 $('#remarks').val(res.current?.remarks || '');
 
                 updateBalance();
