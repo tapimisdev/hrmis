@@ -221,6 +221,7 @@ class ForecastComputationService
     public function annualSalaryTotalByMonth(
         string $employeeNo,
         int $year = 2026,
+        string $type = 'forecast',
     ): array {
 
         // ----------------------------
@@ -241,6 +242,7 @@ class ForecastComputationService
                 'annual_total'          => 0.0,
                 'months_covered'        => 0,
                 'hazard_pay'            => 0.0,
+                'hazard_total'          => 0.0,
 
                 'midyear'               => [
                     'as_of'                 => null,
@@ -392,27 +394,49 @@ class ForecastComputationService
         $res['monthly_salary']        = (float) round($latestMonthlySalary, 4);
         $res['salary_effective_date'] = $latestSalaryRow->effectivity_date ?? null;
 
-        // Annual total now uses latest salary * months covered
-        $annualTotal = $latestMonthlySalary * $res['months_covered'];
-        $res['annual_total'] = (float) round($annualTotal, 4);
+        $actualMonths = $this->completedActualMonthsForType($type);
 
-        $monthlyBreakdown = array_map(function ($m) use ($res) {
-            return [
-                'month'  => $m,
-                'amount' => (float) $res['monthly_salary'],
-            ];
-        }, $res['months']);
+        // dd($this->usesActualPayrollForType($type), $this->getActualSalaryPayrollByMonth($employeeNo, $year));
+
+        $actualSalaryMonthly = $this->usesActualPayrollForType($type)
+            ? $this->getActualSalaryPayrollByMonth($employeeNo, $year)
+            : [];
+
+        $monthlyBreakdown = collect($res['months'])
+            ->map(function ($month) use ($res, $actualMonths, $actualSalaryMonthly) {
+                $monthNumber = (int) Carbon::createFromFormat('Y-m', $month)->month;
+                $useActual = in_array($monthNumber, $actualMonths, true);
+
+                return [
+                    'month' => $month,
+                    'amount' => (float) round(
+                        $useActual
+                            ? (float) $actualSalaryMonthly[$monthNumber]
+                            : (float) $res['monthly_salary'],
+                        4
+                    ),
+                    'source' => $useActual ? 'payroll_actual' : 'forecast',
+                ];
+            })
+            ->values()
+            ->all();
+
+        $annualTotal = collect($monthlyBreakdown)->sum('amount');
+        $res['annual_total'] = (float) round($annualTotal, 4);
 
         $res['computations'] = [
             [
                 'key'     => 'basic_salary',
                 'label'   => 'Basic Salary (Annualized)',
-                'formula' => 'Monthly Salary × Months Covered',
+                'formula' => $this->usesActualPayrollForType($type)
+                    ? 'Completed months use actual salary payroll or 0 if missing; remaining months use forecast monthly salary'
+                    : 'Monthly Salary × Months Covered',
                 'months'  => $monthlyBreakdown,
                 'inputs'  => [
                     'monthly_salary'   => $res['monthly_salary'],
                     'months_covered'   => $res['months_covered'],
                     'effective_date'   => $res['salary_effective_date'],
+                    'completed_actual_months' => $actualMonths,
                 ],
                 'steps'   => [
                     [
@@ -425,9 +449,20 @@ class ForecastComputationService
                     ],
                     [
                         'label' => 'Multiplication',
-                        'value' => number_format($res['monthly_salary'], 4)
-                            . ' × '
-                            . $res['months_covered']
+                        'value' => $this->usesActualPayrollForType($type)
+                            ? 'Completed months used actual payroll or 0 if missing; remaining months used forecast values'
+                            : number_format($res['monthly_salary'], 4)
+                                . ' × '
+                                . $res['months_covered']
+                    ],
+                    [
+                        'label' => 'Monthly breakdown',
+                        'value' => array_map(function ($row) {
+                            return [
+                                'label' => $row['month'] . ' (' . ($row['source'] === 'payroll_actual' ? 'Actual' : 'Forecast') . ')',
+                                'value' => number_format((float) $row['amount'], 2),
+                            ];
+                        }, $monthlyBreakdown),
                     ],
                 ],
                 'result'  => number_format($res['annual_total'], 4),
@@ -440,19 +475,38 @@ class ForecastComputationService
 
         // Hazard pay uses latest monthly salary (15%)
         $monthlyHazardAmount = (float) round($latestMonthlySalary * 0.15, 4);
-        $res['hazard_pay'] = $monthlyHazardAmount;
+        $actualHazardMonthly = $this->usesActualPayrollForType($type)
+            ? $this->getActualHazardPayrollByMonth($employeeNo, $year)
+            : [];
 
-        $hazardMonthlyBreakdown = array_map(function ($m) use ($monthlyHazardAmount) {
-            return [
-                'month'  => $m,
-                'amount' => $monthlyHazardAmount,
-            ];
-        }, $res['months']);
+        $hazardMonthlyBreakdown = collect($res['months'])
+            ->map(function ($month) use ($monthlyHazardAmount, $actualMonths, $actualHazardMonthly) {
+                $monthNumber = (int) Carbon::createFromFormat('Y-m', $month)->month;
+                $useActual = in_array($monthNumber, $actualMonths, true);
+
+                return [
+                    'month' => $month,
+                    'amount' => (float) round(
+                        $useActual
+                            ? (float) $actualHazardMonthly[$monthNumber]
+                            : (float) $monthlyHazardAmount,
+                        4
+                    ),
+                    'source' => $useActual ? 'payroll_actual' : 'forecast',
+                ];
+            })
+            ->values()
+            ->all();
+
+        $res['hazard_pay'] = $monthlyHazardAmount;
+        $res['hazard_total'] = (float) round(collect($hazardMonthlyBreakdown)->sum('amount'), 4);
 
         $res['computations'][] = [
             'key'     => 'hazard_pay',
             'label'   => 'Hazard Pay',
-            'formula' => 'Monthly Salary × 15%',
+            'formula' => $this->usesActualPayrollForType($type)
+                ? 'Completed months use actual hazard payroll or 0 if missing; remaining months use forecast hazard at 15% of monthly salary'
+                : 'Monthly Salary × 15%',
             'months'  => $hazardMonthlyBreakdown,
             'inputs'  => [
                 'months_covered'   => $res['months_covered'],
@@ -460,6 +514,7 @@ class ForecastComputationService
                 'monthly_salary' => $res['monthly_salary'],
                 'rate'           => 0.15,
                 'rate_percent'   => 15,
+                'completed_actual_months' => $actualMonths,
             ],
             'steps'   => [
                 [
@@ -472,11 +527,22 @@ class ForecastComputationService
                 ],
                 [
                     'label' => 'Multiplication',
-                    'value' => number_format($res['monthly_salary'], 4) . ' × 15%'
+                    'value' => $this->usesActualPayrollForType($type)
+                        ? 'Completed months used actual payroll or 0 if missing; remaining months used forecast values'
+                        : number_format($res['monthly_salary'], 4) . ' × 15%'
+                ],
+                [
+                    'label' => 'Monthly breakdown',
+                    'value' => array_map(function ($row) {
+                        return [
+                            'label' => $row['month'] . ' (' . ($row['source'] === 'payroll_actual' ? 'Actual' : 'Forecast') . ')',
+                            'value' => number_format((float) $row['amount'], 2),
+                        ];
+                    }, $hazardMonthlyBreakdown),
                 ],
             ],
-            'result'  => number_format($res['hazard_pay'], 4),
-            'result_raw' => $res['hazard_pay'],
+            'result'  => number_format($res['hazard_total'], 4),
+            'result_raw' => $res['hazard_total'],
             'meta'    => [
                 'type' => 'hazard_pay'
             ]
@@ -952,21 +1018,86 @@ class ForecastComputationService
 
     public function ComputeLongevity(
         $employee_no,
-        $year = 2026
+        $year = 2026,
+        string $type = 'forecast'
     ): array {
 
         $longevity = TableSettingsEnum::LONGETIVITY->value;
 
         $longevityData = $this->getComponentAmount($longevity, $employee_no, $year);
 
-        $longevityTotal = $longevityData['total'];
+        if (!$this->usesActualPayrollForType($type)) {
+            $longevityTotal = $longevityData['total'];
+
+            return [
+                'employee_no'        => $employee_no,
+                'year'               => $year,
+                'longevity_total'    => $longevityTotal,
+                'avg_monthly' => round(((float) $longevityTotal / 12), 4),
+                'computations' => [$longevityData['computation']]
+            ];
+        }
+
+        $actualMonths = $this->completedActualMonthsForType($type);
+        $actualLongevityMonthly = $this->getActualLongevityPayrollByMonth($employee_no, $year);
+
+        $monthly = collect($longevityData['monthly'] ?? [])
+            ->map(function ($row) use ($actualMonths, $actualLongevityMonthly) {
+                $monthNumber = (int) ($row['month'] ?? 0);
+                $useActual = in_array($monthNumber, $actualMonths, true);
+
+                return [
+                    'month' => $monthNumber,
+                    'label' => $row['label'] ?? '',
+                    'amount' => (float) round(
+                        $useActual
+                            ? (float) $actualLongevityMonthly[$monthNumber]
+                            : (float) ($row['amount'] ?? 0),
+                        4
+                    ),
+                    'source' => $useActual ? 'payroll_actual' : 'forecast',
+                ];
+            })
+            ->values()
+            ->all();
+
+        $longevityTotal = (float) round(collect($monthly)->sum('amount'), 4);
+        $avgMonthly = round(((float) $longevityTotal / 12), 4);
+        $monthSteps = array_map(function ($row) {
+            return [
+                'label' => ($row['label'] ?? '') . ' (' . ($row['source'] === 'payroll_actual' ? 'Actual' : 'Forecast') . ')',
+                'value' => number_format((float) ($row['amount'] ?? 0), 2),
+            ];
+        }, $monthly);
+
+        $computation = $longevityData['computation'];
+        $computation['formula'] = 'Completed months use actual longevity payroll or 0 if missing; remaining months use taxation configuration';
+        $computation['inputs']['monthly'] = $monthly;
+        $computation['inputs']['completed_actual_months'] = $actualMonths;
+        $computation['steps'] = [
+            [
+                'label' => 'Monthly breakdown (Jan–Dec)',
+                'value' => $monthSteps,
+            ],
+            [
+                'label' => 'Total (sum of months)',
+                'value' => number_format($longevityTotal, 2),
+            ],
+            [
+                'label' => 'Average monthly (Total ÷ 12)',
+                'value' => number_format($longevityTotal, 2) . ' ÷ 12',
+            ],
+        ];
+        $computation['result_raw'] = $longevityTotal;
+        $computation['result'] = number_format($longevityTotal, 2);
+        $computation['meta']['avg_monthly_raw'] = $avgMonthly;
 
         return [
             'employee_no'        => $employee_no,
             'year'               => $year,
             'longevity_total'    => $longevityTotal,
-            'avg_monthly' => round(((float) $longevityTotal / 12), 4),
-            'computations' => [$longevityData['computation']]
+            'avg_monthly' => $avgMonthly,
+            'computations' => [$computation]
         ];
     }
 
@@ -1395,7 +1526,7 @@ class ForecastComputationService
         ];
     }
 
-    public function getNonTaxableAllowance($employee_no, $year): array
+    public function getNonTaxableAllowance($employee_no, $year, string $periodType = 'forecast'): array
     {
         $allowances = [
             'pera' => TableSettingsEnum::PERA->value,
@@ -1406,8 +1537,9 @@ class ForecastComputationService
         $results = [];
 
         foreach ($allowances as $name => $type) {
-
-            $data = $this->getComponentAmount($type, $employee_no, $year);
+            $data = $this->usesActualPayrollForType($periodType)
+                ? $this->getActualNonTaxableAllowanceByMonth($employee_no, $year, $name, $type, $periodType)
+                : $this->getComponentAmount($type, $employee_no, $year);
             
             $results[] = [
                 'is_default' => true,
@@ -1419,6 +1551,77 @@ class ForecastComputationService
         }
 
         return $results;
+    }
+
+    private function getActualNonTaxableAllowanceByMonth(
+        string $employee_no,
+        int $year,
+        string $name,
+        string $type,
+        string $periodType,
+        int $months_covered = 12
+    ): array {
+        $forecastData = $this->getComponentAmount($type, $employee_no, $year, $months_covered);
+        $actualMonths = $this->completedActualMonthsForType($periodType);
+        $actualMonthly = $this->getActualPeraRataAllowanceByMonth($employee_no, $year, $name);
+
+        $monthly = collect($forecastData['monthly'] ?? [])
+            ->map(function ($row) use ($actualMonths, $actualMonthly) {
+                $monthNumber = (int) ($row['month'] ?? 0);
+                $useActual = in_array($monthNumber, $actualMonths, true);
+
+                return [
+                    'month' => $monthNumber,
+                    'label' => $row['label'] ?? '',
+                    'amount' => (float) round(
+                        $useActual
+                            ? (float) ($actualMonthly[$monthNumber] ?? 0)
+                            : (float) ($row['amount'] ?? 0),
+                        4
+                    ),
+                    'source' => $useActual ? 'payroll_actual' : 'forecast',
+                ];
+            })
+            ->values()
+            ->all();
+
+        $total = (float) round(collect($monthly)->sum('amount'), 4);
+        $avgMonthly = (float) round($total / max(1, $months_covered), 4);
+        $monthSteps = array_map(function ($row) {
+            return [
+                'label' => ($row['label'] ?? '') . ' (' . ($row['source'] === 'payroll_actual' ? 'Actual' : 'Forecast') . ')',
+                'value' => number_format((float) ($row['amount'] ?? 0), 2),
+            ];
+        }, $monthly);
+
+        $computation = $forecastData['computation'];
+        $computation['formula'] = 'Completed months use actual payroll or 0 if missing; remaining months use taxation configuration';
+        $computation['inputs']['monthly'] = $monthly;
+        $computation['inputs']['completed_actual_months'] = $actualMonths;
+        $computation['steps'] = [
+            [
+                'label' => 'Monthly breakdown (Jan–Dec)',
+                'value' => $monthSteps,
+            ],
+            [
+                'label' => 'Total (sum of months)',
+                'value' => number_format($total, 2),
+            ],
+            [
+                'label' => 'Average monthly (Total ÷ Months Covered)',
+                'value' => number_format($total, 2) . ' ÷ ' . max(1, $months_covered),
+            ],
+        ];
+        $computation['result_raw'] = $total;
+        $computation['result'] = number_format($total, 2);
+        $computation['meta']['avg_monthly_raw'] = $avgMonthly;
+
+        return [
+            'total' => $total,
+            'monthly' => $monthly,
+            'avg_monthly' => $avgMonthly,
+            'computation' => $computation,
+        ];
     }
 
     private function getComponentAmount($type, $employee_no, $year, $months_covered = 12): array
@@ -1591,6 +1794,125 @@ class ForecastComputationService
             'monthly'     => array_values($monthly),
             'avg_monthly' => (float) $avgMonthly,
             'computation' => $computation,
+        ];
+    }
+
+    private function usesActualPayrollForType(string $type): bool
+    {
+        return in_array($type, ['q2', 'q3', 'q4'], true);
+    }
+
+    private function completedActualMonthsForType(string $type): array
+    {
+        return match ($type) {
+            'q2' => [1, 2, 3],
+            'q3' => [1, 2, 3, 4, 5, 6],
+            'q4' => [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            default => [],
+        };
+    }
+
+    private function getActualSalaryPayrollByMonth(string $employeeNo, int $year): array
+    {
+        $monthly = DB::table('payroll_salary_permanent_employees as pspe')
+            ->join('payroll_salary as ps', 'pspe.payroll_salary_id', '=', 'ps.id')
+            ->selectRaw('MONTH(ps.payroll_date) as month_number, SUM(COALESCE(pspe.net_pay, 0) + COALESCE(pspe.total_deductions, 0)) as total_amount')
+            ->where('pspe.employee_no', $employeeNo)
+            ->whereYear('ps.payroll_date', $year)
+            ->where('ps.status', 'completed')
+            ->groupByRaw('MONTH(ps.payroll_date)')
+            ->pluck('total_amount', 'month_number')
+            ->map(fn ($amount) => (float) round((float) $amount, 4))
+            ->all();
+
+        return $this->normalizeActualMonthlyMap($monthly);
+    }
+
+    private function getActualHazardPayrollByMonth(string $employeeNo, int $year): array
+    {
+        $monthly = DB::table('payroll_hazard_pay_employee as phpe')
+            ->join('payroll_hazard_pay as php', 'phpe.payroll_hazard_pay_id', '=', 'php.id')
+            ->selectRaw('MONTH(CONCAT(php.month, "-01")) as month_number, SUM(COALESCE(phpe.hazard_pay, 0)) as total_amount')
+            ->where('phpe.employee_no', $employeeNo)
+            ->whereRaw('YEAR(CONCAT(php.month, "-01")) = ?', [$year])
+            ->where('php.status', 'completed')
+            ->groupByRaw('MONTH(CONCAT(php.month, "-01"))')
+            ->pluck('total_amount', 'month_number')
+            ->map(fn ($amount) => (float) round((float) $amount, 4))
+            ->all();
+
+        return $this->normalizeActualMonthlyMap($monthly);
+    }
+
+    private function getActualLongevityPayrollByMonth(string $employeeNo, int $year): array
+    {
+        $monthly = DB::table('payroll_longevity_pay_employee as plpe')
+            ->join('payroll_longevity_pay as plp', 'plpe.payroll_longevity_pay_id', '=', 'plp.id')
+            ->selectRaw('MONTH(CONCAT(plp.month, "-01")) as month_number, SUM(COALESCE(plpe.longevity_amount, 0)) as total_amount')
+            ->where('plpe.employee_no', $employeeNo)
+            ->whereRaw('YEAR(CONCAT(plp.month, "-01")) = ?', [$year])
+            ->where('plp.status', 'completed')
+            ->groupByRaw('MONTH(CONCAT(plp.month, "-01"))')
+            ->pluck('total_amount', 'month_number')
+            ->map(fn ($amount) => (float) round((float) $amount, 4))
+            ->all();
+
+        return $this->normalizeActualMonthlyMap($monthly);
+    }
+
+    private function getActualPeraRataAllowanceByMonth(string $employeeNo, int $year, string $allowanceName): array
+    {
+        $column = match ($allowanceName) {
+            'pera' => 'ppre.pera',
+            'representation_allowance' => 'ppre.representation_allowance',
+            'transportation_allowance' => 'ppre.transportion_allowance',
+            default => null,
+        };
+
+        if ($column === null) {
+            return $this->normalizeActualMonthlyMap([]);
+        }
+
+        $monthly = DB::table('payroll_pera_rata_employee as ppre')
+            ->join('payroll_pera_rata as ppr', 'ppre.payroll_pera_rata_id', '=', 'ppr.id')
+            ->selectRaw("MONTH(CONCAT(ppr.month, '-01')) as month_number, SUM(COALESCE({$column}, 0)) as total_amount")
+            ->where('ppre.employee_no', $employeeNo)
+            ->whereRaw("YEAR(CONCAT(ppr.month, '-01')) = ?", [$year])
+            ->where('ppr.status', 'completed')
+            ->groupByRaw("MONTH(CONCAT(ppr.month, '-01'))")
+            ->pluck('total_amount', 'month_number')
+            ->map(fn ($amount) => (float) round((float) $amount, 4))
+            ->all();
+
+        return $this->normalizeActualMonthlyMap($monthly);
+    }
+
+    private function normalizeActualMonthlyMap(array $monthly): array
+    {
+        $normalized = [];
+
+        foreach (array_keys($this->getMonthLabels()) as $monthNumber) {
+            $normalized[$monthNumber] = (float) round((float) ($monthly[$monthNumber] ?? 0), 4);
+        }
+
+        return $normalized;
+    }
+
+    private function getMonthLabels(): array
+    {
+        return [
+            1 => 'January',
+            2 => 'February',
+            3 => 'March',
+            4 => 'April',
+            5 => 'May',
+            6 => 'June',
+            7 => 'July',
+            8 => 'August',
+            9 => 'September',
+            10 => 'October',
+            11 => 'November',
+            12 => 'December',
         ];
     }
 }

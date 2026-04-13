@@ -77,7 +77,7 @@ export default {
                     is_show: this.row.longevity,
                     component: LongevityView,
                     props: {
-                        data: this.breakdown.longetivity_pay,
+                        data: this.breakdown.longetivity_pay
                     },
                 },
                 {

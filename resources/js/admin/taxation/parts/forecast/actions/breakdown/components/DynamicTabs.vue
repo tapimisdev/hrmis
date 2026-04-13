@@ -21,7 +21,7 @@
             </button>
         </li>
     </ul>
-
+    <!-- {{ tabs }} -->
     <!-- Tabs Content -->
     <div class="tab-content p-2">
         <div

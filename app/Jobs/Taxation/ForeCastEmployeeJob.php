@@ -86,7 +86,11 @@ class ForeCastEmployeeJob implements ShouldQueue
         // -----------------------------
         // Basic pays
         // -----------------------------
-        $basicPays = $service->annualSalaryTotalByMonth($this->employee_no, $year);
+        $basicPays = $service->annualSalaryTotalByMonth(
+            $this->employee_no,
+            $year,
+            (string) ($payload['type'] ?? 'forecast')
+        );
 
         if ($basicPays['remarks'] ?? null) {
             $addRemark("Basic Pay: " . ($basicPays['remarks'] ?? ''));
@@ -96,6 +100,7 @@ class ForeCastEmployeeJob implements ShouldQueue
         $monthlySalary     = round((float) ($basicPays['monthly_salary'] ?? 0), 4);
         $monthsCovered     = (int) ($basicPays['months_covered'] ?? 0);
         $monthlyHazardPay  = round((float) ($basicPays['hazard_pay'] ?? ($monthlySalary * 0.15)), 4);
+        $annualHazardPay   = round((float) ($basicPays['hazard_total'] ?? ($monthlyHazardPay * $monthsCovered)), 4);
 
         $mid = $basicPays['midyear'] ?? null;
         $ye  = $basicPays['year_end'] ?? null;
@@ -142,7 +147,8 @@ class ForeCastEmployeeJob implements ShouldQueue
 
             $longevity = $service->ComputeLongevity(
                 $this->employee_no,
-                $year
+                $year,
+                (string) ($payload['type'] ?? 'forecast')
             );
 
 
@@ -156,8 +162,8 @@ class ForeCastEmployeeJob implements ShouldQueue
 
         $hazardPayAnnual = 0.0;
         if ($assume('hazardPay')) {
-            if ($monthsCovered > 0 && $monthlyHazardPay > 0) {
-                $hazardPayAnnual = $monthlyHazardPay * $monthsCovered;
+            if ($annualHazardPay > 0) {
+                $hazardPayAnnual = $annualHazardPay;
             } else {
                 $payload['assumptions']['hazardPay'] = false;
                 $addRemark("Hazard Pay was enabled but cannot be computed (months covered or monthly hazard pay is zero).");
@@ -169,7 +175,11 @@ class ForeCastEmployeeJob implements ShouldQueue
         // -----------------------------
         $payload['othersEarnings'] = array_merge(
             $payload['othersEarnings'] ?? [],
-            $service->getNonTaxableAllowance($this->employee_no, $year)
+            $service->getNonTaxableAllowance(
+                $this->employee_no,
+                $year,
+                (string) ($payload['type'] ?? 'forecast')
+            )
         );
 
         // -----------------------------
