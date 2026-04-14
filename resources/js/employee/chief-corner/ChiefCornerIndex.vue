@@ -90,7 +90,7 @@
                                     </div>
                                     <div class="chief-kpi-label">Current Timelog Period</div>
                                     <div class="fw-bold">{{ overview.highlight_cards.period_label || periodLabel }}</div>
-                                    <div class="text-muted">Use the Timelogs tab to jump to a previous or next month.</div>
+                                    <div class="text-muted">Use the filter above to view different data through out the period.</div>
                                 </div>
                             </div>
                             <div class="col-12 col-md-6 col-xl-12">
@@ -368,9 +368,12 @@
                     </div>
                     <div class="mb-3">
                         <div>
-                            <h5 class="mb-1">Credits</h5>
-                            <p class="text-muted mb-0">Latest credits per employee, grouped by credit type.</p>
+                            <h5 class="mb-1">Leave Credits and Offset</h5>
+                            <p class="text-muted mb-0">One row per employee showing all leave credit balances plus offset.</p>
                         </div>
+                    </div>
+                    <div class="alert alert-info mb-3" role="alert">
+                        The leave credits shown below are based on the latest records.
                     </div>
                     <div class="table-responsive">
                         <table ref="leaveCreditsTable" class="table table-striped align-middle chief-table">
@@ -615,7 +618,7 @@ export default {
         },
         async fetchTab(tab, force = false) {
             if (this.loadedTabs[tab] && !force) {
-                return;
+                return false;
             }
 
             this.loading[tab] = true;
@@ -625,6 +628,11 @@ export default {
                 const params = {
                     month: this.selectedMonth,
                 };
+
+                const selectedDate = this.selectedDateParam(tab);
+                if (selectedDate) {
+                    params.selected_date = selectedDate;
+                }
 
                 if (tab === "applications") {
                     params.application_type = this.applicationType;
@@ -641,29 +649,36 @@ export default {
             } catch (error) {
                 console.error(`Chief Corner ${tab} load failed`, error);
                 this.errorMessage = error.response?.data?.message || "Something went wrong while loading this tab.";
+                return false;
             } finally {
                 this.loading[tab] = false;
             }
 
             try {
-                this.initializeDataTables();
+                this.initializeTabTables(tab);
                 this.adjustVisibleTables();
             } catch (error) {
                 console.error(`Chief Corner ${tab} table enhancement failed`, error);
             }
+
+            return true;
         },
         async showTab(tab) {
             this.activeTab = tab;
             localStorage.setItem("chief-corner-active-tab", tab);
             this.syncUrl();
-            await this.fetchTab(tab);
+            const didFetch = await this.fetchTab(tab);
             await this.$nextTick();
+            if (!didFetch) {
+                this.reloadTabTables(tab);
+            }
             this.adjustVisibleTables();
         },
         async reloadApplications() {
             localStorage.setItem("chief-corner-application-type", this.applicationType);
             this.loadedTabs.applications = false;
             await this.fetchTab("applications", true);
+            this.reloadTabTables("applications");
         },
         async refreshLoadedTabs() {
             this.loadedTabs = {
@@ -675,12 +690,7 @@ export default {
 
             await this.fetchTab(this.activeTab, true);
             await this.$nextTick();
-
-            this.reloadDataTable("applications");
-            this.reloadDataTable("timelogStats");
-            this.reloadDataTable("timelogSummary");
-            this.reloadDataTable("timelogDaily");
-            this.reloadDataTable("leaveCredits");
+            this.reloadTabTables(this.activeTab);
             this.adjustVisibleTables();
         },
         async applyGlobalMonthFilter() {
@@ -701,8 +711,9 @@ export default {
             const url = new URL(window.location.href);
             url.searchParams.set("tab", this.activeTab);
             url.searchParams.set("month", this.selectedMonth);
-            if (this.activeTab === "timelogs" && this.timelogView === "day" && this.selectedTimelogDate) {
-                url.searchParams.set("selected_date", this.selectedTimelogDate);
+            const selectedDate = this.selectedDateParam();
+            if (this.activeTab === "timelogs" && selectedDate) {
+                url.searchParams.set("selected_date", selectedDate);
             } else {
                 url.searchParams.delete("selected_date");
             }
@@ -733,18 +744,12 @@ export default {
                 this.leaveCreditColumns = data.leave_credit_columns || [];
             }
         },
-        initializeDataTables() {
-            this.rebuildDataTable("overview", this.$refs.overviewTable, {
-                pageLength: 10,
-                order: [[0, "desc"]],
-                columnDefs: [{ targets: [3], orderable: false }],
-            });
-
+        initializeApplicationsTable() {
             this.rebuildDataTable("applications", this.$refs.applicationsTable, {
                 processing: true,
                 serverSide: true,
                 pageLength: 10,
-                order: [[0, "desc"]],
+                order: [[3, "asc"]],
                 ajax: this.buildAjaxHandler("applications", "applications"),
                 columns: [
                     {
@@ -769,7 +774,8 @@ export default {
                     },
                 ],
             });
-
+        },
+        initializeTimelogTables() {
             this.buildTimelogStatsTable();
 
             this.rebuildDataTable("timelogSummary", this.$refs.timelogSummaryTable, {
@@ -778,7 +784,7 @@ export default {
                 pageLength: 10,
                 lengthChange: false,
                 dom: "<'chief-datatable-toolbar'<'chief-datatable-search'f>>rt<'chief-datatable-footer'ip>",
-                order: [[2, "desc"]],
+                order: [[0, "asc"]],
                 ajax: this.buildAjaxHandler("timelogs", "timelogSummary"),
                 columns: [
                     {
@@ -812,7 +818,7 @@ export default {
                 pageLength: 10,
                 lengthChange: false,
                 dom: "<'chief-datatable-toolbar'<'chief-datatable-search'f>>rt<'chief-datatable-footer'ip>",
-                order: [[0, "desc"]],
+                order: [[1, "asc"]],
                 ajax: this.buildAjaxHandler("timelogs", "timelogDaily"),
                 columns: [
                     {
@@ -846,8 +852,26 @@ export default {
                     { data: "remarks" },
                 ],
             });
+        },
+        initializeTabTables(tab) {
+            if (tab === "overview") {
+                this.refreshOverviewTable();
+                return;
+            }
 
-            this.buildLeaveCreditsTable();
+            if (tab === "applications") {
+                this.initializeApplicationsTable();
+                return;
+            }
+
+            if (tab === "timelogs") {
+                this.initializeTimelogTables();
+                return;
+            }
+
+            if (tab === "credits") {
+                this.buildLeaveCreditsTable();
+            }
         },
         buildTimelogStatsTable() {
             this.rebuildDataTable("timelogStats", this.$refs.timelogStatsTable, {
@@ -890,8 +914,9 @@ export default {
             this.rebuildDataTable("leaveCredits", this.$refs.leaveCreditsTable, {
                 processing: true,
                 serverSide: true,
-                pageLength: 20,
-                order: [[0, "asc"]],
+                pageLength: 10,
+                lengthChange: true,
+                order: [[1, "asc"]],
                 ajax: this.buildAjaxHandler("credits", "leaveCredits"),
                 columns: [
                     {
@@ -955,8 +980,9 @@ export default {
                     }
 
                     params.month = this.selectedMonth;
-                    if (tab === "timelogs" && table === "timelogDaily" && this.selectedTimelogDate) {
-                        params.selected_date = this.selectedTimelogDate;
+                    const selectedDate = this.selectedDateParam(tab, table);
+                    if (selectedDate) {
+                        params.selected_date = selectedDate;
                     }
 
                     if (tab === "timelogs") {
@@ -1148,15 +1174,60 @@ export default {
 
             return normalizedDate || this.timelogDayMax;
         },
+        selectedDateParam(tab = null, table = null) {
+            if (this.timelogView !== "day") {
+                return "";
+            }
+
+            const allowsSelectedDate = table === "timelogDaily"
+                || tab === "applications"
+                || tab === "timelogs";
+
+            if (!allowsSelectedDate) {
+                return "";
+            }
+
+            return this.normalizeSelectedTimelogDate(this.selectedTimelogDate);
+        },
+        invalidateLoadedTabs(tabs = this.tabs.map((tab) => tab.key)) {
+            tabs.forEach((tab) => {
+                if (Object.prototype.hasOwnProperty.call(this.loadedTabs, tab)) {
+                    this.loadedTabs[tab] = false;
+                }
+            });
+        },
         async applyTimelogDateFilter() {
             this.selectedTimelogDate = this.resolveTimelogDateSelection(this.selectedTimelogDate);
+            this.invalidateLoadedTabs();
             this.syncUrl();
-            this.reloadDataTable("timelogDaily");
+            this.reloadTabTables("timelogs");
         },
         async clearTimelogDateFilter() {
             this.selectedTimelogDate = "";
+            this.invalidateLoadedTabs();
             this.syncUrl();
-            this.reloadDataTable("timelogDaily");
+            this.reloadTabTables("timelogs");
+        },
+        reloadTabTables(tab) {
+            const tableMap = {
+                applications: ["applications"],
+                timelogs: ["timelogStats", "timelogSummary", "timelogDaily"],
+                credits: ["leaveCredits"],
+            };
+
+            if (tab === "overview") {
+                this.refreshOverviewTable();
+                return;
+            }
+
+            (tableMap[tab] || []).forEach((key) => this.reloadDataTable(key));
+        },
+        refreshOverviewTable() {
+            this.rebuildDataTable("overview", this.$refs.overviewTable, {
+                pageLength: 10,
+                order: [[0, "desc"]],
+                columnDefs: [{ targets: [3], orderable: false }],
+            });
         },
         reloadDataTable(key) {
             const element = this.$refs[`${key}Table`] || this.$refs[key];
@@ -1198,10 +1269,9 @@ export default {
             if (view === "day") {
                 this.selectedTimelogDate = this.resolveTimelogDateSelection(this.selectedTimelogDate);
             }
+            this.invalidateLoadedTabs();
             this.syncUrl();
-            if (view === "day") {
-                this.reloadDataTable("timelogDaily");
-            }
+            this.reloadTabTables("timelogs");
             this.$nextTick(() => {
                 this.adjustVisibleTables();
             });
@@ -1210,7 +1280,7 @@ export default {
             this.activeTimelogStatTab = tab;
             localStorage.setItem("chief-corner-timelog-stat-tab", tab);
             this.$nextTick(() => {
-                this.buildTimelogStatsTable();
+                this.reloadTabTables("timelogs");
                 this.adjustVisibleTables();
             });
         },
