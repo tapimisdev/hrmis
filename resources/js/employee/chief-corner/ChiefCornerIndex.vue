@@ -5,6 +5,23 @@
             <div class="small text-muted">{{ loadingMessage }}</div>
         </div>
 
+        <div class="chief-filter-bar mb-3">
+            <div class="chief-filter-copy">
+                <div class="chief-section-eyebrow">Page Filters</div>
+                <h5 class="mb-1">Month Context</h5>
+                <p class="text-muted mb-0">Changing the month updates every tab using the same selected period.</p>
+            </div>
+            <div class="chief-toolbar-form chief-timelog-toolbar">
+                <button type="button" class="btn btn-outline-secondary chief-icon-btn" title="Previous month" :disabled="isAnyLoading" @click="shiftMonth(-1)">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <input v-model="selectedMonth" type="month" class="form-control" :disabled="isAnyLoading" @change="applyGlobalMonthFilter">
+                <button type="button" class="btn btn-outline-secondary chief-icon-btn" title="Next month" :disabled="isAnyLoading" @click="shiftMonth(1)">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
         <ul class="nav nav-tabs chief-tabs" role="tablist">
             <li class="nav-item" role="presentation" v-for="tab in tabs" :key="tab.key">
                 <button
@@ -66,24 +83,46 @@
                     <div class="col-12 col-xl-5">
                         <div class="row g-3">
                             <div class="col-12 col-md-6 col-xl-12">
-                                <div class="card rounded-4 p-3 h-100">
-                                    <div class="chief-kpi-label">Top Late</div>
-                                    <div class="fw-bold">{{ overview.highlight_cards.top_late.employee || '-' }}</div>
-                                    <div class="text-muted">{{ overview.highlight_cards.top_late.value || 'No data yet.' }}</div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6 col-xl-12">
-                                <div class="card rounded-4 p-3 h-100">
-                                    <div class="chief-kpi-label">Top Ontime</div>
-                                    <div class="fw-bold">{{ overview.highlight_cards.top_ontime.employee || '-' }}</div>
-                                    <div class="text-muted">{{ overview.highlight_cards.top_ontime.value || 'No data yet.' }}</div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="card rounded-4 p-3 h-100">
+                                <div class="card rounded-4 p-3 h-100 chief-tab-card" :class="{ 'chief-card-loading': isLoading('overview') }">
+                                    <div v-if="isLoading('overview')" class="chief-tab-loader">
+                                        <div class="spinner-border text-primary" role="status"></div>
+                                        <div class="small text-muted">Loading overview data...</div>
+                                    </div>
                                     <div class="chief-kpi-label">Current Timelog Period</div>
                                     <div class="fw-bold">{{ overview.highlight_cards.period_label || periodLabel }}</div>
                                     <div class="text-muted">Use the Timelogs tab to jump to a previous or next month.</div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-xl-12">
+                                <div class="card rounded-4 p-3 h-100 chief-tab-card" :class="{ 'chief-card-loading': isLoading('overview') }">
+                                    <div v-if="isLoading('overview')" class="chief-tab-loader">
+                                        <div class="spinner-border text-primary" role="status"></div>
+                                        <div class="small text-muted">Loading overview data...</div>
+                                    </div>
+                                    <div class="chief-kpi-label">Top Late</div>
+                                    <div v-if="overview.highlight_cards.top_late.length" class="chief-kpi-list">
+                                        <div v-for="(employee, index) in overview.highlight_cards.top_late" :key="`top-late-${employee.employee}-${index}`" class="chief-kpi-item">
+                                            <div class="fw-bold">{{ index + 1 }}. {{ employee.employee }}</div>
+                                            <div class="text-muted">{{ employee.value }}</div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-muted">No data yet.</div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="card rounded-4 p-3 h-100 chief-tab-card" :class="{ 'chief-card-loading': isLoading('overview') }">
+                                    <div v-if="isLoading('overview')" class="chief-tab-loader">
+                                        <div class="spinner-border text-primary" role="status"></div>
+                                        <div class="small text-muted">Loading overview data...</div>
+                                    </div>
+                                    <div class="chief-kpi-label">Top Ontime</div>
+                                    <div v-if="overview.highlight_cards.top_ontime.length" class="chief-kpi-list">
+                                        <div v-for="(employee, index) in overview.highlight_cards.top_ontime" :key="`top-ontime-${employee.employee}-${index}`" class="chief-kpi-item">
+                                            <div class="fw-bold">{{ index + 1 }}. {{ employee.employee }}</div>
+                                            <div class="text-muted">{{ employee.value }}</div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-muted">No data yet.</div>
                                 </div>
                             </div>
                         </div>
@@ -162,18 +201,126 @@
                     </div>
 
                     <div class="chief-toolbar-form chief-timelog-toolbar">
-                        <input type="hidden" name="tab" value="timelogs">
-                        <button type="button" class="btn btn-outline-secondary chief-icon-btn" title="Previous month" :disabled="isAnyLoading" @click="shiftMonth(-1)">
-                            <i class="fa-solid fa-chevron-left"></i>
-                        </button>
-                        <input v-model="selectedMonth" type="month" name="month" class="form-control" :disabled="isAnyLoading" @change="applyTimelogMonth">
-                        <button type="button" class="btn btn-outline-secondary chief-icon-btn" title="Next month" :disabled="isAnyLoading" @click="shiftMonth(1)">
-                            <i class="fa-solid fa-chevron-right"></i>
-                        </button>
+                        <span class="chief-meta-pill">{{ selectedMonth }}</span>
                     </div>
                 </div>
 
-                <div class="card rounded-4 p-3 mb-4 chief-tab-card" :class="{ 'chief-card-loading': isTimelogStatsLoading }">
+                <div class="card rounded-4 p-3 chief-tab-card mb-4" :class="{ 'chief-card-loading': isTimelogDetailLoading }">
+                    <div
+                        v-if="isTimelogDetailLoading"
+                        class="chief-tab-loader"
+                    >
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="small text-muted">
+                            {{ timelogView === 'month' ? 'Loading monthly timelog summary...' : 'Loading daily timelog entries...' }}
+                        </div>
+                    </div>
+                    <div class="chief-timelog-detail-header mb-3">
+                        <div>
+                            <div class="chief-section-eyebrow">{{ timelogView === 'month' ? 'Per Month View' : 'Per Day View' }}</div>
+                            <h5 class="mb-1">{{ timelogView === 'month' ? 'Monthly Timelog Summary' : 'Daily Timelog Entries' }}</h5>
+                            <p class="text-muted mb-0">
+                                {{ timelogView === 'month'
+                                    ? 'One row per employee with monthly totals for worked hours, late, undertime, overtime, leave, offset, SO, and LTO.'
+                                    : 'One row per employee per day with logs, work hours, and remarks.' }}
+                            </p>
+                        </div>
+                        <div class="chief-timelog-detail-controls">
+                            <div class="chief-view-switch" role="tablist" aria-label="Timelog view switch">
+                                <button
+                                    type="button"
+                                    class="chief-view-switch-btn"
+                                    :class="{ active: timelogView === 'month' }"
+                                    :disabled="isAnyLoading"
+                                    @click="setTimelogView('month')"
+                                >
+                                    Month
+                                </button>
+                                <button
+                                    type="button"
+                                    class="chief-view-switch-btn"
+                                    :class="{ active: timelogView === 'day' }"
+                                    :disabled="isAnyLoading"
+                                    @click="setTimelogView('day')"
+                                >
+                                    Day
+                                </button>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <div v-show="timelogView === 'month'" class="table-responsive">
+                        <table ref="timelogSummaryTable" class="table table-striped align-middle chief-table">
+                            <thead>
+                                <tr class="text-uppercase">
+                                    <th>Employee</th>
+                                    <th>Unit</th>
+                                    <th>Worked Hrs</th>
+                                    <th>Late</th>
+                                    <th>Undertime</th>
+                                    <th>OT</th>
+                                    <th>Leave</th>
+                                    <th>Offset</th>
+                                    <th>SO</th>
+                                    <th>LTO</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                    <div v-show="timelogView === 'day'" class="table-responsive">
+                        <div
+                            v-if="timelogView === 'day'"
+                            class="chief-day-filter-card"
+                        >
+                            <label class="chief-day-filter-label" for="chief-timelog-day-filter">
+                                Specific date
+                            </label>
+                            <div class="chief-day-filter-inline">
+                                <input
+                                    id="chief-timelog-day-filter"
+                                    v-model="selectedTimelogDate"
+                                    type="date"
+                                    class="form-control chief-day-filter-input"
+                                    :min="timelogDayMin"
+                                    :max="timelogDayMax"
+                                    :disabled="isAnyLoading"
+                                    @change="applyTimelogDateFilter"
+                                >
+                                <button
+                                    v-if="selectedTimelogDate"
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    :disabled="isAnyLoading"
+                                    @click="clearTimelogDateFilter"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                        <table ref="timelogDailyTable" class="table table-striped align-middle chief-table">
+                            <thead>
+                                <tr class="text-uppercase">
+                                    <th>Date</th>
+                                    <th>Employee</th>
+                                    <th>Unit</th>
+                                    <th>Clock In</th>
+                                    <th>Break Out</th>
+                                    <th>Break In</th>
+                                    <th>Time Out</th>
+                                    <th>OT</th>
+                                    <th>Late / UT</th>
+                                    <th>Worked Hrs</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card rounded-4 p-3 chief-tab-card" :class="{ 'chief-card-loading': isTimelogStatsLoading }">
                     <div v-if="isTimelogStatsLoading" class="chief-tab-loader">
                         <div class="spinner-border text-primary" role="status"></div>
                         <div class="small text-muted">Loading timelog data...</div>
@@ -205,89 +352,6 @@
                                     <th>Employee</th>
                                     <th>Unit</th>
                                     <th>Value</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="card rounded-4 p-3 chief-tab-card" :class="{ 'chief-card-loading': isTimelogDetailLoading }">
-                    <div
-                        v-if="isTimelogDetailLoading"
-                        class="chief-tab-loader"
-                    >
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <div class="small text-muted">
-                            {{ timelogView === 'month' ? 'Loading monthly timelog summary...' : 'Loading daily timelog entries...' }}
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
-                        <div>
-                            <div class="chief-section-eyebrow">{{ timelogView === 'month' ? 'Per Month View' : 'Per Day View' }}</div>
-                            <h5 class="mb-1">{{ timelogView === 'month' ? 'Monthly Timelog Summary' : 'Daily Timelog Entries' }}</h5>
-                            <p class="text-muted mb-0">
-                                {{ timelogView === 'month'
-                                    ? 'One row per employee with monthly totals for logs, late, undertime, overtime, leave, offset, SO, and LTO.'
-                                    : 'One row per employee per day with logs, work hours, and remarks.' }}
-                            </p>
-                        </div>
-                        <div class="chief-view-switch" role="tablist" aria-label="Timelog view switch">
-                            <button
-                                type="button"
-                                class="chief-view-switch-btn"
-                                :class="{ active: timelogView === 'month' }"
-                                :disabled="isAnyLoading"
-                                @click="setTimelogView('month')"
-                            >
-                                Month
-                            </button>
-                            <button
-                                type="button"
-                                class="chief-view-switch-btn"
-                                :class="{ active: timelogView === 'day' }"
-                                :disabled="isAnyLoading"
-                                @click="setTimelogView('day')"
-                            >
-                                Day
-                            </button>
-                        </div>
-                    </div>
-                    <div v-show="timelogView === 'month'" class="table-responsive">
-                        <table ref="timelogSummaryTable" class="table table-striped align-middle chief-table">
-                            <thead>
-                                <tr class="text-uppercase">
-                                    <th>Employee</th>
-                                    <th>Unit</th>
-                                    <th>Logs</th>
-                                    <th>Late</th>
-                                    <th>Undertime</th>
-                                    <th>OT</th>
-                                    <th>Leave</th>
-                                    <th>Offset</th>
-                                    <th>SO</th>
-                                    <th>LTO</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-
-                    <div v-show="timelogView === 'day'" class="table-responsive">
-                        <table ref="timelogDailyTable" class="table table-striped align-middle chief-table">
-                            <thead>
-                                <tr class="text-uppercase">
-                                    <th>Date</th>
-                                    <th>Employee</th>
-                                    <th>Unit</th>
-                                    <th>Clock In</th>
-                                    <th>Break Out</th>
-                                    <th>Break In</th>
-                                    <th>Time Out</th>
-                                    <th>OT</th>
-                                    <th>Late / UT</th>
-                                    <th>Worked Hrs</th>
-                                    <th>Remarks</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -328,11 +392,61 @@
                 {{ errorMessage }}
             </div>
         </div>
+
+        <div
+            ref="timelogBreakdownModal"
+            class="modal fade"
+            tabindex="-1"
+            aria-labelledby="chief-breakdown-title"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-body p-4">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <div class="chief-section-eyebrow">Timelog Breakdown</div>
+                                <h5 id="chief-breakdown-title" class="mb-1">
+                                    {{ activeTimelogBreakdown?.title || 'Timelog Breakdown' }}
+                                </h5>
+                                <p class="text-muted mb-0">
+                                    {{ activeTimelogBreakdown?.employee || '-' }} • {{ activeTimelogBreakdown?.value || '-' }}
+                                </p>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div v-if="activeTimelogBreakdown?.items?.length" class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr class="text-uppercase">
+                                        <th>Date</th>
+                                        <th>Value</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="item in activeTimelogBreakdown.items" :key="`${item.date}-${item.value}-${item.details}`">
+                                        <td class="fw-semibold">{{ item.date }}</td>
+                                        <td>{{ item.value }}</td>
+                                        <td class="text-muted">{{ item.details || '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div v-else class="text-muted">
+                            {{ activeTimelogBreakdown?.empty_message || 'No breakdown available.' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
 import axios from "axios";
+import { Modal } from "bootstrap";
 
 export default {
     name: "ChiefCornerIndex",
@@ -374,8 +488,11 @@ export default {
             timelogView: localStorage.getItem("chief-corner-timelog-view") || "month",
             activeTimelogStatTab: localStorage.getItem("chief-corner-timelog-stat-tab") || "lates",
             selectedMonth: this.selectedMonthProp,
+            selectedTimelogDate: "",
             applicationType: localStorage.getItem("chief-corner-application-type") || "",
             applicationsCount: 0,
+            timelogBreakdowns: {},
+            activeTimelogBreakdown: null,
             tableBusyCount: 0,
             loadingTables: {
                 applications: false,
@@ -400,8 +517,8 @@ export default {
             overview: {
                 applications: [],
                 highlight_cards: {
-                    top_late: {},
-                    top_ontime: {},
+                    top_late: [],
+                    top_ontime: [],
                     period_label: "",
                 },
             },
@@ -451,20 +568,42 @@ export default {
         isLeaveCreditsLoading() {
             return this.loading.credits || this.loadingTables.leaveCredits;
         },
+        timelogDayMin() {
+            return `${this.selectedMonth}-01`;
+        },
+        timelogDayMax() {
+            const [year, month] = this.selectedMonth.split("-").map(Number);
+            const endOfMonth = new Date(year, month, 0);
+            const monthMax = `${year}-${String(month).padStart(2, "0")}-${String(endOfMonth.getDate()).padStart(2, "0")}`;
+            const today = new Date().toISOString().slice(0, 10);
+
+            return this.selectedMonth === today.slice(0, 7) && today < monthMax ? today : monthMax;
+        },
     },
     mounted() {
         const url = new URL(window.location.href);
         const queryTab = url.searchParams.get("tab");
+        const queryDate = queryTab === "timelogs" ? url.searchParams.get("selected_date") : null;
         const savedTab = localStorage.getItem("chief-corner-active-tab");
 
         if (!queryTab && savedTab && this.tabs.some((tab) => tab.key === savedTab)) {
             this.activeTab = savedTab;
         }
 
+        if (queryDate) {
+            this.selectedTimelogDate = queryDate;
+        }
+
+        if (this.activeTab === "timelogs" && this.timelogView === "day") {
+            this.selectedTimelogDate = this.resolveTimelogDateSelection(this.selectedTimelogDate);
+        }
+
         this.syncUrl();
         this.fetchTab(this.activeTab, true);
     },
     beforeUnmount() {
+        this.detachTimelogStatsClickHandler();
+        this.disposeTimelogBreakdownModal();
         this.destroyAllDataTables();
     },
     methods: {
@@ -483,14 +622,12 @@ export default {
             this.errorMessage = "";
 
             try {
-                const params = {};
+                const params = {
+                    month: this.selectedMonth,
+                };
 
                 if (tab === "applications") {
                     params.application_type = this.applicationType;
-                }
-
-                if (tab === "overview" || tab === "timelogs") {
-                    params.month = this.selectedMonth;
                 }
 
                 const response = await axios.get(this.tabEndpoint(tab), { params });
@@ -528,22 +665,29 @@ export default {
             this.loadedTabs.applications = false;
             await this.fetchTab("applications", true);
         },
-        async applyTimelogMonth() {
-            this.loadedTabs.timelogs = false;
-            this.loadedTabs.overview = false;
-            await this.fetchTab("timelogs", true);
+        async refreshLoadedTabs() {
+            this.loadedTabs = {
+                overview: false,
+                applications: false,
+                timelogs: false,
+                credits: false,
+            };
 
-            if (this.activeTab === "timelogs") {
-                await this.$nextTick();
-                this.reloadDataTable("timelogStats");
-                this.reloadDataTable("timelogSummary");
-                this.reloadDataTable("timelogDaily");
-                this.adjustVisibleTables();
-            }
+            await this.fetchTab(this.activeTab, true);
+            await this.$nextTick();
 
-            if (this.activeTab === "overview") {
-                await this.fetchTab("overview", true);
-            }
+            this.reloadDataTable("applications");
+            this.reloadDataTable("timelogStats");
+            this.reloadDataTable("timelogSummary");
+            this.reloadDataTable("timelogDaily");
+            this.reloadDataTable("leaveCredits");
+            this.adjustVisibleTables();
+        },
+        async applyGlobalMonthFilter() {
+            this.selectedTimelogDate = this.timelogView === "day"
+                ? this.resolveTimelogDateSelection(this.selectedTimelogDate)
+                : this.normalizeSelectedTimelogDate(this.selectedTimelogDate);
+            await this.refreshLoadedTabs();
         },
         async shiftMonth(delta) {
             const [year, month] = this.selectedMonth.split("-").map(Number);
@@ -551,12 +695,17 @@ export default {
             const nextYear = nextDate.getFullYear();
             const nextMonth = String(nextDate.getMonth() + 1).padStart(2, "0");
             this.selectedMonth = `${nextYear}-${nextMonth}`;
-            await this.applyTimelogMonth();
+            await this.applyGlobalMonthFilter();
         },
         syncUrl() {
             const url = new URL(window.location.href);
             url.searchParams.set("tab", this.activeTab);
             url.searchParams.set("month", this.selectedMonth);
+            if (this.activeTab === "timelogs" && this.timelogView === "day" && this.selectedTimelogDate) {
+                url.searchParams.set("selected_date", this.selectedTimelogDate);
+            } else {
+                url.searchParams.delete("selected_date");
+            }
             window.history.replaceState({}, "", url);
         },
         applyTabData(tab, data) {
@@ -571,6 +720,10 @@ export default {
             if (tab === "timelogs") {
                 this.timelogs = data;
                 this.selectedMonth = data.selected_month || this.selectedMonth;
+                const nextSelectedDate = data.selected_date || this.selectedTimelogDate;
+                this.selectedTimelogDate = this.timelogView === "day"
+                    ? this.resolveTimelogDateSelection(nextSelectedDate)
+                    : this.normalizeSelectedTimelogDate(nextSelectedDate);
                 if (!this.timelogStatTabs.some((item) => item.key === this.activeTimelogStatTab)) {
                     this.activeTimelogStatTab = "lates";
                 }
@@ -624,7 +777,8 @@ export default {
                 serverSide: true,
                 pageLength: 10,
                 lengthChange: false,
-                order: [[3, "desc"]],
+                dom: "<'chief-datatable-toolbar'<'chief-datatable-search'f>>rt<'chief-datatable-footer'ip>",
+                order: [[2, "desc"]],
                 ajax: this.buildAjaxHandler("timelogs", "timelogSummary"),
                 columns: [
                     {
@@ -641,7 +795,7 @@ export default {
                             ? row.unit_order
                             : data,
                     },
-                    this.numericColumn("logs", "logs_order"),
+                    this.numericColumn("worked_hours", "worked_hours_order"),
                     this.numericColumn("late", "late_order"),
                     this.numericColumn("undertime", "undertime_order"),
                     this.numericColumn("overtime", "overtime_order"),
@@ -657,6 +811,7 @@ export default {
                 serverSide: true,
                 pageLength: 10,
                 lengthChange: false,
+                dom: "<'chief-datatable-toolbar'<'chief-datatable-search'f>>rt<'chief-datatable-footer'ip>",
                 order: [[0, "desc"]],
                 ajax: this.buildAjaxHandler("timelogs", "timelogDaily"),
                 columns: [
@@ -712,9 +867,24 @@ export default {
                             : `${data} ${row.position}`,
                     },
                     { data: "unit", name: "unit" },
-                    { data: "value", name: "value" },
+                    {
+                        data: "value",
+                        name: "value_order",
+                        render: (data, type, row) => {
+                            if (type === "sort" || type === "type") {
+                                return row.value_order;
+                            }
+
+                            if (type === "display" && row.breakdown_id) {
+                                return `<button type="button" class="btn btn-link p-0 chief-breakdown-trigger" data-breakdown-id="${row.breakdown_id}">${data}</button>`;
+                            }
+
+                            return data;
+                        },
+                    },
                 ],
             });
+            this.attachTimelogStatsClickHandler();
         },
         buildLeaveCreditsTable() {
             this.rebuildDataTable("leaveCredits", this.$refs.leaveCreditsTable, {
@@ -784,12 +954,19 @@ export default {
                         params.application_type = this.applicationType;
                     }
 
+                    params.month = this.selectedMonth;
+                    if (tab === "timelogs" && table === "timelogDaily" && this.selectedTimelogDate) {
+                        params.selected_date = this.selectedTimelogDate;
+                    }
+
                     if (tab === "timelogs") {
-                        params.month = this.selectedMonth;
                         params.stat = this.activeTimelogStatTab;
                     }
 
                     const response = await axios.get(this.tabEndpoint(tab), { params });
+                    if (table === "timelogStats") {
+                        this.registerTimelogBreakdowns(response.data?.data || []);
+                    }
                     this.applyDataTableMeta(table, response.data);
                     callback(response.data);
                 } catch (error) {
@@ -887,8 +1064,102 @@ export default {
                 this.timelogs.daily_count = payload.recordsTotal;
             }
         },
+        registerTimelogBreakdowns(rows) {
+            rows.forEach((row) => {
+                if (row?.breakdown_id && row?.breakdown) {
+                    this.timelogBreakdowns[row.breakdown_id] = row.breakdown;
+                }
+            });
+        },
+        attachTimelogStatsClickHandler() {
+            if (!this.$refs.timelogStatsTable || typeof window.$ === "undefined") {
+                return;
+            }
+
+            window.$(this.$refs.timelogStatsTable)
+                .off("click.chiefBreakdown")
+                .on("click.chiefBreakdown", ".chief-breakdown-trigger", (event) => {
+                    const breakdownId = event.currentTarget.dataset.breakdownId;
+                    this.openTimelogBreakdown(breakdownId);
+                });
+        },
+        detachTimelogStatsClickHandler() {
+            if (!this.$refs.timelogStatsTable || typeof window.$ === "undefined") {
+                return;
+            }
+
+            window.$(this.$refs.timelogStatsTable).off("click.chiefBreakdown");
+        },
+        openTimelogBreakdown(breakdownId) {
+            this.activeTimelogBreakdown = this.timelogBreakdowns[breakdownId] || null;
+            this.$nextTick(() => {
+                this.getTimelogBreakdownModal()?.show();
+            });
+        },
+        closeTimelogBreakdown() {
+            this.getTimelogBreakdownModal()?.hide();
+        },
+        getTimelogBreakdownModal() {
+            const modalElement = this.$refs.timelogBreakdownModal;
+
+            if (!modalElement) {
+                return null;
+            }
+
+            const modal = Modal.getOrCreateInstance(modalElement);
+
+            if (!this._timelogBreakdownModalBound) {
+                modalElement.addEventListener("hidden.bs.modal", this.handleTimelogBreakdownHidden);
+                this._timelogBreakdownModalBound = true;
+            }
+
+            return modal;
+        },
+        handleTimelogBreakdownHidden() {
+            this.activeTimelogBreakdown = null;
+        },
+        disposeTimelogBreakdownModal() {
+            const modalElement = this.$refs.timelogBreakdownModal;
+
+            if (!modalElement) {
+                return;
+            }
+
+            if (this._timelogBreakdownModalBound) {
+                modalElement.removeEventListener("hidden.bs.modal", this.handleTimelogBreakdownHidden);
+                this._timelogBreakdownModalBound = false;
+            }
+
+            Modal.getInstance(modalElement)?.dispose();
+        },
+        normalizeSelectedTimelogDate(dateValue) {
+            if (!dateValue || !dateValue.startsWith(`${this.selectedMonth}-`)) {
+                return "";
+            }
+
+            if (dateValue < this.timelogDayMin || dateValue > this.timelogDayMax) {
+                return "";
+            }
+
+            return dateValue;
+        },
+        resolveTimelogDateSelection(dateValue) {
+            const normalizedDate = this.normalizeSelectedTimelogDate(dateValue);
+
+            return normalizedDate || this.timelogDayMax;
+        },
+        async applyTimelogDateFilter() {
+            this.selectedTimelogDate = this.resolveTimelogDateSelection(this.selectedTimelogDate);
+            this.syncUrl();
+            this.reloadDataTable("timelogDaily");
+        },
+        async clearTimelogDateFilter() {
+            this.selectedTimelogDate = "";
+            this.syncUrl();
+            this.reloadDataTable("timelogDaily");
+        },
         reloadDataTable(key) {
-            const element = this.$refs[key];
+            const element = this.$refs[`${key}Table`] || this.$refs[key];
 
             if (!element || typeof window.$ === "undefined" || !window.$.fn?.DataTable || !window.$.fn.DataTable.isDataTable(element)) {
                 return;
@@ -924,6 +1195,13 @@ export default {
         setTimelogView(view) {
             this.timelogView = view;
             localStorage.setItem("chief-corner-timelog-view", view);
+            if (view === "day") {
+                this.selectedTimelogDate = this.resolveTimelogDateSelection(this.selectedTimelogDate);
+            }
+            this.syncUrl();
+            if (view === "day") {
+                this.reloadDataTable("timelogDaily");
+            }
             this.$nextTick(() => {
                 this.adjustVisibleTables();
             });
@@ -939,3 +1217,131 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.chief-breakdown-trigger {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.chief-kpi-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.chief-kpi-item + .chief-kpi-item {
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.chief-timelog-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.chief-timelog-detail-controls {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.chief-day-filter-card {
+    min-width: 260px;
+    max-width: 340px;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 1rem;
+    background: rgba(var(--bs-primary-rgb), 0.04);
+}
+
+.chief-day-filter-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+.chief-day-filter-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.chief-day-filter-input {
+    flex: 1 1 180px;
+    min-width: 0;
+}
+
+:deep(.chief-datatable-toolbar) {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+:deep(.chief-datatable-search) {
+    width: min(100%, 230px);
+}
+
+:deep(.chief-datatable-search label) {
+    display: block;
+    margin: 0;
+    width: 100%;
+    font-size: 0;
+}
+
+:deep(.chief-datatable-search input) {
+    width: 100% !important;
+    margin-left: 0 !important;
+}
+
+:deep(.chief-datatable-footer) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+@media (max-width: 991.98px) {
+    .chief-timelog-detail-controls {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .chief-timelog-detail-header,
+    .chief-timelog-detail-controls,
+    .chief-day-filter-inline {
+        align-items: stretch;
+    }
+
+    .chief-timelog-detail-controls,
+    .chief-day-filter-card {
+        width: 100%;
+        max-width: none;
+    }
+
+    :deep(.chief-datatable-toolbar),
+    :deep(.chief-datatable-footer) {
+        justify-content: stretch;
+    }
+
+    :deep(.chief-datatable-search) {
+        width: 100%;
+    }
+}
+</style>
