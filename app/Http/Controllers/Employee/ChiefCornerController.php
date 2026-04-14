@@ -305,6 +305,8 @@ class ChiefCornerController extends Controller
                     return (object) [
                         'employee_no' => $employee->employee_no,
                         'employee_name' => $employee->employee_name,
+                        'firstname' => $employee->firstname ?? null,
+                        'lastname' => $employee->lastname ?? null,
                         'division_name' => $employee->division_name,
                         'unit_name' => $employee->unit_name,
                         'position_name' => $employee->position_name,
@@ -336,6 +338,8 @@ class ChiefCornerController extends Controller
                     return (object) [
                         'employee_no' => $employee->employee_no,
                         'employee_name' => $employee->employee_name,
+                        'firstname' => $employee->firstname ?? null,
+                        'lastname' => $employee->lastname ?? null,
                         'division_name' => $employee->division_name,
                         'unit_name' => $employee->unit_name,
                         'position_name' => $employee->position_name,
@@ -481,6 +485,8 @@ class ChiefCornerController extends Controller
                 return (object) [
                     'employee_no' => $employee->employee_no,
                     'employee_name' => $employee->employee_name,
+                    'firstname' => $employee->firstname ?? null,
+                    'lastname' => $employee->lastname ?? null,
                     'division_name' => $employee->division_name,
                     'unit_name' => $employee->unit_name,
                     'position_name' => $employee->position_name,
@@ -528,7 +534,6 @@ class ChiefCornerController extends Controller
         $latestLeaveCredits = DB::table('leave_credits as lc1')
             ->selectRaw('MAX(lc1.id) as id')
             ->whereIn('lc1.employee_no', $employeeNos)
-            ->when($asOfDate, fn ($query) => $query->whereDate('lc1.as_of', '<=', $asOfDate->toDateString()))
             ->groupBy('lc1.employee_no', 'lc1.leave_id');
 
         $employeeNameSql = $this->employeeNameSql('ep');
@@ -559,13 +564,26 @@ class ChiefCornerController extends Controller
             return collect();
         }
 
-        return DB::table('leave_credits as lc')
+        $creditTypes = DB::table('leave_credits as lc')
             ->leftJoin('leaves as l', 'l.id', '=', 'lc.leave_id')
             ->whereIn('lc.employee_no', $employeeNos)
-            ->when($asOfDate, fn ($query) => $query->whereDate('lc.as_of', '<=', $asOfDate->toDateString()))
             ->select('lc.leave_id', 'l.name as leave_name')
             ->distinct()
             ->orderBy('l.name')
+            ->get();
+
+        if ($creditTypes->isNotEmpty()) {
+            return $creditTypes;
+        }
+
+        return DB::table('leaves')
+            ->when(
+                DB::getSchemaBuilder()->hasColumn('leaves', 'is_active'),
+                fn ($query) => $query->where('is_active', true)
+            )
+            ->select('id as leave_id', 'name as leave_name')
+            ->whereNotNull('name')
+            ->orderBy('name')
             ->get();
     }
 
@@ -578,7 +596,6 @@ class ChiefCornerController extends Controller
         $latestOffsetCredits = DB::table('offset_credits as oc1')
             ->selectRaw('MAX(oc1.id) as id')
             ->whereIn('oc1.employee_no', $employeeNos)
-            ->when($asOfDate, fn ($query) => $query->whereDate('oc1.as_of', '<=', $asOfDate->toDateString()))
             ->groupBy('oc1.employee_no');
 
         $employeeNameSql = $this->employeeNameSql('ep');
@@ -604,29 +621,23 @@ class ChiefCornerController extends Controller
 
     protected function cachedLeaveCredits(array $employeeNos, Carbon $monthDate, ?Carbon $selectedDate = null): Collection
     {
-        $asOfDate = $selectedDate?->copy() ?? $monthDate->copy()->endOfMonth();
-
         return Cache::remember(
             $this->chiefCacheKey('leave-credits', [
                 'employees' => md5(json_encode($employeeNos)),
-                'as_of' => $asOfDate->toDateString(),
             ]),
             now()->addMinutes(10),
-            fn () => $this->leaveCredits($employeeNos, $asOfDate)
+            fn () => $this->leaveCredits($employeeNos)
         );
     }
 
     protected function cachedOffsetCredits(array $employeeNos, Carbon $monthDate, ?Carbon $selectedDate = null): Collection
     {
-        $asOfDate = $selectedDate?->copy() ?? $monthDate->copy()->endOfMonth();
-
         return Cache::remember(
             $this->chiefCacheKey('offset-credits', [
                 'employees' => md5(json_encode($employeeNos)),
-                'as_of' => $asOfDate->toDateString(),
             ]),
             now()->addMinutes(10),
-            fn () => $this->offsetCredits($employeeNos, $asOfDate)
+            fn () => $this->offsetCredits($employeeNos)
         );
     }
 
@@ -738,7 +749,11 @@ class ChiefCornerController extends Controller
                             'date_order' => $date->timestamp,
                             'day_name' => $date->format('D'),
                             'employee' => $employee->employee_name ?: $employee->employee_no,
-                            'employee_order' => mb_strtolower($employee->employee_name ?: $employee->employee_no),
+                            'employee_order' => $this->employeeSortValue(
+                                $employee->lastname ?? null,
+                                $employee->firstname ?? null,
+                                $employee->employee_name ?: $employee->employee_no
+                            ),
                             'unit' => $employee->unit_name ?: '-',
                             'unit_order' => mb_strtolower($employee->unit_name ?: '-'),
                             'position' => $employee->position_name ?: 'No position',
@@ -754,7 +769,7 @@ class ChiefCornerController extends Controller
                             'overtime_order' => $overtimeMinutes,
                             'late_undertime' => $this->minutesToHoursLabel($lateUndertimeMinutes),
                             'late_undertime_order' => $lateUndertimeMinutes,
-                            'worked_hours' => $this->minutesToHoursLabel($workMinutes),
+                            'worked_hours' => $this->workedDurationLabel($workMinutes),
                             'worked_hours_order' => $workMinutes,
                             'remarks' => $remarks->isNotEmpty() ? $remarks->join(', ') : 'Logged',
                         ];
@@ -800,7 +815,11 @@ class ChiefCornerController extends Controller
 
             return [
                 'employee' => $row->employee_name ?: $row->employee_no,
-                'employee_order' => mb_strtolower($row->employee_name ?: $row->employee_no),
+                'employee_order' => $this->employeeSortValue(
+                    $row->lastname ?? null,
+                    $row->firstname ?? null,
+                    $row->employee_name ?: $row->employee_no
+                ),
                 'unit' => $row->unit_name ?: '-',
                 'position' => $row->position_name ?: 'No position',
                 'value' => $format === 'duration'
@@ -851,6 +870,27 @@ class ChiefCornerController extends Controller
             $remainingMinutes,
             $remainingMinutes === 1 ? 'min' : 'mins'
         );
+    }
+
+    protected function workedDurationLabel(int $minutes): string
+    {
+        $totalMinutes = max($minutes, 0);
+
+        if ($totalMinutes < 1440) {
+            return $this->minutesToHoursLabel($totalMinutes);
+        }
+
+        $days = intdiv($totalMinutes, 1440);
+        $remainingMinutes = $totalMinutes % 1440;
+        $parts = [
+            sprintf('%d %s', $days, $days === 1 ? 'day' : 'days'),
+        ];
+
+        if ($remainingMinutes > 0) {
+            $parts[] = $this->minutesToHoursLabel($remainingMinutes);
+        }
+
+        return implode(' ', $parts);
     }
 
     protected function timeOrderValue(?string $time): int
@@ -910,6 +950,11 @@ class ChiefCornerController extends Controller
     protected function timelogsDataTablePayload(array $scope, Carbon $monthDate, Request $request): array
     {
         $table = $request->string('table')->toString();
+
+        if ($monthDate->copy()->startOfMonth()->gt(now()->copy()->startOfMonth())) {
+            return $this->datatableCollectionResponse(collect(), $request);
+        }
+
         [$timelogSummaries, $timelogStats] = $this->cachedTimelogInsights($scope, $monthDate);
         $dailyRows = $table === 'timelogDaily'
             ? $this->cachedTimelogDailyRows($scope, $monthDate)
@@ -1074,11 +1119,15 @@ class ChiefCornerController extends Controller
     {
         return [
             'employee' => $summary->employee_name ?: $summary->employee_no,
-            'employee_order' => mb_strtolower($summary->employee_name ?: $summary->employee_no),
+            'employee_order' => $this->employeeSortValue(
+                $summary->lastname ?? null,
+                $summary->firstname ?? null,
+                $summary->employee_name ?: $summary->employee_no
+            ),
             'position' => $summary->position_name ?: 'No position',
             'unit' => $summary->unit_name ?: '-',
             'unit_order' => mb_strtolower($summary->unit_name ?: '-'),
-            'worked_hours' => $this->minutesToHoursLabel((int) ($summary->worked_minutes ?? 0)),
+            'worked_hours' => $this->workedDurationLabel((int) ($summary->worked_minutes ?? 0)),
             'worked_hours_order' => (int) ($summary->worked_minutes ?? 0),
             'late' => $this->minutesToHoursLabel((int) $summary->late_minutes),
             'late_order' => (int) $summary->late_minutes,
@@ -1099,20 +1148,25 @@ class ChiefCornerController extends Controller
 
     protected function leaveCreditColumns(array $employeeNos, Carbon $monthDate, ?Carbon $selectedDate = null): Collection
     {
-        $asOfDate = $selectedDate?->copy() ?? $monthDate->copy()->endOfMonth();
+        $fixedColumns = collect([
+            ['name' => 'Vacation Leave', 'key' => 'vacation_leave', 'label' => 'VACATION LEAVE (VL)'],
+            ['name' => 'Sick Leave', 'key' => 'sick_leave', 'label' => 'SICK LEAVE (SL)'],
+            ['name' => 'Wellness Leave', 'key' => 'wellness_leave', 'label' => 'WELLNESS LEAVE (WL)'],
+        ]);
 
-        return $this->leaveCreditTypes($employeeNos, $asOfDate)
-            ->map(function ($type) {
-                $leaveName = trim((string) ($type->leave_name ?? ''));
+        $leaveIdsByName = DB::table('leaves')
+            ->whereIn('name', $fixedColumns->pluck('name')->all())
+            ->pluck('id', 'name');
 
+        return $fixedColumns
+            ->map(function ($column) use ($leaveIdsByName) {
                 return [
-                    'leave_id' => (int) ($type->leave_id ?? 0),
-                    'leave_name' => $leaveName,
-                    'key' => $this->leaveCreditColumnKey($leaveName, (int) ($type->leave_id ?? 0)),
-                    'label' => $this->leaveCreditColumnLabel($leaveName),
+                    'leave_id' => (int) ($leaveIdsByName[$column['name']] ?? 0),
+                    'leave_name' => $column['name'],
+                    'key' => $column['key'],
+                    'label' => $column['label'],
                 ];
             })
-            ->filter(fn ($column) => $column['leave_id'] > 0 && $column['leave_name'] !== '')
             ->values();
     }
 
@@ -1121,25 +1175,47 @@ class ChiefCornerController extends Controller
         $leaveCreditColumns = $this->leaveCreditColumns($scope['employeeNos'], $monthDate, $selectedDate);
         $leaveCreditsByEmployee = $this->cachedLeaveCredits($scope['employeeNos'], $monthDate, $selectedDate)
             ->groupBy('employee_no')
-            ->map(fn ($credits) => $credits->keyBy('leave_id'));
+            ->map(function ($credits) {
+                return [
+                    'by_id' => $credits->keyBy('leave_id'),
+                    'by_name' => $credits->keyBy(fn ($credit) => Str::lower(trim((string) ($credit->leave_name ?? '')))),
+                ];
+            });
         $offsetCreditsByEmployee = $this->cachedOffsetCredits($scope['employeeNos'], $monthDate, $selectedDate)->keyBy('employee_no');
 
         return $scope['employees']
             ->map(function ($employee) use ($leaveCreditColumns, $leaveCreditsByEmployee, $offsetCreditsByEmployee) {
                 $employeeNo = (string) $employee->employee_no;
                 $employeeName = trim((string) ($employee->employee_name ?: $employeeNo));
-                $employeeCredits = $leaveCreditsByEmployee->get($employeeNo, collect());
+                $employeeCredits = $leaveCreditsByEmployee->get($employeeNo, [
+                    'by_id' => collect(),
+                    'by_name' => collect(),
+                ]);
                 $offsetCredit = $offsetCreditsByEmployee->get($employeeNo);
 
                 $row = [
                     'employee_no' => $employeeNo,
                     'employee_no_order' => $employeeNo,
                     'employee' => $employeeName,
+                    'employee_lastname_order' => mb_strtolower(trim((string) ($employee->lastname ?? ''))),
+                    'employee_firstname_order' => mb_strtolower(trim((string) ($employee->firstname ?? ''))),
                     'employee_order' => mb_strtolower($employeeName),
                 ];
 
                 foreach ($leaveCreditColumns as $column) {
-                    $balance = (float) data_get($employeeCredits->get($column['leave_id']), 'balance', 0);
+                    $credit = null;
+
+                    if (($column['leave_id'] ?? 0) > 0) {
+                        $credit = data_get($employeeCredits, 'by_id')->get($column['leave_id']);
+                    }
+
+                    if (!$credit) {
+                        $credit = data_get($employeeCredits, 'by_name')->get(
+                            Str::lower(trim((string) ($column['leave_name'] ?? '')))
+                        );
+                    }
+
+                    $balance = (float) data_get($credit, 'balance', 0);
 
                     $row[$column['key']] = $this->formatLeaveCreditBalance($balance);
                     $row[$column['key'] . '_order'] = $balance;
@@ -1151,7 +1227,11 @@ class ChiefCornerController extends Controller
 
                 return $row;
             })
-            ->sortBy('employee_no_order')
+            ->sortBy([
+                ['employee_lastname_order', 'asc'],
+                ['employee_firstname_order', 'asc'],
+                ['employee_no_order', 'asc'],
+            ])
             ->values();
     }
 
@@ -1251,6 +1331,19 @@ class ChiefCornerController extends Controller
         }
 
         return $lastname !== '' ? $lastname : ($firstname !== '' ? $firstname : trim((string) $fallback));
+    }
+
+    protected function employeeSortValue(?string $lastname, ?string $firstname, ?string $fallback = ''): string
+    {
+        $lastname = mb_strtolower(trim((string) $lastname));
+        $firstname = mb_strtolower(trim((string) $firstname));
+        $fallback = mb_strtolower(trim((string) $fallback));
+
+        if ($lastname !== '' || $firstname !== '') {
+            return trim($lastname . ' ' . $firstname);
+        }
+
+        return $fallback;
     }
 
     protected function timelogStatBreakdownPayload(object $row, string $field, string $format): array
