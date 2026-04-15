@@ -38,6 +38,26 @@
             </li>
         </ul>
 
+        <div class="chief-subtab-bar">
+            <div>
+                <div class="chief-section-eyebrow">Employee Type</div>
+                <div class="text-muted small">Separate division employees by employment category.</div>
+            </div>
+            <div class="chief-stat-switch" role="tablist" aria-label="Employee type tabs">
+                <button
+                    v-for="tab in employeeTypeTabs"
+                    :key="tab.key"
+                    type="button"
+                    class="chief-stat-switch-btn"
+                    :class="{ active: activeEmployeeType === tab.key }"
+                    :disabled="isAnyLoading"
+                    @click="setEmployeeTypeTab(tab.key)"
+                >
+                    {{ tab.label }}
+                </button>
+            </div>
+        </div>
+
         <div class="tab-content">
             <div v-show="activeTab === 'overview'" class="chief-tab-pane">
                 <div class="row g-4">
@@ -67,7 +87,7 @@
                                         <tr v-for="application in overview.applications" :key="application.application_no + application.submitted_order">
                                             <td :data-order="application.submitted_order">{{ application.submitted }}</td>
                                             <td>{{ application.type }}</td>
-                                            <td>{{ application.employee }}</td>
+                                            <td>{{ uppercaseName(application.employee) }}</td>
                                             <td>
                                                 <span class="badge" :class="'bg-' + application.status_class">
                                                     {{ application.status }}
@@ -102,7 +122,7 @@
                                     <div class="chief-kpi-label">Top Late</div>
                                     <div v-if="overview.highlight_cards.top_late.length" class="chief-kpi-list">
                                         <div v-for="(employee, index) in overview.highlight_cards.top_late" :key="`top-late-${employee.employee}-${index}`" class="chief-kpi-item">
-                                            <div class="fw-bold">{{ index + 1 }}. {{ employee.employee }}</div>
+                                            <div class="fw-bold">{{ index + 1 }}. {{ uppercaseName(employee.employee) }}</div>
                                             <div class="text-muted">{{ employee.value }}</div>
                                         </div>
                                     </div>
@@ -118,7 +138,7 @@
                                     <div class="chief-kpi-label">Top Ontime</div>
                                     <div v-if="overview.highlight_cards.top_ontime.length" class="chief-kpi-list">
                                         <div v-for="(employee, index) in overview.highlight_cards.top_ontime" :key="`top-ontime-${employee.employee}-${index}`" class="chief-kpi-item">
-                                            <div class="fw-bold">{{ index + 1 }}. {{ employee.employee }}</div>
+                                            <div class="fw-bold">{{ index + 1 }}. {{ uppercaseName(employee.employee) }}</div>
                                             <div class="text-muted">{{ employee.value }}</div>
                                         </div>
                                     </div>
@@ -413,7 +433,7 @@
                                     {{ activeTimelogBreakdown?.title || 'Timelog Breakdown' }}
                                 </h5>
                                 <p class="text-muted mb-0">
-                                    {{ activeTimelogBreakdown?.employee || '-' }} • {{ activeTimelogBreakdown?.value || '-' }}
+                                    {{ uppercaseName(activeTimelogBreakdown?.employee || '-') }} • {{ activeTimelogBreakdown?.value || '-' }}
                                 </p>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -487,9 +507,15 @@ export default {
                 { key: "so", label: "SO" },
                 { key: "lto", label: "LTO" },
             ],
+            employeeTypeTabs: [
+                { key: "all", label: "All" },
+                { key: "regular", label: "Regular" },
+                { key: "cos", label: "COS" },
+            ],
             activeTab: this.initialTab,
             timelogView: localStorage.getItem("chief-corner-timelog-view") || "month",
             activeTimelogStatTab: localStorage.getItem("chief-corner-timelog-stat-tab") || "lates",
+            activeEmployeeType: localStorage.getItem("chief-corner-employee-type") || "all",
             selectedMonth: this.selectedMonthProp,
             selectedTimelogDate: "",
             applicationType: localStorage.getItem("chief-corner-application-type") || "",
@@ -586,11 +612,18 @@ export default {
     mounted() {
         const url = new URL(window.location.href);
         const queryTab = url.searchParams.get("tab");
+        const queryEmployeeType = url.searchParams.get("employee_type");
         const queryDate = queryTab === "timelogs" ? url.searchParams.get("selected_date") : null;
         const savedTab = localStorage.getItem("chief-corner-active-tab");
 
         if (!queryTab && savedTab && this.tabs.some((tab) => tab.key === savedTab)) {
             this.activeTab = savedTab;
+        }
+
+        if (queryEmployeeType && this.employeeTypeTabs.some((tab) => tab.key === queryEmployeeType)) {
+            this.activeEmployeeType = queryEmployeeType;
+        } else if (!this.employeeTypeTabs.some((tab) => tab.key === this.activeEmployeeType)) {
+            this.activeEmployeeType = "all";
         }
 
         if (queryDate) {
@@ -612,6 +645,9 @@ export default {
     methods: {
         isLoading(tab) {
             return this.loading[tab];
+        },
+        uppercaseName(value) {
+            return String(value || "").toUpperCase();
         },
         tabEndpoint(tab) {
             return this.tabEndpointTemplate.replace("__TAB__", tab);
@@ -637,6 +673,8 @@ export default {
                 if (tab === "applications") {
                     params.application_type = this.applicationType;
                 }
+
+                params.employee_type = this.activeEmployeeType;
 
                 const response = await axios.get(this.tabEndpoint(tab), { params });
                 const data = response.data;
@@ -678,7 +716,6 @@ export default {
             localStorage.setItem("chief-corner-application-type", this.applicationType);
             this.loadedTabs.applications = false;
             await this.fetchTab("applications", true);
-            this.reloadTabTables("applications");
         },
         async refreshLoadedTabs() {
             this.loadedTabs = {
@@ -690,7 +727,6 @@ export default {
 
             await this.fetchTab(this.activeTab, true);
             await this.$nextTick();
-            this.reloadTabTables(this.activeTab);
             this.adjustVisibleTables();
         },
         async applyGlobalMonthFilter() {
@@ -711,6 +747,7 @@ export default {
             const url = new URL(window.location.href);
             url.searchParams.set("tab", this.activeTab);
             url.searchParams.set("month", this.selectedMonth);
+            url.searchParams.set("employee_type", this.activeEmployeeType);
             const selectedDate = this.selectedDateParam();
             if (this.activeTab === "timelogs" && selectedDate) {
                 url.searchParams.set("selected_date", selectedDate);
@@ -761,7 +798,12 @@ export default {
                     },
                     { data: "type" },
                     { data: "application_no" },
-                    { data: "employee" },
+                    {
+                        data: "employee",
+                        render: (data, type) => type === "display"
+                            ? this.uppercaseName(data)
+                            : data,
+                    },
                     { data: "subject" },
                     { data: "schedule" },
                     {
@@ -791,7 +833,7 @@ export default {
                         data: "employee",
                         name: "employee_order",
                         render: (data, type, row) => type === "display"
-                            ? `<div class="fw-bold">${data}</div><div class="small text-muted">${row.position}</div>`
+                            ? `<div class="fw-bold">${this.uppercaseName(data)}</div><div class="small text-muted">${this.uppercaseName(row.position)}</div>`
                             : row.employee_order || `${data} ${row.position}`,
                     },
                     {
@@ -832,7 +874,7 @@ export default {
                         data: "employee",
                         name: "employee_order",
                         render: (data, type, row) => type === "display"
-                            ? `<div class="fw-bold">${data}</div><div class="small text-muted">${row.position}</div>`
+                            ? `<div class="fw-bold">${this.uppercaseName(data)}</div><div class="small text-muted">${this.uppercaseName(row.position)}</div>`
                             : row.employee_order || `${data} ${row.position}`,
                     },
                     {
@@ -887,7 +929,7 @@ export default {
                         data: "employee",
                         name: "employee_order",
                         render: (data, type, row) => type === "display"
-                            ? `<div class="fw-bold">${data}</div><div class="small text-muted">${row.position}</div>`
+                            ? `<div class="fw-bold">${this.uppercaseName(data)}</div><div class="small text-muted">${this.uppercaseName(row.position)}</div>`
                             : `${data} ${row.position}`,
                     },
                     { data: "unit", name: "unit" },
@@ -928,7 +970,7 @@ export default {
                         name: "employee_order",
                         render: (data, type, row) => type === "sort" || type === "type"
                             ? row.employee_order
-                            : data,
+                            : this.uppercaseName(data),
                     },
                     ...this.leaveCreditColumns.map((column) => this.numericColumn(column.key, `${column.key}_order`)),
                     this.numericColumn("offset", "offset_order"),
@@ -980,6 +1022,7 @@ export default {
                     }
 
                     params.month = this.selectedMonth;
+                    params.employee_type = this.activeEmployeeType;
                     const selectedDate = this.selectedDateParam(tab, table);
                     if (selectedDate) {
                         params.selected_date = selectedDate;
@@ -1284,11 +1327,33 @@ export default {
                 this.adjustVisibleTables();
             });
         },
+        async setEmployeeTypeTab(tab) {
+            if (this.activeEmployeeType === tab) {
+                return;
+            }
+
+            this.activeEmployeeType = tab;
+            localStorage.setItem("chief-corner-employee-type", tab);
+            this.invalidateLoadedTabs();
+            this.syncUrl();
+            await this.fetchTab(this.activeTab, true);
+            await this.$nextTick();
+            this.adjustVisibleTables();
+        },
     },
 };
 </script>
 
 <style scoped>
+.chief-subtab-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 1rem 0 1.25rem;
+}
+
 .chief-breakdown-trigger {
     font-weight: 600;
     text-decoration: none;

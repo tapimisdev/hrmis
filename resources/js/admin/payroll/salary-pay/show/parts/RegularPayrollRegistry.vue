@@ -791,6 +791,7 @@ export default {
                         "Equivalent AUT changes have been applied.",
                 });
 
+                this.$emit("fetch_data");
                 await this.fetchAutDeductions();
             } catch (error) {
                 Swal.fire({
