@@ -50,7 +50,9 @@ class ChiefCornerController extends Controller
 
     public function tabData(Request $request, string $tab): JsonResponse
     {
-        $scope = $this->chiefScope();
+        $scope = $this->chiefScope(
+            $this->resolveEmploymentTypeFilter($request)
+        );
         $monthDate = $this->resolveMonthDate($request);
         $selectedDate = $this->resolveSelectedDate($request);
 
@@ -88,24 +90,44 @@ class ChiefCornerController extends Controller
         };
     }
 
-    protected function chiefScope(): array
+    protected function chiefScope(string $employmentType = 'all'): array
     {
         abort_unless(Auth::user()?->is_division_chief, 403);
 
-        $user = Auth::user();
-        $managedDivisions = $user->managedDivisions()
-            ->orderBy('name')
-            ->get(['id', 'code', 'name']);
+        $userId = (int) Auth::id();
 
-        $divisionIds = $managedDivisions->pluck('id')->all();
-        $employees = $this->divisionEmployees($divisionIds);
+        return Cache::remember(
+            $this->chiefCacheKey('scope', [
+                'user' => $userId,
+                'employment_type' => $employmentType,
+            ]),
+            now()->addMinutes(5),
+            function () use ($employmentType) {
+                $user = Auth::user();
+                $managedDivisions = $user->managedDivisions()
+                    ->orderBy('name')
+                    ->get(['id', 'code', 'name']);
 
-        return [
-            'managedDivisions' => $managedDivisions,
-            'employees' => $employees,
-            'employeeNos' => $employees->pluck('employee_no')->filter()->values()->all(),
-            'userIds' => $employees->pluck('user_id')->filter()->values()->all(),
-        ];
+                $divisionIds = $managedDivisions->pluck('id')->all();
+                $employees = $this->divisionEmployees($divisionIds, $employmentType);
+
+                return [
+                    'managedDivisions' => $managedDivisions,
+                    'employees' => $employees,
+                    'employeeNos' => $employees->pluck('employee_no')->filter()->values()->all(),
+                    'userIds' => $employees->pluck('user_id')->filter()->values()->all(),
+                ];
+            }
+        );
+    }
+
+    protected function resolveEmploymentTypeFilter(Request $request): string
+    {
+        $employmentType = Str::lower(trim($request->string('employee_type')->toString()));
+
+        return in_array($employmentType, ['all', 'regular', 'cos'], true)
+            ? $employmentType
+            : 'all';
     }
 
     protected function resolveMonthDate(Request $request): Carbon
@@ -129,14 +151,20 @@ class ChiefCornerController extends Controller
         return Carbon::createFromFormat('Y-m-d', $selectedDate)->startOfDay();
     }
 
-    protected function divisionEmployees(array $divisionIds): Collection
+    protected function divisionEmployees(array $divisionIds, string $employmentType = 'all'): Collection
     {
         if (empty($divisionIds)) {
             return collect();
         }
 
+        $employmentTypeId = match ($employmentType) {
+            'regular' => '1',
+            'cos' => '2',
+            default => null,
+        };
+
         return $this->employeeService
-            ->getEmployees('active', null, null, null)
+            ->getEmployees('active', null, null, $employmentTypeId)
             ->whereIn('division_id', $divisionIds)
             ->sortBy([
                 ['division_name', 'asc'],
