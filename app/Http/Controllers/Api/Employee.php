@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Feedback;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Yajra\DataTables\Facades\DataTables;
 use App\Services\EmployeeService;
 use App\Services\EventService;
@@ -660,5 +662,59 @@ class Employee extends Controller
     {
         $data = $this->EventService->saveReadNotification($request);
         return response()->json($data);
+    }
+
+    public function storeFeedback(Request $request)
+    {
+        $validated = $request->validate([
+            'category' => ['required', 'string', 'max:100'],
+            'subject' => ['required', 'string', 'max:255'],
+            'message' => ['required', 'string', 'max:3000'],
+            'is_anonymous' => ['nullable', 'boolean'],
+            'attachment' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'max:10240'],
+        ]);
+
+        $attachment = $request->file('attachment');
+        $attachmentPath = null;
+        $attachmentName = null;
+        $attachmentMime = null;
+        $attachmentSize = null;
+
+        if ($attachment) {
+            $attachmentPath = $attachment->store('feedbacks/' . Auth::id(), 'public');
+            $attachmentName = $attachment->getClientOriginalName();
+            $attachmentMime = $attachment->getClientMimeType();
+            $attachmentSize = $attachment->getSize();
+        }
+
+        $isAnonymous = (bool) ($validated['is_anonymous'] ?? false);
+
+        $feedback = Feedback::create([
+            'user_id' => Auth::id(),
+            'category' => $validated['category'],
+            'subject' => $validated['subject'],
+            'message' => $validated['message'],
+            'is_anonymous' => $isAnonymous,
+            'anonymous_nickname' => $isAnonymous ? $this->generateAnonymousNickname() : null,
+            'attachment_path' => $attachmentPath,
+            'attachment_name' => $attachmentName,
+            'attachment_mime' => $attachmentMime,
+            'attachment_size' => $attachmentSize,
+        ]);
+
+        return response()->json([
+            'message' => 'Feedback submitted successfully.',
+            'feedback' => $feedback,
+        ], 201);
+    }
+
+    protected function generateAnonymousNickname(): string
+    {
+        $adjectives = ['Quiet', 'Curious', 'Swift', 'Clever', 'Bright', 'Calm', 'Hidden', 'Silver', 'Golden', 'Gentle'];
+        $nouns = ['Comet', 'Falcon', 'Lantern', 'Wave', 'Orbit', 'Maple', 'Echo', 'River', 'Pixel', 'Harbor'];
+
+        return $adjectives[array_rand($adjectives)] . ' ' .
+            $nouns[array_rand($nouns)] . ' ' .
+            Str::upper(Str::random(3));
     }
 }
