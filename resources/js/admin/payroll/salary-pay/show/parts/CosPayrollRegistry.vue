@@ -63,7 +63,7 @@
             <th class="p-4">Name / Position</th>
             <th class="p-4">Monthly <br />Rate</th>
             <th class="p-4">Salary <br />Earned</th>
-            <th class="p-4 deduction">Absences / Lates / Undertime</th>
+            <th class="p-4 deduction">AUT <br />Deduction</th>
             <th class="p-4">Overtime</th>
             <th class="p-4">Holiday <br />Excess</th>
 
@@ -98,16 +98,120 @@
 
             <td class="text-center number-cell">{{ formatNumber(emp.monthly_rate) }}</td>
             <td class="text-center number-cell">{{ formatNumber(emp.salary_earned) }}</td>
-            <td class="text-center number-cell deduction">{{ formatNumber(emp.aut) }}</td>
+            <td class="text-center number-cell deduction breakdown-cell">
+              <div class="breakdown-total">{{ formatNumber(emp.aut) }}</div>
+              <div v-if="hasDeductionBreakdown(emp, 'aut')" class="deduction-breakdown">
+                <div
+                  v-for="(item, itemIndex) in deductionBreakdown(emp, 'aut')"
+                  :key="`${emp.employee_no}-aut-${itemIndex}`"
+                  class="deduction-breakdown-row"
+                >
+                  <div class="deduction-breakdown-main">
+                    <span class="deduction-breakdown-payroll">{{ deductionBreakdownLabel(item) }}</span>
+                    <span class="deduction-breakdown-amount">{{ formatNumber(item.amount) }}</span>
+                  </div>
+                  <div class="deduction-breakdown-source">
+                    <span v-if="item.period_covered" class="deduction-breakdown-period">
+                      {{ item.period_covered }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </td>
             <td class="text-center number-cell">{{ formatNumber(emp.overtime) }}</td>
             <td class="text-center number-cell">{{ formatNumber(emp.holiday) }}</td>
             <td class="text-center number-cell earning">{{ formatNumber(emp.total_salary) }}</td>
 
-            <td class="text-center number-cell deduction">{{ formatNumber(emp.ewt_2) }}</td>
-            <td class="text-center number-cell deduction">{{ formatNumber(emp.percentage_tax_3) }}</td>
-            <td class="text-center number-cell deduction">{{ formatNumber(emp.tax_ewt_5) }}</td>
-            <td class="text-center number-cell deduction">{{ formatNumber(emp.w_tax) }}</td>
-            <td class="text-center number-cell deduction">{{ formatNumber(emp.hmo) }}</td>
+            <td class="text-center number-cell deduction breakdown-cell">
+              <div class="breakdown-total">{{ formatNumber(emp.ewt_2) }}</div>
+              <div v-if="hasDeductionBreakdown(emp, 'ewt_2')" class="deduction-breakdown">
+                <div
+                  v-for="(item, itemIndex) in deductionBreakdown(emp, 'ewt_2')"
+                  :key="`${emp.employee_no}-ewt-2-${itemIndex}`"
+                  class="deduction-breakdown-row"
+                >
+                  <div class="deduction-breakdown-main">
+                    <span class="deduction-breakdown-payroll">{{ deductionBreakdownLabel(item) }}</span>
+                    <span class="deduction-breakdown-amount">{{ formatNumber(item.amount) }}</span>
+                  </div>
+                  <span v-if="item.period_covered" class="deduction-breakdown-period">
+                    {{ item.period_covered }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="text-center number-cell deduction breakdown-cell">
+              <div class="breakdown-total">{{ formatNumber(emp.percentage_tax_3) }}</div>
+              <div v-if="hasDeductionBreakdown(emp, 'percentage_tax_3')" class="deduction-breakdown">
+                <div
+                  v-for="(item, itemIndex) in deductionBreakdown(emp, 'percentage_tax_3')"
+                  :key="`${emp.employee_no}-percentage-tax-3-${itemIndex}`"
+                  class="deduction-breakdown-row"
+                >
+                  <div class="deduction-breakdown-main">
+                    <span class="deduction-breakdown-payroll">{{ deductionBreakdownLabel(item) }}</span>
+                    <span class="deduction-breakdown-amount">{{ formatNumber(item.amount) }}</span>
+                  </div>
+                  <span v-if="item.period_covered" class="deduction-breakdown-period">
+                    {{ item.period_covered }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="text-center number-cell deduction breakdown-cell">
+              <div class="breakdown-total">{{ formatNumber(emp.tax_ewt_5) }}</div>
+              <div v-if="hasDeductionBreakdown(emp, 'tax_ewt_5')" class="deduction-breakdown">
+                <div
+                  v-for="(item, itemIndex) in deductionBreakdown(emp, 'tax_ewt_5')"
+                  :key="`${emp.employee_no}-tax-ewt-5-${itemIndex}`"
+                  class="deduction-breakdown-row"
+                >
+                  <div class="deduction-breakdown-main">
+                    <span class="deduction-breakdown-payroll">{{ deductionBreakdownLabel(item) }}</span>
+                    <span class="deduction-breakdown-amount">{{ formatNumber(item.amount) }}</span>
+                  </div>
+                  <span v-if="item.period_covered" class="deduction-breakdown-period">
+                    {{ item.period_covered }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="text-center number-cell deduction breakdown-cell">
+              <div class="breakdown-total">{{ formatNumber(emp.w_tax) }}</div>
+              <div v-if="hasDeductionBreakdown(emp, 'w_tax')" class="deduction-breakdown">
+                <div
+                  v-for="(item, itemIndex) in deductionBreakdown(emp, 'w_tax')"
+                  :key="`${emp.employee_no}-w-tax-${itemIndex}`"
+                  class="deduction-breakdown-row"
+                >
+                  <div class="deduction-breakdown-main">
+                    <span class="deduction-breakdown-payroll">{{ deductionBreakdownLabel(item) }}</span>
+                    <span class="deduction-breakdown-amount">{{ formatNumber(item.amount) }}</span>
+                  </div>
+                  <span v-if="item.period_covered" class="deduction-breakdown-period">
+                    {{ item.period_covered }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="text-center number-cell deduction breakdown-cell">
+              <div class="breakdown-total">{{ formatNumber(emp.hmo) }}</div>
+              <div v-if="hasDeductionBreakdown(emp, 'hmo')" class="deduction-breakdown">
+                <div
+                  v-for="(item, itemIndex) in deductionBreakdown(emp, 'hmo')"
+                  :key="`${emp.employee_no}-hmo-${itemIndex}`"
+                  class="deduction-breakdown-row"
+                >
+                  <div class="deduction-breakdown-main">
+                    <span class="deduction-breakdown-payroll">{{ deductionBreakdownLabel(item) }}</span>
+                    <span class="deduction-breakdown-amount">{{ formatNumber(item.amount) }}</span>
+                  </div>
+                  <span v-if="item.period_covered" class="deduction-breakdown-period">
+                    {{ item.period_covered }}
+                  </span>
+                </div>
+              </div>
+            </td>
 
             <td class="text-center">
               <input type="number" v-model="emp.adjustment" @change="adjustRow(emp)"
@@ -277,6 +381,22 @@ export default {
         ? num.toLocaleString(undefined, { minimumFractionDigits: 2 })
         : "-";
     },
+    deductionBreakdown(emp, key) {
+      const breakdowns = emp.deduction_breakdowns || {};
+      const items = Array.isArray(breakdowns[key])
+        ? breakdowns[key]
+        : key === "aut" && Array.isArray(emp.aut_breakdown)
+          ? emp.aut_breakdown
+          : [];
+
+      return items.filter((item) => Number(item.amount) > 0);
+    },
+    hasDeductionBreakdown(emp, key) {
+      return this.deductionBreakdown(emp, key).length > 1;
+    },
+    deductionBreakdownLabel(item) {
+      return item.payroll_no || item.label || "Payroll";
+    },
     projectTotals(project, field, subfield = null) {
       let total = 0;
 
@@ -325,6 +445,59 @@ export default {
   max-width: 150px;
   overflow-wrap: anywhere;
   white-space: normal;
+}
+
+.breakdown-cell {
+  min-width: 175px;
+  vertical-align: top;
+}
+
+.breakdown-total {
+  font-weight: 700;
+}
+
+.deduction-breakdown {
+  margin-top: 8px;
+  font-size: 10.5px;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.deduction-breakdown-row {
+  padding: 5px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.deduction-breakdown-main {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.deduction-breakdown-source {
+  min-width: 0;
+}
+
+.deduction-breakdown-payroll {
+  color: #bfdbfe;
+  font-weight: 700;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.deduction-breakdown-period {
+  display: block;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 10px;
+  margin-top: 1px;
+}
+
+.deduction-breakdown-amount {
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .net-salary {

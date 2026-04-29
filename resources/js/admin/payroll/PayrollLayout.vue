@@ -28,7 +28,7 @@
       title="Others"
       :payrolls="inactivePayrolls"
       :url="url"
-      column-class="col-12 col-md-4"
+      column-class="col-12 col-md-6"
       :show-section="inactivePayrolls.length > 0"
       @change-status="handleChangeStatus"
       @cancel="confirmDelete"

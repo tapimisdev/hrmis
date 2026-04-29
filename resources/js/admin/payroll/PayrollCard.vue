@@ -13,14 +13,6 @@
             <span class="status-pill" :style="statusPill">
               {{ prettyStatus(payroll.status) }}
             </span>
-
-            <span
-              v-if="showAutIndicator"
-              class="status-pill aut-pill"
-              :style="autIndicatorPill"
-            >
-              {{ autIndicatorLabel }}
-            </span>
           </div>
 
           <div class="payroll-card__subtitle">
@@ -105,6 +97,18 @@
           {{ formatDateTime(payroll.created_at) }}
         </span>
       </div>
+
+      <div v-if="hasDeferredDeduction" class="deduction-schedule">
+        <div class="deduction-schedule__icon">
+          <i class="fa fa-receipt"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="deduction-schedule__label">Deduction scheduled</div>
+          <div class="deduction-schedule__value">
+            Apply on {{ deferredDeductionLabel }}
+          </div>
+        </div>
+      </div>
     </div>
   </article>
 </template>
@@ -112,39 +116,46 @@
 <script>
 const STATUS_META = {
   draft: {
-    color: "#f5c15d",
-    background: "rgba(245, 193, 93, 0.12)",
-    borderColor: "rgba(245, 193, 93, 0.4)",
+    color: "var(--bs-warning-text-emphasis)",
+    background: "var(--bs-warning-bg-subtle)",
+    borderColor: "var(--bs-warning-border-subtle)",
+    accent: "var(--bs-warning)",
   },
   pending: {
-    color: "#8cc9ff",
-    background: "rgba(140, 201, 255, 0.12)",
-    borderColor: "rgba(140, 201, 255, 0.38)",
+    color: "var(--bs-primary-text-emphasis)",
+    background: "var(--bs-primary-bg-subtle)",
+    borderColor: "var(--bs-primary-border-subtle)",
+    accent: "var(--bs-primary)",
   },
   approved: {
-    color: "#38d27d",
-    background: "rgba(56, 210, 125, 0.12)",
-    borderColor: "rgba(56, 210, 125, 0.42)",
+    color: "var(--bs-success-text-emphasis)",
+    background: "var(--bs-success-bg-subtle)",
+    borderColor: "var(--bs-success-border-subtle)",
+    accent: "var(--bs-success)",
   },
   for_releasing: {
-    color: "#d8b4fe",
-    background: "rgba(216, 180, 254, 0.12)",
-    borderColor: "rgba(216, 180, 254, 0.38)",
+    color: "var(--bs-info-text-emphasis)",
+    background: "var(--bs-info-bg-subtle)",
+    borderColor: "var(--bs-info-border-subtle)",
+    accent: "var(--bs-info)",
   },
   completed: {
-    color: "#5eead4",
-    background: "rgba(94, 234, 212, 0.12)",
-    borderColor: "rgba(94, 234, 212, 0.38)",
+    color: "var(--bs-success-text-emphasis)",
+    background: "var(--bs-success-bg-subtle)",
+    borderColor: "var(--bs-success-border-subtle)",
+    accent: "var(--bs-success)",
   },
   cancelled: {
-    color: "#fda4af",
-    background: "rgba(253, 164, 175, 0.12)",
-    borderColor: "rgba(253, 164, 175, 0.38)",
+    color: "var(--bs-danger-text-emphasis)",
+    background: "var(--bs-danger-bg-subtle)",
+    borderColor: "var(--bs-danger-border-subtle)",
+    accent: "var(--bs-danger)",
   },
   failed: {
-    color: "#cbd5e1",
-    background: "rgba(203, 213, 225, 0.12)",
-    borderColor: "rgba(203, 213, 225, 0.3)",
+    color: "var(--bs-secondary-text-emphasis)",
+    background: "var(--bs-secondary-bg-subtle)",
+    borderColor: "var(--bs-secondary-border-subtle)",
+    accent: "var(--bs-secondary)",
   },
 }
 
@@ -168,15 +179,16 @@ export default {
     statusMeta() {
       return (
         STATUS_META[this.statusKey] || {
-          color: "#cbd5e1",
-          background: "rgba(203, 213, 225, 0.12)",
-          borderColor: "rgba(203, 213, 225, 0.3)",
+          color: "var(--bs-secondary-text-emphasis)",
+          background: "var(--bs-secondary-bg-subtle)",
+          borderColor: "var(--bs-secondary-border-subtle)",
+          accent: "var(--bs-secondary)",
         }
       )
     },
 
     accent() {
-      return this.statusMeta.color
+      return this.statusMeta.accent
     },
 
     statusPill() {
@@ -187,30 +199,27 @@ export default {
       }
     },
 
-    showAutIndicator() {
+    isRegularSalaryPayroll() {
       return this.url === "salary-pay" && Number(this.payroll?.employment_type_id) === 1
     },
 
-    autIndicatorApplied() {
-      return Boolean(this.payroll?.is_aut_deducted)
+    hasDeferredDeduction() {
+      return (
+        this.url === "salary-pay" &&
+        Number(this.payroll?.employment_type_id) === 2 &&
+        [false, 0, "0"].includes(this.payroll?.apply_deduction) &&
+        Boolean(this.payroll?.deduction_deferred_date)
+      )
     },
 
-    autIndicatorLabel() {
-      return this.autIndicatorApplied ? "AUT Deducted" : "AUT Pending"
-    },
+    deferredDeductionLabel() {
+      const cutoff = this.formatCutoff(this.payroll?.deduction_deferred_cutoff)
+      const date = this.formatDate(this.payroll?.deduction_deferred_date)
 
-    autIndicatorPill() {
-      return this.autIndicatorApplied
-        ? {
-            color: "#166534",
-            background: "#dcfce7",
-            borderColor: "#bbf7d0",
-          }
-        : {
-            color: "#fde68a",
-            background: "rgba(253, 230, 138, 0.12)",
-            borderColor: "rgba(253, 230, 138, 0.38)",
-          }
+      if (cutoff === "-") return date
+      if (date === "-") return cutoff
+
+      return `${date} (${cutoff})`
     },
 
     payrollPeriod() {
@@ -219,6 +228,7 @@ export default {
 
       if (monthYear === "-" && cutoff === "-") return "-"
       if (monthYear === "-") return cutoff
+      if (this.isRegularSalaryPayroll) return monthYear
       if (cutoff === "-") return monthYear
 
       return `${monthYear} • ${cutoff}`
@@ -391,6 +401,20 @@ export default {
         hour12: true,
       })
     },
+
+    formatDate(value) {
+      if (!value) return "-"
+
+      const date = new Date(String(value).replace(" ", "T"))
+
+      if (isNaN(date.getTime())) return "-"
+
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    },
   },
 }
 </script>
@@ -399,13 +423,13 @@ export default {
 .payroll-card {
   display: flex;
   gap: 1rem;
-  padding: 1.15rem 1.2rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(100, 116, 139, 0.45);
-  background:
-    radial-gradient(circle at top right, rgba(52, 211, 153, 0.08), transparent 24%),
-    linear-gradient(180deg, rgba(31, 41, 55, 0.98), rgba(31, 41, 55, 0.98));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
+  box-shadow: 0 0.5rem 1.25rem rgba(var(--bs-body-color-rgb), 0.06);
 }
 
 .payroll-card--loading {
@@ -413,15 +437,16 @@ export default {
 }
 
 .payroll-card__accent {
-  width: 6px;
-  min-height: 104px;
+  width: 5px;
+  min-height: 96px;
   flex: 0 0 auto;
   border-radius: 999px;
   margin-top: 0.35rem;
-  box-shadow: 0 0 14px rgba(52, 211, 153, 0.18);
 }
 
 .payroll-card__content {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -434,14 +459,14 @@ export default {
 }
 
 .payroll-card__title {
-  color: #f8fafc;
+  color: var(--bs-body-color);
   font-size: 1.05rem;
   font-weight: 700;
 }
 
 .payroll-card__subtitle {
   margin-top: 0.55rem;
-  color: #cbd5e1;
+  color: var(--bs-secondary-color);
   font-size: 0.93rem;
 }
 
@@ -451,14 +476,15 @@ export default {
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #e2e8f0;
+  color: var(--bs-secondary-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .payroll-card__menu:hover:not(:disabled) {
-  background: rgba(148, 163, 184, 0.12);
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
 }
 
 .payroll-card__meta {
@@ -474,9 +500,9 @@ export default {
   min-height: 2rem;
   padding: 0.38rem 0.8rem;
   border-radius: 999px;
-  border: 1px solid rgba(100, 116, 139, 0.45);
-  background: rgba(51, 65, 85, 0.62);
-  color: #e2e8f0;
+  border: 1px solid var(--bs-border-color);
+  background: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
   font-size: 0.82rem;
   line-height: 1;
 }
@@ -494,8 +520,46 @@ export default {
   text-transform: capitalize;
 }
 
-.aut-pill {
+.deduction-schedule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  max-width: 28rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--bs-warning-border-subtle);
+  border-left: 4px solid var(--bs-warning);
+  border-radius: 0.55rem;
+  background: var(--bs-warning-bg-subtle);
+  color: var(--bs-body-color);
+}
+
+.deduction-schedule__icon {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(var(--bs-warning-rgb), 0.18);
+  color: var(--bs-warning-text-emphasis);
+}
+
+.deduction-schedule__label {
+  color: var(--bs-warning-text-emphasis);
+  font-size: 0.72rem;
   font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.deduction-schedule__value {
+  margin-top: 0.2rem;
+  color: var(--bs-body-color);
+  font-size: 0.86rem;
+  line-height: 1.25;
 }
 
 @media (max-width: 767.98px) {
@@ -513,6 +577,10 @@ export default {
 
   .payroll-card__accent {
     min-height: 86px;
+  }
+
+  .deduction-schedule {
+    max-width: none;
   }
 }
 </style>

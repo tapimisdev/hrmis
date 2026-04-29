@@ -15,7 +15,7 @@
             </div>
 
             <div class="row g-3" v-if="payrollList.length">
-                <div v-for="payroll in payrollList" :key="payroll.id" class="col-12 col-md-6">
+                <div v-for="payroll in payrollList" :key="payroll.id" class="col-12 col-md-6 d-flex">
                     <PayrollCard
                         :url="'government-bonuses'"
                         :payroll="payroll"

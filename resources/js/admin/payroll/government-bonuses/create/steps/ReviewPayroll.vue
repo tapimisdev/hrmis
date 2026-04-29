@@ -47,7 +47,7 @@
                             </span>
                         </div>
 
-                        <div v-if="modelValue.employees.eligible?.length" class="list-group list-group-flush">
+                        <div v-if="modelValue.employees.eligible?.length" class="list-group list-group-flush eligibility-list">
                             <div
                                 v-for="employee in modelValue.employees.eligible"
                                 :key="employee.employee_no"
@@ -116,7 +116,7 @@
                             </span>
                         </div>
 
-                        <div v-if="modelValue.employees.not_eligible?.length" class="list-group list-group-flush">
+                        <div v-if="modelValue.employees.not_eligible?.length" class="list-group list-group-flush eligibility-list">
                             <div
                                 v-for="employee in modelValue.employees.not_eligible"
                                 :key="employee.employee_no"
@@ -225,3 +225,16 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.eligibility-list {
+    max-height: 28rem;
+    overflow-y: auto;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+}
+
+.eligibility-list .list-group-item {
+    background: transparent;
+}
+</style>
