@@ -23,8 +23,9 @@
             </h5>
             <div class="filters d-md-flex align-items-center gap-3">
                 <button
+                    type="button"
                     class="btn btn-sm btn-link text-uppercase fw-medium"
-                    @click="openCorretionList"
+                    @click="openCorrectionList"
                 >
                     View Corrections for this month
                 </button>
@@ -489,12 +490,20 @@ export default {
                     });
                 });
         },
-        openCorretionList() {
+        openCorrectionList() {
+            const url = new URL(window.location.href);
+
+            url.searchParams.set("view-corrections", "true");
+            window.history.replaceState({}, document.title, url.toString());
+
             this.$refs.correctionListModal.open(
                 this.selectedMonth,
                 this.selectedYear,
                 this.searchable,
             );
+        },
+        openCorretionList() {
+            this.openCorrectionList();
         },
         clearSearchable() {
             this.searchable = "";
@@ -542,7 +551,7 @@ export default {
 
             this.searchable = referenceNo;
             if (shouldOpen) {
-                this.openCorretionList();
+                this.openCorrectionList();
             }
         });
     },

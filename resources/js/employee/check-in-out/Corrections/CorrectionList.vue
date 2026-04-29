@@ -1,7 +1,7 @@
 <template>
     <div
         class="modal fade"
-        id="correctionModal"
+        id="correctionListModal"
         tabindex="-1"
         aria-hidden="true"
         data-bs-backdrop="static"
@@ -31,7 +31,7 @@
                     <div v-if="loading" class="text-center py-4">
                         <i class="fas fa-spinner fa-spin fa-2x"></i>
                     </div>
-                    <div v-else>
+                    <div v-show="!loading">
                         <div class="table-responsive">
                             <table
                                 id="correctionRequestsTable"
@@ -92,7 +92,7 @@ export default {
             this.searchable = searchable;
             this.loading = true;
 
-            $("#correctionModal").modal("show");
+            $("#correctionListModal").modal("show");
 
             this.$nextTick(() => {
                 this.initDataTable();
@@ -101,12 +101,28 @@ export default {
 
         initDataTable() {
             const vm = this;
+            const $modal = $("#correctionListModal");
+            const $table = $("#correctionRequestsTable");
 
-            if ($.fn.DataTable.isDataTable("#correctionRequestsTable")) {
-                $("#correctionRequestsTable").DataTable().destroy();
+            if (!$table.length) {
+                this.loading = false;
+                return;
             }
 
-            this.dataTable = $("#correctionRequestsTable").DataTable({
+            if ($.fn.DataTable.isDataTable($table)) {
+                $table.DataTable().destroy();
+            }
+
+            $modal.off("shown.bs.modal.correctionList").on(
+                "shown.bs.modal.correctionList",
+                () => {
+                    if (this.dataTable) {
+                        this.dataTable.columns.adjust();
+                    }
+                },
+            );
+
+            this.dataTable = $table.DataTable({
                 processing: true,
                 serverSide: true,
                 order: [[0, "desc"]],
@@ -163,16 +179,17 @@ export default {
 
                 initComplete: () => {
                     this.loading = false;
+                    this.$nextTick(() => {
+                        if (this.dataTable) {
+                            this.dataTable.columns.adjust();
+                        }
+                    });
                 },
             });
 
             if (vm.searchable && vm.searchable.trim() !== "") {
                 this.dataTable.search(vm.searchable.trim()).draw();
             }
-
-            $("#correctionModal").on("shown.bs.modal", () => {
-                this.dataTable.columns.adjust();
-            });
         },
 
         closeModal() {
@@ -187,7 +204,9 @@ export default {
             url.searchParams.delete("reference-no");
 
             window.history.replaceState({}, document.title, url.toString());
-            $("#correctionModal").modal("hide");
+            $("#correctionListModal")
+                .off("shown.bs.modal.correctionList")
+                .modal("hide");
             this.$emit("clearSearchable");
         },
     },
