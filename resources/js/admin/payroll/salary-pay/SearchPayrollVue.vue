@@ -2,7 +2,7 @@
     <div class="position-relative">
         <div class="row mb-3">
             <div
-                v-for="(field, index) in selects"
+                v-for="(field, index) in visibleSelects"
                 :key="index"
                 class="col-12 col-md-2 mb-3"
             >
@@ -67,7 +67,7 @@ export default {
                 employment_type: 1,
                 year: new Date().getFullYear(),
                 month: new Date().getMonth() + 1,
-                cutoff: "first_cutoff",
+                cutoff: "all",
                 status: "draft",
             },
             selects: [
@@ -92,8 +92,8 @@ export default {
                 {
                     label: "Cutoff",
                     model: "cutoff",
-                    // placeholder: "-- CHOOSE STATUS --",
                     options: [
+                        { text: "All Cutoffs", value: "all" },
                         { text: "1st Cutoff", value: "first_cutoff" },
                         { text: "2nd Cutoff", value: "second_cutoff" },
                     ],
@@ -120,8 +120,10 @@ export default {
             this.loading = true;
             this.$emit("payroll-list", this.dataStorage, this.loading);
 
+            const payload = this.normalizedForm();
+
             axios
-                .post("/api/payroll/salary-pay/processed", this.form, {
+                .post("/api/payroll/salary-pay/processed", payload, {
                     headers: {
                         Accept: "application/json",
                         Authorization: `Bearer ${this.token}`,
@@ -147,28 +149,120 @@ export default {
                     this.$emit("payroll-list", [], false);
                 });
         },
+        normalizedForm() {
+            return {
+                ...this.form,
+                employment_type: this.toNumberOrValue(this.form.employment_type),
+                year: this.toNumberOrValue(this.form.year),
+                month: this.toNumberOrValue(this.form.month),
+                cutoff: this.apiCutoffValue(this.form.cutoff),
+            };
+        },
+        toNumberOrValue(value) {
+            if (value === "" || value === null || value === undefined) {
+                return value;
+            }
+
+            const number = Number(value);
+            return Number.isNaN(number) ? value : number;
+        },
+        normalizedCutoff(value) {
+            if (value === "" || value === null || value === undefined) {
+                return "";
+            }
+
+            const normalized = String(value);
+            const aliases = {
+                0: "all",
+                all: "all",
+                1: "second_cutoff",
+                first: "first_cutoff",
+                second: "second_cutoff",
+            };
+
+            return aliases[normalized] ?? normalized;
+        },
+        apiCutoffValue(value) {
+            const cutoff = this.normalizedCutoff(value);
+            return cutoff === "all" ? "" : cutoff;
+        },
+        applyQueryFilters() {
+            const params = new URLSearchParams(window.location.search);
+
+            for (const [key, value] of params.entries()) {
+                if (!Object.prototype.hasOwnProperty.call(this.form, key)) {
+                    continue;
+                }
+
+                if (key === "cutoff") {
+                    this.form[key] = this.normalizedCutoff(value);
+                    continue;
+                }
+
+                this.form[key] = ["employment_type", "year", "month"].includes(key)
+                    ? this.toNumberOrValue(value)
+                    : value;
+            }
+
+            if (this.isRegular) {
+                this.form.cutoff = "";
+            } else if (!this.form.cutoff) {
+                this.form.cutoff = "all";
+            }
+        },
+        syncQueryString() {
+            const params = new URLSearchParams();
+            const form = {
+                ...this.normalizedForm(),
+                cutoff: this.normalizedCutoff(this.form.cutoff),
+            };
+
+            Object.entries(form).forEach(([key, value]) => {
+                if (value === "" || value === null || value === undefined) {
+                    return;
+                }
+
+                params.set(key, value);
+            });
+
+            const query = params.toString();
+            const newUrl = query
+                ? `${window.location.pathname}?${query}`
+                : window.location.pathname;
+
+            window.history.replaceState({}, "", newUrl);
+        },
+    },
+    computed: {
+        isRegular() {
+            return String(this.form.employment_type) === "1";
+        },
+        visibleSelects() {
+            return this.selects.filter((field) => {
+                return field.model !== "cutoff" || !this.isRegular;
+            });
+        },
     },
 
     watch: {
+        "form.employment_type"() {
+            if (this.isRegular) {
+                this.form.cutoff = "";
+            } else if (!this.form.cutoff) {
+                this.form.cutoff = "all";
+            }
+        },
         form: {
             deep: true,
-            handler(newVal) {
-                const params = new URLSearchParams(newVal).toString();
-                const newUrl = `${window.location.pathname}?${params}`;
-                window.history.replaceState({}, "", newUrl);
+            handler() {
+                this.syncQueryString();
             },
         },
     },
 
     mounted() {
-        const params = new URLSearchParams(window.location.search);
-        for (const [key, value] of params.entries()) {
-            if (this.form.hasOwnProperty(key)) {
-                // Convert to number for year/month if needed
-                this.form[key] = isNaN(value) ? value : Number(value);
-            }
-        }
-
+        this.applyQueryFilters();
+        this.syncQueryString();
         this.search();
     },
 };

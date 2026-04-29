@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Payroll\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\LongevityPay\CreateRequest;
+use App\Services\Exports\LongevityRegistryService;
 use App\Services\LongevityPay\PayrollService;
 use App\Services\LongevityPay\GetEmployeeService;
 use Illuminate\Http\Request;
@@ -60,5 +61,10 @@ class LongevityApiController extends Controller
         $employee_salary->getAndMapEmployeeSalary();
         $employees = $employee_salary->employees;
         return response()->json($employees);
+    }
+
+    public function downloadPayrollRegistry($payroll_no)
+    {
+        return app(LongevityRegistryService::class)->download($payroll_no);
     }
 }

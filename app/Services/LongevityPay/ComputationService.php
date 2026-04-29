@@ -30,7 +30,8 @@ class ComputationService
         $this->getEmployeeInformation();
 
         $longevityAmount = $this->getLongevityAmount();
-        $total = $longevityAmount;
+        $withholdingTax = $this->getLongevityTax();
+        $total = $longevityAmount - $withholdingTax;
         $netPay = $total;
 
         DB::table('payroll_longevity_pay_employee')->insert([
@@ -39,6 +40,7 @@ class ComputationService
             'name' => $this->name,
             'position' => $this->position,
             'longevity_amount' => $longevityAmount,
+            'w_tax' => $withholdingTax,
             'total' => $total,
             'adjustments' => 0,
             'net_pay' => $netPay,
@@ -47,6 +49,7 @@ class ComputationService
 
         return [
             'longevity_amount' => $longevityAmount,
+            'w_tax' => $withholdingTax,
             'net_pay' => $netPay,
         ];
     }
@@ -73,7 +76,7 @@ class ComputationService
             ->value('table_id');
 
         if (!$componentTableId) {
-            throw new \Exception('Longevity payroll component setting is not configured.');
+            return 0;
         }
 
         $componentYearId = DB::table('payroll_components_years')
@@ -82,7 +85,7 @@ class ComputationService
             ->value('id');
 
         if (!$componentYearId) {
-            throw new \Exception("Longevity payroll component year is not configured for {$year}.");
+            return 0;
         }
 
         $amount = DB::table('employee_payroll_components')
@@ -91,11 +94,46 @@ class ComputationService
             ->where('month', (int) $month)
             ->value('amount');
 
-        if (is_null($amount)) {
-            throw new \Exception("Longevity amount not found for employee {$this->employee_no}.");
+        return (float) ($amount ?? 0);
+    }
+
+    private function getLongevityTax(): float
+    {
+        [$year, $month] = explode('-', $this->payroll_date);
+
+        $componentYearId = $this->getComponentYearId('tax_id', 'longetivity-tax', (int) $year);
+
+        if (!$componentYearId) {
+            return 0;
         }
 
-        return (float) $amount;
+        return (float) (DB::table('employee_payroll_components')
+            ->where('tax_deduction_id', $componentYearId)
+            ->where('employee_no', $this->employee_no)
+            ->where('month', (int) $month)
+            ->value('amount') ?? 0);
+    }
+
+    private function getComponentYearId(string $settingsColumn, string $fallbackSlug, int $year): ?int
+    {
+        $componentId = DB::table('payroll_components_settings')
+            ->where('type', TableSettingsEnum::LONGETIVITY->value)
+            ->value($settingsColumn);
+
+        if (!$componentId) {
+            $componentId = DB::table('payroll_components')
+                ->where('slug', $fallbackSlug)
+                ->value('id');
+        }
+
+        if (!$componentId) {
+            return null;
+        }
+
+        return DB::table('payroll_components_years')
+            ->where('payroll_component_id', $componentId)
+            ->where('year', $year)
+            ->value('id');
     }
 
     private function getEmployeeInformation()

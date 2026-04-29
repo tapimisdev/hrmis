@@ -111,8 +111,8 @@ class SalaryService extends BaseImportService
             'HMO c/o TAPIEA' => ['HMO c/o TAPIEA', 'HMO C/O TAPIEA', 'HMO'],
             'Total Deductions' => ['Total Deductions'],
             'Net Pay' => ['Net Pay', 'Net Salary'],
-            'Net Salary 15th' => ['Net Salary 15th', 'Net Salary'],
-            'Net Salary 31st' => ['Net Salary 31st', 'Net Salary'],
+            'Net Salary 15th' => ['Net Salary 15th', '15th Cutoff', '15th'],
+            'Net Salary 30th' => ['Net Salary 30th', 'Net Salary 31st', '30th Cutoff', '31st Cutoff', '30th', '31st'],
         ], [], [
             'Salary Grade',
             'GSIS Conso Loan',
@@ -122,6 +122,7 @@ class SalaryService extends BaseImportService
             'Computer Loan',
             'OPTICAL c/o TAPIEA',
             'HMO c/o TAPIEA',
+            'Net Pay',
         ]);
 
         $cleaned = array_filter($parsed['rows'], function ($row) {
@@ -241,7 +242,7 @@ class SalaryService extends BaseImportService
         $label = $data['label'];
         $payrollNo = generateNo('SL-', 4);
         $employmentTypeId = $data['employment_type'];
-        $cutoff = $data['cutoff'];
+        $cutoff = $data['cutoff'] ?? 'second_cutoff';
         $periodCovered = $data['period_covered'];
         $payrollDate = $data['date'];
         $noEmployee = count($data['data']);
@@ -254,7 +255,7 @@ class SalaryService extends BaseImportService
 
         foreach ($rows as $employee) {
             $rowTotalDeductions = $this->toAmount($employee['Total Deductions'] ?? 0);
-            $rowNetPay = $this->amountFromKeys($employee, ['Net Pay', 'Net Salary']);
+            $rowNetPay = $this->regularNetPayFromRow($employee);
             $grossAmount += $rowNetPay + $rowTotalDeductions;
             $deductionAmount += $rowTotalDeductions;
             $netPayAmount += $rowNetPay;
@@ -294,7 +295,7 @@ class SalaryService extends BaseImportService
 
                 $rowDeductions = $this->extractRegularDeductions($employee, $moduleTabs);
                 $totalDeductions = $this->toAmount($employee['Total Deductions'] ?? 0);
-                $netPay = $this->amountFromKeys($employee, ['Net Pay', 'Net Salary']);
+                $netPay = $this->regularNetPayFromRow($employee);
 
                 $pspeId = DB::table('payroll_salary_permanent_employees')->insertGetId([
                     'payroll_salary_id' => $payrollId,
@@ -379,7 +380,20 @@ class SalaryService extends BaseImportService
 
     private function getRegularStaticHeaders(): array
     {
-        return ['No.', 'Employee No', 'Employee', 'Position', 'Salary Grade', 'Rate/Month', 'Total Deductions', 'Net Pay', 'Net Salary', 'Net Salary 15th', 'Net Salary 31st'];
+        return ['No.', 'Employee No', 'Employee', 'Position', 'Salary Grade', 'Rate/Month', 'Total Deductions', 'Net Pay', 'Net Salary', 'Net Salary 15th', 'Net Salary 30th', 'Net Salary 31st'];
+    }
+
+    private function regularNetPayFromRow(array $employee): float
+    {
+        $netPay = $this->amountFromKeys($employee, ['Net Pay', 'Net Salary']);
+
+        if ($netPay > 0) {
+            return $netPay;
+        }
+
+        return $this->toAmount($employee['Net Salary 15th'] ?? 0)
+            + $this->toAmount($employee['Net Salary 30th'] ?? 0)
+            + $this->toAmount($employee['Net Salary 31st'] ?? 0);
     }
 
     private function getRegularDirectHeaderDeductions(): array
