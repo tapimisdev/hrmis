@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin\Payroll\Import;
 
 use App\Http\Controllers\Controller;
+use App\Enums\EmploymentTypesEnum;
 use App\Services\Import\SalaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use RuntimeException;
+use Illuminate\Validation\Rule;
 
 class SalaryRegistryController extends Controller
 {
@@ -78,15 +80,19 @@ class SalaryRegistryController extends Controller
             throw $exception;
         }
 
-        $period_covered = Carbon::parse($request->date)->format('F Y') . ' ' .
-            ($request->cut_off_period === 'first_cutoff'
-                ? '1-15'
-                : '16-' . Carbon::parse($request->date)->endOfMonth()->format('d')
-            );
+        $isRegular = (string) $employment_type === EmploymentTypesEnum::REGULAR->value;
+        $payrollDate = Carbon::parse($request->date);
+        $period_covered = $isRegular
+            ? $payrollDate->format('F Y')
+            : $payrollDate->format('F Y') . ' ' .
+                ($request->cut_off_period === 'first_cutoff'
+                    ? '1-15'
+                    : '16-' . $payrollDate->copy()->endOfMonth()->format('d')
+                );
 
         $parsedData = [
             'label' => $request->label,
-            'cutoff' => $request->cut_off_period,
+            'cutoff' => $isRegular ? 'second_cutoff' : $request->cut_off_period,
             'period_covered' => $period_covered,
             'type' => 'Salary Payroll',
             'employment_type' => $employment_type,
@@ -110,7 +116,11 @@ class SalaryRegistryController extends Controller
             'file' => 'required|file|mimes:xls,xlsx',
             'label' => 'required|string',
             'date' => 'required|date',
-            'cut_off_period' => 'required|in:first_cutoff,second_cutoff',
+            'cut_off_period' => [
+                'nullable',
+                Rule::requiredIf(fn () => (string) request('employment_type') !== EmploymentTypesEnum::REGULAR->value),
+                'in:first_cutoff,second_cutoff',
+            ],
         ];
     }
 

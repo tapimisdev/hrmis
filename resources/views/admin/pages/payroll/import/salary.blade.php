@@ -47,7 +47,7 @@
                                 <input type="date" name="date" id="date" class="form-control">
                                 <div class="error-field"></div>
                             </div>
-                            <div class="col-12 col-md-4 mb-3">
+                            <div class="col-12 col-md-4 mb-3" id="cutoff-period-field">
                                 <label for="cut_off_period" class="mb-2">Cutoff Period <span class="text-danger">*</span></label>
                                 <select name="cut_off_period" id="cut_off_period" class="form-select">
                                     <option value=""> - CHOOSE - </option>
@@ -188,6 +188,20 @@ $(function() {
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     const $form = $('#form');
     let parsedData = null;
+
+    function selectedEmploymentTypeIsRegular() {
+        return String($('#employment_type').val()) === '1';
+    }
+
+    function syncCutoffField() {
+        const isRegular = selectedEmploymentTypeIsRegular();
+        $('#cutoff-period-field').toggle(!isRegular);
+        $('#cut_off_period')
+            .prop('required', !isRegular)
+            .val(isRegular ? '' : $('#cut_off_period').val());
+    }
+
+    syncCutoffField();
 
     /*
     |--------------------------------------------------------------------------
@@ -639,6 +653,10 @@ $(function() {
 
     $(document).on('click', '#preview-search-clear', function() {
         $('#preview-search-input').val('').trigger('input').trigger('focus');
+    });
+
+    $(document).on('change', '#employment_type', function() {
+        syncCutoffField();
     });
 
     $(document).on('click', '.preview-issue-link', function() {

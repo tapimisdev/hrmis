@@ -180,17 +180,18 @@ export default {
       const month = date.getMonth() + 1;
       const year = date.getFullYear();
       const days = new Date(year, month, 0).getDate();
+      const isRegular = String(this.modelValue.employment_type_id) === "1";
       const isFirst = this.modelValue.cutoff === "first_cutoff";
 
       const monthStr = month.toString().padStart(2, "0");
-      const startDay = isFirst ? "01" : "16";
-      const endDay = isFirst ? "15" : days.toString().padStart(2, "0");
+      const startDay = isRegular || isFirst ? "01" : "16";
+      const endDay = isRegular || !isFirst ? days.toString().padStart(2, "0") : "15";
 
       const cutoff = {
-        label: isFirst ? "First Cutoff (1–15)" : `Second Cutoff (16–${days})`,
+        label: isRegular ? "Monthly" : (isFirst ? "First Cutoff (1-15)" : `Second Cutoff (16-${days})`),
         start: `${year}-${monthStr}-${startDay}`,
         end: `${year}-${monthStr}-${endDay}`,
-        color: isFirst ? "#d1e7dd" : "#f8d7da",
+        color: isRegular ? "#dbeafe" : (isFirst ? "#d1e7dd" : "#f8d7da"),
       };
 
       this.start_date = cutoff.start;

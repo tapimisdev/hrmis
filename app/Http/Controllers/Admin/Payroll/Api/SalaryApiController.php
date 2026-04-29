@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Payroll\Api;
 
+use App\Enums\PayrollStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SalaryPay\CreateRequest;
 use App\Services\Exports\AUTService;
@@ -34,6 +35,7 @@ class SalaryApiController extends Controller
             'year' => 'required|integer|min:2000|max:' . date('Y'),
             'month' => 'required|integer|min:1|max:12',
             'cutoff' => 'nullable|string|max:50',
+            'status' => 'nullable|string|max:50',
         ]);
 
         $list = $this->salary_payroll_service->getPayrolls($validated);
@@ -46,7 +48,21 @@ class SalaryApiController extends Controller
         $validatedData = $request->validated();
         $employees = $this->salary_payroll_service->getEligibleEmployees($validatedData);
 
-        return response(['data' => $employees, 'success'], 200);
+        return response([
+            'data' => $employees,
+            'deduction_schedule' => $this->salary_payroll_service->getCosDeductionSchedulePreview($validatedData),
+            'success',
+        ], 200);
+    }
+
+    public function deductionOptions(Request $request)
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date'],
+            'cutoff' => ['required', 'string', 'in:first_cutoff,second_cutoff'],
+        ]);
+
+        return response()->json($this->salary_payroll_service->getCosDeductionOptions($validated));
     }
 
     public function getAdjustments(Request $request)
@@ -88,6 +104,7 @@ class SalaryApiController extends Controller
     public function previewAutDeductions(string $payroll_id)
     {
         $payroll = $this->autDeductionService->getRegularPayroll($payroll_id);
+        $this->ensureAutDeductionCanBeProcessed($payroll);
         $range = $this->autDeductionService->getPayrollRangeMeta($payroll);
 
         return response()->json([
@@ -109,6 +126,7 @@ class SalaryApiController extends Controller
     public function applyAutDeductions(string $payroll_id)
     {
         $payroll = $this->autDeductionService->getRegularPayroll($payroll_id);
+        $this->ensureAutDeductionCanBeProcessed($payroll);
         $validated = request()->validate([
             'rows' => 'nullable|array',
             'rows.*.pspe_id' => 'required_with:rows|integer',
@@ -125,6 +143,13 @@ class SalaryApiController extends Controller
             'message' => 'AUT changes applied successfully.',
             'saved_count' => $savedCount,
         ]);
+    }
+
+    private function ensureAutDeductionCanBeProcessed(object $payroll): void
+    {
+        if (($payroll->status ?? null) !== PayrollStatusEnum::Approved->value) {
+            abort(422, 'AUT deductions can only be processed when payroll is approved.');
+        }
     }
 
     private function getEmployeePayslip($payroll_id)

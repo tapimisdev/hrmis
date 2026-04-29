@@ -174,6 +174,8 @@ class RegistryService
                     $col++;
                 }
 
+                $this->addCosDeductionBreakdownComments($sheet, $currentRow, $employee);
+
                 // Apply fill styles
                 $applyStyle("A{$currentRow}:D{$currentRow}", ['fill' => $fill['white']]);
                 $applyStyle("E{$currentRow}", ['fill' => $fill['deduction']]);
@@ -265,6 +267,42 @@ class RegistryService
             ->deleteFileAfterSend(true);
     }
 
+    private function addCosDeductionBreakdownComments($sheet, int $row, array $employee): void
+    {
+        $columns = [
+            'E' => ['key' => 'aut', 'label' => 'AUT Deduction'],
+            'I' => ['key' => 'ewt_2', 'label' => 'EWT 2%'],
+            'J' => ['key' => 'percentage_tax_3', 'label' => 'Percentage Tax 3%'],
+            'K' => ['key' => 'tax_ewt_5', 'label' => 'Tax EWT 5%'],
+            'L' => ['key' => 'w_tax', 'label' => 'Overall Tax'],
+            'M' => ['key' => 'hmo', 'label' => 'HMO'],
+        ];
+
+        foreach ($columns as $column => $meta) {
+            $items = $employee['deduction_breakdowns'][$meta['key']] ?? [];
+
+            if (empty($items)) {
+                continue;
+            }
+
+            $lines = [$meta['label'] . ' breakdown'];
+
+            foreach ($items as $item) {
+                $source = trim(implode(' ', array_filter([
+                    $item['label'] ?? null,
+                    $item['payroll_no'] ?? null,
+                    $item['period_covered'] ?? null,
+                ])));
+                $amount = number_format((float) ($item['amount'] ?? 0), 2);
+                $lines[] = ($source ?: 'Payroll') . ': ' . $amount;
+            }
+
+            $comment = $sheet->getComment("{$column}{$row}");
+            $comment->setAuthor('DOST Payroll');
+            $comment->getText()->createTextRun(implode("\n", $lines));
+        }
+    }
+
 
     /* --------------------------
         REGULAR REGISTRY
@@ -282,6 +320,9 @@ class RegistryService
         // Update header
         $sheet->setCellValue('A3', $this->payroll->period_covered);
         $sheet->setCellValue('A2', 'GENERAL PAYROLL FOR SALARY');
+        $sheet->setCellValue('Q6', 'NET SALARY 15TH');
+        $sheet->setCellValue('R6', 'NET SALARY 30TH');
+        $sheet->setCellValue('S6', 'NET SALARY');
 
         $row = 7;
         $counter = 1;
@@ -296,13 +337,16 @@ class RegistryService
 
             $totalDeductions = $deductions->sum();
 
-            $netBasicSalary = (float) $employee['monthly_rate'] - (float) $employee['absences'];
+            $netBasicSalary = (float) $employee['monthly_rate'];
+            $netPay = (float) ($employee['net_pay'] ?? $employee['net_salary'] ?? 0);
+            [$netSalary15th, $netSalary30th] = $this->splitRegularNetPay($netPay);
 
             // Basic info
             $sheet->setCellValue("A{$row}", $counter++);
             $sheet->setCellValue("B{$row}", $employee['name']);
             $sheet->setCellValue("C{$row}", ucwords($employee['position']));
             $sheet->setCellValue("D{$row}", $employee['monthly_rate']);
+            $sheet->setCellValue("E{$row}", $employee['salary_grade'] ?? '');
             $sheet->setCellValue("F{$row}", $netBasicSalary);
 
             // Mandatory deductions
@@ -320,7 +364,9 @@ class RegistryService
 
             // Totals
             $sheet->setCellValue("P{$row}", $totalDeductions);
-            $sheet->setCellValue("Q{$row}", $employee['net_salary'] ?? 0);
+            $sheet->setCellValue("Q{$row}", $employee['net_salary_15th'] ?? $netSalary15th);
+            $sheet->setCellValue("R{$row}", $employee['net_salary_30th'] ?? $netSalary30th);
+            $sheet->setCellValue("S{$row}", $netPay);
 
             $row++;
         }
@@ -341,5 +387,13 @@ class RegistryService
         (new Xlsx($spreadsheet))->save($savePath);
 
         return Response::download($savePath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    private function splitRegularNetPay(float $netPay): array
+    {
+        $firstCutoff = round($netPay / 2, 2);
+        $secondCutoff = round($netPay - $firstCutoff, 2);
+
+        return [$firstCutoff, $secondCutoff];
     }
 }

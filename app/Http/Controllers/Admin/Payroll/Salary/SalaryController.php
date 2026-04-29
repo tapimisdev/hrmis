@@ -131,7 +131,7 @@ class SalaryController extends Controller
                 ->where('payroll_salary_id', $id)
                 ->delete();
 
-            if ($isCos) {
+            if (!$isCos) {
                 $permanentEmployeeIds = DB::table('payroll_salary_permanent_employees')
                     ->where('payroll_salary_id', $id)
                     ->pluck('id');

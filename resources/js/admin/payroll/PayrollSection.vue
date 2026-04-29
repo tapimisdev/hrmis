@@ -6,7 +6,7 @@
 
     <div class="row g-3">
       <template v-if="payrolls.length">
-        <div v-for="item in payrolls" :key="item.id" :class="columnClass">
+        <div v-for="item in payrolls" :key="item.id" :class="[columnClass, 'd-flex']">
           <slot name="card" :payroll="item" :url="url">
             <PayrollCard
               :url="url"

@@ -472,8 +472,6 @@ class AutDeductionService
         if (!$existingAutRemark) {
             $updates['ut'] = 0;
             $updates['absences'] = 0;
-            $updates['total_deductions'] = round((float) $employee->total_deductions - (float) $row['aut'], 2);
-            $updates['net_pay'] = round((float) $employee->net_pay + (float) $row['aut'], 2);
         }
 
         DB::table('payroll_salary_permanent_employees')
@@ -537,6 +535,13 @@ class AutDeductionService
     private function resolvePayrollRange(object $payroll): array
     {
         $payrollDate = Carbon::parse($payroll->payroll_date);
+
+        if ((int) $payroll->employment_type_id === (int) EmploymentTypesEnum::REGULAR->value) {
+            return [
+                $payrollDate->copy()->startOfMonth()->format('Y-m-d'),
+                $payrollDate->copy()->endOfMonth()->format('Y-m-d'),
+            ];
+        }
 
         if (($payroll->cutoff ?? null) === 'first_cutoff') {
             return [
