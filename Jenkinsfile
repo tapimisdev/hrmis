@@ -1,0 +1,152 @@
+pipeline {
+      agent any
+
+    triggers {
+        githubPush()
+    }
+
+    environment {
+        APP_SERVER = 'test@192.168.2.238'
+        SSH_KEY = '/var/jenkins_home/.ssh/id_ed25519'
+
+        APP_DIR = '/var/app/orbit'
+        CONTAINER = 'orbit'
+        BRANCH = 'develop'
+        REPO_SSH = 'git@github.com:KemuelJoshua/dost.git'
+    }
+
+    stages {
+        stage('Show Jenkins Details') {
+            steps {
+                sh '''
+                    echo "=============================="
+                    echo "🚀 Jenkins running on:"
+                    hostname
+                    hostname -I || true
+                    whoami
+                    echo "=============================="
+                '''
+            }
+        }
+
+        stage('Test SSH Connection') {
+            steps {
+                sh '''
+                    mkdir -p ~/.ssh
+        
+                    # Add server to known_hosts (avoids host verification error)
+                    ssh-keyscan -H $(echo $APP_SERVER | cut -d@ -f2) >> ~/.ssh/known_hosts
+        
+                    chmod 700 ~/.ssh
+                    chmod 600 ~/.ssh/known_hosts
+        
+                    ssh -i "$SSH_KEY" \
+                        -o IdentitiesOnly=yes \
+                        -o StrictHostKeyChecking=yes \
+                        "$APP_SERVER" "hostname && whoami"
+                '''
+            }
+        }
+
+        stage('Update Live Code') {
+            steps {
+                sh '''
+                    ssh -i "$SSH_KEY" \
+                        -o IdentitiesOnly=yes \
+                        -o StrictHostKeyChecking=yes \
+                        "$APP_SERVER" "
+                            set -euo pipefail
+
+                            test -d '$APP_DIR/.git' || {
+                                echo 'ERROR: $APP_DIR is not a git repo'
+                                exit 1
+                            }
+
+                            cd '$APP_DIR'
+
+                            git config --global --add safe.directory '$APP_DIR'
+                            git remote set-url origin '$REPO_SSH'
+                            git fetch origin '$BRANCH'
+                            git reset --hard origin/'$BRANCH'
+                            git clean -fd
+                        "
+                '''
+            }
+        }
+
+        stage('Install PHP Dependencies') {
+            steps {
+                sh '''
+                    ssh -i "$SSH_KEY" "$APP_SERVER" "
+                        docker exec '$CONTAINER' bash -lc '
+                            cd /var/www/html &&
+                            composer install --no-interaction --prefer-dist --optimize-autoloader
+                        '
+                    "
+                '''
+            }
+        }
+
+        stage('Install Node Dependencies') {
+            steps {
+                sh '''
+                    ssh -i "$SSH_KEY" "$APP_SERVER" "
+                        docker exec '$CONTAINER' bash -lc '
+                            cd /var/www/html &&
+                            npm ci
+                        '
+                    "
+                '''
+            }
+        }
+
+        stage('Build Frontend Assets') {
+            steps {
+                sh '''
+                    ssh -i "$SSH_KEY" "$APP_SERVER" "
+                        docker exec '$CONTAINER' bash -lc '
+                            cd /var/www/html &&
+                            npm run build
+                        '
+                    "
+                '''
+            }
+        }
+
+        stage('Run Migrations') {
+            steps {
+                sh '''
+                    ssh -i "$SSH_KEY" "$APP_SERVER" "
+                        docker exec '$CONTAINER' bash -lc '
+                            cd /var/www/html &&
+                            php artisan migrate --force
+                        '
+                    "
+                '''
+            }
+        }
+
+        stage('Optimize Laravel') {
+            steps {
+                sh '''
+                    ssh -i "$SSH_KEY" "$APP_SERVER" "
+                        docker exec '$CONTAINER' bash -lc '
+                            cd /var/www/html &&
+                            php artisan optimize:clear
+                        '
+                    "
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Deploy done on testing server!'
+        }
+
+        failure {
+            echo '❌ Deploy failed. Check Jenkins console logs.'
+        }
+    }
+}
