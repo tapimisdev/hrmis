@@ -88,7 +88,7 @@
 
               <td class="text-center">{{ formatMoney(emp.pera) }}</td>
               <td class="text-center">{{ formatMoney(emp.representation_allowance) }}</td>
-              <td class="text-center">{{ formatMoney(emp.transportion_allowance) }}</td>
+              <td class="text-center">{{ formatMoney(transportationAllowance(emp)) }}</td>
 
               <td class="text-center">{{ emp.absences }}</td>
               <td class="text-center">{{ formatMoney(emp.ut_deductions) }}</td>
@@ -132,7 +132,7 @@
               <td class="number-cell">-</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "pera")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "representation_allowance")) }}</td>
-              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "transportion_allowance")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "transportation_allowance", "transportion_allowance")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "absences")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "ut_deductions")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "total")) }}</td>
@@ -157,7 +157,7 @@
             <td class="number-cell">-</td>
             <td class="number-cell">{{ formatNumber(grandTotals("pera")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("representation_allowance")) }}</td>
-            <td class="number-cell">{{ formatNumber(grandTotals("transportion_allowance")) }}</td>
+            <td class="number-cell">{{ formatNumber(grandTotals("transportation_allowance", "transportion_allowance")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("absences")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("ut_deductions")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("total")) }}</td>
@@ -302,14 +302,18 @@ export default {
       return `${name} (${code})`;
     },
 
-    groupTotals(employees, field) {
+    transportationAllowance(emp) {
+      return emp.transportation_allowance ?? emp.transportion_allowance;
+    },
+
+    groupTotals(employees, field, fallbackField = null) {
       return employees.reduce((total, emp) => {
-        return total + (Number(emp[field]) || 0);
+        return total + (Number(emp[field] ?? emp[fallbackField]) || 0);
       }, 0);
     },
 
-    grandTotals(field) {
-      return this.groupTotals(this.filteredEmployees, field);
+    grandTotals(field, fallbackField = null) {
+      return this.groupTotals(this.filteredEmployees, field, fallbackField);
     },
 
     async adjustRow(emp) {

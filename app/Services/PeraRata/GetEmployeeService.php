@@ -67,7 +67,7 @@ class GetEmployeeService
                 'position'       => $e->position,
                 'pera'   => $e->pera,
                 'representation_allowance'    => $e->representation_allowance,
-                'transportion_allowance'     => $e->transportion_allowance,
+                'transportation_allowance'   => $e->transportion_allowance,
                 'absences' => $e->absences,
                 'ut_deductions' => $e->ut_deductions,
                 'total' => $e->total,
