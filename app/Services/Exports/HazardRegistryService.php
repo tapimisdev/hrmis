@@ -45,30 +45,43 @@ class HazardRegistryService
         }
 
         $payrollDate = Carbon::parse($this->payroll->month . '-01')->endOfMonth()->toDateString();
+        $latestOrgDate = DB::table('employee_organization')
+            ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
+            ->whereDate('effectivity_date', '<=', $payrollDate)
+            ->groupBy('employee_no');
+
+        $latestOrgId = DB::table('employee_organization')
+            ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
+            ->groupBy('employee_no', 'effectivity_date');
+
         $this->employees = DB::table('payroll_hazard_pay_employee as phe')
+            ->leftJoinSub($latestOrgDate, 'latest_org_date', function ($join) {
+                $join->on('phe.employee_no', '=', 'latest_org_date.employee_no');
+            })
+            ->leftJoinSub($latestOrgId, 'latest_org_id', function ($join) {
+                $join->on('latest_org_date.employee_no', '=', 'latest_org_id.employee_no')
+                    ->on('latest_org_date.max_effectivity_date', '=', 'latest_org_id.effectivity_date');
+            })
+            ->leftJoin('employee_organization as eo', 'latest_org_id.max_id', '=', 'eo.id')
+            ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
             ->where('phe.payroll_hazard_pay_id', $this->payroll->id)
+            ->select(
+                'phe.*',
+                'd.id as division_id',
+                'd.name as division_name',
+                'd.code as division_code'
+            )
+            ->orderBy('d.name')
             ->orderBy('phe.employee_no')
             ->get()
-            ->map(function ($employee) use ($payrollDate) {
-                $project = DB::table('employee_projects as ep')
-                    ->join('projects as p', 'ep.project_id', '=', 'p.id')
-                    ->where('ep.employee_no', $employee->employee_no)
-                    ->whereDate('ep.start_date', '<=', $payrollDate)
-                    ->where(function ($query) use ($payrollDate) {
-                        $query->whereDate('ep.end_date', '>=', $payrollDate)
-                            ->orWhereNull('ep.end_date');
-                    })
-                    ->orderByDesc('ep.start_date')
-                    ->orderByDesc('ep.id')
-                    ->select('p.id as project_id', 'p.name as project_name')
-                    ->first();
-
+            ->map(function ($employee) {
                 return [
                     'employee_no' => $employee->employee_no,
                     'name' => strtoupper((string) $employee->name),
                     'position' => ucwords(strtolower((string) $employee->position)),
-                    'project_id' => $project->project_id ?? null,
-                    'project_name' => $project->project_name ?? 'No Project',
+                    'division_id' => $employee->division_id,
+                    'division_name' => $employee->division_name ?? 'No Division',
+                    'division_code' => $employee->division_code,
                     'monthly_rate' => (float) ($employee->monthly_rate ?? 0),
                     'entitlement' => (float) ($employee->entitlement ?? 0),
                     'hazard_pay' => (float) ($employee->hazard_pay ?? 0),
@@ -93,7 +106,7 @@ class HazardRegistryService
 
     private function writeEmployees()
     {
-        $groups = $this->employees->groupBy('project_name')->values();
+        $groups = $this->employees->groupBy(fn ($employee) => $employee['division_id'] ?? 'division:' . ($employee['division_name'] ?? 'none'))->values();
         $employeeCount = $this->employees->count();
         $groupCount = $groups->count();
 
@@ -118,9 +131,9 @@ class HazardRegistryService
         ];
 
         foreach ($groups as $group) {
-            $projectName = $this->cleanText($group->first()['project_name'] ?? 'No Project');
+            $divisionName = $this->cleanText($this->divisionName($group->first()));
 
-            $row = $this->writeProjectHeader($row, $projectName, $templateRow);
+            $row = $this->writeProjectHeader($row, $divisionName, $templateRow);
 
             $groupTotals = [
                 'monthly_rate' => 0,
@@ -151,7 +164,7 @@ class HazardRegistryService
                 $row++;
             }
 
-            $row = $this->writeSubtotalRow($row, $projectName, $groupTotals, $templateRow);
+            $row = $this->writeSubtotalRow($row, $divisionName, $groupTotals, $templateRow);
         }
 
         $this->writeGrandTotalRow($row, $grandTotals, $templateRow);
@@ -162,6 +175,18 @@ class HazardRegistryService
         $text = (string) ($value ?? '');
 
         return preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/u', '', $text) ?? '';
+    }
+
+    private function divisionName(array $employee): string
+    {
+        $name = trim((string) ($employee['division_name'] ?? 'No Division'));
+        $code = trim((string) ($employee['division_code'] ?? ''));
+
+        if ($code === '' || str_contains($name, "({$code})")) {
+            return $name;
+        }
+
+        return "{$name} ({$code})";
     }
 
     private function writeReportTitle(): void
@@ -262,7 +287,7 @@ class HazardRegistryService
     {
         $this->copyTemplateRow($templateRow, $row);
         $this->sheet->mergeCells("A{$row}:B{$row}");
-        $this->sheet->setCellValue("A{$row}", "SUB TOTAL: " . strtoupper($projectName));
+        $this->sheet->setCellValue("A{$row}", "SUB TOTAL");
         $this->sheet->setCellValue("C{$row}", $totals['monthly_rate']);
         $this->sheet->setCellValue("D{$row}", '-');
         $this->sheet->setCellValue("E{$row}", $totals['hazard_pay']);
@@ -355,7 +380,9 @@ class HazardRegistryService
         $fileName = "Hazard_Registry_{$this->payroll->payroll_no}.xlsx";
         $filePath = $exportDir . '/' . $fileName;
 
-        (new Xlsx($this->spreadsheet))->save($filePath);
+        $writer = new Xlsx($this->spreadsheet);
+        $writer->setPreCalculateFormulas(false);
+        $writer->save($filePath);
         $this->sanitizeWorkbookPackage($filePath);
 
         return Response::download($filePath, $fileName)->deleteFileAfterSend(true);

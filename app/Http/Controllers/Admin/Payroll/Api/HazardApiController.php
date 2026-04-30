@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Payroll\Api;
 
+use App\Http\Controllers\Admin\Payroll\Api\Concerns\PreparesPayrollExports;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\HazardPay\CreateRequest;
 use App\Services\HazardPay\PayrollService;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 class HazardApiController extends Controller
 {
+    use PreparesPayrollExports;
 
     protected $hazard_pay_service;
 
@@ -76,15 +78,21 @@ class HazardApiController extends Controller
 
     public function downloadPayrollRegistry($payroll_no)
     {
+       $this->preparePayrollExport();
+
        return app(HazardRegistryService::class)->download($payroll_no);
     }
 
     public function downloadAbsencesLeaves($payroll_no) {
+        $this->preparePayrollExport();
+
         return app(AUTService::class)->download($payroll_no);
     }
     
     public function downloadPayslip($payroll_no)
     {
+        $this->preparePayrollExport();
+
         return app(PayslipService::class)->download($payroll_no);
     }
 

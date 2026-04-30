@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Payroll\Api;
 
+use App\Http\Controllers\Admin\Payroll\Api\Concerns\PreparesPayrollExports;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\LongevityPay\CreateRequest;
 use App\Services\Exports\LongevityRegistryService;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class LongevityApiController extends Controller
 {
+    use PreparesPayrollExports;
+
     protected $payroll_service;
 
     public function __construct(PayrollService $payroll_service)
@@ -65,6 +68,8 @@ class LongevityApiController extends Controller
 
     public function downloadPayrollRegistry($payroll_no)
     {
+        $this->preparePayrollExport();
+
         return app(LongevityRegistryService::class)->download($payroll_no);
     }
 }

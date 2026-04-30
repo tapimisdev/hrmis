@@ -251,6 +251,7 @@ class AUTService
     private function exportFile()
     {
         $writer = IOFactory::createWriter($this->spreadsheet, 'Xlsx');
+        $writer->setPreCalculateFormulas(false);
         $output = storage_path('app/public/absences-leaves-filled.xlsx');
         $writer->save($output);
 

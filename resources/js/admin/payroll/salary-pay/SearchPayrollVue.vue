@@ -98,6 +98,19 @@ export default {
                         { text: "2nd Cutoff", value: "second_cutoff" },
                     ],
                 },
+                {
+                    label: "Status",
+                    model: "status",
+                    placeholder: "All statuses",
+                    options: [
+                        { text: "Draft", value: "draft" },
+                        { text: "Pending Review", value: "pending" },
+                        { text: "Approved", value: "approved" },
+                        { text: "For Releasing", value: "for_releasing" },
+                        { text: "Completed", value: "completed" },
+                        { text: "Cancelled", value: "cancelled" },
+                    ],
+                },
             ],
         };
     },

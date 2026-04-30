@@ -5,7 +5,6 @@ namespace App\Http\Requests\Admin\SalaryPay;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use App\Enums\EmploymentTypesEnum;
-use Carbon\Carbon;
 
 class CreateRequest extends FormRequest
 {
@@ -72,22 +71,20 @@ class CreateRequest extends FormRequest
                 'array',
                 'min:1',
             ],
-            'deduction_defer_options.*' => ['string', Rule::in(['tbd', 'next_cutoff'])],
+            'deduction_defer_options.*' => ['string', Rule::in(['tbd'])],
         ];
     }
 
     protected function prepareForValidation(): void
     {
-        if (!$this->isDeferredCosDeduction() || !$this->input('date') || !$this->input('cutoff')) {
-            return;
-        }
-
-        if ($this->deferOptions()->contains('next_cutoff')) {
-            $this->merge($this->expectedDeferredDeduction());
+        if (!$this->isDeferredCosDeduction()) {
             return;
         }
 
         $this->merge([
+            'deduction_defer_options' => $this->deferOptions()->isNotEmpty()
+                ? $this->deferOptions()->values()->all()
+                : ['tbd'],
             'deduction_deferred_cutoff' => null,
             'deduction_deferred_date' => null,
         ]);
@@ -107,8 +104,7 @@ class CreateRequest extends FormRequest
 
     private function isScheduledDeferredCosDeduction(): bool
     {
-        return $this->isDeferredCosDeduction()
-            && $this->deferOptions()->contains('next_cutoff');
+        return false;
     }
 
     public function withValidator($validator): void
@@ -122,27 +118,6 @@ class CreateRequest extends FormRequest
                 }
             }
 
-            if ($this->isDeferredCosDeduction()) {
-                $deferOptions = $this->deferOptions();
-
-                if ($deferOptions->contains('tbd') && $deferOptions->contains('next_cutoff')) {
-                    $validator->errors()->add('deduction_defer_options', 'Choose only one deduction schedule option.');
-                }
-            }
-
-            if (!$this->isDeferredCosDeduction() || !$this->input('date') || !$this->input('cutoff') || !$this->deferOptions()->contains('next_cutoff')) {
-                return;
-            }
-
-            $expected = $this->expectedDeferredDeduction();
-
-            if ($this->input('deduction_deferred_cutoff') !== $expected['deduction_deferred_cutoff']) {
-                $validator->errors()->add('deduction_deferred_cutoff', 'The deduction schedule must be the next payroll cutoff.');
-            }
-
-            if ($this->input('deduction_deferred_date') !== $expected['deduction_deferred_date']) {
-                $validator->errors()->add('deduction_deferred_date', 'The deduction schedule date must match the next payroll cutoff.');
-            }
         });
     }
 
@@ -154,22 +129,5 @@ class CreateRequest extends FormRequest
     private function deferOptions()
     {
         return collect($this->input('deduction_defer_options', []));
-    }
-
-    private function expectedDeferredDeduction(): array
-    {
-        $date = Carbon::parse($this->input('date'));
-
-        if ($this->input('cutoff') === 'second_cutoff') {
-            return [
-                'deduction_deferred_cutoff' => 'first_cutoff',
-                'deduction_deferred_date' => $date->copy()->addMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
-            ];
-        }
-
-        return [
-            'deduction_deferred_cutoff' => 'second_cutoff',
-            'deduction_deferred_date' => $date->copy()->day(16)->format('Y-m-d'),
-        ];
     }
 }
