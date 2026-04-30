@@ -74,11 +74,12 @@ pipeline {
             }
         }
 
-        stage('Install PHP Dependencies') {
+       stage('Install PHP Dependencies') {
             steps {
                 sh '''
                     ssh -i "$SSH_KEY" "$APP_SERVER" "
                         docker exec '$CONTAINER' bash -lc '
+                            git config --global --add safe.directory /var/www/html &&
                             cd /var/www/html &&
                             composer install --no-interaction --prefer-dist --optimize-autoloader
                         '
@@ -87,26 +88,28 @@ pipeline {
             }
         }
 
-        stage('Install Node Dependencies') {
+        stage('Install & Build Frontend Assets') {
             steps {
                 sh '''
                     ssh -i "$SSH_KEY" "$APP_SERVER" "
                         docker exec '$CONTAINER' bash -lc '
                             cd /var/www/html &&
-                            npm ci
+                            rm -rf node_modules &&
+                            npm ci &&
+                            npm run build
                         '
                     "
                 '''
             }
         }
 
-        stage('Build Frontend Assets') {
+        stage('Clear Laravel Cache') {
             steps {
                 sh '''
                     ssh -i "$SSH_KEY" "$APP_SERVER" "
                         docker exec '$CONTAINER' bash -lc '
                             cd /var/www/html &&
-                            npm run build
+                            php artisan optimize:clear
                         '
                     "
                 '''
@@ -126,13 +129,15 @@ pipeline {
             }
         }
 
-        stage('Optimize Laravel') {
+        stage('Cache Laravel') {
             steps {
                 sh '''
                     ssh -i "$SSH_KEY" "$APP_SERVER" "
                         docker exec '$CONTAINER' bash -lc '
                             cd /var/www/html &&
-                            php artisan optimize:clear
+                            php artisan config:cache &&
+                            php artisan route:cache &&
+                            php artisan view:cache
                         '
                     "
                 '''
