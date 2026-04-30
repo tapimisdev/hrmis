@@ -5,7 +5,16 @@
     { key: 'payslip', label: 'Payslip (xlxs)' },
   ]" @print="handlePrint">
     <!-- Header slots -->
-    <template #sheet-type></template>
+    <template #sheet-type><span class="d-none"></span></template>
+
+    <template #notice>
+      <div v-if="hasUndeductedReferences" class="undeducted-alert" role="alert">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>
+          This payroll has deduction reference amounts that are not yet deducted.
+        </span>
+      </div>
+    </template>
 
     <template #agency>
       PAYROLL FOR CONTRACT PRICE OF PROJECT PERSONNEL
@@ -63,15 +72,21 @@
             <th class="p-4">Name / Position</th>
             <th class="p-4">Monthly <br />Rate</th>
             <th class="p-4">Salary <br />Earned</th>
+            <th class="p-4 deferred-reference" style="width: 90px;">AUT <br />Ref</th>
             <th class="p-4 deduction">AUT <br />Deduction</th>
             <th class="p-4">Overtime</th>
             <th class="p-4">Holiday <br />Excess</th>
 
             <th class="p-4 earning" style="width: 100px;">Total Salary</th>
+            <th class="p-4 deferred-reference" style="width: 90px;">EWT <br />Ref</th>
             <th class="p-4 deduction" style="width: 100px;">EWT <br />(2%)</th>
+            <th class="p-4 deferred-reference" style="width: 90px;">Percentage Tax <br />Ref</th>
             <th class="p-4 deduction" style="width: 100px;">Percentage Tax <br />(3%)</th>
+            <th class="p-4 deferred-reference" style="width: 90px;">Tax EWT <br />Ref</th>
             <th class="p-4 deduction" style="width: 100px;">Tax <br />(EWT: 5%)</th>
+            <th class="p-4 deferred-reference" style="width: 90px;">Overall Tax <br />Ref</th>
             <th class="p-4 deduction" style="width: 100px;">Overall Tax</th>
+            <th class="p-4 deferred-reference" style="width: 90px;">HMO <br />Ref</th>
             <th class="p-4 deduction" style="width: 100px;">HMO</th>
 
             <th style="width: 150px;">Adjustment</th>
@@ -84,7 +99,9 @@
         <!-- Projects -->
         <tbody v-for="(project, pIndex) in filteredProjects" :key="pIndex">
           <tr class="project-header">
-            <td colspan="100" class="project-cell">{{ project.name }}</td>
+            <td colspan="100" class="project-cell">
+              <span class="project-cell-label">{{ project.name }}</span>
+            </td>
           </tr>
 
           <!-- Employee Rows -->
@@ -98,6 +115,9 @@
 
             <td class="text-center number-cell">{{ formatNumber(emp.monthly_rate) }}</td>
             <td class="text-center number-cell">{{ formatNumber(emp.salary_earned) }}</td>
+            <td class="text-center number-cell deferred-reference reference-cell">
+              {{ formatNumber(deferredDeductionReferenceAmount(emp, 'aut')) }}
+            </td>
             <td class="text-center number-cell deduction breakdown-cell">
               <div class="breakdown-total">{{ formatNumber(emp.aut) }}</div>
               <div v-if="hasDeductionBreakdown(emp, 'aut')" class="deduction-breakdown">
@@ -122,6 +142,9 @@
             <td class="text-center number-cell">{{ formatNumber(emp.holiday) }}</td>
             <td class="text-center number-cell earning">{{ formatNumber(emp.total_salary) }}</td>
 
+            <td class="text-center number-cell deferred-reference reference-cell">
+              {{ formatNumber(deferredDeductionReferenceAmount(emp, 'ewt_2')) }}
+            </td>
             <td class="text-center number-cell deduction breakdown-cell">
               <div class="breakdown-total">{{ formatNumber(emp.ewt_2) }}</div>
               <div v-if="hasDeductionBreakdown(emp, 'ewt_2')" class="deduction-breakdown">
@@ -139,6 +162,9 @@
                   </span>
                 </div>
               </div>
+            </td>
+            <td class="text-center number-cell deferred-reference reference-cell">
+              {{ formatNumber(deferredDeductionReferenceAmount(emp, 'percentage_tax_3')) }}
             </td>
             <td class="text-center number-cell deduction breakdown-cell">
               <div class="breakdown-total">{{ formatNumber(emp.percentage_tax_3) }}</div>
@@ -158,6 +184,9 @@
                 </div>
               </div>
             </td>
+            <td class="text-center number-cell deferred-reference reference-cell">
+              {{ formatNumber(deferredDeductionReferenceAmount(emp, 'tax_ewt_5')) }}
+            </td>
             <td class="text-center number-cell deduction breakdown-cell">
               <div class="breakdown-total">{{ formatNumber(emp.tax_ewt_5) }}</div>
               <div v-if="hasDeductionBreakdown(emp, 'tax_ewt_5')" class="deduction-breakdown">
@@ -176,6 +205,9 @@
                 </div>
               </div>
             </td>
+            <td class="text-center number-cell deferred-reference reference-cell">
+              {{ formatNumber(deferredDeductionReferenceAmount(emp, 'w_tax')) }}
+            </td>
             <td class="text-center number-cell deduction breakdown-cell">
               <div class="breakdown-total">{{ formatNumber(emp.w_tax) }}</div>
               <div v-if="hasDeductionBreakdown(emp, 'w_tax')" class="deduction-breakdown">
@@ -193,6 +225,9 @@
                   </span>
                 </div>
               </div>
+            </td>
+            <td class="text-center number-cell deferred-reference reference-cell">
+              {{ formatNumber(deferredDeductionReferenceAmount(emp, 'hmo')) }}
             </td>
             <td class="text-center number-cell deduction breakdown-cell">
               <div class="breakdown-total">{{ formatNumber(emp.hmo) }}</div>
@@ -243,14 +278,20 @@
             <td colspan="2" class="text-end"><strong>Total ({{ project.name }})</strong></td>
             <td class="number-cell">{{ formatNumber(projectTotals(project, 'monthly_rate')) }}</td>
             <td class="number-cell">{{ formatNumber(projectTotals(project, 'salary_earned')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(projectDeferredReferenceTotals(project, 'aut')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'aut')) }}</td>
             <td class="number-cell">{{ formatNumber(projectTotals(project, 'overtime')) }}</td>
             <td class="number-cell">{{ formatNumber(projectTotals(project, 'holiday')) }}</td>
             <td class="number-cell earning">{{ formatNumber(projectTotals(project, 'total_salary')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(projectDeferredReferenceTotals(project, 'ewt_2')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'ewt_2')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(projectDeferredReferenceTotals(project, 'percentage_tax_3')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'percentage_tax_3')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(projectDeferredReferenceTotals(project, 'tax_ewt_5')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'tax_ewt_5')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(projectDeferredReferenceTotals(project, 'w_tax')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'w_tax')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(projectDeferredReferenceTotals(project, 'hmo')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(projectTotals(project, 'hmo')) }}</td>
 
             <td class="number-cell">{{ formatNumber(projectTotals(project, 'adjustment')) }}</td>
@@ -264,7 +305,7 @@
 
         <tbody v-if="!filteredProjects.length">
           <tr>
-            <td colspan="16" class="text-center py-3">
+            <td colspan="23" class="text-center py-3">
               No employees found for the selected filters.
             </td>
           </tr>
@@ -275,20 +316,27 @@
             <td colspan="2" class="text-end"><strong>GRAND TOTAL</strong></td>
             <td class="number-cell">{{ formatNumber(grandTotals('monthly_rate')) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals('salary_earned')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(grandDeferredReferenceTotals('aut')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('aut')) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals('overtime')) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals('holiday')) }}</td>
             <td class="number-cell earning">{{ formatNumber(grandTotals('total_salary')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(grandDeferredReferenceTotals('ewt_2')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('ewt_2')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(grandDeferredReferenceTotals('percentage_tax_3')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('percentage_tax_3')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(grandDeferredReferenceTotals('tax_ewt_5')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('tax_ewt_5')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(grandDeferredReferenceTotals('w_tax')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('w_tax')) }}</td>
+            <td class="number-cell deferred-reference">{{ formatNumber(grandDeferredReferenceTotals('hmo')) }}</td>
             <td class="number-cell deduction">{{ formatNumber(grandTotals('hmo')) }}</td>
 
             <td class="number-cell">{{ formatNumber(grandTotals('adjustment')) }}</td>
             <td class="number-cell net-salary">
               <strong>{{ formatNumber(grandTotals('net_salary')) }}</strong>
             </td>
+            <td></td>
             <td></td>
           </tr>
         </tfoot>
@@ -328,6 +376,11 @@ export default {
     },
     filteredEmployeeCount() {
       return this.filteredProjects.reduce((count, project) => count + project.employees.length, 0);
+    },
+    hasUndeductedReferences() {
+      return this.filteredProjects.some((project) =>
+        project.employees.some((emp) => this.deferredDeductionReference(emp).length > 0)
+      );
     },
     projectOptions() {
       return this.projects
@@ -394,6 +447,15 @@ export default {
     hasDeductionBreakdown(emp, key) {
       return this.deductionBreakdown(emp, key).length > 1;
     },
+    deferredDeductionReference(emp) {
+      return Array.isArray(emp.deferred_deduction_reference)
+        ? emp.deferred_deduction_reference.filter((item) => Number(item.amount) > 0)
+        : [];
+    },
+    deferredDeductionReferenceAmount(emp, key) {
+      const item = this.deferredDeductionReference(emp).find((reference) => reference.key === key);
+      return Number(item?.amount) || 0;
+    },
     deductionBreakdownLabel(item) {
       return item.payroll_no || item.label || "Payroll";
     },
@@ -406,9 +468,21 @@ export default {
 
       return total;
     },
+    projectDeferredReferenceTotals(project, key) {
+      return project.employees.reduce(
+        (total, emp) => total + this.deferredDeductionReferenceAmount(emp, key),
+        0
+      );
+    },
     grandTotals(field, subfield = null) {
       return this.filteredProjects.reduce(
         (total, project) => total + this.projectTotals(project, field, subfield),
+        0
+      );
+    },
+    grandDeferredReferenceTotals(key) {
+      return this.filteredProjects.reduce(
+        (total, project) => total + this.projectDeferredReferenceTotals(project, key),
         0
       );
     },
@@ -435,6 +509,29 @@ export default {
   min-width: 100%;
 }
 
+.undeducted-alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #f59e0b;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.undeducted-alert i {
+  color: #f59e0b;
+}
+
 .earning {
   max-width: 150px;
   overflow-wrap: anywhere;
@@ -447,9 +544,23 @@ export default {
   white-space: normal;
 }
 
+.deferred-reference {
+  max-width: 170px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  opacity: 0.58;
+  filter: grayscale(0.2);
+}
+
 .breakdown-cell {
   min-width: 175px;
   vertical-align: top;
+}
+
+.reference-cell {
+  min-width: 180px;
+  vertical-align: top;
+  background-color: rgba(148, 163, 184, 0.14);
 }
 
 .breakdown-total {

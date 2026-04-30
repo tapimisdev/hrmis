@@ -428,11 +428,7 @@ class PayrollService
         $payrollDate = Carbon::parse($payload['date']);
         $cutoff = $isRegular ? 'second_cutoff' : $payload['cutoff'];
         $applyOptions = $isCos ? $this->normalizeDeductionOptions($payload['deduction_apply_options'] ?? []) : [];
-        $deferOptions = $isCos ? $this->normalizeDeductionOptions($payload['deduction_defer_options'] ?? []) : [];
-        $shouldScheduleNextCutoff = !$applyDeduction && $isCos && in_array('next_cutoff', $deferOptions, true);
-        $deferredDeduction = $shouldScheduleNextCutoff
-            ? $this->getNextCutoffDeductionSchedule($payrollDate, $cutoff)
-            : ['cutoff' => null, 'date' => null];
+        $deferredDeduction = ['cutoff' => null, 'date' => null];
         $periodCovered = $isRegular
             ? $payrollDate->format('F Y')
             : $payrollDate->format('F Y') . ' ' .
@@ -459,7 +455,7 @@ class PayrollService
             'deduction_deferred_date' => $deferredDeduction['date'],
             'deduction_apply_options' => $isCos ? json_encode($applyOptions) : null,
             'deduction_defer_option' => (!$applyDeduction && $isCos)
-                ? ($shouldScheduleNextCutoff ? 'next_cutoff' : 'tbd')
+                ? 'tbd'
                 : null,
             'created_at' => now(),
             'updated_at' => now(),
@@ -538,7 +534,6 @@ class PayrollService
         $cutoff = $payload['cutoff'];
         $applyDeduction = ($payload['apply_deduction'] ?? 'yes') !== 'no';
         $applyOptions = $this->normalizeDeductionOptions($payload['deduction_apply_options'] ?? []);
-        $deferOptions = $this->normalizeDeductionOptions($payload['deduction_defer_options'] ?? []);
         $selectedDeferredPayrollIds = $this->selectedDeferredPayrollIds($applyOptions);
         $currentApplies = $applyDeduction && (empty($applyOptions) || in_array('current', $applyOptions, true));
         $incomingPayrolls = $this->getPendingCosDeferredPayrolls($payrollDate, $cutoff);
@@ -567,9 +562,7 @@ class PayrollService
             'incoming' => $incoming,
             'incoming_count' => count($incoming),
             'current_applies' => $currentApplies,
-            'current_deferred' => (!$applyDeduction && in_array('next_cutoff', $deferOptions, true))
-                ? $this->getNextCutoffDeductionSchedule($payrollDate, $cutoff)
-                : null,
+            'current_deferred' => null,
             'applied_cutoff_count' => count($incoming) + ($currentApplies ? 1 : 0),
         ];
     }
@@ -585,10 +578,6 @@ class PayrollService
 
         $payrollDate = Carbon::parse($payload['date']);
         $cutoff = $payload['cutoff'];
-        $nextCutoff = $this->getNextCutoffDeductionSchedule($payrollDate, $cutoff);
-        $nextCutoffLabel = ($nextCutoff['cutoff'] === 'first_cutoff' ? '1st Cutoff' : '2nd Cutoff')
-            . ' of '
-            . Carbon::parse($nextCutoff['date'])->format('F Y');
 
         $applyOptions = [[
             'value' => 'current',
@@ -613,14 +602,7 @@ class PayrollService
                 [
                     'value' => 'tbd',
                     'label' => 'To be determined',
-                    'description' => 'Do not schedule this deduction yet.',
-                ],
-                [
-                    'value' => 'next_cutoff',
-                    'label' => $nextCutoffLabel,
-                    'description' => 'Suggested next payroll cutoff.',
-                    'cutoff' => $nextCutoff['cutoff'],
-                    'date' => $nextCutoff['date'],
+                    'description' => 'Apply this deduction on the next desired cutoff.',
                 ],
             ],
         ];
@@ -860,18 +842,42 @@ class PayrollService
                 ->select('pse.*', 'ps.payroll_no', 'ps.payroll_date', 'ps.cutoff', 'ps.period_covered', 'ps.apply_deduction', 'ps.deduction_apply_options')
                 ->get();
         } else { // REGULAR
+            $latestOrgDate = DB::table('employee_organization')
+                ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
+                ->when($payroll_date, fn ($query) => $query->whereDate('effectivity_date', '<=', $payroll_date))
+                ->groupBy('employee_no');
+
+            $latestOrgId = DB::table('employee_organization')
+                ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
+                ->groupBy('employee_no', 'effectivity_date');
 
             $pse = DB::table('payroll_salary_permanent_employees as pse')
                 ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+                ->leftJoinSub($latestOrgDate, 'latest_org_date', function ($join) {
+                    $join->on('pse.employee_no', '=', 'latest_org_date.employee_no');
+                })
+                ->leftJoinSub($latestOrgId, 'latest_org_id', function ($join) {
+                    $join->on('latest_org_date.employee_no', '=', 'latest_org_id.employee_no')
+                        ->on('latest_org_date.max_effectivity_date', '=', 'latest_org_id.effectivity_date');
+                })
+                ->leftJoin('employee_organization as eo', 'latest_org_id.max_id', '=', 'eo.id')
+                ->leftJoin('divisions', 'eo.division_id', '=', 'divisions.id')
                 ->where('payroll_salary_id', $payroll_id)
-                ->select('pse.*', 'ps.payroll_date', 'ps.cutoff', 'ps.period_covered')
+                ->select(
+                    'pse.*',
+                    'ps.payroll_date',
+                    'ps.cutoff',
+                    'ps.period_covered',
+                    'divisions.id as division_id',
+                    'divisions.name as division_name'
+                )
                 ->get();
         }
 
         /* ===========================
         |  Enrich employees
         ===========================*/
-        $enriched = $pse->map(function ($d) use ($employment_type_id, $payroll_date) {
+        $enriched = $pse->map(function ($d) use ($employment_type_id, $payroll_date, $payroll) {
 
             $deductions = [];
             $earnings   = [];

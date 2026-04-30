@@ -42,9 +42,35 @@ class LongevityRegistryService
             abort(404, 'Longevity payroll not found.');
         }
 
-        $this->employees = DB::table('payroll_longevity_pay_employee')
-            ->where('payroll_longevity_pay_id', $this->payroll->id)
-            ->orderBy('employee_no')
+        $organizationEffectiveDate = Carbon::parse($this->payroll->month)->endOfMonth()->toDateString();
+
+        $latestOrganizations = DB::table('employee_organization as eo1')
+            ->select('eo1.employee_no', 'eo1.division_id')
+            ->where(
+                'eo1.id',
+                DB::table('employee_organization as eo2')
+                    ->select('eo2.id')
+                    ->whereColumn('eo2.employee_no', 'eo1.employee_no')
+                    ->where('eo2.created_at', '<=', $organizationEffectiveDate)
+                    ->orderByDesc('eo2.created_at')
+                    ->orderByDesc('eo2.id')
+                    ->limit(1)
+            );
+
+        $this->employees = DB::table('payroll_longevity_pay_employee as plpe')
+            ->leftJoinSub($latestOrganizations, 'latest_org', function ($join) {
+                $join->on('latest_org.employee_no', '=', 'plpe.employee_no');
+            })
+            ->leftJoin('divisions as d', 'latest_org.division_id', '=', 'd.id')
+            ->where('plpe.payroll_longevity_pay_id', $this->payroll->id)
+            ->select(
+                'plpe.*',
+                'latest_org.division_id',
+                'd.name as division_name',
+                'd.code as division_code'
+            )
+            ->orderBy('d.name')
+            ->orderBy('plpe.employee_no')
             ->get();
     }
 
@@ -85,22 +111,60 @@ class LongevityRegistryService
             'net_pay' => 0,
         ];
 
-        foreach ($this->employees as $employee) {
-            $sheet->setCellValue("A{$row}", $employee->employee_no);
-            $sheet->setCellValue("B{$row}", $this->nameWithPosition($employee));
-            $sheet->setCellValue("C{$row}", (float) $employee->longevity_amount);
-            $sheet->setCellValue("D{$row}", (float) ($employee->w_tax ?? 0));
-            $sheet->setCellValue("E{$row}", (float) $employee->total);
-            $sheet->setCellValue("F{$row}", (float) $employee->adjustments);
-            $sheet->setCellValue("G{$row}", (float) $employee->net_pay);
-            $sheet->setCellValue("H{$row}", $employee->remarks);
+        foreach ($this->groupEmployeesByDivision() as $group) {
+            $sheet->mergeCells("A{$row}:H{$row}");
+            $sheet->setCellValue("A{$row}", $group['name']);
+            $sheet->getStyle("A{$row}:H{$row}")->getFont()->setBold(true);
+            $sheet->getStyle("A{$row}:H{$row}")->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()
+                ->setARGB('FFE9EDF2');
+            $row++;
 
-            $totals['longevity_amount'] += (float) $employee->longevity_amount;
-            $totals['w_tax'] += (float) ($employee->w_tax ?? 0);
-            $totals['total'] += (float) $employee->total;
-            $totals['adjustments'] += (float) $employee->adjustments;
-            $totals['net_pay'] += (float) $employee->net_pay;
+            $groupTotals = [
+                'longevity_amount' => 0,
+                'w_tax' => 0,
+                'total' => 0,
+                'adjustments' => 0,
+                'net_pay' => 0,
+            ];
 
+            foreach ($group['employees'] as $employee) {
+                $sheet->setCellValue("A{$row}", $employee->employee_no);
+                $sheet->setCellValue("B{$row}", $this->nameWithPosition($employee));
+                $sheet->setCellValue("C{$row}", (float) $employee->longevity_amount);
+                $sheet->setCellValue("D{$row}", (float) ($employee->w_tax ?? 0));
+                $sheet->setCellValue("E{$row}", (float) $employee->total);
+                $sheet->setCellValue("F{$row}", (float) $employee->adjustments);
+                $sheet->setCellValue("G{$row}", (float) $employee->net_pay);
+                $sheet->setCellValue("H{$row}", $employee->remarks);
+
+                $totals['longevity_amount'] += (float) $employee->longevity_amount;
+                $totals['w_tax'] += (float) ($employee->w_tax ?? 0);
+                $totals['total'] += (float) $employee->total;
+                $totals['adjustments'] += (float) $employee->adjustments;
+                $totals['net_pay'] += (float) $employee->net_pay;
+                $groupTotals['longevity_amount'] += (float) $employee->longevity_amount;
+                $groupTotals['w_tax'] += (float) ($employee->w_tax ?? 0);
+                $groupTotals['total'] += (float) $employee->total;
+                $groupTotals['adjustments'] += (float) $employee->adjustments;
+                $groupTotals['net_pay'] += (float) $employee->net_pay;
+
+                $row++;
+            }
+
+            $sheet->mergeCells("A{$row}:B{$row}");
+            $sheet->setCellValue("A{$row}", 'SUB TOTAL');
+            $sheet->setCellValue("C{$row}", $groupTotals['longevity_amount']);
+            $sheet->setCellValue("D{$row}", $groupTotals['w_tax']);
+            $sheet->setCellValue("E{$row}", $groupTotals['total']);
+            $sheet->setCellValue("F{$row}", $groupTotals['adjustments']);
+            $sheet->setCellValue("G{$row}", $groupTotals['net_pay']);
+            $sheet->getStyle("A{$row}:H{$row}")->getFont()->setBold(true);
+            $sheet->getStyle("A{$row}:H{$row}")->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()
+                ->setARGB('FFF7F7F7');
             $row++;
         }
 
@@ -169,6 +233,38 @@ class LongevityRegistryService
         return $position === '' ? $name : "{$name}\n{$position}";
     }
 
+    private function groupEmployeesByDivision(): array
+    {
+        $groups = [];
+
+        foreach ($this->employees as $employee) {
+            $groupId = $employee->division_id ?? 'division:' . ($employee->division_name ?? 'none');
+
+            if (!isset($groups[$groupId])) {
+                $groups[$groupId] = [
+                    'name' => $this->divisionName($employee),
+                    'employees' => [],
+                ];
+            }
+
+            $groups[$groupId]['employees'][] = $employee;
+        }
+
+        return array_values($groups);
+    }
+
+    private function divisionName($employee): string
+    {
+        $name = trim((string) ($employee->division_name ?? 'No Division'));
+        $code = trim((string) ($employee->division_code ?? ''));
+
+        if ($code === '' || str_contains($name, "({$code})")) {
+            return $name;
+        }
+
+        return "{$name} ({$code})";
+    }
+
     private function formatPayrollMonthYear(string $month): string
     {
         $month = trim($month);
@@ -199,7 +295,9 @@ class LongevityRegistryService
         $fileName = strtolower("longevity_pay_registry_{$payrollNo}.xlsx");
         $filePath = "{$exportPath}/{$fileName}";
 
-        (new Xlsx($this->spreadsheet))->save($filePath);
+        $writer = new Xlsx($this->spreadsheet);
+        $writer->setPreCalculateFormulas(false);
+        $writer->save($filePath);
 
         return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
     }
