@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Payroll\Api;
 
 use App\Enums\PayrollStatusEnum;
+use App\Http\Controllers\Admin\Payroll\Api\Concerns\PreparesPayrollExports;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SalaryPay\CreateRequest;
 use App\Services\Exports\AUTService;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 
 class SalaryApiController extends Controller
 {
+    use PreparesPayrollExports;
+
     protected $salary_payroll_service;
     protected $autDeductionService;
 
@@ -88,16 +91,22 @@ class SalaryApiController extends Controller
 
     public function downloadPayrollRegistry($payroll_no)
     {
+        $this->preparePayrollExport();
+
         return app(RegistryService::class)->download($payroll_no);
     }
 
     public function downloadAbsencesLeaves($payroll_no)
     {
+        $this->preparePayrollExport();
+
         return app(AUTService::class)->download($payroll_no);
     }
 
     public function downloadPayslip($payroll_no)
     {
+        $this->preparePayrollExport();
+
         return app(PayslipService::class)->download($payroll_no);
     }
 

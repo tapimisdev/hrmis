@@ -125,6 +125,7 @@ class GetEmployeeService {
                     $aut = collect($autBreakdown)->sum('amount');
                     $deductionBreakdowns = $this->getDeductionBreakdowns($employee);
                     $deductionBreakdowns['aut'] = $autBreakdown;
+                    $deferredDeductionReference = $this->getDeferredCurrentDeductionReference($employee);
 
                     $this->employees[$projectId]['employees'][] = [
                         'id' => $employee->id,
@@ -145,6 +146,8 @@ class GetEmployeeService {
                         'tax_ewt_5' => $employee->tax_ewt_5,
                         'w_tax' => $employee->w_tax,
                         'hmo' => $employee->hmo,
+                        'deferred_deduction_reference' => $deferredDeductionReference,
+                        'deferred_deduction_reference_total' => collect($deferredDeductionReference)->sum('amount'),
                         'deduction_breakdowns' => $deductionBreakdowns,
                         'deductions' => $employee->deductions,
                         'earnings' => $employee->earnings,
@@ -163,6 +166,7 @@ class GetEmployeeService {
                     $aut = collect($autBreakdown)->sum('amount');
                     $deductionBreakdowns = $this->getDeductionBreakdowns($employee);
                     $deductionBreakdowns['aut'] = $autBreakdown;
+                    $deferredDeductionReference = $this->getDeferredCurrentDeductionReference($employee);
 
                     return [
                         'employee_no' => $employee->employee_no,
@@ -182,6 +186,8 @@ class GetEmployeeService {
                         'tax_ewt_5' => $employee->tax_ewt_5,
                         'w_tax' => $employee->w_tax,
                         'hmo' => $employee->hmo,
+                        'deferred_deduction_reference' => $deferredDeductionReference,
+                        'deferred_deduction_reference_total' => collect($deferredDeductionReference)->sum('amount'),
                         'deduction_breakdowns' => $deductionBreakdowns,
                         'deductions' => $employee->deductions,
                         'earnings' => $employee->earnings,
@@ -197,11 +203,33 @@ class GetEmployeeService {
 
         // PERMANENT
         if($employment_type_id == EmploymentTypesEnum::REGULAR->value) {
+            $latestOrgDate = DB::table('employee_organization')
+                ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
+                ->when($payroll_date, fn ($query) => $query->whereDate('effectivity_date', '<=', $payroll_date))
+                ->groupBy('employee_no');
+
+            $latestOrgId = DB::table('employee_organization')
+                ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
+                ->groupBy('employee_no', 'effectivity_date');
 
             $pse = DB::table('payroll_salary_permanent_employees as pse')
                 ->leftJoin('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+                ->leftJoinSub($latestOrgDate, 'latest_org_date', function ($join) {
+                    $join->on('pse.employee_no', '=', 'latest_org_date.employee_no');
+                })
+                ->leftJoinSub($latestOrgId, 'latest_org_id', function ($join) {
+                    $join->on('latest_org_date.employee_no', '=', 'latest_org_id.employee_no')
+                        ->on('latest_org_date.max_effectivity_date', '=', 'latest_org_id.effectivity_date');
+                })
+                ->leftJoin('employee_organization as eo', 'latest_org_id.max_id', '=', 'eo.id')
+                ->leftJoin('divisions', 'eo.division_id', '=', 'divisions.id')
                 ->where('payroll_salary_id', $this->payroll_id)
-                ->select('pse.*', 'ps.payroll_date')
+                ->select(
+                    'pse.*',
+                    'ps.payroll_date',
+                    'divisions.id as division_id',
+                    'divisions.name as division_name'
+                )
                 ->get()
                 ->map(function ($employee) {
                     $psped = DB::table('payroll_salary_permanents_employee_deductions')
@@ -214,6 +242,7 @@ class GetEmployeeService {
                     $employee->deductions = $psped;
                     $employee->net_salary_15th = $netSalary15th;
                     $employee->net_salary_30th = $netSalary30th;
+                    $employee->division_name = $employee->division_name ?? 'No Division';
 
                     return $employee;
                 });
@@ -365,6 +394,50 @@ class GetEmployeeService {
         }
 
         return $breakdowns;
+    }
+
+    private function getDeferredCurrentDeductionReference(object $employee): array
+    {
+        $deductionOptions = $this->parseDeductionOptions($employee->deduction_apply_options ?? null);
+        $hasExplicitDeductionOptions = !empty($deductionOptions);
+        $currentDeductionApplies = $employee->apply_deduction
+            && (!$hasExplicitDeductionOptions || in_array('current', $deductionOptions, true));
+
+        if ($currentDeductionApplies) {
+            return [];
+        }
+
+        $gross = (float) ($employee->gross_pay ?? 0);
+        $taxFlags = $this->getCosTaxFlags($employee->employee_no);
+        $amounts = [
+            'aut' => round((float) ($employee->ut ?? 0) + (float) ($employee->absences ?? 0), 2),
+            'ewt_2' => $taxFlags['two_percent'] ? round(max(0, $gross - 10417) * 0.02, 2) : 0,
+            'percentage_tax_3' => $taxFlags['three_percent'] ? round($gross * 0.03, 2) : 0,
+            'tax_ewt_5' => $taxFlags['five_percent'] ? round($gross * 0.05, 2) : 0,
+            'hmo' => $this->getCosHmoAmount($employee->employee_no, $employee->payroll_date, $employee->cutoff),
+        ];
+        $amounts['w_tax'] = round($amounts['ewt_2'] + $amounts['percentage_tax_3'] + $amounts['tax_ewt_5'], 2);
+
+        $labels = [
+            'aut' => 'AUT',
+            'ewt_2' => 'EWT (2%)',
+            'percentage_tax_3' => 'Percentage Tax (3%)',
+            'tax_ewt_5' => 'Tax (EWT: 5%)',
+            'w_tax' => 'Overall Tax',
+            'hmo' => 'HMO',
+        ];
+
+        return collect($labels)
+            ->map(fn ($label, $key) => [
+                'key' => $key,
+                'label' => $label,
+                'amount' => $amounts[$key] ?? 0,
+                'period_covered' => $employee->period_covered ?? null,
+                'payroll_no' => $employee->payroll_no ?? null,
+            ])
+            ->filter(fn ($item) => (float) $item['amount'] > 0)
+            ->values()
+            ->all();
     }
 
     private function getDeferredCosTaxBreakdowns(string $employeeNo, ?string $payrollDate, ?string $cutoff, ?array $selectedPayrollIds = null): array

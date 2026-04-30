@@ -3,14 +3,14 @@
     :status="status"
     :payroll_no="payroll_no"
     :loading="loading"
-    :downloads="[{ key: 'registry', label: 'Payroll Registry' }]"
+    :downloads="[{ key: 'registry', label: 'Registry' }]"
     :download-endpoints="{
       registry: `/api/payroll/longevity-pay/${payroll_no}/download`,
     }"
     @print="handlePrint"
     @download="handleDownload"
   >
-    <template #sheet-type>( LONGEVITY PAY )</template>
+    <template #sheet-type><span class="d-none"></span></template>
     <template #agency>TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template>
     <template #title>PAYROLL OF LONGEVITY PAY FOR THE MONTH OF {{ month?.toUpperCase() }}</template>
 
@@ -63,47 +63,66 @@
         </thead>
 
         <tbody>
-          <tr class="data-row" v-for="(emp, index) in filteredEmployees" :key="index">
-            <td class="text-center">{{ emp.employee_no }}</td>
+          <template v-for="group in groupedEmployees" :key="group.id">
+            <tr class="project-header">
+              <td colspan="9" class="project-cell">
+                <span class="project-cell-label">{{ group.name }}</span>
+              </td>
+            </tr>
 
-            <td class="name-cell">
-              <div class="employee-name">{{ emp.name }}</div>
-              <div class="employee-position">{{ emp.position }}</div>
-            </td>
+            <tr class="data-row" v-for="emp in group.employees" :key="emp.id">
+              <td class="text-center">{{ emp.employee_no }}</td>
 
-            <td class="text-center">{{ formatMoney(emp.longevity_amount) }}</td>
-            <td class="text-center">{{ formatMoney(emp.w_tax) }}</td>
-            <td class="text-center"><strong>{{ formatMoney(emp.total) }}</strong></td>
+              <td class="name-cell">
+                <div class="employee-name">{{ emp.name }}</div>
+                <div class="employee-position">{{ emp.position }}</div>
+              </td>
 
-            <td class="text-center">
-              <input
-                type="number"
-                class="form-control border-0 text-center bg-body"
-                v-model="emp.adjustments"
-                @change="adjustRow(emp)"
-              />
-            </td>
+              <td class="text-center">{{ formatMoney(emp.longevity_amount) }}</td>
+              <td class="text-center">{{ formatMoney(emp.w_tax) }}</td>
+              <td class="text-center"><strong>{{ formatMoney(emp.total) }}</strong></td>
 
-            <td class="text-center"><strong>{{ formatMoney(emp.net_pay) }}</strong></td>
+              <td class="text-center">
+                <input
+                  type="number"
+                  class="form-control border-0 text-center bg-body"
+                  v-model="emp.adjustments"
+                  @change="adjustRow(emp)"
+                />
+              </td>
 
-            <td class="text-center">
-              <textarea
-                class="form-control border-0 bg-body"
-                v-model="emp.remarks"
-                @change="adjustRow(emp)"
-              ></textarea>
-            </td>
-            <td class="text-center">
-              <button
-                type="button"
-                class="btn btn-danger btn-sm"
-                @click="$emit('delete', emp)"
-                title="Delete"
-              >
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </td>
-          </tr>
+              <td class="text-center"><strong>{{ formatMoney(emp.net_pay) }}</strong></td>
+
+              <td class="text-center">
+                <textarea
+                  class="form-control border-0 bg-body"
+                  v-model="emp.remarks"
+                  @change="adjustRow(emp)"
+                ></textarea>
+              </td>
+              <td class="text-center">
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  @click="$emit('delete', emp)"
+                  title="Delete"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+
+            <tr class="project-total division-total text-center">
+              <td colspan="2" class="text-end"><strong>SUBTOTAL</strong></td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "longevity_amount")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "w_tax")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "total")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "adjustments")) }}</td>
+              <td class="number-cell"><strong>{{ formatNumber(groupTotals(group.employees, "net_pay")) }}</strong></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </template>
           <tr v-if="!filteredEmployees.length">
             <td colspan="9" class="text-center py-3">
               No employees found for the selected filters.
@@ -177,6 +196,27 @@ export default {
         return matchesSearch && matchesPosition && matchesRemarks;
       });
     },
+    groupedEmployees() {
+      const groups = [];
+      const groupIndexes = new Map();
+
+      this.filteredEmployees.forEach((emp) => {
+        const groupId = emp.division_id || `division:${emp.division_name || "none"}`;
+
+        if (!groupIndexes.has(groupId)) {
+          groupIndexes.set(groupId, groups.length);
+          groups.push({
+            id: groupId,
+            name: this.formatDivisionName(emp),
+            employees: [],
+          });
+        }
+
+        groups[groupIndexes.get(groupId)].employees.push(emp);
+      });
+
+      return groups;
+    },
   },
   methods: {
     handlePrint() {
@@ -195,8 +235,21 @@ export default {
         maximumFractionDigits: 2,
       }).format(Number(value) || 0);
     },
+    groupTotals(employees, field) {
+      return employees.reduce((total, emp) => total + (Number(emp[field]) || 0), 0);
+    },
     grandTotals(field) {
-      return this.filteredEmployees.reduce((total, emp) => total + (Number(emp[field]) || 0), 0);
+      return this.groupTotals(this.filteredEmployees, field);
+    },
+    formatDivisionName(emp) {
+      const name = String(emp.division_name || "No Division").trim();
+      const code = String(emp.division_code || "").trim();
+
+      if (!code || name.includes(`(${code})`)) {
+        return name;
+      }
+
+      return `${name} (${code})`;
     },
     async adjustRow(emp) {
       this.loading = true;
@@ -215,3 +268,9 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.division-total {
+  font-weight: 700;
+}
+</style>

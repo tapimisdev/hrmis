@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Payroll\Api;
 
+use App\Http\Controllers\Admin\Payroll\Api\Concerns\PreparesPayrollExports;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PeraRata\CreateRequest;
 use App\Services\PeraRata\PayrollService;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class PeraRataApiController extends Controller
 {
+    use PreparesPayrollExports;
 
     protected $payroll_service;
 
@@ -77,15 +79,21 @@ class PeraRataApiController extends Controller
 
     public function downloadPayrollRegistry($payroll_no)
     {
+       $this->preparePayrollExport();
+
        return app(PeraRataRegistryService::class)->download($payroll_no);
     }
 
     public function downloadAbsencesLeaves($payroll_no) {
+        $this->preparePayrollExport();
+
         return app(AUTService::class)->download($payroll_no);
     }
     
     public function downloadPayslip($payroll_no)
     {
+        $this->preparePayrollExport();
+
         return app(PayslipService::class)->download($payroll_no);
     }
 
