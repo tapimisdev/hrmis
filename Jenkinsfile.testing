@@ -135,9 +135,7 @@ pipeline {
                     ssh -i "$SSH_KEY" "$APP_SERVER" "
                         docker exec '$CONTAINER' bash -lc '
                             cd /var/www/html &&
-                            php artisan config:cache &&
-                            php artisan route:cache &&
-                            php artisan view:cache
+                            php artisan optimize:clear
                         '
                     "
                 '''
