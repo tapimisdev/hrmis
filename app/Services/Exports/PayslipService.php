@@ -2,6 +2,7 @@
 
 namespace App\Services\Exports;
 
+use App\Enums\EmploymentTypesEnum;
 use App\Services\SalaryPay\PayrollService;
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -200,18 +201,21 @@ class PayslipService
     {
         
         /** ---------- APPEND COMPUTED DEDUCTIONS ---------- */
-        $employee['deductions'] = array_merge(
-            $employee['deductions'],
-            [
-                [
-                    'deduction_type' => 'Absences/Lates/Undertime',
-                    'amount' => (float) ($employee['ut'] ?? 0) + (float) ($employee['absences'] ?? 0),
-                ],
-                ['deduction_type' => 'EWT 2%', 'amount' => (float) ($employee['ewt_2'] ?? 0)],
-                ['deduction_type' => 'Percentage Tax 3%', 'amount' => (float) ($employee['percentage_tax_3'] ?? 0)],
-                ['deduction_type' => 'Tax EWT 5%', 'amount' => (float) ($employee['tax_ewt_5'] ?? 0)],
-            ]
-        );
+        $computedDeductions = [
+            ['deduction_type' => 'EWT 2%', 'amount' => (float) ($employee['ewt_2'] ?? 0)],
+            ['deduction_type' => 'Percentage Tax 3%', 'amount' => (float) ($employee['percentage_tax_3'] ?? 0)],
+            ['deduction_type' => 'Tax EWT 5%', 'amount' => (float) ($employee['tax_ewt_5'] ?? 0)],
+            ['deduction_type' => 'HMO', 'amount' => (float) ($employee['hmo'] ?? 0)],
+        ];
+
+        if ((string) $this->payroll->employment_type_id !== EmploymentTypesEnum::REGULAR->value) {
+            array_unshift($computedDeductions, [
+                'deduction_type' => 'Absences/Lates/Undertime',
+                'amount' => (float) ($employee['ut'] ?? 0) + (float) ($employee['absences'] ?? 0),
+            ]);
+        }
+
+        $employee['deductions'] = array_merge($employee['deductions'], $computedDeductions);
 
         $row = $this->currentRow + 5;
 

@@ -41,6 +41,7 @@ class GetEmployeeService
                 'name' => strtoupper($e->name),
                 'position' => $e->position,
                 'longevity_amount' => $e->longevity_amount,
+                'w_tax' => $e->w_tax ?? 0,
                 'total' => $e->total,
                 'adjustments' => $e->adjustments,
                 'net_pay' => $e->net_pay,

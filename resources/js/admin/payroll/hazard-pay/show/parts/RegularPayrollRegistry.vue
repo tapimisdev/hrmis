@@ -62,7 +62,7 @@
             <th style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
             <th style="min-width: 220px">Remarks</th>
-            <th>actions</th>
+            <th>Action</th>
           </tr>
         </thead>
 

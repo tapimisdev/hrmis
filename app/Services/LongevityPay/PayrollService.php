@@ -119,7 +119,7 @@ class PayrollService
         }
 
         if (!$this->hasLongevityAmount($employee->employee_no)) {
-            $remarks[] = [
+            $eligibleRemarks[] = [
                 'text' => 'No longevity amount found for this employee for the selected month.',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
             ];

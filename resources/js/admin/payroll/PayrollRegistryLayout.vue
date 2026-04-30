@@ -1,16 +1,16 @@
 <template>
   <div class="payroll-registry-container" :class="status" :data-bs-theme="theme">
     <!-- Toolbar -->
-    <div class="excel-toolbar">
-      <div class="toolbar-meta">
-        <div class="toolbar-title">{{ payroll_no }} Payroll</div>
-        <div class="status-badge">
-          <i :class="['fa-solid', statusConfig.icon]"></i>
+	    <div class="excel-toolbar">
+	      <div class="toolbar-meta">
+	        <div class="toolbar-title">{{ payroll_no }} Payroll</div>
+	        <div class="status-badge">
+	          <i :class="['fa-solid', statusConfig.icon]"></i>
           {{ statusConfig.label }}
         </div>
       </div>
 
-      <div class="toolbar-left d-flex gap-2">
+      <div class="toolbar-left">
         <div class="dropdown">
           <button class="toolbar-btn left dropdown-toggle" type="button" data-bs-toggle="dropdown"
             aria-expanded="false">
@@ -25,11 +25,19 @@
             </li>
           </ul>
         </div>
-      </div>
-    </div>
 
-    <!-- Sheet -->
-    <div class="excel-sheet">
+        <div v-if="$slots.actions" class="toolbar-actions">
+          <slot name="actions"></slot>
+	        </div>
+	      </div>
+	    </div>
+
+	    <div v-if="$slots.summary" class="toolbar-summary">
+	      <slot name="summary"></slot>
+	    </div>
+
+	    <!-- Sheet -->
+	    <div class="excel-sheet">
       <LoaderVue :visible="loading" :hasBackground="true" status="uploading" message="Uploading, please wait..." />
 
       <!-- Header -->
@@ -313,6 +321,11 @@ export default {
   font-size: 12px;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  line-height: 1;
 }
 
 .toolbar-btn:hover {
@@ -324,21 +337,62 @@ export default {
   margin-right: 5px;
 }
 
-.status-badge {
+.toolbar-left {
   display: flex;
   align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-actions :deep(.toolbar-btn) {
+  background: var(--header-bg);
+  border: 1px solid var(--line-color);
+  color: var(--bs-body-color, #111827);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  line-height: 1;
+}
+
+.toolbar-actions :deep(.toolbar-btn:hover) {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.6);
+}
+
+.toolbar-actions :deep(.toolbar-btn i) {
+  margin-right: 5px;
+}
+
+	.status-badge {
+	  display: flex;
+	  align-items: center;
   gap: 6px;
   background: var(--status-bg);
   color: var(--status-color);
   border: 1px solid rgba(107, 114, 128, 0.2);
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-}
+	  font-size: 11px;
+	  font-weight: 600;
+	}
 
-.excel-sheet {
-  background: var(--panel-bg);
+	.toolbar-summary {
+	  margin-bottom: 14px;
+	}
+
+	.excel-sheet {
+	  background: var(--panel-bg);
   margin: 0;
   box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
   border: 1px solid var(--line-color);

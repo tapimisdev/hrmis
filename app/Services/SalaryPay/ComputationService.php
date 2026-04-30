@@ -126,6 +126,11 @@ class ComputationService
     /** @var string|null */
     protected $cutoff;
 
+    protected bool $apply_deduction = true;
+    protected bool $apply_current_deduction = true;
+    protected array $selected_deferred_payroll_ids = [];
+    protected bool $has_explicit_deduction_options = false;
+
     /** @var mixed */
     protected $actual_presence;
 
@@ -190,13 +195,13 @@ class ComputationService
             'endDate'   => $this->end_date,
         ];
 
-        $remarks = '';
+        $remarks = null;
 
         /**
-         * Salary frequency handling.
-         * If salary is paid twice per month, compute half for the cutoff.
+         * COS payroll remains cutoff-based. Regular/plantilla salary payroll is
+         * monthly, so keep the full monthly salary amount for regular employees.
          */
-        if ($this->salary_frequency === 'twice') {
+        if ($this->employment_type == EmploymentTypesEnum::COS->value && $this->salary_frequency === 'twice') {
             $this->salary_amount = $this->salary_amount / 2;
         }
 
@@ -215,8 +220,6 @@ class ComputationService
         $overtime              = $summary['overtime'];       // minutes
         $this->actual_presence = $summary['actual_presence'];
 
-        $leaves_to_deduct = [];
-
         /**
          * ============================================================
          * 4) Base computations for earnings/deductions amounts
@@ -230,47 +233,8 @@ class ComputationService
         $overtime_amount       = round($this->min_rate * $overtime, 4);
         $holiday_excess_amount = round($this->daily_rate * $holiday_excess, 4);
 
-        /**
-         * ============================================================
-         * 5) REGULAR: Deduct absences/undertime on leave credits (AUT)
-         * ============================================================
-         *
-         * If employee is REGULAR and has absences/late-undertime,
-         * convert to leave credits and make salary-side absences/UT zero
-         * to avoid salary deduction.
-         */
-        if ($this->employment_type == (int) EmploymentTypesEnum::REGULAR->value) {
-            if ($absences > 0 || $late_undertime > 0) {
-
-                // Convert absences(days) + late_undertime(mins) to minutes and leave credits
-                $leaves_to_deduct = $this->convertToMinutes($absences, $late_undertime);
-
-                // Convert total minutes to days/hours/mins format for remarks
-                $totalMinutes  = $leaves_to_deduct['total_minutes'];
-                $minutesPerDay = $this->working_hours * 60;
-
-                $days = intdiv($totalMinutes, $minutesPerDay);
-
-                $remainingMinutes = $totalMinutes % $minutesPerDay;
-                $hours            = intdiv($remainingMinutes, 60);
-                $mins             = $remainingMinutes % 60;
-
-                // Remarks used in permanent payroll table
-                $remarks = sprintf(
-                    'AUT %d day%s %d hour%s %d min%s = %.3f VL',
-                    $days,  $days  !== 1 ? 's' : '',
-                    $hours, $hours !== 1 ? 's' : '',
-                    $mins,  $mins  !== 1 ? 's' : '',
-                    $leaves_to_deduct['equivalent_leave_credits']
-                );
-
-                // Making the actual zero so it won't deduct in the salary
-                $absences       = 0;
-                $late_undertime = 0;
-            }
-        }
-
-        // Salary-side computations after AUT adjustment (if any)
+        // COS uses these as salary deductions. Regular/plantilla sets them to
+        // zero before saving because AUT is handled outside regular payroll.
         $absences_amount       = round($this->daily_rate * $absences, 4);
         $late_undertime_amount = round($this->min_rate * $late_undertime, 4);
 
@@ -311,24 +275,41 @@ class ComputationService
                 $hmo = 0;
             }
 
-            $hmoC = $toCents($hmo) ?? 0;
+            $hmoC = $this->apply_current_deduction ? ($toCents($hmo) ?? 0) : 0;
 
-            // Gross = basic - absences - late/undertime + earnings
-            $grossC = $basicC - $absencesC - $lateUnderC + $earningsC;
+            $autC = $absencesC + $lateUnderC;
+            $appliedAutC = $this->apply_current_deduction ? $autC : 0;
+
+            // Gross = basic salary + earnings. AUT is part of deductions.
+            $grossC = $basicC + $earningsC;
 
             // 2% (with threshold 10417.00 pesos)
             $thresholdC = 10417 * 100;
             $base2C = max(0, $grossC - $thresholdC);
 
-            $ewt2C = $this->two_percent ? $percentOfCents($base2C, 0.02) : 0;
+            $ewt2C = $this->apply_current_deduction && $this->two_percent ? $percentOfCents($base2C, 0.02) : 0;
 
             // 3% (no threshold) — direct on gross
-            $ewt3C = $this->three_percent ? $percentOfCents($grossC, 0.03) : 0;
+            $ewt3C = $this->apply_current_deduction && $this->three_percent ? $percentOfCents($grossC, 0.03) : 0;
 
             // 5% (no threshold) — direct on gross
-            $ewt5C = $this->five_percent ? $percentOfCents($grossC, 0.05) : 0;
+            $ewt5C = $this->apply_current_deduction && $this->five_percent ? $percentOfCents($grossC, 0.05) : 0;
 
-            $totalDedC = $ewt2C + $ewt3C + $ewt5C + $hmoC;
+            if ($this->apply_deduction) {
+                $deferredDeductions = $this->getDeferredCosDeductionCents(
+                    $employee_no,
+                    $toCents,
+                    $percentOfCents
+                );
+
+                $appliedAutC += $deferredDeductions['aut'];
+                $ewt2C += $deferredDeductions['ewt_2'];
+                $ewt3C += $deferredDeductions['percentage_tax_3'];
+                $ewt5C += $deferredDeductions['tax_ewt_5'];
+                $hmoC += $deferredDeductions['hmo'];
+            }
+
+            $totalDedC = $appliedAutC + $ewt2C + $ewt3C + $ewt5C + $hmoC;
             $netC      = $grossC - $totalDedC;
 
             // Convert back to pesos with 2 decimals
@@ -422,6 +403,11 @@ class ComputationService
         if ($this->employment_type == (int) EmploymentTypesEnum::REGULAR->value) {
             Log::info("Processing REGULAR employee: {$this->employee_no} for Payroll ID: {$this->payroll_id}");
 
+            // Regular/plantilla payroll no longer carries AUT. Absences and
+            // undertime are handled outside salary computation via leave/AUT.
+            $absences_amount = 0;
+            $late_undertime_amount = 0;
+
             /**
              * Fetch deductions for the employee (includes withholding tax prepended).
              */
@@ -442,7 +428,7 @@ class ComputationService
             Name                : " . $this->safe($this->name) . "
             Position            : " . $this->safe($this->position) . "
             Salary Grade        : " . $this->safe($this->salary_grade) . "
-            Monthly Rate x2     : " . (isset($this->salary_amount) ? round($this->salary_amount * 2, 2) : '') . "
+            Monthly Rate        : " . (isset($this->salary_amount) ? round($this->salary_amount, 2) : '') . "
             ---------------------------------------------------
             UT                  : " . $this->safe($late_undertime_amount) . "
             Absences            : " . $this->safe($absences_amount) . "
@@ -466,7 +452,7 @@ class ComputationService
                 'employee_no'       => $this->employee_no,
                 'name'              => $this->name,
                 'position'          => $this->position,
-                'monthly_rate'      => round($this->salary_amount * 2, 2),
+                'monthly_rate'      => round($this->salary_amount, 2),
                 'salary_grade'      => $this->salary_grade,
 
                 'ut'                => $late_undertime_amount,
@@ -508,14 +494,6 @@ class ComputationService
                 ]);
             }
 
-            /**
-             * Post deduction request for leave credits processing.
-             */
-            $this->deductionOnLeaveCredits(
-                $pseId,
-                $leaves_to_deduct['equivalent_leave_credits'] ?? 0
-            );
-
             // Final totals for return payload
             $gross            = $net + $sum_of_deduction;
             $total_deductions = $sum_of_deduction;
@@ -546,8 +524,17 @@ class ComputationService
         if ($payroll) {
             $this->payroll_date = $payroll->payroll_date;
             $this->cutoff       = $payroll->cutoff;
+            $this->apply_deduction = (bool) ($payroll->apply_deduction ?? true);
+            $deductionOptions = $this->parseDeductionOptions($payroll->deduction_apply_options ?? null);
+            $this->has_explicit_deduction_options = !empty($deductionOptions);
+            $this->apply_current_deduction = $this->apply_deduction
+                && (!$this->has_explicit_deduction_options || in_array('current', $deductionOptions, true));
+            $this->selected_deferred_payroll_ids = $this->selectedDeferredPayrollIds($deductionOptions);
 
-            if ($this->cutoff == 'first_cutoff') {
+            if ((string) $payroll->employment_type_id === EmploymentTypesEnum::REGULAR->value) {
+                $this->start_date = date('Y-m-01', strtotime($this->payroll_date));
+                $this->end_date   = date('Y-m-t', strtotime($this->payroll_date));
+            } elseif ($this->cutoff == 'first_cutoff') {
                 $this->start_date = date('Y-m-01', strtotime($this->payroll_date));
                 $this->end_date   = date('Y-m-15', strtotime($this->payroll_date));
             } else {
@@ -700,18 +687,11 @@ class ComputationService
      * - module tab deductions (module_tab_employees)
      * - withholding tax (employee_payroll_components), prepended at index 0 if exists
      *
-     * Applies cutoff rules:
-     * - If deduction_applied_on != current cutoff and not 'both', returns empty collection
-     * - If deduction_applied_on == 'both', divides each deduction by 2
+     * Regular/plantilla payroll is monthly, so deductions are applied in full.
      */
     private function getDeductions($employee_no)
     {
         [$year, $month] = array_map('intval', explode('-', $this->payroll_date));
-
-        // Skip deductions if cutoff doesn't match
-        if ($this->cutoff != $this->deduction_applied_on && $this->deduction_applied_on !== 'both') {
-            return collect([]);
-        }
 
         /**
          * Base deductions from module tabs.
@@ -762,19 +742,7 @@ class ComputationService
             ]);
         }
 
-        /**
-         * Apply cutoff logic:
-         * - if NOT both: return deductions as-is
-         * - if both: divide each deduction by 2
-         */
-        if ($this->deduction_applied_on !== 'both') {
-            return $deductions;
-        }
-
-        return $deductions->map(function ($deduction) {
-            $deduction->amount = $deduction->amount / 2;
-            return $deduction;
-        });
+        return $deductions;
     }
 
     /**
@@ -809,27 +777,119 @@ class ComputationService
         ];
     }
 
-    /**
-     * Create a pending payroll record to deduct leave credits.
-     * Permanent payroll only.
-     */
-    private function deductionOnLeaveCredits(float $leaves_to_deduct): bool
+    private function formatAutRemark(int $totalMinutes, float $workingHours, float $equivalent): string
     {
-        return DB::table('payroll_pending_data')->insert([
-            'payroll_id'      => $this->payroll_id,
-            'parent'          => 'payroll_salary',
-            'value'           => $leaves_to_deduct,
-            'created_at'      => now(),
-            'updated_at'      => now(),
-        ]);
+        $minutesPerDay = max(1, (int) round($workingHours * 60));
+        $days = intdiv($totalMinutes, $minutesPerDay);
+        $remainingMinutes = $totalMinutes % $minutesPerDay;
+        $hours = intdiv($remainingMinutes, 60);
+        $mins = $remainingMinutes % 60;
+
+        return sprintf(
+            'AUT %d day%s %d hour%s %d min%s = %.3f VL',
+            $days,
+            $days !== 1 ? 's' : '',
+            $hours,
+            $hours !== 1 ? 's' : '',
+            $mins,
+            $mins !== 1 ? 's' : '',
+            $equivalent
+        );
     }
 
-    private function getHmo($employee_no)
+    private function getDeferredCosDeductionCents(
+        string $employee_no,
+        callable $toCents,
+        callable $percentOfCents
+    ): array {
+        $payrollDate = Carbon::parse($this->payroll_date);
+
+        $deferredPayrolls = DB::table('payroll_salary as ps')
+            ->join('payroll_salary_employee as pse', 'pse.payroll_salary_id', '=', 'ps.id')
+            ->where('pse.employee_no', $employee_no)
+            ->where('ps.employment_type_id', EmploymentTypesEnum::COS->value)
+            ->where('ps.apply_deduction', false)
+            ->when(
+                $this->has_explicit_deduction_options,
+                fn ($query) => $query->whereIn('ps.id', $this->selected_deferred_payroll_ids ?: [0]),
+                fn ($query) => $query
+                    ->where('ps.deduction_deferred_cutoff', $this->cutoff)
+                    ->whereYear('ps.deduction_deferred_date', $payrollDate->year)
+                    ->whereMonth('ps.deduction_deferred_date', $payrollDate->month)
+                    ->whereNull('ps.deduction_applied_payroll_id')
+            )
+            ->where('ps.status', '!=', 'cancelled')
+            ->select(
+                'ps.payroll_date',
+                'ps.cutoff',
+                'pse.gross_pay',
+                'pse.ut',
+                'pse.absences'
+            )
+            ->get();
+
+        $totals = [
+            'aut' => 0,
+            'ewt_2' => 0,
+            'percentage_tax_3' => 0,
+            'tax_ewt_5' => 0,
+            'hmo' => 0,
+        ];
+
+        foreach ($deferredPayrolls as $deferredPayroll) {
+            $grossC = $toCents((float) ($deferredPayroll->gross_pay ?? 0));
+            $thresholdC = 10417 * 100;
+            $base2C = max(0, $grossC - $thresholdC);
+
+            $totals['aut'] += $toCents((float) ($deferredPayroll->ut ?? 0))
+                + $toCents((float) ($deferredPayroll->absences ?? 0));
+            $totals['ewt_2'] += $this->two_percent ? $percentOfCents($base2C, 0.02) : 0;
+            $totals['percentage_tax_3'] += $this->three_percent ? $percentOfCents($grossC, 0.03) : 0;
+            $totals['tax_ewt_5'] += $this->five_percent ? $percentOfCents($grossC, 0.05) : 0;
+            $totals['hmo'] += $toCents($this->getHmo(
+                $employee_no,
+                $deferredPayroll->payroll_date,
+                $deferredPayroll->cutoff
+            ));
+        }
+
+        return $totals;
+    }
+
+    private function parseDeductionOptions(null|string|array $options): array
     {
-        [$year, $month] = array_map('intval', explode('-', $this->payroll_date));
+        if (is_array($options)) {
+            return $options;
+        }
+
+        if (!is_string($options) || $options === '') {
+            return [];
+        }
+
+        $decoded = json_decode($options, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function selectedDeferredPayrollIds(array $options): array
+    {
+        return collect($options)
+            ->filter(fn ($option) => is_string($option) && str_starts_with($option, 'payroll:'))
+            ->map(fn ($option) => (int) substr($option, strlen('payroll:')))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function getHmo($employee_no, ?string $payrollDate = null, ?string $cutoff = null)
+    {
+        $payrollDate ??= $this->payroll_date;
+        $cutoff ??= $this->cutoff;
+        [$year, $month] = array_map('intval', explode('-', $payrollDate));
 
         // Skip deductions if cutoff doesn't match
-        if ($this->cutoff != $this->deduction_applied_on && $this->deduction_applied_on !== 'both') {
+        if ($cutoff != $this->deduction_applied_on && $this->deduction_applied_on !== 'both') {
             return 0;
         }
 

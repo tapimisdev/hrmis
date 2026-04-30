@@ -70,8 +70,10 @@ class AUTService
 
     private function setHeader()
     {
-        [$month, $year, $period] = explode(' ', $this->payroll->period_covered);
-        $cutoff = strtoupper("$period $month $year");
+        $parts = explode(' ', $this->payroll->period_covered);
+        $cutoff = count($parts) >= 3
+            ? strtoupper("{$parts[2]} {$parts[0]} {$parts[1]}")
+            : strtoupper($this->payroll->period_covered);
 
         $this->sheet->setCellValue("A8", $cutoff);
         $this->sheet->getStyle("A8")->applyFromArray([

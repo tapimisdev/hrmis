@@ -3,10 +3,10 @@
     :status="status"
     :payroll_no="payroll_no"
     :loading="loading"
-    :downloads="[
-      { key: 'registry', label: 'Payroll Registry' },
-      { key: 'payslip', label: 'Payslip' },
-    ]"
+    :downloads="[{ key: 'registry', label: 'Payroll Registry' }]"
+    :download-endpoints="{
+      registry: `/api/payroll/longevity-pay/${payroll_no}/download`,
+    }"
     @print="handlePrint"
     @download="handleDownload"
   >
@@ -53,6 +53,7 @@
             <th>Emp#</th>
             <th>Name / Position</th>
             <th>Longevity Pay</th>
+            <th>W/Tax</th>
             <th>Total Amount</th>
             <th style="width: 150px">Adjustments</th>
             <th>Net Amount</th>
@@ -71,6 +72,7 @@
             </td>
 
             <td class="text-center">{{ formatMoney(emp.longevity_amount) }}</td>
+            <td class="text-center">{{ formatMoney(emp.w_tax) }}</td>
             <td class="text-center"><strong>{{ formatMoney(emp.total) }}</strong></td>
 
             <td class="text-center">
@@ -103,7 +105,7 @@
             </td>
           </tr>
           <tr v-if="!filteredEmployees.length">
-            <td colspan="8" class="text-center py-3">
+            <td colspan="9" class="text-center py-3">
               No employees found for the selected filters.
             </td>
           </tr>
@@ -113,6 +115,7 @@
           <tr class="grand-total text-center">
             <td colspan="2" class="text-end"><strong>GRAND TOTAL</strong></td>
             <td class="number-cell">{{ formatNumber(grandTotals("longevity_amount")) }}</td>
+            <td class="number-cell">{{ formatNumber(grandTotals("w_tax")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("total")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("adjustments")) }}</td>
             <td class="number-cell"><strong>{{ formatNumber(grandTotals("net_pay")) }}</strong></td>

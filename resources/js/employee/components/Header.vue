@@ -5,6 +5,7 @@
       <widget-component />
       <online-users :user-id="userId" :user-role="userRole" />
       <notification-component :user-role="userRole" :user-id="userId" />  
+      <feedback-component :user-id="userId" />
       <profile-component />
     </div>
 </template>
@@ -12,6 +13,7 @@
 <script>
 import WidgetComponent from "./parts/Widgets.vue";
 import NotificationComponent from "./parts/Notification.vue";
+import FeedbackComponent from "./parts/Feedback.vue";
 import ProfileComponent from "./parts/Profile.vue";
 import IncompleteLogs from "./parts/IncompleteLogs.vue";
 import OnlineUsers from "../../admin/components/parts/OnlineUsers.vue";
@@ -31,6 +33,7 @@ export default {
     components: {
         WidgetComponent,
         NotificationComponent,
+        FeedbackComponent,
         ProfileComponent,
         IncompleteLogs,
         OnlineUsers,

@@ -100,13 +100,30 @@ class SalaryService extends BaseImportService
             'GSIS MPL' => ['GSIS MPL'],
             'GSIS Policy Loan' => ['GSIS Policy Loan'],
             'GSIS Emer. Loan' => ['GSIS Emer. Loan', 'GSIS Emergency Loan'],
+            'GSIS Conso Loan' => ['GSIS Conso Loan', 'GSIS Consol Loan', 'GSIS Consolidated Loan'],
+            'GSIS Optional Prem' => ['GSIS Optional Prem', 'GSIS Optional Premium'],
             'GSIS MPL LITE' => ['GSIS MPL LITE'],
+            'GSIS Educ' => ['GSIS Educ', 'GSIS Education', 'GSIS Educational Loan'],
+            'Real Estate' => ['Real Estate', 'Real Estate Loan'],
             'Landbank' => ['Landbank'],
+            'Computer Loan' => ['Computer Loan'],
+            'OPTICAL c/o TAPIEA' => ['OPTICAL c/o TAPIEA', 'Optical c/o TAPIEA', 'Optical'],
+            'HMO c/o TAPIEA' => ['HMO c/o TAPIEA', 'HMO C/O TAPIEA', 'HMO'],
             'Total Deductions' => ['Total Deductions'],
             'Net Pay' => ['Net Pay', 'Net Salary'],
-            'Net Salary 15th' => ['Net Salary 15th', 'Net Salary'],
-            'Net Salary 31st' => ['Net Salary 31st', 'Net Salary'],
-        ], [], ['Salary Grade']);
+            'Net Salary 15th' => ['Net Salary 15th', '15th Cutoff', '15th'],
+            'Net Salary 30th' => ['Net Salary 30th', 'Net Salary 31st', '30th Cutoff', '31st Cutoff', '30th', '31st'],
+        ], [], [
+            'Salary Grade',
+            'GSIS Conso Loan',
+            'GSIS Optional Prem',
+            'GSIS Educ',
+            'Real Estate',
+            'Computer Loan',
+            'OPTICAL c/o TAPIEA',
+            'HMO c/o TAPIEA',
+            'Net Pay',
+        ]);
 
         $cleaned = array_filter($parsed['rows'], function ($row) {
             $employee = (string) ($row['Employee'] ?? '');
@@ -196,6 +213,7 @@ class SalaryService extends BaseImportService
             'payroll_date' => $payrollDate,
             'processed_by_id' => Auth::id(),
             'status' => 'approved',
+            'is_aut_deducted' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -224,7 +242,7 @@ class SalaryService extends BaseImportService
         $label = $data['label'];
         $payrollNo = generateNo('SL-', 4);
         $employmentTypeId = $data['employment_type'];
-        $cutoff = $data['cutoff'];
+        $cutoff = $data['cutoff'] ?? 'second_cutoff';
         $periodCovered = $data['period_covered'];
         $payrollDate = $data['date'];
         $noEmployee = count($data['data']);
@@ -237,7 +255,7 @@ class SalaryService extends BaseImportService
 
         foreach ($rows as $employee) {
             $rowTotalDeductions = $this->toAmount($employee['Total Deductions'] ?? 0);
-            $rowNetPay = $this->amountFromKeys($employee, ['Net Pay', 'Net Salary']);
+            $rowNetPay = $this->regularNetPayFromRow($employee);
             $grossAmount += $rowNetPay + $rowTotalDeductions;
             $deductionAmount += $rowTotalDeductions;
             $netPayAmount += $rowNetPay;
@@ -261,6 +279,7 @@ class SalaryService extends BaseImportService
                 'payroll_date' => $payrollDate,
                 'processed_by_id' => Auth::id(),
                 'status' => 'completed',
+                'is_aut_deducted' => false,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -276,7 +295,7 @@ class SalaryService extends BaseImportService
 
                 $rowDeductions = $this->extractRegularDeductions($employee, $moduleTabs);
                 $totalDeductions = $this->toAmount($employee['Total Deductions'] ?? 0);
-                $netPay = $this->amountFromKeys($employee, ['Net Pay', 'Net Salary']);
+                $netPay = $this->regularNetPayFromRow($employee);
 
                 $pspeId = DB::table('payroll_salary_permanent_employees')->insertGetId([
                     'payroll_salary_id' => $payrollId,
@@ -307,16 +326,18 @@ class SalaryService extends BaseImportService
                     ]);
 
                     if ($employeeNo !== '' && $deduction['type'] === 'module_tab' && !empty($deduction['module_tab_id'])) {
-                        DB::table('module_tab_employees')->updateOrInsert(
+                        $this->incrementExistingMonthlyDeduction(
+                            'module_tab_employees',
                             ['module_tab_id' => $deduction['module_tab_id'], 'employee_no' => $employeeNo, 'year' => $year, 'month' => $month],
-                            ['amount' => $deduction['amount'], 'updated_at' => now(), 'created_at' => now()]
+                            $deduction['amount']
                         );
                     }
 
                     if ($employeeNo !== '' && $deduction['type'] === 'salary_tax' && $salaryTaxYearId) {
-                        DB::table('employee_payroll_components')->updateOrInsert(
+                        $this->incrementExistingMonthlyDeduction(
+                            'employee_payroll_components',
                             ['tax_deduction_id' => $salaryTaxYearId, 'employee_no' => $employeeNo, 'month' => $month],
-                            ['amount' => $deduction['amount'], 'updated_at' => now(), 'created_at' => now()]
+                            $deduction['amount']
                         );
                     }
                 }
@@ -359,7 +380,33 @@ class SalaryService extends BaseImportService
 
     private function getRegularStaticHeaders(): array
     {
-        return ['No.', 'Employee No', 'Employee', 'Position', 'Salary Grade', 'Rate/Month', 'Total Deductions', 'Net Pay', 'Net Salary', 'Net Salary 15th', 'Net Salary 31st'];
+        return ['No.', 'Employee No', 'Employee', 'Position', 'Salary Grade', 'Rate/Month', 'Total Deductions', 'Net Pay', 'Net Salary', 'Net Salary 15th', 'Net Salary 30th', 'Net Salary 31st'];
+    }
+
+    private function regularNetPayFromRow(array $employee): float
+    {
+        $netPay = $this->amountFromKeys($employee, ['Net Pay', 'Net Salary']);
+
+        if ($netPay > 0) {
+            return $netPay;
+        }
+
+        return $this->toAmount($employee['Net Salary 15th'] ?? 0)
+            + $this->toAmount($employee['Net Salary 30th'] ?? 0)
+            + $this->toAmount($employee['Net Salary 31st'] ?? 0);
+    }
+
+    private function getRegularDirectHeaderDeductions(): array
+    {
+        return [
+            'GSIS Conso Loan' => ['GSIS Conso Loan', 'GSIS Consol Loan', 'GSIS Consolidated Loan'],
+            'GSIS Optional Prem' => ['GSIS Optional Prem', 'GSIS Optional Premium'],
+            'GSIS Educ' => ['GSIS Educ', 'GSIS Education', 'GSIS Educational Loan'],
+            'Real Estate' => ['Real Estate', 'Real Estate Loan'],
+            'Computer Loan' => ['Computer Loan'],
+            'OPTICAL c/o TAPIEA' => ['OPTICAL c/o TAPIEA', 'Optical c/o TAPIEA', 'Optical'],
+            'HMO c/o TAPIEA' => ['HMO c/o TAPIEA', 'HMO C/O TAPIEA', 'HMO'],
+        ];
     }
 
     private function getRegularModuleTabsByHeader(): array
@@ -401,9 +448,17 @@ class SalaryService extends BaseImportService
             str_ireplace('Phil Health', 'PhilHealth', $label),
             str_ireplace('Emergency', 'Emer.', $label),
             str_ireplace('Emer.', 'Emergency', $label),
+            str_ireplace('Consolidated', 'Conso', $label),
+            str_ireplace('Conso', 'Consolidated', $label),
+            str_ireplace('Premium', 'Prem', $label),
+            str_ireplace('Prem', 'Premium', $label),
+            str_ireplace('Educational', 'Educ', $label),
+            str_ireplace('Educ', 'Educational', $label),
             str_ireplace('MP 2', 'MP2', $label),
             str_ireplace('MP2', 'MP 2', $label),
             str_ireplace('Savings', '', $label),
+            str_ireplace('c/o', '', $label),
+            str_ireplace('TAPIEA', '', $label),
         ];
 
         return array_values(array_unique(array_filter(array_map(fn ($value) => trim(preg_replace('/\s+/', ' ', (string) $value)), $aliases))));
@@ -440,6 +495,16 @@ class SalaryService extends BaseImportService
             }
         }
 
+        foreach ($this->getRegularDirectHeaderDeductions() as $label => $aliases) {
+            $candidates = array_merge($aliases, $this->buildRegularDeductionAliases($label));
+
+            foreach ($candidates as $alias) {
+                if ($normalizedHeader === $this->normalizeDeductionKey($alias)) {
+                    return ['type' => 'known_header', 'module_tab_id' => null, 'label' => $label];
+                }
+            }
+        }
+
         return $moduleTab
             ? ['type' => 'module_tab', 'module_tab_id' => $moduleTab['id'], 'label' => $moduleTab['label']]
             : ['type' => null, 'module_tab_id' => null, 'label' => $header];
@@ -461,5 +526,27 @@ class SalaryService extends BaseImportService
         )
             ? DB::table('payroll_components_years')->where('payroll_component_id', $componentId)->where('year', $year)->value('id')
             : null;
+    }
+
+    private function incrementExistingMonthlyDeduction(string $table, array $attributes, float $amount): void
+    {
+        $existing = DB::table($table)->where($attributes)->first();
+
+        if ($existing) {
+            DB::table($table)
+                ->where('id', $existing->id)
+                ->update([
+                    'amount' => $this->toAmount($existing->amount ?? 0) + $amount,
+                    'updated_at' => now(),
+                ]);
+
+            return;
+        }
+
+        DB::table($table)->insert($attributes + [
+            'amount' => $amount,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

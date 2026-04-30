@@ -39,6 +39,9 @@
         {{-- Users --}}
         @include('admin.components.sidebar.items.users')
 
+        {{-- Feedbacks --}}
+        @include('admin.components.sidebar.items.feedbacks')
+
         {{-- Reports --}}
         @include('admin.components.sidebar.items.reports')
 

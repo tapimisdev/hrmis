@@ -148,6 +148,18 @@ export default {
                 employees: [],
                 group_id: "",
                 employment_type_id: "",
+                apply_deduction: "yes",
+                deduction_apply_options: ["current"],
+                deduction_defer_options: [],
+                deduction_deferred_cutoff: "",
+                deduction_deferred_date: "",
+                deduction_schedule_preview: {
+                    incoming: [],
+                    incoming_count: 0,
+                    current_applies: false,
+                    current_deferred: null,
+                    applied_cutoff_count: 0,
+                },
                 date: new Date().toISOString().split("T")[0],
                 approved_by: {},
             },
@@ -204,6 +216,13 @@ export default {
                     },
                 );
                 this.form.employees = res.data.data;
+                this.form.deduction_schedule_preview = res.data.deduction_schedule ?? {
+                    incoming: [],
+                    incoming_count: 0,
+                    current_applies: false,
+                    current_deferred: null,
+                    applied_cutoff_count: 0,
+                };
                 if (this.form.employees.eligible.length == 0) {
                     this.nextDisabled = true;
                 } else {

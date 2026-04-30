@@ -41,8 +41,11 @@ Route::prefix('payroll')->group(function() {
     
         Route::post('items/{payroll_id}/{payroll_emp_id}', [SalaryItemController::class, 'update']);
         Route::post('check-employees', [SalaryApiController::class, 'validateAndGetEmployee']);
+        Route::get('deduction-options', [SalaryApiController::class, 'deductionOptions']);
         Route::post('adjustments', [SalaryApiController::class, 'getAdjustments']);
         Route::post('processed', [SalaryApiController::class, 'getList']);
+        Route::get('{payroll_id}/aut-deductions/preview', [SalaryApiController::class, 'previewAutDeductions']);
+        Route::post('{payroll_id}/aut-deductions/apply', [SalaryApiController::class, 'applyAutDeductions']);
         Route::get('{payroll_id}', [SalaryApiController::class, 'getPayrollData']);
         Route::post('generate', [SalaryController::class, 'store']);
         Route::delete('{id}/delete', [SalaryController::class, 'destroy']);
@@ -110,6 +113,8 @@ Route::prefix('payroll')->group(function() {
         Route::post('check-employees', [LongevityApiController::class, 'validateAndGetEmployee']);
         Route::post('processed', [LongevityApiController::class, 'getList']);
         Route::get('{payroll_id}', [LongevityApiController::class, 'getPayrollData']);
+        Route::get('{payroll_no}/download', [LongevityApiController::class, 'downloadPayrollRegistry'])
+            ->name('api.payroll.longevity.download');
         Route::post('generate', [LongevityPayController::class, 'store']);
         Route::delete('{id}/delete', [LongevityPayController::class, 'destroy']);
         Route::delete('{id}/{employment_type}', [LongevityPayController::class, 'deleteEmployeePayroll']);

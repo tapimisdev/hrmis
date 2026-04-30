@@ -30,6 +30,7 @@ import TaxationIndex from "./admin/taxation/TaxationIndex.vue";
 import TrainLawIndex from "./admin/trainlaw/TrainLawIndex.vue";
 
 import WebtimeIndex from "./admin/web-time-access/WebtimeIndex.vue";
+import FeedbackDetailModal from "./admin/feedbacks/DetailModal.vue";
 
 import TabModule from "./admin/modules/TabModule.vue";
 import TaxSettings from "./admin/settings/TaxIndex.vue";
@@ -83,6 +84,7 @@ const authApp = createApp({
         ChangePassword,
         PushNotification,
         WebtimeIndex,
+        FeedbackDetailModal,
         ViewDtr,
         TaxationIndex,
         TrainLawIndex,

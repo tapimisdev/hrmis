@@ -2,24 +2,30 @@
 
 namespace App\Http\Controllers\Admin\Payroll\Api;
 
+use App\Enums\PayrollStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SalaryPay\CreateRequest;
-use App\Services\Exports\PayslipService;
 use App\Services\Exports\AUTService;
+use App\Services\Exports\PayslipService;
 use App\Services\Exports\RegistryService;
+use App\Services\SalaryPay\AutDeductionService;
 use App\Services\SalaryPay\GetEmployeeService;
 use App\Services\SalaryPay\PayrollService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SalaryApiController extends Controller
 {
-
     protected $salary_payroll_service;
+    protected $autDeductionService;
 
-    public function __construct(PayrollService $salary_payroll_service)
-    {
+    public function __construct(
+        PayrollService $salary_payroll_service,
+        AutDeductionService $autDeductionService
+    ) {
         $this->salary_payroll_service = $salary_payroll_service;
+        $this->autDeductionService = $autDeductionService;
     }
 
     public function getList(Request $request)
@@ -29,7 +35,7 @@ class SalaryApiController extends Controller
             'year' => 'required|integer|min:2000|max:' . date('Y'),
             'month' => 'required|integer|min:1|max:12',
             'cutoff' => 'nullable|string|max:50',
-            // 'status' => 'nullable|string|in:draft,pending,approved,for_releasing,completed,cancelled',
+            'status' => 'nullable|string|max:50',
         ]);
 
         $list = $this->salary_payroll_service->getPayrolls($validated);
@@ -40,10 +46,23 @@ class SalaryApiController extends Controller
     public function validateAndGetEmployee(CreateRequest $request)
     {
         $validatedData = $request->validated();
-
         $employees = $this->salary_payroll_service->getEligibleEmployees($validatedData);
 
-        return response(['data' => $employees, 'success'], 200);
+        return response([
+            'data' => $employees,
+            'deduction_schedule' => $this->salary_payroll_service->getCosDeductionSchedulePreview($validatedData),
+            'success',
+        ], 200);
+    }
+
+    public function deductionOptions(Request $request)
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date'],
+            'cutoff' => ['required', 'string', 'in:first_cutoff,second_cutoff'],
+        ]);
+
+        return response()->json($this->salary_payroll_service->getCosDeductionOptions($validated));
     }
 
     public function getAdjustments(Request $request)
@@ -56,37 +75,86 @@ class SalaryApiController extends Controller
         $holidays = $this->salary_payroll_service->getHolidays($validated);
         $suspensions = $this->salary_payroll_service->getSuspensions($validated);
 
-        $events = $holidays->merge($suspensions);
-
-        return response()->json($events);
+        return response()->json($holidays->merge($suspensions));
     }
 
-    public function getPayrollData(string $payroll_id, bool $isGrouped = true) 
+    public function getPayrollData(string $payroll_id, bool $isGrouped = true)
     {
         $employee_salary = new GetEmployeeService($payroll_id, $isGrouped);
         $employee_salary->getAndMapEmployeeSalary();
-        $employees = $employee_salary->employees;
-        
-        return response()->json($employees);
+
+        return response()->json($employee_salary->employees);
     }
 
     public function downloadPayrollRegistry($payroll_no)
     {
-       return app(RegistryService::class)->download($payroll_no);
+        return app(RegistryService::class)->download($payroll_no);
     }
 
-    public function downloadAbsencesLeaves($payroll_no) {
+    public function downloadAbsencesLeaves($payroll_no)
+    {
         return app(AUTService::class)->download($payroll_no);
     }
-    
+
     public function downloadPayslip($payroll_no)
     {
         return app(PayslipService::class)->download($payroll_no);
     }
 
+    public function previewAutDeductions(string $payroll_id)
+    {
+        $payroll = $this->autDeductionService->getRegularPayroll($payroll_id);
+        $this->ensureAutDeductionCanBeProcessed($payroll);
+        $range = $this->autDeductionService->getPayrollRangeMeta($payroll);
+
+        return response()->json([
+            'data' => $this->autDeductionService->buildAutDeductionRows($payroll)->values(),
+            'meta' => [
+                'payroll_id' => $payroll->id,
+                'payroll_no' => $payroll->payroll_no,
+                'as_of' => Carbon::parse($payroll->payroll_date)->format('Y-m'),
+                'status' => $payroll->status,
+                'is_aut_deducted' => (bool) ($payroll->is_aut_deducted ?? false),
+                'period_covered' => $payroll->period_covered,
+                'range_start' => $range['start_date'],
+                'range_end' => $range['end_date'],
+                'range_label' => $range['label'],
+            ],
+        ]);
+    }
+
+    public function applyAutDeductions(string $payroll_id)
+    {
+        $payroll = $this->autDeductionService->getRegularPayroll($payroll_id);
+        $this->ensureAutDeductionCanBeProcessed($payroll);
+        $validated = request()->validate([
+            'rows' => 'nullable|array',
+            'rows.*.pspe_id' => 'required_with:rows|integer',
+            'rows.*.equivalent' => 'required_with:rows|numeric|min:0',
+        ]);
+
+        $savedCount = $this->autDeductionService->applyAutDeductions(
+            $payroll,
+            $validated['rows'] ?? []
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'AUT changes applied successfully.',
+            'saved_count' => $savedCount,
+        ]);
+    }
+
+    private function ensureAutDeductionCanBeProcessed(object $payroll): void
+    {
+        if (($payroll->status ?? null) !== PayrollStatusEnum::Approved->value) {
+            abort(422, 'AUT deductions can only be processed when payroll is approved.');
+        }
+    }
+
     private function getEmployeePayslip($payroll_id)
     {
-        $employees = DB::table('payroll_salary_employee as pse')
+        return DB::table('payroll_salary_employee as pse')
             ->where('pse.payroll_salary_id', $payroll_id)
             ->leftJoinSub(
                 DB::table('employee_projects as ep')
@@ -104,18 +172,5 @@ class SalaryApiController extends Controller
                 'p.name as project_name'
             )
             ->get();
-
-        return $employees;
     }
-
-
-
-
-
-
-
-
-
-
-
 }
