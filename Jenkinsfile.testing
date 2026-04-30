@@ -16,6 +16,20 @@ pipeline {
     }
 
     stages {
+        
+        stage('Set Build Name') {
+            steps {
+                script {
+                    def msg = sh(
+                        script: "git log -1 --pretty=%s",
+                        returnStdout: true
+                    ).trim()
+
+                    currentBuild.displayName = "#${env.BUILD_NUMBER} - ${msg}"
+                }
+            }
+        }
+
         stage('Show Jenkins Details') {
             steps {
                 sh '''
