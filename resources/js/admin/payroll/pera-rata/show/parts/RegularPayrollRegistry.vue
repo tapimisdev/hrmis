@@ -81,7 +81,7 @@
 
             <td class="text-center">{{ formatMoney(emp.pera) }}</td>
             <td class="text-center">{{ formatMoney(emp.representation_allowance) }}</td>
-            <td class="text-center">{{ formatMoney(emp.transportion_allowance) }}</td>
+            <td class="text-center">{{ formatMoney(emp.transportation_allowance ?? emp.transportion_allowance) }}</td>
 
             <td class="text-center">{{ emp.absences }}</td>
             <td class="text-center">{{ formatMoney(emp.ut_deductions) }}</td>

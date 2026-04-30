@@ -52,33 +52,24 @@ class ComputationService {
         $year = (int) $year;
         $month = (int) $month;
 
-        // type => payroll_component_id
-        $componentIdsByType = DB::table('payroll_components_settings')
-            ->whereIn('type', [
-                TableSettingsEnum::PERA->value,
-                TableSettingsEnum::RATA->value,
-            ])
-            ->pluck('table_id', 'type');
+        $componentTypes = [
+            TableSettingsEnum::PERA->value,
+            TableSettingsEnum::RATA->value,
+            'representation_allowance',
+            'transportation_allowance',
+        ];
 
-        // payroll_component_id list (for whereIn)
-        $componentIds = $componentIdsByType->values();
-
-        // type => payroll_components_years.id  (THIS is the key fix)
+        // type => payroll_components_years.id
         $componentYearIdByType = DB::table('payroll_components_years as pcy')
             ->join('payroll_components_settings as pcs', function ($join) {
                 $join->on('pcs.table_id', '=', 'pcy.payroll_component_id');
             })
-            ->whereIn('pcs.type', [
-                TableSettingsEnum::PERA->value,
-                TableSettingsEnum::RATA->value,
-            ])
+            ->whereIn('pcs.type', $componentTypes)
             ->where('pcy.year', $year)
             ->pluck('pcy.id', 'pcs.type');
 
-        // year_id list for whereIn
         $yearIds = $componentYearIdByType->values();
 
-        // tax_deduction_id(year_id) => amount
         $amountsByYearId = DB::table('employee_payroll_components')
             ->whereIn('tax_deduction_id', $yearIds)
             ->where('employee_no', $employee_no)
@@ -87,10 +78,27 @@ class ComputationService {
 
         $peraYearId = $componentYearIdByType[TableSettingsEnum::PERA->value] ?? null;
         $rataYearId = $componentYearIdByType[TableSettingsEnum::RATA->value] ?? null;
+        $representationYearId = $componentYearIdByType['representation_allowance'] ?? null;
+        $transportationYearId = $componentYearIdByType['transportation_allowance'] ?? null;
+
+        $rataTotal = $rataYearId ? (float) ($amountsByYearId[$rataYearId] ?? 0) : 0;
+        $representation = $representationYearId ? (float) ($amountsByYearId[$representationYearId] ?? 0) : 0;
+        $transportation = $transportationYearId ? (float) ($amountsByYearId[$transportationYearId] ?? 0) : 0;
+
+        if ($representation === 0.0 && $transportation === 0.0 && $rataTotal > 0) {
+            $representation = $rataTotal / 2;
+            $transportation = $rataTotal / 2;
+        }
+
+        if ($rataTotal === 0.0 && ($representation > 0 || $transportation > 0)) {
+            $rataTotal = $representation + $transportation;
+        }
 
         return [
             'pera_employee' => $peraYearId ? (float) ($amountsByYearId[$peraYearId] ?? 0) : 0,
-            'rata_employee' => $rataYearId ? (float) ($amountsByYearId[$rataYearId] ?? 0) : 0,
+            'rata_employee' => $rataTotal,
+            'representation_allowance' => $representation,
+            'transportation_allowance' => $transportation,
         ];
     }
 
@@ -107,7 +115,8 @@ class ComputationService {
 
         $pera = (float) $pera_rata['pera_employee'];
         $rata_total = (float) $pera_rata['rata_employee'];
-        $rata = $rata_total / 2;
+        $representationAllowance = (float) $pera_rata['representation_allowance'];
+        $transportationAllowance = (float) $pera_rata['transportation_allowance'];
 
 
         $payload = [
@@ -127,7 +136,7 @@ class ComputationService {
 
         $ut_deductions = $this->computeUTDeduction($total_ut);
 
-        $gross = $pera + $rata_total;
+        $gross = $pera + $representationAllowance + $transportationAllowance;
         $deductions = $absences + $ut_deductions;
 
         $total = max($gross - $deductions, 0);
@@ -141,8 +150,8 @@ class ComputationService {
                 'name' => $this->name,
                 'position' => $this->position,
                 'pera' => $pera,
-                'representation_allowance' => $rata,
-                'transportion_allowance' => $rata,
+                'representation_allowance' => $representationAllowance,
+                'transportion_allowance' => $transportationAllowance,
                 'absences' => $absences,
                 'ut_deductions' => $ut_deductions,
                 'total' => $total,
