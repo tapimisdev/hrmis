@@ -193,7 +193,7 @@ def deployLaravel(String server, String linuxUser, boolean runMigration) {
                 docker exec '${CONTAINER}' bash -lc 'cd /var/www/html && npm run build'
 
                 echo 'Caching Laravel config/routes/views...'
-                docker exec '${CONTAINER}' bash -lc 'cd /var/www/html && php artisan optimize'
+                docker exec '${CONTAINER}' bash -lc 'cd /var/www/html && php artisan optimize:clear'
 
                 ${runMigration ? "echo 'Running database migrations...'; docker exec '${CONTAINER}' bash -lc 'cd /var/www/html && php artisan migrate --force'" : "echo 'Skipping migration on this server...'"}
 
