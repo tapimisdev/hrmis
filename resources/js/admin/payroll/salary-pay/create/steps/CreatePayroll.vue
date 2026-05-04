@@ -306,22 +306,11 @@ export default {
                 this.localForm.cutoff = this.inferCutoffFromDate(this.localForm.date);
             }
 
-            if (!this.localForm.deduction_defer_options.includes("next_cutoff")) {
-                this.clearDeferredDeduction();
-                return;
+            if (!this.localForm.deduction_defer_options.length) {
+                this.localForm.deduction_defer_options = ["tbd"];
             }
 
-            const nextCutoff = this.deductionOptions.defer_options.find(
-                (option) => option.value === "next_cutoff"
-            ) || this.deferredDeductionOption;
-
-            if (!nextCutoff?.cutoff || !nextCutoff?.date) {
-                this.clearDeferredDeduction();
-                return;
-            }
-
-            this.localForm.deduction_deferred_cutoff = nextCutoff.cutoff;
-            this.localForm.deduction_deferred_date = nextCutoff.date;
+            this.clearDeferredDeduction();
         },
         fetchDeductionOptions() {
             if (!this.isCos || !this.localForm.date || !this.localForm.cutoff) {
@@ -351,9 +340,16 @@ export default {
         },
         isRequiredDeductionOption(value) {
             return (
-                this.localForm.apply_deduction === "yes" &&
-                this.localForm.deduction_apply_options.length === 1 &&
-                this.localForm.deduction_apply_options.includes(value)
+                (
+                    this.localForm.apply_deduction === "yes" &&
+                    this.localForm.deduction_apply_options.length === 1 &&
+                    this.localForm.deduction_apply_options.includes(value)
+                ) ||
+                (
+                    this.localForm.apply_deduction === "no" &&
+                    this.localForm.deduction_defer_options.length === 1 &&
+                    this.localForm.deduction_defer_options.includes(value)
+                )
             );
         },
         toggleDeductionOption(value, checked) {
@@ -362,7 +358,7 @@ export default {
                 : "deduction_defer_options";
 
             if (this.localForm.apply_deduction === "no") {
-                this.localForm[key] = checked ? [value] : [];
+                this.localForm[key] = checked ? [value] : ["tbd"];
                 this.syncDeferredDeduction();
                 return;
             }
@@ -370,13 +366,6 @@ export default {
             const selected = new Set(this.localForm[key]);
             checked ? selected.add(value) : selected.delete(value);
             this.localForm[key] = selected.size ? Array.from(selected) : ["current"];
-        },
-        formatLocalDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, "0");
-            const day = String(date.getDate()).padStart(2, "0");
-
-            return `${year}-${month}-${day}`;
         },
         inferCutoffFromDate(value) {
             const date = new Date(value);
@@ -424,17 +413,7 @@ export default {
 
             return this.deductionOptions.defer_options.length
                 ? this.deductionOptions.defer_options
-                : [
-                    { value: "tbd", label: "To be determined" },
-                    this.deferredDeductionOption
-                        ? {
-                            value: "next_cutoff",
-                            label: this.deferredDeductionOption.label,
-                            cutoff: this.deferredDeductionOption.cutoff,
-                            date: this.deferredDeductionOption.date,
-                        }
-                        : null,
-                ].filter(Boolean);
+                : [{ value: "tbd", label: "To be determined" }];
         },
         deferredDeductionPlaceholder() {
             if (!this.localForm.cutoff) {
@@ -446,34 +425,6 @@ export default {
             }
 
             return "Choose a deduction schedule.";
-        },
-        deferredDeductionOption() {
-            if (!this.localForm.date || !this.localForm.cutoff) return null;
-
-            const date = new Date(this.localForm.date);
-            if (Number.isNaN(date.getTime())) return null;
-
-            let cutoff = "second_cutoff";
-            let scheduleDate = new Date(date.getFullYear(), date.getMonth(), 16);
-
-            if (this.localForm.cutoff === "second_cutoff") {
-                cutoff = "first_cutoff";
-                scheduleDate = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-            }
-
-            const monthYear = scheduleDate.toLocaleString(undefined, {
-                month: "long",
-                year: "numeric",
-            });
-            const cutoffLabel = cutoff === "first_cutoff" ? "1st Cutoff" : "2nd Cutoff";
-            const formattedDate = this.formatLocalDate(scheduleDate);
-
-            return {
-                cutoff,
-                date: formattedDate,
-                value: `${cutoff}|${formattedDate}`,
-                label: `${cutoffLabel} of ${monthYear}`,
-            };
         },
     },
 };

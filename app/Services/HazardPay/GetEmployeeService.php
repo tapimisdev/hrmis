@@ -9,7 +9,7 @@ class GetEmployeeService
     protected $payroll_id;
     public $employees = [];
 
-    public function __construct($payroll_id)
+    public function __construct($payroll_id, $isGrouped = true)
     {
         $this->payroll_id = $payroll_id;
     }
@@ -29,8 +29,34 @@ class GetEmployeeService
             return $this->employees;
         }
 
-        $employees = DB::table('payroll_hazard_pay_employee')
-            ->where('payroll_hazard_pay_id', $this->payroll_id)
+        $latestOrgDate = DB::table('employee_organization')
+            ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
+            ->whereDate('effectivity_date', '<=', Carbon::parse($payroll->month)->endOfMonth()->toDateString())
+            ->groupBy('employee_no');
+
+        $latestOrgId = DB::table('employee_organization')
+            ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
+            ->groupBy('employee_no', 'effectivity_date');
+
+        $employees = DB::table('payroll_hazard_pay_employee as phpe')
+            ->leftJoinSub($latestOrgDate, 'latest_org_date', function ($join) {
+                $join->on('phpe.employee_no', '=', 'latest_org_date.employee_no');
+            })
+            ->leftJoinSub($latestOrgId, 'latest_org_id', function ($join) {
+                $join->on('latest_org_date.employee_no', '=', 'latest_org_id.employee_no')
+                    ->on('latest_org_date.max_effectivity_date', '=', 'latest_org_id.effectivity_date');
+            })
+            ->leftJoin('employee_organization as eo', 'latest_org_id.max_id', '=', 'eo.id')
+            ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
+            ->where('phpe.payroll_hazard_pay_id', $this->payroll_id)
+            ->select(
+                'phpe.*',
+                'd.id as division_id',
+                'd.name as division_name',
+                'd.code as division_code'
+            )
+            ->orderBy('d.name')
+            ->orderBy('phpe.employee_no')
             ->get();
 
         $data = $employees->map(function ($e) {
@@ -47,6 +73,9 @@ class GetEmployeeService
                 'adjustments'    => $e->adjustments,
                 'net_pay'        => $e->net_pay,
                 'remarks'        => $e->remarks,
+                'division_id'     => $e->division_id,
+                'division_name'   => $e->division_name ?? 'No Division',
+                'division_code'   => $e->division_code,
             ];
         })->toArray();
 

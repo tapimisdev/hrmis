@@ -439,6 +439,7 @@ class PayslipService
     private function exportFile()
     {
         $writer = IOFactory::createWriter($this->spreadsheet, 'Xlsx');
+        $writer->setPreCalculateFormulas(false);
         $output = storage_path('app/public/payslip.xlsx');
         $writer->save($output);
 

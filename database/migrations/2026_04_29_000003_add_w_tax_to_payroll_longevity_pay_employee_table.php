@@ -9,9 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('payroll_longevity_pay_employee', function (Blueprint $table) {
-            $table->decimal('w_tax', 12, 2)->default(0)->after('longevity_amount');
-        });
+        if (!Schema::hasColumn('payroll_longevity_pay_employee', 'w_tax')) {
+            Schema::table('payroll_longevity_pay_employee', function (Blueprint $table) {
+                $table->decimal('w_tax', 12, 2)->default(0)->after('longevity_amount');
+            });
+        }
 
         $componentId = DB::table('payroll_components_settings')
             ->where('type', 'longetivity_pay')
@@ -47,8 +49,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('payroll_longevity_pay_employee', function (Blueprint $table) {
-            $table->dropColumn('w_tax');
-        });
+        if (Schema::hasColumn('payroll_longevity_pay_employee', 'w_tax')) {
+            Schema::table('payroll_longevity_pay_employee', function (Blueprint $table) {
+                $table->dropColumn('w_tax');
+            });
+        }
     }
 };

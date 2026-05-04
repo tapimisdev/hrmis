@@ -15,7 +15,7 @@
                 v-if="canShowAutDeductionButton"
                 type="button"
                 class="toolbar-btn"
-                :disabled="loading || autDeducted"
+                :disabled="loading"
                 @click="openAutDeductionModal"
             >
                 <i
@@ -28,7 +28,7 @@
             </button>
         </template>
 
-        <template #sheet-type>( PERMANENT )</template>
+        <template #sheet-type><span class="d-none"></span></template>
         <template #agency
             >TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template
         >
@@ -150,102 +150,168 @@
                         >
                             Remarks
                         </th>
-                        <th>Action</th>
+                        <th class="action-cell">Action</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    <tr
-                        v-for="emp in filteredEmployees"
-                        :key="emp.id"
-                        class="data-row"
+                    <template
+                        v-for="group in groupedFilteredEmployees"
+                        :key="group.name"
                     >
-                        <td class="text-center" style="min-width: 100px">
-                            {{ emp.employee_no }}
-                        </td>
-
-                        <td class="name-cell" style="min-width: 200px">
-                            <div class="employee-name">{{ emp.name }}</div>
-                            <div class="employee-position">
-                                {{ emp.position }}
-                            </div>
-                        </td>
-
-                        <td class="text-center" style="min-width: 120px">
-                            {{ formatMoney(emp.monthly_rate) }}
-                        </td>
-
-                        <td class="text-center" style="min-width: 120px">
-                            {{ emp.salary_grade }}
-                        </td>
-
-                        <td class="text-center" style="min-width: 120px">
-                            {{ formatMoney(emp.overtime) }}
-                        </td>
-
-                        <td class="text-center" style="min-width: 120px">
-                            {{ formatMoney(emp.holiday) }}
-                        </td>
-
-                        <td
-                            v-for="deduction in dynamicDeductions"
-                            :key="`row-${emp.id}-deduction-${deduction}`"
-                            class="number-cell deduction text-center"
-                        >
-                            {{
-                                formatMoney(getDeductionAmount(emp, deduction))
-                            }}
-                        </td>
-
-                        <td class="text-center deduction">
-                            {{ formatMoney(emp.total_deductions) }}
-                        </td>
-
-                        <td class="number-cell">
-                            <input
-                                v-model.number="emp.salary_adjustment"
-                                type="number"
-                                class="form-control border-0 bg-body"
-                                style="
-                                    min-width: 150px;
-                                    width: 100%;
-                                    max-width: 300px;
-                                    text-align: center;
-                                "
-                                @change="adjustRow(emp)"
-                            />
-                        </td>
-
-                        <td class="text-center">
-                            {{ formatMoney(netSalary15th(emp)) }}
-                        </td>
-
-                        <td class="text-center">
-                            {{ formatMoney(netSalary30th(emp)) }}
-                        </td>
-
-                        <td class="text-center">
-                            {{ formatMoney(emp.net_pay) }}
-                        </td>
-
-                        <td class="text-center">
-                            <textarea
-                                v-model="emp.remarks"
-                                class="form-control border-0 bg-body"
-                                @change="adjustRow(emp)"
-                            ></textarea>
-                        </td>
-                        <td class="text-center">
-                            <button
-                                type="button"
-                                class="btn btn-danger btn-sm"
-                                @click="$emit('delete', emp)"
-                                title="Delete"
+                        <tr class="project-header division-header">
+                            <td
+                                :colspan="tableColumnCount"
+                                class="project-cell division-cell"
                             >
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
+                                <span class="project-cell-label">{{ group.name }}</span>
+                            </td>
+                        </tr>
+
+                        <tr
+                            v-for="emp in group.employees"
+                            :key="emp.id"
+                            class="data-row"
+                        >
+                            <td class="text-center" style="min-width: 100px">
+                                {{ emp.employee_no }}
+                            </td>
+
+                            <td class="name-cell" style="min-width: 200px">
+                                <div class="employee-name">{{ emp.name }}</div>
+                                <div class="employee-position">
+                                    {{ emp.position }}
+                                </div>
+                            </td>
+
+                            <td class="text-center" style="min-width: 120px">
+                                {{ formatMoney(emp.monthly_rate) }}
+                            </td>
+
+                            <td class="text-center" style="min-width: 120px">
+                                {{ emp.salary_grade }}
+                            </td>
+
+                            <td class="text-center" style="min-width: 120px">
+                                {{ formatMoney(emp.overtime) }}
+                            </td>
+
+                            <td class="text-center" style="min-width: 120px">
+                                {{ formatMoney(emp.holiday) }}
+                            </td>
+
+                            <td
+                                v-for="deduction in dynamicDeductions"
+                                :key="`row-${emp.id}-deduction-${deduction}`"
+                                class="number-cell deduction text-center"
+                            >
+                                {{
+                                    formatMoney(getDeductionAmount(emp, deduction))
+                                }}
+                            </td>
+
+                            <td class="text-center deduction">
+                                {{ formatMoney(emp.total_deductions) }}
+                            </td>
+
+                            <td class="number-cell">
+                                <input
+                                    v-model.number="emp.salary_adjustment"
+                                    type="number"
+                                    class="form-control border-0 bg-body"
+                                    style="
+                                        min-width: 150px;
+                                        width: 100%;
+                                        max-width: 300px;
+                                        text-align: center;
+                                    "
+                                    @change="adjustRow(emp)"
+                                />
+                            </td>
+
+                            <td class="text-center">
+                                {{ formatMoney(netSalary15th(emp)) }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ formatMoney(netSalary30th(emp)) }}
+                            </td>
+
+                            <td class="text-center">
+                                {{ formatMoney(emp.net_pay) }}
+                            </td>
+
+                            <td class="text-center">
+                                <textarea
+                                    v-model="emp.remarks"
+                                    class="form-control border-0 bg-body"
+                                    @change="adjustRow(emp)"
+                                ></textarea>
+                            </td>
+                            <td class="text-center action-cell">
+                                <button
+                                    type="button"
+                                    class="btn btn-danger btn-sm"
+                                    @click="$emit('delete', emp)"
+                                    title="Delete"
+                                >
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <tr class="project-total division-total text-center">
+                            <td colspan="2" class="text-end">
+                                <strong>SUBTOTAL</strong>
+                            </td>
+                            <td class="number-cell">
+                                {{ formatMoney(groupTotals(group.employees, "monthly_rate")) }}
+                            </td>
+                            <td class="number-cell">-</td>
+                            <td class="number-cell">
+                                {{ formatMoney(groupTotals(group.employees, "overtime")) }}
+                            </td>
+                            <td class="number-cell">
+                                {{ formatMoney(groupTotals(group.employees, "holiday")) }}
+                            </td>
+
+                            <td
+                                v-for="deduction in dynamicDeductions"
+                                :key="`subtotal-${group.name}-deduction-${deduction}`"
+                                class="number-cell deduction"
+                            >
+                                {{
+                                    formatMoney(
+                                        groupTotals(
+                                            group.employees,
+                                            "deductions",
+                                            deduction,
+                                        ),
+                                    )
+                                }}
+                            </td>
+
+                            <td class="number-cell deduction">
+                                {{ formatMoney(groupTotals(group.employees, "total_deductions")) }}
+                            </td>
+                            <td class="number-cell earning">
+                                {{ formatMoney(groupTotals(group.employees, "salary_adjustment")) }}
+                            </td>
+                            <td class="number-cell net-salary">
+                                {{ formatMoney(groupTotals(group.employees, "net_salary_15th")) }}
+                            </td>
+                            <td class="number-cell net-salary">
+                                {{ formatMoney(groupTotals(group.employees, "net_salary_30th")) }}
+                            </td>
+                            <td class="number-cell net-salary">
+                                <strong>{{
+                                    formatMoney(groupTotals(group.employees, "net_pay"))
+                                }}</strong>
+                            </td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </template>
 
                     <tr v-if="!filteredEmployees.length">
                         <td
@@ -411,15 +477,6 @@
                 <button
                     v-if="!autDeducted"
                     type="button"
-                    class="btn btn-outline-primary"
-                    :disabled="autModalLoading || savingAut"
-                    @click="fetchAutDeductions"
-                >
-                    Refresh
-                </button>
-                <button
-                    v-if="!autDeducted"
-                    type="button"
                     class="btn btn-primary"
                     :disabled="!canApplyAutDeductions"
                     @click="confirmAutDeductions"
@@ -528,6 +585,31 @@ export default {
             });
         },
 
+        groupedFilteredEmployees() {
+            const groups = new Map();
+
+            this.filteredEmployees.forEach((emp) => {
+                const divisionName = this.divisionName(emp);
+
+                if (!groups.has(divisionName)) {
+                    groups.set(divisionName, {
+                        name: divisionName,
+                        employees: [],
+                    });
+                }
+
+                groups.get(divisionName).employees.push(emp);
+            });
+
+            return Array.from(groups.values()).sort((a, b) =>
+                a.name.localeCompare(b.name),
+            );
+        },
+
+        tableColumnCount() {
+            return this.baseColumnCount + this.dynamicDeductions.length;
+        },
+
         dynamicDeductions() {
             const names = new Set();
 
@@ -547,7 +629,7 @@ export default {
         },
 
         canShowAutDeductionButton() {
-            return this.isPayrollApproved;
+            return this.isPayrollApproved || this.autDeducted;
         },
 
         autRangeLabel() {
@@ -616,6 +698,10 @@ export default {
             return deduction ? this.toNumber(deduction.amount) : 0;
         },
 
+        divisionName(emp) {
+            return String(emp.division_name || "No Division").trim() || "No Division";
+        },
+
         netSalary15th(emp) {
             if (emp.net_salary_15th !== undefined && emp.net_salary_15th !== null) {
                 return this.toNumber(emp.net_salary_15th);
@@ -632,8 +718,8 @@ export default {
             return Number((this.toNumber(emp.net_pay) - this.netSalary15th(emp)).toFixed(2));
         },
 
-        grandTotals(field, subfield = null) {
-            return this.filteredEmployees.reduce((total, emp) => {
+        groupTotals(employees, field, subfield = null) {
+            return employees.reduce((total, emp) => {
                 if (field === "deductions" && subfield) {
                     return total + this.getDeductionAmount(emp, subfield);
                 }
@@ -648,6 +734,10 @@ export default {
 
                 return total + this.toNumber(emp[field]);
             }, 0);
+        },
+
+        grandTotals(field, subfield = null) {
+            return this.groupTotals(this.filteredEmployees, field, subfield);
         },
 
         async adjustRow(emp) {
@@ -675,7 +765,7 @@ export default {
         },
 
         openAutDeductionModal() {
-            if (!this.isPayrollApproved) return;
+            if (!this.isPayrollApproved && !this.autDeducted) return;
 
             this.$refs.autDeductionModal.open();
             this.fetchAutDeductions();
@@ -801,6 +891,15 @@ export default {
     border-collapse: collapse;
 }
 
+.excel-table .header-labels th {
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+}
+
+.excel-table .header-labels th br {
+    display: none;
+}
+
 .earning,
 .deduction {
     max-width: 96px;
@@ -822,6 +921,32 @@ export default {
 
 .grand-total {
     font-weight: 700;
+}
+
+.division-cell {
+    text-transform: uppercase;
+    white-space: nowrap !important;
+    text-align: start;
+}
+
+.division-total {
+    font-weight: 700;
+}
+
+.action-cell {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+    white-space: nowrap;
+}
+
+.action-cell .btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .aut-modal-meta {

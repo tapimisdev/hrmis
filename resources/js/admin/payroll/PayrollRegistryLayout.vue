@@ -12,15 +12,23 @@
 
       <div class="toolbar-left">
         <div class="dropdown">
-          <button class="toolbar-btn left dropdown-toggle" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            <i class="fa-solid fa-download"></i> Export
+          <button ref="exportDropdownButton" class="toolbar-btn left dropdown-toggle" type="button" data-bs-toggle="dropdown"
+            aria-expanded="false" :disabled="isExporting">
+            <i v-if="!isExporting" class="fa-solid fa-download"></i>
+            {{ isExporting ? "Exporting" : "Export" }}
+            <i v-if="isExporting" class="fa-solid fa-spinner fa-spin"></i>
           </button>
 
           <ul class="dropdown-menu dropdown-menu-end">
             <li v-for="item in downloads" :key="item.key">
-              <a class="dropdown-item" href="javascript:void(0)" @click="downloadPayroll(item.key, payroll_no)">
-                {{ item.label }}
+              <a
+                class="dropdown-item"
+                :class="{ disabled: isExporting }"
+                href="javascript:void(0)"
+                @click="downloadPayroll(item.key, payroll_no)"
+              >
+                <i v-if="exportingKey === item.key" class="fa-solid fa-spinner fa-spin me-2"></i>
+                {{ exportingKey === item.key ? `Exporting ${item.label}...` : item.label }}
               </a>
             </li>
           </ul>
@@ -36,6 +44,10 @@
 	      <slot name="summary"></slot>
 	    </div>
 
+	    <div v-if="$slots.notice" class="toolbar-notice">
+	      <slot name="notice"></slot>
+	    </div>
+
 	    <!-- Sheet -->
 	    <div class="excel-sheet">
       <LoaderVue :visible="loading" :hasBackground="true" status="uploading" message="Uploading, please wait..." />
@@ -44,7 +56,7 @@
       <div class="sheet-header">
         <h1 class="sheet-title">
           <div class="toolbar-description mb-1">
-            <slot name="sheet-type">( PERMANENT )</slot>
+            <slot name="sheet-type"><span class="d-none"></span></slot>
           </div>
 
           <slot name="agency">
@@ -124,9 +136,13 @@ export default {
     return {
       token,
       theme: document.documentElement.getAttribute("data-bs-theme") || "light",
+      exportingKey: null,
     };
   },
   computed: {
+    isExporting() {
+      return Boolean(this.exportingKey);
+    },
     statusConfig() {
       const configs = {
         draft: {
@@ -192,6 +208,8 @@ export default {
   },
   methods: {
     async downloadPayroll(type, payroll_no) {
+      if (this.isExporting) return;
+
       const defaultEndpoints = {
         registry: `/api/payroll/salary-pay/${payroll_no}/download`,
         aut: `/api/payroll/salary-pay/absences-leaves/${payroll_no}/download`,
@@ -201,6 +219,9 @@ export default {
       const endPoint = this.downloadEndpoints[type] || defaultEndpoints[type];
 
       if (!endPoint) return;
+
+      this.closeExportDropdown();
+      this.exportingKey = type;
 
       try {
         const response = await axios.get(endPoint, {
@@ -219,7 +240,22 @@ export default {
         window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error("Download failed:", error);
+      } finally {
+        this.exportingKey = null;
       }
+    },
+    closeExportDropdown() {
+      const button = this.$refs.exportDropdownButton;
+
+      if (!button) return;
+
+      const dropdown = button.closest(".dropdown");
+      const menu = dropdown?.querySelector(".dropdown-menu");
+
+      window.bootstrap?.Dropdown?.getOrCreateInstance(button)?.hide();
+      button.setAttribute("aria-expanded", "false");
+      menu?.classList.remove("show");
+      dropdown?.classList.remove("show");
     },
     applyStatusTheme() {
       const { color, bg, darkColor, darkBg } = this.statusConfig;
@@ -324,6 +360,7 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   min-height: 34px;
   line-height: 1;
 }
@@ -334,7 +371,7 @@ export default {
 }
 
 .toolbar-btn i {
-  margin-right: 5px;
+  margin-right: 0;
 }
 
 .toolbar-left {
@@ -485,7 +522,7 @@ export default {
 
 .excel-table-wrapper :deep(.excel-table) {
   width: 100%;
-  min-width: max-content;
+  min-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 12px;
@@ -512,9 +549,15 @@ export default {
   font-weight: 700;
   text-transform: none;
   letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 25;
+}
+
+.excel-table-wrapper :deep(.header-labels th br) {
+  display: none;
 }
 
 .excel-table-wrapper :deep(.data-row:nth-child(even) td) {
@@ -524,11 +567,11 @@ export default {
 .excel-table-wrapper :deep(.header-labels th:nth-child(1)) {
   left: 0;
   z-index: 35;
-  min-width: 90px;
+  min-width: 100px;
 }
 
 .excel-table-wrapper :deep(.header-labels th:nth-child(2)) {
-  left: 90px;
+  left: 100px;
   z-index: 34;
   min-width: 220px;
 }
@@ -538,12 +581,12 @@ export default {
   left: 0;
   z-index: 20;
   background: var(--panel-bg);
-  min-width: 90px;
+  min-width: 100px;
 }
 
 .excel-table-wrapper :deep(.data-row > td:nth-child(2)) {
   position: sticky;
-  left: 90px;
+  left: 100px;
   z-index: 19;
   background: var(--panel-bg);
   min-width: 220px;
@@ -577,6 +620,16 @@ export default {
   background: #e9edf2 !important;
   color: #334155;
   font-weight: 700;
+  padding-left: 0;
+  text-align: start;
+}
+
+.excel-table-wrapper :deep(.excel-table .project-header .project-cell-label) {
+  display: inline-block;
+  padding-left: 30px;
+  position: sticky;
+  left: 0;
+  z-index: 24;
 }
 
 .excel-table-wrapper :deep(.excel-table .employee-name) {

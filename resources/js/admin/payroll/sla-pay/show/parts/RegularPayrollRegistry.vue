@@ -11,7 +11,7 @@
     @download="handleDownload"
   >
     <!-- Header slots -->
-    <template #sheet-type>( SLA PAY )</template>
+    <template #sheet-type><span class="d-none"></span></template>
     <template #agency>TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template>
     <template #title>
       PAYROLL OF SUBSISTENCE AND LAUNDRY ALLOWANCE PAY FOR THE MONTH OF {{ month?.toUpperCase() }}
@@ -92,53 +92,75 @@
         </thead>
 
         <tbody>
-          <tr class="data-row" v-for="(emp, index) in filteredEmployees" :key="index">
-            <td class="text-center">{{ emp.employee_no }}</td>
+          <template v-for="group in groupedEmployees" :key="group.id">
+            <tr class="project-header division-header">
+              <td colspan="12" class="project-cell division-cell">
+                <span class="project-cell-label">{{ group.name }}</span>
+              </td>
+            </tr>
 
-            <td class="name-cell">
-              <div class="employee-name">{{ emp.name }}</div>
-              <div class="employee-position">{{ emp.position }}</div>
-            </td>
+            <tr class="data-row" v-for="emp in group.employees" :key="emp.id">
+              <td class="text-center">{{ emp.employee_no }}</td>
 
-            <td class="text-center">{{ formatMoney(emp.subsistence_allowance) }}</td>
-            <td class="text-center">{{ formatMoney(emp.laundry_allowance) }}</td>
-            <td class="text-center"><strong>{{ formatMoney(emp.total_sla) }}</strong></td>
+              <td class="name-cell">
+                <div class="employee-name">{{ emp.name }}</div>
+                <div class="employee-position">{{ emp.position }}</div>
+              </td>
 
-            <td class="text-center">{{ formatMoney(emp.ut_deductions) }}</td>
-            <td class="text-center">{{ formatMoney(emp.uniform_deduction) }}</td>
-            <td class="text-center">{{ formatMoney(emp.healthcard) }}</td>
+              <td class="text-center">{{ formatMoney(emp.subsistence_allowance) }}</td>
+              <td class="text-center">{{ formatMoney(emp.laundry_allowance) }}</td>
+              <td class="text-center"><strong>{{ formatMoney(emp.total_sla) }}</strong></td>
 
-            <td class="text-center">
-              <input
-                type="number"
-                class="form-control border-0 text-center bg-body"
-                v-model="emp.adjustments"
-                @change="adjustRow(emp)"
-              />
-            </td>
+              <td class="text-center">{{ formatMoney(emp.ut_deductions) }}</td>
+              <td class="text-center">{{ formatMoney(emp.uniform_deduction) }}</td>
+              <td class="text-center">{{ formatMoney(emp.healthcard) }}</td>
 
-            <td class="text-center">
-              <strong>{{ formatMoney(emp.net_pay) }}</strong>
-            </td>
+              <td class="text-center">
+                <input
+                  type="number"
+                  class="form-control border-0 text-center bg-body"
+                  v-model="emp.adjustments"
+                  @change="adjustRow(emp)"
+                />
+              </td>
 
-            <td class="text-center">
-              <textarea
-                class="form-control border-0 bg-body"
-                v-model="emp.remarks"
-                @change="adjustRow(emp)"
-              ></textarea>
-            </td>
-            <td class="text-center">
-              <button
-                type="button"
-                class="btn btn-danger btn-sm"
-                @click="$emit('delete', emp)"
-                title="Delete"
-              >
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </td>
-          </tr>
+              <td class="text-center">
+                <strong>{{ formatMoney(emp.net_pay) }}</strong>
+              </td>
+
+              <td class="text-center">
+                <textarea
+                  class="form-control border-0 bg-body"
+                  v-model="emp.remarks"
+                  @change="adjustRow(emp)"
+                ></textarea>
+              </td>
+              <td class="text-center">
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  @click="$emit('delete', emp)"
+                  title="Delete"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+
+            <tr class="project-total division-total text-center">
+              <td colspan="2" class="text-end"><strong>SUBTOTAL</strong></td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "subsistence_allowance")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "laundry_allowance")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "total_sla")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "ut_deductions")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "uniform_deduction")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "healthcard")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "adjustments")) }}</td>
+              <td class="number-cell"><strong>{{ formatNumber(groupTotals(group.employees, "net_pay")) }}</strong></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </template>
           <tr v-if="!filteredEmployees.length">
             <td colspan="12" class="text-center py-3">
               No employees found for the selected filters.
@@ -218,6 +240,27 @@ export default {
         return matchesSearch && matchesPosition && matchesRemarks;
       });
     },
+    groupedEmployees() {
+      const groups = [];
+      const indexes = new Map();
+
+      this.filteredEmployees.forEach((emp) => {
+        const groupId = emp.division_id || `division:${this.divisionName(emp)}`;
+
+        if (!indexes.has(groupId)) {
+          indexes.set(groupId, groups.length);
+          groups.push({
+            id: groupId,
+            name: this.divisionName(emp),
+            employees: [],
+          });
+        }
+
+        groups[indexes.get(groupId)].employees.push(emp);
+      });
+
+      return groups;
+    },
   },
   methods: {
     handlePrint() {
@@ -264,10 +307,25 @@ export default {
       }).format(Number(value) || 0);
     },
 
-    grandTotals(field) {
-      return this.filteredEmployees.reduce((total, emp) => {
+    divisionName(emp) {
+      const name = String(emp.division_name || "No Division").trim();
+      const code = String(emp.division_code || "").trim();
+
+      if (!code || name.includes(`(${code})`)) {
+        return name;
+      }
+
+      return `${name} (${code})`;
+    },
+
+    groupTotals(employees, field) {
+      return employees.reduce((total, emp) => {
         return total + (Number(emp[field]) || 0);
       }, 0);
+    },
+
+    grandTotals(field) {
+      return this.groupTotals(this.filteredEmployees, field);
     },
 
     async adjustRow(emp) {
@@ -303,6 +361,15 @@ export default {
 }
 
 .grand-total {
+  font-weight: 700;
+}
+
+.division-cell {
+  text-transform: uppercase;
+  white-space: nowrap !important;
+}
+
+.division-total {
   font-weight: 700;
 }
 </style>

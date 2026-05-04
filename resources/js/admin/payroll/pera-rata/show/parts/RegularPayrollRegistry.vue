@@ -11,7 +11,7 @@
     @download="handleDownload"
   >
     <!-- Header slots -->
-    <template #sheet-type>( PERA / RATA )</template>
+    <template #sheet-type><span class="d-none"></span></template>
     <template #agency>TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE</template>
     <template #title>PAYROLL OF PERA and RATA FOR THE MONTH OF {{ month?.toUpperCase() }}</template>
 
@@ -70,55 +70,79 @@
         </thead>
 
         <tbody>
-          <tr class="data-row" v-for="(emp, index) in filteredEmployees" :key="index">
-            <td class="text-center">{{ emp.employee_no }}</td>
+          <template v-for="group in groupedEmployees" :key="group.id">
+            <tr class="project-header division-header">
+              <td colspan="14" class="project-cell division-cell">
+                <span class="project-cell-label">{{ group.name }}</span>
+              </td>
+            </tr>
 
-            <td class="name-cell">
-              <div class="employee-name">{{ emp.name }}</div>
-            </td>
+            <tr class="data-row" v-for="emp in group.employees" :key="emp.id">
+              <td class="text-center">{{ emp.employee_no }}</td>
 
-            <td class="text-center">{{ emp.position }}</td>
+              <td class="name-cell">
+                <div class="employee-name">{{ emp.name }}</div>
+              </td>
 
-            <td class="text-center">{{ formatMoney(emp.pera) }}</td>
-            <td class="text-center">{{ formatMoney(emp.representation_allowance) }}</td>
-            <td class="text-center">{{ formatMoney(emp.transportion_allowance) }}</td>
+              <td class="text-center">{{ emp.position }}</td>
 
-            <td class="text-center">{{ emp.absences }}</td>
-            <td class="text-center">{{ formatMoney(emp.ut_deductions) }}</td>
+              <td class="text-center">{{ formatMoney(emp.pera) }}</td>
+              <td class="text-center">{{ formatMoney(emp.representation_allowance) }}</td>
+              <td class="text-center">{{ formatMoney(transportationAllowance(emp)) }}</td>
 
-            <td class="text-center"><strong>{{ formatMoney(emp.total) }}</strong></td>
+              <td class="text-center">{{ emp.absences }}</td>
+              <td class="text-center">{{ formatMoney(emp.ut_deductions) }}</td>
 
-            <td class="text-center">{{ formatMoney(emp.healthcard) }}</td>
+              <td class="text-center"><strong>{{ formatMoney(emp.total) }}</strong></td>
 
-            <td class="text-center">
-              <input
-                type="number"
-                class="form-control border-0 text-center bg-body"
-                v-model="emp.adjustments"
-                @change="adjustRow(emp)"
-              />
-            </td>
+              <td class="text-center">{{ formatMoney(emp.healthcard) }}</td>
 
-            <td class="text-center"><strong>{{ formatMoney(emp.net_pay) }}</strong></td>
+              <td class="text-center">
+                <input
+                  type="number"
+                  class="form-control border-0 text-center bg-body"
+                  v-model="emp.adjustments"
+                  @change="adjustRow(emp)"
+                />
+              </td>
 
-            <td class="text-center">
-              <textarea
-                class="form-control border-0 bg-body"
-                v-model="emp.remarks"
-                @change="adjustRow(emp)"
-              ></textarea>
-            </td>
-            <td class="text-center">
-              <button
-                type="button"
-                class="btn btn-danger btn-sm"
-                @click="$emit('delete', emp)"
-                title="Delete"
-              >
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </td>
-          </tr>
+              <td class="text-center"><strong>{{ formatMoney(emp.net_pay) }}</strong></td>
+
+              <td class="text-center">
+                <textarea
+                  class="form-control border-0 bg-body"
+                  v-model="emp.remarks"
+                  @change="adjustRow(emp)"
+                ></textarea>
+              </td>
+              <td class="text-center">
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  @click="$emit('delete', emp)"
+                  title="Delete"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+
+            <tr class="project-total division-total text-center">
+              <td colspan="2" class="text-end"><strong>SUBTOTAL</strong></td>
+              <td class="number-cell">-</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "pera")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "representation_allowance")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "transportation_allowance", "transportion_allowance")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "absences")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "ut_deductions")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "total")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "healthcard")) }}</td>
+              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "adjustments")) }}</td>
+              <td class="number-cell"><strong>{{ formatNumber(groupTotals(group.employees, "net_pay")) }}</strong></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </template>
           <tr v-if="!filteredEmployees.length">
             <td colspan="14" class="text-center py-3">
               No employees found for the selected filters.
@@ -133,7 +157,7 @@
             <td class="number-cell">-</td>
             <td class="number-cell">{{ formatNumber(grandTotals("pera")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("representation_allowance")) }}</td>
-            <td class="number-cell">{{ formatNumber(grandTotals("transportion_allowance")) }}</td>
+            <td class="number-cell">{{ formatNumber(grandTotals("transportation_allowance", "transportion_allowance")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("absences")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("ut_deductions")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("total")) }}</td>
@@ -200,6 +224,27 @@ export default {
         return matchesSearch && matchesPosition && matchesRemarks;
       });
     },
+    groupedEmployees() {
+      const groups = [];
+      const indexes = new Map();
+
+      this.filteredEmployees.forEach((emp) => {
+        const groupId = emp.division_id || `division:${this.divisionName(emp)}`;
+
+        if (!indexes.has(groupId)) {
+          indexes.set(groupId, groups.length);
+          groups.push({
+            id: groupId,
+            name: this.divisionName(emp),
+            employees: [],
+          });
+        }
+
+        groups[indexes.get(groupId)].employees.push(emp);
+      });
+
+      return groups;
+    },
   },
   methods: {
     handlePrint() {
@@ -246,10 +291,29 @@ export default {
       }).format(Number(value) || 0);
     },
 
-    grandTotals(field) {
-      return this.filteredEmployees.reduce((total, emp) => {
-        return total + (Number(emp[field]) || 0);
+    divisionName(emp) {
+      const name = String(emp.division_name || "No Division").trim();
+      const code = String(emp.division_code || "").trim();
+
+      if (!code || name.includes(`(${code})`)) {
+        return name;
+      }
+
+      return `${name} (${code})`;
+    },
+
+    transportationAllowance(emp) {
+      return emp.transportation_allowance ?? emp.transportion_allowance;
+    },
+
+    groupTotals(employees, field, fallbackField = null) {
+      return employees.reduce((total, emp) => {
+        return total + (Number(emp[field] ?? emp[fallbackField]) || 0);
       }, 0);
+    },
+
+    grandTotals(field, fallbackField = null) {
+      return this.groupTotals(this.filteredEmployees, field, fallbackField);
     },
 
     async adjustRow(emp) {
@@ -281,6 +345,15 @@ export default {
 }
 
 .grand-total {
+  font-weight: 700;
+}
+
+.division-cell {
+  text-transform: uppercase;
+  white-space: nowrap !important;
+}
+
+.division-total {
   font-weight: 700;
 }
 </style>
