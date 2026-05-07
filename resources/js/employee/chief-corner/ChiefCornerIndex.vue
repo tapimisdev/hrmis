@@ -371,7 +371,63 @@
                                 <tr class="text-uppercase">
                                     <th>Employee</th>
                                     <th>Unit</th>
-                                    <th>Value</th>
+                                    <th>Mins Consumed</th>
+                                    <th>Tally</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card rounded-4 p-3 chief-tab-card mt-4" :class="{ 'chief-card-loading': isQuarterlyTimelogStatsLoading }">
+                    <div v-if="isQuarterlyTimelogStatsLoading" class="chief-tab-loader">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <div class="small text-muted">Loading quarterly timelog data...</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                        <div>
+                            <div class="chief-section-eyebrow">Quarterly Stats</div>
+                            <h5 class="mb-1">Top 10 by Category</h5>
+                            <p class="text-muted mb-0">{{ selectedYear }} totals by quarter</p>
+                        </div>
+                        <div class="chief-stat-switch" role="tablist" aria-label="Quarter tabs">
+                            <button
+                                v-for="quarter in quarterTabs"
+                                :key="quarter.key"
+                                type="button"
+                                class="chief-stat-switch-btn"
+                                :class="{ active: activeQuarterTab === quarter.key }"
+                                :disabled="isAnyLoading"
+                                @click="setQuarterTab(quarter.key)"
+                            >
+                                {{ quarter.label }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end mb-3">
+                        <div class="chief-stat-switch" role="tablist" aria-label="Quarterly timelog stat categories">
+                            <button
+                                v-for="tab in timelogStatTabs"
+                                :key="`quarterly-${tab.key}`"
+                                type="button"
+                                class="chief-stat-switch-btn"
+                                :class="{ active: activeTimelogStatTab === tab.key }"
+                                :disabled="isAnyLoading"
+                                @click="setTimelogStatTab(tab.key)"
+                            >
+                                {{ tab.label }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table ref="timelogQuarterlyStatsTable" class="table table-striped align-middle chief-table">
+                            <thead>
+                                <tr class="text-uppercase">
+                                    <th>Employee</th>
+                                    <th>Unit</th>
+                                    <th>Mins Consumed</th>
+                                    <th>Tally</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -502,10 +558,17 @@ export default {
             timelogStatTabs: [
                 { key: "lates", label: "Lates" },
                 { key: "undertime", label: "Undertime" },
+                { key: "ut", label: "UT" },
                 { key: "leave", label: "Leave" },
                 { key: "offsets", label: "Offsets" },
                 { key: "so", label: "SO" },
                 { key: "lto", label: "LTO" },
+            ],
+            quarterTabs: [
+                { key: "1", label: "Q1 (Jan - Mar)" },
+                { key: "2", label: "Q2 (Apr - Jun)" },
+                { key: "3", label: "Q3 (Jul - Sep)" },
+                { key: "4", label: "Q4 (Oct - Dec)" },
             ],
             employeeTypeTabs: [
                 { key: "all", label: "All" },
@@ -515,6 +578,7 @@ export default {
             activeTab: this.initialTab,
             timelogView: localStorage.getItem("chief-corner-timelog-view") || "month",
             activeTimelogStatTab: localStorage.getItem("chief-corner-timelog-stat-tab") || "lates",
+            activeQuarterTab: localStorage.getItem("chief-corner-quarter-tab") || String(Math.ceil((Number(this.selectedMonthProp.slice(5, 7)) || 1) / 3)),
             activeEmployeeType: localStorage.getItem("chief-corner-employee-type") || "all",
             selectedMonth: this.selectedMonthProp,
             selectedTimelogDate: "",
@@ -526,6 +590,7 @@ export default {
             loadingTables: {
                 applications: false,
                 timelogStats: false,
+                timelogQuarterlyStats: false,
                 timelogSummary: false,
                 timelogDaily: false,
                 leaveCredits: false,
@@ -594,8 +659,14 @@ export default {
         isTimelogStatsLoading() {
             return this.loading.timelogs || this.loadingTables.timelogStats;
         },
+        isQuarterlyTimelogStatsLoading() {
+            return this.loading.timelogs || this.loadingTables.timelogQuarterlyStats;
+        },
         isLeaveCreditsLoading() {
             return this.loading.credits || this.loadingTables.leaveCredits;
+        },
+        selectedYear() {
+            return this.selectedMonth.slice(0, 4);
         },
         timelogDayMin() {
             return `${this.selectedMonth}-01`;
@@ -624,6 +695,10 @@ export default {
             this.activeEmployeeType = queryEmployeeType;
         } else if (!this.employeeTypeTabs.some((tab) => tab.key === this.activeEmployeeType)) {
             this.activeEmployeeType = "all";
+        }
+
+        if (!this.quarterTabs.some((tab) => tab.key === this.activeQuarterTab)) {
+            this.activeQuarterTab = String(Math.ceil((Number(this.selectedMonth.slice(5, 7)) || 1) / 3));
         }
 
         if (queryDate) {
@@ -819,7 +894,18 @@ export default {
         },
         initializeTimelogTables() {
             this.buildTimelogStatsTable();
+            this.buildTimelogQuarterlyStatsTable();
+            this.buildActiveTimelogDetailTable();
+        },
+        buildActiveTimelogDetailTable() {
+            if (this.timelogView === "month") {
+                this.buildTimelogSummaryTable();
+                return;
+            }
 
+            this.buildTimelogDailyTable();
+        },
+        buildTimelogSummaryTable() {
             this.rebuildDataTable("timelogSummary", this.$refs.timelogSummaryTable, {
                 processing: true,
                 serverSide: true,
@@ -853,7 +939,8 @@ export default {
                     this.numericColumn("lto", "lto_order"),
                 ],
             });
-
+        },
+        buildTimelogDailyTable() {
             this.rebuildDataTable("timelogDaily", this.$refs.timelogDailyTable, {
                 processing: true,
                 serverSide: true,
@@ -924,33 +1011,50 @@ export default {
                 order: [],
                 searching: false,
                 ajax: this.buildAjaxHandler("timelogs", "timelogStats"),
-                columns: [
-                    {
-                        data: "employee",
-                        name: "employee_order",
-                        render: (data, type, row) => type === "display"
-                            ? `<div class="fw-bold">${this.uppercaseName(data)}</div><div class="small text-muted">${this.uppercaseName(row.position)}</div>`
-                            : `${data} ${row.position}`,
-                    },
-                    { data: "unit", name: "unit" },
-                    {
-                        data: "value",
-                        name: "value_order",
-                        render: (data, type, row) => {
-                            if (type === "sort" || type === "type") {
-                                return row.value_order;
-                            }
-
-                            if (type === "display" && row.breakdown_id) {
-                                return `<button type="button" class="btn btn-link p-0 chief-breakdown-trigger" data-breakdown-id="${row.breakdown_id}">${data}</button>`;
-                            }
-
-                            return data;
-                        },
-                    },
-                ],
+                columns: this.timelogStatsColumns(),
             });
             this.attachTimelogStatsClickHandler();
+        },
+        buildTimelogQuarterlyStatsTable() {
+            this.rebuildDataTable("timelogQuarterlyStats", this.$refs.timelogQuarterlyStatsTable, {
+                processing: true,
+                serverSide: true,
+                pageLength: 10,
+                lengthChange: false,
+                order: [],
+                searching: false,
+                ajax: this.buildAjaxHandler("timelogs", "timelogQuarterlyStats"),
+                columns: this.timelogStatsColumns(),
+            });
+            this.attachTimelogStatsClickHandler();
+        },
+        timelogStatsColumns() {
+            return [
+                {
+                    data: "employee",
+                    name: "employee_order",
+                    render: (data, type, row) => type === "display"
+                        ? `<div class="fw-bold">${this.uppercaseName(data)}</div><div class="small text-muted">${this.uppercaseName(row.position)}</div>`
+                        : `${data} ${row.position}`,
+                },
+                { data: "unit", name: "unit" },
+                {
+                    data: "value",
+                    name: "value_order",
+                    render: (data, type, row) => {
+                        if (type === "sort" || type === "type") {
+                            return row.value_order;
+                        }
+
+                        if (type === "display" && row.breakdown_id) {
+                            return `<button type="button" class="btn btn-link p-0 chief-breakdown-trigger" data-breakdown-id="${row.breakdown_id}">${data}</button>`;
+                        }
+
+                        return data;
+                    },
+                },
+                this.numericColumn("tally", "tally_order"),
+            ];
         },
         buildLeaveCreditsTable() {
             this.rebuildDataTable("leaveCredits", this.$refs.leaveCreditsTable, {
@@ -1030,10 +1134,13 @@ export default {
 
                     if (tab === "timelogs") {
                         params.stat = this.activeTimelogStatTab;
+                        if (table === "timelogQuarterlyStats") {
+                            params.quarter = this.activeQuarterTab;
+                        }
                     }
 
                     const response = await axios.get(this.tabEndpoint(tab), { params });
-                    if (table === "timelogStats") {
+                    if (table === "timelogStats" || table === "timelogQuarterlyStats") {
                         this.registerTimelogBreakdowns(response.data?.data || []);
                     }
                     this.applyDataTableMeta(table, response.data);
@@ -1141,23 +1248,39 @@ export default {
             });
         },
         attachTimelogStatsClickHandler() {
-            if (!this.$refs.timelogStatsTable || typeof window.$ === "undefined") {
+            if (typeof window.$ === "undefined") {
                 return;
             }
 
-            window.$(this.$refs.timelogStatsTable)
-                .off("click.chiefBreakdown")
-                .on("click.chiefBreakdown", ".chief-breakdown-trigger", (event) => {
-                    const breakdownId = event.currentTarget.dataset.breakdownId;
-                    this.openTimelogBreakdown(breakdownId);
-                });
+            [
+                this.$refs.timelogStatsTable,
+                this.$refs.timelogQuarterlyStatsTable,
+            ].forEach((table) => {
+                if (!table) {
+                    return;
+                }
+
+                window.$(table)
+                    .off("click.chiefBreakdown")
+                    .on("click.chiefBreakdown", ".chief-breakdown-trigger", (event) => {
+                        const breakdownId = event.currentTarget.dataset.breakdownId;
+                        this.openTimelogBreakdown(breakdownId);
+                    });
+            });
         },
         detachTimelogStatsClickHandler() {
-            if (!this.$refs.timelogStatsTable || typeof window.$ === "undefined") {
+            if (typeof window.$ === "undefined") {
                 return;
             }
 
-            window.$(this.$refs.timelogStatsTable).off("click.chiefBreakdown");
+            [
+                this.$refs.timelogStatsTable,
+                this.$refs.timelogQuarterlyStatsTable,
+            ].forEach((table) => {
+                if (table) {
+                    window.$(table).off("click.chiefBreakdown");
+                }
+            });
         },
         openTimelogBreakdown(breakdownId) {
             this.activeTimelogBreakdown = this.timelogBreakdowns[breakdownId] || null;
@@ -1254,7 +1377,11 @@ export default {
         reloadTabTables(tab) {
             const tableMap = {
                 applications: ["applications"],
-                timelogs: ["timelogStats", "timelogSummary", "timelogDaily"],
+                timelogs: [
+                    "timelogStats",
+                    "timelogQuarterlyStats",
+                    this.timelogView === "month" ? "timelogSummary" : "timelogDaily",
+                ],
                 credits: ["leaveCredits"],
             };
 
@@ -1290,6 +1417,7 @@ export default {
                 this.$refs.overviewTable,
                 this.$refs.applicationsTable,
                 this.$refs.timelogStatsTable,
+                this.$refs.timelogQuarterlyStatsTable,
                 this.$refs.timelogSummaryTable,
                 this.$refs.timelogDailyTable,
                 this.$refs.leaveCreditsTable,
@@ -1314,8 +1442,10 @@ export default {
             }
             this.invalidateLoadedTabs();
             this.syncUrl();
-            this.reloadTabTables("timelogs");
             this.$nextTick(() => {
+                this.buildActiveTimelogDetailTable();
+                this.reloadDataTable("timelogStats");
+                this.reloadDataTable("timelogQuarterlyStats");
                 this.adjustVisibleTables();
             });
         },
@@ -1323,7 +1453,16 @@ export default {
             this.activeTimelogStatTab = tab;
             localStorage.setItem("chief-corner-timelog-stat-tab", tab);
             this.$nextTick(() => {
-                this.reloadTabTables("timelogs");
+                this.reloadDataTable("timelogStats");
+                this.reloadDataTable("timelogQuarterlyStats");
+                this.adjustVisibleTables();
+            });
+        },
+        setQuarterTab(tab) {
+            this.activeQuarterTab = tab;
+            localStorage.setItem("chief-corner-quarter-tab", tab);
+            this.$nextTick(() => {
+                this.reloadDataTable("timelogQuarterlyStats");
                 this.adjustVisibleTables();
             });
         },
