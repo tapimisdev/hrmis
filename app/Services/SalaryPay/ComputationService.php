@@ -251,149 +251,163 @@ class ComputationService
          * ============================================================
          */
         if ($this->employment_type == EmploymentTypesEnum::COS->value) {
-            $month = (int) $month;
+    $month = (int) $month;
 
-            $toCents = fn(float $v): int => (int) round($v * 100, 0, PHP_ROUND_HALF_UP);
-            $fromCents = fn(int $c): float => $c / 100;
+    $toCents = fn(float $v): int => (int) round($v * 100, 0, PHP_ROUND_HALF_UP);
+    $fromCents = fn(int $c): float => $c / 100;
 
-            $percentOfCents = function(int $baseCents, float $rate): int {
-                return (int) round($baseCents * $rate, 0, PHP_ROUND_HALF_UP);
-            };
+    $percentOfCents = function (int $baseCents, float $rate): int {
+        return (int) round($baseCents * $rate, 0, PHP_ROUND_HALF_UP);
+    };
 
-            // Earnings for COS are overtime + holiday excess only
-            $total_earnings = $overtime_amount + $holiday_excess_amount;
+    // Earnings for COS are overtime + holiday excess only
+    $total_earnings = $overtime_amount + $holiday_excess_amount;
 
-            // Convert all money inputs to cents (ASSUME these are already in pesos as floats)
-            $basicC          = $toCents($basic_salary);
-            $absencesC       = $toCents($absences_amount);
-            $lateUnderC      = $toCents($late_undertime_amount);
-            $earningsC       = $toCents($total_earnings);
+    // Convert all money inputs to cents
+    $basicC     = $toCents($basic_salary);
+    $absencesC  = $toCents($absences_amount);
+    $lateC      = $toCents($late_undertime_amount);
+    $earningsC  = $toCents($total_earnings);
 
-            if($this->cutoff === 'second_cutoff') {
-                $hmo = $this->getHmo($employee_no);
-            } else {
-                $hmo = 0;
-            }
+    if ($this->cutoff === 'second_cutoff') {
+        $hmo = $this->getHmo($employee_no);
+    } else {
+        $hmo = 0;
+    }
 
-            $hmoC = $this->apply_current_deduction ? ($toCents($hmo) ?? 0) : 0;
+    $hmoC = $this->apply_current_deduction ? ($toCents($hmo) ?? 0) : 0;
 
-            $autC = $absencesC + $lateUnderC;
-            $appliedAutC = $this->apply_current_deduction ? $autC : 0;
+    $autC = $absencesC + $lateC;
+    $appliedAutC = $this->apply_current_deduction ? $autC : 0;
 
-            // Gross = basic salary + earnings. AUT is part of deductions.
-            $grossC = $basicC + $earningsC;
+    // Gross = basic + earnings
+    $grossC = $basicC + $earningsC;
 
-            // 2% (with threshold 10417.00 pesos)
-            $thresholdC = 10417 * 100;
-            $base2C = max(0, $grossC - $thresholdC);
+    /**
+     * ============================================================
+     * FIXED: TAXABLE INCOME
+     * taxable = gross - deductions (AUT + HMO)
+     * ============================================================
+     */
+    $deductionsBaseC = $appliedAutC + $hmoC;
+    $taxableC = $grossC - $deductionsBaseC;
 
-            $ewt2C = $this->apply_current_deduction && $this->two_percent ? $percentOfCents($base2C, 0.02) : 0;
+    // 2% (with threshold 10417.00 pesos)
+    $thresholdC = 10417 * 100;
+    $base2C = max(0, $taxableC - $thresholdC);
 
-            // 3% (no threshold) — direct on gross
-            $ewt3C = $this->apply_current_deduction && $this->three_percent ? $percentOfCents($grossC, 0.03) : 0;
+    $ewt2C = $this->apply_current_deduction && $this->two_percent
+        ? $percentOfCents($base2C, 0.02)
+        : 0;
 
-            // 5% (no threshold) — direct on gross
-            $ewt5C = $this->apply_current_deduction && $this->five_percent ? $percentOfCents($grossC, 0.05) : 0;
+    // 3% — FIXED: use taxable income
+    $ewt3C = $this->apply_current_deduction && $this->three_percent
+        ? $percentOfCents($taxableC, 0.03)
+        : 0;
 
-            if ($this->apply_deduction) {
-                $deferredDeductions = $this->getDeferredCosDeductionCents(
-                    $employee_no,
-                    $toCents,
-                    $percentOfCents
-                );
+    // 5% — FIXED: use taxable income
+    $ewt5C = $this->apply_current_deduction && $this->five_percent
+        ? $percentOfCents($taxableC, 0.05)
+        : 0;
 
-                $appliedAutC += $deferredDeductions['aut'];
-                $ewt2C += $deferredDeductions['ewt_2'];
-                $ewt3C += $deferredDeductions['percentage_tax_3'];
-                $ewt5C += $deferredDeductions['tax_ewt_5'];
-                $hmoC += $deferredDeductions['hmo'];
-            }
+    if ($this->apply_deduction) {
+        $deferredDeductions = $this->getDeferredCosDeductionCents(
+            $employee_no,
+            $toCents,
+            $percentOfCents
+        );
 
-            $totalDedC = $appliedAutC + $ewt2C + $ewt3C + $ewt5C + $hmoC;
-            $netC      = $grossC - $totalDedC;
+        $appliedAutC += $deferredDeductions['aut'];
+        $ewt2C += $deferredDeductions['ewt_2'];
+        $ewt3C += $deferredDeductions['percentage_tax_3'];
+        $ewt5C += $deferredDeductions['tax_ewt_5'];
+        $hmoC += $deferredDeductions['hmo'];
+    }
 
-            // Convert back to pesos with 2 decimals
-            $basic_salary        = $fromCents($basicC);
-            $total_earnings      = $fromCents($earningsC);
-            $gross               = $fromCents($grossC);
+    $totalDedC = $appliedAutC + $ewt2C + $ewt3C + $ewt5C + $hmoC;
+    $netC      = $grossC - $totalDedC;
 
-            $ewt_2prct            = $fromCents($ewt2C);
-            $percentage_tax_3prct = $fromCents($ewt3C);
-            $tax_ewt_5prct        = $fromCents($ewt5C);
+    // Convert back to pesos
+    $basic_salary        = $fromCents($basicC);
+    $total_earnings      = $fromCents($earningsC);
+    $gross               = $fromCents($grossC);
 
-            $hmo                  = $fromCents($hmoC);
-            $total_deductions     = $fromCents($totalDedC);
-            $net                  = $fromCents($netC);
+    $ewt_2prct            = $fromCents($ewt2C);
+    $percentage_tax_3prct = $fromCents($ewt3C);
+    $tax_ewt_5prct        = $fromCents($ewt5C);
 
-            // Salary diagnostics (unchanged content)
-            Log::info("
-                ================ SALARY INFO ================
-                Name            : {$this->name}
-                Position        : {$this->position}
-                Daily Rate      : {$this->daily_rate}
-                Monthly Rate    : {$this->salary_amount}
-                Holiday Excess  : {$holiday_excess_amount}
-                Absences        : {$absences}
-                Absences Amount : {$absences_amount}
-                UT mins         : {$late_undertime}
-                UT Amount       : {$late_undertime_amount}
-                Overtime mins   : {$overtime}
-                Overtime Amount : {$overtime_amount}
-                ---------------------------------------------
-                Basic Salary        : {$basic_salary}
-                Total Earnings      : {$total_earnings}
-                Total Deductions    : {$total_deductions}
-                Gross Pay           : {$gross}
-                EWT 2%              : {$ewt_2prct}
-                Percentage Tax 3%   : {$percentage_tax_3prct}
-                Tax EWT 5%          : {$tax_ewt_5prct}
-                hmo                 : {$hmo}
-                Net Pay             : {$net}
-                =============================================
-            ");
+    $hmo                  = $fromCents($hmoC);
+    $total_deductions     = $fromCents($totalDedC);
+    $net                  = $fromCents($netC);
 
-            /**
-             * Persist COS payroll entry.
-             */
-            $pseId = DB::table('payroll_salary_employee')->insertGetId([
-                'payroll_salary_id' => $this->payroll_id,
-                'employee_no'       => $this->employee_no,
-                'name'              => $this->name,
-                'position'          => $this->position,
-                'salary_grade'      => $this->salary_grade,
+    Log::info("
+        ================ SALARY INFO ================
+        Name            : {$this->name}
+        Position        : {$this->position}
+        Daily Rate      : {$this->daily_rate}
+        Monthly Rate    : {$this->salary_amount}
+        Holiday Excess  : {$holiday_excess_amount}
+        Absences        : {$absences}
+        Absences Amount : {$absences_amount}
+        UT mins         : {$late_undertime}
+        UT Amount       : {$late_undertime_amount}
+        Overtime mins   : {$overtime}
+        Overtime Amount : {$overtime_amount}
+        ---------------------------------------------
+        Basic Salary        : {$basic_salary}
+        Total Earnings      : {$total_earnings}
+        Total Deductions    : {$total_deductions}
+        Gross Pay           : {$gross}
+        EWT 2%              : {$ewt_2prct}
+        Percentage Tax 3%   : {$percentage_tax_3prct}
+        Tax EWT 5%          : {$tax_ewt_5prct}
+        hmo                 : {$hmo}
+        Net Pay             : {$net}
+        =============================================
+    ");
 
-                'ut'                => $late_undertime_amount,
-                'absences'          => $absences_amount,
-                'overtime'          => $overtime_amount,
-                'holiday'           => $holiday_excess_amount,
+    /**
+     * Persist COS payroll entry.
+     */
+    $pseId = DB::table('payroll_salary_employee')->insertGetId([
+        'payroll_salary_id' => $this->payroll_id,
+        'employee_no'       => $this->employee_no,
+        'name'              => $this->name,
+        'position'          => $this->position,
+        'salary_grade'      => $this->salary_grade,
 
-                'gsis'              => 0,
-                'philhealth'        => 0,
-                'pagibig'           => 0,
+        'ut'                => $late_undertime_amount,
+        'absences'          => $absences_amount,
+        'overtime'          => $overtime_amount,
+        'holiday'           => $holiday_excess_amount,
 
-                'ewt_2'             => $ewt_2prct,
-                'percentage_tax_3'  => $percentage_tax_3prct,
-                'tax_ewt_5'         => $tax_ewt_5prct,
+        'gsis'              => 0,
+        'philhealth'        => 0,
+        'pagibig'           => 0,
 
-                'w_tax'             => $ewt_2prct + $percentage_tax_3prct + $tax_ewt_5prct,
+        'ewt_2'             => $ewt_2prct,
+        'percentage_tax_3'  => $percentage_tax_3prct,
+        'tax_ewt_5'         => $tax_ewt_5prct,
 
-                'hmo'               => $hmo,
+        'w_tax'             => $ewt_2prct + $percentage_tax_3prct + $tax_ewt_5prct,
 
-                'total_deductions'  => $total_deductions,
-                'total_earnings'    => $total_earnings,
+        'hmo'               => $hmo,
 
-                'monthly_rate'      => round($this->salary_amount * 2, 2),
-                'basic_pay'         => $basic_salary,
-                'gross_pay'         => $gross,
-                'net_pay'           => $net,
+        'total_deductions'  => $total_deductions,
+        'total_earnings'    => $total_earnings,
 
-                'salary_adjustment' => 0,
-                'created_at'        => now(),
-                'updated_at'        => now(),
-            ]);
+        'monthly_rate'      => round($this->salary_amount * 2, 2),
+        'basic_pay'         => $basic_salary,
+        'gross_pay'         => $gross,
+        'net_pay'           => $net,
 
-            Log::info("Insert ID returned: " . var_export($pseId, true));
-        }
+        'salary_adjustment' => 0,
+        'created_at'        => now(),
+        'updated_at'        => now(),
+    ]);
+
+    Log::info("Insert ID returned: " . var_export($pseId, true));
+}
 
         /**
          * ============================================================

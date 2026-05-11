@@ -302,6 +302,7 @@ class ChiefCornerController extends Controller
             $this->chiefCacheKey('timelog-insights', [
                 'month' => $monthDate->format('Y-m'),
                 'users' => md5(json_encode($scope['userIds'])),
+                'stats_version' => 4,
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogInsights($scope['employees'], $monthDate)
@@ -317,6 +318,20 @@ class ChiefCornerController extends Controller
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogDailyRows($scope['employees'], $monthDate)
+        );
+    }
+
+    protected function cachedQuarterlyTimelogStats(array $scope, Carbon $monthDate, int $quarter): array
+    {
+        return Cache::remember(
+            $this->chiefCacheKey('timelog-quarterly-stats', [
+                'year' => $monthDate->format('Y'),
+                'quarter' => $quarter,
+                'users' => md5(json_encode($scope['userIds'])),
+                'stats_version' => 4,
+            ]),
+            now()->addMinutes(10),
+            fn () => $this->quarterlyTimelogStats($scope, $monthDate, $quarter)
         );
     }
 
@@ -396,6 +411,7 @@ class ChiefCornerController extends Controller
                 $timelogRows = $rows->filter(fn ($row) => !empty($row['time_in']) || !empty($row['time_out']));
 
                 $lateMinutes = 0;
+                $undertimeMinutes = 0;
                 $earlyMinutes = 0;
                 $onTimeDays = 0;
                 $workedMinutes = 0;
@@ -437,6 +453,7 @@ class ChiefCornerController extends Controller
                         ]);
 
                         if (($tardinessData['total_tardiness'] ?? 0) > 0) {
+                            $lateMinutes += (int) $tardinessData['total_tardiness'];
                             $lateBreakdown[] = $this->timelogDurationBreakdownItem(
                                 $rowDate,
                                 (int) $tardinessData['total_tardiness'],
@@ -448,6 +465,7 @@ class ChiefCornerController extends Controller
                         }
 
                         if (($tardinessData['total_undertime'] ?? 0) > 0) {
+                            $undertimeMinutes += (int) $tardinessData['total_undertime'];
                             $undertimeBreakdown[] = $this->timelogDurationBreakdownItem(
                                 $rowDate,
                                 (int) $tardinessData['total_undertime'],
@@ -490,24 +508,10 @@ class ChiefCornerController extends Controller
                 $summaryMap = collect($dtr['summary'] ?? [])->keyBy('label');
                 $payrollValues = collect($dtr['payroll_value'] ?? []);
                 $lateUndertime = (int) data_get($summaryMap->get('Late / Undertime'), 'actual_value', 0);
-
-                foreach ($rows as $row) {
-                    if (!empty($row['shift_id']) && (!isset($shiftCache[$row['shift_id']]))) {
-                        $shiftCache[$row['shift_id']] = DB::table('shifts')->find($row['shift_id']);
-                    }
-
-                    $shift = $row['shift_id'] ? ($shiftCache[$row['shift_id']] ?? null) : null;
-
-                    if ($shift?->start_time && !empty($row['time_in'])) {
-                        $shiftStart = Carbon::parse($row['date'] . ' ' . $shift->start_time);
-                        $actualIn = Carbon::parse($row['date'] . ' ' . $row['time_in']);
-                        if ($actualIn->gt($shiftStart)) {
-                            $lateMinutes += $shiftStart->diffInMinutes($actualIn);
-                        }
-                    }
-                }
-
-                $undertimeMinutes = max($lateUndertime - $lateMinutes, 0);
+                $lateMinutes = min($lateMinutes, $lateUndertime);
+                $undertimeMinutes = min($undertimeMinutes, max($lateUndertime - $lateMinutes, 0));
+                $lateBreakdown = $this->normalizeTimelogDurationBreakdownTotal($lateBreakdown, $lateMinutes);
+                $undertimeBreakdown = $this->normalizeTimelogDurationBreakdownTotal($undertimeBreakdown, $undertimeMinutes);
                 $latestRow = $timelogRows->sortByDesc('date')->first();
 
                 return (object) [
@@ -542,14 +546,100 @@ class ChiefCornerController extends Controller
 
         return [
             $summaries,
-            [
-                'lates' => $summaries->filter(fn ($row) => $row->late_minutes > 0)->sortByDesc('late_minutes')->take(10)->values(),
-                'undertime' => $summaries->filter(fn ($row) => $row->undertime_minutes > 0)->sortByDesc('undertime_minutes')->take(10)->values(),
-                'leave' => $summaries->filter(fn ($row) => $row->leave_days > 0)->sortByDesc('leave_days')->take(10)->values(),
-                'offsets' => $summaries->filter(fn ($row) => $row->offset_days > 0)->sortByDesc('offset_days')->take(10)->values(),
-                'so' => $summaries->filter(fn ($row) => $row->so_days > 0)->sortByDesc('so_days')->take(10)->values(),
-                'lto' => $summaries->filter(fn ($row) => $row->lto_days > 0)->sortByDesc('lto_days')->take(10)->values(),
-            ],
+            $this->timelogStatsFromSummaries($summaries),
+        ];
+    }
+
+    protected function quarterlyTimelogStats(array $scope, Carbon $monthDate, int $quarter): array
+    {
+        $quarter = max(1, min(4, $quarter));
+        $startMonth = (($quarter - 1) * 3) + 1;
+        $todayMonth = now()->copy()->startOfMonth();
+        $summaries = collect();
+
+        for ($offset = 0; $offset < 3; $offset++) {
+            $quarterMonth = $monthDate->copy()
+                ->startOfYear()
+                ->addMonths($startMonth + $offset - 1);
+
+            if ($quarterMonth->gt($todayMonth)) {
+                continue;
+            }
+
+            [$monthSummaries] = $this->cachedTimelogInsights($scope, $quarterMonth);
+            $summaries = $summaries->merge($monthSummaries);
+        }
+
+        return $this->timelogStatsFromSummaries($this->aggregateTimelogSummaries($summaries));
+    }
+
+    protected function aggregateTimelogSummaries(Collection $summaries): Collection
+    {
+        $numericFields = [
+            'days_with_logs',
+            'worked_minutes',
+            'late_minutes',
+            'undertime_minutes',
+            'early_minutes',
+            'overtime_minutes',
+            'leave_days',
+            'offset_days',
+            'so_days',
+            'lto_days',
+            'ontime_days',
+        ];
+
+        $breakdownFields = [
+            'late_breakdown',
+            'undertime_breakdown',
+            'leave_breakdown',
+            'offset_breakdown',
+            'so_breakdown',
+            'lto_breakdown',
+        ];
+
+        return $summaries
+            ->groupBy('employee_no')
+            ->map(function (Collection $rows) use ($numericFields, $breakdownFields) {
+                $summary = clone $rows->first();
+
+                foreach ($numericFields as $field) {
+                    $summary->{$field} = $rows->sum(fn ($row) => (float) ($row->{$field} ?? 0));
+                }
+
+                foreach ($breakdownFields as $field) {
+                    $summary->{$field} = $rows
+                        ->flatMap(fn ($row) => $row->{$field} ?? [])
+                        ->values()
+                        ->all();
+                }
+
+                $summary->last_log_date = $rows
+                    ->pluck('last_log_date')
+                    ->filter()
+                    ->sortDesc()
+                    ->first();
+
+                return $summary;
+            })
+            ->values();
+    }
+
+    protected function timelogStatsFromSummaries(Collection $summaries): array
+    {
+        return [
+            'lates' => $summaries->filter(fn ($row) => $row->late_minutes > 0)->sortByDesc('late_minutes')->take(10)->values(),
+            'undertime' => $summaries->filter(fn ($row) => $row->undertime_minutes > 0)->sortByDesc('undertime_minutes')->take(10)->values(),
+            'ut' => $summaries
+                ->map(fn ($row) => $this->withCombinedLateUndertime($row))
+                ->filter(fn ($row) => $row->ut_minutes > 0)
+                ->sortByDesc('ut_minutes')
+                ->take(10)
+                ->values(),
+            'leave' => $summaries->filter(fn ($row) => $row->leave_days > 0)->sortByDesc('leave_days')->take(10)->values(),
+            'offsets' => $summaries->filter(fn ($row) => $row->offset_days > 0)->sortByDesc('offset_days')->take(10)->values(),
+            'so' => $summaries->filter(fn ($row) => $row->so_days > 0)->sortByDesc('so_days')->take(10)->values(),
+            'lto' => $summaries->filter(fn ($row) => $row->lto_days > 0)->sortByDesc('lto_days')->take(10)->values(),
         ];
     }
 
@@ -854,6 +944,8 @@ class ChiefCornerController extends Controller
                     ? $this->minutesToHoursLabel((int) $value)
                     : $this->formatDayCount((float) $value),
                 'value_order' => $value,
+                'tally' => $this->timelogStatTally($row, $field, $breakdown),
+                'tally_order' => $this->timelogStatTally($row, $field, $breakdown),
                 'breakdown_id' => $breakdown['id'],
                 'breakdown' => $breakdown,
             ];
@@ -978,35 +1070,63 @@ class ChiefCornerController extends Controller
     protected function timelogsDataTablePayload(array $scope, Carbon $monthDate, Request $request): array
     {
         $table = $request->string('table')->toString();
+        $stat = $request->string('stat')->toString();
 
-        if ($monthDate->copy()->startOfMonth()->gt(now()->copy()->startOfMonth())) {
+        if ($table !== 'timelogQuarterlyStats' && $monthDate->copy()->startOfMonth()->gt(now()->copy()->startOfMonth())) {
             return $this->datatableCollectionResponse(collect(), $request);
         }
 
-        [$timelogSummaries, $timelogStats] = $this->cachedTimelogInsights($scope, $monthDate);
-        $dailyRows = $table === 'timelogDaily'
-            ? $this->cachedTimelogDailyRows($scope, $monthDate)
-            : collect();
+        return match ($table) {
+            'timelogStats' => $this->timelogStatsDataTableResponse($scope, $monthDate, $stat, $request),
+            'timelogQuarterlyStats' => $this->quarterlyTimelogStatsDataTableResponse($scope, $monthDate, $stat, $request),
+            'timelogSummary' => $this->timelogSummaryDataTableResponse($scope, $monthDate, $request),
+            'timelogDaily' => $this->timelogDailyDataTableResponse($scope, $monthDate, $request),
+            default => $this->datatableCollectionResponse(collect(), $request),
+        };
+    }
+
+    protected function timelogStatsDataTableResponse(array $scope, Carbon $monthDate, string $stat, Request $request): array
+    {
+        [, $timelogStats] = $this->cachedTimelogInsights($scope, $monthDate);
+
+        return $this->datatableCollectionResponse(
+            $this->timelogStatTableRows($timelogStats, $stat),
+            $request
+        );
+    }
+
+    protected function quarterlyTimelogStatsDataTableResponse(array $scope, Carbon $monthDate, string $stat, Request $request): array
+    {
+        $quarter = max(1, min(4, (int) $request->input('quarter', (int) ceil($monthDate->month / 3))));
+
+        return $this->datatableCollectionResponse(
+            $this->timelogStatTableRows($this->cachedQuarterlyTimelogStats($scope, $monthDate, $quarter), $stat),
+            $request
+        );
+    }
+
+    protected function timelogSummaryDataTableResponse(array $scope, Carbon $monthDate, Request $request): array
+    {
+        [$timelogSummaries] = $this->cachedTimelogInsights($scope, $monthDate);
+
+        return $this->datatableCollectionResponse(
+            $timelogSummaries->map(fn ($summary) => $this->formatTimelogSummaryRow($summary)),
+            $request
+        );
+    }
+
+    protected function timelogDailyDataTableResponse(array $scope, Carbon $monthDate, Request $request): array
+    {
+        $dailyRows = $this->cachedTimelogDailyRows($scope, $monthDate);
         $selectedDate = $request->string('selected_date')->toString();
-        if ($table === 'timelogDaily' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $selectedDate)) {
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $selectedDate)) {
             $dailyRows = $dailyRows
                 ->filter(fn ($row) => ($row['date_key'] ?? null) === $selectedDate)
                 ->values();
         }
-        $stat = $request->string('stat')->toString();
 
-        return match ($table) {
-            'timelogStats' => $this->datatableCollectionResponse(
-                $this->timelogStatTableRows($timelogStats, $stat),
-                $request
-            ),
-            'timelogSummary' => $this->datatableCollectionResponse(
-                $timelogSummaries->map(fn ($summary) => $this->formatTimelogSummaryRow($summary)),
-                $request
-            ),
-            'timelogDaily' => $this->datatableCollectionResponse($dailyRows, $request),
-            default => $this->datatableCollectionResponse(collect(), $request),
-        };
+        return $this->datatableCollectionResponse($dailyRows, $request);
     }
 
     protected function timelogStatTableRows(array $timelogStats, string $stat): Collection
@@ -1014,6 +1134,7 @@ class ChiefCornerController extends Controller
         $fieldMap = [
             'lates' => ['field' => 'late_minutes', 'format' => 'duration'],
             'undertime' => ['field' => 'undertime_minutes', 'format' => 'duration'],
+            'ut' => ['field' => 'ut_minutes', 'format' => 'duration'],
             'leave' => ['field' => 'leave_days', 'format' => 'days'],
             'offsets' => ['field' => 'offset_days', 'format' => 'days'],
             'so' => ['field' => 'so_days', 'format' => 'days'],
@@ -1028,6 +1149,40 @@ class ChiefCornerController extends Controller
             $selectedStat['field'],
             $selectedStat['format']
         );
+    }
+
+    protected function withCombinedLateUndertime(object $row): object
+    {
+        $combined = clone $row;
+        $combined->ut_minutes = (int) ($combined->late_minutes ?? 0) + (int) ($combined->undertime_minutes ?? 0);
+        $combined->ut_tally = count($combined->late_breakdown ?? []) + count($combined->undertime_breakdown ?? []);
+        $combined->ut_breakdown = collect($combined->late_breakdown ?? [])
+            ->map(fn ($item) => $this->withTimelogBreakdownType($item, 'Late'))
+            ->merge(
+                collect($combined->undertime_breakdown ?? [])
+                    ->map(fn ($item) => $this->withTimelogBreakdownType($item, 'Undertime'))
+            )
+            ->sortBy('date')
+            ->values()
+            ->all();
+
+        return $combined;
+    }
+
+    protected function timelogStatTally(object $row, string $field, array $breakdown): int
+    {
+        return match ($field) {
+            'ut_minutes' => (int) ($row->ut_tally ?? count($breakdown['items'])),
+            default => count($breakdown['items']),
+        };
+    }
+
+    protected function withTimelogBreakdownType(array $item, string $type): array
+    {
+        $details = trim((string) ($item['details'] ?? ''));
+        $item['details'] = trim($type . ($details !== '' ? ' | ' . $details : ''));
+
+        return $item;
     }
 
     protected function creditsDataTablePayload(array $scope, Carbon $monthDate, ?Carbon $selectedDate, Request $request): array
@@ -1379,6 +1534,7 @@ class ChiefCornerController extends Controller
         $typeMap = [
             'late_minutes' => ['key' => 'late_breakdown', 'label' => 'Late'],
             'undertime_minutes' => ['key' => 'undertime_breakdown', 'label' => 'Undertime'],
+            'ut_minutes' => ['key' => 'ut_breakdown', 'label' => 'UT'],
             'leave_days' => ['key' => 'leave_breakdown', 'label' => 'Leave'],
             'offset_days' => ['key' => 'offset_breakdown', 'label' => 'Offset'],
             'so_days' => ['key' => 'so_breakdown', 'label' => 'Special Order'],
@@ -1405,9 +1561,60 @@ class ChiefCornerController extends Controller
     {
         return [
             'date' => Carbon::parse($date)->format('M d, Y'),
+            'minutes' => $minutes,
             'value' => $this->minutesToHoursLabel($minutes),
             'details' => collect($details)->filter()->join(' | '),
         ];
+    }
+
+    protected function normalizeTimelogDurationBreakdownTotal(array $items, int $targetMinutes): array
+    {
+        if ($targetMinutes <= 0 || empty($items)) {
+            return [];
+        }
+
+        $rawTotal = collect($items)->sum(fn ($item) => (int) ($item['minutes'] ?? 0));
+        if ($rawTotal <= 0) {
+            return [];
+        }
+
+        if ($rawTotal === $targetMinutes) {
+            return array_values($items);
+        }
+
+        $allocated = collect($items)
+            ->map(function ($item, $index) use ($targetMinutes, $rawTotal) {
+                $rawMinutes = (int) ($item['minutes'] ?? 0);
+                $exactMinutes = ($rawMinutes / $rawTotal) * $targetMinutes;
+                $minutes = (int) floor($exactMinutes);
+
+                return [
+                    'index' => $index,
+                    'item' => $item,
+                    'minutes' => $minutes,
+                    'remainder' => $exactMinutes - $minutes,
+                ];
+            });
+
+        $remainingMinutes = $targetMinutes - $allocated->sum('minutes');
+        $remainderOrder = $allocated
+            ->sortByDesc('remainder')
+            ->pluck('index')
+            ->take($remainingMinutes)
+            ->all();
+
+        return $allocated
+            ->map(function ($allocation) use ($remainderOrder) {
+                $minutes = $allocation['minutes'] + (in_array($allocation['index'], $remainderOrder, true) ? 1 : 0);
+                $item = $allocation['item'];
+                $item['minutes'] = $minutes;
+                $item['value'] = $this->minutesToHoursLabel($minutes);
+
+                return $item;
+            })
+            ->filter(fn ($item) => (int) ($item['minutes'] ?? 0) > 0)
+            ->values()
+            ->all();
     }
 
     protected function timelogDayBreakdownItem(string $date, string $remark): array
