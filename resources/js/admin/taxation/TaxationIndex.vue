@@ -248,7 +248,7 @@ export default {
             this.setUrlType(this.selectedType, true);
         },
         setUrlType(type, replace = false) {
-            const allowedTypes = ["forecast", "q2", "q3", "nov", "final"];
+            const allowedTypes = ["forecast", "q2", "q3", "q4", "nov", "final"];
             const safeType = allowedTypes.includes(type) ? type : "forecast";
             const url = new URL(window.location.href);
 
@@ -276,7 +276,7 @@ export default {
             this.taxation_id = hasTaxationRecord ? data.id : null;
         },
 
-        async applyToPayroll() {
+        async applyToPayroll(payload = {}) {
             if (!this.taxation_id) {
                 await Swal.fire({
                     title: "No Taxation Selected",
@@ -291,7 +291,10 @@ export default {
             try {
                 const response = await axios.post(
                     "/admin/taxation/apply-to-payroll",
-                    { taxation_id: this.taxation_id },
+                    {
+                        taxation_id: this.taxation_id,
+                        type: payload?.type || this.selectedType,
+                    },
                 );
 
                 await Swal.fire({

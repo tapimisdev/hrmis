@@ -10,10 +10,11 @@ class TaxationCardsService
         private readonly ConnectionInterface $db
     ) {}
 
-    public function getTaxationEmployeesTotalCards(int $id): ?object
+    public function getTaxationEmployeesTotalCards(int $id, string $type): ?object
     {
         $taxation = $this->db->table('taxation_employees')
             ->where('taxation_id', $id)
+            ->where('type', $type)
             ->get();
 
         if ($taxation->isEmpty()) {

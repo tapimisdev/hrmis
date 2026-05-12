@@ -21,6 +21,7 @@
         <ApplyTaxComputationModal
             ref="applyTaxComputationModal"
             :is-submitting="isApplying"
+            :type="activeTab"
             @confirm="submitApplyToPayroll"
         />
 
@@ -394,7 +395,7 @@ export default {
         },
         submitApplyToPayroll() {
             this.$refs.applyTaxComputationModal?.close?.();
-            this.$emit("apply-to-tax");
+            this.$emit("apply-to-tax", { type: this.activeTab });
         },
     },
 };

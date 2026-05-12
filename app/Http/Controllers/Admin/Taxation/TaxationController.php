@@ -42,7 +42,10 @@ class TaxationController extends Controller
 
         if ($taxation) {
 
-            $taxation->cards = $this->taxationCardsService->getTaxationEmployeesTotalCards($taxation->id ?? 0) ?? [];
+            $taxation->cards = $this->taxationCardsService->getTaxationEmployeesTotalCards(
+                $taxation->id ?? 0,
+                $type
+            ) ?? [];
             $taxation->body = $this->taxationBodyService->getEmployees($taxation->id, $type) ?? [];
         }
 
@@ -125,7 +128,8 @@ class TaxationController extends Controller
     {
         try {
             $result = $this->applyForecastToPayrollService->handle(
-                (int) $request->validated('taxation_id')
+                (int) $request->validated('taxation_id'),
+                (string) $request->validated('type')
             );
 
             return response()->json([

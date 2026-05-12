@@ -11,10 +11,13 @@
             <div class="notes-box">
                 <div class="notes-title">Notes</div>
                 <div class="notes-item">
-                    This applies the selected taxation setup from <span class="fw-semibold">January to December</span>.
+                    This applies the selected taxation setup for <span class="fw-semibold">{{ monthRangeLabel }}</span>.
                 </div>
                 <div class="notes-item">
-                    Existing Payroll tax data for covered months may be <span class="fw-semibold text-danger">overridden</span>.
+                    Existing Payroll records for covered months will <span class="fw-semibold text-danger">not be overridden</span>.
+                </div>
+                <div class="notes-item">
+                    If an employee already has an existing payroll record for a month, that month will be <span class="fw-semibold">skipped</span>.
                 </div>
             </div>
 
@@ -78,6 +81,10 @@ export default {
             type: Boolean,
             default: false,
         },
+        type: {
+            type: String,
+            default: "forecast",
+        },
     },
     emits: ["confirm"],
     data() {
@@ -85,6 +92,18 @@ export default {
             confirmationText: "",
             error: "",
         };
+    },
+    computed: {
+        monthRangeLabel() {
+            return {
+                forecast: "January to December",
+                q2: "April to December",
+                q3: "July to December",
+                q4: "October to December",
+                nov: "December only",
+                final: "January to December",
+            }[this.type] || "January to December";
+        },
     },
     methods: {
         open() {
