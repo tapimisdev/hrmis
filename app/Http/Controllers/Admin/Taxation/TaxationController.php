@@ -143,6 +143,25 @@ class TaxationController extends Controller
         }
     }
 
+    public function applyToPayrollPreview(ApplyForecastToPayrollRequest $request)
+    {
+        try {
+            $result = $this->applyForecastToPayrollService->preview(
+                (int) $request->validated('taxation_id'),
+                (string) $request->validated('type')
+            );
+
+            return response()->json([
+                'message' => 'Apply-to-payroll preview loaded successfully.',
+                'data' => $result,
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage() ?: 'Failed to load apply forecast preview.',
+            ], 500);
+        }
+    }
+
     public function computeCumulative(ComputeCumulativeRequest $request)
     {
         try {

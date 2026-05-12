@@ -10,6 +10,7 @@ Route::prefix('taxation')->group(function() {
     Route::resource('/', TaxationController::class)->names('taxation');
     Route::get('/status', [TaxationController::class, 'status']);
     Route::delete('/{taxation_id}/delete', [TaxationController::class, 'destroy']);
+    Route::post('/apply-to-payroll-preview', [TaxationController::class, 'applyToPayrollPreview']);
     Route::post('/apply-to-payroll', [TaxationController::class, 'applyToPayroll']);
     Route::post('/compute-cumulative', [TaxationController::class, 'computeCumulative']);
 

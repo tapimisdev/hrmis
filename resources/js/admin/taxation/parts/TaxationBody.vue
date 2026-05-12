@@ -21,6 +21,7 @@
         <ApplyTaxComputationModal
             ref="applyTaxComputationModal"
             :is-submitting="isApplying"
+            :taxation-id="taxation?.id"
             :type="activeTab"
             @confirm="submitApplyToPayroll"
         />
@@ -183,6 +184,7 @@ export default {
             isComputingCumulative: false,
             isComputingAdjustment: false,
             currentCumulativeAction: "",
+            isWaitingApplyResult: false,
         };
     },
     computed: {
@@ -200,6 +202,16 @@ export default {
         selectedType(newType) {
             if (newType && newType !== this.activeTab) {
                 this.activeTab = newType;
+            }
+        },
+        isApplyingToPayroll(newValue) {
+            if (newValue) {
+                return;
+            }
+
+            if (this.isWaitingApplyResult) {
+                this.$refs.applyTaxComputationModal?.close?.();
+                this.isWaitingApplyResult = false;
             }
         },
     },
@@ -393,8 +405,19 @@ export default {
             if (this.isApplying) return;
             this.$refs.applyTaxComputationModal?.open?.();
         },
-        submitApplyToPayroll() {
-            this.$refs.applyTaxComputationModal?.close?.();
+        async submitApplyToPayroll() {
+            const result = await Swal.fire({
+                title: "Apply Tax Computation?",
+                text: "This will apply the current taxation setup to Payroll for the selected months.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Apply to Payroll",
+                cancelButtonText: "Cancel",
+            });
+
+            if (!result.isConfirmed) return;
+
+            this.isWaitingApplyResult = true;
             this.$emit("apply-to-tax", { type: this.activeTab });
         },
     },
