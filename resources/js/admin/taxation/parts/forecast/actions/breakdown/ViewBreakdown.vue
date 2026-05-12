@@ -72,12 +72,14 @@ export default {
                     },
                 },
                 {
-                    id: "longevity",
+                    id: "longevities",
                     name: "Longevity",
                     is_show: this.row.longevity,
                     component: LongevityView,
                     props: {
-                        data: this.breakdown.longetivity_pay
+                        data:
+                            this.breakdown.longetivity_pay ??
+                            this.breakdown.longevity_pay,
                     },
                 },
                 {

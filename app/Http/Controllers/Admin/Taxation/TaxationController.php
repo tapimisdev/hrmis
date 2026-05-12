@@ -42,10 +42,6 @@ class TaxationController extends Controller
 
         if ($taxation) {
 
-            // if($taxation->status === 'processing') {
-            //     return response()->json([]);
-            // }
-
             $taxation->cards = $this->taxationCardsService->getTaxationEmployeesTotalCards($taxation->id ?? 0) ?? [];
             $taxation->body = $this->taxationBodyService->getEmployees($taxation->id, $type) ?? [];
         }
