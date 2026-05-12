@@ -90,9 +90,38 @@ export function TaxationSettingModel(data = {}) {
             return Number.isNaN(n) ? 0 : n;
         };
 
-        return items.map((row = {}) => ({
+        const parseJsonObject = (value) => {
+            if (!value) return {};
+            if (typeof value === "object") return value;
+
+            try {
+                const parsed = JSON.parse(value);
+                return parsed && typeof parsed === "object" ? parsed : {};
+            } catch {
+                return {};
+            }
+        };
+
+        return items.map((row = {}) => {
+            const rawPayload = parseJsonObject(row.raw_payload);
+            const taxComputationRawPayload = parseJsonObject(row?.tax_computation?.raw_payload);
+            const rawMonthlyTax = toRawNumber(row.amount_monthly_tax);
+            const storedReturnAmount = toRawNumber(
+                rawPayload?.amounts?.returnAmount ?? taxComputationRawPayload?.return_amount,
+            );
+            const normalizedReturnAmount = row.type === "nov"
+                ? (storedReturnAmount > 0
+                    ? storedReturnAmount
+                    : (rawMonthlyTax < 0 ? Math.abs(rawMonthlyTax) : 0))
+                : storedReturnAmount;
+            const normalizedMonthlyTax = row.type === "nov"
+                ? Math.max(rawMonthlyTax, 0)
+                : rawMonthlyTax;
+
+            return {
             id: row.id ?? "",
             year: row.year ?? "",
+            type: row.type ?? "",
             avatar: row.avatar ?? "",
             employee_no: row.employee_no ?? "",
 
@@ -130,7 +159,8 @@ export function TaxationSettingModel(data = {}) {
 
             amount_annual_taxable: toMoney(row.amount_annual_taxable),
             amount_annual_tax: toMoney(row.amount_annual_tax),
-            amount_monthly_tax: toMoney(row.amount_monthly_tax),
+            amount_monthly_tax: toMoney(normalizedMonthlyTax),
+            amount_return_amount: toMoney(normalizedReturnAmount),
 
             portion_hazard_pay: toPercent(row.portion_hazard_pay),
             portion_basic_pay: toPercent(row.portion_basic_pay),
@@ -149,13 +179,15 @@ export function TaxationSettingModel(data = {}) {
                 excess_over: toMoney(row.tax_computation.excess_over),
                 excess_amount: toMoney(row.tax_computation.excess_amount),
                 tax: toMoney(row.tax_computation.tax),
-                monthly_tax: toMoney(row.tax_computation.monthly_tax),
+                monthly_tax: toMoney(normalizedMonthlyTax),
+                return_amount: toMoney(normalizedReturnAmount),
                 remarks: row.tax_computation.remarks,
             },
             
             // always an array for bullet rendering
             remarks: toRemarksArray(row.remarks),
-        }));
+            };
+        });
     };
 
     const normalizeTrainLawTable = (items) => {

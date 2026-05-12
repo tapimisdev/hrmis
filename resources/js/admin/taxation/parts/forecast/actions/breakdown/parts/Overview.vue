@@ -5,18 +5,28 @@
     >
         <template #headline-left>
             <div>
-                <div class="small text-muted">Monthly Tax</div>
+                <div class="small text-muted">
+                    {{ row.type === "nov" ? "December Tax" : "Monthly Tax" }}
+                </div>
                 <div class="fs-4 fw-bold text-primary old-money">
                     {{ row.amount_monthly_tax }}
                 </div>
-                <div class="small text-muted">= Annual Tax ÷ 12</div>
+                <div class="small text-muted">
+                    {{
+                        row.type === "nov"
+                            ? "= max(Annual Tax − Actual Withheld Tax, 0)"
+                            : "= Annual Tax ÷ 12"
+                    }}
+                </div>
             </div>
         </template>
 
         <template #headline-right>
             <div class="small text-muted">Annual Tax</div>
             <div class="fw-semibold fs-5 text-body">{{ row.amount_annual_tax }}</div>
-            <div class="small text-muted">TRAIN Law (Bracket)</div>
+            <div v-if="row.type === 'nov'" class="small text-muted mt-2">Return</div>
+            <div v-if="row.type === 'nov'" class="fw-semibold fs-6 text-success">{{ row.amount_return_amount }}</div>
+            <div v-else class="small text-muted">TRAIN Law (Bracket)</div>
         </template>
 
         <template #default="{ accordionId, panelId }">
@@ -71,9 +81,20 @@
                                 <span class="text-muted">Other Earnings (Non-taxable)</span>
                                 <span class="fw-semibold">{{ row.amount_other_earnings_non_taxable }}</span>
                             </div>
-                            <div class="d-flex justify-content-between small old-row">
+                            <div
+                                v-for="(bonus, index) in governmentBonusItems"
+                                :key="`${bonus.label}-${index}`"
+                                class="d-flex justify-content-between small old-row"
+                            >
+                                <span class="text-muted">{{ bonus.label }}</span>
+                                <span class="fw-semibold">{{ bonus.value }}</span>
+                            </div>
+                            <div
+                                v-if="showRemainingOtherTaxable"
+                                class="d-flex justify-content-between small old-row"
+                            >
                                 <span class="text-muted">Other Earnings (Taxable)</span>
-                                <span class="fw-semibold">{{ row.amount_other_earnings_taxable }}</span>
+                                <span class="fw-semibold">{{ remainingOtherTaxableFormatted }}</span>
                             </div>
 
                             <div class="old-total small mt-2">
@@ -83,7 +104,7 @@
 
                             <div class="old-tip mt-2 small text-muted">
                                 <i class="fa-solid fa-calculator me-2"></i>
-                                Annual Gross = Basic + Hazard + Mid-Year + Year-End + Other Earnings
+                                Annual Gross = Basic + Hazard + Mid-Year + Year-End + Government Bonuses + Other Earnings
                             </div>
                         </div>
                     </div>
@@ -212,7 +233,11 @@
 
                         <div class="old-tip mt-2 small text-muted">
                             <i class="fa-solid fa-circle-info me-2"></i>
-                            Monthly tax = <span class="fw-semibold">Annual Tax ÷ 12</span>
+                            {{
+                                row.type === "nov"
+                                    ? "December tax due = max(Annual Tax − Actual Withheld Tax (Jan–Nov), 0). Excess becomes return."
+                                    : "Monthly tax = Annual Tax ÷ 12"
+                            }}
                         </div>
 
                         <div class="old-total small mt-2">
@@ -236,9 +261,13 @@
                         <div class="w-100 d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="fa-solid fa-calendar-day text-muted"></i>
-                                <span class="fw-semibold small">Monthly Tax</span>
+                                <span class="fw-semibold small">
+                                    {{ row.type === "nov" ? "December Tax / Return" : "Monthly Tax" }}
+                                </span>
                             </div>
-                            <span class="fw-bold small text-primary">{{ row.amount_monthly_tax }}</span>
+                            <span class="fw-bold small text-primary">
+                                {{ row.type === "nov" ? row.amount_monthly_tax + " / " + row.amount_return_amount : row.amount_monthly_tax }}
+                            </span>
                         </div>
                     </button>
                 </h2>
@@ -253,13 +282,84 @@
                             <span class="text-muted">Annual Tax</span>
                             <span class="fw-semibold">{{ row.amount_annual_tax }}</span>
                         </div>
-                        <div class="old-row small d-flex justify-content-between">
-                            <span class="text-muted">÷ months</span>
-                            <span class="fw-semibold">{{ row.months_covered }}</span>
+
+                        <template v-if="row.type === 'nov'">
+                            <div class="old-row small d-flex justify-content-between">
+                                <span class="text-muted">Actual withheld tax (Jan–Nov)</span>
+                                <span class="fw-semibold">{{ actualWithheldTaxFormatted }}</span>
+                            </div>
+
+                            <div class="old-row small d-flex justify-content-between">
+                                <span class="text-muted">Formula</span>
+                                <span class="fw-semibold">Annual Tax − Actual Withheld</span>
+                            </div>
+
+                            <div class="old-row small d-flex justify-content-between">
+                                <span class="text-muted">December tax due</span>
+                                <span class="fw-semibold">{{ row.amount_monthly_tax }}</span>
+                            </div>
+
+                            <div class="old-row small d-flex justify-content-between">
+                                <span class="text-muted">Return amount</span>
+                                <span class="fw-semibold text-success">{{ row.amount_return_amount }}</span>
+                            </div>
+
+                            <div v-if="actualWithholdingMonthlyRows.length" class="old-months mt-2">
+                                <div class="d-flex justify-content-between small old-row old-row-head">
+                                    <span class="text-muted">Actual withholding by month</span>
+                                    <span class="fw-semibold">{{ actualWithheldTaxFormatted }}</span>
+                                </div>
+
+                                <div class="old-nested">
+                                    <div
+                                        v-for="(month, index) in actualWithholdingMonthlyRows"
+                                        :key="`${month.label}-${index}`"
+                                        class="d-flex justify-content-between small old-row old-row-nested"
+                                    >
+                                        <span class="text-muted">{{ month.label }}</span>
+                                        <span class="fw-semibold">{{ month.value }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template v-else>
+                            <div class="old-row small d-flex justify-content-between">
+                                <span class="text-muted">÷ months</span>
+                                <span class="fw-semibold">{{ row.months_covered }}</span>
+                            </div>
+                        </template>
+
+                        <div class="old-months mt-2">
+                            <div class="d-flex justify-content-between small old-row old-row-head">
+                                <span class="text-muted">Monthly tax partition</span>
+                                <span class="fw-semibold">
+                                    {{ row.type === "nov" ? "Salary / Hazard / Longevity basis" : row.amount_monthly_tax }}
+                                </span>
+                            </div>
+
+                            <div class="old-nested">
+                                <div
+                                    v-for="(item, index) in monthlyTaxPartitionRows"
+                                    :key="`${item.label}-${index}`"
+                                    class="d-flex justify-content-between small old-row old-row-nested"
+                                >
+                                    <span class="text-muted">{{ item.label }}</span>
+                                    <span class="fw-semibold">{{ item.value }}</span>
+                                </div>
+                            </div>
                         </div>
+
                         <div class="old-total small mt-2">
-                            <span class="text-muted">Monthly Tax</span>
+                            <span class="text-muted">
+                                {{ row.type === "nov" ? "December Tax" : "Monthly Tax" }}
+                            </span>
                             <span class="fw-bold text-primary">{{ row.amount_monthly_tax }}</span>
+                        </div>
+
+                        <div v-if="row.type === 'nov'" class="old-total small mt-2">
+                            <span class="text-muted">Return amount</span>
+                            <span class="fw-bold text-success">{{ row.amount_return_amount }}</span>
                         </div>
                     </div>
                 </div>
@@ -276,6 +376,104 @@ export default {
     components: { BreakdownViewTemplate },
     props: {
         row: { type: Object, default: () => ({}) },
+        breakdown: { type: Object, default: () => ({}) },
+    },
+    computed: {
+        governmentBonusesComputation() {
+            return this.breakdown?.government_bonuses?.raw_computation
+                ?? this.breakdown?.government_bonuses
+                ?? null;
+        },
+        actualWithholdingComputation() {
+            return this.breakdown?.actual_withholding_tax?.raw_computation
+                ?? this.breakdown?.actual_withholding_tax
+                ?? null;
+        },
+        governmentBonusItems() {
+            const steps = this.governmentBonusesComputation?.steps || [];
+            const selectedBonuses = steps.find(
+                (step) => step?.label === "Selected actual bonuses",
+            );
+
+            return Array.isArray(selectedBonuses?.value)
+                ? selectedBonuses.value
+                : [];
+        },
+        governmentBonusesTotal() {
+            const raw = Number(this.governmentBonusesComputation?.result_raw ?? 0);
+            return Number.isFinite(raw) ? raw : 0;
+        },
+        remainingOtherTaxable() {
+            return Math.max(
+                0,
+                this.parseMoney(this.row?.amount_other_earnings_taxable) - this.governmentBonusesTotal,
+            );
+        },
+        showRemainingOtherTaxable() {
+            if (!this.governmentBonusItems.length) return true;
+            return this.remainingOtherTaxable > 0;
+        },
+        remainingOtherTaxableFormatted() {
+            return this.formatMoney(this.remainingOtherTaxable);
+        },
+        actualWithheldTax() {
+            const raw = Number(this.actualWithholdingComputation?.result_raw ?? 0);
+            return Number.isFinite(raw) ? raw : 0;
+        },
+        actualWithheldTaxFormatted() {
+            return this.formatMoney(this.actualWithheldTax);
+        },
+        actualWithholdingMonthlyRows() {
+            const steps = this.actualWithholdingComputation?.steps || [];
+            const monthlyBreakdown = steps.find(
+                (step) => step?.label === "Monthly withholding breakdown",
+            );
+
+            if (!Array.isArray(monthlyBreakdown?.value)) {
+                return [];
+            }
+
+            return monthlyBreakdown.value.map((month) => {
+                const details = Array.isArray(month?.value) ? month.value : [];
+                const total = details.find((item) => item?.label === "Total");
+
+                return {
+                    label: month?.label || "-",
+                    value: total?.value || this.formatMoney(0),
+                };
+            });
+        },
+        monthlyTaxPartitionRows() {
+            return [
+                {
+                    label: `Basic Pay (${this.row?.portion_basic_pay || "0%"})`,
+                    value: this.row?.amount_portion_basic_pay || this.formatMoney(0),
+                },
+                {
+                    label: `Hazard Pay (${this.row?.portion_hazard_pay || "0%"})`,
+                    value: this.row?.amount_portion_hazard_pay || this.formatMoney(0),
+                },
+                {
+                    label: `Longevity (${this.row?.portion_longevity_pay || "0%"})`,
+                    value: this.row?.amount_portion_longevity_pay || this.formatMoney(0),
+                },
+            ];
+        },
+    },
+    methods: {
+        parseMoney(value) {
+            if (value === null || value === undefined || value === "") return 0;
+            if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+
+            const parsed = Number(String(value).replace(/[^0-9.-]/g, ""));
+            return Number.isFinite(parsed) ? parsed : 0;
+        },
+        formatMoney(value) {
+            return `₱ ${Number(value || 0).toLocaleString("en-PH", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+        },
     },
 };
 </script>

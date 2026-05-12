@@ -14,8 +14,8 @@
                     <th rowspan="2" class="sticky th-1">Division</th>
                     <th rowspan="2" class="sticky th-1">Unit</th>
 
-                    <th colspan="3" class="sticky th-1 text-center">
-                        Forecasted
+                    <th :colspan="selectedType === 'nov' ? 4 : 3" class="sticky th-1 text-center">
+                        {{ selectedType === "nov" ? "Adjustment" : "Forecasted" }}
                     </th>
                 </tr>
 
@@ -23,14 +23,17 @@
                 <tr class="thead-row-2">
                     <th class="sticky th-2">Annual Taxable</th>
                     <th class="sticky th-2">Annual Tax</th>
-                    <th class="sticky th-2">Monthly Tax</th>
+                    <th class="sticky th-2">
+                        {{ selectedType === "nov" ? "December Tax" : "Monthly Tax" }}
+                    </th>
+                    <th v-if="selectedType === 'nov'" class="sticky th-2">Return</th>
                 </tr>
             </thead>
 
             <tbody>
                 <!-- EMPTY STATE -->
                 <tr v-if="!rows || rows.length === 0">
-                    <td colspan="7" class="text-center text-muted py-4">
+                    <td :colspan="selectedType === 'nov' ? 8 : 7" class="text-center text-muted py-4">
                         No employees found.
                     </td>
                 </tr>
@@ -47,6 +50,7 @@
                         :selected="isSelectedRow(row)"
                         :index="rowIndexOffset + i"
                         :open="isOpen(row)"
+                        :selected-type="selectedType"
                         @toggle="({ row, index }) => toggleRow(row, index)"
                     />
 
@@ -55,7 +59,7 @@
                         v-show="isOpen(row)"
                         class="own-accordion-details"
                     >
-                        <td colspan="7">
+                        <td :colspan="selectedType === 'nov' ? 8 : 7">
                             <TaxForecastDetailsCard
                                 :row="row"
                                 :is-recomputing="isRowRecomputing(row)"
@@ -98,6 +102,7 @@ export default {
         recomputingKey: { type: [String, Number], default: null },
         focusRowKey: { type: [String, Number], default: null },
         selectedRowKey: { type: [String, Number], default: null },
+        selectedType: { type: String, default: "forecast" },
     },
     data() {
         return {

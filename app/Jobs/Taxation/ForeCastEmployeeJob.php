@@ -83,6 +83,12 @@ class ForeCastEmployeeJob implements ShouldQueue
             return $total;
         };
 
+        $selectedGovernmentBonuses = collect($payload['governmentBonuses'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->values()
+            ->all();
+
         // -----------------------------
         // Basic pays
         // -----------------------------
@@ -181,6 +187,23 @@ class ForeCastEmployeeJob implements ShouldQueue
                 (string) ($payload['type'] ?? 'forecast')
             )
         );
+
+        if (!empty($selectedGovernmentBonuses)) {
+            $governmentBonusData = $service->getSelectedGovernmentBonuses(
+                $this->employee_no,
+                $year,
+                $selectedGovernmentBonuses
+            );
+
+            $payload['othersEarnings'] = array_merge(
+                $payload['othersEarnings'] ?? [],
+                $governmentBonusData['earnings'] ?? [],
+            );
+
+            if (!empty($governmentBonusData['computation'])) {
+                $payload['computations'][] = $governmentBonusData['computation'];
+            }
+        }
 
         // -----------------------------
         // Other earnings (split taxable/non-taxable)
@@ -296,6 +319,7 @@ class ForeCastEmployeeJob implements ShouldQueue
         $payload['amounts']['annualTaxable']         = $taxableIncome;
         $payload['amounts']['annualTax']             = (float) ($computedAnnualTax['tax'] ?? 0);
         $payload['amounts']['monthlyTax']            = (float) ($computedAnnualTax['monthly_tax'] ?? 0);
+        $payload['amounts']['returnAmount']          = 0.0;
         $payload['amounts']['annualTotalAllowables'] = $totalAllowableDeduction;
 
         // Totals (for reporting)
@@ -321,6 +345,78 @@ class ForeCastEmployeeJob implements ShouldQueue
         $payload['amounts']['amount_basic_salary'] = $basicPays['monthly_salary'];
         $payload['months_covered'] = $basicPays['months_covered'];
         $payload['amounts']['amount_anual_total_basic_salary'] = $annualBasicPay;
+
+        if (($payload['type'] ?? 'forecast') === 'nov') {
+            $actualWithholdingTax = $service->getActualWithheldTaxForType(
+                $this->employee_no,
+                $year,
+                'nov',
+                [
+                    (int) ($payload['salaryTaxId'] ?? 0),
+                    (int) ($payload['hazardTaxId'] ?? 0),
+                    (int) ($payload['longevityTaxId'] ?? 0),
+                ]
+            );
+
+            $decemberAdjustmentDifference = round(
+                ((float) ($computedAnnualTax['tax'] ?? 0)) - ((float) ($actualWithholdingTax['total'] ?? 0)),
+                4
+            );
+            $decemberTaxDue = round(max($decemberAdjustmentDifference, 0), 4);
+            $decemberReturnAmount = round(max($decemberAdjustmentDifference * -1, 0), 4);
+
+            $payload['amounts']['regularMonthlyTax'] = (float) ($computedAnnualTax['monthly_tax'] ?? 0);
+            $payload['amounts']['actualWithheldTax'] = (float) ($actualWithholdingTax['total'] ?? 0);
+            $payload['amounts']['monthlyTax'] = $decemberTaxDue;
+            $payload['amounts']['returnAmount'] = $decemberReturnAmount;
+
+            if (!empty($actualWithholdingTax['computation'])) {
+                $payload['computations'][] = $actualWithholdingTax['computation'];
+            }
+
+            $payload['computations'][] = [
+                'key' => 'december_adjustment_tax',
+                'label' => 'December Adjustment Tax',
+                'formula' => 'Annual Tax − Actual Withheld Tax (Jan–Nov)',
+                'inputs' => [
+                    'annual_tax' => (float) ($computedAnnualTax['tax'] ?? 0),
+                    'actual_withheld_tax' => (float) ($actualWithholdingTax['total'] ?? 0),
+                ],
+                'steps' => [
+                    [
+                        'label' => 'Annual tax',
+                        'value' => number_format((float) ($computedAnnualTax['tax'] ?? 0), 2),
+                    ],
+                    [
+                        'label' => 'Actual withheld tax (Jan–Nov)',
+                        'value' => number_format((float) ($actualWithholdingTax['total'] ?? 0), 2),
+                    ],
+                    [
+                        'label' => 'December tax due',
+                        'value' => number_format($decemberTaxDue, 2),
+                    ],
+                    [
+                        'label' => 'Return amount',
+                        'value' => number_format($decemberReturnAmount, 2),
+                    ],
+                ],
+                'result_raw' => $decemberTaxDue,
+                'result' => number_format($decemberTaxDue, 2),
+                'meta' => [
+                    'type' => 'december_adjustment_tax',
+                    'direction' => $decemberReturnAmount > 0 ? 'refund' : 'deduct',
+                    'difference' => $decemberAdjustmentDifference,
+                    'return_amount' => $decemberReturnAmount,
+                ],
+            ];
+
+            $computedAnnualTax['monthly_tax'] = $decemberTaxDue;
+            $computedAnnualTax['return_amount'] = $decemberReturnAmount;
+            $computedAnnualTax['adjustment_difference'] = $decemberAdjustmentDifference;
+            $computedAnnualTax['remarks'] = $decemberReturnAmount <= 0
+                ? 'NOV adjustment: deduct the remaining balance in December after Jan–Nov actual withholding.'
+                : 'NOV adjustment: return the excess withheld amount in December based on Jan–Nov actual withholding.';
+        }
 
         // Keep computed eligibility info
         $payload['midyear']  = $mid;

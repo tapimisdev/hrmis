@@ -60,7 +60,8 @@ export default {
                     name: "Overview",
                     component: Overview,
                     props: {
-                        row: this.row
+                        row: this.row,
+                        breakdown: this.breakdown,
                     },
                 },
                 {
@@ -115,6 +116,15 @@ export default {
                     component: AllowablesView,
                     props: {
                         data: this.breakdown.allowables_deductions,
+                    },
+                },
+                {
+                    id: "government_bonuses",
+                    name: "Government Bonuses",
+                    is_show: !!this.breakdown?.government_bonuses,
+                    component: OtherEarningsView,
+                    props: {
+                        data: this.breakdown.government_bonuses,
                     },
                 },
                 {

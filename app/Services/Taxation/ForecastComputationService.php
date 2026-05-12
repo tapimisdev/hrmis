@@ -1799,7 +1799,7 @@ class ForecastComputationService
 
     private function usesActualPayrollForType(string $type): bool
     {
-        return in_array($type, ['q2', 'q3', 'q4'], true);
+        return in_array($type, ['q2', 'q3', 'q4', 'nov'], true);
     }
 
     private function completedActualMonthsForType(string $type): array
@@ -1808,8 +1808,263 @@ class ForecastComputationService
             'q2' => [1, 2, 3],
             'q3' => [1, 2, 3, 4, 5, 6],
             'q4' => [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            'nov' => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
             default => [],
         };
+    }
+
+    public function getSelectedGovernmentBonuses(
+        string $employeeNo,
+        int $year,
+        array $payrollIds = []
+    ): array {
+        $payrollIds = collect($payrollIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->values()
+            ->all();
+
+        if (empty($payrollIds)) {
+            return [
+                'total' => 0.0,
+                'earnings' => [],
+                'computation' => null,
+            ];
+        }
+
+        $rows = DB::table('payroll_government_bonus_employee as pgbe')
+            ->join('payroll_government_bonus as pgb', 'pgbe.payroll_government_bonus_id', '=', 'pgb.id')
+            ->join('government_bonus_types as gbt', 'pgb.government_bonus_type_id', '=', 'gbt.id')
+            ->select(
+                'pgbe.payroll_government_bonus_id',
+                'pgbe.bonus_amount',
+                'pgb.month',
+                'gbt.name'
+            )
+            ->where('pgbe.employee_no', $employeeNo)
+            ->whereIn('pgbe.payroll_government_bonus_id', $payrollIds)
+            ->where('pgb.status', 'completed')
+            ->whereRaw('YEAR(CONCAT(pgb.month, "-01")) = ?', [$year])
+            ->orderBy('pgb.month')
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return [
+                'total' => 0.0,
+                'earnings' => [],
+                'computation' => null,
+            ];
+        }
+
+        $earnings = $rows->map(function ($row) {
+            $amount = (float) round((float) ($row->bonus_amount ?? 0), 4);
+
+            return [
+                'is_default' => true,
+                'name' => trim((string) ($row->name ?? 'Government Bonus')),
+                'tax_type' => 'taxable',
+                'amount' => $amount,
+                'computations' => [[
+                    'key' => 'government_bonus_item',
+                    'label' => trim((string) ($row->name ?? 'Government Bonus')),
+                    'formula' => 'Actual completed government bonus payroll amount',
+                    'inputs' => [
+                        'payroll_id' => (int) $row->payroll_government_bonus_id,
+                        'month' => (string) ($row->month ?? ''),
+                        'amount' => $amount,
+                    ],
+                    'steps' => [
+                        [
+                            'label' => 'Payroll month',
+                            'value' => (string) ($row->month ?? ''),
+                        ],
+                        [
+                            'label' => 'Actual amount',
+                            'value' => number_format($amount, 2),
+                        ],
+                    ],
+                    'result_raw' => $amount,
+                    'result' => number_format($amount, 2),
+                    'meta' => [
+                        'type' => 'government_bonus_item',
+                        'source' => 'payroll_actual',
+                    ],
+                ]],
+            ];
+        })->values()->all();
+
+        $stepRows = $rows->map(function ($row) {
+            return [
+                'label' => trim((string) ($row->name ?? 'Government Bonus')) . ' (' . (string) ($row->month ?? '') . ')',
+                'value' => number_format((float) ($row->bonus_amount ?? 0), 2),
+            ];
+        })->values()->all();
+
+        $total = (float) round($rows->sum('bonus_amount'), 4);
+
+        return [
+            'total' => $total,
+            'earnings' => $earnings,
+            'computation' => [
+                'key' => 'government_bonuses',
+                'label' => 'Government Bonuses',
+                'formula' => 'Sum of selected completed government bonus payrolls',
+                'inputs' => [
+                    'selected_payroll_ids' => $payrollIds,
+                    'items_count' => count($earnings),
+                ],
+                'steps' => [
+                    [
+                        'label' => 'Selected actual bonuses',
+                        'value' => $stepRows,
+                    ],
+                    [
+                        'label' => 'Total government bonuses',
+                        'value' => number_format($total, 2),
+                    ],
+                ],
+                'result_raw' => $total,
+                'result' => number_format($total, 2),
+                'meta' => [
+                    'type' => 'government_bonuses',
+                    'source' => 'payroll_actual',
+                ],
+            ],
+        ];
+    }
+
+    public function getActualWithheldTaxForType(
+        string $employeeNo,
+        int $year,
+        string $type,
+        array $componentIds = []
+    ): array {
+        $actualMonths = $this->completedActualMonthsForType($type);
+
+        if (empty($actualMonths)) {
+            return [
+                'total' => 0.0,
+                'monthly_total' => [],
+                'computation' => null,
+            ];
+        }
+
+        $salary = $this->getActualSalaryWithheldTaxByMonth($employeeNo, $year);
+        $hazard = $this->getActualHazardWithheldTaxByMonth($employeeNo, $year);
+        $longevity = $this->getActualLongevityWithheldTaxByMonth($employeeNo, $year);
+
+        $monthly = [];
+        foreach ($actualMonths as $monthNumber) {
+            $monthly[$monthNumber] = [
+                'month' => $monthNumber,
+                'label' => $this->getMonthLabels()[$monthNumber] ?? (string) $monthNumber,
+                'salary' => (float) round((float) ($salary[$monthNumber] ?? 0), 4),
+                'hazard' => (float) round((float) ($hazard[$monthNumber] ?? 0), 4),
+                'longevity' => (float) round((float) ($longevity[$monthNumber] ?? 0), 4),
+            ];
+            $monthly[$monthNumber]['total'] = (float) round(
+                $monthly[$monthNumber]['salary']
+                + $monthly[$monthNumber]['hazard']
+                + $monthly[$monthNumber]['longevity'],
+                4
+            );
+        }
+
+        $monthly = array_values($monthly);
+        $total = (float) round(collect($monthly)->sum('total'), 4);
+
+        return [
+            'total' => $total,
+            'monthly_total' => $monthly,
+            'computation' => [
+                'key' => 'actual_withholding_tax',
+                'label' => 'Actual Withholding Tax (Completed Months)',
+                'formula' => 'Sum of actual withheld tax from salary, hazard pay, and longevity payrolls',
+                'inputs' => [
+                    'completed_actual_months' => $actualMonths,
+                ],
+                'steps' => [
+                    [
+                        'label' => 'Monthly withholding breakdown',
+                        'value' => array_map(function ($row) {
+                            return [
+                                'label' => $row['label'],
+                                'value' => [
+                                    ['label' => 'Salary', 'value' => number_format($row['salary'], 2)],
+                                    ['label' => 'Hazard', 'value' => number_format($row['hazard'], 2)],
+                                    ['label' => 'Longevity', 'value' => number_format($row['longevity'], 2)],
+                                    ['label' => 'Total', 'value' => number_format($row['total'], 2)],
+                                ],
+                            ];
+                        }, $monthly),
+                    ],
+                    [
+                        'label' => 'Total actual withheld tax',
+                        'value' => number_format($total, 2),
+                    ],
+                ],
+                'result_raw' => $total,
+                'result' => number_format($total, 2),
+                'meta' => [
+                    'type' => 'actual_withholding_tax',
+                    'source' => 'payroll_actual',
+                ],
+            ],
+        ];
+    }
+
+    private function getActualSalaryWithheldTaxByMonth(string $employeeNo, int $year): array
+    {
+        $monthly = DB::table('payroll_salary_permanent_employees as pspe')
+            ->join('payroll_salary as ps', 'pspe.payroll_salary_id', '=', 'ps.id')
+            ->join('payroll_salary_permanents_employee_deductions as psped', 'psped.pspe_id', '=', 'pspe.id')
+            ->selectRaw('MONTH(ps.payroll_date) as month_number, SUM(COALESCE(psped.amount, 0)) as total_amount')
+            ->where('pspe.employee_no', $employeeNo)
+            ->whereYear('ps.payroll_date', $year)
+            ->where('ps.status', 'completed')
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(psped.deduction_type) = ?', ['withholding tax'])
+                    ->orWhereRaw('LOWER(psped.deduction_type) = ?', ['withholding_tax'])
+                    ->orWhereRaw('LOWER(psped.deduction_type) like ?', ['%withholding%tax%']);
+            })
+            ->groupByRaw('MONTH(ps.payroll_date)')
+            ->pluck('total_amount', 'month_number')
+            ->map(fn ($amount) => (float) round((float) $amount, 4))
+            ->all();
+
+        return $this->normalizeActualMonthlyMap($monthly);
+    }
+
+    private function getActualHazardWithheldTaxByMonth(string $employeeNo, int $year): array
+    {
+        $monthly = DB::table('payroll_hazard_pay_employee as phpe')
+            ->join('payroll_hazard_pay as php', 'phpe.payroll_hazard_pay_id', '=', 'php.id')
+            ->selectRaw('MONTH(CONCAT(php.month, "-01")) as month_number, SUM(COALESCE(phpe.witholding_tax, 0)) as total_amount')
+            ->where('phpe.employee_no', $employeeNo)
+            ->whereRaw('YEAR(CONCAT(php.month, "-01")) = ?', [$year])
+            ->where('php.status', 'completed')
+            ->groupByRaw('MONTH(CONCAT(php.month, "-01"))')
+            ->pluck('total_amount', 'month_number')
+            ->map(fn ($amount) => (float) round((float) $amount, 4))
+            ->all();
+
+        return $this->normalizeActualMonthlyMap($monthly);
+    }
+
+    private function getActualLongevityWithheldTaxByMonth(string $employeeNo, int $year): array
+    {
+        $monthly = DB::table('payroll_longevity_pay_employee as plpe')
+            ->join('payroll_longevity_pay as plp', 'plpe.payroll_longevity_pay_id', '=', 'plp.id')
+            ->selectRaw('MONTH(CONCAT(plp.month, "-01")) as month_number, SUM(COALESCE(plpe.w_tax, 0)) as total_amount')
+            ->where('plpe.employee_no', $employeeNo)
+            ->whereRaw('YEAR(CONCAT(plp.month, "-01")) = ?', [$year])
+            ->where('plp.status', 'completed')
+            ->groupByRaw('MONTH(CONCAT(plp.month, "-01"))')
+            ->pluck('total_amount', 'month_number')
+            ->map(fn ($amount) => (float) round((float) $amount, 4))
+            ->all();
+
+        return $this->normalizeActualMonthlyMap($monthly);
     }
 
     private function getActualSalaryPayrollByMonth(string $employeeNo, int $year): array

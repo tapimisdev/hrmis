@@ -55,6 +55,9 @@ class UpdateForecastRequest extends FormRequest
             'othersDeductions.*.name'       => ['required_with:deductions.others', 'string'],
             'othersDeductions.*.amount'     => ['required_with:deductions.others', 'numeric', 'min:1'],
 
+            'governmentBonuses'             => ['nullable', 'array'],
+            'governmentBonuses.*'           => ['integer', 'exists:payroll_government_bonus,id'],
+
             // =========================
             // Allocation (TAB C)
             // =========================

@@ -1,10 +1,27 @@
 <template>
     <div class="mt-3 border-bottom pb-3">
+        <ComputeCumulativeChoiceModal
+            ref="computeCumulativeChoiceModal"
+            :is-submitting="isComputingCumulative"
+            :active-action="currentCumulativeAction"
+            @select="handleComputeCumulativeSelection"
+        />
         <ComputeCumulativeModal
             ref="computeCumulativeModal"
             :taxation="taxation"
             :is-submitting="isComputingCumulative"
             @submit="submitOverrideCumulative"
+        />
+        <ComputeAdjustmentModal
+            ref="computeAdjustmentModal"
+            :taxation="taxation"
+            :is-submitting="isComputingAdjustment"
+            @submit="submitAdjustment"
+        />
+        <ApplyTaxComputationModal
+            ref="applyTaxComputationModal"
+            :is-submitting="isApplying"
+            @confirm="submitApplyToPayroll"
         />
 
         <div
@@ -69,6 +86,21 @@
 
             <div class="d-flex mb-3 gap-2">
                 <button
+                    v-if="showComputeAdjustmentButton"
+                    class="fb-btn fb-secondary"
+                    @click="openComputeAdjustmentModal"
+                    :disabled="isComputingAdjustment"
+                >
+                    <i class="fa-solid fa-calculator me-1"></i>
+                    {{
+                        isComputingAdjustment
+                            ? "Computing Adjustment..."
+                            : "Compute Adjustment"
+                    }}
+                </button>
+
+                <button
+                    v-else
                     class="fb-btn fb-secondary"
                     @click="handleComputeCumulative"
                     :disabled="isComputingCumulative"
@@ -110,11 +142,17 @@
 import axios from "axios";
 import IndexForecast from "./forecast/IndexForecast.vue";
 import ComputeCumulativeModal from "../modal/run-forecast/ComputeCumulativeModal.vue";
+import ComputeAdjustmentModal from "../modal/run-forecast/ComputeAdjustmentModal.vue";
+import ComputeCumulativeChoiceModal from "../modal/run-forecast/ComputeCumulativeChoiceModal.vue";
+import ApplyTaxComputationModal from "../modal/ApplyTaxComputationModal.vue";
 
 export default {
     components: {
         IndexForecast,
+        ComputeCumulativeChoiceModal,
         ComputeCumulativeModal,
+        ComputeAdjustmentModal,
+        ApplyTaxComputationModal,
     },
     props: {
         body: {
@@ -142,6 +180,8 @@ export default {
         return {
             activeTab: this.selectedType || "forecast",
             isComputingCumulative: false,
+            isComputingAdjustment: false,
+            currentCumulativeAction: "",
         };
     },
     computed: {
@@ -150,6 +190,9 @@ export default {
         },
         hasTaxationRecord() {
             return Boolean(this.taxation?.id);
+        },
+        showComputeAdjustmentButton() {
+            return this.activeTab === "nov";
         },
     },
     watch: {
@@ -168,6 +211,7 @@ export default {
         },
         async handleComputeCumulative() {
             if (this.isComputingCumulative) return;
+            this.currentCumulativeAction = "";
 
             if (!this.hasTaxationRecord) {
                 await Swal.fire({
@@ -187,23 +231,32 @@ export default {
                 return;
             }
 
-            const result = await Swal.fire({
-                title: "Compute Cumulative Tax",
-                text: "Choose how you want to proceed",
-                icon: "question",
-                showDenyButton: true,
-                showCancelButton: true,
-                confirmButtonText: "Compute Cumulative and Override",
-                denyButtonText: "Compute Cumulative with Same Configuration",
-                cancelButtonText: "Cancel",
-            });
+            this.$refs.computeCumulativeChoiceModal?.open?.();
+        },
+        async handleComputeCumulativeSelection(mode) {
+            this.currentCumulativeAction = mode;
 
-            if (result.isConfirmed) {
+            if (mode === "override") {
+                this.$refs.computeCumulativeChoiceModal?.close?.();
                 this.$refs.computeCumulativeModal?.open?.();
                 return;
             }
 
-            if (result.isDenied) {
+            if (mode === "same_configuration") {
+                const result = await Swal.fire({
+                    title: "Compute with Same Configuration?",
+                    text: "This will use the currently saved setup and run the cumulative computation immediately.",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "Compute",
+                    cancelButtonText: "Cancel",
+                });
+
+                if (!result.isConfirmed) {
+                    this.currentCumulativeAction = "";
+                    return;
+                }
+
                 await this.computeCumulative({
                     mode: "same_configuration",
                 });
@@ -211,6 +264,26 @@ export default {
         },
         async submitOverrideCumulative(form) {
             await this.computeCumulative({
+                mode: "override",
+                ...form,
+            });
+        },
+        async openComputeAdjustmentModal() {
+            if (this.isComputingAdjustment) return;
+
+            if (!this.hasTaxationRecord) {
+                await Swal.fire({
+                    title: "No Taxation Selected",
+                    text: "There is no saved taxation record to use for adjustment computation.",
+                    icon: "info",
+                });
+                return;
+            }
+
+            this.$refs.computeAdjustmentModal?.open?.();
+        },
+        async submitAdjustment(form) {
+            await this.computeAdjustment({
                 mode: "override",
                 ...form,
             });
@@ -232,6 +305,7 @@ export default {
                 );
 
                 this.$refs.computeCumulativeModal?.close?.();
+                this.$refs.computeCumulativeChoiceModal?.close?.();
 
                 await Swal.fire({
                     title: "Cumulative Computation Started",
@@ -262,44 +336,64 @@ export default {
                 });
             } finally {
                 this.isComputingCumulative = false;
+                this.currentCumulativeAction = "";
+            }
+        },
+        async computeAdjustment(payload = {}) {
+            if (this.isComputingAdjustment) return;
+
+            this.isComputingAdjustment = true;
+            this.$refs.computeAdjustmentModal?.setErrors?.({});
+
+            try {
+                const response = await axios.post(
+                    "/admin/taxation/compute-cumulative",
+                    {
+                        taxation_id: this.taxation.id,
+                        type: this.activeTab,
+                        ...payload,
+                    },
+                );
+
+                this.$refs.computeAdjustmentModal?.close?.();
+
+                await Swal.fire({
+                    title: "Adjustment Computation Started",
+                    text:
+                        response?.data?.message ||
+                        "The adjustment computation has been queued.",
+                    icon: "success",
+                });
+
+                this.$emit("refresh-forecast", {
+                    source: "compute-adjustment",
+                    type: this.activeTab,
+                });
+            } catch (error) {
+                if (error.response?.status === 422) {
+                    this.$refs.computeAdjustmentModal?.setErrors?.(
+                        error.response?.data?.errors || {},
+                    );
+                    return;
+                }
+
+                await Swal.fire({
+                    title: "Error",
+                    text:
+                        error?.response?.data?.message ||
+                        "Failed to compute adjustment tax.",
+                    icon: "error",
+                });
+            } finally {
+                this.isComputingAdjustment = false;
             }
         },
         async confirmApplyToPayroll() {
             if (this.isApplying) return;
-
-            const result = await Swal.fire({
-                title: "Apply Forecast to Payroll?",
-                html: `
-                    <div class="text-start">
-                        <div>This will update the Payroll tax tables used for employee tax computation.</div>
-                        <div class="mt-2">This action will apply the selected taxation setup from <b class="text-primary">January to December</b>.</div>
-                        <div class="mt-2">If Payroll tax data already exists for those months, it will be <b class="text-danger">overridden</b> by this action.</div>
-                        <div class="mt-2">To continue, type <b>Apply</b> below.</div>
-                    </div>
-                `,
-                icon: "warning",
-                input: "text",
-                inputPlaceholder: "Type Apply to confirm",
-                inputAttributes: { autocapitalize: "off" },
-                showCancelButton: true,
-                confirmButtonText: "Apply to Payroll",
-                cancelButtonText: "Cancel",
-                confirmButtonColor: "#198754",
-                reverseButtons: true,
-                preConfirm: (value) => {
-                    if (String(value || "").trim() !== "APPLY") {
-                        Swal.showValidationMessage(
-                            'Confirmation text must be "APPLY".',
-                        );
-                        return false;
-                    }
-
-                    return true;
-                },
-            });
-
-            if (!result.isConfirmed) return;
-
+            this.$refs.applyTaxComputationModal?.open?.();
+        },
+        submitApplyToPayroll() {
+            this.$refs.applyTaxComputationModal?.close?.();
             this.$emit("apply-to-tax");
         },
     },

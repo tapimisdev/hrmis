@@ -39,6 +39,9 @@ class ComputeCumulativeRequest extends FormRequest
             'othersDeductions' => ['nullable', 'array'],
             'othersDeductions.*.name' => ['required_with:othersDeductions', 'string'],
             'othersDeductions.*.amount' => ['required_with:othersDeductions', 'numeric', 'min:1'],
+
+            'governmentBonuses' => ['nullable', 'array'],
+            'governmentBonuses.*' => ['integer', 'exists:payroll_government_bonus,id'],
         ];
     }
 }

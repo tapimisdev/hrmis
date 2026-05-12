@@ -1,5 +1,10 @@
 <template>
     <div class="container-fluid" style="padding: 16px 18px">
+        <DeleteTaxationModal
+            ref="deleteTaxationModal"
+            :is-submitting="is_deleting_taxation"
+            @confirm="confirmDelete"
+        />
         <TaxationHeader
             :has_taxation_record="has_taxation_record"
             :is_busy="is_loading || is_processing"
@@ -43,6 +48,7 @@ import TaxationBody from "./parts/TaxationBody.vue";
 import TaxSettings from "./parts/TaxSettings.vue";
 import TaxationSkeleton from "./components/TaxationSkeleton.vue";
 import LoadingAccordion from "./components/LoadingAccordion.vue";
+import DeleteTaxationModal from "./modal/DeleteTaxationModal.vue";
 
 import { TaxationSettingModel } from "./TaxationModel";
 
@@ -54,6 +60,7 @@ export default {
         TaxSettings,
         TaxationSkeleton,
         LoadingAccordion,
+        DeleteTaxationModal,
     },
 
     data() {
@@ -74,6 +81,7 @@ export default {
             has_taxation_record: null,
             taxation_id: null,
             is_loading: false,
+            is_deleting_taxation: false,
             is_applying_to_payroll: false,
 
             batch_data: [],
@@ -326,40 +334,13 @@ export default {
                 return;
             }
 
-            const res = await Swal.fire({
-                title: "Delete Taxation",
-                html: `
-            <div class="text-start">
-                <div>This action cannot be undone.</div>
-                <div class="mt-2">To confirm, type <b>DELETE</b> below.</div>
-            </div>
-        `,
-                icon: "warning",
-                input: "text",
-                inputPlaceholder: "Type DELETE to confirm",
-                inputAttributes: { autocapitalize: "off" },
-                showCancelButton: true,
-                confirmButtonText: "Delete",
-                cancelButtonText: "Cancel",
-                confirmButtonColor: "#dc3545",
-                reverseButtons: true,
-                preConfirm: (value) => {
-                    const v = String(value || "")
-                        .trim()
-                        .toUpperCase();
-                    if (v !== "DELETE") {
-                        Swal.showValidationMessage(
-                            "Confirmation text must be DELETE",
-                        );
-                        return false;
-                    }
-                    return true;
-                },
-            });
-
-            if (!res.isConfirmed) return;
+            this.$refs.deleteTaxationModal?.open?.();
+        },
+        async confirmDelete() {
+            if (!this.taxation_id || this.is_deleting_taxation) return;
 
             // UI lock + reset anything that could conflict
+            this.is_deleting_taxation = true;
             this.is_loading = true;
             this.resetProcessingState(); // stop polling + clear batch/progress
             // (optional) also clear view instantly so user feels it changed
@@ -370,6 +351,8 @@ export default {
                 await axios.delete(
                     `/admin/taxation/${this.taxation_id}/delete`,
                 );
+
+                this.$refs.deleteTaxationModal?.close?.();
 
                 Swal.fire({
                     title: "Deleted!",
@@ -399,6 +382,8 @@ export default {
                 });
                 this.has_taxation_record = this.taxation_id != null;
                 this.is_loading = false;
+            } finally {
+                this.is_deleting_taxation = false;
             }
         },
         resetProcessingState() {

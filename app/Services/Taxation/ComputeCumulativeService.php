@@ -39,8 +39,6 @@ class ComputeCumulativeService
                 throw new RuntimeException('No saved Q1 forecast employees found for this taxation record.');
             }
 
-            $jobPayload = $this->buildPayload($taxation, $payload);
-
             DB::table('taxations')
                 ->where('id', $taxationId)
                 ->update([
@@ -49,7 +47,11 @@ class ComputeCumulativeService
                 ]);
 
             $jobs = collect($employeeNos)
-                ->map(fn ($employeeNo) => new ForeCastEmployeeJob($taxationId, $employeeNo, $jobPayload))
+                ->map(function ($employeeNo) use ($taxationId, $taxation, $payload) {
+                    $jobPayload = $this->buildPayload($taxation, $payload, (string) $employeeNo);
+
+                    return new ForeCastEmployeeJob($taxationId, $employeeNo, $jobPayload);
+                })
                 ->values()
                 ->all();
 
@@ -89,7 +91,7 @@ class ComputeCumulativeService
         });
     }
 
-    private function buildPayload(object $taxation, array $payload): array
+    private function buildPayload(object $taxation, array $payload, ?string $employeeNo = null): array
     {
         $basePayload = [
             'year' => (int) $taxation->year,
@@ -135,7 +137,16 @@ class ComputeCumulativeService
                 'basicPayPct' => (float) $taxation->portion_basic_pay,
                 'longevityPct' => (float) $taxation->portion_longevity_pay,
             ],
+            'governmentBonuses' => [],
         ];
+
+        if (data_get($payload, 'mode') === 'same_configuration') {
+            return $this->buildEmployeeSameConfigurationPayload(
+                $taxation,
+                $basePayload,
+                $employeeNo
+            );
+        }
 
         if (data_get($payload, 'mode') !== 'override') {
             return $basePayload;
@@ -167,6 +178,73 @@ class ComputeCumulativeService
             ->values()
             ->all();
 
+        $basePayload['governmentBonuses'] = collect(data_get($payload, 'governmentBonuses', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->values()
+            ->all();
+
         return $basePayload;
+    }
+
+    private function buildEmployeeSameConfigurationPayload(
+        object $taxation,
+        array $basePayload,
+        ?string $employeeNo
+    ): array {
+        if (!$employeeNo) {
+            return $basePayload;
+        }
+
+        $employee = DB::table('taxation_employees')
+            ->where('taxation_id', $taxation->id)
+            ->where('type', 'forecast')
+            ->where('employee_no', $employeeNo)
+            ->select('raw_payload')
+            ->first();
+
+        $employeePayload = json_decode($employee->raw_payload ?? '[]', true);
+        if (!is_array($employeePayload) || empty($employeePayload)) {
+            return $basePayload;
+        }
+
+        return [
+            ...$basePayload,
+            'assumptions' => [
+                ...$basePayload['assumptions'],
+                ...(array) data_get($employeePayload, 'assumptions', []),
+                'basicPay' => true,
+            ],
+            'deductions' => [
+                ...$basePayload['deductions'],
+                ...(array) data_get($employeePayload, 'deductions', []),
+            ],
+            'othersEarnings' => collect(data_get($employeePayload, 'othersEarnings', []))
+                ->filter(fn ($item) => filled(data_get($item, 'name')))
+                ->map(fn ($item) => [
+                    'name' => trim((string) data_get($item, 'name', '')),
+                    'tax_type' => (string) data_get($item, 'tax_type', 'taxable'),
+                    'amount' => (float) data_get($item, 'amount', 0),
+                ])
+                ->values()
+                ->all(),
+            'othersDeductions' => collect(data_get($employeePayload, 'othersDeductions', []))
+                ->filter(fn ($item) => filled(data_get($item, 'name')))
+                ->map(fn ($item) => [
+                    'name' => trim((string) data_get($item, 'name', '')),
+                    'amount' => (float) data_get($item, 'amount', 0),
+                ])
+                ->values()
+                ->all(),
+            'allocation' => [
+                ...$basePayload['allocation'],
+                ...(array) data_get($employeePayload, 'allocation', []),
+            ],
+            'governmentBonuses' => collect(data_get($employeePayload, 'governmentBonuses', []))
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn ($id) => $id > 0)
+                ->values()
+                ->all(),
+        ];
     }
 }

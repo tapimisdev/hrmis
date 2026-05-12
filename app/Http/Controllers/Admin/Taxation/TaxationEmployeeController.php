@@ -13,6 +13,7 @@ class TaxationEmployeeController extends Controller
     {
         $emp = DB::table('taxation_employees as te')
             ->select(
+                'te.type',
                 'te.allowable_gsis',
                 'te.allowable_pagibig',
                 'te.allowable_philhealth',
@@ -23,7 +24,8 @@ class TaxationEmployeeController extends Controller
                 'te.less_bir_rr3_2015',
                 'te.portion_hazard_pay',
                 'te.portion_basic_pay',
-                'te.portion_longevity_pay'
+                'te.portion_longevity_pay',
+                'te.raw_payload'
             )
             ->where('te.id', $id)
             ->first();
@@ -62,7 +64,10 @@ class TaxationEmployeeController extends Controller
             })
             ->values();
 
+        $rawPayload = json_decode($emp->raw_payload ?? '[]', true);
+
         $data = [
+            'type' => $emp->type,
             'assumptions' => [
                 'basicPay' => true,
                 'midYear' => (bool) $emp->mid_year,
@@ -78,6 +83,11 @@ class TaxationEmployeeController extends Controller
             ],
             'othersEarnings' => $other_earnings,
             'othersDeductions' => $other_deductions,
+            'governmentBonuses' => collect(data_get($rawPayload, 'governmentBonuses', []))
+                ->map(fn ($value) => (int) $value)
+                ->filter(fn ($value) => $value > 0)
+                ->values()
+                ->all(),
 
             'allocation' => [
                 'basicPayPct' => $emp->portion_basic_pay,

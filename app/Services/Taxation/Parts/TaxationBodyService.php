@@ -42,6 +42,7 @@ class TaxationBodyService
             ->select(
                 'te.id',
                 'te.year',
+                'te.type',
                 'te.employee_no',
                 'ep.profile',
                 'ep.lastname',
@@ -89,6 +90,7 @@ class TaxationBodyService
                 'te.amount_annual_taxable',
                 'te.amount_annual_tax',
                 'te.amount_monthly_tax',
+                'te.raw_payload',
 
                 'te.portion_hazard_pay',
                 'te.portion_basic_pay',
@@ -134,6 +136,7 @@ class TaxationBodyService
                         'tax',
                         'monthly_tax',
                         'remarks',
+                        'raw_payload',
                         )
                     ->where('taxation_employee_id', $employee->id)
                     ->orderByDesc('id')

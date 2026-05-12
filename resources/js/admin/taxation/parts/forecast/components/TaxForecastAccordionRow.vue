@@ -65,6 +65,10 @@
         <td class="td-money">
             {{ row?.amount_monthly_tax ?? "—" }}
         </td>
+
+        <td v-if="selectedType === 'nov'" class="td-money">
+            {{ row?.amount_return_amount ?? "—" }}
+        </td>
     </tr>
 </template>
 
@@ -77,6 +81,7 @@ export default {
         open: { type: Boolean, default: false },
         rowKey: { type: String, default: "" },
         selected: { type: Boolean, default: false },
+        selectedType: { type: String, default: "forecast" },
     },
     computed: {
         initials() {

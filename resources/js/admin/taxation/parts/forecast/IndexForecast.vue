@@ -24,6 +24,7 @@
             <div v-if="filteredRows.length">
                 <TaxForecastTable
                     :rows="filteredRows"
+                    :selected-type="selectedType"
                     :is-recomputing="is_recomputing"
                     :recomputing-key="recomputing_key"
                     :focus-row-key="pending_focus_row_key"

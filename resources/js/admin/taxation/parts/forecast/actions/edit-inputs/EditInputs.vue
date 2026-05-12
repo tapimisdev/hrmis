@@ -13,8 +13,17 @@
                 </p>
 
                 <div class="row justify-content-center g-3">
+                    <div v-if="isNovAdjustment" class="col-12">
+                        <ComputeAdjustmentFields
+                            v-model="form"
+                            :government-bonuses="governmentBonuses"
+                            :is-loading-bonuses="isLoadingBonuses"
+                            :taxation-year="row.year"
+                        />
+                    </div>
+
                     <!-- Earnings Included / Exemptions -->
-                    <div class="col-12">
+                    <div v-else class="col-12">
                         <div class="border rounded p-3 h-100">
                             <div class="fw-bold mb-2">Earnings Included</div>
 
@@ -45,7 +54,7 @@
                     </div>
 
                     <!-- Other Earnings -->
-                    <div class="col-12">
+                    <div v-if="!isNovAdjustment" class="col-12">
                         <DynamicRows v-model="form.othersEarnings" title="Others (Earnings)" :errors="errors"
                             error-key="othersEarnings" :enableTaxType="true" class="w-100">
                             <template #title>
@@ -59,7 +68,7 @@
                     </div>
 
                     <!-- Allowable Deductions -->
-                    <div class="col-12">
+                    <div v-if="!isNovAdjustment" class="col-12">
                         <div class="border rounded p-3">
                             <div class="fw-bold mb-2 d-flex align-items-center">
                                 <span>Allowable Deductions</span>
@@ -115,7 +124,7 @@
                             </small>
                         </div>
                     </div>
-                    <div class="col-12">
+                    <div v-if="!isNovAdjustment" class="col-12">
                         <TabCAllocation v-model="form.allocation" :errors="errors" />
                     </div>
 
@@ -146,6 +155,7 @@ import DynamicRows from "../../../../modal/run-forecast/tabs/partials/DynamicRow
 import AppTooltip from "../../../../../../components/AppTooltip.vue";
 import EditSkeleton from "./EditSkeleton.vue";
 import TabCAllocation from "../../../../modal/run-forecast/tabs/TabCAllocation.vue";
+import ComputeAdjustmentFields from "../../../../modal/run-forecast/tabs/ComputeAdjustmentFields.vue";
 
 const defaultForm = () => ({
     assumptions: {
@@ -163,6 +173,7 @@ const defaultForm = () => ({
     },
     othersEarnings: [],
     othersDeductions: [],
+    governmentBonuses: [],
 
     allocation: {
         basicPayPct: 20,
@@ -179,7 +190,8 @@ export default {
         DynamicRows,
         AppTooltip,
         EditSkeleton,
-        TabCAllocation
+        TabCAllocation,
+        ComputeAdjustmentFields,
     },
     props: {
         row: { type: Object, required: true },
@@ -191,6 +203,8 @@ export default {
             is_saving: false,
             form: defaultForm(),
             errors: {},
+            governmentBonuses: [],
+            isLoadingBonuses: false,
             earningChecks: [
                 { key: "basicPay", label: "Basic Pay", disabled: true },
                 {
@@ -208,9 +222,15 @@ export default {
             ],
         };
     },
+    computed: {
+        isNovAdjustment() {
+            return (this.row?.type || this.form?.type) === "nov";
+        },
+    },
     methods: {
         normalizeForm(payload = {}) {
             return {
+                type: payload.type || this.row?.type || "",
                 assumptions: {
                     ...defaultForm().assumptions,
                     ...(payload.assumptions || {}),
@@ -225,11 +245,66 @@ export default {
                 othersDeductions: Array.isArray(payload.othersDeductions)
                     ? payload.othersDeductions
                     : [],
+                governmentBonuses: Array.isArray(payload.governmentBonuses)
+                    ? payload.governmentBonuses
+                    : [],
                 allocation: {
                     ...defaultForm().allocation,
                     ...(payload.allocation || {}),
                 },
             };
+        },
+        async fetchGovernmentBonuses() {
+            if (!this.row?.year || !this.isNovAdjustment) {
+                this.governmentBonuses = [];
+                return;
+            }
+
+            this.isLoadingBonuses = true;
+
+            try {
+                const response = await axios.post(
+                    "/api/payroll/government-bonuses/processed",
+                    {
+                        year: String(this.row.year),
+                        status: "completed",
+                    },
+                    {
+                        headers: {
+                            Accept: "application/json",
+                            Authorization: `Bearer ${this.token}`,
+                        },
+                    },
+                );
+
+                const rows = Array.isArray(response?.data?.data)
+                    ? response.data.data
+                    : [];
+
+                this.governmentBonuses = rows.map((item) => ({
+                    id: item.id,
+                    name: item.bonus_type_name || "Government Bonus",
+                    monthLabel: this.formatMonth(item.month),
+                }));
+            } catch (error) {
+                this.governmentBonuses = [];
+            } finally {
+                this.isLoadingBonuses = false;
+            }
+        },
+        formatMonth(value) {
+            if (!value) return "";
+
+            const date = new Date(`${value}-01T00:00:00`);
+
+            if (Number.isNaN(date.getTime())) {
+                return String(value);
+            }
+
+            return date.toLocaleDateString("en-PH", {
+                year: "numeric",
+                month: "long",
+            });
         },
 
         fetchEdits() {
@@ -245,12 +320,14 @@ export default {
                 .get(`/admin/taxation/edit-inputs/${this.row.id}`, {
                     headers: { Authorization: `Bearer ${this.token}` },
                 })
-                .then((response) => {
+                .then(async (response) => {
                     this.form = this.normalizeForm(response.data || {});
+                    await this.fetchGovernmentBonuses();
                 })
                 .catch((err) => {
                     console.error(err);
                     this.form = defaultForm();
+                    this.governmentBonuses = [];
                 })
                 .finally(() => {
                     this.is_loading = false;
