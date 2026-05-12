@@ -217,13 +217,16 @@
                                 'bg-primary fw-bold':
                                     selected_employee === item.employee_no,
                                 'selected-computation-cell': isCellSelected(item.employee_no, monthKey),
+                                'locked-computation-cell': isMonthLocked(item, monthKey),
                             }"
                             @click="handleCellSelection(item, monthKey, $event)"
                         >
                             <input
                                 type="number"
                                 v-model="item[monthKey]"
-                                :readonly="computationMode"
+                                :readonly="computationMode || isMonthLocked(item, monthKey)"
+                                :disabled="isMonthLocked(item, monthKey)"
+                                :title="monthLockReason(item, monthKey)"
                                 @change="
                                     create_update(
                                         item[monthKey + '_id'],
@@ -452,8 +455,20 @@ export default {
                 (cell) => cell.key === this.cellSelectionKey(employeeNo, monthKey)
             );
         },
+        isMonthLocked(item, monthKey) {
+            return Boolean(item?.[monthKey + "_locked"]);
+        },
+        monthLockReason(item, monthKey) {
+            return this.isMonthLocked(item, monthKey)
+                ? "This month already has an existing payroll record."
+                : "";
+        },
         handleCellSelection(item, monthKey, event) {
             if (!this.computationMode) {
+                return;
+            }
+
+            if (this.isMonthLocked(item, monthKey)) {
                 return;
             }
 
@@ -534,6 +549,10 @@ export default {
                         return Promise.resolve();
                     }
 
+                     if (this.isMonthLocked(row, cell.monthKey)) {
+                        return Promise.resolve();
+                    }
+
                     const nextValue = this.computeCellValue(row[cell.monthKey]);
                     row[cell.monthKey] = nextValue;
 
@@ -591,6 +610,15 @@ export default {
 
 .computation-help {
     min-width: 220px;
+}
+
+.locked-computation-cell {
+    background-color: var(--bs-secondary-bg-subtle);
+}
+
+.locked-computation-cell .border-less-input {
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 /* Table */

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Modules;
 
 use App\Enums\EmploymentTypesEnum;
+use App\Enums\TableSettingsEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Modules\StoreComponentEmployeeBulkRequest;
 use App\Services\EmployeeService;
@@ -109,6 +110,14 @@ class PayrollComponentsEmployeeController extends Controller
             return response([
                 'message' => 'Invalid month provided',
                 'status' => 'error',
+            ], 422);
+        }
+
+        $employmentType = $this->resolveEmploymentTypeByComponentSlug($slug);
+        if ($this->hasExistingPayrollForComponent($component->id, (string) $validatedData['employee_no'], (int) $year, $monthNumber, $employmentType)) {
+            return response([
+                'message' => 'This month already has an existing payroll record and cannot be edited.',
+                'status' => 'locked_month',
             ], 422);
         }
 
@@ -251,6 +260,7 @@ class PayrollComponentsEmployeeController extends Controller
         try {
             $updated = 0;
             $skipped = [];
+            $lockedMonths = [];
 
             foreach ($employeeNos as $employeeNo) {
                 // Skip employees who are not REGULAR / Permanent
@@ -286,6 +296,13 @@ class PayrollComponentsEmployeeController extends Controller
 
                 // Apply amount across the month range
                for ($month = $start; $month <= $end; $month++) {
+                    if ($this->hasExistingPayrollForComponent((int) $payload['id'], (string) $employeeNo, (int) $payload['year'], $month, $payload['module_tab'])) {
+                        $lockedMonths[] = [
+                            'employee_no' => $employeeNo,
+                            'month' => $month,
+                        ];
+                        continue;
+                    }
                     
                     $ok = DB::table('employee_payroll_components')->updateOrInsert(
                         [
@@ -316,6 +333,11 @@ class PayrollComponentsEmployeeController extends Controller
                     'count'     => count($skipped),
                     'employees' => $skipped,
                     'reason'    => 'Not REGULAR / not permanent',
+                ],
+                'locked_months' => [
+                    'count' => count($lockedMonths),
+                    'items' => $lockedMonths,
+                    'reason' => 'Month already has an existing payroll record',
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -402,6 +424,97 @@ class PayrollComponentsEmployeeController extends Controller
         $salary = (float) $salaryClean;
 
         return round($salary * ($percentage / 100), 2);
+    }
+
+    private function resolveEmploymentTypeByComponentSlug(string $slug): string
+    {
+        return in_array($slug, ['ewt-2', 'percentage-tax-3', 'tax-ewt-5'], true)
+            ? 'cos'
+            : 'regular';
+    }
+
+    private function hasExistingPayrollForComponent(
+        int $componentId,
+        string $employeeNo,
+        int $year,
+        int $month,
+        string $employmentType = 'regular'
+    ): bool {
+        $componentType = DB::table('payroll_components_settings')
+            ->where('tax_id', $componentId)
+            ->value('type');
+
+        if (
+            $componentType === TableSettingsEnum::SALARY_ID->value ||
+            in_array($componentType, ['ewt_2%', 'percentage_tax_3%', 'tax_ewt_5%'], true)
+        ) {
+            return $employmentType === 'cos'
+                ? DB::table('payroll_salary_employee as pse')
+                    ->join('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
+                    ->where('pse.employee_no', $employeeNo)
+                    ->whereYear('ps.payroll_date', $year)
+                    ->whereMonth('ps.payroll_date', $month)
+                    ->where(function ($query) {
+                        $query->whereNull('ps.status')
+                            ->orWhere('ps.status', '!=', 'draft');
+                    })
+                    ->exists()
+                : DB::table('payroll_salary_permanent_employees as pspe')
+                    ->join('payroll_salary as ps', 'pspe.payroll_salary_id', '=', 'ps.id')
+                    ->where('pspe.employee_no', $employeeNo)
+                    ->whereYear('ps.payroll_date', $year)
+                    ->whereMonth('ps.payroll_date', $month)
+                    ->where(function ($query) {
+                        $query->whereNull('ps.status')
+                            ->orWhere('ps.status', '!=', 'draft');
+                    })
+                    ->exists();
+        }
+
+        if ($componentType === TableSettingsEnum::HAZARD_PA->value) {
+            return DB::table('payroll_hazard_pay_employee as phpe')
+                ->join('payroll_hazard_pay as php', 'phpe.payroll_hazard_pay_id', '=', 'php.id')
+                ->where('phpe.employee_no', $employeeNo)
+                ->whereRaw('YEAR(CONCAT(php.month, "-01")) = ?', [$year])
+                ->whereRaw('MONTH(CONCAT(php.month, "-01")) = ?', [$month])
+                ->where(function ($query) {
+                    $query->whereNull('php.status')
+                        ->orWhere('php.status', '!=', 'draft');
+                })
+                ->exists();
+        }
+
+        if ($componentType === TableSettingsEnum::LONGETIVITY->value) {
+            return DB::table('payroll_longevity_pay_employee as plpe')
+                ->join('payroll_longevity_pay as plp', 'plpe.payroll_longevity_pay_id', '=', 'plp.id')
+                ->where('plpe.employee_no', $employeeNo)
+                ->whereRaw('YEAR(CONCAT(plp.month, "-01")) = ?', [$year])
+                ->whereRaw('MONTH(CONCAT(plp.month, "-01")) = ?', [$month])
+                ->where(function ($query) {
+                    $query->whereNull('plp.status')
+                        ->orWhere('plp.status', '!=', 'draft');
+                })
+                ->exists();
+        }
+
+        if (in_array($componentType, [
+            TableSettingsEnum::PERA->value,
+            TableSettingsEnum::REPRESENTATION_ALLOWANCE->value,
+            TableSettingsEnum::TRANSPORTATION_ALLOWANCE->value,
+        ], true)) {
+            return DB::table('payroll_pera_rata_employee as ppre')
+                ->join('payroll_pera_rata as ppr', 'ppre.payroll_pera_rata_id', '=', 'ppr.id')
+                ->where('ppre.employee_no', $employeeNo)
+                ->whereRaw('YEAR(CONCAT(ppr.month, "-01")) = ?', [$year])
+                ->whereRaw('MONTH(CONCAT(ppr.month, "-01")) = ?', [$month])
+                ->where(function ($query) {
+                    $query->whereNull('ppr.status')
+                        ->orWhere('ppr.status', '!=', 'draft');
+                })
+                ->exists();
+        }
+
+        return false;
     }
 
 }
