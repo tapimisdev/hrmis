@@ -491,6 +491,30 @@
                             </div>
                         @endif
 
+                        {{-- OTHERS --}}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingOthers">
+                                <button class="accordion-button text-uppercase fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOthers" aria-expanded="true">
+                                    Others
+                                </button>
+                            </h2>
+                            <div id="collapseOthers" class="accordion-collapse collapse show">
+                                <div class="accordion-body">
+                                    <div class="row mt-3">
+                                        <div class="col-12 col-md-4 mb-3">
+                                            <label class="mb-2" for="is_driver">Is Driver?</label>
+                                            <select id="is_driver" name="is_driver" class="form-select">
+                                                <option value=""> - CHOOSE - </option>
+                                                <option value="no" {{ optional($data)->is_driver ? '' : 'selected' }}>No</option>
+                                                <option value="yes" {{ optional($data)->is_driver ? 'selected' : '' }}>Yes</option>
+                                            </select>
+                                            <div class="error-field"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     <div class="bg-transparent border-0 d-flex justify-content-end mt-4">

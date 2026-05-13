@@ -237,10 +237,15 @@ export default {
     manageHref() {
       const baseUrl = `/admin/payroll/${this.url}/${this.payroll.payroll_no}`
       const batchId = this.payroll?.batch_id
+      const params = new URLSearchParams(window.location.search)
 
-      return batchId !== null && batchId !== undefined && batchId !== ""
-        ? `${baseUrl}?batch_id=${batchId}`
-        : baseUrl
+      if (batchId !== null && batchId !== undefined && batchId !== "") {
+        params.set("batch_id", batchId)
+      }
+
+      const query = params.toString()
+
+      return query ? `${baseUrl}?${query}` : baseUrl
     },
 
     actions() {

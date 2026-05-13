@@ -90,11 +90,13 @@ export default {
         },
     },
     data() {
+        const params = new URLSearchParams(window.location.search);
+
         return {
-            division: "",
-            unit: "",
-            account_status: "active",
-            employment_type: "",
+            division: params.get("division") || "",
+            unit: params.get("unit") || "",
+            account_status: params.get("account_status") || "active",
+            employment_type: params.get("employment_type") || "",
 
             divisions: [],
             units: [],
@@ -107,8 +109,11 @@ export default {
 
     mounted() {
         this.loadEmploymentTypes();
-        this.initTable();
+        if (this.division) {
+            this.loadUnits(this.division);
+        }
         this.loadDivisions();
+        this.initTable();
     },
 
     methods: {
@@ -162,7 +167,31 @@ export default {
                 this.unit = "";
             }
 
+            this.syncFiltersToUrl();
             this.reloadTable();
+        },
+
+        syncFiltersToUrl() {
+            const params = new URLSearchParams();
+            const filters = {
+                account_status: this.account_status,
+                division: this.division,
+                unit: this.unit,
+                employment_type: this.employment_type,
+            };
+
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== "") {
+                    params.set(key, value);
+                }
+            });
+
+            const query = params.toString();
+            const url = query
+                ? `${window.location.pathname}?${query}`
+                : window.location.pathname;
+
+            window.history.replaceState({}, "", url);
         },
 
         /** ===============================

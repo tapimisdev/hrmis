@@ -35,7 +35,7 @@
 
             <li class="nested-item">
                 <a href="{{ route('sla-pay.index') }}"
-                    class="{{ request()->is('admin/payroll/sla-pay*') ? 'active' : '' }}">
+                    class="{{ request()->is('admin/payroll/sla-pay*') || request()->is('admin/payroll/subsistence-allowance*') ? 'active' : '' }}">
                     <i class="fa-solid fa-clock"></i>
                     <span>SLA Pay</span>
                 </a>
