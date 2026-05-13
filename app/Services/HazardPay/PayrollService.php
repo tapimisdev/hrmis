@@ -56,6 +56,8 @@ class PayrollService {
     public function getEligibleEmployees($payload)
     {
         $this->monthYear = $payload['month'];
+        $this->eligible = [];
+        $this->not_eligible = [];
 
         $latestOrg = $this->salaryEmployeeService->activeOrg();
                 
@@ -66,7 +68,13 @@ class PayrollService {
             ->leftJoin('positions', 'eo.position_id', '=', 'positions.id')
             ->leftJoin('divisions', 'eo.division_id', '=', 'divisions.id')
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-            ->where('eo.employment_type_id', $payload['employment_type_id'])
+            ->where(function ($query) use ($payload) {
+                $query->where('eo.employment_type_id', $payload['employment_type_id'])
+                    ->orWhere(function ($query) {
+                        $query->where('eo.employment_type_id', EmploymentTypesEnum::COS->value)
+                            ->where('ei.is_driver', true);
+                    });
+            })
             ->select(
                 'ep.firstname',
                 'ep.middlename',
@@ -80,7 +88,8 @@ class PayrollService {
 
                 'ei.user_id',
                 'ei.employee_no',
-                'ei.account_status'
+                'ei.account_status',
+                'ei.is_driver'
             )
             ->get();
         
@@ -152,7 +161,7 @@ class PayrollService {
             && $employee->employment_type_id == EmploymentTypesEnum::COS->value) {
             
             $eligibleRemarks[] = [
-                'text' => 'COS employee has no assigned project during the payroll date. Please update.',
+                'text' => 'COS driver has no assigned project during the payroll date. Please update.',
                 'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
             ];
         }

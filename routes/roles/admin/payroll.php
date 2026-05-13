@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\Payroll\Import\SLARegistryController;
 use App\Http\Controllers\Admin\Payroll\Import\LongevityRegistryController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupEmployeesController;
+use App\Http\Controllers\Admin\Payroll\SubsistenceAllowanceController;
 
 Route::prefix('payroll')->group(function() {
     
@@ -51,6 +52,8 @@ Route::prefix('payroll')->group(function() {
     Route::resource('hazard-pay', HazardPayController::class)->only('index', 'create', 'show', 'store', 'destroy');
 
     # SLA PAYROLL
+    Route::get('subsistence-allowance', [SubsistenceAllowanceController::class, 'index'])
+        ->name('subsistence-allowance.index');
     Route::resource('sla-pay', SLAPayController::class)->only('index', 'create', 'show', 'store', 'destroy');
 
     # RATA PAYROLL

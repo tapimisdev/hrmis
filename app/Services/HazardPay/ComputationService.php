@@ -33,6 +33,7 @@ class ComputationService {
     protected $withHoldingTax;
     protected $start_date;
     protected $end_date;
+    protected $is_driver = false;
 
     public function __construct(DailyTimeRecordService $daily_time_record_service, SalaryEmloyeeService $salaryEmployeeService) 
     {
@@ -66,15 +67,7 @@ class ComputationService {
 
         $withHoldingTax = $this->getWithHoldingTax();
 
-        if ($actual_presence >= 15) {
-            $entitlementPercentage = 0.15;
-        } elseif ($actual_presence >= 8 && $actual_presence < 15) {
-            $entitlementPercentage = 0.12;
-        } elseif ($actual_presence >= 1 && $actual_presence <= 7) {
-            $entitlementPercentage = 0.10;
-        } else {
-            $entitlementPercentage = 0;
-        }
+        $entitlementPercentage = $this->getEntitlementPercentage($actual_presence);
 
         $hazardPay = ($this->salary_amount * $entitlementPercentage) / 22 * $actual_presence;
         $total = $hazardPay - $withHoldingTax;
@@ -182,7 +175,8 @@ class ComputationService {
                 'employee_personal.suffix',
                 'eo1.employment_type_id',
                 'positions.name as position_name',
-                'users.id as user_id'
+                'users.id as user_id',
+                'employee_information.is_driver'
             )
             ->first();
 
@@ -197,6 +191,24 @@ class ComputationService {
         $this->position = $employee_information->position_name;
         $this->employment_type = $employee_information->employment_type_id;
         $this->user_id = $employee_information->user_id;
+        $this->is_driver = (bool) $employee_information->is_driver;
+    }
+
+    private function getEntitlementPercentage(int|float $actual_presence): float
+    {
+        if ($actual_presence >= 15) {
+            return $this->is_driver ? 0.30 : 0.15;
+        }
+
+        if ($actual_presence >= 8) {
+            return $this->is_driver ? 0.23 : 0.12;
+        }
+
+        if ($actual_presence >= 1) {
+            return $this->is_driver ? 0.15 : 0.10;
+        }
+
+        return 0;
     }
 
     private function getWithHoldingTax() 

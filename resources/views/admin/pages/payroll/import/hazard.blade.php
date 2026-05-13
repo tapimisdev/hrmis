@@ -243,7 +243,9 @@ $(function() {
         $('#dynamic-table tbody tr').each(function () {
             const rowData = {};
             headers.forEach((header) => {
-                rowData[header] = $(this).find(`[data-field="${header}"]`).val();
+                rowData[header] = $(this).find('[data-field]').filter(function () {
+                    return $(this).data('field') === header;
+                }).val() ?? '';
             });
             updatedData.push(rowData);
         });
@@ -487,7 +489,7 @@ $(function() {
         table += '<th style="min-width: 90px;">Action</th>';
 
         headers.forEach(header => {
-            table += '<th>' + (previewHeaders[header] ?? header) + '</th>';
+            table += '<th>' + escapeHtml(previewHeaders[header] ?? header) + '</th>';
         });
 
         table += '</tr></thead><tbody>';
@@ -506,6 +508,8 @@ $(function() {
 
             headers.forEach(header => {
                 const value = row[header] ?? '';
+                const safeValue = escapeHtml(value);
+                const safeHeader = escapeHtml(header);
                 const isMissingEmployeeNo = header === 'Employee No' && String(value).trim() === '';
                 const isMissingName = header === 'Name' && String(value).trim() === '';
                 const isMissingPosition = header === 'Position' && String(value).trim() === '';
@@ -516,22 +520,22 @@ $(function() {
                 if (header === 'Name') {
                     table += '<td style="width:500px;">' +
                                 '<textarea class="form-control ' + (isInvalidField ? 'is-invalid' : '') + '" ' +
-                                `data-field="${header}" placeholder="Edit employee name" ` +
-                                'style="width:500px; min-height:72px; white-space:pre-wrap;">' + value + '</textarea>' +
+                                `data-field="${safeHeader}" placeholder="Edit employee name" ` +
+                                'style="width:500px; min-height:72px; white-space:pre-wrap;">' + safeValue + '</textarea>' +
                             '</td>';
                 } else if (header === 'Position') {
                     table += '<td style="width:300px;">' +
                                 '<input type="text" class="form-control ' + (isInvalidField ? 'is-invalid' : '') + '" ' +
-                                `data-field="${header}" ` +
+                                `data-field="${safeHeader}" ` +
                                 'style="width:300px;"' +
-                                'value="' + value + '">' +
+                                'value="' + safeValue + '">' +
                             '</td>';
                 } else {
                     table += '<td>' +
                                 '<input type="text" class="form-control ' + (isInvalidField ? 'is-invalid' : '') + '" ' +
-                                `data-field="${header}" ` +
+                                `data-field="${safeHeader}" ` +
                                 'style="width:200px;"' +
-                                'value="' + value + '">' +
+                                'value="' + safeValue + '">' +
                             '</td>';
                 }
             });

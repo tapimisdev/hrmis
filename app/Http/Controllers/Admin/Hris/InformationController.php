@@ -277,6 +277,7 @@ class InformationController extends Controller
                     'two_percent'             => $request->has_two_percent == 'yes' ? 1 : 0,
                     'three_percent'           => $request->has_three_percent == 'yes' ? 1 : 0,
                     'five_percent'            => $request->has_five_percent == 'yes' ? 1 : 0,
+                    'is_driver'               => $request->is_driver == 'yes' ? 1 : 0,
                     'updated_at'              => now(),
                     'created_at'              => $isExists ? DB::raw('created_at') : now(),
                 ]
@@ -424,6 +425,7 @@ class InformationController extends Controller
             'date_hired_company' => 'required|date',
             'date_hired_organization' => 'required|date',
             'status' => 'required|in:active,inactive',
+            'is_driver' => 'nullable|in:yes,no',
         ];
 
         // Only include Organization, Employment, Salary & Payroll Details if employee does not exist

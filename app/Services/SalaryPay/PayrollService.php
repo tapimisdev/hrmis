@@ -3,6 +3,7 @@
 namespace App\Services\SalaryPay;
 
 use App\Enums\EmploymentTypesEnum;
+use App\Enums\PayrollStatusEnum;
 use App\Jobs\Admin\Payroll\PayrollRegistryReport;
 use App\Services\DailyTimeRecordService;
 use App\Services\SalaryEmloyeeService;
@@ -470,6 +471,7 @@ class PayrollService
                     ->where('employment_type_id', EmploymentTypesEnum::COS->value)
                     ->where('apply_deduction', false)
                     ->whereNull('deduction_applied_payroll_id')
+                    ->whereIn('status', $this->deductibleCosPayrollStatuses())
                     ->update([
                         'deduction_applied_payroll_id' => $payroll_id,
                         'updated_at' => now(),
@@ -626,7 +628,7 @@ class PayrollService
                     });
             })
             ->whereNull('deduction_applied_payroll_id')
-            ->where('status', '!=', 'cancelled')
+            ->whereIn('status', $this->deductibleCosPayrollStatuses())
             ->orderBy('payroll_date')
             ->orderBy('id')
             ->get([
@@ -640,6 +642,15 @@ class PayrollService
                 'deduction_deferred_date',
                 'status',
             ]);
+    }
+
+    private function deductibleCosPayrollStatuses(): array
+    {
+        return [
+            PayrollStatusEnum::Approved->value,
+            PayrollStatusEnum::ForReleasing->value,
+            PayrollStatusEnum::Completed->value,
+        ];
     }
 
     private function normalizeDeductionOptions(array|string|null $options): array
@@ -1173,7 +1184,7 @@ class PayrollService
                     ->whereMonth('ps.deduction_deferred_date', $date->month)
                     ->whereNull('ps.deduction_applied_payroll_id')
             )
-            ->where('ps.status', '!=', 'cancelled')
+            ->whereIn('ps.status', $this->deductibleCosPayrollStatuses())
             ->orderBy('ps.payroll_date')
             ->orderBy('ps.id')
             ->select(
@@ -1273,7 +1284,7 @@ class PayrollService
                     ->whereMonth('ps.deduction_deferred_date', $date->month)
                     ->whereNull('ps.deduction_applied_payroll_id')
             )
-            ->where('ps.status', '!=', 'cancelled')
+            ->whereIn('ps.status', $this->deductibleCosPayrollStatuses())
             ->orderBy('ps.payroll_date')
             ->orderBy('ps.id')
             ->select(

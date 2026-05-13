@@ -53,6 +53,7 @@ class SLAPayReport implements ShouldQueue
             ->where('id', $this->payroll_id)
             ->update([
                 'no_employee'      => DB::raw('no_employee + 1'),
+                'total'            => DB::raw('total + ' . (float) ($processedData['net_pay'] ?? 0)),
             ]);
 
         Log::info("Completed payroll registry generation for Payroll ID: {$this->payroll_id}");

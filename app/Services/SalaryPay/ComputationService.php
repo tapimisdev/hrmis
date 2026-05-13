@@ -832,7 +832,11 @@ class ComputationService
                     ->whereMonth('ps.deduction_deferred_date', $payrollDate->month)
                     ->whereNull('ps.deduction_applied_payroll_id')
             )
-            ->where('ps.status', '!=', 'cancelled')
+            ->whereIn('ps.status', [
+                PayrollStatusEnum::Approved->value,
+                PayrollStatusEnum::ForReleasing->value,
+                PayrollStatusEnum::Completed->value,
+            ])
             ->select(
                 'ps.payroll_date',
                 'ps.cutoff',

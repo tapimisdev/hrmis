@@ -388,7 +388,7 @@
                     <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
                         <div>
                             <div class="chief-section-eyebrow">Quarterly Stats</div>
-                            <h5 class="mb-1">Top 10 by Category</h5>
+                            <h5 class="mb-1">All by Category</h5>
                             <p class="text-muted mb-0">{{ selectedYear }} totals by quarter</p>
                         </div>
                         <div class="chief-stat-switch" role="tablist" aria-label="Quarter tabs">
@@ -1021,7 +1021,7 @@ export default {
                 serverSide: true,
                 pageLength: 10,
                 lengthChange: false,
-                order: [],
+                order: [[3, "desc"]],
                 searching: false,
                 ajax: this.buildAjaxHandler("timelogs", "timelogQuarterlyStats"),
                 columns: this.timelogStatsColumns(),

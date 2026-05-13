@@ -302,7 +302,7 @@ class ChiefCornerController extends Controller
             $this->chiefCacheKey('timelog-insights', [
                 'month' => $monthDate->format('Y-m'),
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 4,
+                'stats_version' => 5,
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogInsights($scope['employees'], $monthDate)
@@ -328,7 +328,7 @@ class ChiefCornerController extends Controller
                 'year' => $monthDate->format('Y'),
                 'quarter' => $quarter,
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 4,
+                'stats_version' => 5,
             ]),
             now()->addMinutes(10),
             fn () => $this->quarterlyTimelogStats($scope, $monthDate, $quarter)
@@ -570,7 +570,7 @@ class ChiefCornerController extends Controller
             $summaries = $summaries->merge($monthSummaries);
         }
 
-        return $this->timelogStatsFromSummaries($this->aggregateTimelogSummaries($summaries));
+        return $this->timelogStatsFromSummaries($this->aggregateTimelogSummaries($summaries), null);
     }
 
     protected function aggregateTimelogSummaries(Collection $summaries): Collection
@@ -625,21 +625,21 @@ class ChiefCornerController extends Controller
             ->values();
     }
 
-    protected function timelogStatsFromSummaries(Collection $summaries): array
+    protected function timelogStatsFromSummaries(Collection $summaries, ?int $limit = 10): array
     {
+        $limitRows = fn (Collection $rows) => $limit === null ? $rows->values() : $rows->take($limit)->values();
+
         return [
-            'lates' => $summaries->filter(fn ($row) => $row->late_minutes > 0)->sortByDesc('late_minutes')->take(10)->values(),
-            'undertime' => $summaries->filter(fn ($row) => $row->undertime_minutes > 0)->sortByDesc('undertime_minutes')->take(10)->values(),
-            'ut' => $summaries
+            'lates' => $limitRows($summaries->filter(fn ($row) => $row->late_minutes > 0)->sortByDesc('late_minutes')),
+            'undertime' => $limitRows($summaries->filter(fn ($row) => $row->undertime_minutes > 0)->sortByDesc('undertime_minutes')),
+            'ut' => $limitRows($summaries
                 ->map(fn ($row) => $this->withCombinedLateUndertime($row))
                 ->filter(fn ($row) => $row->ut_minutes > 0)
-                ->sortByDesc('ut_minutes')
-                ->take(10)
-                ->values(),
-            'leave' => $summaries->filter(fn ($row) => $row->leave_days > 0)->sortByDesc('leave_days')->take(10)->values(),
-            'offsets' => $summaries->filter(fn ($row) => $row->offset_days > 0)->sortByDesc('offset_days')->take(10)->values(),
-            'so' => $summaries->filter(fn ($row) => $row->so_days > 0)->sortByDesc('so_days')->take(10)->values(),
-            'lto' => $summaries->filter(fn ($row) => $row->lto_days > 0)->sortByDesc('lto_days')->take(10)->values(),
+                ->sortByDesc('ut_minutes')),
+            'leave' => $limitRows($summaries->filter(fn ($row) => $row->leave_days > 0)->sortByDesc('leave_days')),
+            'offsets' => $limitRows($summaries->filter(fn ($row) => $row->offset_days > 0)->sortByDesc('offset_days')),
+            'so' => $limitRows($summaries->filter(fn ($row) => $row->so_days > 0)->sortByDesc('so_days')),
+            'lto' => $limitRows($summaries->filter(fn ($row) => $row->lto_days > 0)->sortByDesc('lto_days')),
         ];
     }
 
@@ -1100,7 +1100,9 @@ class ChiefCornerController extends Controller
         $quarter = max(1, min(4, (int) $request->input('quarter', (int) ceil($monthDate->month / 3))));
 
         return $this->datatableCollectionResponse(
-            $this->timelogStatTableRows($this->cachedQuarterlyTimelogStats($scope, $monthDate, $quarter), $stat),
+            $this->timelogStatTableRows($this->cachedQuarterlyTimelogStats($scope, $monthDate, $quarter), $stat)
+                ->sortByDesc('tally_order')
+                ->values(),
             $request
         );
     }
@@ -1206,7 +1208,8 @@ class ChiefCornerController extends Controller
     {
         $draw = (int) $request->input('draw', 1);
         $start = max((int) $request->input('start', 0), 0);
-        $length = max((int) $request->input('length', 10), 1);
+        $requestedLength = (int) $request->input('length', 10);
+        $length = $requestedLength === -1 ? -1 : max($requestedLength, 1);
         $search = trim((string) $request->input('search.value', ''));
 
         $rows = $rows->values();
@@ -1237,7 +1240,9 @@ class ChiefCornerController extends Controller
                 : $rows->sortBy(fn ($row) => data_get($row, $orderColumn))->values();
         }
 
-        $pageRows = $rows->slice($start, $length)->values();
+        $pageRows = $length === -1
+            ? $rows->values()
+            : $rows->slice($start, $length)->values();
 
         return [
             'draw' => $draw,
