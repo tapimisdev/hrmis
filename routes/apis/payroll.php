@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\Payroll\LongevityPay\LongevityPayItemController;
 use App\Http\Controllers\Admin\Payroll\Api\GovernmentBonusApiController;
 use App\Http\Controllers\Admin\Payroll\GovernmentBonus\GovernmentBonusController;
 use App\Http\Controllers\Admin\Payroll\GovernmentBonus\GovernmentBonusItemController;
+use App\Http\Controllers\Admin\Payroll\Api\SubsistenceAllowanceApiController;
 
 use App\Http\Controllers\Admin\Payroll\ReportsController;
 
@@ -33,6 +34,11 @@ Route::prefix('payroll')->group(function() {
     Route::post('/cancel/{batchId}', [ReportsController::class, 'cancelBatch']);
 
     Route::get('groups/{id}', [PayrollGroupController::class, 'get_groups'])->name('get.groups');
+
+    Route::prefix('subsistence-allowance')->group(function() {
+        Route::get('/', [SubsistenceAllowanceApiController::class, 'index']);
+        Route::post('/', [SubsistenceAllowanceApiController::class, 'store']);
+    });
 
     # Salary Payroll
 

@@ -5,6 +5,8 @@ namespace App\Http\Requests\Admin\SalaryPay;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use App\Enums\EmploymentTypesEnum;
+use App\Enums\PayrollStatusEnum;
+use Illuminate\Support\Facades\DB;
 
 class CreateRequest extends FormRequest
 {
@@ -114,7 +116,27 @@ class CreateRequest extends FormRequest
                 $options = $this->applyOptions();
 
                 if (!$options->contains('current') && !$options->contains(fn ($option) => str_starts_with($option, 'payroll:'))) {
-                    $validator->errors()->add('deduction_apply_options', 'Select current deductions or at least one pending payroll deduction.');
+                    $validator->errors()->add('deduction_apply_options', 'Select current deductions or at least one deferred payroll deduction.');
+                }
+
+                $deferredPayrollIds = $this->selectedDeferredPayrollIds($options);
+
+                if ($deferredPayrollIds->isNotEmpty()) {
+                    $eligibleCount = DB::table('payroll_salary')
+                        ->whereIn('id', $deferredPayrollIds->all())
+                        ->where('employment_type_id', EmploymentTypesEnum::COS->value)
+                        ->where('apply_deduction', false)
+                        ->whereNull('deduction_applied_payroll_id')
+                        ->whereIn('status', [
+                            PayrollStatusEnum::Approved->value,
+                            PayrollStatusEnum::ForReleasing->value,
+                            PayrollStatusEnum::Completed->value,
+                        ])
+                        ->count();
+
+                    if ($eligibleCount !== $deferredPayrollIds->count()) {
+                        $validator->errors()->add('deduction_apply_options', 'Selected payroll deductions must be undeducted and already approved, for releasing, or completed.');
+                    }
                 }
             }
 
@@ -129,5 +151,15 @@ class CreateRequest extends FormRequest
     private function deferOptions()
     {
         return collect($this->input('deduction_defer_options', []));
+    }
+
+    private function selectedDeferredPayrollIds($options)
+    {
+        return collect($options)
+            ->filter(fn ($option) => is_string($option) && str_starts_with($option, 'payroll:'))
+            ->map(fn ($option) => (int) substr($option, strlen('payroll:')))
+            ->filter()
+            ->unique()
+            ->values();
     }
 }

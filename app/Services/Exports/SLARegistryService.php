@@ -104,6 +104,7 @@ class SLARegistryService
         $this->sheet->unfreezePane();
         $this->freezeTemplateFormulasAsValues();
         $this->writeReportTitle();
+        $this->ensureRemarksColumn();
         $this->removeBrokenNamedRanges();
     }
 
@@ -163,6 +164,7 @@ class SLARegistryService
                 $this->sheet->setCellValue("G{$row}", $employee['uniform_deduction']);
                 $this->sheet->setCellValue("H{$row}", $employee['healthcard']);
                 $this->sheet->setCellValue("I{$row}", $employee['net_pay']);
+                $this->sheet->setCellValue("J{$row}", $this->cleanText($employee['remarks'] ?? ''));
 
                 foreach ($groupTotals as $field => $value) {
                     $groupTotals[$field] += (float) ($employee[$field] ?? 0);
@@ -237,6 +239,13 @@ class SLARegistryService
         $this->sheet->setCellValue('A2', 'PAYROLL OF SUBSISTENCE AND LAUNDRY ALLOWANCE FOR THE MONTH OF ' . strtoupper($period));
     }
 
+    private function ensureRemarksColumn(): void
+    {
+        $this->sheet->duplicateStyle($this->sheet->getStyle('I3'), 'J3');
+        $this->sheet->setCellValue('J3', 'Remarks');
+        $this->sheet->getColumnDimension('J')->setWidth(28);
+    }
+
     private function formatPayrollMonthYear(string $month): string
     {
         $month = trim($month);
@@ -275,7 +284,7 @@ class SLARegistryService
 
     private function copyTemplateRow(int $sourceRow, int $targetRow): void
     {
-        for ($col = 'A'; $col !== 'J'; $col++) {
+        for ($col = 'A'; $col !== 'K'; $col++) {
             $this->sheet->duplicateStyle(
                 $this->sheet->getStyle("{$col}{$sourceRow}"),
                 "{$col}{$targetRow}"
@@ -290,9 +299,9 @@ class SLARegistryService
     private function writeProjectHeader(int $row, string $projectName, int $templateRow): int
     {
         $this->copyTemplateRow($templateRow, $row);
-        $this->sheet->mergeCells("A{$row}:I{$row}");
+        $this->sheet->mergeCells("A{$row}:J{$row}");
         $this->sheet->setCellValue("A{$row}", strtoupper($projectName));
-        $this->sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+        $this->sheet->getStyle("A{$row}:J{$row}")->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'size' => 11,
@@ -331,8 +340,9 @@ class SLARegistryService
         $this->sheet->setCellValue("G{$row}", $totals['uniform_deduction']);
         $this->sheet->setCellValue("H{$row}", $totals['healthcard']);
         $this->sheet->setCellValue("I{$row}", $totals['net_pay']);
+        $this->sheet->setCellValue("J{$row}", "");
 
-        $this->sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+        $this->sheet->getStyle("A{$row}:J{$row}")->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'size' => 10,
@@ -374,8 +384,9 @@ class SLARegistryService
         $this->sheet->setCellValue("G{$row}", $totals['uniform_deduction']);
         $this->sheet->setCellValue("H{$row}", $totals['healthcard']);
         $this->sheet->setCellValue("I{$row}", $totals['net_pay']);
+        $this->sheet->setCellValue("J{$row}", "");
 
-        $this->sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+        $this->sheet->getStyle("A{$row}:J{$row}")->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'size' => 11,

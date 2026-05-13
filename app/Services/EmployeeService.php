@@ -281,6 +281,7 @@ class EmployeeService {
                     'employee_information.two_percent',
                     'employee_information.three_percent',
                     'employee_information.five_percent',
+                    'employee_information.is_driver',
 
                     'employee_personal.profile',
                     'employee_personal.firstname',

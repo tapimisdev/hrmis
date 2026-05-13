@@ -100,6 +100,13 @@ class IndexController extends Controller
 
     public function datatable($query)
     {
+        $filterParams = request()->only([
+            'account_status',
+            'division',
+            'unit',
+            'employment_type',
+        ]);
+
         return DataTables::of($query)
             ->editColumn('profile', function ($row) {
                 $profile = $row->profile ?? null;
@@ -134,7 +141,7 @@ class IndexController extends Controller
                 return $row->date_hired_organization ? Carbon::parse($row->date_hired_organization)->format('F d, Y')
                     : '';
             })
-            ->addColumn('actions', function ($row) {
+            ->addColumn('actions', function ($row) use ($filterParams) {
                 $div = '<div class="d-block d-flex gap-2 justify-content-start">';
 
                 if ($row->account_status != 'archived') {
@@ -144,12 +151,12 @@ class IndexController extends Controller
                         title="Timelogs">
                             <i class="fa-solid fa-hourglass-half"></i>
                         </a>
-                        <a href="' . route('hris.employee.transfer', ['employee_no' => $row->employee_no]) . '" 
+                        <a href="' . route('hris.employee.transfer', array_merge(['employee_no' => $row->employee_no], $filterParams)) . '" 
                         class="btn btn-secondary me-1" 
                         title="Transfer Unit">
                             <i class="fa-solid fa-retweet"></i>
                         </a>
-                        <a href="' . route('hris.employee.information', ['employee_no' => $row->employee_no]) . '" 
+                        <a href="' . route('hris.employee.information', array_merge(['employee_no' => $row->employee_no], $filterParams)) . '" 
                         class="btn btn-primary me-1" 
                         title="Edit">
                             <i class="fa-solid fa-pen-to-square"></i>

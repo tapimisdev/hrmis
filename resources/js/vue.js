@@ -53,6 +53,7 @@ import HazardPayView from "./admin/payroll/hazard-pay/show/ShowPayroll.vue";
 import SlaPayIndex from "./admin/payroll/sla-pay/Index.vue";
 import SlaPayStepper from "./admin/payroll/sla-pay/create/PayrollStepper.vue";
 import SlaPayView from "./admin/payroll/sla-pay/show/ShowPayroll.vue";
+import SubsistenceAllowanceIndex from "./admin/payroll/subsistence-allowance/Index.vue";
 
 // PERA RATA Payroll
 import PeraRataIndex from "./admin/payroll/pera-rata/Index.vue";
@@ -111,6 +112,7 @@ const authApp = createApp({
         SlaPayIndex,
         SlaPayStepper,
         SlaPayView,
+        SubsistenceAllowanceIndex,
 
         PeraRataIndex,
         PeraRataStepper,

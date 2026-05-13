@@ -127,6 +127,41 @@ $(document).on('click', '.push-state-query', function() {
     pushQuery('tab', tabName);
 });
 
+$(document).on('click', '.js-back-with-fallback', function(e) {
+    e.preventDefault();
+
+    const fallbackUrl = this.getAttribute('href') || '/admin/dashboard';
+    const currentUrl = window.location.href;
+    const referrer = document.referrer;
+    const backUrl = new URL(fallbackUrl, window.location.origin);
+    const currentParams = new URLSearchParams(window.location.search);
+
+    currentParams.delete('batch_id');
+
+    for (const [key, value] of currentParams.entries()) {
+        backUrl.searchParams.set(key, value);
+    }
+
+    if (referrer && referrer !== currentUrl) {
+        try {
+            const referrerUrl = new URL(referrer);
+
+            if (referrerUrl.origin === window.location.origin) {
+                window.location.href = referrer;
+                return;
+            }
+        } catch (error) {
+        }
+    }
+
+    if (window.history.length > 1) {
+        window.history.back();
+        return;
+    }
+
+    window.location.href = backUrl.toString();
+});
+
 $('.select2').select2({
     allowClear: true,
     width: '100%',
