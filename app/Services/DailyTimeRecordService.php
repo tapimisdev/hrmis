@@ -260,7 +260,7 @@ class DailyTimeRecordService {
             }
           
             if ($is_offset) {
-                $factor = ($leave_shift === 'wholeday') ? 1 : 0.5;
+                $factor = ($offset_shift === 'wholeday') ? 1 : 0.5;
                 $TOTAL_OFFSET += $factor;
                 $remarks[] = $offset_status;
             }
