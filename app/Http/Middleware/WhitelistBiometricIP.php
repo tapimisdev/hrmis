@@ -12,8 +12,8 @@ class WhitelistBiometricIP
     // allowed IPs
     protected $whitelisted = [
         '192.168.1.217', // Main door
-        '192.168.110.218', // 2nd floor
-        '192.168.110.219', // reserve
+        '192.168.2.218', // 2nd floor
+        '192.168.2.219', // reserve
         '127.0.0.1',
         '192.168.2.231',
     ];
