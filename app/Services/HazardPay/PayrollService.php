@@ -68,13 +68,7 @@ class PayrollService {
             ->leftJoin('positions', 'eo.position_id', '=', 'positions.id')
             ->leftJoin('divisions', 'eo.division_id', '=', 'divisions.id')
             ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
-            ->where(function ($query) use ($payload) {
-                $query->where('eo.employment_type_id', $payload['employment_type_id'])
-                    ->orWhere(function ($query) {
-                        $query->where('eo.employment_type_id', EmploymentTypesEnum::COS->value)
-                            ->where('ei.is_driver', true);
-                    });
-            })
+            ->where('eo.employment_type_id', EmploymentTypesEnum::REGULAR->value)
             ->select(
                 'ep.firstname',
                 'ep.middlename',
@@ -112,8 +106,6 @@ class PayrollService {
     private function checkEligibility($employee)
     {
         $remarks = [];
-        $eligibleRemarks = [];
-
         if ($employee->account_status !== 'active') {
             $remarks[] = [
                 'text' => 'This Employee is Inactive',
@@ -157,16 +149,7 @@ class PayrollService {
             ];
         }
 
-        if (!$this->hasProject($employee->employee_no) 
-            && $employee->employment_type_id == EmploymentTypesEnum::COS->value) {
-            
-            $eligibleRemarks[] = [
-                'text' => 'COS driver has no assigned project during the payroll date. Please update.',
-                'url'  => route('hris.employee.information', ['employee_no' => $employee->employee_no]),
-            ];
-        }
-
-        $employee->remarks = $remarks ?: $eligibleRemarks;
+        $employee->remarks = $remarks;
 
         if (empty($remarks)) {
 
@@ -254,25 +237,6 @@ class PayrollService {
             ->first();
     }
 
-    private function hasProject($emp_no)
-    {
-        [$year, $month] = explode('-', $this->monthYear);
-        $startDate = "$year-$month-01";
-        $endDate   = date("Y-m-t", strtotime($startDate));
-
-        $projects_employee = DB::table('employee_projects')
-            ->where('employee_no', $emp_no)
-            ->whereDate('start_date', '<=', $endDate)
-            ->where(function ($query) use ($startDate, $endDate) {
-                $query->whereDate('end_date', '>=', $startDate)
-                    ->orWhereNull('end_date');
-            })
-            ->orderByDesc('start_date')
-            ->first();
-
-        return !is_null($projects_employee);
-    }
-
     public function createPayroll($payload)
     {
         $payroll_no = generateNo('HP-', 4);
@@ -283,7 +247,7 @@ class PayrollService {
             'payroll_no' => $payroll_no,
             'month' => $payload['month'],
             'no_employee' => 0,
-            'employment_type_id' => $payload['employment_type_id'],
+            'employment_type_id' => EmploymentTypesEnum::REGULAR->value,
             'total' => 0,
             'processed_by_id' => auth('sanctum')->user()->id,
             'created_at' => now(),

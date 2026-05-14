@@ -42,7 +42,7 @@ class ChiefCornerController extends Controller
             'totals' => [
                 'divisions' => $scope['managedDivisions']->count(),
                 'employees' => $scope['employees']->count(),
-                'applications' => $this->applicationCount($scope['employeeNos']),
+                'applications' => $this->cachedApplicationCount($scope['employeeNos']),
                 'tracked_users' => count($scope['userIds']),
             ],
         ]);
@@ -302,7 +302,7 @@ class ChiefCornerController extends Controller
             $this->chiefCacheKey('timelog-insights', [
                 'month' => $monthDate->format('Y-m'),
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 5,
+                'stats_version' => 11,
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogInsights($scope['employees'], $monthDate)
@@ -315,23 +315,73 @@ class ChiefCornerController extends Controller
             $this->chiefCacheKey('timelog-daily-rows', [
                 'month' => $monthDate->format('Y-m'),
                 'users' => md5(json_encode($scope['userIds'])),
+                'stats_version' => 11,
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogDailyRows($scope['employees'], $monthDate)
         );
     }
 
+    protected function cachedTimelogInsightsForDate(array $scope, string $selectedDate): array
+    {
+        return Cache::remember(
+            $this->chiefCacheKey('timelog-insights-date', [
+                'date' => $selectedDate,
+                'users' => md5(json_encode($scope['userIds'])),
+                'stats_version' => 11,
+            ]),
+            now()->addMinutes(10),
+            fn () => $this->timelogInsightsForPeriod($scope['employees'], $selectedDate, $selectedDate)
+        );
+    }
+
+    protected function cachedTimelogDailyRowsForDate(array $scope, string $selectedDate): Collection
+    {
+        return Cache::remember(
+            $this->chiefCacheKey('timelog-daily-rows-date', [
+                'date' => $selectedDate,
+                'users' => md5(json_encode($scope['userIds'])),
+                'stats_version' => 11,
+            ]),
+            now()->addMinutes(10),
+            fn () => $this->timelogDailyRowsForPeriod($scope['employees'], $selectedDate, $selectedDate)
+        );
+    }
+
     protected function cachedQuarterlyTimelogStats(array $scope, Carbon $monthDate, int $quarter): array
+    {
+        return $this->cachedQuarterlyTimelogStatsForQuarters($scope, $monthDate, [$quarter]);
+    }
+
+    protected function cachedQuarterlyTimelogStatsForQuarters(array $scope, Carbon $monthDate, array $quarters): array
     {
         return Cache::remember(
             $this->chiefCacheKey('timelog-quarterly-stats', [
                 'year' => $monthDate->format('Y'),
-                'quarter' => $quarter,
+                'quarters' => implode(',', $this->normalizeQuarterSelection($quarters)),
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 5,
+                'stats_version' => 11,
             ]),
             now()->addMinutes(10),
-            fn () => $this->quarterlyTimelogStats($scope, $monthDate, $quarter)
+            fn () => $this->quarterlyTimelogStatsForQuarters($scope, $monthDate, $quarters)
+        );
+    }
+
+    protected function cachedEmployeeDtr(int $userId, string $startDate, string $endDate): array
+    {
+        return Cache::remember(
+            $this->chiefCacheKey('employee-dtr', [
+                'user' => $userId,
+                'start' => $startDate,
+                'end' => $endDate,
+                'stats_version' => 11,
+            ]),
+            now()->addMinutes(10),
+            fn () => $this->dailyTimeRecordService->getDTR([
+                'user_id' => $userId,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ])
         );
     }
 
@@ -339,6 +389,12 @@ class ChiefCornerController extends Controller
     {
         $startDate = $monthDate->copy()->startOfMonth()->toDateString();
         $endDate = $monthDate->copy()->endOfMonth()->toDateString();
+
+        return $this->timelogInsightsForPeriod($employees, $startDate, $endDate);
+    }
+
+    protected function timelogInsightsForPeriod(Collection $employees, string $startDate, string $endDate): array
+    {
         $shiftCache = [];
 
         $summaries = $employees
@@ -359,6 +415,7 @@ class ChiefCornerController extends Controller
                         'undertime_minutes' => 0,
                         'early_minutes' => 0,
                         'overtime_minutes' => 0,
+                        'absent_days' => 0,
                         'leave_days' => 0,
                         'offset_days' => 0,
                         'so_days' => 0,
@@ -369,14 +426,7 @@ class ChiefCornerController extends Controller
                 }
 
                 try {
-                    $dtr = $this->dailyTimeRecordService->getDTR([
-                        'user_id' => $employee->user_id,
-                        'startDate' => $startDate,
-                        'endDate' => $endDate,
-                    ]);
-                    $rawLogsByDate = collect(
-                        $this->timelogsServices->getTimeLogsWithPeriod($employee->user_id, $startDate, $endDate)
-                    )->keyBy('date');
+                    $dtr = $this->cachedEmployeeDtr((int) $employee->user_id, $startDate, $endDate);
                 } catch (Throwable) {
                     return (object) [
                         'employee_no' => $employee->employee_no,
@@ -392,6 +442,7 @@ class ChiefCornerController extends Controller
                         'undertime_minutes' => 0,
                         'early_minutes' => 0,
                         'overtime_minutes' => 0,
+                        'absent_days' => 0,
                         'leave_days' => 0,
                         'offset_days' => 0,
                         'so_days' => 0,
@@ -408,7 +459,10 @@ class ChiefCornerController extends Controller
                 }
 
                 $rows = collect($dtr['computedData'] ?? []);
-                $timelogRows = $rows->filter(fn ($row) => !empty($row['time_in']) || !empty($row['time_out']));
+                $timelogRows = $rows->filter(
+                    fn ($row) => $this->usableTimelogTime($row['time_in'] ?? null)
+                        || $this->usableTimelogTime($row['time_out'] ?? null)
+                );
 
                 $lateMinutes = 0;
                 $undertimeMinutes = 0;
@@ -417,6 +471,7 @@ class ChiefCornerController extends Controller
                 $workedMinutes = 0;
                 $lateBreakdown = [];
                 $undertimeBreakdown = [];
+                $absentDays = 0;
                 $leaveBreakdown = [];
                 $offsetBreakdown = [];
                 $soBreakdown = [];
@@ -424,8 +479,9 @@ class ChiefCornerController extends Controller
 
                 foreach ($rows as $row) {
                     $rowDate = (string) ($row['date'] ?? '');
+                    $dailyLateUndertimeMinutes = max((int) ($row['late_undertime'] ?? 0), 0);
 
-                    if (!empty($row['time_in']) && !empty($row['shift_id'])) {
+                    if ($this->usableTimelogTime($row['time_in'] ?? null) && !empty($row['shift_id'])) {
                         if (!isset($shiftCache[$row['shift_id']])) {
                             $shiftCache[$row['shift_id']] = DB::table('shifts')->find($row['shift_id']);
                         }
@@ -433,7 +489,7 @@ class ChiefCornerController extends Controller
                         $shift = $shiftCache[$row['shift_id']];
                         if ($shift?->start_time) {
                             $shiftStart = Carbon::parse($row['date'] . ' ' . $shift->start_time);
-                            $actualIn = Carbon::parse($row['date'] . ' ' . $row['time_in']);
+                            $actualIn = Carbon::parse($row['date'] . ' ' . $this->usableTimelogTime($row['time_in'] ?? null));
 
                             if ($actualIn->lt($shiftStart)) {
                                 $earlyMinutes += $actualIn->diffInMinutes($shiftStart);
@@ -441,77 +497,97 @@ class ChiefCornerController extends Controller
                         }
                     }
 
-                    $rawLog = $rawLogsByDate->get($rowDate);
-                    if ($rawLog && !empty($rawLog['shift_id'])) {
+                    if ($dailyLateUndertimeMinutes > 0 && !empty($row['shift_id'])) {
+                        [$breakOut, $breakIn] = $this->splitTimelogRange($row['break'] ?? null);
                         $tardinessData = $this->timelogsServices->computeTardinessAndUndertime([
                             'date' => $rowDate,
-                            'shift_id' => $rawLog['shift_id'],
-                            'time_in' => $rawLog['time_in'] ?? null,
-                            'time_out' => $rawLog['time_out'] ?? null,
-                            'break_out' => $rawLog['break_out'] ?? null,
-                            'break_in' => $rawLog['break_in'] ?? null,
+                            'shift_id' => $row['shift_id'],
+                            'time_in' => $this->usableTimelogTime($row['time_in'] ?? null),
+                            'time_out' => $this->usableTimelogTime($row['time_out'] ?? null),
+                            'break_out' => $this->usableTimelogTime($breakOut),
+                            'break_in' => $this->usableTimelogTime($breakIn),
                         ]);
 
-                        if (($tardinessData['total_tardiness'] ?? 0) > 0) {
-                            $lateMinutes += (int) $tardinessData['total_tardiness'];
+                        [$rowLateMinutes, $rowUndertimeMinutes] = $this->splitDailyLateUndertimeMinutes(
+                            (int) ($tardinessData['total_tardiness'] ?? 0),
+                            (int) ($tardinessData['total_undertime'] ?? 0),
+                            $dailyLateUndertimeMinutes
+                        );
+
+                        if ($rowLateMinutes > 0) {
+                            $lateMinutes += $rowLateMinutes;
                             $lateBreakdown[] = $this->timelogDurationBreakdownItem(
                                 $rowDate,
-                                (int) $tardinessData['total_tardiness'],
+                                $rowLateMinutes,
                                 [
-                                    'Time in ' . $this->formatTimelogTime($rawLog['time_in'] ?? null),
-                                    'Expected start ' . $this->expectedShiftStartLabel($rawLog['shift_id'], $shiftCache),
+                                    'Time in ' . $this->formatTimelogTime($row['time_in'] ?? null),
+                                    'Expected start ' . $this->expectedShiftStartLabel($row['shift_id'] ?? $employee->shift_id, $shiftCache),
                                 ]
                             );
                         }
 
-                        if (($tardinessData['total_undertime'] ?? 0) > 0) {
-                            $undertimeMinutes += (int) $tardinessData['total_undertime'];
+                        if ($rowUndertimeMinutes > 0) {
+                            $undertimeMinutes += $rowUndertimeMinutes;
                             $undertimeBreakdown[] = $this->timelogDurationBreakdownItem(
                                 $rowDate,
-                                (int) $tardinessData['total_undertime'],
+                                $rowUndertimeMinutes,
                                 [
-                                    'Time out ' . $this->formatTimelogTime($rawLog['time_out'] ?? null),
-                                    'Expected end ' . $this->expectedShiftEndLabel($rawLog['shift_id'], $shiftCache),
+                                    'Time out ' . $this->formatTimelogTime($row['time_out'] ?? null),
+                                    'Expected end ' . $this->expectedShiftEndLabel(
+                                        $row['shift_id'] ?? $employee->shift_id,
+                                        $shiftCache,
+                                        $rowDate,
+                                        $row['time_in'] ?? null
+                                    ),
                                 ]
                             );
                         }
+                    } elseif ($dailyLateUndertimeMinutes > 0) {
+                        $undertimeMinutes += $dailyLateUndertimeMinutes;
+                        $undertimeBreakdown[] = $this->timelogDurationBreakdownItem(
+                            $rowDate,
+                            $dailyLateUndertimeMinutes,
+                            [
+                                'Late / UT from DTR row',
+                                'Remarks ' . $this->normalizeTimelogRemarks($row['remarks'] ?? [])->join(', '),
+                            ]
+                        );
                     }
 
                     $workedMinutes += max((int) ($row['total_time_work'] ?? 0), 0);
 
                     $remarks = $this->normalizeTimelogRemarks($row['remarks'] ?? []);
+                    if ($this->hasAbsentRemark($remarks)) {
+                        $absentDays++;
+                    }
+
                     foreach ($remarks as $remark) {
                         $remarkLower = Str::lower($remark);
 
-                        if (str_contains($remarkLower, 'leave')) {
+                        if (Str::startsWith($remarkLower, 'leave')) {
                             $leaveBreakdown[$rowDate] = $this->timelogDayBreakdownItem($rowDate, $remark);
                         }
 
-                        if (str_contains($remarkLower, 'offset')) {
+                        if (Str::startsWith($remarkLower, 'offset')) {
                             $offsetBreakdown[$rowDate] = $this->timelogDayBreakdownItem($rowDate, $remark);
                         }
 
-                        if (str_contains($remarkLower, 'special order')) {
+                        if (Str::startsWith($remarkLower, 'special order')) {
                             $soBreakdown[$rowDate] = $this->timelogDayBreakdownItem($rowDate, $remark);
                         }
 
-                        if (preg_match('/\blto\b|local travel order/', $remarkLower)) {
+                        if (Str::startsWith($remarkLower, ['lto', 'local travel order'])) {
                             $ltoBreakdown[$rowDate] = $this->timelogDayBreakdownItem($rowDate, $remark);
                         }
                     }
 
-                    if (!empty($row['time_in']) && !empty($row['time_out']) && empty($row['late_undertime'])) {
+                    if ($this->usableTimelogTime($row['time_in'] ?? null) && $this->usableTimelogTime($row['time_out'] ?? null) && empty($row['late_undertime'])) {
                         $onTimeDays++;
                     }
                 }
 
-                $summaryMap = collect($dtr['summary'] ?? [])->keyBy('label');
                 $payrollValues = collect($dtr['payroll_value'] ?? []);
-                $lateUndertime = (int) data_get($summaryMap->get('Late / Undertime'), 'actual_value', 0);
-                $lateMinutes = min($lateMinutes, $lateUndertime);
-                $undertimeMinutes = min($undertimeMinutes, max($lateUndertime - $lateMinutes, 0));
-                $lateBreakdown = $this->normalizeTimelogDurationBreakdownTotal($lateBreakdown, $lateMinutes);
-                $undertimeBreakdown = $this->normalizeTimelogDurationBreakdownTotal($undertimeBreakdown, $undertimeMinutes);
+                $absentDays = max($absentDays, (float) $payrollValues->get('absent', 0));
                 $latestRow = $timelogRows->sortByDesc('date')->first();
 
                 return (object) [
@@ -528,6 +604,7 @@ class ChiefCornerController extends Controller
                     'undertime_minutes' => $undertimeMinutes,
                     'early_minutes' => $earlyMinutes,
                     'overtime_minutes' => (int) $payrollValues->get('overtime', 0),
+                    'absent_days' => $absentDays,
                     'leave_days' => (float) $payrollValues->get('leaves', 0),
                     'offset_days' => (float) $payrollValues->get('offset', 0),
                     'so_days' => (float) $payrollValues->get('so', 0),
@@ -552,6 +629,26 @@ class ChiefCornerController extends Controller
 
     protected function quarterlyTimelogStats(array $scope, Carbon $monthDate, int $quarter): array
     {
+        return $this->quarterlyTimelogStatsForQuarters($scope, $monthDate, [$quarter]);
+    }
+
+    protected function quarterlyTimelogStatsForQuarters(array $scope, Carbon $monthDate, array $quarters): array
+    {
+        return $this->timelogStatsFromSummaries(
+            $this->quarterlyTimelogSummariesForQuarters($scope, $monthDate, $quarters),
+            null
+        );
+    }
+
+    protected function quarterlyTimelogSummariesForQuarters(array $scope, Carbon $monthDate, array $quarters): Collection
+    {
+        return collect($this->normalizeQuarterSelection($quarters))
+            ->flatMap(fn ($quarter) => $this->quarterlyTimelogSummaries($scope, $monthDate, $quarter))
+            ->pipe(fn (Collection $summaries) => $this->aggregateTimelogSummaries($summaries));
+    }
+
+    protected function quarterlyTimelogSummaries(array $scope, Carbon $monthDate, int $quarter): Collection
+    {
         $quarter = max(1, min(4, $quarter));
         $startMonth = (($quarter - 1) * 3) + 1;
         $todayMonth = now()->copy()->startOfMonth();
@@ -570,7 +667,32 @@ class ChiefCornerController extends Controller
             $summaries = $summaries->merge($monthSummaries);
         }
 
-        return $this->timelogStatsFromSummaries($this->aggregateTimelogSummaries($summaries), null);
+        return $this->aggregateTimelogSummaries($summaries);
+    }
+
+    protected function normalizeQuarterSelection(array $quarters): array
+    {
+        $normalized = collect($quarters)
+            ->flatMap(fn ($quarter) => is_array($quarter) ? $quarter : explode(',', (string) $quarter))
+            ->map(fn ($quarter) => (int) $quarter)
+            ->filter(fn ($quarter) => $quarter >= 1 && $quarter <= 4)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        return !empty($normalized) ? $normalized : [max(1, min(4, (int) ceil(now()->month / 3)))];
+    }
+
+    protected function requestedQuarters(Request $request, Carbon $monthDate): array
+    {
+        $quarters = Arr::wrap($request->input('quarters', []));
+
+        if (empty($quarters)) {
+            $quarters = [$request->input('quarter', (int) ceil($monthDate->month / 3))];
+        }
+
+        return $this->normalizeQuarterSelection($quarters);
     }
 
     protected function aggregateTimelogSummaries(Collection $summaries): Collection
@@ -582,6 +704,7 @@ class ChiefCornerController extends Controller
             'undertime_minutes',
             'early_minutes',
             'overtime_minutes',
+            'absent_days',
             'leave_days',
             'offset_days',
             'so_days',
@@ -816,36 +939,38 @@ class ChiefCornerController extends Controller
     {
         $startDate = $monthDate->copy()->startOfMonth()->toDateString();
         $endDate = $monthDate->copy()->endOfMonth()->toDateString();
+
+        return $this->timelogDailyRowsForPeriod($employees, $startDate, $endDate);
+    }
+
+    protected function timelogDailyRowsForPeriod(Collection $employees, string $startDate, string $endDate): Collection
+    {
         $today = now()->toDateString();
-        $isCurrentMonth = $monthDate->isSameMonth(now());
+        $canIncludeFutureDates = Carbon::parse($endDate)->toDateString() < $today;
 
         return $employees
             ->filter(fn ($employee) => !empty($employee->user_id))
-            ->flatMap(function ($employee) use ($startDate, $endDate, $today, $isCurrentMonth) {
+            ->flatMap(function ($employee) use ($startDate, $endDate, $today, $canIncludeFutureDates) {
                 if (empty($employee->shift_id) || empty($employee->work_schedule_id)) {
                     return collect();
                 }
 
                 try {
-                    $dtr = $this->dailyTimeRecordService->getDTR([
-                        'user_id' => $employee->user_id,
-                        'startDate' => $startDate,
-                        'endDate' => $endDate,
-                    ]);
+                    $dtr = $this->cachedEmployeeDtr((int) $employee->user_id, $startDate, $endDate);
                 } catch (Throwable) {
                     return collect();
                 }
 
                 return collect($dtr['computedData'] ?? [])
-                    ->filter(function ($row) use ($today, $isCurrentMonth) {
-                        if ($isCurrentMonth && !empty($row['date']) && Carbon::parse($row['date'])->toDateString() > $today) {
+                    ->filter(function ($row) use ($today, $canIncludeFutureDates) {
+                        if (!$canIncludeFutureDates && !empty($row['date']) && Carbon::parse($row['date'])->toDateString() > $today) {
                             return false;
                         }
 
                         $remarks = $this->normalizeTimelogRemarks($row['remarks'] ?? []);
 
-                        return !empty($row['time_in'])
-                            || !empty($row['time_out'])
+                        return $this->usableTimelogTime($row['time_in'] ?? null)
+                            || $this->usableTimelogTime($row['time_out'] ?? null)
                             || !empty($row['overtime'])
                             || !empty($row['break'])
                             || (int) ($row['late_undertime'] ?? 0) > 0
@@ -875,13 +1000,13 @@ class ChiefCornerController extends Controller
                             'unit' => $employee->unit_name ?: '-',
                             'unit_order' => mb_strtolower($employee->unit_name ?: '-'),
                             'position' => $employee->position_name ?: 'No position',
-                            'time_in' => $row['time_in'] ? Carbon::parse($row['time_in'])->format('h:i A') : '--',
+                            'time_in' => $this->formatTimelogTime($row['time_in'] ?? null),
                             'time_in_order' => $this->timeOrderValue($row['time_in'] ?? null),
                             'break_out' => $breakOut,
                             'break_out_order' => $this->timeOrderValue($breakOut),
                             'break_in' => $breakIn,
                             'break_in_order' => $this->timeOrderValue($breakIn),
-                            'time_out' => $row['time_out'] ? Carbon::parse($row['time_out'])->format('h:i A') : '--',
+                            'time_out' => $this->formatTimelogTime($row['time_out'] ?? null),
                             'time_out_order' => $this->timeOrderValue($row['time_out'] ?? null),
                             'ot' => $row['overtime'] ?: '-- : -- to -- : --',
                             'overtime_order' => $overtimeMinutes,
@@ -917,12 +1042,22 @@ class ChiefCornerController extends Controller
             })
             ->filter(fn ($remark) => filled($remark))
             ->map(function ($remark) {
-                $remark = str_replace('_', ' ', (string) $remark);
+                $remark = preg_replace('/[\s_-]+/', ' ', (string) $remark);
 
                 return ucwords(trim($remark));
             })
             ->filter(fn ($remark) => $remark !== '')
             ->values();
+    }
+
+    protected function hasAbsentRemark(Collection $remarks): bool
+    {
+        return $remarks->contains(function ($remark) {
+            $remarkLower = Str::lower((string) $remark);
+
+            return $remarkLower === 'absent'
+                || str_contains($remarkLower, 'considered absent');
+        });
     }
 
     protected function formatTimelogStatRows(Collection $rows, string $field, string $format): Collection
@@ -959,6 +1094,30 @@ class ChiefCornerController extends Controller
             : rtrim(rtrim(number_format($value, 1, '.', ''), '0'), '.');
 
         return $formatted . ' day' . ((float) $formatted === 1.0 ? '' : 's');
+    }
+
+    protected function splitDailyLateUndertimeMinutes(int $rawLateMinutes, int $rawUndertimeMinutes, int $dtrLateUndertimeMinutes): array
+    {
+        if ($dtrLateUndertimeMinutes <= 0) {
+            return [0, 0];
+        }
+
+        $rawLateMinutes = max($rawLateMinutes, 0);
+        $rawUndertimeMinutes = max($rawUndertimeMinutes, 0);
+        $rawTotal = $rawLateMinutes + $rawUndertimeMinutes;
+
+        if ($rawTotal <= 0) {
+            return [0, $dtrLateUndertimeMinutes];
+        }
+
+        if ($rawTotal === $dtrLateUndertimeMinutes) {
+            return [$rawLateMinutes, $rawUndertimeMinutes];
+        }
+
+        $lateMinutes = (int) round(($rawLateMinutes / $rawTotal) * $dtrLateUndertimeMinutes);
+        $lateMinutes = min(max($lateMinutes, 0), $dtrLateUndertimeMinutes);
+
+        return [$lateMinutes, $dtrLateUndertimeMinutes - $lateMinutes];
     }
 
     protected function minutesToHoursLabel(int $minutes): string
@@ -1015,9 +1174,9 @@ class ChiefCornerController extends Controller
 
     protected function timeOrderValue(?string $time): int
     {
-        $normalizedTime = trim((string) $time);
+        $normalizedTime = $this->usableTimelogTime($time);
 
-        if ($normalizedTime === '' || str_replace(['-', ':', ' '], '', $normalizedTime) === '') {
+        if ($normalizedTime === null) {
             return -1;
         }
 
@@ -1034,7 +1193,10 @@ class ChiefCornerController extends Controller
 
         [$from, $to] = array_pad(explode(' to ', (string) $range, 2), 2, '--');
 
-        return [trim($from) !== '' ? trim($from) : '--', trim($to) !== '' ? trim($to) : '--'];
+        return [
+            $this->usableTimelogTime($from) ?? '--',
+            $this->usableTimelogTime($to) ?? '--',
+        ];
     }
 
     protected function creditsPayload(array $scope, Carbon $monthDate, ?Carbon $selectedDate = null): array
@@ -1087,7 +1249,13 @@ class ChiefCornerController extends Controller
 
     protected function timelogStatsDataTableResponse(array $scope, Carbon $monthDate, string $stat, Request $request): array
     {
-        [, $timelogStats] = $this->cachedTimelogInsights($scope, $monthDate);
+        $selectedDate = $request->string('selected_date')->toString();
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $selectedDate)) {
+            [, $timelogStats] = $this->cachedTimelogInsightsForDate($scope, $selectedDate);
+        } else {
+            [, $timelogStats] = $this->cachedTimelogInsights($scope, $monthDate);
+        }
 
         return $this->datatableCollectionResponse(
             $this->timelogStatTableRows($timelogStats, $stat),
@@ -1097,10 +1265,10 @@ class ChiefCornerController extends Controller
 
     protected function quarterlyTimelogStatsDataTableResponse(array $scope, Carbon $monthDate, string $stat, Request $request): array
     {
-        $quarter = max(1, min(4, (int) $request->input('quarter', (int) ceil($monthDate->month / 3))));
+        $quarters = $this->requestedQuarters($request, $monthDate);
 
         return $this->datatableCollectionResponse(
-            $this->timelogStatTableRows($this->cachedQuarterlyTimelogStats($scope, $monthDate, $quarter), $stat)
+            $this->timelogStatTableRows($this->cachedQuarterlyTimelogStatsForQuarters($scope, $monthDate, $quarters), $stat)
                 ->sortByDesc('tally_order')
                 ->values(),
             $request
@@ -1119,13 +1287,12 @@ class ChiefCornerController extends Controller
 
     protected function timelogDailyDataTableResponse(array $scope, Carbon $monthDate, Request $request): array
     {
-        $dailyRows = $this->cachedTimelogDailyRows($scope, $monthDate);
         $selectedDate = $request->string('selected_date')->toString();
 
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $selectedDate)) {
-            $dailyRows = $dailyRows
-                ->filter(fn ($row) => ($row['date_key'] ?? null) === $selectedDate)
-                ->values();
+            $dailyRows = $this->cachedTimelogDailyRowsForDate($scope, $selectedDate);
+        } else {
+            $dailyRows = $this->cachedTimelogDailyRows($scope, $monthDate);
         }
 
         return $this->datatableCollectionResponse($dailyRows, $request);
@@ -1157,16 +1324,16 @@ class ChiefCornerController extends Controller
     {
         $combined = clone $row;
         $combined->ut_minutes = (int) ($combined->late_minutes ?? 0) + (int) ($combined->undertime_minutes ?? 0);
-        $combined->ut_tally = count($combined->late_breakdown ?? []) + count($combined->undertime_breakdown ?? []);
         $combined->ut_breakdown = collect($combined->late_breakdown ?? [])
             ->map(fn ($item) => $this->withTimelogBreakdownType($item, 'Late'))
             ->merge(
                 collect($combined->undertime_breakdown ?? [])
                     ->map(fn ($item) => $this->withTimelogBreakdownType($item, 'Undertime'))
             )
-            ->sortBy('date')
+            ->sortBy(fn ($item) => Carbon::parse($item['date'])->timestamp . '-' . ($item['details'] ?? ''))
             ->values()
             ->all();
+        $combined->ut_tally = count($combined->ut_breakdown);
 
         return $combined;
     }
@@ -1202,6 +1369,60 @@ class ChiefCornerController extends Controller
             ),
             default => $this->datatableCollectionResponse(collect(), $request),
         };
+    }
+
+    protected function filterTimelogSummariesByBreakdownDate(Collection $summaries, string $selectedDate): Collection
+    {
+        $selectedLabel = Carbon::parse($selectedDate)->format('M d, Y');
+        $breakdownFields = [
+            'late_breakdown' => 'late_minutes',
+            'undertime_breakdown' => 'undertime_minutes',
+            'leave_breakdown' => 'leave_days',
+            'offset_breakdown' => 'offset_days',
+            'so_breakdown' => 'so_days',
+            'lto_breakdown' => 'lto_days',
+        ];
+
+        return $summaries
+            ->map(function ($summary) use ($breakdownFields, $selectedLabel) {
+                $filtered = clone $summary;
+
+                foreach ($breakdownFields as $breakdownField => $totalField) {
+                    $items = collect($summary->{$breakdownField} ?? [])
+                        ->filter(fn ($item) => ($item['date'] ?? null) === $selectedLabel)
+                        ->values()
+                        ->all();
+
+                    $filtered->{$breakdownField} = $items;
+                    $filtered->{$totalField} = str_ends_with($totalField, '_days')
+                        ? collect($items)->sum(fn ($item) => $this->breakdownDayValue($item))
+                        : collect($items)->sum(fn ($item) => (int) ($item['minutes'] ?? 0));
+                }
+
+                $filtered->worked_minutes = 0;
+                $filtered->early_minutes = 0;
+                $filtered->overtime_minutes = 0;
+                $filtered->days_with_logs = 0;
+                $filtered->ontime_days = 0;
+                $filtered->last_log_date = null;
+
+                return $filtered;
+            })
+            ->filter(function ($summary) use ($breakdownFields) {
+                foreach ($breakdownFields as $totalField) {
+                    if ((float) ($summary->{$totalField} ?? 0) > 0) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })
+            ->values();
+    }
+
+    protected function breakdownDayValue(array $item): float
+    {
+        return (float) (preg_match('/0\.5/', (string) ($item['value'] ?? '')) ? 0.5 : 1);
     }
 
     protected function datatableCollectionResponse(Collection $rows, Request $request): array
@@ -1264,6 +1485,17 @@ class ChiefCornerController extends Controller
             + DB::table('obs_applications')->whereIn('employee_no', $employeeNos)->count();
     }
 
+    protected function cachedApplicationCount(array $employeeNos): int
+    {
+        return Cache::remember(
+            $this->chiefCacheKey('application-count', [
+                'employees' => md5(json_encode($employeeNos)),
+            ]),
+            now()->addMinutes(5),
+            fn () => $this->applicationCount($employeeNos)
+        );
+    }
+
     protected function filterApplicationsByPeriod(Collection $applications, Carbon $monthDate, ?Carbon $selectedDate = null): Collection
     {
         return $applications
@@ -1317,6 +1549,8 @@ class ChiefCornerController extends Controller
             'unit_order' => mb_strtolower($summary->unit_name ?: '-'),
             'worked_hours' => $this->workedDurationLabel((int) ($summary->worked_minutes ?? 0)),
             'worked_hours_order' => (int) ($summary->worked_minutes ?? 0),
+            'absent' => $this->formatDayCount((float) ($summary->absent_days ?? 0)),
+            'absent_order' => (float) ($summary->absent_days ?? 0),
             'late' => $this->minutesToHoursLabel((int) $summary->late_minutes),
             'late_order' => (int) $summary->late_minutes,
             'undertime' => $this->minutesToHoursLabel((int) $summary->undertime_minutes),
@@ -1633,32 +1867,85 @@ class ChiefCornerController extends Controller
 
     protected function formatTimelogTime(?string $time): string
     {
-        return filled($time) ? Carbon::parse($time)->format('h:i A') : '--';
+        $normalizedTime = $this->usableTimelogTime($time);
+
+        return $normalizedTime ? Carbon::parse($normalizedTime)->format('h:i A') : '--';
+    }
+
+    protected function usableTimelogTime(?string $time): ?string
+    {
+        $normalizedTime = trim((string) $time);
+
+        if ($normalizedTime === '' || str_replace(['-', ':', ' '], '', $normalizedTime) === '') {
+            return null;
+        }
+
+        return $normalizedTime;
     }
 
     protected function expectedShiftStartLabel($shiftId, array &$shiftCache): string
     {
-        if (!$shiftId) {
+        $shift = $this->shiftFromCache($shiftId, $shiftCache);
+
+        if (!$shift) {
             return '--';
         }
 
-        if (!isset($shiftCache[$shiftId])) {
-            $shiftCache[$shiftId] = DB::table('shifts')->find($shiftId);
-        }
-
-        return $this->formatTimelogTime($shiftCache[$shiftId]?->start_time);
+        return $this->formatTimelogTime($shift->start_time ?? null);
     }
 
-    protected function expectedShiftEndLabel($shiftId, array &$shiftCache): string
+    protected function expectedShiftEndLabel($shiftId, array &$shiftCache, ?string $date = null, ?string $timeIn = null): string
     {
-        if (!$shiftId) {
+        $shift = $this->shiftFromCache($shiftId, $shiftCache);
+
+        if (!$shift) {
             return '--';
         }
 
-        if (!isset($shiftCache[$shiftId])) {
+        if ($this->usableTimelogTime($shift->end_time ?? null)) {
+            return $this->formatTimelogTime($shift->end_time);
+        }
+
+        if (!$date || !$this->usableTimelogTime($shift->start_time ?? null)) {
+            return '--';
+        }
+
+        $baseStart = Carbon::parse($date . ' ' . $shift->start_time);
+        $actualIn = $this->usableTimelogTime($timeIn);
+        $earliestTime = $this->usableTimelogTime($shift->earliest_time ?? null);
+
+        if (!empty($shift->is_flexible) && $actualIn) {
+            $actualInDate = Carbon::parse($date . ' ' . $actualIn);
+            $earliestIn = $earliestTime ? Carbon::parse($date . ' ' . $earliestTime) : null;
+
+            $baseStart = $actualInDate;
+
+            if ($earliestIn && $actualInDate->lt($earliestIn)) {
+                $baseStart = $earliestIn;
+            } elseif ($actualInDate->gt(Carbon::parse($date . ' ' . $shift->start_time))) {
+                $baseStart = Carbon::parse($date . ' ' . $shift->start_time);
+            }
+        } elseif ($earliestTime) {
+            $baseStart = Carbon::parse($date . ' ' . $shift->start_time);
+        }
+
+        $shiftDurationHours = (float) ($shift->working_hours ?? 0) + (float) ($shift->breaktime_hours ?? 0);
+
+        return $shiftDurationHours > 0
+            ? $baseStart->copy()->addMinutes((int) round($shiftDurationHours * 60))->format('h:i A')
+            : '--';
+    }
+
+    protected function shiftFromCache($shiftId, array &$shiftCache): ?object
+    {
+        if (!$shiftId) {
+            return null;
+        }
+
+        if (!array_key_exists($shiftId, $shiftCache)) {
             $shiftCache[$shiftId] = DB::table('shifts')->find($shiftId);
         }
 
-        return $this->formatTimelogTime($shiftCache[$shiftId]?->end_time);
+        return $shiftCache[$shiftId];
     }
 }
