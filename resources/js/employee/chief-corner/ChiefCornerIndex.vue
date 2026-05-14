@@ -276,6 +276,7 @@
                                     <th>Employee</th>
                                     <th>Unit</th>
                                     <th>Worked Hrs</th>
+                                    <th>Absent</th>
                                     <th>Late</th>
                                     <th>Undertime</th>
                                     <th>OT</th>
@@ -397,7 +398,7 @@
                                 :key="quarter.key"
                                 type="button"
                                 class="chief-stat-switch-btn"
-                                :class="{ active: activeQuarterTab === quarter.key }"
+                                :class="{ active: activeQuarterTabs.includes(quarter.key) }"
                                 :disabled="isAnyLoading"
                                 @click="setQuarterTab(quarter.key)"
                             >
@@ -578,7 +579,7 @@ export default {
             activeTab: this.initialTab,
             timelogView: localStorage.getItem("chief-corner-timelog-view") || "month",
             activeTimelogStatTab: localStorage.getItem("chief-corner-timelog-stat-tab") || "lates",
-            activeQuarterTab: localStorage.getItem("chief-corner-quarter-tab") || String(Math.ceil((Number(this.selectedMonthProp.slice(5, 7)) || 1) / 3)),
+            activeQuarterTabs: this.resolveStoredQuarterTabs(),
             activeEmployeeType: localStorage.getItem("chief-corner-employee-type") || "all",
             selectedMonth: this.selectedMonthProp,
             selectedTimelogDate: "",
@@ -697,8 +698,9 @@ export default {
             this.activeEmployeeType = "all";
         }
 
-        if (!this.quarterTabs.some((tab) => tab.key === this.activeQuarterTab)) {
-            this.activeQuarterTab = String(Math.ceil((Number(this.selectedMonth.slice(5, 7)) || 1) / 3));
+        this.activeQuarterTabs = this.normalizeQuarterTabs(this.activeQuarterTabs);
+        if (!this.activeQuarterTabs.length) {
+            this.activeQuarterTabs = [String(Math.ceil((Number(this.selectedMonth.slice(5, 7)) || 1) / 3))];
         }
 
         if (queryDate) {
@@ -718,6 +720,29 @@ export default {
         this.destroyAllDataTables();
     },
     methods: {
+        resolveStoredQuarterTabs() {
+            const fallbackQuarter = String(Math.ceil((Number(this.selectedMonthProp.slice(5, 7)) || 1) / 3));
+            const storedValue = localStorage.getItem("chief-corner-quarter-tabs")
+                || localStorage.getItem("chief-corner-quarter-tab")
+                || fallbackQuarter;
+
+            return this.normalizeQuarterTabs(storedValue);
+        },
+        normalizeQuarterTabs(value) {
+            const rawValues = Array.isArray(value)
+                ? value
+                : String(value || "")
+                    .split(",")
+                    .map((item) => item.trim());
+            const validKeys = ["1", "2", "3", "4"];
+            const normalized = rawValues
+                .filter((item) => validKeys.includes(item))
+                .filter((item, index, items) => items.indexOf(item) === index);
+
+            const monthValue = this.selectedMonth || this.selectedMonthProp;
+
+            return normalized.length ? normalized : [String(Math.ceil((Number(monthValue.slice(5, 7)) || 1) / 3))];
+        },
         isLoading(tab) {
             return this.loading[tab];
         },
@@ -930,6 +955,7 @@ export default {
                             : data,
                     },
                     this.numericColumn("worked_hours", "worked_hours_order"),
+                    this.numericColumn("absent", "absent_order"),
                     this.numericColumn("late", "late_order"),
                     this.numericColumn("undertime", "undertime_order"),
                     this.numericColumn("overtime", "overtime_order"),
@@ -1022,7 +1048,8 @@ export default {
                 pageLength: 10,
                 lengthChange: false,
                 order: [[3, "desc"]],
-                searching: false,
+                searching: true,
+                dom: "<'chief-datatable-toolbar'<'chief-datatable-search'f>>rt<'chief-datatable-footer'ip>",
                 ajax: this.buildAjaxHandler("timelogs", "timelogQuarterlyStats"),
                 columns: this.timelogStatsColumns(),
             });
@@ -1135,7 +1162,7 @@ export default {
                     if (tab === "timelogs") {
                         params.stat = this.activeTimelogStatTab;
                         if (table === "timelogQuarterlyStats") {
-                            params.quarter = this.activeQuarterTab;
+                            params.quarters = this.activeQuarterTabs;
                         }
                     }
 
@@ -1346,8 +1373,8 @@ export default {
             }
 
             const allowsSelectedDate = table === "timelogDaily"
-                || tab === "applications"
-                || tab === "timelogs";
+                || table === "timelogStats"
+                || tab === "applications";
 
             if (!allowsSelectedDate) {
                 return "";
@@ -1459,8 +1486,12 @@ export default {
             });
         },
         setQuarterTab(tab) {
-            this.activeQuarterTab = tab;
-            localStorage.setItem("chief-corner-quarter-tab", tab);
+            const selected = this.activeQuarterTabs.includes(tab)
+                ? this.activeQuarterTabs.filter((item) => item !== tab)
+                : [...this.activeQuarterTabs, tab];
+            this.activeQuarterTabs = this.normalizeQuarterTabs(selected);
+            localStorage.setItem("chief-corner-quarter-tabs", this.activeQuarterTabs.join(","));
+            localStorage.removeItem("chief-corner-quarter-tab");
             this.$nextTick(() => {
                 this.reloadDataTable("timelogQuarterlyStats");
                 this.adjustVisibleTables();
