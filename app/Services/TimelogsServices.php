@@ -922,22 +922,6 @@ class TimelogsServices {
         $totalLostHours   = floor($totalLostMinutes / 60);
         $remainingMinutes = $totalLostMinutes % 60;
         
-        Log::info("DTR lost minutes computed", [
-            'work_date' => $workDate,
-            'am_tardiness' => $amTardiness,
-            'am_undertime' => $amUndertime,
-            'pm_tardiness' => $pmTardiness,
-            'pm_undertime' => $pmUndertime,
-            'total_tardiness' => $totalTardiness,
-            'total_undertime' => $totalUndertime,
-            'actual_work_mins' => max(0, $actualWorkMinutes),
-            'lost_minutes' => $totalLostMinutes,
-            'lost_hours' => sprintf('%02d:%02d', $totalLostHours, $remainingMinutes),
-            'remark' => $remark,
-            'required_to_work_in_mins' => $requiredMinutes,
-            'break_duration_mins' => $breakDurationMins,
-        ]);
-
         return [
             'am_tardiness'     => $amTardiness,
             'am_undertime'     => $amUndertime,
