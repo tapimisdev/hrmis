@@ -302,7 +302,7 @@ class ChiefCornerController extends Controller
             $this->chiefCacheKey('timelog-insights', [
                 'month' => $monthDate->format('Y-m'),
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 11,
+                'stats_version' => 12,
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogInsights($scope['employees'], $monthDate)
@@ -315,7 +315,7 @@ class ChiefCornerController extends Controller
             $this->chiefCacheKey('timelog-daily-rows', [
                 'month' => $monthDate->format('Y-m'),
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 11,
+                'stats_version' => 12,
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogDailyRows($scope['employees'], $monthDate)
@@ -328,7 +328,7 @@ class ChiefCornerController extends Controller
             $this->chiefCacheKey('timelog-insights-date', [
                 'date' => $selectedDate,
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 11,
+                'stats_version' => 12,
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogInsightsForPeriod($scope['employees'], $selectedDate, $selectedDate)
@@ -341,7 +341,7 @@ class ChiefCornerController extends Controller
             $this->chiefCacheKey('timelog-daily-rows-date', [
                 'date' => $selectedDate,
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 11,
+                'stats_version' => 12,
             ]),
             now()->addMinutes(10),
             fn () => $this->timelogDailyRowsForPeriod($scope['employees'], $selectedDate, $selectedDate)
@@ -360,7 +360,7 @@ class ChiefCornerController extends Controller
                 'year' => $monthDate->format('Y'),
                 'quarters' => implode(',', $this->normalizeQuarterSelection($quarters)),
                 'users' => md5(json_encode($scope['userIds'])),
-                'stats_version' => 11,
+                'stats_version' => 12,
             ]),
             now()->addMinutes(10),
             fn () => $this->quarterlyTimelogStatsForQuarters($scope, $monthDate, $quarters)
@@ -374,7 +374,7 @@ class ChiefCornerController extends Controller
                 'user' => $userId,
                 'start' => $startDate,
                 'end' => $endDate,
-                'stats_version' => 11,
+                'stats_version' => 12,
             ]),
             now()->addMinutes(10),
             fn () => $this->dailyTimeRecordService->getDTR([
@@ -508,39 +508,22 @@ class ChiefCornerController extends Controller
                             'break_in' => $this->usableTimelogTime($breakIn),
                         ]);
 
-                        [$rowLateMinutes, $rowUndertimeMinutes] = $this->splitDailyLateUndertimeMinutes(
-                            (int) ($tardinessData['total_tardiness'] ?? 0),
-                            (int) ($tardinessData['total_undertime'] ?? 0),
-                            $dailyLateUndertimeMinutes
+                        $componentBreakdown = $this->timelogLateUndertimeBreakdownComponents(
+                            $row,
+                            $employee,
+                            $tardinessData,
+                            $dailyLateUndertimeMinutes,
+                            $shiftCache
                         );
 
-                        if ($rowLateMinutes > 0) {
-                            $lateMinutes += $rowLateMinutes;
-                            $lateBreakdown[] = $this->timelogDurationBreakdownItem(
-                                $rowDate,
-                                $rowLateMinutes,
-                                [
-                                    'Time in ' . $this->formatTimelogTime($row['time_in'] ?? null),
-                                    'Expected start ' . $this->expectedShiftStartLabel($row['shift_id'] ?? $employee->shift_id, $shiftCache),
-                                ]
-                            );
+                        if (!empty($componentBreakdown['late'])) {
+                            $lateMinutes += collect($componentBreakdown['late'])->sum(fn ($item) => (int) ($item['minutes'] ?? 0));
+                            $lateBreakdown = array_merge($lateBreakdown, $componentBreakdown['late']);
                         }
 
-                        if ($rowUndertimeMinutes > 0) {
-                            $undertimeMinutes += $rowUndertimeMinutes;
-                            $undertimeBreakdown[] = $this->timelogDurationBreakdownItem(
-                                $rowDate,
-                                $rowUndertimeMinutes,
-                                [
-                                    'Time out ' . $this->formatTimelogTime($row['time_out'] ?? null),
-                                    'Expected end ' . $this->expectedShiftEndLabel(
-                                        $row['shift_id'] ?? $employee->shift_id,
-                                        $shiftCache,
-                                        $rowDate,
-                                        $row['time_in'] ?? null
-                                    ),
-                                ]
-                            );
+                        if (!empty($componentBreakdown['undertime'])) {
+                            $undertimeMinutes += collect($componentBreakdown['undertime'])->sum(fn ($item) => (int) ($item['minutes'] ?? 0));
+                            $undertimeBreakdown = array_merge($undertimeBreakdown, $componentBreakdown['undertime']);
                         }
                     } elseif ($dailyLateUndertimeMinutes > 0) {
                         $undertimeMinutes += $dailyLateUndertimeMinutes;
@@ -1118,6 +1101,112 @@ class ChiefCornerController extends Controller
         $lateMinutes = min(max($lateMinutes, 0), $dtrLateUndertimeMinutes);
 
         return [$lateMinutes, $dtrLateUndertimeMinutes - $lateMinutes];
+    }
+
+    protected function timelogLateUndertimeBreakdownComponents(
+        array $row,
+        object $employee,
+        array $tardinessData,
+        int $dailyLateUndertimeMinutes,
+        array &$shiftCache
+    ): array {
+        if ($dailyLateUndertimeMinutes <= 0) {
+            return ['late' => [], 'undertime' => []];
+        }
+
+        $rowDate = (string) ($row['date'] ?? '');
+        $shiftId = $row['shift_id'] ?? $employee->shift_id;
+        [$breakOut, $breakIn] = $this->splitTimelogRange($row['break'] ?? null);
+
+        $items = collect([
+            [
+                'category' => 'late',
+                'minutes' => (int) ($tardinessData['am_tardiness'] ?? 0),
+                'details' => [
+                    'AM Late',
+                    'Time in ' . $this->formatTimelogTime($row['time_in'] ?? null),
+                    'Expected start ' . $this->expectedShiftStartLabel($shiftId, $shiftCache),
+                ],
+            ],
+            [
+                'category' => 'late',
+                'minutes' => (int) ($tardinessData['pm_tardiness'] ?? 0),
+                'details' => [
+                    'PM Late',
+                    'Break in ' . $this->formatTimelogTime($breakIn),
+                    'Expected break in ' . $this->expectedShiftBreakLabel($shiftId, $shiftCache, 'in'),
+                ],
+            ],
+            [
+                'category' => 'undertime',
+                'minutes' => (int) ($tardinessData['am_undertime'] ?? 0),
+                'details' => [
+                    'AM Undertime',
+                    'Break out ' . $this->formatTimelogTime($breakOut),
+                    'Expected break out ' . $this->expectedShiftBreakLabel($shiftId, $shiftCache, 'out'),
+                ],
+            ],
+            [
+                'category' => 'undertime',
+                'minutes' => (int) ($tardinessData['pm_undertime'] ?? 0),
+                'details' => [
+                    'PM Undertime',
+                    'Time out ' . $this->formatTimelogTime($row['time_out'] ?? null),
+                    'Expected end ' . $this->expectedShiftEndLabel(
+                        $shiftId,
+                        $shiftCache,
+                        $rowDate,
+                        $row['time_in'] ?? null
+                    ),
+                ],
+            ],
+        ])
+            ->filter(fn ($item) => (int) $item['minutes'] > 0)
+            ->map(fn ($item) => $this->timelogDurationBreakdownItem($rowDate, (int) $item['minutes'], $item['details']) + [
+                'category' => $item['category'],
+            ])
+            ->values()
+            ->all();
+
+        if (empty($items)) {
+            [$lateMinutes, $undertimeMinutes] = $this->splitDailyLateUndertimeMinutes(
+                (int) ($tardinessData['total_tardiness'] ?? 0),
+                (int) ($tardinessData['total_undertime'] ?? 0),
+                $dailyLateUndertimeMinutes
+            );
+
+            $items = array_values(array_filter([
+                $lateMinutes > 0
+                    ? $this->timelogDurationBreakdownItem($rowDate, $lateMinutes, [
+                        'Late',
+                        'Time in ' . $this->formatTimelogTime($row['time_in'] ?? null),
+                        'Expected start ' . $this->expectedShiftStartLabel($shiftId, $shiftCache),
+                    ]) + ['category' => 'late']
+                    : null,
+                $undertimeMinutes > 0
+                    ? $this->timelogDurationBreakdownItem($rowDate, $undertimeMinutes, [
+                        'Undertime',
+                        'Time out ' . $this->formatTimelogTime($row['time_out'] ?? null),
+                        'Expected end ' . $this->expectedShiftEndLabel($shiftId, $shiftCache, $rowDate, $row['time_in'] ?? null),
+                    ]) + ['category' => 'undertime']
+                    : null,
+            ]));
+        }
+
+        $normalizedItems = $this->normalizeTimelogDurationBreakdownTotal($items, $dailyLateUndertimeMinutes);
+
+        return [
+            'late' => collect($normalizedItems)
+                ->where('category', 'late')
+                ->map(fn ($item) => Arr::except($item, ['category']))
+                ->values()
+                ->all(),
+            'undertime' => collect($normalizedItems)
+                ->where('category', 'undertime')
+                ->map(fn ($item) => Arr::except($item, ['category']))
+                ->values()
+                ->all(),
+        ];
     }
 
     protected function minutesToHoursLabel(int $minutes): string
@@ -1892,6 +1981,19 @@ class ChiefCornerController extends Controller
         }
 
         return $this->formatTimelogTime($shift->start_time ?? null);
+    }
+
+    protected function expectedShiftBreakLabel($shiftId, array &$shiftCache, string $direction): string
+    {
+        $shift = $this->shiftFromCache($shiftId, $shiftCache);
+
+        if (!$shift) {
+            return '--';
+        }
+
+        $field = $direction === 'in' ? 'break_in_time' : 'break_out_time';
+
+        return $this->formatTimelogTime($shift->{$field} ?? null);
     }
 
     protected function expectedShiftEndLabel($shiftId, array &$shiftCache, ?string $date = null, ?string $timeIn = null): string
