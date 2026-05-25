@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\Payroll\Import\LongevityRegistryController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupEmployeesController;
 use App\Http\Controllers\Admin\Payroll\SubsistenceAllowanceController;
+use App\Http\Controllers\Admin\Payroll\MonthlyPayrollSummaryController;
 
 Route::prefix('payroll')->group(function() {
     
@@ -64,6 +65,10 @@ Route::prefix('payroll')->group(function() {
 
     # GOVERNMENT BONUS PAYROLL
     Route::resource('government-bonuses', GovernmentBonusController::class)->only('index', 'create', 'show', 'store', 'destroy');
+
+    # MONTHLY PAYROLL SUMMARY
+    Route::get('monthly-summary', [MonthlyPayrollSummaryController::class, 'index'])
+        ->name('payroll.monthly-summary.index');
 
     # GOVERNMENT BONUS RULES
     Route::resource('government-bonus-types', GovernmentBonusTypeController::class)->only('index', 'store', 'update', 'destroy');
