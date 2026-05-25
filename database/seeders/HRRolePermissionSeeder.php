@@ -17,6 +17,10 @@ class HRRolePermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = config('hr_permissions');
+        $monthlySummaryPermission = Permission::firstOrCreate([
+            'name' => 'payroll.monthly-summary.view',
+            'guard_name' => 'web',
+        ]);
 
         foreach ($permissions as $group => $actions) {
             foreach ($actions as $action) {
@@ -30,6 +34,7 @@ class HRRolePermissionSeeder extends Seeder
         foreach ($roles as $roleName) {
             $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
             $role->givePermissionTo(Permission::where('name', 'like', 'hr.%')->get());
+            $role->givePermissionTo($monthlySummaryPermission);
 
             $name = str_replace('_', ' ', $roleName);
 
