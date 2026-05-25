@@ -1,6 +1,7 @@
 @canany([
     'hr.timekeeping.view', 
     'hr.timekeeping.import',
+    'hr.timelog-verification.view',
 ])
 <li class="sidebar-item {{ Str::contains(request()->path(), 'timekeeping') ? 'active' : '' }}">
     <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'timekeeping') ? '' : 'collapsed' }}"
@@ -30,6 +31,16 @@
                 class="{{ Route::is('timelogs.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-clock"></i>
                     <span>Timelogs</span>
+                </a>
+            </li>
+            @endcan
+
+            @can('hr.timelog-verification.view')
+           <li class="nested-item">
+                <a href="{{ route('timekeeping.timelog-verification.index') }}"
+                class="{{ Route::is('timekeeping.timelog-verification.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Timelog Verification</span>
                 </a>
             </li>
             @endcan
