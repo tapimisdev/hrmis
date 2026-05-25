@@ -33,6 +33,11 @@ class PermissionSeeder extends Seeder
                 Permission  ::firstOrCreate(['name' => "admin.$group.$action", 'guard_name' => 'web']);
             }
         }
+
+        Permission::firstOrCreate([
+            'name' => 'payroll.monthly-summary.view',
+            'guard_name' => 'web',
+        ]);
     }
 
 }
