@@ -59,9 +59,14 @@
     }
 
     .timelog-verification-empty {
-        border: 1px dashed #d0d7de;
+        border: 1px dashed rgba(255, 255, 255, 0.12);
         border-radius: 0.75rem;
-        background: #f8fafc;
+        background: rgba(255, 255, 255, 0.03);
+        color: #f8f9fa;
+    }
+
+    .timelog-verification-empty .text-muted {
+        color: rgba(248, 249, 250, 0.7) !important;
     }
 
     .timelog-verification-legend {
