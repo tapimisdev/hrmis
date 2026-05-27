@@ -25,6 +25,12 @@ class HrisMenu extends Component
     }
 
     private function menuInfo() {
+        $filterParams = request()->only([
+            'account_status',
+            'division',
+            'unit',
+            'employment_type',
+        ]);
 
         $employment_type = DB::table('employee_organization')
                                 ->where('employee_no', $this->employee_no)
@@ -85,67 +91,67 @@ class HrisMenu extends Component
         return [
             [
                 'name' => 'I. Employee Information',
-                'route' => route('hris.employee.information', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.information', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'information' ? 'active' : '',
             ],
             [
                 'name' => 'I. Personal Information',
-                'route' => route('hris.employee.personal', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.personal', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'personal' ? 'active' : '',
             ],
             [
                 'name' => 'II. Family Background (A)',
-                'route' => route('hris.employee.family', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.family', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'family' ? 'active' : '',
             ],
             [
                 'name' => 'II. Family Background (B)',
-                'route' => route('hris.employee.children', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.children', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'children' ? 'active' : '',
             ],
             [
                 'name' => 'III. Educational Background',
-                'route' => route('hris.employee.education', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.education', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'education' ? 'active' : '',
             ],
             [
                 'name' => 'IV. Civil Service Eligibility',
-                'route' => route('hris.employee.civil-service', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.civil-service', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'civil-service' ? 'active' : '',
             ],
             [
                 'name' => 'V. Work Experience',
-                'route' => route('hris.employee.work-experience', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.work-experience', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'work-experience' ? 'active' : '',
             ],
             [
                 'name' => 'VI. Voluntary Work or Involvement in Civic / Non-Government / People / Voluntary Organizations',
-                'route' => route('hris.employee.voluntary-works', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.voluntary-works', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'voluntary-works' ? 'active' : '',
             ],
             [
                 'name' => 'VII. Learning and Development (L&D) Interventions / Training Programs Attended',
-                'route' => route('hris.employee.trainings', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.trainings', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'trainings' ? 'active' : '',
             ],
             [
                 'name' => 'VIII. Skills or Hobbies',
-                'route' => route('hris.employee.skills', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.skills', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'skills' ? 'active' : '',
             ],
             [
                 'name' => 'IX. Account Setup',
-                'route' => route('hris.employee.account', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.account', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'account' ? 'active' : '',
             ],
             [
                 'name' => 'X. Leave Credits',
-                'route' => route('hris.employee.leave-credits', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.leave-credits', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'leave-credits' ? 'active' : '',
             ],
             [
                 'name' => 'XI. Offset Credits',
-                'route' => route('hris.employee.offset-credits', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.offset-credits', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'offset-credits' ? 'active' : '',
             ],
             [
@@ -160,7 +166,7 @@ class HrisMenu extends Component
             ],
             [
                 'name' => 'XIV. Salary History',
-                'route' => route('hris.employee.salary-history', ['employee_no' => $this->employee_no]),
+                'route' => route('hris.employee.salary-history', array_merge(['employee_no' => $this->employee_no], $filterParams)),
                 'active' => $this->active == 'salary-history' ? 'active' : '',
             ],
         ];

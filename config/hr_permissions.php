@@ -26,6 +26,10 @@ return [
         'import',
     ],
 
+    'timelog-verification' => [
+        'view',
+    ],
+
     // Salary & Payroll
     'salary_payroll' => [
         'view',

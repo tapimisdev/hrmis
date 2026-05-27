@@ -61,20 +61,28 @@ class ComputationService {
         $this->getEmployeeSalaryDetails();
         $this->getEmployeeInformation();
 
-        // SLA payroll is previous month
-        $payload = [
-            'user_id'   => $this->user_id,
-            'startDate' => Carbon::parse($this->start_date)->subMonth()->format('Y-m-d'),
-            'endDate'   => Carbon::parse($this->end_date)->subMonth()->format('Y-m-d'),
-        ];
+        $subsistenceRecord = $this->getSubsistenceAllowanceRecord();
+        $subsistenceRemarks = null;
 
-        $dtr = $this->daily_time_record_service->getDTR($payload);
-        $dtr_summary = $dtr['payroll_value'];
-        $actual_presence  = $dtr_summary['actual_presence'];
-        $total_ut = $dtr_summary['late_undertime'] ?? 0;
+        if ($subsistenceRecord) {
+            $actual_presence = (float) $subsistenceRecord->actual_days;
+            $total_ut = 0;
+            $subsistence_allowance = (float) $subsistenceRecord->computed_amount;
+            $subsistenceRemarks = $this->buildSubsistenceRemarks($subsistenceRecord);
+        } else {
+            $payload = [
+                'user_id'   => $this->user_id,
+                'startDate' => Carbon::parse($this->start_date)->format('Y-m-d'),
+                'endDate'   => Carbon::parse($this->end_date)->format('Y-m-d'),
+            ];
 
+            $dtr = $this->daily_time_record_service->getDTR($payload);
+            $total_summary_of_dtr = $dtr['payroll_value'];
+            $actual_presence = $total_summary_of_dtr['actual_presence'];
+            $total_ut = $total_summary_of_dtr['late_undertime'] ?? 0;
+            $subsistence_allowance = 150 * $actual_presence;
+        }
 
-        $subsistence_allowance = 150 * $actual_presence;
         $laundry_allowance = (500 / 22) * $actual_presence;
         $total_sla = $subsistence_allowance + $laundry_allowance;
         $ut_deductions = $this->computeUTDeduction($total_ut);
@@ -99,12 +107,49 @@ class ComputationService {
                 'healthcard' => $less_healthcard,
                 'adjustments' => 0,
                 'net_pay' => $netPay,
-                'remarks' => null,
+                'remarks' => $subsistenceRemarks,
             ]);
 
         return [
             'net_pay' => $netPay,
         ];
+    }
+
+    private function getSubsistenceAllowanceRecord()
+    {
+        $serviceMonth = Carbon::parse($this->start_date);
+
+        return DB::table('subsistence_allowance_records')
+            ->where('employee_no', $this->employee_no)
+            ->where('month', (int) $serviceMonth->format('n'))
+            ->where('year', (int) $serviceMonth->format('Y'))
+            ->first();
+    }
+
+    private function buildSubsistenceRemarks($record): ?string
+    {
+        $remarks = [];
+        $actualDays = (float) ($record->actual_days ?? 0);
+        $deductionCount = (float) ($record->deduction_count ?? 0);
+        $deductionAmount = (float) ($record->deduction_amount ?? 0);
+        $manualRemarks = trim((string) ($record->remarks ?? ''));
+
+        $remarks[] = 'Actual days: ' . $this->formatNumber($actualDays);
+
+        if ($deductionCount > 0 || $deductionAmount > 0) {
+            $remarks[] = 'Deduction: ' . $this->formatNumber($deductionCount) . ' / PHP ' . number_format($deductionAmount, 2);
+        }
+
+        if ($manualRemarks !== '') {
+            $remarks[] = $manualRemarks;
+        }
+
+        return implode("\n", $remarks);
+    }
+
+    private function formatNumber(float $value): string
+    {
+        return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
     }
 
     private function getPayrollDetails()

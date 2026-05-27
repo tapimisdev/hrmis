@@ -765,6 +765,14 @@ class TimelogsServices {
             $shiftEnd = $baseStart->copy()->addHours($shiftDurationHours);
         }
 
+        $maxMinutesTardinessAm = ($baseStart && $shiftBreakOut)
+            ? $baseStart->diffInMinutes($shiftBreakOut)
+            : 0;
+
+        $maxMinutesTardinessPm = ($shiftBreakIn && $shiftEnd)
+            ? $shiftBreakIn->diffInMinutes($shiftEnd)
+            : 0;
+
         // Initialize
         $amTardiness = $amUndertime = $pmTardiness = $pmUndertime = 0;
         $totalTardiness = $totalUndertime = $totalLostMinutes = 0;
@@ -787,7 +795,7 @@ class TimelogsServices {
             if ($logIn && $logOut) {
 
                 if ($suspensionShift === 'morning') {
-                    $pmTardiness = $this->computeTardiness($logIn, $shiftBreakIn);
+                    $pmTardiness = $this->computeTardiness($logIn, $shiftBreakIn, $maxMinutesTardinessAm);
                     $pmUndertime = $this->computeUndertime($logOut, $shiftEnd, $shiftBreakIn);
 
                     $totalTardiness = $pmTardiness;
@@ -795,7 +803,7 @@ class TimelogsServices {
                 }
 
                 if ($suspensionShift === 'afternoon') {
-                    $amTardiness = $this->computeTardiness($logIn, $shiftStart);
+                    $amTardiness = $this->computeTardiness($logIn, $shiftStart, $maxMinutesTardinessPm);
                     $amUndertime = $this->computeUndertime($logOut, $shiftBreakOut, $shiftStart);
 
                     $totalTardiness = $amTardiness;
@@ -847,12 +855,12 @@ class TimelogsServices {
                 $isAfternoon = $shiftType === 'afternoon';
 
                 if ($isMorning) {
-                    $totalTardiness = $this->computeTardiness($logIn, $shiftBreakIn);
+                    $totalTardiness = $this->computeTardiness($logIn, $shiftBreakIn, $maxMinutesTardinessAm);
                     $totalUndertime = $this->computeUndertime($logOut, $shiftEnd, $shiftBreakIn);
                 }
 
                 if ($isAfternoon) {
-                    $totalTardiness = $this->computeTardiness($logIn, $shiftStart);
+                    $totalTardiness = $this->computeTardiness($logIn, $shiftStart, $maxMinutesTardinessPm);
                     $totalUndertime = $this->computeUndertime($logOut, $shiftBreakOut, $shiftStart);
                 }
 
@@ -883,13 +891,13 @@ class TimelogsServices {
 
             if ($logIn && $logOut) {
 
-                $amTardiness = $this->computeTardiness($logIn, $shiftStart);
+                $amTardiness = $this->computeTardiness($logIn, $shiftStart, $maxMinutesTardinessAm);
 
                 $amUndertime = $logOut->lte($shiftBreakOut)
                     ? $this->computeUndertime($logOut, $shiftBreakOut, $baseStart)
                     : $this->computeUndertime($logBreakOut, $shiftBreakOut, $baseStart);
 
-                $pmTardiness = $this->computeTardiness($logBreakIn, $shiftBreakIn);
+                $pmTardiness = $this->computeTardiness($logBreakIn, $shiftBreakIn, $maxMinutesTardinessPm);
                 $pmUndertime = $this->computeUndertime($logOut, $shiftEnd, $shiftBreakIn);
 
                 $totalTardiness = $amTardiness + $pmTardiness;
@@ -913,7 +921,7 @@ class TimelogsServices {
         =================================================== */
         $totalLostHours   = floor($totalLostMinutes / 60);
         $remainingMinutes = $totalLostMinutes % 60;
-
+        
         return [
             'am_tardiness'     => $amTardiness,
             'am_undertime'     => $amUndertime,
@@ -947,11 +955,15 @@ class TimelogsServices {
      * @param \Carbon\Carbon $expected The scheduled/expected time in
      * @return int                     Number of tardiness minutes (0 if not late)
      */
-    protected function computeTardiness(?Carbon $actual, ?Carbon $expected): int
+    protected function computeTardiness(?Carbon $actual, ?Carbon $expected, ?int $maxMinutes): int
     {
-        return ($actual && $expected && $actual->gt($expected)) 
-            ? $expected->diffInMinutes($actual) 
-            : 0;
+        if (!$actual || !$expected || !$actual->gt($expected)) {
+            return 0;
+        }
+
+        $tardiness = $expected->diffInMinutes($actual);
+
+        return min($tardiness, $maxMinutes);
     }
 
     /**

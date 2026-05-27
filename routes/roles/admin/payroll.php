@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\Payroll\Import\SLARegistryController;
 use App\Http\Controllers\Admin\Payroll\Import\LongevityRegistryController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupController;
 use App\Http\Controllers\Admin\Payroll\PayrollGroupEmployeesController;
+use App\Http\Controllers\Admin\Payroll\SubsistenceAllowanceController;
+use App\Http\Controllers\Admin\Payroll\MonthlyPayrollSummaryController;
 
 Route::prefix('payroll')->group(function() {
     
@@ -51,6 +53,8 @@ Route::prefix('payroll')->group(function() {
     Route::resource('hazard-pay', HazardPayController::class)->only('index', 'create', 'show', 'store', 'destroy');
 
     # SLA PAYROLL
+    Route::get('subsistence-allowance', [SubsistenceAllowanceController::class, 'index'])
+        ->name('subsistence-allowance.index');
     Route::resource('sla-pay', SLAPayController::class)->only('index', 'create', 'show', 'store', 'destroy');
 
     # RATA PAYROLL
@@ -61,6 +65,10 @@ Route::prefix('payroll')->group(function() {
 
     # GOVERNMENT BONUS PAYROLL
     Route::resource('government-bonuses', GovernmentBonusController::class)->only('index', 'create', 'show', 'store', 'destroy');
+
+    # MONTHLY PAYROLL SUMMARY
+    Route::get('monthly-summary', [MonthlyPayrollSummaryController::class, 'index'])
+        ->name('payroll.monthly-summary.index');
 
     # GOVERNMENT BONUS RULES
     Route::resource('government-bonus-types', GovernmentBonusTypeController::class)->only('index', 'store', 'update', 'destroy');

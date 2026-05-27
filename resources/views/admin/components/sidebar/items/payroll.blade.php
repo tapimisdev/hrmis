@@ -1,5 +1,6 @@
 @canany([
-'hr.salary_payroll.view'
+'hr.salary_payroll.view',
+'payroll.monthly-summary.view'
 ])
 <li class="sidebar-item {{ request()->segment(2) === 'payroll' ? 'active' : '' }}">
     <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'admin/payroll/') ? '' : 'collapsed' }}"
@@ -35,7 +36,7 @@
 
             <li class="nested-item">
                 <a href="{{ route('sla-pay.index') }}"
-                    class="{{ request()->is('admin/payroll/sla-pay*') ? 'active' : '' }}">
+                    class="{{ request()->is('admin/payroll/sla-pay*') || request()->is('admin/payroll/subsistence-allowance*') ? 'active' : '' }}">
                     <i class="fa-solid fa-clock"></i>
                     <span>SLA Pay</span>
                 </a>
@@ -64,6 +65,16 @@
                     <span>Government Bonuses</span>
                 </a>
             </li>
+
+            @can('payroll.monthly-summary.view')
+            <li class="nested-item">
+                <a href="{{ route('payroll.monthly-summary.index') }}"
+                    class="{{ request()->is('admin/payroll/monthly-summary*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-table-list"></i>
+                    <span>Monthly Payroll Summary</span>
+                </a>
+            </li>
+            @endcan
 
             <hr class="mt-2 mb-2">
 

@@ -4,6 +4,13 @@
     <div class="container-fluid">
         <x-header title="Subsistence and Allowance Payroll" subtitle="View susistence and allowance payroll in this module">
             <x-button-link
+                :href="route('subsistence-allowance.index')"
+                icon="fa-solid fa-utensils"
+                text="Subsistence Allowance"
+                variant="primary"
+            />
+
+            <x-button-link
                 :href="route('registry.sla.index')"
                 icon="fa-solid fa-upload"
                 text="Import Registry"

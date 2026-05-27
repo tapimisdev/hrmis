@@ -3,6 +3,7 @@
 namespace App\Services\SalaryPay;
 
 use App\Enums\EmploymentTypesEnum;
+use App\Enums\PayrollStatusEnum;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -319,7 +320,7 @@ class GetEmployeeService {
                     ->whereMonth('ps.deduction_deferred_date', $date->month)
                     ->whereNull('ps.deduction_applied_payroll_id')
             )
-            ->where('ps.status', '!=', 'cancelled')
+            ->whereIn('ps.status', $this->deductibleCosPayrollStatuses())
             ->orderBy('ps.payroll_date')
             ->orderBy('ps.id')
             ->select(
@@ -471,7 +472,7 @@ class GetEmployeeService {
                     ->whereMonth('ps.deduction_deferred_date', $date->month)
                     ->whereNull('ps.deduction_applied_payroll_id')
             )
-            ->where('ps.status', '!=', 'cancelled')
+            ->whereIn('ps.status', $this->deductibleCosPayrollStatuses())
             ->orderBy('ps.payroll_date')
             ->orderBy('ps.id')
             ->select(
@@ -584,6 +585,15 @@ class GetEmployeeService {
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function deductibleCosPayrollStatuses(): array
+    {
+        return [
+            PayrollStatusEnum::Approved->value,
+            PayrollStatusEnum::ForReleasing->value,
+            PayrollStatusEnum::Completed->value,
+        ];
     }
 
 }
