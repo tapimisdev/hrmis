@@ -14,13 +14,13 @@ class SlaImportService extends BaseImportService
             'Name' => ['NAME', 'Name', 'Employee'],
             'Subsistence Allowance' => ['Subsistence Allowance (22 Days)', 'Subsistence Allowance', 'Subsistence'],
             'Laundry Allowance' => ['Laundry Allow. P 500', 'Laundry Allowance', 'Laundry Allow.', 'Laundry'],
-            'Total SLA' => ['TOTAL SLA', 'Total SLA'],
-            'UT Deductions' => ["Deduction Late/UT's perDOST AO No. 003", "Deduction Late/UT's per DOST AO No. 003", "Deduction Late/UT's", 'UT Deductions'],
-            'Uniform Deduction' => ['Uniform Deduction', 'Uniform'],
+            'Total SLA' => ['GROSS AMOUNT', 'Gross Amount', 'TOTAL SLA', 'Total SLA'],
+            'UT Deductions' => ['Deduction Late/UTs per DOST AO No. 003', 'Deduction Late/UTs', "Deduction Late/UT's perDOST AO No. 003", "Deduction Late/UT's per DOST AO No. 003", "Deduction Late/UT's", 'UT Deductions'],
+            'Uniform Deduction' => ['Food Deductions', 'Food Deduction', 'Uniform Deduction', 'Uniform'],
             'Healthcard' => ['Less: Health Card c/o TAPIEA', 'Less: Healthcard c/o TAPIEA', 'Healthcard c/o TAPIEA', 'Healthcard'],
-            'Net Amount' => ['Net Amount', 'Net Pay', 'Net Salary'],
+            'Net Amount' => ['Net Amount', 'Net Pay', 'Net Salary', 'TOTAL SLA', 'Total SLA'],
             'Salary Grade' => ['Salary Grade', 'Salary Grade/Step'],
-        ], ['Name' => 1], ['Salary Grade']);
+        ], [], ['Salary Grade']);
 
         $errors = [];
         $hasSalaryGrade = $this->fieldWasParsed($parsed, 'Salary Grade');
@@ -62,9 +62,11 @@ class SlaImportService extends BaseImportService
             'preview_headers' => $this->overridePreviewHeaders($previewHeaders + $parsed['preview_headers'], [
                 'Subsistence Allowance' => 'Subsistence Allowance (22 Days)',
                 'Laundry Allowance' => 'Laundry Allow. P 500',
+                'Total SLA' => 'GROSS AMOUNT',
                 'UT Deductions' => "Deduction Late/UT's per DOST AO No. 003",
+                'Uniform Deduction' => 'Food Deductions',
                 'Healthcard' => 'Less: Health Card c/o TAPIEA',
-                'Net Amount' => 'Net Amount',
+                'Net Amount' => 'TOTAL SLA',
             ]),
             'field_order' => $this->prependFields($leadingFields, $this->availableFieldOrder($parsed)),
             'errors' => $errors,
