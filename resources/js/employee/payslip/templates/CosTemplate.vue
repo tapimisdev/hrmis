@@ -384,6 +384,39 @@ export default {
   text-align: right;
 }
 
+[data-bs-theme="dark"] {
+  .printed-payslip {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+  }
+
+  .printed-payslip__table {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+  }
+
+  .printed-payslip__table td,
+  .printed-payslip__table th,
+  .printed-payslip__title,
+  .printed-payslip__head th {
+    border-color: var(--bs-border-color);
+  }
+
+  .printed-payslip__danger {
+    color: var(--bs-danger);
+  }
+
+  .printed-payslip__net-inline {
+    color: var(--bs-body-color);
+  }
+
+  .printed-payslip__total .printed-payslip__amount:not(.printed-payslip__net-inline),
+  .printed-payslip__total .printed-payslip__peso,
+  .printed-payslip__net-pay-line span:last-child {
+    border-color: var(--bs-border-color);
+  }
+}
+
 @media (max-width: 767.98px) {
   .printed-payslip {
     max-width: 100%;
