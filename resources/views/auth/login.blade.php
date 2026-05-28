@@ -16,14 +16,14 @@
 
             <div class="w-100 mb-3">
                 <input 
-                    type="email" 
+                    type="text" 
                     class="form-input @error('email') is-invalid @enderror" 
                     id="email" 
                     name="email" 
-                    placeholder="Username" 
+                    placeholder="Email or Employee No." 
                     value="{{ old('email', request()->cookie('remember_email')) }}"
                     required 
-                    autocomplete="email" 
+                    autocomplete="username" 
                     autofocus
                 >
                 @error('email')
