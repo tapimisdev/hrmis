@@ -56,6 +56,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
 
     Route::resource('payslip', PayslipController::class)->only('index')->names('payslip');
     Route::get('payslip/data', [PayslipController::class, 'fetch_payslip'])->name('payslip.fetch');
+    Route::get('payslip/download', [PayslipController::class, 'download'])->name('payslip.download');
 
     # ANNOUNCEMENTS 
     Route::get('announcements', [AnnouncementsController::class, 'index'])->name('announcement.index');
