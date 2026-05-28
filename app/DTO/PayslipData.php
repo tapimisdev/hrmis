@@ -8,6 +8,7 @@ class PayslipData
         public string $employee_no,
         public int $month,
         public int $year,
-        public string $employee_type // 'cos' or 'regular'
+        public string $employee_type, // 'cos' or 'regular'
+        public ?string $cutoff = null
     ) {}
 }
