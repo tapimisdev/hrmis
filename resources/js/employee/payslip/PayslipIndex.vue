@@ -110,7 +110,7 @@
 
                     <!-- Success state -->
                     <div v-else class="card shadow rounded-4 payslip-card">
-                        <div class="card-header bg-white d-flex justify-content-end gap-2 py-3 payslip-actions" role="group">
+                        <div class="card-header d-flex justify-content-end gap-2 py-3 payslip-actions" role="group">
                             <button
                                 type="button"
                                 class="btn btn-sm btn-outline-warning px-4 py-2 d-flex align-items-center gap-2 fw-semibold"
@@ -310,9 +310,11 @@ export default {
 }
 
 .payslip-filter {
+    background: var(--bs-body-bg);
     border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 18px !important;
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12) !important;
+    color: var(--bs-body-color);
     width: 100%;
 }
 
@@ -337,15 +339,16 @@ export default {
 }
 
 .payslip-filter__field .form-label {
-    color: #111827;
+    color: var(--bs-body-color);
     font-size: 0.95rem;
     margin-bottom: 10px;
 }
 
 .payslip-filter__field .form-control {
+    background-color: var(--bs-body-bg);
     border-color: #d8dee8;
     border-radius: 7px;
-    color: #111827;
+    color: var(--bs-body-color);
     font-size: 1rem;
     min-height: 45px;
     padding-left: 15px;
@@ -387,9 +390,11 @@ export default {
 }
 
 .payslip-reminder {
+    background: var(--bs-body-bg);
     border: 1px solid rgba(10, 54, 127, 0.12);
     border-radius: 18px !important;
     box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1) !important;
+    color: var(--bs-body-color);
     height: 100%;
     overflow: hidden;
 }
@@ -410,7 +415,7 @@ export default {
 }
 
 .payslip-reminder__list {
-    color: #5b6475;
+    color: var(--bs-secondary-color);
     font-size: 0.92rem;
     line-height: 1.45;
     margin: 0;
@@ -426,12 +431,72 @@ export default {
 }
 
 .payslip-card {
+    background: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
     overflow: hidden;
+}
+
+.payslip-actions {
+    background: var(--bs-body-bg);
+    border-bottom-color: var(--bs-border-color);
 }
 
 .payslip-card__body {
     overflow-x: auto;
     padding: 18px;
+}
+
+[data-bs-theme="dark"] {
+    .payslip-filter,
+    .payslip-reminder,
+    .payslip-card {
+        background: var(--bs-secondary-bg);
+        border-color: var(--bs-border-color);
+        box-shadow: none !important;
+    }
+
+    .payslip-filter__field .form-label,
+    .payslip-reminder__header {
+        color: var(--bs-body-color);
+    }
+
+    .payslip-filter__field .form-control {
+        background-color: var(--bs-body-bg);
+        border-color: var(--bs-border-color);
+        color: var(--bs-body-color);
+    }
+
+    .payslip-filter__field .form-control:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.18rem rgba(var(--bs-primary-rgb), 0.2);
+    }
+
+    .payslip-filter__search .btn {
+        background: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: var(--bs-body-color);
+    }
+
+    .payslip-reminder .card-body {
+        background: linear-gradient(180deg, var(--bs-secondary-bg) 0%, var(--bs-body-bg) 100%);
+    }
+
+    .payslip-reminder__list,
+    .alert .text-muted {
+        color: var(--bs-secondary-color) !important;
+    }
+
+    .payslip-results .alert {
+        background-color: var(--bs-secondary-bg);
+        border-color: var(--bs-border-color);
+        color: var(--bs-body-color);
+    }
+
+    .payslip-actions {
+        background: var(--bs-secondary-bg);
+        border-bottom-color: var(--bs-border-color);
+    }
 }
 
 @media (max-width: 767.98px) {
