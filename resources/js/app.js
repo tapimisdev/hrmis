@@ -79,7 +79,57 @@ window.ErrorToast = Swal.mixin({
 
 $('#toggleSidebar').on('change', function() {
     var sidebar = $('.sidebar');
+    var overlay = $('.sidebar-overlay');
     sidebar.toggleClass('show', this.checked);
+    overlay.toggleClass('show', this.checked);
+    $('body').toggleClass('sidebar-open', this.checked);
+});
+
+$(document).on('click', '.sidebar-overlay, .sidebar a:not([data-bs-toggle="collapse"])', function() {
+    $('.sidebar').removeClass('show');
+    $('.sidebar-overlay').removeClass('show');
+    $('body').removeClass('sidebar-open');
+    $('#toggleSidebar').prop('checked', false);
+});
+
+const $mobileScrollActions = $('#mobileScrollActions');
+const mainScrollContainer = document.querySelector('main');
+
+function currentScrollTarget() {
+    if (mainScrollContainer && mainScrollContainer.scrollHeight > mainScrollContainer.clientHeight + 100) {
+        return mainScrollContainer;
+    }
+
+    return window;
+}
+
+function currentScrollTop(target) {
+    return target === window ? window.scrollY : target.scrollTop;
+}
+
+function toggleMobileScrollActions() {
+    const target = currentScrollTarget();
+    const scrollable = target === window
+        ? document.documentElement.scrollHeight > window.innerHeight + 100
+        : target.scrollHeight > target.clientHeight + 100;
+
+    $mobileScrollActions.toggleClass('show', scrollable && currentScrollTop(target) > 100);
+    $mobileScrollActions.attr('aria-hidden', !$mobileScrollActions.hasClass('show'));
+}
+
+$(window).on('scroll resize', toggleMobileScrollActions);
+$(mainScrollContainer).on('scroll', toggleMobileScrollActions);
+toggleMobileScrollActions();
+
+$('#scrollToTop').on('click', function() {
+    const target = currentScrollTarget();
+
+    if (target === window) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
+
+    target.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 $(document).on('click', '#btn-delete', function() {

@@ -46,6 +46,7 @@
     <div id="app">
         <!-- Sidebar (admin navigation) -->
         @include('admin.components.sidebar.sidebar')
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <main class="bg-body">
             <!-- to show birthdays -->
             <div>
@@ -60,6 +61,11 @@
         </main>  
 
         <push-notification :user-role="'admin'" :user-id='@json(Auth::id())'></push-notification>
+        <div class="mobile-scroll-actions" id="mobileScrollActions" aria-hidden="true">
+            <button type="button" class="mobile-scroll-btn" id="scrollToTop" aria-label="Scroll to top">
+                <i class="fa-solid fa-arrow-up"></i>
+            </button>
+        </div>
     </div>
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
