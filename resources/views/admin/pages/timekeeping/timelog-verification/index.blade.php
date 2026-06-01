@@ -8,54 +8,52 @@
 
     .timelog-verification-badge {
         font-size: 0.75rem;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.02em;
+        line-height: 1.15;
+        opacity: 1 !important;
+        padding: 0.35rem 0.55rem;
     }
 
     .timelog-verification-badge-fn {
         border: 1px solid transparent;
+        color: #ffffff !important;
     }
 
     .timelog-verification-badge-fn-0 {
-        background: rgba(13, 110, 253, 0.2);
-        color: #dbeafe;
-        border-color: rgba(13, 110, 253, 0.35);
+        background: #2563eb !important;
+        border-color: #1d4ed8;
     }
 
     .timelog-verification-badge-fn-1 {
-        background: rgba(25, 135, 84, 0.22);
-        color: #dcfce7;
-        border-color: rgba(25, 135, 84, 0.4);
+        background: #16a34a !important;
+        border-color: #15803d;
     }
 
     .timelog-verification-badge-fn-2 {
-        background: rgba(255, 193, 7, 0.28);
-        color: #fff3bf;
-        border-color: rgba(255, 193, 7, 0.45);
+        background: #f59e0b !important;
+        border-color: #d97706;
+        color: #111827 !important;
     }
 
     .timelog-verification-badge-fn-3 {
-        background: rgba(13, 202, 240, 0.24);
-        color: #cffafe;
-        border-color: rgba(13, 202, 240, 0.42);
+        background: #0891b2 !important;
+        border-color: #0e7490;
     }
 
     .timelog-verification-badge-fn-4 {
-        background: rgba(108, 117, 125, 0.32);
-        color: #f8f9fa;
-        border-color: rgba(173, 181, 189, 0.4);
+        background: #6b7280 !important;
+        border-color: #4b5563;
     }
 
     .timelog-verification-badge-fn-5 {
-        background: rgba(220, 53, 69, 0.22);
-        color: #ffe3e6;
-        border-color: rgba(220, 53, 69, 0.4);
+        background: #dc2626 !important;
+        border-color: #b91c1c;
     }
 
     .timelog-verification-badge-fn-default {
-        background: rgba(108, 117, 125, 0.22);
-        color: #e9ecef;
-        border-color: rgba(108, 117, 125, 0.35);
+        background: #4b5563 !important;
+        border-color: #374151;
     }
 
     .timelog-verification-empty {
@@ -72,13 +70,20 @@
     .timelog-verification-legend {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: 0.45rem;
     }
 
     .timelog-verification-badge-muted {
-        background: rgba(108, 117, 125, 0.12);
-        color: #6c757d;
-        border: 1px solid rgba(108, 117, 125, 0.2);
+        background: #374151 !important;
+        color: #ffffff !important;
+        border: 1px solid #1f2937;
+        opacity: 1 !important;
+    }
+
+    [data-bs-theme="dark"] .timelog-verification-badge-muted {
+        background: #f3f4f6 !important;
+        color: #111827 !important;
+        border-color: #d1d5db;
     }
 
     .timelog-verification-filter-card {
@@ -88,11 +93,100 @@
     }
 
     .timelog-verification-filter-group {
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(15, 23, 42, 0.08);
         border-radius: 0.85rem;
         padding: 1rem;
-        background: rgba(255, 255, 255, 0.015);
+        background: #ffffff;
+        box-shadow: 0 0.5rem 1.25rem rgba(15, 23, 42, 0.08);
         height: 100%;
+    }
+
+    [data-bs-theme="dark"] .timelog-verification-filter-group {
+        border-color: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.015);
+        box-shadow: none;
+    }
+
+    .timelog-verification-filter-row {
+        row-gap: 0.75rem;
+    }
+
+    .timelog-verification-filter-group-compact {
+        padding-bottom: 0.65rem;
+    }
+
+    .timelog-verification-actions .btn {
+        min-height: 44px;
+        min-width: 150px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .timelog-verification-actions {
+        margin-top: 0.5rem;
+    }
+
+    @media (max-width: 1199.98px) {
+        .timelog-verification-actions {
+            flex-direction: row !important;
+            flex-wrap: wrap;
+        }
+
+        .timelog-verification-actions .btn {
+            flex: 0 0 auto;
+            width: auto !important;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .timelog-verification-filter-card .card-body {
+            padding: 1rem;
+        }
+
+        .timelog-verification-filter-group {
+            padding: 0.85rem;
+        }
+
+        .timelog-verification-actions {
+            flex-direction: row !important;
+        }
+
+        .timelog-verification-actions .btn {
+            width: auto !important;
+        }
+
+        .timelog-verification-legend {
+            gap: 0.35rem;
+        }
+
+        .timelog-verification-badge {
+            white-space: normal;
+            text-align: left;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .timelog-verification-filter-card {
+            border-radius: 0.65rem;
+        }
+
+        .timelog-verification-filter-group {
+            border-radius: 0.65rem;
+        }
+
+        .timelog-verification-filter-group .form-text {
+            font-size: 0.75rem;
+        }
+
+        .timelog-verification-actions {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+
+        .timelog-verification-actions .btn {
+            width: 100% !important;
+        }
     }
 </style>
 @endsection
@@ -104,9 +198,9 @@
         <div class="card border-0 shadow-sm timelog-verification-filter-card">
             <div class="card-body">
                 <form method="GET" action="{{ route('timekeeping.timelog-verification.index') }}">
-                    <div class="row g-3">
-                        <div class="col-12 col-xl-5">
-                            <div class="timelog-verification-filter-group">
+                    <div class="row timelog-verification-filter-row">
+                        <div class="col-12">
+                            <div class="timelog-verification-filter-group timelog-verification-filter-group-compact">
                                 <label for="search" class="form-label">Search Employee or Device</label>
                                 <input
                                     type="text"
@@ -119,7 +213,7 @@
                                 <div class="form-text">Search by employee number, user ID, employee name, or biometric SN.</div>
                             </div>
                         </div>
-                        <div class="col-12 col-xl-5">
+                        <div class="col-12">
                             <div class="timelog-verification-filter-group">
                                 <div class="form-label mb-2">Date Range</div>
                                 <div class="row g-3">
@@ -147,12 +241,10 @@
                                 <div class="form-text">Leave blank to show all dates, or use one side only for open-ended filtering.</div>
                             </div>
                         </div>
-                        <div class="col-12 col-xl-2">
-                            <div class="timelog-verification-filter-group d-flex flex-column justify-content-end gap-2">
-                                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-                                <a href="{{ route('timekeeping.timelog-verification.index') }}" class="btn btn-secondary w-100">
-                                    Clear Filters
-                                </a>
+                        <div class="col-12">
+                            <div class="timelog-verification-actions d-flex justify-content-end align-items-center gap-2">
+                                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                                <a href="{{ route('timekeeping.timelog-verification.index') }}" class="btn btn-secondary">Clear Filters</a>
                             </div>
                         </div>
                     </div>

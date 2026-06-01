@@ -14,6 +14,8 @@ use App\Http\Controllers\Employee\AtroApprovalController;
 use App\Http\Controllers\Employee\LeaveApprovalController;
 use App\Http\Controllers\Employee\ObsApprovalController;
 use App\Http\Controllers\Employee\ObsController;
+use App\Http\Controllers\Employee\SpecialOrderController;
+use App\Http\Controllers\Employee\LtoController;
 use App\Http\Controllers\Employee\MessagesController;
 use App\Http\Controllers\Employee\CreditsController;
 use App\Http\Controllers\Employee\PayslipController;
@@ -40,6 +42,10 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
     Route::resource('offset', OffsetApplicationController::class)->except('edit', 'update');
     Route::resource('overtime', AtroController::class)->except('edit', 'update');
     Route::resource('pass-slip', ObsController::class)->except('edit', 'update')->names('obs');
+    Route::resource('special-order', SpecialOrderController::class)->except('edit', 'update');
+    Route::resource('local-travel-order', LtoController::class)
+        ->except('edit', 'update')
+        ->names('lto');
 
     # EMPLOYEE TIMELOGS
     Route::resource('check-in-out', CheckInOutController::class)->only('index', 'store')->names('checkinout');

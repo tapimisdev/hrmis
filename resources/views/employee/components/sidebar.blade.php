@@ -200,6 +200,34 @@
                 @endcanany
 
                 @canany([
+                    'emp.special_order_application.view',
+                    'emp.special_order_application.apply'
+                ])
+                <li class="side-items has-submenu {{ request()->routeIs('special-order.*') ? 'active' : '' }}">
+                    <a href="{{ route('special-order.index') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-car-on"></i>
+                        </span>
+                        <span class="side-text">Special Order</span>
+                    </a>
+                </li>
+                @endcanany
+
+                @canany([
+                    'emp.lto_application.view',
+                    'emp.lto_application.apply'
+                ])
+                <li class="side-items has-submenu {{ request()->routeIs('lto.*') ? 'active' : '' }}">
+                    <a href="{{ route('lto.index') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-person-walking-luggage"></i>
+                        </span>
+                        <span class="side-text">Local Travel Order</span>
+                    </a>
+                </li>
+                @endcanany
+
+                @canany([
                     'emp.pass_slip_application.view',
                     'emp.pass_slip_application.apply'
                 ])

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Employee\timelogs;
 
+use App\Events\TimelogMonitoringUpdated;
 use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employee\Timelogs\CheckInOutRequest;
@@ -148,6 +149,12 @@ class CheckInOutController extends Controller
             }
 
             DB::commit();
+
+            event(new TimelogMonitoringUpdated(
+                $now->toDateString(),
+                (int) $validatedData['user_id'],
+                (string) $fn,
+            ));
 
             return response()->json([
                 'message' => 'Your time log was recorded successfully.',

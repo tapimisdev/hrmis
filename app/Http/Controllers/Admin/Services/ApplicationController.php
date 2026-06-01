@@ -151,6 +151,83 @@ class ApplicationController extends Controller
                     ],
                 ],
             ],
+            'special_order' => [
+                'table' => 'special_order_applications',
+                'alias' => 'so',
+                'id_col' => 'id',
+                'user_col' => 'user_id',
+                'attachment_table' => 'special_order_attachments',
+                'attachment_fk' => 'special_order_application_id',
+                'approval_table' => 'special_order_approvals',
+                'approval_fk' => 'special_order_application_id',
+                'select_extra' => [
+                    'join' => [
+                        ['special_order_dates as sod', 'sod.special_order_application_id', '=', 'so.id'],
+                    ],
+                    'columns' => [
+                        'so.*',
+                        DB::raw("
+                            GROUP_CONCAT(
+                                CONCAT_WS('|', sod.date, sod.shift)
+                                ORDER BY sod.date
+                                SEPARATOR '||'
+                            ) as details
+                        "),
+                        DB::raw("MAX(CONCAT(ep.firstname, ' ', ep.lastname)) as employee_name"),
+                    ],
+                    'groupBy' => [
+                        'so.id',
+                        'so.name',
+                        'so.user_id',
+                        'so.employee_no',
+                        'so.so_no',
+                        'so.within_metro_manila',
+                        'so.isHazardous',
+                        'so.status',
+                        'so.remarks',
+                        'so.created_at',
+                        'so.updated_at',
+                    ],
+                ],
+            ],
+            'lto' => [
+                'table' => 'lto_applications',
+                'alias' => 'lto',
+                'id_col' => 'id',
+                'user_col' => 'user_id',
+                'attachment_table' => 'lto_attachments',
+                'attachment_fk' => 'lto_application_id',
+                'approval_table' => 'lto_approvals',
+                'approval_fk' => 'lto_application_id',
+                'select_extra' => [
+                    'join' => [
+                        ['lto_dates as ltd', 'ltd.lto_application_id', '=', 'lto.id'],
+                    ],
+                    'columns' => [
+                        'lto.*',
+                        DB::raw("
+                            GROUP_CONCAT(
+                                CONCAT_WS('|', ltd.date, ltd.shift)
+                                ORDER BY ltd.date
+                                SEPARATOR '||'
+                            ) as details
+                        "),
+                        DB::raw("MAX(CONCAT(ep.firstname, ' ', ep.lastname)) as employee_name"),
+                    ],
+                    'groupBy' => [
+                        'lto.id',
+                        'lto.name',
+                        'lto.user_id',
+                        'lto.employee_no',
+                        'lto.lto_no',
+                        'lto.isHazardous',
+                        'lto.status',
+                        'lto.remarks',
+                        'lto.created_at',
+                        'lto.updated_at',
+                    ],
+                ],
+            ],
 
         ];
 
@@ -650,6 +727,20 @@ class ApplicationController extends Controller
                 ->where('a.user_id', $user->id)
                 ->select(
                     DB::raw("'special order' as title"),
+                    'a.status',
+                    'd.date'
+                );
+        }
+
+        # Local travel order applications
+        if (in_array('lto', $types)) {
+            $queries[] = DB::table('lto_applications as a')
+                ->join('lto_dates as d', 'a.id', '=', 'd.lto_application_id')
+                ->where('d.isActive', true)
+                ->whereNotIn('a.status', ['cancelled', 'rejected'])
+                ->where('a.user_id', $user->id)
+                ->select(
+                    DB::raw("'local travel order' as title"),
                     'a.status',
                     'd.date'
                 );
