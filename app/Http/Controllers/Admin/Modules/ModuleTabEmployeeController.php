@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class ModuleTabEmployeeController extends Controller
 {
+    private const EDITABLE_PAYROLL_STATUSES = ['failed', 'cancelled'];
+
     protected $employeeService;
     protected $philhealthService;
     protected $salaryEmployeeService;
@@ -161,6 +163,7 @@ class ModuleTabEmployeeController extends Controller
             $employeeRecords = $module_tab_employees[$employee->employee_no] ?? [];
             $employeeLocks = collect($salaryPayrollLocks[$employee->employee_no] ?? []);
             $lockedMonths = $employeeLocks
+                ->filter(fn ($lock) => !$this->isEditablePayrollStatus($lock->payroll_status ?? null))
                 ->pluck('payroll_month')
                 ->map(fn ($month) => (int) $month)
                 ->all();
@@ -236,6 +239,7 @@ class ModuleTabEmployeeController extends Controller
             ->where('pspe.employee_no', $validatedData['employee_no'])
             ->whereYear('ps.payroll_date', $validatedData['year'])
             ->whereMonth('ps.payroll_date', $monthNumber)
+            ->whereNotIn('ps.status', self::EDITABLE_PAYROLL_STATUSES)
             ->exists();
 
         if($checkExistingSalaryPayroll) {
@@ -401,6 +405,19 @@ class ModuleTabEmployeeController extends Controller
                 while ($cursor->lte($end)) {
                     $year  = (int) $cursor->year;
                     $month = (int) $cursor->month;
+
+                    $hasLockedPayroll = DB::table('payroll_salary_permanent_employees as pspe')
+                        ->join('payroll_salary as ps', 'pspe.payroll_salary_id', '=', 'ps.id')
+                        ->where('pspe.employee_no', $employeeNo)
+                        ->whereYear('ps.payroll_date', $year)
+                        ->whereMonth('ps.payroll_date', $month)
+                        ->whereNotIn('ps.status', self::EDITABLE_PAYROLL_STATUSES)
+                        ->exists();
+
+                    if ($hasLockedPayroll) {
+                        $cursor->addMonthNoOverflow();
+                        continue;
+                    }
 
                     $ok = DB::table('module_tab_employees')->updateOrInsert(
                         [
@@ -629,5 +646,10 @@ class ModuleTabEmployeeController extends Controller
         $salary = (float) $salaryClean;
 
         return round($salary * ($percentage / 100), 2);
+    }
+
+    private function isEditablePayrollStatus(?string $status): bool
+    {
+        return in_array($status, self::EDITABLE_PAYROLL_STATUSES, true);
     }
 }

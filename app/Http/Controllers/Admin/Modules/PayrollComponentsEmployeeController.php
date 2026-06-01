@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class PayrollComponentsEmployeeController extends Controller
 {
+    private const EDITABLE_PAYROLL_STATUSES = ['failed', 'cancelled'];
+
     protected $componentService;
     protected $employeeService;
     protected $salaryEmployeeService;
@@ -430,6 +432,7 @@ class PayrollComponentsEmployeeController extends Controller
         return collect($employees)->map(function ($employee) use ($locks, $monthKeys, $source) {
             $employeeLocks = collect($locks[$employee->employee_no] ?? []);
             $lockedMonths = $employeeLocks
+                ->filter(fn ($lock) => !$this->isEditablePayrollStatus($lock->payroll_status ?? null))
                 ->pluck('payroll_month')
                 ->map(fn ($month) => (int) $month)
                 ->all();
@@ -454,6 +457,7 @@ class PayrollComponentsEmployeeController extends Controller
             ->where('pe.employee_no', $employeeNo)
             ->whereYear('p.' . $source['date_column'], $year)
             ->whereMonth('p.' . $source['date_column'], $month)
+            ->whereNotIn('p.status', self::EDITABLE_PAYROLL_STATUSES)
             ->exists();
     }
 
@@ -530,5 +534,10 @@ class PayrollComponentsEmployeeController extends Controller
                     'label' => 'Salary Payroll',
                 ];
         }
+    }
+
+    private function isEditablePayrollStatus(?string $status): bool
+    {
+        return in_array($status, self::EDITABLE_PAYROLL_STATUSES, true);
     }
 }
