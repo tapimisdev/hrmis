@@ -31,6 +31,7 @@
     .monitoring-item.is-highlighted {
         border-color: #ffc107;
         background: #fff3cd;
+        color: #212529;
         box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.28);
         transform: translateY(-1px);
     }
@@ -38,7 +39,13 @@
     .monitoring-item.is-current-match {
         border-color: #0d6efd;
         background: #e7f1ff;
+        color: #212529;
         box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
+    }
+
+    .monitoring-item.is-highlighted .text-muted,
+    .monitoring-item.is-current-match .text-muted {
+        color: #5c636a !important;
     }
 
     .monitoring-column-card.has-search-match {

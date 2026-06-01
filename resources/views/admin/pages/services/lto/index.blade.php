@@ -1,0 +1,59 @@
+@extends('admin.layouts.app')
+
+@section('styles')
+
+@endsection
+
+@section('content')
+    <div class="container-fluid">
+        <x-header title="Local Travel Order Applications" subtitle="Manage local travel order applications in this module">
+
+        </x-header>
+
+        <x-table id="myTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>LTO No.</th>
+                    <th>Employee No</th>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th style="width: 120px">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </x-table>
+    </div>
+@endsection
+
+@section('scripts')
+<script>
+    $(function() {
+        let DataTable = $('#myTable').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "order": [[0, 'desc']],
+            "ajax": '{{ route('services.lto.index') }}',
+            "columns": [
+                { data: "id", name: 'id', visible: false },
+                { data: "lto_no", name: 'lto_no' },
+                { data: "employee_no", name: 'employee_no' },
+                { data: "name", name: 'name' },
+                { data: "date", name: 'date' },
+                { data: "status", name: 'status' },
+                { data: "actions", name: 'actions', orderable: false, searchable: false },
+            ],
+            "columnDefs": [
+                {
+                    targets: [1, 2, 3, 4, 5, 6],
+                    className: 'min-table-width'
+                }
+            ],
+            "scrollX": true,
+            "autoWidth": false
+        });
+    });
+</script>
+@endsection
