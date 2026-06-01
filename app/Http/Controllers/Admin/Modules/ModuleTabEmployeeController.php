@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 
 class ModuleTabEmployeeController extends Controller
 {
+    private const EDITABLE_PAYROLL_STATUSES = ['failed', 'cancelled'];
+
     protected $employeeService;
     protected $philhealthService;
     protected $salaryEmployeeService;
@@ -127,6 +129,7 @@ class ModuleTabEmployeeController extends Controller
             ->get();
 
         $module_tab_id = $module->module_tab_id;
+        $employeeNos = $employees->pluck('employee_no')->filter()->values();
 
         /**
          * Fetch module tab employee records for the given year
@@ -138,16 +141,40 @@ class ModuleTabEmployeeController extends Controller
             ->get()
             ->groupBy('employee_no');
 
+        $salaryPayrollLocks = DB::table('payroll_salary_permanent_employees as pspe')
+            ->join('payroll_salary as ps', 'pspe.payroll_salary_id', '=', 'ps.id')
+            ->whereIn('pspe.employee_no', $employeeNos)
+            ->whereYear('ps.payroll_date', $year)
+            ->orderByDesc('ps.id')
+            ->select(
+                'pspe.employee_no',
+                DB::raw('MONTH(ps.payroll_date) as payroll_month'),
+                'ps.status as payroll_status',
+                DB::raw("'Salary Payroll' as payroll_source")
+            )
+            ->get()
+            ->groupBy('employee_no');
+
         /**
          * Map employees with their corresponding monthly amounts.
          * Missing months are defaulted to zero.
          */
-        return $employees->map(function ($employee) use ($module_tab_employees, $module_tab_id, $monthNames) {
+        $employees = $employees->map(function ($employee) use ($module_tab_employees, $module_tab_id, $monthNames, $salaryPayrollLocks) {
             $employeeRecords = $module_tab_employees[$employee->employee_no] ?? [];
+            $employeeLocks = collect($salaryPayrollLocks[$employee->employee_no] ?? []);
+            $lockedMonths = $employeeLocks
+                ->filter(fn ($lock) => !$this->isEditablePayrollStatus($lock->payroll_status ?? null))
+                ->pluck('payroll_month')
+                ->map(fn ($month) => (int) $month)
+                ->all();
 
             foreach ($monthNames as $month => $monthName) {
                 $record = collect($employeeRecords)->firstWhere('month', $month);
+                $lock = $employeeLocks->firstWhere('payroll_month', $month);
                 $employee->{$monthName} = $record->amount ?? 0;
+                $employee->{$monthName . '_enable'} = !in_array($month, $lockedMonths, true);
+                $employee->{$monthName . '_payroll_status'} = $lock->payroll_status ?? null;
+                $employee->{$monthName . '_payroll_source'} = $lock->payroll_source ?? 'Salary Payroll';
             }
 
             // Attach module tab ID for frontend or further processing
@@ -155,6 +182,8 @@ class ModuleTabEmployeeController extends Controller
 
             return $employee;
         });
+
+        return $employees;
     }
 
 
@@ -204,6 +233,21 @@ class ModuleTabEmployeeController extends Controller
         ];
 
         $monthNumber = $monthNumbers[strtolower($validatedData['month'])] ?? null;
+
+        $checkExistingSalaryPayroll = DB::table('payroll_salary_permanent_employees as pspe')
+            ->join('payroll_salary as ps', 'pspe.payroll_salary_id', '=', 'ps.id')
+            ->where('pspe.employee_no', $validatedData['employee_no'])
+            ->whereYear('ps.payroll_date', $validatedData['year'])
+            ->whereMonth('ps.payroll_date', $monthNumber)
+            ->whereNotIn('ps.status', self::EDITABLE_PAYROLL_STATUSES)
+            ->exists();
+
+        if($checkExistingSalaryPayroll) {
+            return response()->json([
+                'message' => 'Cannot update record. Salary payroll already exists for the specified employee, year, and month.',
+                'errors'  => ['salary_payroll' => ['A salary payroll record exists for this employee, year, and month. Please remove it before updating this module tab record.']],
+            ], 422);
+        }
 
         if (!$monthNumber) {
             return response()->json([
@@ -361,6 +405,19 @@ class ModuleTabEmployeeController extends Controller
                 while ($cursor->lte($end)) {
                     $year  = (int) $cursor->year;
                     $month = (int) $cursor->month;
+
+                    $hasLockedPayroll = DB::table('payroll_salary_permanent_employees as pspe')
+                        ->join('payroll_salary as ps', 'pspe.payroll_salary_id', '=', 'ps.id')
+                        ->where('pspe.employee_no', $employeeNo)
+                        ->whereYear('ps.payroll_date', $year)
+                        ->whereMonth('ps.payroll_date', $month)
+                        ->whereNotIn('ps.status', self::EDITABLE_PAYROLL_STATUSES)
+                        ->exists();
+
+                    if ($hasLockedPayroll) {
+                        $cursor->addMonthNoOverflow();
+                        continue;
+                    }
 
                     $ok = DB::table('module_tab_employees')->updateOrInsert(
                         [
@@ -589,5 +646,10 @@ class ModuleTabEmployeeController extends Controller
         $salary = (float) $salaryClean;
 
         return round($salary * ($percentage / 100), 2);
+    }
+
+    private function isEditablePayrollStatus(?string $status): bool
+    {
+        return in_array($status, self::EDITABLE_PAYROLL_STATUSES, true);
     }
 }
