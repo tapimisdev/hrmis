@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use App\Services\EmployeeService;
 use App\Services\DailyTimeRecordService;
 use Carbon\Carbon;
@@ -29,9 +28,14 @@ class MonitoringController extends Controller
 
     public function index(Request $request)
     {
-
         $date = $request->date ?? Carbon::now()->format('Y-m-d');
+        $columns = $this->buildColumns($date);
 
+        return view('admin.pages.timekeeping.monitoring.index', compact('columns', 'date'));
+    }
+
+    private function buildColumns(string $date): array
+    {
         $employees = $this->employeeService->getEmployees('active', null, null, null);
 
         $start = $date;
@@ -60,7 +64,7 @@ class MonitoringController extends Controller
                         'employee' => $employee,
                         'log' => $log
                     ];
-                } elseif (!empty($log['break'])) {
+                } elseif (!empty($log['break']) && str_contains($log['break'], '--')) {
                     $columns['break'][] = [
                         'employee' => $employee,
                         'log' => $log
@@ -74,7 +78,7 @@ class MonitoringController extends Controller
             }
         }
 
-        return view('admin.pages.timekeeping.monitoring.index', compact('columns', 'date'));
+        return $columns;
     }
 
 }
