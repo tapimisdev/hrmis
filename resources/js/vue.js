@@ -27,6 +27,7 @@ import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
 import PatchNotesPage from "./admin/pages/patch-notes/PatchNotesPage.vue";
 
 import TaxationIndex from "./admin/taxation/TaxationIndex.vue";
+import IndividualTaxIndex from "./admin/taxation/IndividualTaxIndex.vue";
 import TrainLawIndex from "./admin/trainlaw/TrainLawIndex.vue";
 
 import WebtimeIndex from "./admin/web-time-access/WebtimeIndex.vue";
@@ -88,6 +89,7 @@ const authApp = createApp({
         FeedbackDetailModal,
         ViewDtr,
         TaxationIndex,
+        IndividualTaxIndex,
         TrainLawIndex,
 
         DashboardVue,

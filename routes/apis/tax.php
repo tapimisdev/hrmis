@@ -2,6 +2,7 @@
 <?php
 
 use App\Http\Controllers\Api\Taxation\RunForecastApiController;
+use App\Http\Controllers\Api\Taxation\IndividualTaxApiController;
 use App\Http\Controllers\Api\Taxation\TaxationEmployeesApiController;
 use App\Http\Controllers\Api\Taxation\TaxationSetupApiController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,7 @@ Route::prefix('tax')->group(function() {
     Route::get('train-law-lists', [TaxationSetupApiController::class, 'train_law_list']);
 
     Route::post('run-forecast', [RunForecastApiController::class, 'run']);
+    Route::get('individual-tax', [IndividualTaxApiController::class, 'index']);
 
     Route::prefix('breakdown')->group(function() {
         Route::get('/{taxation_employee_id}', [TaxationEmployeesApiController::class, 'breakdowns']);
