@@ -10,6 +10,16 @@
                 </div>
 
                 <div ref="toolbarForm" class="individual-tax-toolbar-form">
+                    <button
+                        type="button"
+                        class="btn btn-primary individual-tax-run-btn"
+                        :disabled="isLoading"
+                        @click="openRunModal"
+                    >
+                        <i class="fa-solid fa-play me-2"></i>
+                        Run
+                    </button>
+
                     <select
                         ref="employeeSelect"
                         v-model="selectedEmployeeNo"
@@ -78,6 +88,10 @@
                             <tr>
                                 <td>Other Earnings</td>
                                 <td class="amount">{{ peso(currentSummary.other_earnings) }}</td>
+                            </tr>
+                            <tr>
+                                <td>De Minimis Benefits</td>
+                                <td class="amount">{{ peso(currentSummary.de_minimis_total) }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Gross Taxable Income</strong></td>
@@ -164,6 +178,27 @@
                         </div>
                     </div>
 
+                    <h2 class="individual-tax-heading mt-4">De Minimis Benefits</h2>
+
+                    <div class="individual-tax-list">
+                        <div
+                            v-for="item in currentOtherComponents.de_minimis"
+                            :key="`deminimis-${item.name}`"
+                            class="individual-tax-list-row"
+                        >
+                            <span>{{ item.name }}</span>
+                            <span>{{ peso(item.amount) }}</span>
+                        </div>
+                        <div v-if="!currentOtherComponents.de_minimis?.length" class="individual-tax-list-row">
+                            <span>No de minimis benefits found.</span>
+                            <span>{{ peso(0) }}</span>
+                        </div>
+                        <div class="individual-tax-list-row individual-tax-list-row--total">
+                            <span>Total</span>
+                            <span>{{ peso(currentSummary.de_minimis_total) }}</span>
+                        </div>
+                    </div>
+
                     <h2 class="individual-tax-heading mt-4">Taxes</h2>
 
                     <div class="individual-tax-list">
@@ -186,6 +221,116 @@
                         automatically shows the first employee that is both <strong>regular</strong> and <strong>active</strong>.
                     </div>
                 </section>
+            </div>
+        </div>
+
+        <div
+            ref="runModal"
+            class="modal fade"
+            tabindex="-1"
+            aria-labelledby="individualTaxRunModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered modal-xl">
+                <div class="modal-content individual-tax-modal">
+                    <div class="modal-header">
+                        <div>
+                            <h5 id="individualTaxRunModalLabel" class="modal-title">Run Individual Tax</h5>
+                            <div class="individual-tax-modal-subtitle">
+                                Employee {{ currentEmployee.employee_no || "-" }} for year {{ selectedYearValue }}
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" aria-label="Close" @click="closeRunModal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <ul class="nav nav-tabs individual-tax-run-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button
+                                    class="nav-link active"
+                                    type="button"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#individual-tax-run-tab-a"
+                                    role="tab"
+                                    aria-controls="individual-tax-run-tab-a"
+                                    aria-selected="true"
+                                >
+                                    Tab A
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button
+                                    class="nav-link"
+                                    type="button"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#individual-tax-run-tab-b"
+                                    role="tab"
+                                    aria-controls="individual-tax-run-tab-b"
+                                    aria-selected="false"
+                                >
+                                    Tab B
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button
+                                    class="nav-link"
+                                    type="button"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#individual-tax-run-tab-c"
+                                    role="tab"
+                                    aria-controls="individual-tax-run-tab-c"
+                                    aria-selected="false"
+                                >
+                                    Tab C
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content individual-tax-run-content">
+                            <div
+                                id="individual-tax-run-tab-a"
+                                class="tab-pane fade show active"
+                                role="tabpanel"
+                                tabindex="0"
+                            >
+                                <div class="individual-tax-run-panel">
+                                    <h6>Tab A</h6>
+                                    <p>Ready for run content.</p>
+                                </div>
+                            </div>
+
+                            <div
+                                id="individual-tax-run-tab-b"
+                                class="tab-pane fade"
+                                role="tabpanel"
+                                tabindex="0"
+                            >
+                                <div class="individual-tax-run-panel">
+                                    <h6>Tab B</h6>
+                                    <p>Ready for run content.</p>
+                                </div>
+                            </div>
+
+                            <div
+                                id="individual-tax-run-tab-c"
+                                class="tab-pane fade"
+                                role="tabpanel"
+                                tabindex="0"
+                            >
+                                <div class="individual-tax-run-panel">
+                                    <h6>Tab C</h6>
+                                    <p>Ready for run content.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" @click="closeRunModal">
+                            Close
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -222,6 +367,7 @@ export default {
             selectedYearValue: Number(this.selectedYear || new Date().getFullYear()),
             isLoading: false,
             token: localStorage.getItem("auth_token"),
+            runModalInstance: null,
         };
     },
 
@@ -239,7 +385,7 @@ export default {
         },
 
         currentOtherComponents() {
-            return this.state.otherComponents || { earnings: [], taxes: [] };
+            return this.state.otherComponents || { earnings: [], de_minimis: [], taxes: [] };
         },
 
         currentSummary() {
@@ -278,6 +424,8 @@ export default {
     },
 
     beforeUnmount() {
+        this.closeRunModal();
+        this.runModalInstance = null;
         this.destroyEmployeeSelect();
     },
 
@@ -354,6 +502,24 @@ export default {
                 $select.select2("destroy");
             }
         },
+        getRunModalInstance() {
+            const modalElement = this.$refs.runModal;
+            const modalApi = window.bootstrap?.Modal;
+
+            if (!modalElement || !modalApi) {
+                return null;
+            }
+
+            this.runModalInstance = this.runModalInstance || modalApi.getOrCreateInstance(modalElement);
+
+            return this.runModalInstance;
+        },
+        openRunModal() {
+            this.getRunModalInstance()?.show();
+        },
+        closeRunModal() {
+            this.getRunModalInstance()?.hide();
+        },
 
         syncUrl() {
             const url = new URL(this.baseUrl, window.location.origin);
@@ -376,7 +542,7 @@ export default {
                 selectedYear: Number(payload.selectedYear || this.selectedYearValue),
                 availableYears: payload.availableYears || [],
                 monthlyBreakdown: payload.monthlyBreakdown || [],
-                otherComponents: payload.otherComponents || { earnings: [], taxes: [] },
+                otherComponents: payload.otherComponents || { earnings: [], de_minimis: [], taxes: [] },
                 summary: payload.summary || {},
             };
 
@@ -450,6 +616,11 @@ export default {
         gap: 0.75rem;
         flex-wrap: wrap;
     }
+}
+
+.individual-tax-run-btn {
+    min-height: 44px;
+    font-weight: 700;
 }
 
 .individual-tax-title {
@@ -623,6 +794,12 @@ export default {
             font-variant-numeric: tabular-nums;
         }
     }
+
+    &-row--total {
+        border-color: var(--bs-warning-border-subtle);
+        background: var(--bs-warning-bg-subtle);
+        font-weight: 800;
+    }
 }
 
 .individual-tax-note {
@@ -632,6 +809,55 @@ export default {
     background: var(--bs-body-bg);
     color: var(--bs-secondary-color);
     font-size: 0.75rem;
+}
+
+.individual-tax-modal {
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+
+.individual-tax-modal-subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+    color: var(--bs-secondary-color);
+}
+
+.individual-tax-run-tabs {
+    border-bottom-color: var(--bs-border-color);
+}
+
+.individual-tax-run-tabs .nav-link {
+    color: var(--bs-secondary-color);
+    font-weight: 700;
+}
+
+.individual-tax-run-tabs .nav-link.active {
+    color: var(--bs-primary-text-emphasis);
+    background: var(--bs-primary-bg-subtle);
+    border-color: var(--bs-border-color) var(--bs-border-color) transparent;
+}
+
+.individual-tax-run-content {
+    padding-top: 1rem;
+}
+
+.individual-tax-run-panel {
+    min-height: 280px;
+    padding: 1.25rem;
+    border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+}
+
+.individual-tax-run-panel h6 {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.individual-tax-run-panel p {
+    margin: 0;
+    color: var(--bs-secondary-color);
 }
 
 /* Select2 */

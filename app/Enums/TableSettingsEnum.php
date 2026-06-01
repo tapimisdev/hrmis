@@ -8,6 +8,7 @@ enum TableSettingsEnum: string
     case HAZARD_PA    = 'hazard_pay';
     case LONGETIVITY  = 'longetivity_pay';
     case PERA         = 'pera_allowance';
+    case RATA         = 'rata';
     case REPRESENTATION_ALLOWANCE = 'representation_allowance';
     case TRANSPORTATION_ALLOWANCE = 'transportation_allowance';
 

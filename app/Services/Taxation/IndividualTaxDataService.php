@@ -201,6 +201,8 @@ class IndividualTaxDataService
 
     public function getOtherComponents(string $employeeNo, int $year): array
     {
+        $otherEarningTaxTypes = $this->getOtherEarningTaxTypesByYear($year);
+
         $rows = DB::table('employee_payroll_components as epc')
             ->join('payroll_components_years as pcy', 'pcy.id', '=', 'epc.tax_deduction_id')
             ->join('payroll_components as pc', 'pc.id', '=', 'pcy.payroll_component_id')
@@ -212,7 +214,7 @@ class IndividualTaxDataService
                 'epc.amount',
             ]);
 
-        $earnings = $rows
+        $normalizedEarnings = $rows
             ->where('type', 'earnings')
             ->reject(fn ($row) => in_array(strtolower((string) $row->name), [
                 'hazard pay',
@@ -220,11 +222,25 @@ class IndividualTaxDataService
                 'longevity pay',
             ], true))
             ->groupBy('name')
-            ->map(fn ($group, $name) => [
-                'name' => $name,
-                'amount' => (float) collect($group)->sum('amount'),
-            ])
+            ->map(function ($group, $name) use ($otherEarningTaxTypes) {
+                $normalizedName = strtolower(trim((string) $name));
+
+                return [
+                    'name' => $name,
+                    'tax_type' => $otherEarningTaxTypes[$normalizedName] ?? 'taxable',
+                    'amount' => (float) collect($group)->sum('amount'),
+                ];
+            })
             ->sortBy('name')
+            ->values();
+
+        $earnings = $normalizedEarnings
+            ->filter(fn ($item) => ($item['tax_type'] ?? 'taxable') === 'taxable')
+            ->values()
+            ->all();
+
+        $deMinimis = $normalizedEarnings
+            ->filter(fn ($item) => in_array(($item['tax_type'] ?? ''), ['non_taxable', 'exempt'], true))
             ->values()
             ->all();
 
@@ -241,6 +257,7 @@ class IndividualTaxDataService
 
         return [
             'earnings' => $earnings,
+            'de_minimis' => $deMinimis,
             'taxes' => $taxes,
         ];
     }
@@ -252,8 +269,9 @@ class IndividualTaxDataService
         $annualLongevityPay = (float) $monthlyBreakdown->sum('longevity_pay');
         $grossTaxableIncome = (float) $monthlyBreakdown->sum('total');
         $otherEarnings = (float) collect($otherComponents['earnings'] ?? [])->sum('amount');
+        $deMinimisTotal = (float) collect($otherComponents['de_minimis'] ?? [])->sum('amount');
         $taxWithheld = (float) $monthlyBreakdown->sum('tax_withheld');
-        $netAfterTax = ($grossTaxableIncome + $otherEarnings) - $taxWithheld;
+        $netAfterTax = ($grossTaxableIncome + $otherEarnings + $deMinimisTotal) - $taxWithheld;
 
         return [
             'annual_basic_salary' => $annualBasicSalary,
@@ -261,9 +279,30 @@ class IndividualTaxDataService
             'annual_longevity_pay' => $annualLongevityPay,
             'gross_taxable_income' => $grossTaxableIncome,
             'other_earnings' => $otherEarnings,
+            'de_minimis_total' => $deMinimisTotal,
             'total_tax_withheld' => $taxWithheld,
             'net_after_tax' => $netAfterTax,
         ];
+    }
+
+    private function getOtherEarningTaxTypesByYear(int $year): array
+    {
+        $taxationId = DB::table('taxations')
+            ->where('is_active', true)
+            ->where('year', $year)
+            ->value('id');
+
+        if (!$taxationId) {
+            return [];
+        }
+
+        return DB::table('taxation_other_earnings')
+            ->where('taxation_id', $taxationId)
+            ->get(['name', 'tax_type'])
+            ->mapWithKeys(fn ($item) => [
+                strtolower(trim((string) $item->name)) => strtolower((string) ($item->tax_type ?? 'taxable')),
+            ])
+            ->all();
     }
 
     public function formatEmployeeName(object $employee): string
