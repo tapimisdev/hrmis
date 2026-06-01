@@ -161,6 +161,17 @@ table {
     font-weight: 600;
 }
 
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate,
+.dataTables_wrapper .dataTables_paginate.paging_simple_numbers,
+.dataTables_wrapper .dataTables_paginate ul.pagination,
+.dt-container .dt-info,
+.dt-container .dt-paging,
+.dt-container .dt-paging nav,
+.dt-container .dt-paging .pagination {
+    margin-top: 1rem !important;
+}
+
 .album-card {
     width: 100%;
     overflow: hidden;

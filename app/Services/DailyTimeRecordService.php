@@ -537,7 +537,7 @@ class DailyTimeRecordService {
 
             /** ---------------- FINAL DATA ROW ---------------- **/
             $computedData[] = [
-                'date'              => Carbon::parse($logDate)->format('Y-m-d'),
+                'date'              => Carbon::parse($logDate)->format('Y-m-d' ),
                 'user_id'           => $userId,
                 'time_in'           => $timeInCarbon,
                 'time_out'          => $timeOutCarbon,

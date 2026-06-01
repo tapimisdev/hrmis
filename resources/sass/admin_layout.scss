@@ -252,6 +252,10 @@
             pointer-events: auto;
         }
     }
+
+    body.sidebar-open {
+        overflow: hidden;
+    }
 }
 
 @media (max-width: 1200px) and (min-width: 993px) {
@@ -363,6 +367,7 @@ main {
     font-size: 12px;
     width: 100%;
     overflow-x: hidden;
+    overflow-y: auto;
     position: relative;
     min-height: 100vh;
     display: flex;
@@ -384,5 +389,142 @@ main {
         &:hover {
             background: #555;
         }
+    }
+}
+
+.admin-nav {
+    min-height: 58px;
+
+    .admin-nav-menu {
+        display: flex;
+        align-items: center;
+    }
+
+    .navbar-nav {
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+    }
+}
+
+.mobile-scroll-actions {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1030;
+    display: flex;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    transform: translateY(8px);
+
+    &.show {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+}
+
+.mobile-scroll-btn {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--bs-primary);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    #app {
+        display: block;
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
+    main {
+        width: 100%;
+        min-width: 0;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: visible;
+        padding-top: 72px;
+    }
+
+    .admin-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 1020;
+        min-height: 54px;
+
+        .admin-nav-inner {
+            flex-wrap: nowrap;
+            min-height: 54px;
+            padding-left: 18px;
+            padding-right: 18px;
+        }
+
+        .dropdown {
+            display: none;
+        }
+
+        .admin-nav-menu {
+            flex: 0 0 auto;
+            justify-content: flex-start;
+        }
+
+        .admin-nav-actions {
+            flex: 0 0 auto;
+            flex-direction: row !important;
+            justify-content: flex-end !important;
+            align-items: center;
+            gap: 16px !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-left: 0 !important;
+            margin-bottom: 0;
+        }
+
+        .nav-item,
+        li {
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    main > div > .container-fluid {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    main > div > .container-fluid > .d-flex:first-child {
+        gap: 12px !important;
+        margin-top: 24px !important;
+        margin-bottom: 20px !important;
+    }
+
+    main > div > .container-fluid > .d-flex:first-child h4 {
+        font-size: 1.25rem;
+        line-height: 1.2;
+    }
+
+    main > div > .container-fluid > .d-flex:first-child p {
+        max-width: 100%;
+        font-size: 0.95rem !important;
+        line-height: 1.65;
+    }
+
+    .mobile-scroll-actions {
+        right: 16px;
+        bottom: 18px;
     }
 }

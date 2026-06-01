@@ -1,16 +1,15 @@
 // Navbar Hamburger
 .hamburger {
-  position: absolute;
-  top: 6px;
-  right: 80px;
+  position: relative;
+  width: 34px;
+  height: 34px;
 
   input[type="checkbox"] {
-    position: relative;
+    position: absolute;
     display: block;
-    height: 32px;
-    width: 32px;
-    top: 15px;
-    left: 20px;
+    height: 100%;
+    width: 100%;
+    inset: 0;
     z-index: 5;
     opacity: 0;
     cursor: pointer;
@@ -43,8 +42,8 @@
     height: 26px;
     width: 32px;
     position: absolute;
-    top: 5px;
-    left: 20px;
+    top: 4px;
+    left: 1px;
     z-index: 2;
 
     .line {

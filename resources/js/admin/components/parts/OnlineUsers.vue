@@ -5681,7 +5681,7 @@ img {
 
 [data-bs-theme="light"] {
   #onlineUsersDropdown i {
-    color: var(--primary) !important;
+    color: var(--bs-body-color) !important;
   }
 }
 </style>

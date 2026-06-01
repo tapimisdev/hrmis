@@ -27,4 +27,14 @@ return [
         'view',
         'apply',
     ],
+
+    'special_order_application' => [
+        'view',
+        'apply',
+    ],
+
+    'lto_application' => [
+        'view',
+        'apply',
+    ],
 ];

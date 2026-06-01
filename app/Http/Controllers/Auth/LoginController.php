@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\DB;
 
 class LoginController extends Controller
 {
@@ -76,6 +77,25 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
         $this->middleware('auth')->only('logout');
+    }
+
+    protected function credentials(Request $request)
+    {
+        $login = trim($request->input($this->username()));
+
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            return [
+                'email' => $login,
+                'password' => $request->input('password'),
+            ];
+        }
+
+        return [
+            'id' => DB::table('employee_information')
+                ->where('employee_no', $login)
+                ->value('user_id'),
+            'password' => $request->input('password'),
+        ];
     }
 
     public function logout(Request $request)
