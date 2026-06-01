@@ -2,7 +2,9 @@
     'hr.events_and_announcements.view', 
     'hr.leave_approval.view', 
     'hr.pass_slip_approval.view', 
-    'hr.overtime_approval.view'
+    'hr.overtime_approval.view',
+    'hr.special_order_approval.view',
+    'hr.lto_approval.view'
 ])
 <li class="sidebar-item {{ Str::contains(request()->path(), 'service') ? 'active' : '' }}">
     <a class="sidebar-link dropdown-toggle {{ Str::contains(request()->path(), 'services') ? '' : 'collapsed' }}"
@@ -84,6 +86,26 @@
                     <span>Pass Slip Application</span>
                 </a>
             </li> 
+            @endcan
+
+            @can('hr.special_order_approval.view')
+            <li class="nested-item">
+                <a href="{{ route('services.special_order.index') }}"
+                    class="{{ request()->is('admin/service/special-order*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>Special Order Application</span>
+                </a>
+            </li>
+            @endcan
+
+            @can('hr.lto_approval.view')
+            <li class="nested-item">
+                <a href="{{ route('services.lto.index') }}"
+                    class="{{ request()->is('admin/service/local-travel-order*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-route"></i>
+                    <span>Local Travel Order Application</span>
+                </a>
+            </li>
             @endcan
 
         </ul>

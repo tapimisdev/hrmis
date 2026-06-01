@@ -65,6 +65,16 @@ return [
         'save',
     ],
 
+    'special_order_approval' => [
+        'view',
+        'save',
+    ],
+
+    'lto_approval' => [
+        'view',
+        'save',
+    ],
+
     'suspensions' => [
         'view',
         'create',

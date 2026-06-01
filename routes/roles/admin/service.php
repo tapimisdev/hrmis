@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\Services\LeaveApplicationController as AdminLeave
 use App\Http\Controllers\Admin\Services\OffsetApplicationController as AdminOffsetApplicationController;
 use App\Http\Controllers\Admin\Services\PassSlipController as AdminPassSlipController;
 use App\Http\Controllers\Admin\Services\OvertimeController as AdminOvertimeController;
+use App\Http\Controllers\Admin\Services\SpecialOrderController as AdminSpecialOrderController;
+use App\Http\Controllers\Admin\Services\LtoController as AdminLtoController;
 
 # SERVICES
 Route::prefix('service')->group(function() {
@@ -42,5 +44,15 @@ Route::prefix('service')->group(function() {
     route::get('overtime/application', [AdminOvertimeController::class, 'index'])->name('services.overtime.index');
     route::get('overtime/application/{application}', [AdminOvertimeController::class, 'show'])->name('services.overtime.show');
     route::post('overtime/application/{application}/save', [AdminOvertimeController::class, 'save'])->name('services.overtime.save');
+
+    # SPECIAL ORDER APPLICATION
+    route::get('special-order/application', [AdminSpecialOrderController::class, 'index'])->name('services.special_order.index');
+    route::get('special-order/application/{application}', [AdminSpecialOrderController::class, 'show'])->name('services.special_order.show');
+    route::post('special-order/application/{application}/save', [AdminSpecialOrderController::class, 'save'])->name('services.special_order.save');
+
+    # LOCAL TRAVEL ORDER APPLICATION
+    route::get('local-travel-order/application', [AdminLtoController::class, 'index'])->name('services.lto.index');
+    route::get('local-travel-order/application/{application}', [AdminLtoController::class, 'show'])->name('services.lto.show');
+    route::post('local-travel-order/application/{application}/save', [AdminLtoController::class, 'save'])->name('services.lto.save');
 
 });
