@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 
 class PayrollComponentsEmployeeController extends Controller
 {
+    private const EDITABLE_PAYROLL_STATUSES = ['failed', 'cancelled'];
+
     protected $componentService;
     protected $employeeService;
     protected $salaryEmployeeService;
@@ -58,12 +60,16 @@ class PayrollComponentsEmployeeController extends Controller
                 ->where('tax_id', $component->id)
                 ->value('type');
 
-            if(in_array($pcs, ['ewt_2%', 'percentage_tax_3%', 'tax_ewt_5%'])) {
-                $employees = $this->componentService->getAll($component->id, $deduction_id, 'cos');
-                return response()->json($employees);
-            }
-            
-            $employees = $this->componentService->getAll($component->id, $deduction_id, 'regular');
+            $isCosComponent = in_array($pcs, ['ewt_2%', 'percentage_tax_3%', 'tax_ewt_5%']);
+
+            $employees = $this->componentService->getAll(
+                $component->id,
+                $deduction_id,
+                $isCosComponent ? 'cos' : 'regular'
+            );
+
+            $employees = $this->appendMonthEnableFlags($employees, (int) $year, $isCosComponent, $component->id);
+
             return response()->json($employees);
         }
 
@@ -113,11 +119,16 @@ class PayrollComponentsEmployeeController extends Controller
             ], 422);
         }
 
-        $employmentType = $this->resolveEmploymentTypeByComponentSlug($slug);
-        if ($this->hasExistingPayrollForComponent($component->id, (string) $validatedData['employee_no'], (int) $year, $monthNumber, $employmentType)) {
-            return response([
-                'message' => 'This month already has an existing payroll record and cannot be edited.',
-                'status' => 'locked_month',
+        $pcs = DB::table('payroll_components_settings')
+            ->where('tax_id', $component->id)
+            ->value('type');
+
+        $isCosComponent = in_array($pcs, ['ewt_2%', 'percentage_tax_3%', 'tax_ewt_5%']);
+
+        if ($this->hasExistingSalaryPayroll($validatedData['employee_no'], (int) $year, $monthNumber, $component->id, $isCosComponent)) {
+            return response()->json([
+                'message' => 'Cannot update record. Salary payroll already exists for the specified employee, year, and month.',
+                'errors'  => ['salary_payroll' => ['A salary payroll record exists for this employee, year, and month. Please remove it before updating this payroll component record.']],
             ], 422);
         }
 
@@ -186,6 +197,7 @@ class PayrollComponentsEmployeeController extends Controller
     public function bulkStore(StoreComponentEmployeeBulkRequest $request)
     {
         $payload = $request->validated();
+        $isCosComponent = in_array($payload['module_tab'], ['ewt-2', 'percentage-tax-3', 'tax-ewt-5']);
 
         // Resolve module tab ID using tab_slug
         $payroll_component_years_id = DB::table('payroll_components_years')
@@ -210,12 +222,7 @@ class PayrollComponentsEmployeeController extends Controller
         if (strtoupper($raw) === 'ALL') {
             
             // if the tax type is cos, get all cos employees
-            if(
-                $payload['module_tab'] === 'ewt-2' ||
-                $payload['module_tab'] === 'percentage-tax-3' ||
-                $payload['module_tab'] === 'tax-ewt-5'
-                
-                ) {
+            if ($isCosComponent) {
                 $employeeNos = $this->employeeService
                     ->getAllActiveEmployee(EmploymentTypesEnum::COS->value);
             } else {
@@ -266,13 +273,7 @@ class PayrollComponentsEmployeeController extends Controller
                 // Skip employees who are not REGULAR / Permanent
 
                 // if the tax type is cos, get all cos employees
-                if(
-                    $payload['module_tab'] === 'ewt-2' ||
-                    $payload['module_tab'] === 'percentage-tax-3' ||
-                    $payload['module_tab'] === 'tax-ewt-5'
-                    
-                    ) {
-                    
+                if ($isCosComponent) {
                     if ($this->checkIfPermanentEmployee($employeeNo)) {
                         $skipped[] = $employeeNo;
                         continue;
@@ -296,14 +297,10 @@ class PayrollComponentsEmployeeController extends Controller
 
                 // Apply amount across the month range
                for ($month = $start; $month <= $end; $month++) {
-                    if ($this->hasExistingPayrollForComponent((int) $payload['id'], (string) $employeeNo, (int) $payload['year'], $month, $payload['module_tab'])) {
-                        $lockedMonths[] = [
-                            'employee_no' => $employeeNo,
-                            'month' => $month,
-                        ];
+                    if ($this->hasExistingSalaryPayroll($employeeNo, (int) $payload['year'], $month, (int) $payload['id'], $isCosComponent)) {
                         continue;
                     }
-                    
+
                     $ok = DB::table('employee_payroll_components')->updateOrInsert(
                         [
                             'tax_deduction_id' => $payroll_component_years_id,
@@ -426,95 +423,135 @@ class PayrollComponentsEmployeeController extends Controller
         return round($salary * ($percentage / 100), 2);
     }
 
-    private function resolveEmploymentTypeByComponentSlug(string $slug): string
+    private function appendMonthEnableFlags($employees, int $year, bool $isCosComponent, int $componentId)
     {
-        return in_array($slug, ['ewt-2', 'percentage-tax-3', 'tax-ewt-5'], true)
-            ? 'cos'
-            : 'regular';
+        $employeeNos = collect($employees)->pluck('employee_no')->filter()->values();
+        $locks = $this->salaryPayrollLocks($employeeNos, $year, $componentId, $isCosComponent);
+        $monthKeys = [
+            1 => 'january',
+            2 => 'february',
+            3 => 'march',
+            4 => 'april',
+            5 => 'may',
+            6 => 'june',
+            7 => 'july',
+            8 => 'august',
+            9 => 'september',
+            10 => 'october',
+            11 => 'november',
+            12 => 'december',
+        ];
+        $source = $this->payrollSource($componentId, $isCosComponent);
+
+        return collect($employees)->map(function ($employee) use ($locks, $monthKeys, $source) {
+            $employeeLocks = collect($locks[$employee->employee_no] ?? []);
+            $lockedMonths = $employeeLocks
+                ->filter(fn ($lock) => !$this->isEditablePayrollStatus($lock->payroll_status ?? null))
+                ->pluck('payroll_month')
+                ->map(fn ($month) => (int) $month)
+                ->all();
+
+            foreach ($monthKeys as $month => $monthKey) {
+                $lock = $employeeLocks->firstWhere('payroll_month', $month);
+                $employee->{$monthKey . '_enable'} = !in_array($month, $lockedMonths, true);
+                $employee->{$monthKey . '_payroll_status'} = $lock->payroll_status ?? null;
+                $employee->{$monthKey . '_payroll_source'} = $lock->payroll_source ?? $source['label'];
+            }
+
+            return $employee;
+        });
     }
 
-    private function hasExistingPayrollForComponent(
-        int $componentId,
-        string $employeeNo,
-        int $year,
-        int $month,
-        string $employmentType = 'regular'
-    ): bool {
-        $componentType = DB::table('payroll_components_settings')
-            ->where('tax_id', $componentId)
+    private function hasExistingSalaryPayroll(string $employeeNo, int $year, int $month, int $componentId, bool $isCosComponent): bool
+    {
+        $source = $this->payrollSource($componentId, $isCosComponent);
+
+        return DB::table($source['employee_table'] . ' as pe')
+            ->join($source['payroll_table'] . ' as p', 'pe.' . $source['foreign_key'], '=', 'p.id')
+            ->where('pe.employee_no', $employeeNo)
+            ->whereYear('p.' . $source['date_column'], $year)
+            ->whereMonth('p.' . $source['date_column'], $month)
+            ->whereNotIn('p.status', self::EDITABLE_PAYROLL_STATUSES)
+            ->exists();
+    }
+
+    private function salaryPayrollLocks($employeeNos, int $year, int $componentId, bool $isCosComponent)
+    {
+        $source = $this->payrollSource($componentId, $isCosComponent);
+
+        $emps = DB::table($source['employee_table'] . ' as pe')
+            ->join($source['payroll_table'] . ' as p', 'pe.' . $source['foreign_key'], '=', 'p.id')
+            ->whereIn('pe.employee_no', $employeeNos)
+            ->whereRaw("LEFT(p.{$source['date_column']}, 4) = ?", [$year])
+            ->orderByDesc('p.id')
+            ->select(
+                'pe.employee_no',
+                DB::raw("CAST(SUBSTRING(p.{$source['date_column']}, 6, 2) AS UNSIGNED) as payroll_month"),
+                'p.status as payroll_status',
+                DB::raw("'" . $source['label'] . "' as payroll_source")
+            )
+            ->get()
+            ->groupBy('employee_no');
+
+        return $emps;
+    }
+
+    private function payrollSource(int $componentId, bool $isCosComponent): array
+    {
+        $type = DB::table('payroll_components_settings')
+            ->where(function ($query) use ($componentId) {
+                $query->where('table_id', $componentId)
+                    ->orWhere('tax_id', $componentId);
+            })
+            ->orderByDesc('id')
             ->value('type');
 
-        if (
-            $componentType === TableSettingsEnum::SALARY_ID->value ||
-            in_array($componentType, ['ewt_2%', 'percentage_tax_3%', 'tax_ewt_5%'], true)
-        ) {
-            return $employmentType === 'cos'
-                ? DB::table('payroll_salary_employee as pse')
-                    ->join('payroll_salary as ps', 'pse.payroll_salary_id', '=', 'ps.id')
-                    ->where('pse.employee_no', $employeeNo)
-                    ->whereYear('ps.payroll_date', $year)
-                    ->whereMonth('ps.payroll_date', $month)
-                    ->where(function ($query) {
-                        $query->whereNull('ps.status')
-                            ->orWhere('ps.status', '!=', 'draft');
-                    })
-                    ->exists()
-                : DB::table('payroll_salary_permanent_employees as pspe')
-                    ->join('payroll_salary as ps', 'pspe.payroll_salary_id', '=', 'ps.id')
-                    ->where('pspe.employee_no', $employeeNo)
-                    ->whereYear('ps.payroll_date', $year)
-                    ->whereMonth('ps.payroll_date', $month)
-                    ->where(function ($query) {
-                        $query->whereNull('ps.status')
-                            ->orWhere('ps.status', '!=', 'draft');
-                    })
-                    ->exists();
-        }
+        switch ($type) {
+            case 'transportation_allowance':
+            case 'representation_allowance':
+            case 'pera_allowance':
+            case 'rata_allowance':
+                return [
+                    'employee_table' => 'payroll_pera_rata_employee',
+                    'payroll_table' => 'payroll_pera_rata',
+                    'foreign_key' => 'payroll_pera_rata_id',
+                    'date_column' => 'month',
+                    'label' => 'PERA / RATA Payroll',
+                ];
 
-        if ($componentType === TableSettingsEnum::HAZARD_PA->value) {
-            return DB::table('payroll_hazard_pay_employee as phpe')
-                ->join('payroll_hazard_pay as php', 'phpe.payroll_hazard_pay_id', '=', 'php.id')
-                ->where('phpe.employee_no', $employeeNo)
-                ->whereRaw('YEAR(CONCAT(php.month, "-01")) = ?', [$year])
-                ->whereRaw('MONTH(CONCAT(php.month, "-01")) = ?', [$month])
-                ->where(function ($query) {
-                    $query->whereNull('php.status')
-                        ->orWhere('php.status', '!=', 'draft');
-                })
-                ->exists();
-        }
+            case 'hazard_pay':
+                return [
+                    'employee_table' => 'payroll_hazard_pay_employee',
+                    'payroll_table' => 'payroll_hazard_pay',
+                    'foreign_key' => 'payroll_hazard_pay_id',
+                    'date_column' => 'month',
+                    'label' => 'Hazard Payroll',
+                ];
 
-        if ($componentType === TableSettingsEnum::LONGETIVITY->value) {
-            return DB::table('payroll_longevity_pay_employee as plpe')
-                ->join('payroll_longevity_pay as plp', 'plpe.payroll_longevity_pay_id', '=', 'plp.id')
-                ->where('plpe.employee_no', $employeeNo)
-                ->whereRaw('YEAR(CONCAT(plp.month, "-01")) = ?', [$year])
-                ->whereRaw('MONTH(CONCAT(plp.month, "-01")) = ?', [$month])
-                ->where(function ($query) {
-                    $query->whereNull('plp.status')
-                        ->orWhere('plp.status', '!=', 'draft');
-                })
-                ->exists();
-        }
+            case 'longetivity_pay':
+                return [
+                    'employee_table' => 'payroll_longevity_pay_employee',
+                    'payroll_table' => 'payroll_longevity_pay',
+                    'foreign_key' => 'payroll_longevity_pay_id',
+                    'date_column' => 'month',
+                    'label' => 'Longevity Payroll',
+                ];
 
-        if (in_array($componentType, [
-            TableSettingsEnum::PERA->value,
-            TableSettingsEnum::REPRESENTATION_ALLOWANCE->value,
-            TableSettingsEnum::TRANSPORTATION_ALLOWANCE->value,
-        ], true)) {
-            return DB::table('payroll_pera_rata_employee as ppre')
-                ->join('payroll_pera_rata as ppr', 'ppre.payroll_pera_rata_id', '=', 'ppr.id')
-                ->where('ppre.employee_no', $employeeNo)
-                ->whereRaw('YEAR(CONCAT(ppr.month, "-01")) = ?', [$year])
-                ->whereRaw('MONTH(CONCAT(ppr.month, "-01")) = ?', [$month])
-                ->where(function ($query) {
-                    $query->whereNull('ppr.status')
-                        ->orWhere('ppr.status', '!=', 'draft');
-                })
-                ->exists();
+            default:
+                return [
+                    'employee_table' => $isCosComponent
+                        ? 'payroll_salary_employee'
+                        : 'payroll_salary_permanent_employees',
+                    'payroll_table' => 'payroll_salary',
+                    'foreign_key' => 'payroll_salary_id',
+                    'date_column' => 'payroll_date',
+                    'label' => 'Salary Payroll',
+                ];
         }
-
-        return false;
     }
 
+    private function isEditablePayrollStatus(?string $status): bool
+    {
+        return in_array($status, self::EDITABLE_PAYROLL_STATUSES, true);
+    }
 }

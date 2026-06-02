@@ -65,6 +65,23 @@
     <div
         class="shadow-sm border rounded-3 overflow-hidden modern-card position-relative"
     >
+        <div class="payroll-legend border-bottom px-3 py-2 bg-body-tertiary">
+            <div class="payroll-legend-title">Payroll Status</div>
+            <div class="payroll-legend-items">
+                <span
+                    v-for="legend in payrollLegends"
+                    :key="legend.key"
+                    class="payroll-legend-item"
+                >
+                    <span
+                        class="payroll-status-dot"
+                        :class="legend.className"
+                    ></span>
+                    {{ legend.label }}
+                </span>
+            </div>
+        </div>
+
         <div v-if="computationMode" class="computation-toolbar border-bottom p-3 bg-body-tertiary">
             <div class="d-flex flex-wrap align-items-end gap-3">
                 <div class="computation-help">
@@ -217,16 +234,22 @@
                                 'bg-primary fw-bold':
                                     selected_employee === item.employee_no,
                                 'selected-computation-cell': isCellSelected(item.employee_no, monthKey),
-                                'locked-computation-cell': isMonthLocked(item, monthKey),
+                                'locked-cell': !isMonthEditable(item, monthKey),
+                                [getMonthStatusClass(item, monthKey)]: true,
                             }"
                             @click="handleCellSelection(item, monthKey, $event)"
                         >
+                            <span
+                                class="payroll-status-dot cell-status-dot"
+                                :class="getMonthStatusClass(item, monthKey)"
+                                :title="getMonthLockMessage(item, monthKey)"
+                            ></span>
                             <input
                                 type="number"
                                 v-model="item[monthKey]"
-                                :readonly="computationMode || isMonthLocked(item, monthKey)"
-                                :disabled="isMonthLocked(item, monthKey)"
-                                :title="monthLockReason(item, monthKey)"
+                                :readonly="computationMode || !isMonthEditable(item, monthKey)"
+                                :disabled="!isMonthEditable(item, monthKey)"
+                                :title="getMonthLockMessage(item, monthKey)"
                                 @change="
                                     create_update(
                                         item[monthKey + '_id'],
@@ -321,6 +344,18 @@ export default {
     computed: {
         requiresOperand() {
             return !["round", "ceil", "floor", "abs", "negate"].includes(this.computation.operation);
+        },
+        payrollLegends() {
+            return [
+                { key: "available", label: "Available", className: "status-available" },
+                { key: "draft", label: "Draft", className: "status-draft" },
+                { key: "pending", label: "Pending", className: "status-pending" },
+                { key: "approved", label: "Approved", className: "status-approved" },
+                { key: "for_releasing", label: "For Releasing", className: "status-for-releasing" },
+                { key: "completed", label: "Completed", className: "status-completed" },
+                { key: "cancelled", label: "Cancelled", className: "status-cancelled" },
+                { key: "failed", label: "Failed", className: "status-failed" },
+            ];
         },
     },
     created() {
@@ -440,6 +475,44 @@ export default {
                               .includes(query),
                   );
         },
+        isMonthEditable(item, monthKey) {
+            return Boolean(item?.[`${monthKey}_enable`] ?? true);
+        },
+        getMonthPayrollStatus(item, monthKey) {
+            return item?.[`${monthKey}_payroll_status`] ?? null;
+        },
+        getMonthPayrollSource(item, monthKey) {
+            return item?.[`${monthKey}_payroll_source`] ?? "Payroll";
+        },
+        getMonthStatusClass(item, monthKey) {
+            const status = this.getMonthPayrollStatus(item, monthKey);
+
+            if (!status) {
+                return "status-available";
+            }
+
+            return `status-${String(status).replace(/_/g, "-")}`;
+        },
+        formatPayrollStatus(status) {
+            if (!status) {
+                return "Available";
+            }
+
+            return String(status)
+                .split("_")
+                .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                .join(" ");
+        },
+        getMonthLockMessage(item, monthKey) {
+            const source = this.getMonthPayrollSource(item, monthKey);
+            const status = this.formatPayrollStatus(
+                this.getMonthPayrollStatus(item, monthKey)
+            );
+
+            return this.isMonthEditable(item, monthKey)
+                ? `Available for editing. No posted ${source.toLowerCase()} found for this month.`
+                : `${source} status: ${status}. Editing disabled for this employee and month.`;
+        },
         toggleComputationMode() {
             this.computationMode = !this.computationMode;
 
@@ -468,7 +541,7 @@ export default {
                 return;
             }
 
-            if (this.isMonthLocked(item, monthKey)) {
+            if (!this.isMonthEditable(item, monthKey)) {
                 return;
             }
 
@@ -545,11 +618,7 @@ export default {
                 const updates = this.selectedCells.map((cell) => {
                     const row = this.items.find((item) => item.employee_no === cell.employee_no);
 
-                    if (!row) {
-                        return Promise.resolve();
-                    }
-
-                     if (this.isMonthLocked(row, cell.monthKey)) {
+                    if (!row || !this.isMonthEditable(row, cell.monthKey)) {
                         return Promise.resolve();
                     }
 
@@ -612,13 +681,33 @@ export default {
     min-width: 220px;
 }
 
-.locked-computation-cell {
-    background-color: var(--bs-secondary-bg-subtle);
+.payroll-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    align-items: center;
 }
 
-.locked-computation-cell .border-less-input {
-    cursor: not-allowed;
-    opacity: 0.7;
+.payroll-legend-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+.payroll-legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+}
+
+.payroll-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--bs-body-color, #212529);
 }
 
 /* Table */
@@ -720,7 +809,7 @@ export default {
 
 .border-less-input {
     margin: 0;
-    padding: 0;
+    padding: 0 0 0 0.85rem;
     height: 100%;
     width: 100%;
     // width: 86px;
@@ -743,6 +832,68 @@ export default {
 
     /* Firefox */
     -moz-appearance: textfield;
+}
+
+td.locked-cell {
+    background-color: var(--bs-secondary-bg-subtle, #f3f4f6);
+}
+
+td[class*="status-"] {
+    position: relative;
+}
+
+.payroll-status-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.cell-status-dot {
+    position: absolute;
+    top: 0.4rem;
+    left: 0.35rem;
+    z-index: 2;
+}
+
+.status-available {
+    background-color: transparent;
+    border-color: rgba(108, 117, 125, 0.35);
+}
+
+.status-draft {
+    background-color: #94a3b8;
+}
+
+.status-pending {
+    background-color: #f59e0b;
+}
+
+.status-approved {
+    background-color: #0ea5e9;
+}
+
+.status-for-releasing {
+    background-color: #7c3aed;
+}
+
+.status-completed {
+    background-color: #16a34a;
+}
+
+.status-cancelled {
+    background-color: #ef4444;
+}
+
+.status-failed {
+    background-color: #b91c1c;
+}
+
+.border-less-input:disabled {
+    color: var(--bs-secondary-color, #6c757d);
+    cursor: not-allowed;
+    opacity: 1;
 }
 
 td.selected-computation-cell {
