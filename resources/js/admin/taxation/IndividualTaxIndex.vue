@@ -437,7 +437,7 @@
                                         {{ peso(getTaxModuleColumnTotal(column)) }}
                                     </th>
                                     <th class="amount individual-tax-highlight-blue">
-                                        {{ peso(currentSummary.total_tax_withheld) }}
+                                        {{ peso(currentTaxModuleGrandTotal) }}
                                     </th>
                                 </tr>
                             </tfoot>
@@ -1000,6 +1000,13 @@ export default {
             return ["Salary Tax", "Hazard Pay Tax", "Longevity Tax"];
         },
 
+        currentTaxModuleGrandTotal() {
+            return this.currentTaxModuleBreakdown.reduce(
+                (total, row) => total + Number(row?.amount || 0),
+                0,
+            );
+        },
+
         currentOtherComponents() {
             return this.state.otherComponents || { earnings: [], de_minimis: [], government_bonuses: [], allowables: [], taxes: [] };
         },
@@ -1160,6 +1167,9 @@ export default {
 
             return Number(item?.amount || 0);
         },
+        getTaxModuleItem(row, column) {
+            return (row?.items || []).find((entry) => entry?.name === column) || null;
+        },
         getTaxModuleStatusKey(column) {
             const normalized = String(column || "").toLowerCase();
 
@@ -1183,6 +1193,17 @@ export default {
         getTaxModuleSource(row, column) {
             const monthlyRow = this.getMatchingMonthlyBreakdownRow(row?.month_number);
             const sourceKey = this.getTaxModuleStatusKey(column);
+            const item = this.getTaxModuleItem(row, column);
+
+            if (item?.source === "forecast") {
+                return "forecast";
+            }
+
+            if (item?.source === "actual") {
+                const resolved = monthlyRow?.source_breakdown?.[sourceKey];
+
+                return resolved && resolved !== "forecast" ? resolved : "completed";
+            }
 
             return monthlyRow?.source_breakdown?.[sourceKey] || "forecast";
         },
