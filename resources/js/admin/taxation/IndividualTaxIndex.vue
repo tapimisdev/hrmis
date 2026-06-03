@@ -178,6 +178,70 @@
                             </tr>
                         </tbody>
                     </table>
+                    <div class="individual-tax-subsection">
+                        <h2 class="individual-tax-heading">Annual Tax Due Computation</h2>
+
+                        <table class="individual-tax-table">
+                            <tbody>
+                                <tr>
+                                    <td>Selected Tax Table</td>
+                                    <td class="amount">{{ currentAnnualTaxDueComputation.selected_tax_table_label || "No TRAIN Law table selected" }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Net Taxable Income</td>
+                                    <td class="amount individual-tax-highlight-yellow">
+                                        {{ pesoWithSymbol(currentAnnualTaxDueComputation.net_taxable_income) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Tax Bracket</td>
+                                    <td class="amount">{{ currentAnnualTaxDueComputation.tax_bracket }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Excess Over</td>
+                                    <td class="amount">{{ pesoWithSymbol(currentAnnualTaxDueComputation.excess_over) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Taxable Excess</td>
+                                    <td class="amount">
+                                        {{ pesoWithSymbol(currentAnnualTaxDueComputation.net_taxable_income) }}
+                                        -
+                                        {{ pesoWithSymbol(currentAnnualTaxDueComputation.excess_over) }}
+                                        =
+                                        {{ pesoWithSymbol(currentAnnualTaxDueComputation.taxable_excess) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Rate</td>
+                                    <td class="amount">{{ formatPercent(currentAnnualTaxDueComputation.tax_rate) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Variable Tax</td>
+                                    <td class="amount">
+                                        {{ pesoWithSymbol(currentAnnualTaxDueComputation.taxable_excess) }}
+                                        ×
+                                        {{ formatPercent(currentAnnualTaxDueComputation.tax_rate) }}
+                                        =
+                                        {{ pesoWithSymbol(currentAnnualTaxDueComputation.variable_tax) }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Fixed Tax</td>
+                                    <td class="amount">{{ pesoWithSymbol(currentAnnualTaxDueComputation.fixed_tax) }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Annual Tax Due</strong></td>
+                                    <td class="amount individual-tax-highlight-pink">
+                                        {{ pesoWithSymbol(currentAnnualTaxDueComputation.annual_tax_due) }}
+                                    </td>
+                                </tr>
+                                <tr v-if="currentAnnualTaxDueComputation.remarks">
+                                    <td>Remarks</td>
+                                    <td class="amount">{{ currentAnnualTaxDueComputation.remarks }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
 
                 <section class="individual-tax-panel">
@@ -944,6 +1008,10 @@ export default {
             return this.state.summary || {};
         },
 
+        currentAnnualTaxDueComputation() {
+            return this.currentSummary.annual_tax_due_computation || {};
+        },
+
         currentTrainLawOptions() {
             return this.state.trainLawOptions || [];
         },
@@ -1017,6 +1085,18 @@ export default {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             })}`;
+        },
+        pesoWithSymbol(amount) {
+            return `₱${Number(amount || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+        },
+        formatPercent(value) {
+            return `${Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: Number(value || 0) % 1 === 0 ? 0 : 2,
+                maximumFractionDigits: 2,
+            })}%`;
         },
         sourceDotClass(source) {
             const sourceClassMap = {

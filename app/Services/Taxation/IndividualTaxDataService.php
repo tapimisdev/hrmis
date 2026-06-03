@@ -45,11 +45,11 @@ class IndividualTaxDataService
                     ->all()
             )
             : $this->emptyOtherComponents();
-        $summary = $hasTaxationData && $hasSelectedEmployee
-            ? $this->buildSummary($monthlyBreakdown, $otherComponents)
-            : [];
         $trainLawOptions = $this->getTrainLawOptions();
         $selectedTrainLawId = $selectedTaxationSetting['train_law_id'] ?? $trainLawOptions['selectedId'];
+        $summary = $hasTaxationData && $hasSelectedEmployee
+            ? $this->buildSummary($monthlyBreakdown, $otherComponents, $selectedTrainLawId)
+            : [];
 
         return [
             'employee' => $employee ?? (object) [],
@@ -396,7 +396,11 @@ class IndividualTaxDataService
         ];
     }
 
-    public function buildSummary(Collection $monthlyBreakdown, array $otherComponents): array
+    public function buildSummary(
+        Collection $monthlyBreakdown,
+        array $otherComponents,
+        ?int $selectedTrainLawId = null
+    ): array
     {
         $annualBasicSalary = (float) $monthlyBreakdown->sum('basic_salary');
         $annualHazardPay = (float) $monthlyBreakdown->sum('hazard_pay');
@@ -420,6 +424,7 @@ class IndividualTaxDataService
         $netTaxableIncome = max($grossTaxableIncome - $allowablesTotal, 0.0);
         $taxWithheld = (float) $monthlyBreakdown->sum('tax_withheld');
         $netAfterTax = $grossCompensationIncome - $taxWithheld;
+        $annualTaxDueComputation = $this->buildAnnualTaxDueComputation($netTaxableIncome, $selectedTrainLawId);
 
         return [
             'annual_basic_salary' => $annualBasicSalary,
@@ -441,6 +446,8 @@ class IndividualTaxDataService
             'net_taxable_income' => $netTaxableIncome,
             'total_tax_withheld' => $taxWithheld,
             'net_after_tax' => $netAfterTax,
+            'annual_tax_due_computation' => $annualTaxDueComputation,
+            'annual_tax_due' => (float) data_get($annualTaxDueComputation, 'annual_tax_due', 0),
         ];
     }
 
@@ -530,6 +537,134 @@ class IndividualTaxDataService
             'allowables' => [],
             'taxes' => [],
         ];
+    }
+
+    private function buildAnnualTaxDueComputation(float $netTaxableIncome, ?int $trainLawId = null): array
+    {
+        $defaultResult = [
+            'selected_tax_table' => '',
+            'selected_tax_table_label' => 'No TRAIN Law table selected',
+            'net_taxable_income' => round($netTaxableIncome, 2),
+            'tax_bracket' => 'No tax bracket found',
+            'minimum_income' => 0.0,
+            'maximum_income' => null,
+            'excess_over' => 0.0,
+            'taxable_excess' => 0.0,
+            'tax_rate' => 0.0,
+            'variable_tax' => 0.0,
+            'fixed_tax' => 0.0,
+            'annual_tax_due' => 0.0,
+            'remarks' => 'No tax bracket found',
+        ];
+
+        if ($netTaxableIncome <= 0 || !$trainLawId) {
+            return array_merge($defaultResult, [
+                'selected_tax_table' => $this->getTrainLawLabel($trainLawId),
+                'selected_tax_table_label' => $this->getTrainLawLabel($trainLawId) ?: 'No TRAIN Law table selected',
+                'tax_bracket' => $netTaxableIncome <= 0 ? 'No tax due' : $defaultResult['tax_bracket'],
+                'remarks' => $netTaxableIncome <= 0 ? 'Net taxable income is zero or below.' : $defaultResult['remarks'],
+            ]);
+        }
+
+        $trainLaw = DB::table('train_law')
+            ->where('id', $trainLawId)
+            ->first(['id', 'year']);
+
+        $brackets = DB::table('train_law_items')
+            ->where('train_law_id', $trainLawId)
+            ->orderBy('income_from')
+            ->get([
+                'income_from',
+                'income_to',
+                'fixed_tax',
+                'tax_rate',
+                'excess_over',
+            ]);
+
+        $selectedBracket = $brackets->first(function ($bracket) use ($netTaxableIncome) {
+            $minimumIncome = (float) $bracket->income_from;
+            $maximumIncome = $bracket->income_to !== null ? (float) $bracket->income_to : null;
+
+            return $netTaxableIncome >= $minimumIncome
+                && ($maximumIncome === null || $netTaxableIncome <= $maximumIncome);
+        });
+
+        if (!$selectedBracket) {
+            return array_merge($defaultResult, [
+                'selected_tax_table' => $this->formatTrainLawLabel($trainLaw?->year),
+                'selected_tax_table_label' => $this->formatTrainLawLabel($trainLaw?->year),
+            ]);
+        }
+
+        $excessOver = round((float) $selectedBracket->excess_over, 2);
+        $taxRate = round((float) $selectedBracket->tax_rate, 2);
+        $fixedTax = round((float) $selectedBracket->fixed_tax, 2);
+        $taxableExcess = round(max(0, $netTaxableIncome - $excessOver), 2);
+        $variableTax = round($taxableExcess * ($taxRate / 100), 2);
+        $annualTaxDue = round($variableTax + $fixedTax, 2);
+
+        return [
+            'selected_tax_table' => $this->formatTrainLawLabel($trainLaw?->year),
+            'selected_tax_table_label' => $this->formatTrainLawLabel($trainLaw?->year),
+            'net_taxable_income' => round($netTaxableIncome, 2),
+            'tax_bracket' => $this->formatTaxBracketLabel(
+                (float) $selectedBracket->income_from,
+                $selectedBracket->income_to !== null ? (float) $selectedBracket->income_to : null
+            ),
+            'minimum_income' => round((float) $selectedBracket->income_from, 2),
+            'maximum_income' => $selectedBracket->income_to !== null ? round((float) $selectedBracket->income_to, 2) : null,
+            'excess_over' => $excessOver,
+            'taxable_excess' => $taxableExcess,
+            'tax_rate' => $taxRate,
+            'variable_tax' => $variableTax,
+            'fixed_tax' => $fixedTax,
+            'annual_tax_due' => $annualTaxDue,
+            'remarks' => 'Computed using selected TRAIN Law table.',
+        ];
+    }
+
+    private function getTrainLawLabel(?int $trainLawId): string
+    {
+        if (!$trainLawId) {
+            return '';
+        }
+
+        $year = DB::table('train_law')
+            ->where('id', $trainLawId)
+            ->value('year');
+
+        return $this->formatTrainLawLabel($year);
+    }
+
+    private function formatTrainLawLabel(?string $year): string
+    {
+        if (!$year) {
+            return '';
+        }
+
+        return sprintf('TRAIN LAW %s', trim($year));
+    }
+
+    private function formatTaxBracketLabel(float $incomeFrom, ?float $incomeTo): string
+    {
+        if ($incomeFrom <= 0 && $incomeTo !== null) {
+            return sprintf('NOT OVER %s', $this->formatPesoText($incomeTo));
+        }
+
+        if ($incomeTo === null) {
+            return sprintf('OVER %s', $this->formatPesoText($incomeFrom));
+        }
+
+        return sprintf(
+            'OVER %s BUT NOT OVER %s',
+            $this->formatPesoText($incomeFrom),
+            $this->formatPesoText($incomeTo)
+        );
+    }
+
+    private function formatPesoText(float $amount): string
+    {
+        return '₱' . number_format($amount, 2);
     }
 
     private function normalizeTaxModuleName(string $name): string
