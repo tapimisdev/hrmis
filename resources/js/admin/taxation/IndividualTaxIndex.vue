@@ -109,12 +109,8 @@
                                 <td class="amount">{{ peso(currentSummary.annual_longevity_pay) }}</td>
                             </tr>
                             <tr>
-                                <td>Other Earnings</td>
+                                <td>De minimis</td>
                                 <td class="amount">{{ peso(currentSummary.other_earnings) }}</td>
-                            </tr>
-                            <tr>
-                                <td>De Minimis Benefits</td>
-                                <td class="amount">{{ peso(currentSummary.de_minimis_total) }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Gross Taxable Income</strong></td>
@@ -146,7 +142,36 @@
                 </section>
 
                 <section class="individual-tax-panel">
-                    <h2 class="individual-tax-heading">Breakdown</h2>
+                    <div class="individual-tax-heading-row">
+                        <h2 class="individual-tax-heading mb-0">Breakdown</h2>
+
+                        <div class="individual-tax-legend" aria-label="Breakdown source legend">
+                            <span class="individual-tax-legend-item">
+                                <span class="individual-tax-source-dot individual-tax-source-dot--draft"></span>
+                                Draft
+                            </span>
+                            <span class="individual-tax-legend-item">
+                                <span class="individual-tax-source-dot individual-tax-source-dot--pending"></span>
+                                Pending
+                            </span>
+                            <span class="individual-tax-legend-item">
+                                <span class="individual-tax-source-dot individual-tax-source-dot--approved"></span>
+                                Approved
+                            </span>
+                            <span class="individual-tax-legend-item">
+                                <span class="individual-tax-source-dot individual-tax-source-dot--for-releasing"></span>
+                                For Releasing
+                            </span>
+                            <span class="individual-tax-legend-item">
+                                <span class="individual-tax-source-dot individual-tax-source-dot--completed"></span>
+                                Completed
+                            </span>
+                            <span class="individual-tax-legend-item">
+                                <span class="individual-tax-source-dot individual-tax-source-dot--forecast"></span>
+                                Forecasted
+                            </span>
+                        </div>
+                    </div>
 
                     <table class="individual-tax-table">
                         <thead>
@@ -161,11 +186,65 @@
                         <tbody>
                             <tr v-for="(row, index) in currentMonthlyBreakdown" :key="row.month_number">
                                 <td>{{ row.month_label }}</td>
-                                <td class="amount">{{ peso(row.basic_salary) }}</td>
-                                <td class="amount">{{ peso(row.hazard_pay) }}</td>
-                                <td class="amount">{{ peso(row.longevity_pay) }}</td>
+                                <td class="amount">
+                                    <span
+                                        class="individual-tax-amount-with-source"
+                                        :title="formatValueSource(row, 'basic_salary')"
+                                    >
+                                        <span class="individual-tax-amount-value">
+                                            <span
+                                                class="individual-tax-source-dot"
+                                                :class="sourceDotClass(getValueSource(row, 'basic_salary'))"
+                                                aria-hidden="true"
+                                            ></span>
+                                            {{ peso(row.basic_salary) }}
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="amount">
+                                    <span
+                                        class="individual-tax-amount-with-source"
+                                        :title="formatValueSource(row, 'hazard_pay')"
+                                    >
+                                        <span class="individual-tax-amount-value">
+                                            <span
+                                                class="individual-tax-source-dot"
+                                                :class="sourceDotClass(getValueSource(row, 'hazard_pay'))"
+                                                aria-hidden="true"
+                                            ></span>
+                                            {{ peso(row.hazard_pay) }}
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="amount">
+                                    <span
+                                        class="individual-tax-amount-with-source"
+                                        :title="formatValueSource(row, 'longevity_pay')"
+                                    >
+                                        <span class="individual-tax-amount-value">
+                                            <span
+                                                class="individual-tax-source-dot"
+                                                :class="sourceDotClass(getValueSource(row, 'longevity_pay'))"
+                                                aria-hidden="true"
+                                            ></span>
+                                            {{ peso(row.longevity_pay) }}
+                                        </span>
+                                    </span>
+                                </td>
                                 <td class="amount" :class="{ 'individual-tax-highlight-blue': index === currentMonthlyBreakdown.length - 1 }">
-                                    {{ peso(row.total) }}
+                                    <span
+                                        class="individual-tax-amount-with-source"
+                                        :title="formatSourceBreakdown(row)"
+                                    >
+                                        <span class="individual-tax-amount-value">
+                                            <span
+                                                class="individual-tax-source-dot"
+                                                :class="sourceDotClass(row.source)"
+                                                aria-hidden="true"
+                                            ></span>
+                                            {{ peso(row.total) }}
+                                        </span>
+                                    </span>
                                 </td>
                             </tr>
                         </tbody>
@@ -184,7 +263,32 @@
                 </section>
 
                 <section class="individual-tax-panel">
-                    <h2 class="individual-tax-heading">Other Earnings</h2>
+                    <h2 class="individual-tax-heading">Government Bonuses</h2>
+
+                    <div class="individual-tax-list">
+                        <div
+                            v-for="item in currentOtherComponents.government_bonuses"
+                            :key="`gov-bonus-${item.name}-${item.month || 'na'}-${item.amount}`"
+                            class="individual-tax-list-row"
+                        >
+                            <span>
+                                {{ item.name }}
+                                <span v-if="item.month"> ({{ item.month }})</span>
+                                <span v-if="item.source === 'forecast'"> - Forecasted</span>
+                            </span>
+                            <span>{{ peso(item.amount) }}</span>
+                        </div>
+                        <div v-if="!currentOtherComponents.government_bonuses?.length" class="individual-tax-list-row">
+                            <span>No government bonuses found.</span>
+                            <span>{{ peso(0) }}</span>
+                        </div>
+                        <div class="individual-tax-list-row individual-tax-list-row--total">
+                            <span>Total</span>
+                            <span>{{ peso(currentSummary.government_bonuses_total) }}</span>
+                        </div>
+                    </div>
+
+                    <h2 class="individual-tax-heading mt-4">De minimis</h2>
 
                     <div class="individual-tax-list">
                         <div
@@ -196,29 +300,29 @@
                             <span>{{ peso(item.amount) }}</span>
                         </div>
                         <div v-if="!currentOtherComponents.earnings.length" class="individual-tax-list-row">
-                            <span>No other earnings found.</span>
+                            <span>No de minimis entries found.</span>
                             <span>{{ peso(0) }}</span>
                         </div>
                     </div>
 
-                    <h2 class="individual-tax-heading mt-4">De Minimis Benefits</h2>
+                    <h2 class="individual-tax-heading mt-4">Allowables</h2>
 
                     <div class="individual-tax-list">
                         <div
-                            v-for="item in currentOtherComponents.de_minimis"
-                            :key="`deminimis-${item.name}`"
+                            v-for="item in currentOtherComponents.allowables"
+                            :key="`allowable-${item.name}`"
                             class="individual-tax-list-row"
                         >
                             <span>{{ item.name }}</span>
                             <span>{{ peso(item.amount) }}</span>
                         </div>
-                        <div v-if="!currentOtherComponents.de_minimis?.length" class="individual-tax-list-row">
-                            <span>No de minimis benefits found.</span>
+                        <div v-if="!currentOtherComponents.allowables?.length" class="individual-tax-list-row">
+                            <span>No allowables found.</span>
                             <span>{{ peso(0) }}</span>
                         </div>
                         <div class="individual-tax-list-row individual-tax-list-row--total">
                             <span>Total</span>
-                            <span>{{ peso(currentSummary.de_minimis_total) }}</span>
+                            <span>{{ peso(currentSummary.allowables_total) }}</span>
                         </div>
                     </div>
 
@@ -240,8 +344,9 @@
                     </div>
 
                     <div class="individual-tax-note">
-                        This view uses saved payroll and employee payroll component records for the selected year and
-                        automatically shows the first employee that is both <strong>regular</strong> and <strong>active</strong>.
+                        This view combines payroll actuals with forecasted values for missing months in the selected
+                        year and automatically shows the first employee that is both <strong>regular</strong> and
+                        <strong>active</strong>.
                     </div>
                 </section>
             </div>
@@ -843,7 +948,7 @@ export default {
         },
 
         currentOtherComponents() {
-            return this.state.otherComponents || { earnings: [], de_minimis: [], taxes: [] };
+            return this.state.otherComponents || { earnings: [], de_minimis: [], government_bonuses: [], allowables: [], taxes: [] };
         },
 
         currentSummary() {
@@ -911,6 +1016,52 @@ export default {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             })}`;
+        },
+        sourceDotClass(source) {
+            const sourceClassMap = {
+                draft: "individual-tax-source-dot--draft",
+                pending: "individual-tax-source-dot--pending",
+                approved: "individual-tax-source-dot--approved",
+                for_releasing: "individual-tax-source-dot--for-releasing",
+                completed: "individual-tax-source-dot--completed",
+                forecast: "individual-tax-source-dot--forecast",
+            };
+
+            return sourceClassMap[source] || "individual-tax-source-dot--forecast";
+        },
+        getValueSource(row, key) {
+            return row?.source_breakdown?.[key] || "forecast";
+        },
+        formatValueSource(row, key) {
+            const labelMap = {
+                basic_salary: "Basic Salary",
+                hazard_pay: "Hazard Pay",
+                longevity_pay: "Longevity",
+            };
+            const source = this.getValueSource(row, key);
+
+            return `${labelMap[key] || "Value"}: ${this.formatStatusLabel(source)}`;
+        },
+        formatSourceBreakdown(row) {
+            const sourceBreakdown = row?.source_breakdown || {};
+
+            return [
+                `Basic Salary: ${this.formatStatusLabel(sourceBreakdown.basic_salary)}`,
+                `Hazard Pay: ${this.formatStatusLabel(sourceBreakdown.hazard_pay)}`,
+                `Longevity: ${this.formatStatusLabel(sourceBreakdown.longevity_pay)}`,
+            ].join(" | ");
+        },
+        formatStatusLabel(source) {
+            const statusLabelMap = {
+                draft: "Draft",
+                pending: "Pending",
+                approved: "Approved",
+                for_releasing: "For Releasing",
+                completed: "Completed",
+                forecast: "Forecasted",
+            };
+
+            return statusLabelMap[source] || "Forecasted";
         },
 
         syncSelectionFromState() {
@@ -1212,7 +1363,7 @@ export default {
                 selectedYear: Number(payload.selectedYear || this.selectedYearValue),
                 availableYears: payload.availableYears || [],
                 monthlyBreakdown: payload.monthlyBreakdown || [],
-                otherComponents: payload.otherComponents || { earnings: [], de_minimis: [], taxes: [] },
+                otherComponents: payload.otherComponents || { earnings: [], de_minimis: [], government_bonuses: [], allowables: [], taxes: [] },
                 summary: payload.summary || {},
                 trainLawOptions: payload.trainLawOptions || [],
                 selectedTrainLawId: payload.selectedTrainLawId ?? null,
@@ -1343,6 +1494,15 @@ export default {
     }
 }
 
+.individual-tax-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .x-small {
     font-size: 0.75rem;
 }
@@ -1354,6 +1514,65 @@ export default {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--bs-body-color);
+}
+
+.individual-tax-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    color: var(--bs-secondary-color);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.individual-tax-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.individual-tax-source-dot {
+    display: inline-block;
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.individual-tax-source-dot--draft {
+    background: #94a3b8;
+}
+
+.individual-tax-source-dot--pending {
+    background: #f59e0b;
+}
+
+.individual-tax-source-dot--approved {
+    background: #0ea5e9;
+}
+
+.individual-tax-source-dot--for-releasing {
+    background: #8b5cf6;
+}
+
+.individual-tax-source-dot--completed {
+    background: #16a34a;
+}
+
+.individual-tax-source-dot--forecast {
+    background: #ef4444;
+}
+
+.individual-tax-amount-with-source {
+    display: inline-flex;
+    align-items: center;
+}
+
+.individual-tax-amount-value {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
 }
 
 .individual-tax-toolbar-btn {
