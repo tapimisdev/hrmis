@@ -328,23 +328,44 @@ class IndividualTaxDataService
         $annualBasicSalary = (float) $monthlyBreakdown->sum('basic_salary');
         $annualHazardPay = (float) $monthlyBreakdown->sum('hazard_pay');
         $annualLongevityPay = (float) $monthlyBreakdown->sum('longevity_pay');
-        $grossTaxableIncome = (float) $monthlyBreakdown->sum('total');
-        $otherEarnings = (float) collect($otherComponents['earnings'] ?? [])->sum('amount');
         $deMinimisTotal = (float) collect($otherComponents['de_minimis'] ?? [])->sum('amount');
+        $otherEarnings = (float) collect($otherComponents['earnings'] ?? [])->sum('amount');
+        $deMinimisBenefits = $deMinimisTotal > 0 ? $deMinimisTotal : $otherEarnings;
         $governmentBonusesTotal = (float) collect($otherComponents['government_bonuses'] ?? [])->sum('amount');
         $allowablesTotal = (float) collect($otherComponents['allowables'] ?? [])->sum('amount');
+        $grossCompensationIncome = $annualBasicSalary
+            + $annualHazardPay
+            + $annualLongevityPay
+            + $governmentBonusesTotal
+            + $deMinimisBenefits;
+        $taxExemptBonus = min($governmentBonusesTotal, 90000.0);
+        $netTaxableBenefit = max($governmentBonusesTotal - 90000.0, 0.0);
+        $grossTaxableIncome = $annualBasicSalary
+            + $annualHazardPay
+            + $annualLongevityPay
+            + $netTaxableBenefit;
+        $netTaxableIncome = max($grossTaxableIncome - $allowablesTotal, 0.0);
         $taxWithheld = (float) $monthlyBreakdown->sum('tax_withheld');
-        $netAfterTax = ($grossTaxableIncome + $otherEarnings + $governmentBonusesTotal) - $taxWithheld;
+        $netAfterTax = $grossCompensationIncome - $taxWithheld;
 
         return [
             'annual_basic_salary' => $annualBasicSalary,
+            'hazard_pay' => $annualHazardPay,
             'annual_hazard_pay' => $annualHazardPay,
+            'longevity_pay' => $annualLongevityPay,
             'annual_longevity_pay' => $annualLongevityPay,
-            'gross_taxable_income' => $grossTaxableIncome,
-            'other_earnings' => $otherEarnings,
-            'de_minimis_total' => $deMinimisTotal,
+            'government_bonuses' => $governmentBonusesTotal,
             'government_bonuses_total' => $governmentBonusesTotal,
+            'other_earnings' => $otherEarnings,
+            'de_minimis' => $deMinimisBenefits,
+            'de_minimis_total' => $deMinimisTotal,
+            'gross_compensation_income' => $grossCompensationIncome,
+            'tax_exempt_bonus' => $taxExemptBonus,
+            'net_taxable_benefit' => $netTaxableBenefit,
+            'gross_taxable_income' => $grossTaxableIncome,
+            'allowable_deductions' => $allowablesTotal,
             'allowables_total' => $allowablesTotal,
+            'net_taxable_income' => $netTaxableIncome,
             'total_tax_withheld' => $taxWithheld,
             'net_after_tax' => $netAfterTax,
         ];

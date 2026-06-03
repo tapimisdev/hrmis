@@ -90,7 +90,7 @@
 
             <div class="individual-tax-grid">
                 <section class="individual-tax-panel">
-                    <h2 class="individual-tax-heading">Gross Compensation Income</h2>
+                    <h2 class="individual-tax-heading">Annual Taxable Compensation Income Computation</h2>
 
                     <table class="individual-tax-table">
                         <tbody>
@@ -102,39 +102,48 @@
                             </tr>
                             <tr>
                                 <td>Hazard Pay</td>
-                                <td class="amount">{{ peso(currentSummary.annual_hazard_pay) }}</td>
+                                <td class="amount">{{ peso(currentSummary.hazard_pay) }}</td>
                             </tr>
                             <tr>
                                 <td>Longevity Pay</td>
-                                <td class="amount">{{ peso(currentSummary.annual_longevity_pay) }}</td>
+                                <td class="amount">{{ peso(currentSummary.longevity_pay) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Government Bonuses</td>
+                                <td class="amount">{{ peso(currentSummary.government_bonuses) }}</td>
                             </tr>
                             <tr>
                                 <td>De minimis</td>
-                                <td class="amount">{{ peso(currentSummary.other_earnings) }}</td>
+                                <td class="amount">{{ peso(currentSummary.de_minimis) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gross Compensation Income</strong></td>
+                                <td class="amount individual-tax-highlight-pink">
+                                    {{ peso(currentSummary.gross_compensation_income) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Tax-Exempt Bonus</td>
+                                <td class="amount">{{ peso(currentSummary.tax_exempt_bonus) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Net Taxable Benefit</td>
+                                <td class="amount">{{ peso(currentSummary.net_taxable_benefit) }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Gross Taxable Income</strong></td>
-                                <td class="amount individual-tax-highlight-pink">
+                                <td class="amount individual-tax-highlight-orange">
                                     {{ peso(currentSummary.gross_taxable_income) }}
                                 </td>
                             </tr>
-                        </tbody>
-                    </table>
-
-                    <h2 class="individual-tax-heading mt-4">Tax Computation</h2>
-
-                    <table class="individual-tax-table">
-                        <tbody>
                             <tr>
-                                <td>Total Tax Withheld</td>
-                                <td class="amount individual-tax-highlight-orange">
-                                    {{ peso(currentSummary.total_tax_withheld) }}
-                                </td>
+                                <td>Allowable Deductions</td>
+                                <td class="amount">{{ peso(currentSummary.allowable_deductions) }}</td>
                             </tr>
                             <tr>
-                                <td>Net After Tax</td>
+                                <td><strong>Net Taxable Income</strong></td>
                                 <td class="amount individual-tax-highlight-yellow">
-                                    {{ peso(currentSummary.net_after_tax) }}
+                                    {{ peso(currentSummary.net_taxable_income) }}
                                 </td>
                             </tr>
                         </tbody>
