@@ -12,7 +12,8 @@
     'hr.deductions.view',
     'hr.leave_type.view',
     'hr.tranche.view',
-    'hr.approvers.view'
+    'hr.approvers.view',
+    'hr.violations.view'
 ])
 <li class="sidebar-item {{ request()->is('admin/maintenance*') ? 'active' : '' }}">
     <a class="sidebar-link dropdown-toggle {{ request()->is('admin/maintenance*') ? '' : 'collapsed' }}"
@@ -145,6 +146,16 @@
                    class="{{ request()->is('admin/maintenance/approvers*') ? 'active' : '' }}">
                     <i class="fa-solid fa-user-check"></i>
                     <span>Approvers</span>
+                </a>
+            </li>
+            @endcan
+
+            @can('hr.violations.view')
+            <li class="nested-item">
+                <a href="{{ route('settings.violations.index') }}"
+                   class="{{ request()->is('admin/maintenance/violations*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Violations</span>
                 </a>
             </li>
             @endcan

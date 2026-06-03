@@ -2,48 +2,28 @@
 
 namespace App\Services\PeraRata;
 
-use App\Services\DailyTimeRecordService;
-use App\Enums\EmploymentTypesEnum;
-use App\Enums\PayrollStatusEnum;
 use App\Enums\TableSettingsEnum;
 use App\Services\SalaryEmloyeeService;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ComputationService {
 
-    protected $daily_time_record_service;
     protected $salaryEmployeeService;
 
     protected $employee_no;
     protected $payroll_id;
 
-    protected $user_id;
     protected $name; 
     protected $employment_type;
     protected $position;
     protected $salary_amount;
     protected $payroll_date;
-    protected $start_date;
-    protected $end_date;
 
 
-    public function __construct(DailyTimeRecordService $daily_time_record_service, SalaryEmloyeeService $salaryEmployeeService) 
+    public function __construct(SalaryEmloyeeService $salaryEmployeeService)
     {
-        $this->daily_time_record_service = $daily_time_record_service;
         $this->salaryEmployeeService = $salaryEmployeeService;
-    }
-
-    private function computeUTDeduction(int $minutes): int
-    {
-        return match (true) {
-            $minutes >= 241 => 150,   // 4 hrs 1 min and above
-            $minutes >= 181 => 75,    // 3 hrs 1 min to 4 hrs
-            $minutes >= 121 => 50,    // 2 hrs 1 min to 3 hrs
-            $minutes >= 1   => 25,    // 1 min to 2 hrs
-            default         => 0,     // 0 min
-        };
     }
 
     private function getPeraRata(string $employee_no)
@@ -119,27 +99,12 @@ class ComputationService {
         $transportationAllowance = (float) $pera_rata['transportation_allowance'];
 
 
-        $payload = [
-            'user_id' => $this->user_id,
-            'startDate' => $this->start_date,
-            'endDate' => $this->end_date
-        ];
-
-        $dtr = $this->daily_time_record_service->getDTR($payload);
-        $dtr_summary = $dtr['payroll_value'];
-        $actual_presence  = $dtr_summary['actual_presence'];
-        $total_ut = $dtr_summary['late_undertime'] ?? 0;
-
-        # to be get
         $absences = 0;
         $less_healthcard = 0;
-
-        $ut_deductions = $this->computeUTDeduction($total_ut);
+        $ut_deductions = 0;
 
         $gross = $pera + $representationAllowance + $transportationAllowance;
-        $deductions = $absences + $ut_deductions;
-
-        $total = max($gross - $deductions, 0);
+        $total = $gross;
 
         $netPay = $total - $less_healthcard;
         
@@ -177,10 +142,7 @@ class ComputationService {
         }
 
         $this->payroll_date = $payroll->month; 
-        $this->start_date = date('Y-m-01', strtotime($this->payroll_date . '-01'));
-        $this->end_date = date('Y-m-t', strtotime($this->payroll_date . '-01'));
-
-        Log::info("Payroll Details - Start: {$this->start_date}, End: {$this->end_date}, Month: {$this->payroll_date}");
+        Log::info("Payroll Details - Month: {$this->payroll_date}");
     }
 
     private function getEmployeeSalaryDetails()
@@ -210,15 +172,13 @@ class ComputationService {
             ->leftJoin('employee_information', 'eo1.employee_no', '=', 'employee_information.employee_no')
             ->leftJoin('employee_personal', 'employee_information.employee_no', '=', 'employee_personal.employee_no')
             ->leftJoin('positions', 'eo1.position_id', '=', 'positions.id')
-            ->leftJoin('users', 'employee_information.user_id', '=', 'users.id')
             ->select(
                 'employee_personal.firstname',
                 'employee_personal.middlename',
                 'employee_personal.lastname',
                 'employee_personal.suffix',
                 'eo1.employment_type_id',
-                'positions.name as position_name',
-                'users.id as user_id'
+                'positions.name as position_name'
             )
             ->first();
 
@@ -232,6 +192,5 @@ class ComputationService {
             ($employee_information->suffix ? ' ' . $employee_information->suffix : '');
         $this->position = $employee_information->position_name;
         $this->employment_type = $employee_information->employment_type_id;
-        $this->user_id = $employee_information->user_id;
     }
 }
