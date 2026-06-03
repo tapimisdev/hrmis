@@ -429,6 +429,10 @@
                             <span>No de minimis entries found.</span>
                             <span>{{ peso(0) }}</span>
                         </div>
+                        <div class="individual-tax-list-row individual-tax-list-row--total">
+                            <span>Total</span>
+                            <span>{{ peso(currentSummary.de_minimis) }}</span>
+                        </div>
                     </div>
 
                     <h2 class="individual-tax-heading mt-4">Allowables</h2>
