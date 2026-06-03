@@ -274,7 +274,14 @@
                             <span>
                                 {{ item.name }}
                                 <span v-if="item.month"> ({{ item.month }})</span>
-                                <span v-if="item.source === 'forecast'"> - Forecasted</span>
+                                <span v-if="item.source">
+                                    -
+                                    <span
+                                        class="individual-tax-source-dot"
+                                        :class="sourceDotClass(item.source)"
+                                    ></span>
+                                    {{ formatStatusLabel(item.source) }}
+                                </span>
                             </span>
                             <span>{{ peso(item.amount) }}</span>
                         </div>

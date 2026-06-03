@@ -130,8 +130,6 @@ class IndividualTaxDataService
 
     public function buildMonthlyBreakdown(string $employeeNo, int $year): Collection
     {
-        $individualTaxSettings = $this->getIndividualTaxSettings($year);
-
         $salaryRows = DB::table('payroll_salary_permanent_employees as pspe')
             ->join('payroll_salary as ps', 'ps.id', '=', 'pspe.payroll_salary_id')
             ->where('pspe.employee_no', $employeeNo)
@@ -161,10 +159,7 @@ class IndividualTaxDataService
             ->groupBy(fn ($row) => (int) substr((string) $row->month, 5, 2))
             ->map(fn ($rows) => $rows->first());
 
-        $forecastHazardByMonth = $this->getForecastHazardByMonth(
-            $forecastSalaryByMonth,
-            (bool) ($individualTaxSettings['is_hazard_pay'] ?? false) || $hazardRows->isNotEmpty()
-        );
+        $forecastHazardByMonth = $this->getForecastHazardByMonth($forecastSalaryByMonth);
 
         $longevityRows = DB::table('payroll_longevity_pay_employee as plpe')
             ->join('payroll_longevity_pay as plp', 'plp.id', '=', 'plpe.payroll_longevity_pay_id')
@@ -182,8 +177,7 @@ class IndividualTaxDataService
         $forecastLongevityByMonth = $this->getForecastComponentByMonth(
             TableSettingsEnum::LONGETIVITY->value,
             $employeeNo,
-            $year,
-            (bool) ($individualTaxSettings['is_longevity'] ?? false) || $longevityRows->isNotEmpty()
+            $year
         );
 
         $taxRows = DB::table('employee_payroll_components as epc')
@@ -395,27 +389,6 @@ class IndividualTaxDataService
         ];
     }
 
-    private function getIndividualTaxSettings(int $year): array
-    {
-        $settings = DB::table('n_taxation as nt')
-            ->join('n_taxation_settings as nts', 'nts.n_taxation_id', '=', 'nt.UniqueID')
-            ->where('nt.Year', $year)
-            ->select([
-                'nts.is_hazard_pay',
-                'nts.is_longevity',
-                'nts.is_less_bir',
-                'nts.train_law_id',
-            ])
-            ->first();
-
-        return [
-            'is_hazard_pay' => (bool) ($settings->is_hazard_pay ?? false),
-            'is_longevity' => (bool) ($settings->is_longevity ?? false),
-            'is_less_bir' => (bool) ($settings->is_less_bir ?? false),
-            'train_law_id' => $settings->train_law_id ?? null,
-        ];
-    }
-
     private function getForecastSalaryByMonth(string $employeeNo, int $year): array
     {
         $rates = DB::table('employee_salary')
@@ -447,14 +420,12 @@ class IndividualTaxDataService
         return $forecast;
     }
 
-    private function getForecastHazardByMonth(array $forecastSalaryByMonth, bool $isEnabled): array
+    private function getForecastHazardByMonth(array $forecastSalaryByMonth): array
     {
         $forecast = [];
 
         foreach (range(1, 12) as $month) {
-            $forecast[$month] = $isEnabled
-                ? (float) round(((float) ($forecastSalaryByMonth[$month] ?? 0)) * 0.15, 4)
-                : 0.0;
+            $forecast[$month] = (float) round(((float) ($forecastSalaryByMonth[$month] ?? 0)) * 0.15, 4);
         }
 
         return $forecast;
@@ -463,14 +434,9 @@ class IndividualTaxDataService
     private function getForecastComponentByMonth(
         string $type,
         string $employeeNo,
-        int $year,
-        bool $isEnabled
+        int $year
     ): array {
         $forecast = array_fill_keys(range(1, 12), 0.0);
-
-        if (!$isEnabled) {
-            return $forecast;
-        }
 
         $componentId = DB::table('payroll_components_settings')
             ->where('type', $type)
@@ -593,7 +559,6 @@ class IndividualTaxDataService
             ['name' => 'PhilHealth', 'amount' => $philhealth],
             ['name' => 'Pag-IBIG', 'amount' => $pagibig],
         ])
-            ->filter(fn ($item) => (float) ($item['amount'] ?? 0) > 0)
             ->values()
             ->all();
     }
@@ -604,34 +569,76 @@ class IndividualTaxDataService
             ->join('payroll_government_bonus as pgb', 'pgbe.payroll_government_bonus_id', '=', 'pgb.id')
             ->join('government_bonus_types as gbt', 'pgb.government_bonus_type_id', '=', 'gbt.id')
             ->where('pgbe.employee_no', $employeeNo)
-            ->where('pgb.status', 'completed')
+            ->whereNotIn('pgb.status', ['cancelled', 'failed'])
             ->whereRaw('YEAR(CONCAT(pgb.month, "-01")) = ?', [$year])
-            ->orderBy('pgb.month')
+            ->orderBy('gbt.id')
+            ->orderByRaw("
+                CASE pgb.status
+                    WHEN 'completed' THEN 5
+                    WHEN 'for_releasing' THEN 4
+                    WHEN 'approved' THEN 3
+                    WHEN 'pending' THEN 2
+                    WHEN 'draft' THEN 1
+                    ELSE 0
+                END DESC
+            ")
+            ->orderByDesc('pgb.month')
+            ->orderByDesc('pgb.id')
             ->get([
+                'gbt.id as government_bonus_type_id',
                 'pgb.month',
+                'pgb.status',
                 'gbt.name',
+                'pgbe.net_pay',
                 'pgbe.bonus_amount',
             ])
-            ->map(fn ($row) => [
-                'name' => trim((string) ($row->name ?? 'Government Bonus')),
-                'month' => (string) ($row->month ?? ''),
-                'amount' => (float) round((float) ($row->bonus_amount ?? 0), 4),
-                'source' => 'payroll_actual',
-            ])
+            ->groupBy('government_bonus_type_id')
+            ->map(function (Collection $rows) {
+                $row = $rows->first();
+                $amount = (float) ($row->net_pay ?? $row->bonus_amount ?? 0);
+
+                return [
+                    'government_bonus_type_id' => (int) ($row->government_bonus_type_id ?? 0),
+                    'name' => trim((string) ($row->name ?? 'Government Bonus')),
+                    'month' => (string) ($row->month ?? ''),
+                    'amount' => (float) round($amount, 4),
+                    'source' => (string) ($row->status ?? 'payroll_actual'),
+                ];
+            })
             ->values()
             ->all();
 
-        if (!empty($actualBonuses)) {
-            return $actualBonuses;
-        }
+        $actualBonusTypeIds = collect($actualBonuses)
+            ->pluck('government_bonus_type_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
 
-        return $this->getForecastGovernmentBonuses($employeeNo, $year);
+        $forecastBonuses = $this->getForecastGovernmentBonuses($employeeNo, $year, $actualBonusTypeIds);
+
+        return collect([...$actualBonuses, ...$forecastBonuses])
+            ->sortBy([
+                ['month', 'asc'],
+                ['name', 'asc'],
+            ])
+            ->map(function (array $bonus) {
+                unset($bonus['government_bonus_type_id']);
+
+                return $bonus;
+            })
+            ->values()
+            ->all();
     }
 
-    private function getForecastGovernmentBonuses(string $employeeNo, int $year): array
+    private function getForecastGovernmentBonuses(string $employeeNo, int $year, array $excludedBonusTypeIds = []): array
     {
         $bonusTypes = DB::table('government_bonus_types as gbt')
             ->where('gbt.is_active', true)
+            ->when(!empty($excludedBonusTypeIds), function ($query) use ($excludedBonusTypeIds) {
+                $query->whereNotIn('gbt.id', $excludedBonusTypeIds);
+            })
             ->orderBy('gbt.name')
             ->get([
                 'gbt.id',
@@ -668,6 +675,7 @@ class IndividualTaxDataService
                 }
 
                 return [
+                    'government_bonus_type_id' => (int) ($bonusType->id ?? 0),
                     'name' => trim((string) ($bonusType->name ?? 'Government Bonus')),
                     'month' => $payoutMonth,
                     'amount' => (float) round($amount, 4),
