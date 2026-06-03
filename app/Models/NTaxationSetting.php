@@ -11,35 +11,27 @@ class NTaxationSetting extends Model
 {
     protected $table = 'n_taxation_settings';
 
-    protected $primaryKey = 'UniqueID';
+    protected $primaryKey = 'id';
 
     public $timestamps = false;
 
     protected $fillable = [
         'n_taxation_id',
         'train_law_id',
-        'is_longevity',
-        'is_hazard_pay',
-        'is_less_bir',
     ];
 
     public function taxation(): BelongsTo
     {
-        return $this->belongsTo(NTaxation::class, 'n_taxation_id', 'UniqueID');
+        return $this->belongsTo(NTaxation::class, 'n_taxation_id', 'id');
     }
 
     public function bonuses(): HasMany
     {
-        return $this->hasMany(NTaxationSettingBonus::class, 'n_taxation_setting_id', 'UniqueID');
-    }
-
-    public function others(): HasMany
-    {
-        return $this->hasMany(NTaxationSettingOther::class, 'n_taxation_setting_id', 'UniqueID');
+        return $this->hasMany(NTaxationSettingBonus::class, 'n_taxation_setting_id', 'id');
     }
 
     public function portion(): HasOne
     {
-        return $this->hasOne(NTaxationSettingPortion::class, 'n_taxation_setting_id', 'UniqueID');
+        return $this->hasOne(NTaxationSettingPortion::class, 'n_taxation_setting_id', 'id');
     }
 }

@@ -11,26 +11,46 @@ class SaveIndividualTaxService
     public function handle(array $payload): array
     {
         return DB::transaction(function () use ($payload) {
+            $employeeNos = collect(data_get($payload, 'employee_nos', []))
+                ->map(fn ($employeeNo) => trim((string) $employeeNo))
+                ->filter()
+                ->unique()
+                ->values();
+
             $taxation = NTaxation::query()->firstOrCreate([
                 'Year' => (int) data_get($payload, 'n_taxation.Year'),
             ]);
 
             $setting = NTaxationSetting::query()->firstOrNew([
-                'n_taxation_id' => $taxation->UniqueID,
+                'n_taxation_id' => $taxation->id,
             ]);
 
             $setting->fill([
                 'train_law_id' => (int) data_get($payload, 'n_taxation_settings.train_law_id'),
-                'is_longevity' => (bool) data_get($payload, 'n_taxation_settings.is_longevity'),
-                'is_hazard_pay' => (bool) data_get($payload, 'n_taxation_settings.is_hazard_pay'),
-                'is_less_bir' => (bool) data_get($payload, 'n_taxation_settings.is_less_bir'),
             ]);
             $setting->save();
+
+            DB::table('n_taxation_employees')
+                ->where('n_taxation_id', $taxation->id)
+                ->delete();
+
+            if ($employeeNos->isNotEmpty()) {
+                DB::table('n_taxation_employees')->insert(
+                    $employeeNos
+                        ->map(fn (string $employeeNo) => [
+                            'n_taxation_id' => $taxation->id,
+                            'employee_no' => $employeeNo,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ])
+                        ->all()
+                );
+            }
 
             $setting->bonuses()->delete();
             $bonuses = collect(data_get($payload, 'n_taxation_settings.bonuses', []))
                 ->map(fn (array $bonus) => [
-                    'n_taxation_setting_id' => $setting->UniqueID,
+                    'n_taxation_setting_id' => $setting->id,
                     'government_bonus_id' => (int) ($bonus['government_bonus_id'] ?? 0),
                 ])
                 ->filter(fn (array $bonus) => $bonus['government_bonus_id'] > 0)
@@ -40,23 +60,8 @@ class SaveIndividualTaxService
                 $setting->bonuses()->createMany($bonuses->all());
             }
 
-            $setting->others()->delete();
-            $others = collect(data_get($payload, 'n_taxation_settings.others', []))
-                ->map(fn (array $other) => [
-                    'n_taxation_setting_id' => $setting->UniqueID,
-                    'name' => (string) ($other['name'] ?? ''),
-                    'amount' => (float) ($other['amount'] ?? 0),
-                    'is_taxable' => (bool) ($other['is_taxable'] ?? false),
-                    'is_exempt_bir' => (bool) ($other['is_exempt_bir'] ?? false),
-                ])
-                ->values();
-
-            if ($others->isNotEmpty()) {
-                $setting->others()->createMany($others->all());
-            }
-
             $setting->portion()->updateOrCreate(
-                ['n_taxation_setting_id' => $setting->UniqueID],
+                ['n_taxation_setting_id' => $setting->id],
                 [
                     'hazard_pay' => (float) data_get($payload, 'n_taxation_settings.portion.hazard_pay', 0),
                     'salary' => (float) data_get($payload, 'n_taxation_settings.portion.salary', 0),
@@ -67,10 +72,14 @@ class SaveIndividualTaxService
             return [
                 'message' => 'Individual tax settings saved successfully.',
                 'data' => [
-                    'employee_nos' => array_values(data_get($payload, 'employee_nos', [])),
-                    'n_taxation_id' => $taxation->UniqueID,
-                    'n_taxation_setting_id' => $setting->UniqueID,
+                    'employee_nos' => $employeeNos->all(),
+                    'n_taxation_id' => $taxation->id,
+                    'n_taxation_setting_id' => $setting->id,
                     'year' => $taxation->Year,
+                    'selected_taxation_settings' => [
+                        'id' => $setting->id,
+                        'train_law_id' => (int) $setting->train_law_id,
+                    ],
                 ],
             ];
         });

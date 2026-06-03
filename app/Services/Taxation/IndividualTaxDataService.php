@@ -4,6 +4,8 @@ namespace App\Services\Taxation;
 
 use App\Enums\EmploymentTypesEnum;
 use App\Enums\TableSettingsEnum;
+use App\Models\NTaxation;
+use App\Models\NTaxationSetting;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -12,34 +14,61 @@ class IndividualTaxDataService
 {
     public function getPagePayload(?string $employeeNo = null, ?int $year = null): array
     {
-        $employees = $this->getActiveRegularEmployees();
-        $employee = $this->resolveEmployee((string) $employeeNo, $employees);
-
-        if (!$employee) {
-            abort(404, 'No active regular employee found.');
-        }
-
-        $availableYears = $this->getAvailableYears((string) $employee->employee_no);
+        $allEmployees = $this->getAllActiveRegularEmployees();
+        $availableYears = $this->getAvailableTaxationYears();
         $selectedYear = $this->resolveSelectedYear($year, $availableYears);
-        $monthlyBreakdown = $this->buildMonthlyBreakdown((string) $employee->employee_no, $selectedYear);
-        $otherComponents = $this->getOtherComponents((string) $employee->employee_no, $selectedYear);
-        $summary = $this->buildSummary($monthlyBreakdown, $otherComponents);
+        $taxation = $this->getTaxationByYear($selectedYear);
+        $employees = $taxation
+            ? $this->getTaxationEmployees((int) $taxation->id)
+            : collect();
+        $employee = $this->resolveEmployee((string) $employeeNo, $employees);
+        $hasTaxationData = $taxation !== null;
+        $hasSelectedEmployee = $employee !== null;
+        $selectedTaxationSetting = $hasTaxationData
+            ? $this->getSelectedTaxationSetting((int) $taxation->id)
+            : null;
+        $monthlyBreakdown = $hasTaxationData && $hasSelectedEmployee
+            ? $this->buildMonthlyBreakdown((string) $employee->employee_no, $selectedYear)
+            : collect();
+        $taxModuleBreakdown = $hasTaxationData && $hasSelectedEmployee
+            ? $this->buildTaxModuleBreakdown((string) $employee->employee_no, $selectedYear)
+            : collect();
+        $otherComponents = $hasTaxationData && $hasSelectedEmployee
+            ? $this->getOtherComponents(
+                (string) $employee->employee_no,
+                $selectedYear,
+                collect(data_get($selectedTaxationSetting, 'bonuses', []))
+                    ->pluck('government_bonus_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->filter(fn ($id) => $id > 0)
+                    ->values()
+                    ->all()
+            )
+            : $this->emptyOtherComponents();
+        $summary = $hasTaxationData && $hasSelectedEmployee
+            ? $this->buildSummary($monthlyBreakdown, $otherComponents)
+            : [];
         $trainLawOptions = $this->getTrainLawOptions();
+        $selectedTrainLawId = $selectedTaxationSetting['train_law_id'] ?? $trainLawOptions['selectedId'];
 
         return [
-            'employee' => $employee,
-            'employees' => $employees,
+            'employee' => $employee ?? (object) [],
+            'employees' => $employees->values()->all(),
+            'allEmployees' => $allEmployees->values()->all(),
             'selectedYear' => $selectedYear,
             'availableYears' => $availableYears->values()->all(),
             'monthlyBreakdown' => $monthlyBreakdown->values()->all(),
+            'taxModuleBreakdown' => $taxModuleBreakdown->values()->all(),
             'otherComponents' => $otherComponents,
             'summary' => $summary,
             'trainLawOptions' => $trainLawOptions['items'],
-            'selectedTrainLawId' => $trainLawOptions['selectedId'],
+            'selectedTrainLawId' => $selectedTrainLawId,
+            'selectedTaxationSettings' => $selectedTaxationSetting,
+            'hasTaxationData' => $hasTaxationData,
         ];
     }
 
-    public function getActiveRegularEmployees(): Collection
+    public function getAllActiveRegularEmployees(): Collection
     {
         $latestOrgDate = DB::table('employee_organization')
             ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
@@ -75,11 +104,31 @@ class IndividualTaxDataService
                 'p.name as position'
             )
             ->get()
+            ->unique('employee_no')
             ->map(function ($employee) {
                 $employee->display_name = $this->formatEmployeeName($employee);
 
                 return $employee;
             })
+            ->values();
+    }
+
+    public function getTaxationEmployees(int $taxationId): Collection
+    {
+        $employeeNos = DB::table('n_taxation_employees')
+            ->where('n_taxation_id', $taxationId)
+            ->pluck('employee_no')
+            ->map(fn ($employeeNo) => (string) $employeeNo)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($employeeNos->isEmpty()) {
+            return collect();
+        }
+
+        return $this->getAllActiveRegularEmployees()
+            ->whereIn('employee_no', $employeeNos->all())
             ->values();
     }
 
@@ -96,22 +145,11 @@ class IndividualTaxDataService
         return $employees->sortBy('employee_no')->first();
     }
 
-    public function getAvailableYears(string $employeeNo): Collection
+    public function getAvailableTaxationYears(): Collection
     {
-        $salaryYears = DB::table('payroll_salary_permanent_employees as pspe')
-            ->join('payroll_salary as ps', 'ps.id', '=', 'pspe.payroll_salary_id')
-            ->where('pspe.employee_no', $employeeNo)
-            ->selectRaw('DISTINCT YEAR(ps.payroll_date) as year')
-            ->pluck('year');
-
-        $componentYears = DB::table('employee_payroll_components as epc')
-            ->join('payroll_components_years as pcy', 'pcy.id', '=', 'epc.tax_deduction_id')
-            ->where('epc.employee_no', $employeeNo)
-            ->selectRaw('DISTINCT pcy.year as year')
-            ->pluck('year');
-
-        return $salaryYears
-            ->merge($componentYears)
+        return NTaxation::query()
+            ->orderByDesc('Year')
+            ->pluck('Year')
             ->filter()
             ->map(fn ($itemYear) => (int) $itemYear)
             ->unique()
@@ -259,7 +297,42 @@ class IndividualTaxDataService
         });
     }
 
-    public function getOtherComponents(string $employeeNo, int $year): array
+    public function buildTaxModuleBreakdown(string $employeeNo, int $year): Collection
+    {
+        $taxRows = DB::table('employee_payroll_components as epc')
+            ->join('payroll_components_years as pcy', 'pcy.id', '=', 'epc.tax_deduction_id')
+            ->join('payroll_components as pc', 'pc.id', '=', 'pcy.payroll_component_id')
+            ->where('epc.employee_no', $employeeNo)
+            ->where('pcy.year', $year)
+            ->where('pc.type', 'taxes')
+            ->get([
+                'epc.month',
+                'pc.name',
+                'epc.amount',
+            ])
+            ->groupBy(fn ($row) => (int) $row->month);
+
+        return collect(range(1, 12))->map(function (int $month) use ($taxRows) {
+            $rows = collect($taxRows->get($month, []));
+
+            return [
+                'month_number' => $month,
+                'month_label' => Carbon::create()->month($month)->format('F'),
+                'amount' => (float) $rows->sum('amount'),
+                'items' => $rows
+                    ->groupBy(fn ($row) => $this->normalizeTaxModuleName((string) ($row->name ?? '')))
+                    ->map(fn ($group, $name) => [
+                        'name' => (string) $name,
+                        'amount' => (float) collect($group)->sum('amount'),
+                    ])
+                    ->sortBy('name')
+                    ->values()
+                    ->all(),
+            ];
+        });
+    }
+
+    public function getOtherComponents(string $employeeNo, int $year, array $selectedGovernmentBonusIds = []): array
     {
         $otherEarningTaxTypes = $this->getOtherEarningTaxTypesByYear($year);
 
@@ -311,7 +384,7 @@ class IndividualTaxDataService
             ->values()
             ->all();
 
-        $governmentBonuses = $this->getGovernmentBonuses($employeeNo, $year);
+        $governmentBonuses = $this->getGovernmentBonuses($employeeNo, $year, $selectedGovernmentBonusIds);
         $allowables = $this->getAllowablesFromModule($employeeNo, $year);
 
         return [
@@ -408,6 +481,67 @@ class IndividualTaxDataService
             'items' => $items,
             'selectedId' => $items[0]['id'] ?? null,
         ];
+    }
+
+    private function getTaxationByYear(int $year): ?NTaxation
+    {
+        return NTaxation::query()
+            ->where('Year', $year)
+            ->latest('id')
+            ->first();
+    }
+
+    private function getSelectedTaxationSetting(int $taxationId): ?array
+    {
+        $setting = NTaxationSetting::query()
+            ->with(['bonuses', 'portion'])
+            ->where('n_taxation_id', $taxationId)
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$setting) {
+            return null;
+        }
+
+        return [
+            'n_taxation_id' => (int) $setting->n_taxation_id,
+            'n_taxation_setting_id' => (int) $setting->id,
+            'train_law_id' => (int) $setting->train_law_id,
+            'bonuses' => $setting->bonuses
+                ->map(fn ($bonus) => [
+                    'government_bonus_id' => (int) $bonus->government_bonus_id,
+                ])
+                ->values()
+                ->all(),
+            'portion' => [
+                'salary' => (float) ($setting->portion?->salary ?? 80),
+                'hazard_pay' => (float) ($setting->portion?->hazard_pay ?? 20),
+                'longevity' => (float) ($setting->portion?->longevity ?? 0),
+            ],
+        ];
+    }
+
+    private function emptyOtherComponents(): array
+    {
+        return [
+            'earnings' => [],
+            'de_minimis' => [],
+            'government_bonuses' => [],
+            'allowables' => [],
+            'taxes' => [],
+        ];
+    }
+
+    private function normalizeTaxModuleName(string $name): string
+    {
+        $normalized = strtolower(trim($name));
+
+        return match ($normalized) {
+            'salary tax' => 'Salary Tax',
+            'hazard pay tax', 'hazard tax' => 'Hazard Pay Tax',
+            'longetivity tax', 'longevity tax' => 'Longevity Tax',
+            default => $name,
+        };
     }
 
     private function getForecastSalaryByMonth(string $employeeNo, int $year): array
@@ -584,14 +718,19 @@ class IndividualTaxDataService
             ->all();
     }
 
-    private function getGovernmentBonuses(string $employeeNo, int $year): array
+    private function getGovernmentBonuses(string $employeeNo, int $year, array $selectedGovernmentBonusIds = []): array
     {
+        if ($selectedGovernmentBonusIds === []) {
+            return [];
+        }
+
         $actualBonuses = DB::table('payroll_government_bonus_employee as pgbe')
             ->join('payroll_government_bonus as pgb', 'pgbe.payroll_government_bonus_id', '=', 'pgb.id')
             ->join('government_bonus_types as gbt', 'pgb.government_bonus_type_id', '=', 'gbt.id')
             ->where('pgbe.employee_no', $employeeNo)
             ->whereNotIn('pgb.status', ['cancelled', 'failed'])
             ->whereRaw('YEAR(CONCAT(pgb.month, "-01")) = ?', [$year])
+            ->whereIn('gbt.id', $selectedGovernmentBonusIds)
             ->orderBy('gbt.id')
             ->orderByRaw("
                 CASE pgb.status
@@ -637,7 +776,12 @@ class IndividualTaxDataService
             ->values()
             ->all();
 
-        $forecastBonuses = $this->getForecastGovernmentBonuses($employeeNo, $year, $actualBonusTypeIds);
+        $forecastBonuses = $this->getForecastGovernmentBonuses(
+            $employeeNo,
+            $year,
+            $actualBonusTypeIds,
+            $selectedGovernmentBonusIds
+        );
 
         return collect([...$actualBonuses, ...$forecastBonuses])
             ->sortBy([
@@ -653,10 +797,18 @@ class IndividualTaxDataService
             ->all();
     }
 
-    private function getForecastGovernmentBonuses(string $employeeNo, int $year, array $excludedBonusTypeIds = []): array
+    private function getForecastGovernmentBonuses(
+        string $employeeNo,
+        int $year,
+        array $excludedBonusTypeIds = [],
+        array $selectedGovernmentBonusIds = []
+    ): array
     {
         $bonusTypes = DB::table('government_bonus_types as gbt')
             ->where('gbt.is_active', true)
+            ->when(!empty($selectedGovernmentBonusIds), function ($query) use ($selectedGovernmentBonusIds) {
+                $query->whereIn('gbt.id', $selectedGovernmentBonusIds);
+            })
             ->when(!empty($excludedBonusTypeIds), function ($query) use ($excludedBonusTypeIds) {
                 $query->whereNotIn('gbt.id', $excludedBonusTypeIds);
             })

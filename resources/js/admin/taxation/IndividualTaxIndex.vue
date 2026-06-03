@@ -55,19 +55,49 @@
                         </option>
                     </select>
 
-                    <input
-                        v-model="selectedYearInput"
-                        type="text"
-                        inputmode="numeric"
-                        maxlength="4"
-                        class="form-control individual-tax-select"
-                        :disabled="isLoading"
-                        placeholder="Year"
-                        aria-label="Tax year"
-                        @input="onYearInput"
-                        @blur="applyYearInput"
-                        @keyup.enter="applyYearInput"
-                    />
+                    <div class="individual-tax-toolbar-inline-fields">
+                        <div class="individual-tax-toolbar-stack">
+                            <label class="individual-tax-toolbar-label" for="individual-tax-year-input">
+                                Year
+                            </label>
+                            <input
+                                id="individual-tax-year-input"
+                                v-model="selectedYearInput"
+                                type="text"
+                                inputmode="numeric"
+                                maxlength="4"
+                                class="form-control individual-tax-select"
+                                :disabled="isLoading"
+                                placeholder="Year"
+                                aria-label="Tax year"
+                                @input="onYearInput"
+                                @blur="applyYearInput"
+                                @keyup.enter="applyYearInput"
+                            />
+                        </div>
+
+                        <div class="individual-tax-toolbar-stack">
+                            <label class="individual-tax-toolbar-label" for="individual-tax-train-law-input">
+                                Train Law
+                            </label>
+                            <select
+                                id="individual-tax-train-law-input"
+                                class="form-select individual-tax-select"
+                                :value="currentSelectedTrainLawId != null ? String(currentSelectedTrainLawId) : ''"
+                                disabled
+                                aria-label="Selected train law"
+                            >
+                                <option value="">Train law</option>
+                                <option
+                                    v-for="option in currentTrainLawOptions"
+                                    :key="`toolbar-train-law-${option.id}`"
+                                    :value="String(option.id)"
+                                >
+                                    {{ option.year }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -88,7 +118,7 @@
                 </div>
             </div>
 
-            <div class="individual-tax-grid">
+            <div v-if="currentHasTaxationData" class="individual-tax-grid">
                 <section class="individual-tax-panel">
                     <h2 class="individual-tax-heading">Annual Taxable Compensation Income Computation</h2>
 
@@ -269,6 +299,86 @@
                             </tr>
                         </tfoot>
                     </table>
+
+                    <div class="individual-tax-subsection">
+                        <h3 class="individual-tax-subheading">Taxes Breakdown</h3>
+
+                        <table class="individual-tax-table">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th
+                                        v-for="column in currentTaxModuleColumns"
+                                        :key="`tax-module-column-${column}`"
+                                        class="amount"
+                                    >
+                                        {{ column }}
+                                    </th>
+                                    <th class="amount">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="(row, index) in currentTaxModuleBreakdown"
+                                    :key="`tax-module-${row.month_number}`"
+                                >
+                                    <td class="individual-tax-uppercase">{{ row.month_label }}</td>
+                                    <td
+                                        v-for="column in currentTaxModuleColumns"
+                                        :key="`tax-module-${row.month_number}-${column}`"
+                                        class="amount"
+                                    >
+                                        <span
+                                            class="individual-tax-amount-with-source"
+                                            :title="formatTaxModuleSource(row, column)"
+                                        >
+                                            <span class="individual-tax-amount-value">
+                                                <span
+                                                    class="individual-tax-source-dot"
+                                                    :class="sourceDotClass(getTaxModuleSource(row, column))"
+                                                    aria-hidden="true"
+                                                ></span>
+                                                {{ peso(getTaxModuleAmount(row, column)) }}
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td
+                                        class="amount"
+                                        :class="{ 'individual-tax-highlight-blue': index === currentTaxModuleBreakdown.length - 1 }"
+                                    >
+                                        <span
+                                            class="individual-tax-amount-with-source"
+                                            :title="formatTaxModuleTotalSource(row)"
+                                        >
+                                            <span class="individual-tax-amount-value">
+                                                <span
+                                                    class="individual-tax-source-dot"
+                                                    :class="sourceDotClass(getTaxModuleTotalSource(row))"
+                                                    aria-hidden="true"
+                                                ></span>
+                                                {{ peso(row.amount) }}
+                                            </span>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th>Total</th>
+                                    <th
+                                        v-for="column in currentTaxModuleColumns"
+                                        :key="`tax-module-total-${column}`"
+                                        class="amount"
+                                    >
+                                        {{ peso(getTaxModuleColumnTotal(column)) }}
+                                    </th>
+                                    <th class="amount individual-tax-highlight-blue">
+                                        {{ peso(currentSummary.total_tax_withheld) }}
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </section>
 
                 <section class="individual-tax-panel">
@@ -365,6 +475,15 @@
                         <strong>active</strong>.
                     </div>
                 </section>
+            </div>
+
+            <div v-else class="individual-tax-empty-state">
+                <div class="individual-tax-empty-card">
+                    <h2 class="individual-tax-heading mb-2">No data yet</h2>
+                    <p class="mb-0 text-muted">
+                        No individual tax record has been created for {{ selectedYearValue }} yet. Use Calculate to set up this year.
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -525,7 +644,7 @@
                                                                 multiple
                                                             >
                                                                 <option
-                                                                    v-for="employeeOption in currentEmployees"
+                                                                    v-for="employeeOption in currentRunEmployees"
                                                                     :key="`run-${employeeOption.employee_no}`"
                                                                     :value="String(employeeOption.employee_no)"
                                                                 >
@@ -535,59 +654,9 @@
                                                         </div>
 
                                                         <div class="col-12">
-                                                            <label class="form-label individual-tax-run-label">Applicable Components</label>
-                                                            <div class="individual-tax-run-segmented" role="group" aria-label="Applicable Components">
-                                                                <label
-                                                                    class="individual-tax-run-segment individual-tax-run-segment--active individual-tax-run-segment--disabled"
-                                                                >
-                                                                    <input
-                                                                        class="individual-tax-run-segment-input"
-                                                                        type="checkbox"
-                                                                        checked
-                                                                        disabled
-                                                                    />
-                                                                    <span class="individual-tax-run-segment-label">
-                                                                        <i class="bi bi-cash-stack me-2"></i>
-                                                                        Salary
-                                                                    </span>
-                                                                </label>
-
-                                                                <label
-                                                                    class="individual-tax-run-segment"
-                                                                    :class="{ 'individual-tax-run-segment--active': runForm.isLongevity }"
-                                                                >
-                                                                    <input
-                                                                        v-model="runForm.isLongevity"
-                                                                        class="individual-tax-run-segment-input"
-                                                                        type="checkbox"
-                                                                    />
-                                                                    <span class="individual-tax-run-segment-label">
-                                                                        <i class="bi bi-clock-history me-2"></i>
-                                                                        Longevity
-                                                                    </span>
-                                                                </label>
-
-                                                                <label
-                                                                    class="individual-tax-run-segment"
-                                                                    :class="{ 'individual-tax-run-segment--active': runForm.isHazardPay }"
-                                                                >
-                                                                    <input
-                                                                        v-model="runForm.isHazardPay"
-                                                                        class="individual-tax-run-segment-input"
-                                                                        type="checkbox"
-                                                                    />
-                                                                    <span class="individual-tax-run-segment-label">
-                                                                        <i class="bi bi-exclamation-triangle me-2"></i>
-                                                                        Hazard Pay
-                                                                    </span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="col-12">
                                                             <div class="alert alert-secondary mb-0 py-2 px-3">
                                                                 <div class="small">
-                                                                    Select the tax reference table and applicable components before proceeding.
+                                                                    Select the tax reference table and employees before proceeding.
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -662,122 +731,6 @@
                                                             </div>
                                                         </div>
 
-                                                        <div class="col-12">
-                                                            <div class="border rounded p-3 h-100">
-                                                                <div class="form-check">
-                                                                    <input
-                                                                        id="individualTaxRunLessBir"
-                                                                        v-model="runForm.is_less_bir"
-                                                                        class="form-check-input"
-                                                                        type="checkbox"
-                                                                    />
-                                                                    <label
-                                                                        class="form-check-label"
-                                                                        for="individualTaxRunLessBir"
-                                                                    >
-                                                                        Less BIR RR 3-2015 (90,000.00)
-                                                                    </label>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="col-12">
-                                                            <div class="border rounded p-3 h-100">
-                                                                <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-                                                                    <div class="fw-bold">Others</div>
-
-                                                                    <button
-                                                                        type="button"
-                                                                        class="btn btn-sm btn-outline-primary"
-                                                                        @click="addRunOther"
-                                                                    >
-                                                                        <i class="bi bi-plus-lg me-1"></i>
-                                                                        Add Row
-                                                                    </button>
-                                                                </div>
-
-                                                                <div v-if="runForm.others.length" class="d-flex flex-column gap-2">
-                                                                    <div
-                                                                        v-for="(other, index) in runForm.others"
-                                                                        :key="`run-other-${index}`"
-                                                                        class="border rounded p-2"
-                                                                    >
-                                                                        <div class="row g-2 align-items-end">
-                                                                            <div class="col-12 col-lg-4">
-                                                                                <label class="form-label form-label-sm mb-1">Name</label>
-                                                                                <input
-                                                                                    v-model="other.name"
-                                                                                    type="text"
-                                                                                    class="form-control form-control-sm"
-                                                                                    placeholder="Enter name"
-                                                                                />
-                                                                            </div>
-
-                                                                            <div class="col-12 col-sm-6 col-lg-2">
-                                                                                <label class="form-label form-label-sm mb-1">Amount</label>
-                                                                                <input
-                                                                                    v-model="other.amount"
-                                                                                    type="number"
-                                                                                    min="0"
-                                                                                    step="0.01"
-                                                                                    class="form-control form-control-sm"
-                                                                                    placeholder="0.00"
-                                                                                />
-                                                                            </div>
-
-                                                                            <div class="col-6 col-lg-2">
-                                                                                <div class="form-check pt-lg-4">
-                                                                                    <input
-                                                                                        :id="`run-other-taxable-${index}`"
-                                                                                        v-model="other.is_taxable"
-                                                                                        class="form-check-input"
-                                                                                        type="checkbox"
-                                                                                    />
-                                                                                    <label
-                                                                                        class="form-check-label"
-                                                                                        :for="`run-other-taxable-${index}`"
-                                                                                    >
-                                                                                        Taxable
-                                                                                    </label>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            <div class="col-6 col-lg-2">
-                                                                                <div class="form-check pt-lg-4">
-                                                                                    <input
-                                                                                        :id="`run-other-bir-${index}`"
-                                                                                        v-model="other.is_exempt_bir"
-                                                                                        class="form-check-input"
-                                                                                        type="checkbox"
-                                                                                    />
-                                                                                    <label
-                                                                                        class="form-check-label"
-                                                                                        :for="`run-other-bir-${index}`"
-                                                                                    >
-                                                                                        Exempt BIR
-                                                                                    </label>
-                                                                                </div>
-                                                                            </div>
-
-                                                                            <div class="col-12 col-lg-2 d-flex justify-content-lg-end">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    class="btn btn-sm btn-outline-danger w-100 w-lg-auto"
-                                                                                    @click="removeRunOther(index)"
-                                                                                >
-                                                                                    <i class="bi bi-trash me-1"></i>
-                                                                                    Remove
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div v-else class="text-muted small">
-                                                                    No other entries yet.
-                                                                </div>
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -900,13 +853,17 @@ export default {
         apiUrl: { type: String, required: true },
         employee: { type: Object, required: true },
         employees: { type: Array, required: true },
+        allEmployees: { type: Array, default: () => [] },
         selectedYear: { type: Number, required: true },
         availableYears: { type: Array, required: true },
         monthlyBreakdown: { type: Array, required: true },
+        taxModuleBreakdown: { type: Array, default: () => [] },
         otherComponents: { type: Object, required: true },
         summary: { type: Object, required: true },
         trainLawOptions: { type: Array, default: () => [] },
         selectedTrainLawId: { type: [Number, String], default: null },
+        selectedTaxationSettings: { type: Object, default: null },
+        hasTaxationData: { type: Boolean, default: false },
     },
 
     data() {
@@ -914,13 +871,17 @@ export default {
             state: {
                 employee: this.employee,
                 employees: this.employees,
+                allEmployees: this.allEmployees,
                 selectedYear: Number(this.selectedYear || new Date().getFullYear()),
                 availableYears: this.availableYears,
                 monthlyBreakdown: this.monthlyBreakdown,
+                taxModuleBreakdown: this.taxModuleBreakdown,
                 otherComponents: this.otherComponents,
                 summary: this.summary,
                 trainLawOptions: this.trainLawOptions,
                 selectedTrainLawId: this.selectedTrainLawId,
+                selectedTaxationSettings: this.selectedTaxationSettings,
+                hasTaxationData: this.hasTaxationData,
             },
             selectedEmployeeNo: String(this.employee?.employee_no || ""),
             selectedYearValue: Number(this.selectedYear || new Date().getFullYear()),
@@ -936,11 +897,7 @@ export default {
                 year: String(this.selectedYear || new Date().getFullYear()),
                 trainLawId: this.selectedTrainLawId != null ? String(this.selectedTrainLawId) : "",
                 employee_nos: this.employee?.employee_no != null ? [String(this.employee.employee_no)] : [],
-                isLongevity: false,
-                isHazardPay: false,
-                is_less_bir: false,
                 governmentBonuses: [],
-                others: [],
                 portion: {
                     hazard_pay: 20,
                     salary: 80,
@@ -959,8 +916,20 @@ export default {
             return this.state.employees || [];
         },
 
+        currentRunEmployees() {
+            return this.state.allEmployees || [];
+        },
+
         currentMonthlyBreakdown() {
             return this.state.monthlyBreakdown || [];
+        },
+
+        currentTaxModuleBreakdown() {
+            return this.state.taxModuleBreakdown || [];
+        },
+
+        currentTaxModuleColumns() {
+            return ["Salary Tax", "Hazard Pay Tax", "Longevity Tax"];
         },
 
         currentOtherComponents() {
@@ -973,6 +942,18 @@ export default {
 
         currentTrainLawOptions() {
             return this.state.trainLawOptions || [];
+        },
+
+        currentSelectedTrainLawId() {
+            return this.state.selectedTrainLawId ?? null;
+        },
+
+        currentSelectedTaxationSettings() {
+            return this.state.selectedTaxationSettings || null;
+        },
+
+        currentHasTaxationData() {
+            return Boolean(this.state.hasTaxationData);
         },
 
         isLastRunTab() {
@@ -1079,6 +1060,95 @@ export default {
 
             return statusLabelMap[source] || "Forecasted";
         },
+        payrollStatusPriority(status) {
+            const priorityMap = {
+                draft: 1,
+                pending: 2,
+                approved: 3,
+                for_releasing: 4,
+                completed: 5,
+            };
+
+            return priorityMap[status] || 99;
+        },
+        getTaxModuleAmount(row, column) {
+            const item = (row?.items || []).find((entry) => entry?.name === column);
+
+            return Number(item?.amount || 0);
+        },
+        getTaxModuleStatusKey(column) {
+            const normalized = String(column || "").toLowerCase();
+
+            if (normalized === "salary tax") {
+                return "basic_salary";
+            }
+
+            if (normalized === "hazard pay tax") {
+                return "hazard_pay";
+            }
+
+            if (normalized === "longevity tax") {
+                return "longevity_pay";
+            }
+
+            return "basic_salary";
+        },
+        getMatchingMonthlyBreakdownRow(monthNumber) {
+            return this.currentMonthlyBreakdown.find((entry) => Number(entry?.month_number) === Number(monthNumber)) || null;
+        },
+        getTaxModuleSource(row, column) {
+            const monthlyRow = this.getMatchingMonthlyBreakdownRow(row?.month_number);
+            const sourceKey = this.getTaxModuleStatusKey(column);
+
+            return monthlyRow?.source_breakdown?.[sourceKey] || "forecast";
+        },
+        formatTaxModuleSource(row, column) {
+            const labelMap = {
+                "Salary Tax": "Salary Tax",
+                "Hazard Pay Tax": "Hazard Pay Tax",
+                "Longevity Tax": "Longevity Tax",
+            };
+
+            return `${labelMap[column] || column}: ${this.formatStatusLabel(this.getTaxModuleSource(row, column))}`;
+        },
+        getTaxModuleTotalSource(row) {
+            const sources = this.currentTaxModuleColumns.map((column) => this.getTaxModuleSource(row, column));
+            const nonForecastSources = sources.filter((source) => source !== "forecast");
+
+            if (!nonForecastSources.length) {
+                return "forecast";
+            }
+
+            return nonForecastSources.sort((left, right) => {
+                return this.payrollStatusPriority(left) - this.payrollStatusPriority(right);
+            })[0];
+        },
+        formatTaxModuleTotalSource(row) {
+            return `Total: ${this.formatStatusLabel(this.getTaxModuleTotalSource(row))}`;
+        },
+        getTaxModuleColumnTotal(column) {
+            return this.currentTaxModuleBreakdown.reduce(
+                (total, row) => total + this.getTaxModuleAmount(row, column),
+                0,
+            );
+        },
+        applySelectedTaxationSettingsToRunForm() {
+            const selectedSettings = this.currentSelectedTaxationSettings;
+
+            this.runForm.year = String(this.selectedYearValue || "");
+            this.runForm.employee_nos = this.selectedEmployeeNo ? [String(this.selectedEmployeeNo)] : [];
+            this.runForm.trainLawId = this.state?.selectedTrainLawId != null ? String(this.state.selectedTrainLawId) : "";
+            this.runForm.governmentBonuses = Array.isArray(selectedSettings?.bonuses)
+                ? selectedSettings.bonuses
+                    .map((bonus) => String(bonus?.government_bonus_id || ""))
+                    .filter(Boolean)
+                : [];
+            this.runForm.portion = {
+                hazard_pay: Number(selectedSettings?.portion?.hazard_pay ?? 20),
+                salary: Number(selectedSettings?.portion?.salary ?? 80),
+                longevity: Number(selectedSettings?.portion?.longevity ?? 0),
+            };
+        },
 
         syncSelectionFromState() {
             if (this.currentEmployee?.employee_no != null) {
@@ -1088,19 +1158,9 @@ export default {
             if (this.state?.selectedYear != null) {
                 this.selectedYearValue = Number(this.state.selectedYear);
                 this.selectedYearInput = String(this.selectedYearValue);
-                this.runForm.year = String(this.selectedYearValue);
-                this.runForm.employee_nos = this.selectedEmployeeNo ? [String(this.selectedEmployeeNo)] : [];
-                this.runForm.governmentBonuses = [];
-                this.runForm.others = [];
-                this.runForm.portion = {
-                    hazard_pay: 20,
-                    salary: 80,
-                    longevity: 0,
-                };
             }
 
-            const selectedTrainLawId = this.state?.selectedTrainLawId;
-            this.runForm.trainLawId = selectedTrainLawId != null ? String(selectedTrainLawId) : "";
+            this.applySelectedTaxationSettingsToRunForm();
         },
         onYearInput(event) {
             const nextValue = String(event?.target?.value || "").replace(/\D/g, "").slice(0, 4);
@@ -1136,7 +1196,7 @@ export default {
             const select = this.$refs.employeeSelect;
             const dropdownParent = this.$refs.toolbarForm;
 
-            if (!select || !jq || !this.currentEmployees.length) return;
+            if (!select || !jq || !this.currentRunEmployees.length) return;
 
             const $select = jq(select);
 
@@ -1202,7 +1262,7 @@ export default {
             const select = this.$refs.runEmployeeSelect;
             const modalElement = this.$refs.runModal;
 
-            if (!select || !jq || !this.currentEmployees.length) return;
+            if (!select || !jq || !this.currentRunEmployees.length) return;
 
             const $select = jq(select);
 
@@ -1253,7 +1313,7 @@ export default {
             }
         },
         selectAllRunEmployees() {
-            this.runForm.employee_nos = this.currentEmployees.map((employeeOption) =>
+            this.runForm.employee_nos = this.currentRunEmployees.map((employeeOption) =>
                 String(employeeOption.employee_no),
             );
             this.$nextTick(() => {
@@ -1265,17 +1325,6 @@ export default {
             this.$nextTick(() => {
                 this.syncRunEmployeeSelectValue();
             });
-        },
-        addRunOther() {
-            this.runForm.others.push({
-                name: "",
-                amount: "",
-                is_taxable: false,
-                is_exempt_bir: false,
-            });
-        },
-        removeRunOther(index) {
-            this.runForm.others.splice(index, 1);
         },
         goToNextRunTab() {
             if (this.activeRunTab === "A") {
@@ -1298,17 +1347,8 @@ export default {
                 },
                 n_taxation_settings: {
                     train_law_id: this.runForm.trainLawId ? Number(this.runForm.trainLawId) : null,
-                    is_longevity: Boolean(this.runForm.isLongevity),
-                    is_hazard_pay: Boolean(this.runForm.isHazardPay),
-                    is_less_bir: Boolean(this.runForm.is_less_bir),
                     bonuses: (this.runForm.governmentBonuses || []).map((governmentBonusId) => ({
                         government_bonus_id: Number(governmentBonusId),
-                    })),
-                    others: (this.runForm.others || []).map((other) => ({
-                        name: other.name || "",
-                        amount: Number(other.amount || 0),
-                        is_taxable: Boolean(other.is_taxable),
-                        is_exempt_bir: Boolean(other.is_exempt_bir),
                     })),
                     portion: {
                         hazard_pay: Number(this.runForm.portion?.hazard_pay || 0),
@@ -1376,13 +1416,17 @@ export default {
             this.state = {
                 employee: payload.employee || {},
                 employees: payload.employees || [],
+                allEmployees: payload.allEmployees || [],
                 selectedYear: Number(payload.selectedYear || this.selectedYearValue),
                 availableYears: payload.availableYears || [],
                 monthlyBreakdown: payload.monthlyBreakdown || [],
+                taxModuleBreakdown: payload.taxModuleBreakdown || [],
                 otherComponents: payload.otherComponents || { earnings: [], de_minimis: [], government_bonuses: [], allowables: [], taxes: [] },
                 summary: payload.summary || {},
                 trainLawOptions: payload.trainLawOptions || [],
                 selectedTrainLawId: payload.selectedTrainLawId ?? null,
+                selectedTaxationSettings: payload.selectedTaxationSettings || null,
+                hasTaxationData: Boolean(payload.hasTaxationData),
             };
 
             this.syncSelectionFromState();
@@ -1487,6 +1531,17 @@ export default {
     position: relative;
 }
 
+.individual-tax-empty-state {
+    padding: 1.5rem;
+}
+
+.individual-tax-empty-card {
+    padding: 2rem 1.5rem;
+    border: 1px dashed var(--bs-border-color);
+    background: var(--bs-body-bg);
+    text-align: center;
+}
+
 .individual-tax-toolbar {
     display: flex;
     justify-content: space-between;
@@ -1517,6 +1572,21 @@ export default {
     gap: 1rem;
     margin-bottom: 0.75rem;
     flex-wrap: wrap;
+}
+
+.individual-tax-subsection {
+    margin-top: 1.25rem;
+}
+
+.individual-tax-subheading {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--bs-body-color);
+}
+
+.individual-tax-uppercase {
+    text-transform: uppercase;
 }
 
 .x-small {
@@ -1682,6 +1752,28 @@ export default {
 
 .individual-tax-employee-select {
     min-width: 320px;
+}
+
+.individual-tax-toolbar-inline-fields {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.individual-tax-toolbar-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 180px;
+}
+
+.individual-tax-toolbar-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
 }
 
 .individual-tax-meta {

@@ -9,9 +9,9 @@ class NTaxation extends Model
 {
     protected $table = 'n_taxation';
 
-    protected $primaryKey = 'UniqueID';
+    protected $primaryKey = 'id';
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'Year',
@@ -19,6 +19,6 @@ class NTaxation extends Model
 
     public function settings(): HasMany
     {
-        return $this->hasMany(NTaxationSetting::class, 'n_taxation_id', 'UniqueID');
+        return $this->hasMany(NTaxationSetting::class, 'n_taxation_id', 'id');
     }
 }

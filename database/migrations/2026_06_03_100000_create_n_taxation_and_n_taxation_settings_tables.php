@@ -12,20 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('n_taxation', function (Blueprint $table) {
-            $table->id('UniqueID');
+            $table->id('id');
             $table->year('Year');
+            $table->timestamps();
         });
 
         Schema::create('n_taxation_settings', function (Blueprint $table) {
-            $table->id('UniqueID');
+            $table->id('id');
             $table->unsignedBigInteger('n_taxation_id');
             $table->unsignedBigInteger('train_law_id');
-            $table->boolean('is_longevity')->default(false);
-            $table->boolean('is_hazard_pay')->default(false);
-            $table->boolean('is_less_bir')->default(false);
 
             $table->foreign('n_taxation_id')
-                ->references('UniqueID')
+                ->references('id')
                 ->on('n_taxation')
                 ->cascadeOnDelete();
 
@@ -34,13 +32,26 @@ return new class extends Migration
                 ->on('train_law');
         });
 
+        Schema::create('n_taxation_employees', function (Blueprint $table) {
+            $table->id('id');
+            $table->unsignedBigInteger('n_taxation_id');
+            $table->string('employee_no');
+
+            $table->foreign('n_taxation_id')
+                ->references('id')
+                ->on('n_taxation');
+
+            $table->timestamps();
+        });
+
+
         Schema::create('n_taxation_setting_bonuses', function (Blueprint $table) {
-            $table->id('UniqueID');
+            $table->id('id');
             $table->unsignedBigInteger('n_taxation_setting_id');
             $table->unsignedBigInteger('government_bonus_id');
 
             $table->foreign('n_taxation_setting_id')
-                ->references('UniqueID')
+                ->references('id')
                 ->on('n_taxation_settings')
                 ->cascadeOnDelete();
 
@@ -49,29 +60,27 @@ return new class extends Migration
                 ->on('government_bonus_types');
         });
 
-        Schema::create('n_taxation_setting_others', function (Blueprint $table) {
-            $table->id('UniqueID');
-            $table->unsignedBigInteger('n_taxation_setting_id');
-            $table->string('name');
-            $table->decimal('amount', 12, 2)->default(0);
-            $table->boolean('is_taxable')->default(false);
-            $table->boolean('is_exempt_bir')->default(false);
+        Schema::create('n_taxation_employee_bonus_disabled', function (Blueprint $table) {
+            $table->id('id');
+            $table->unsignedBigInteger('n_taxation_bonus_id');
 
-            $table->foreign('n_taxation_setting_id')
-                ->references('UniqueID')
-                ->on('n_taxation_settings')
-                ->cascadeOnDelete();
+            $table->foreign('n_taxation_bonus_id')
+                ->references('id')
+                ->on('n_taxation_setting_bonuses');
+
+            $table->string('employee_no');
+            $table->timestamps();
         });
 
         Schema::create('n_taxation_setting_portion', function (Blueprint $table) {
-            $table->id('UniqueID');
+            $table->id('id');
             $table->unsignedBigInteger('n_taxation_setting_id');
             $table->decimal('hazard_pay', 12, 2)->default(0);
             $table->decimal('salary', 12, 2)->default(0);
             $table->decimal('longevity', 12, 2)->default(0);
 
             $table->foreign('n_taxation_setting_id')
-                ->references('UniqueID')
+                ->references('id')
                 ->on('n_taxation_settings')
                 ->cascadeOnDelete();
         });
@@ -83,9 +92,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('n_taxation_setting_portion');
-        Schema::dropIfExists('n_taxation_setting_others');
+        Schema::dropIfExists('n_taxation_employee_bonus_disabled');
         Schema::dropIfExists('n_taxation_setting_bonuses');
         Schema::dropIfExists('n_taxation_settings');
+        Schema::dropIfExists('n_taxation_employees');
         Schema::dropIfExists('n_taxation');
     }
 };

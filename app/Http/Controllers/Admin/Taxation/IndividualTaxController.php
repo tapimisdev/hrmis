@@ -28,7 +28,8 @@ class IndividualTaxController extends Controller
     public function save(SaveIndividualTaxRequest $request)
     {
         return response()->json(
-            $this->saveIndividualTaxService->handle($request->validated())
+            $this->saveIndividualTaxService->handle($request->validated()),
+            201
         );
     }
 }

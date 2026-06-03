@@ -7,12 +7,16 @@
         :api-url='@json(url('/api/tax/individual-tax'))'
         :employee='@json($employee)'
         :employees='@json($employees)'
+        :all-employees='@json($allEmployees)'
         :selected-year='@json($selectedYear)'
         :available-years='@json($availableYears)'
         :monthly-breakdown='@json($monthlyBreakdown)'
+        :tax-module-breakdown='@json($taxModuleBreakdown)'
         :other-components='@json($otherComponents)'
         :summary='@json($summary)'
         :train-law-options='@json($trainLawOptions)'
         :selected-train-law-id='@json($selectedTrainLawId)'
+        :selected-taxation-settings='@json($selectedTaxationSettings)'
+        :has-taxation-data='@json($hasTaxationData)'
     />
 @endsection

@@ -9,7 +9,7 @@ class NTaxationSettingBonus extends Model
 {
     protected $table = 'n_taxation_setting_bonuses';
 
-    protected $primaryKey = 'UniqueID';
+    protected $primaryKey = 'id';
 
     public $timestamps = false;
 
@@ -20,6 +20,6 @@ class NTaxationSettingBonus extends Model
 
     public function taxationSetting(): BelongsTo
     {
-        return $this->belongsTo(NTaxationSetting::class, 'n_taxation_setting_id', 'UniqueID');
+        return $this->belongsTo(NTaxationSetting::class, 'n_taxation_setting_id', 'id');
     }
 }
