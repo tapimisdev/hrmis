@@ -85,8 +85,6 @@ class PeraRataRegistryService
                     'pera' => (float) ($employee->pera ?? 0),
                     'representation_allowance' => (float) ($employee->representation_allowance ?? 0),
                     'transportion_allowance' => (float) ($employee->transportion_allowance ?? 0),
-                    'absences' => (float) ($employee->absences ?? 0),
-                    'ut_deductions' => (float) ($employee->ut_deductions ?? 0),
                     'total' => (float) ($employee->total ?? 0),
                     'healthcard' => (float) ($employee->healthcard ?? 0),
                     'adjustments' => (float) ($employee->adjustments ?? 0),
@@ -101,6 +99,11 @@ class PeraRataRegistryService
     {
         $this->spreadsheet = IOFactory::load(public_path('templates/regular/pera_rata_registry.xlsx'));
         $this->sheet = $this->spreadsheet->getActiveSheet();
+        $this->sheet->removeColumn('G', 2);
+        $this->sheet->getColumnDimension('I')->setVisible(true);
+        $this->sheet->setCellValue('I4', 'Adjustments');
+        $this->sheet->setCellValue('I5', null);
+        $this->sheet->mergeCells('I4:I5');
         $this->sheet->unfreezePane();
         $this->writeReportTitle();
         $this->removeBrokenNamedRanges();
@@ -126,8 +129,6 @@ class PeraRataRegistryService
             'pera' => 0,
             'representation_allowance' => 0,
             'transportion_allowance' => 0,
-            'absences' => 0,
-            'ut_deductions' => 0,
             'total' => 0,
             'healthcard' => 0,
             'adjustments' => 0,
@@ -143,8 +144,6 @@ class PeraRataRegistryService
                 'pera' => 0,
                 'representation_allowance' => 0,
                 'transportion_allowance' => 0,
-                'absences' => 0,
-                'ut_deductions' => 0,
                 'total' => 0,
                 'healthcard' => 0,
                 'adjustments' => 0,
@@ -160,12 +159,10 @@ class PeraRataRegistryService
                 $this->sheet->setCellValue("D{$row}", $employee['pera']);
                 $this->sheet->setCellValue("E{$row}", $employee['representation_allowance']);
                 $this->sheet->setCellValue("F{$row}", $employee['transportion_allowance']);
-                $this->sheet->setCellValue("G{$row}", $employee['absences']);
-                $this->sheet->setCellValue("H{$row}", $employee['ut_deductions']);
-                $this->sheet->setCellValue("I{$row}", $employee['total']);
-                $this->sheet->setCellValue("J{$row}", $employee['healthcard']);
-                $this->sheet->setCellValue("K{$row}", $employee['adjustments']);
-                $this->sheet->setCellValue("L{$row}", $employee['net_pay']);
+                $this->sheet->setCellValue("G{$row}", $employee['total']);
+                $this->sheet->setCellValue("H{$row}", $employee['healthcard']);
+                $this->sheet->setCellValue("I{$row}", $employee['adjustments']);
+                $this->sheet->setCellValue("J{$row}", $employee['net_pay']);
 
                 foreach ($groupTotals as $field => $value) {
                     $groupTotals[$field] += (float) ($employee[$field] ?? 0);
@@ -208,7 +205,7 @@ class PeraRataRegistryService
             return;
         }
 
-        $this->sheet->mergeCells('A2:L2');
+        $this->sheet->mergeCells('A2:J2');
         $this->sheet->setCellValue('A2', 'PAYROLL OF PERA AND RATA FOR THE MONTH OF ' . strtoupper($period));
     }
 
@@ -250,7 +247,7 @@ class PeraRataRegistryService
 
     private function copyTemplateRow(int $sourceRow, int $targetRow): void
     {
-        for ($col = 'A'; $col !== 'M'; $col++) {
+        for ($col = 'A'; $col !== 'K'; $col++) {
             $this->sheet->duplicateStyle(
                 $this->sheet->getStyle("{$col}{$sourceRow}"),
                 "{$col}{$targetRow}"
@@ -265,9 +262,9 @@ class PeraRataRegistryService
     private function writeProjectHeader(int $row, string $projectName, int $templateRow): int
     {
         $this->copyTemplateRow($templateRow, $row);
-        $this->sheet->mergeCells("A{$row}:L{$row}");
+        $this->sheet->mergeCells("A{$row}:J{$row}");
         $this->sheet->setCellValue("A{$row}", strtoupper($projectName));
-        $this->sheet->getStyle("A{$row}:L{$row}")->applyFromArray([
+        $this->sheet->getStyle("A{$row}:J{$row}")->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'size' => 11,
@@ -302,14 +299,12 @@ class PeraRataRegistryService
         $this->sheet->setCellValue("D{$row}", $totals['pera']);
         $this->sheet->setCellValue("E{$row}", $totals['representation_allowance']);
         $this->sheet->setCellValue("F{$row}", $totals['transportion_allowance']);
-        $this->sheet->setCellValue("G{$row}", $totals['absences']);
-        $this->sheet->setCellValue("H{$row}", $totals['ut_deductions']);
-        $this->sheet->setCellValue("I{$row}", $totals['total']);
-        $this->sheet->setCellValue("J{$row}", $totals['healthcard']);
-        $this->sheet->setCellValue("K{$row}", $totals['adjustments']);
-        $this->sheet->setCellValue("L{$row}", $totals['net_pay']);
+        $this->sheet->setCellValue("G{$row}", $totals['total']);
+        $this->sheet->setCellValue("H{$row}", $totals['healthcard']);
+        $this->sheet->setCellValue("I{$row}", $totals['adjustments']);
+        $this->sheet->setCellValue("J{$row}", $totals['net_pay']);
 
-        $this->sheet->getStyle("A{$row}:L{$row}")->applyFromArray([
+        $this->sheet->getStyle("A{$row}:J{$row}")->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'size' => 10,
@@ -347,14 +342,12 @@ class PeraRataRegistryService
         $this->sheet->setCellValue("D{$row}", $totals['pera']);
         $this->sheet->setCellValue("E{$row}", $totals['representation_allowance']);
         $this->sheet->setCellValue("F{$row}", $totals['transportion_allowance']);
-        $this->sheet->setCellValue("G{$row}", $totals['absences']);
-        $this->sheet->setCellValue("H{$row}", $totals['ut_deductions']);
-        $this->sheet->setCellValue("I{$row}", $totals['total']);
-        $this->sheet->setCellValue("J{$row}", $totals['healthcard']);
-        $this->sheet->setCellValue("K{$row}", $totals['adjustments']);
-        $this->sheet->setCellValue("L{$row}", $totals['net_pay']);
+        $this->sheet->setCellValue("G{$row}", $totals['total']);
+        $this->sheet->setCellValue("H{$row}", $totals['healthcard']);
+        $this->sheet->setCellValue("I{$row}", $totals['adjustments']);
+        $this->sheet->setCellValue("J{$row}", $totals['net_pay']);
 
-        $this->sheet->getStyle("A{$row}:L{$row}")->applyFromArray([
+        $this->sheet->getStyle("A{$row}:J{$row}")->applyFromArray([
             'font' => [
                 'name' => 'Arial',
                 'size' => 11,

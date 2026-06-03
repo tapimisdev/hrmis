@@ -22,6 +22,8 @@ class Employee extends Controller
     public function __construct(EventService $EventService)
     {
         $this->EventService = $EventService;
+        $this->middleware('permission:emp.behavioral_notices.view')
+            ->only(['getViolations', 'getBehavioralNotices', 'markBehavioralNoticeSeen']);
     }
 
     public function children(Request $request)
@@ -662,6 +664,111 @@ class Employee extends Controller
     {
         $data = $this->EventService->saveReadNotification($request);
         return response()->json($data);
+    }
+
+    public function getViolations(Request $request)
+    {
+        return $this->behavioralNoticesResponse($request, true);
+    }
+
+    public function getBehavioralNotices(Request $request)
+    {
+        return $this->behavioralNoticesResponse($request);
+    }
+
+    private function behavioralNoticesResponse(Request $request, bool $defaultToCurrentPeriod = false)
+    {
+        $periodInput = $request->input('period');
+        $period = $periodInput || $defaultToCurrentPeriod
+            ? Carbon::parse(($periodInput ?: now()->format('Y-m')) . '-01')
+            : null;
+
+        $userId = Auth::id() ?? $request->user()?->id;
+        $baseQuery = DB::table('employee_violations')
+            ->where('user_id', $userId);
+
+        $unseenCount = (clone $baseQuery)
+            ->where(fn ($query) => $query
+                ->whereNull('status')
+                ->orWhere('status', 'unseen'))
+            ->count();
+
+        $violationsQuery = (clone $baseQuery)
+            ->when($period, fn ($query) => $query
+                ->where('month', $period->month)
+                ->where('year', $period->year))
+            ->orderByDesc('generated_at')
+            ->orderByDesc('year')
+            ->orderByDesc('month')
+            ->orderBy('violation_type');
+
+        $mapViolation = function (object $violation) {
+            $violation->details = is_string($violation->details)
+                ? json_decode($violation->details, true)
+                : $violation->details;
+            $violation->status ??= 'unseen';
+            $violation->is_seen = $violation->status === 'seen';
+
+            return $violation;
+        };
+
+        $perPage = (int) $request->input('per_page', 0);
+
+        if ($perPage > 0) {
+            $perPage = max(1, min($perPage, 50));
+            $paginator = $violationsQuery->paginate($perPage);
+            $violations = $paginator->getCollection()->map($mapViolation)->values();
+
+            return response()->json([
+                'violations' => $violations,
+                'behavioral_notices' => $violations,
+                'unseen_count' => $unseenCount,
+                'period' => $period?->format('F Y') ?? 'All periods',
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'last_page' => $paginator->lastPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'has_more' => $paginator->hasMorePages(),
+                ],
+            ]);
+        }
+
+        $violations = $violationsQuery->get()->map($mapViolation);
+
+        return response()->json([
+            'violations' => $violations,
+            'behavioral_notices' => $violations,
+            'unseen_count' => $unseenCount,
+            'period' => $period?->format('F Y') ?? 'All periods',
+        ]);
+    }
+
+    public function markBehavioralNoticeSeen(Request $request, int $id)
+    {
+        $userId = Auth::id() ?? $request->user()?->id;
+
+        DB::table('employee_violations')
+            ->where('id', $id)
+            ->where('user_id', $userId)
+            ->update([
+                'status' => 'seen',
+                'seen_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        $unseenCount = DB::table('employee_violations')
+            ->where('user_id', $userId)
+            ->where(fn ($query) => $query
+                ->whereNull('status')
+                ->orWhere('status', 'unseen'))
+            ->count();
+
+        return response()->json([
+            'status' => 'seen',
+            'seen_at' => now(),
+            'unseen_count' => $unseenCount,
+        ]);
     }
 
     public function storeFeedback(Request $request)

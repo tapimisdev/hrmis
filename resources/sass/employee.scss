@@ -683,3 +683,9 @@ footer {
 #header-con {
     width: 32%;
 }
+
+.employee-navbar #onlineUsersDropdown i,
+.employee-navbar #onlineUsersDropdown:hover i,
+.employee-navbar #onlineUsersDropdown:focus i {
+    color: $white !important;
+}

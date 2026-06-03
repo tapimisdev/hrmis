@@ -2,6 +2,7 @@
     <div class="dropdown position-relative">
         <a
             class="text-decoration-none position-relative d-inline-block"
+            :class="{ 'online-users-trigger--employee': userRole === 'employee' }"
             href="#"
             ref="onlineUsersDropdownTrigger"
             id="onlineUsersDropdown"
@@ -5681,7 +5682,11 @@ img {
 
 [data-bs-theme="light"] {
   #onlineUsersDropdown i {
-    color: var(--bs-body-color) !important;
+    color: var(--primary) !important;
   }
+}
+
+#onlineUsersDropdown.online-users-trigger--employee i {
+  color: var(--bs-white) !important;
 }
 </style>

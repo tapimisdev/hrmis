@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\Timekeeping\TimelogVerificationController;
 use App\Http\Controllers\Admin\WebTimeAccess\WebTimeAccessController;
 use App\Http\Controllers\Admin\Timekeeping\TimelogStatisticsController;
 use App\Http\Controllers\Admin\Timekeeping\MonitoringController;
+use App\Http\Controllers\Admin\Timekeeping\BehavioralNoticeController;
 
 Route::prefix('timekeeping')->group(function() {
 
@@ -38,5 +39,12 @@ Route::prefix('timekeeping')->group(function() {
     Route::get('accomplishment-report', [DailyTimeRecordController::class, 'downloadDAR']);
 
     Route::resource('web-time-access', WebTimeAccessController::class)->only('index', 'show', 'store', 'destroy')->names('webtime');
+
+    Route::get('behavioral-notices', [BehavioralNoticeController::class, 'index'])
+        ->name('timekeeping.behavioral-notices.index');
+    Route::get('behavioral-notices/data', [BehavioralNoticeController::class, 'data'])
+        ->name('timekeeping.behavioral-notices.data');
+    Route::get('behavioral-notices/employees', [BehavioralNoticeController::class, 'employees'])
+        ->name('timekeeping.behavioral-notices.employees');
 
 });
