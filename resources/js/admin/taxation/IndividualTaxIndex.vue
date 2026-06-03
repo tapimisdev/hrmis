@@ -10,15 +10,35 @@
                 </div>
 
                 <div ref="toolbarForm" class="individual-tax-toolbar-form">
-                    <button
-                        type="button"
-                        class="btn btn-primary individual-tax-run-btn"
-                        :disabled="isLoading"
-                        @click="openRunModal"
-                    >
-                        <i class="fa-solid fa-play me-2"></i>
-                        Run
-                    </button>
+                    <div class="individual-tax-toolbar-actions">
+                        <button
+                            type="button"
+                            class="btn individual-tax-toolbar-btn individual-tax-toolbar-btn--primary"
+                            :disabled="isLoading"
+                            @click="openRunModal"
+                        >
+                            <i class="fa-solid fa-play me-2"></i>
+                            Calculate
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn individual-tax-toolbar-btn individual-tax-toolbar-btn--neutral"
+                            :disabled="isLoading"
+                            @click="revertCurrentView"
+                        >
+                            Revert
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn individual-tax-toolbar-btn individual-tax-toolbar-btn--accent"
+                            :disabled="isLoading"
+                            @click="handleSave"
+                        >
+                            Save
+                        </button>
+                    </div>
 
                     <select
                         ref="employeeSelect"
@@ -35,16 +55,19 @@
                         </option>
                     </select>
 
-                    <select
-                        v-model="selectedYearValue"
-                        class="individual-tax-select"
+                    <input
+                        v-model="selectedYearInput"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="4"
+                        class="form-control individual-tax-select"
                         :disabled="isLoading"
-                        @change="fetchData"
-                    >
-                        <option v-for="year in normalizedYears" :key="year" :value="year">
-                            Year {{ year }}
-                        </option>
-                    </select>
+                        placeholder="Year"
+                        aria-label="Tax year"
+                        @input="onYearInput"
+                        @blur="applyYearInput"
+                        @keyup.enter="applyYearInput"
+                    />
                 </div>
             </div>
 
@@ -235,7 +258,10 @@
                 <div class="modal-content individual-tax-modal">
                     <div class="modal-header">
                         <div>
-                            <h5 id="individualTaxRunModalLabel" class="modal-title">Run Individual Tax</h5>
+                            <h5 id="individualTaxRunModalLabel" class="modal-title d-flex align-items-center gap-2">
+                                <i class="bi bi-calculator"></i>
+                                <span>Calculate Taxation</span>
+                            </h5>
                             <div class="individual-tax-modal-subtitle">
                                 Employee {{ currentEmployee.employee_no || "-" }} for year {{ selectedYearValue }}
                             </div>
@@ -244,90 +270,496 @@
                     </div>
 
                     <div class="modal-body">
-                        <ul class="nav nav-tabs individual-tax-run-tabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button
-                                    class="nav-link active"
-                                    type="button"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#individual-tax-run-tab-a"
-                                    role="tab"
-                                    aria-controls="individual-tax-run-tab-a"
-                                    aria-selected="true"
-                                >
-                                    Tab A
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button
-                                    class="nav-link"
-                                    type="button"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#individual-tax-run-tab-b"
-                                    role="tab"
-                                    aria-controls="individual-tax-run-tab-b"
-                                    aria-selected="false"
-                                >
-                                    Tab B
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button
-                                    class="nav-link"
-                                    type="button"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#individual-tax-run-tab-c"
-                                    role="tab"
-                                    aria-controls="individual-tax-run-tab-c"
-                                    aria-selected="false"
-                                >
-                                    Tab C
-                                </button>
-                            </li>
-                        </ul>
-
-                        <div class="tab-content individual-tax-run-content">
-                            <div
-                                id="individual-tax-run-tab-a"
-                                class="tab-pane fade show active"
-                                role="tabpanel"
-                                tabindex="0"
-                            >
-                                <div class="individual-tax-run-panel">
-                                    <h6>Tab A</h6>
-                                    <p>Ready for run content.</p>
+                        <div class="container-fluid px-0">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-body py-2">
+                                            <ul class="nav nav-pills individual-tax-run-tabs" role="tablist">
+                                                <li class="nav-item" role="presentation">
+                                                    <button
+                                                        class="nav-link"
+                                                        :class="{ active: activeRunTab === 'A' }"
+                                                        type="button"
+                                                        role="tab"
+                                                        aria-controls="individual-tax-run-tab-a"
+                                                        :aria-selected="activeRunTab === 'A'"
+                                                        @click="setActiveRunTab('A')"
+                                                    >
+                                                        <i class="bi bi-ui-checks-grid me-2"></i>
+                                                        Tab A
+                                                    </button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button
+                                                        class="nav-link"
+                                                        :class="{ active: activeRunTab === 'B' }"
+                                                        type="button"
+                                                        role="tab"
+                                                        aria-controls="individual-tax-run-tab-b"
+                                                        :aria-selected="activeRunTab === 'B'"
+                                                        @click="setActiveRunTab('B')"
+                                                    >
+                                                        <i class="bi bi-list-columns-reverse me-2"></i>
+                                                        Tab B
+                                                    </button>
+                                                </li>
+                                                <li class="nav-item" role="presentation">
+                                                    <button
+                                                        class="nav-link"
+                                                        :class="{ active: activeRunTab === 'C' }"
+                                                        type="button"
+                                                        role="tab"
+                                                        aria-controls="individual-tax-run-tab-c"
+                                                        :aria-selected="activeRunTab === 'C'"
+                                                        @click="setActiveRunTab('C')"
+                                                    >
+                                                        <i class="bi bi-check2-square me-2"></i>
+                                                        Tab C
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div
-                                id="individual-tax-run-tab-b"
-                                class="tab-pane fade"
-                                role="tabpanel"
-                                tabindex="0"
-                            >
-                                <div class="individual-tax-run-panel">
-                                    <h6>Tab B</h6>
-                                    <p>Ready for run content.</p>
-                                </div>
-                            </div>
+                                <div class="col-12">
+                                    <div class="tab-content individual-tax-run-content">
+                                        <div
+                                            id="individual-tax-run-tab-a"
+                                            class="tab-pane fade"
+                                            :class="{ 'show active': activeRunTab === 'A' }"
+                                            role="tabpanel"
+                                            tabindex="0"
+                                        >
+                                            <div class="card h-100">
+                                                <div class="card-header d-flex align-items-center justify-content-between">
+                                                    <div class="fw-semibold">Reference Setup</div>
+                                                    <span class="badge text-bg-secondary">Step 1 of 3</span>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row g-3">
+                                                        <div class="col-12 col-md-6">
+                                                            <label class="form-label individual-tax-run-label">Year</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">
+                                                                    <i class="bi bi-calendar-event"></i>
+                                                                </span>
+                                                                <input
+                                                                    :value="runForm.year"
+                                                                    type="text"
+                                                                    class="form-control"
+                                                                    disabled
+                                                                    readonly
+                                                                />
+                                                            </div>
+                                                        </div>
 
-                            <div
-                                id="individual-tax-run-tab-c"
-                                class="tab-pane fade"
-                                role="tabpanel"
-                                tabindex="0"
-                            >
-                                <div class="individual-tax-run-panel">
-                                    <h6>Tab C</h6>
-                                    <p>Ready for run content.</p>
+                                                        <div class="col-12 col-md-6">
+                                                            <label class="form-label individual-tax-run-label">Train Law</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">
+                                                                    <i class="bi bi-journal-text"></i>
+                                                                </span>
+                                                                <select v-model="runForm.trainLawId" class="form-select">
+                                                                    <option value="">-- Select --</option>
+                                                                    <option
+                                                                        v-for="option in currentTrainLawOptions"
+                                                                        :key="option.id"
+                                                                        :value="String(option.id)"
+                                                                    >
+                                                                        {{ option.year }}
+                                                                    </option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-12">
+                                                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-2">
+                                                                <label class="form-label individual-tax-run-label mb-0">Employees</label>
+
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        class="btn btn-sm btn-outline-primary"
+                                                                        @click="selectAllRunEmployees"
+                                                                    >
+                                                                        Select All
+                                                                    </button>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        class="btn btn-sm btn-outline-secondary"
+                                                                        @click="deselectAllRunEmployees"
+                                                                    >
+                                                                        Deselect All
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                            <select
+                                                                ref="runEmployeeSelect"
+                                                                v-model="runForm.employee_nos"
+                                                                class="form-select"
+                                                                multiple
+                                                            >
+                                                                <option
+                                                                    v-for="employeeOption in currentEmployees"
+                                                                    :key="`run-${employeeOption.employee_no}`"
+                                                                    :value="String(employeeOption.employee_no)"
+                                                                >
+                                                                    {{ employeeOption.display_name }} - {{ employeeOption.employee_no }}
+                                                                </option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="col-12">
+                                                            <label class="form-label individual-tax-run-label">Applicable Components</label>
+                                                            <div class="individual-tax-run-segmented" role="group" aria-label="Applicable Components">
+                                                                <label
+                                                                    class="individual-tax-run-segment individual-tax-run-segment--active individual-tax-run-segment--disabled"
+                                                                >
+                                                                    <input
+                                                                        class="individual-tax-run-segment-input"
+                                                                        type="checkbox"
+                                                                        checked
+                                                                        disabled
+                                                                    />
+                                                                    <span class="individual-tax-run-segment-label">
+                                                                        <i class="bi bi-cash-stack me-2"></i>
+                                                                        Salary
+                                                                    </span>
+                                                                </label>
+
+                                                                <label
+                                                                    class="individual-tax-run-segment"
+                                                                    :class="{ 'individual-tax-run-segment--active': runForm.isLongevity }"
+                                                                >
+                                                                    <input
+                                                                        v-model="runForm.isLongevity"
+                                                                        class="individual-tax-run-segment-input"
+                                                                        type="checkbox"
+                                                                    />
+                                                                    <span class="individual-tax-run-segment-label">
+                                                                        <i class="bi bi-clock-history me-2"></i>
+                                                                        Longevity
+                                                                    </span>
+                                                                </label>
+
+                                                                <label
+                                                                    class="individual-tax-run-segment"
+                                                                    :class="{ 'individual-tax-run-segment--active': runForm.isHazardPay }"
+                                                                >
+                                                                    <input
+                                                                        v-model="runForm.isHazardPay"
+                                                                        class="individual-tax-run-segment-input"
+                                                                        type="checkbox"
+                                                                    />
+                                                                    <span class="individual-tax-run-segment-label">
+                                                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                                                        Hazard Pay
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-12">
+                                                            <div class="alert alert-secondary mb-0 py-2 px-3">
+                                                                <div class="small">
+                                                                    Select the tax reference table and applicable components before proceeding.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            id="individual-tax-run-tab-b"
+                                            class="tab-pane fade"
+                                            :class="{ 'show active': activeRunTab === 'B' }"
+                                            role="tabpanel"
+                                            tabindex="0"
+                                        >
+                                            <div class="card h-100">
+                                                <div class="card-header d-flex align-items-center justify-content-between">
+                                                    <div class="fw-semibold">Employee Tax Inputs</div>
+                                                    <span class="badge text-bg-secondary">Step 2 of 3</span>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row g-3">
+                                                        <div class="col-12">
+                                                            <div class="border rounded p-3 h-100">
+                                                                <div class="fw-bold mb-2">Government Bonus Rules</div>
+
+                                                                <div v-if="isLoadingGovernmentBonuses" class="text-muted small">
+                                                                    Loading bonuses...
+                                                                </div>
+
+                                                                <div
+                                                                    v-else-if="governmentBonuses.length"
+                                                                    class="row g-2"
+                                                                >
+                                                                    <div
+                                                                        v-for="bonus in governmentBonuses"
+                                                                        :key="bonus.id"
+                                                                        class="col-12"
+                                                                    >
+                                                                        <label
+                                                                            class="border rounded px-2 py-2 d-flex align-items-start gap-2 w-100"
+                                                                        >
+                                                                            <input
+                                                                                v-model="runForm.governmentBonuses"
+                                                                                class="form-check-input mt-1"
+                                                                                type="checkbox"
+                                                                                :value="bonus.id"
+                                                                            />
+
+                                                                            <span class="d-flex flex-column flex-grow-1 min-w-0">
+                                                                                <span class="fw-semibold small">
+                                                                                    {{ bonus.name }}
+                                                                                </span>
+                                                                                <span
+                                                                                    v-if="bonus.description"
+                                                                                    class="text-body-secondary small"
+                                                                                >
+                                                                                    {{ bonus.description }}
+                                                                                </span>
+                                                                                <span class="text-muted x-small">
+                                                                                    {{ bonus.metaLabel }}
+                                                                                </span>
+                                                                            </span>
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div v-else class="text-muted small">
+                                                                    No government bonus rules found.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-12">
+                                                            <div class="border rounded p-3 h-100">
+                                                                <div class="form-check">
+                                                                    <input
+                                                                        id="individualTaxRunLessBir"
+                                                                        v-model="runForm.is_less_bir"
+                                                                        class="form-check-input"
+                                                                        type="checkbox"
+                                                                    />
+                                                                    <label
+                                                                        class="form-check-label"
+                                                                        for="individualTaxRunLessBir"
+                                                                    >
+                                                                        Less BIR RR 3-2015 (90,000.00)
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-12">
+                                                            <div class="border rounded p-3 h-100">
+                                                                <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                                                                    <div class="fw-bold">Others</div>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        class="btn btn-sm btn-outline-primary"
+                                                                        @click="addRunOther"
+                                                                    >
+                                                                        <i class="bi bi-plus-lg me-1"></i>
+                                                                        Add Row
+                                                                    </button>
+                                                                </div>
+
+                                                                <div v-if="runForm.others.length" class="d-flex flex-column gap-2">
+                                                                    <div
+                                                                        v-for="(other, index) in runForm.others"
+                                                                        :key="`run-other-${index}`"
+                                                                        class="border rounded p-2"
+                                                                    >
+                                                                        <div class="row g-2 align-items-end">
+                                                                            <div class="col-12 col-lg-4">
+                                                                                <label class="form-label form-label-sm mb-1">Name</label>
+                                                                                <input
+                                                                                    v-model="other.name"
+                                                                                    type="text"
+                                                                                    class="form-control form-control-sm"
+                                                                                    placeholder="Enter name"
+                                                                                />
+                                                                            </div>
+
+                                                                            <div class="col-12 col-sm-6 col-lg-2">
+                                                                                <label class="form-label form-label-sm mb-1">Amount</label>
+                                                                                <input
+                                                                                    v-model="other.amount"
+                                                                                    type="number"
+                                                                                    min="0"
+                                                                                    step="0.01"
+                                                                                    class="form-control form-control-sm"
+                                                                                    placeholder="0.00"
+                                                                                />
+                                                                            </div>
+
+                                                                            <div class="col-6 col-lg-2">
+                                                                                <div class="form-check pt-lg-4">
+                                                                                    <input
+                                                                                        :id="`run-other-taxable-${index}`"
+                                                                                        v-model="other.is_taxable"
+                                                                                        class="form-check-input"
+                                                                                        type="checkbox"
+                                                                                    />
+                                                                                    <label
+                                                                                        class="form-check-label"
+                                                                                        :for="`run-other-taxable-${index}`"
+                                                                                    >
+                                                                                        Taxable
+                                                                                    </label>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div class="col-6 col-lg-2">
+                                                                                <div class="form-check pt-lg-4">
+                                                                                    <input
+                                                                                        :id="`run-other-bir-${index}`"
+                                                                                        v-model="other.is_exempt_bir"
+                                                                                        class="form-check-input"
+                                                                                        type="checkbox"
+                                                                                    />
+                                                                                    <label
+                                                                                        class="form-check-label"
+                                                                                        :for="`run-other-bir-${index}`"
+                                                                                    >
+                                                                                        Exempt BIR
+                                                                                    </label>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div class="col-12 col-lg-2 d-flex justify-content-lg-end">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    class="btn btn-sm btn-outline-danger w-100 w-lg-auto"
+                                                                                    @click="removeRunOther(index)"
+                                                                                >
+                                                                                    <i class="bi bi-trash me-1"></i>
+                                                                                    Remove
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div v-else class="text-muted small">
+                                                                    No other entries yet.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            id="individual-tax-run-tab-c"
+                                            class="tab-pane fade"
+                                            :class="{ 'show active': activeRunTab === 'C' }"
+                                            role="tabpanel"
+                                            tabindex="0"
+                                        >
+                                            <div class="card h-100">
+                                                <div class="card-header d-flex align-items-center justify-content-between">
+                                                    <div class="fw-semibold">Portion</div>
+                                                    <span class="badge text-bg-secondary">Step 3 of 3</span>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row g-3">
+                                                        <div class="col-12 col-md-4">
+                                                            <label class="form-label individual-tax-run-label">Salary</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">
+                                                                    <i class="bi bi-cash-stack"></i>
+                                                                </span>
+                                                                <input
+                                                                    v-model="runForm.portion.salary"
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step="0.01"
+                                                                    class="form-control"
+                                                                    placeholder="0.00"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-12 col-md-4">
+                                                            <label class="form-label individual-tax-run-label">Hazard Pay</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">
+                                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                                </span>
+                                                                <input
+                                                                    v-model="runForm.portion.hazard_pay"
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step="0.01"
+                                                                    class="form-control"
+                                                                    placeholder="0.00"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-12 col-md-4">
+                                                            <label class="form-label individual-tax-run-label">Longevity</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">
+                                                                    <i class="bi bi-clock-history"></i>
+                                                                </span>
+                                                                <input
+                                                                    v-model="runForm.portion.longevity"
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step="0.01"
+                                                                    class="form-control"
+                                                                    placeholder="0.00"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" @click="closeRunModal">
+                        <button type="button" class="btn btn-secondary" @click="closeRunModal">
+                            <i class="bi bi-x-lg me-2"></i>
                             Close
+                        </button>
+
+                        <button
+                            v-if="!isLastRunTab"
+                            type="button"
+                            class="btn btn-primary"
+                            @click="goToNextRunTab"
+                        >
+                            <i class="bi bi-arrow-right me-2"></i>
+                            Next
+                        </button>
+
+                        <button
+                            v-else
+                            type="button"
+                            class="btn btn-success"
+                            @click="handleCalculate"
+                        >
+                            <i class="bi bi-calculator me-2"></i>
+                            Calculate
                         </button>
                     </div>
                 </div>
@@ -338,10 +770,12 @@
 
 <script>
 import axios from "axios";
+import { Modal } from "bootstrap";
 
 export default {
     props: {
         baseUrl: { type: String, required: true },
+        saveUrl: { type: String, required: true },
         apiUrl: { type: String, required: true },
         employee: { type: Object, required: true },
         employees: { type: Array, required: true },
@@ -350,6 +784,8 @@ export default {
         monthlyBreakdown: { type: Array, required: true },
         otherComponents: { type: Object, required: true },
         summary: { type: Object, required: true },
+        trainLawOptions: { type: Array, default: () => [] },
+        selectedTrainLawId: { type: [Number, String], default: null },
     },
 
     data() {
@@ -362,12 +798,34 @@ export default {
                 monthlyBreakdown: this.monthlyBreakdown,
                 otherComponents: this.otherComponents,
                 summary: this.summary,
+                trainLawOptions: this.trainLawOptions,
+                selectedTrainLawId: this.selectedTrainLawId,
             },
             selectedEmployeeNo: String(this.employee?.employee_no || ""),
             selectedYearValue: Number(this.selectedYear || new Date().getFullYear()),
+            selectedYearInput: String(this.selectedYear || new Date().getFullYear()),
             isLoading: false,
+            isSaving: false,
             token: localStorage.getItem("auth_token"),
             runModalInstance: null,
+            activeRunTab: "A",
+            governmentBonuses: [],
+            isLoadingGovernmentBonuses: false,
+            runForm: {
+                year: String(this.selectedYear || new Date().getFullYear()),
+                trainLawId: this.selectedTrainLawId != null ? String(this.selectedTrainLawId) : "",
+                employee_nos: this.employee?.employee_no != null ? [String(this.employee.employee_no)] : [],
+                isLongevity: false,
+                isHazardPay: false,
+                is_less_bir: false,
+                governmentBonuses: [],
+                others: [],
+                portion: {
+                    hazard_pay: 20,
+                    salary: 80,
+                    longevity: 0,
+                },
+            },
         };
     },
 
@@ -392,6 +850,14 @@ export default {
             return this.state.summary || {};
         },
 
+        currentTrainLawOptions() {
+            return this.state.trainLawOptions || [];
+        },
+
+        isLastRunTab() {
+            return this.activeRunTab === "C";
+        },
+
         employeeName() {
             if (this.currentEmployee?.display_name) {
                 return this.currentEmployee.display_name;
@@ -405,10 +871,6 @@ export default {
             const suffix = this.currentEmployee?.suffix ? ` ${this.currentEmployee.suffix}` : "";
 
             return `${lastname}${firstname}${middlename}${suffix}`.trim();
-        },
-
-        normalizedYears() {
-            return (this.state.availableYears || []).map((year) => Number(year));
         },
     },
 
@@ -426,6 +888,7 @@ export default {
     beforeUnmount() {
         this.closeRunModal();
         this.runModalInstance = null;
+        this.destroyRunEmployeeSelect();
         this.destroyEmployeeSelect();
     },
 
@@ -435,6 +898,7 @@ export default {
                 this.$nextTick(() => {
                     this.syncSelectionFromState();
                     this.initEmployeeSelect();
+                    this.initRunEmployeeSelect();
                 });
             },
             deep: true,
@@ -456,6 +920,47 @@ export default {
 
             if (this.state?.selectedYear != null) {
                 this.selectedYearValue = Number(this.state.selectedYear);
+                this.selectedYearInput = String(this.selectedYearValue);
+                this.runForm.year = String(this.selectedYearValue);
+                this.runForm.employee_nos = this.selectedEmployeeNo ? [String(this.selectedEmployeeNo)] : [];
+                this.runForm.governmentBonuses = [];
+                this.runForm.others = [];
+                this.runForm.portion = {
+                    hazard_pay: 20,
+                    salary: 80,
+                    longevity: 0,
+                };
+            }
+
+            const selectedTrainLawId = this.state?.selectedTrainLawId;
+            this.runForm.trainLawId = selectedTrainLawId != null ? String(selectedTrainLawId) : "";
+        },
+        onYearInput(event) {
+            const nextValue = String(event?.target?.value || "").replace(/\D/g, "").slice(0, 4);
+            this.selectedYearInput = nextValue;
+
+            if (nextValue.length === 4) {
+                this.applyYearInput();
+            }
+        },
+        applyYearInput() {
+            const sanitizedYear = String(this.selectedYearInput || "").replace(/\D/g, "").slice(0, 4);
+
+            if (sanitizedYear.length !== 4) {
+                return;
+            }
+
+            const parsedYear = Number(sanitizedYear);
+
+            if (!Number.isInteger(parsedYear) || parsedYear < 1000 || parsedYear > 9999) {
+                return;
+            }
+
+            this.selectedYearInput = sanitizedYear;
+
+            if (parsedYear !== this.selectedYearValue) {
+                this.selectedYearValue = parsedYear;
+                this.fetchData();
             }
         },
 
@@ -504,18 +1009,183 @@ export default {
         },
         getRunModalInstance() {
             const modalElement = this.$refs.runModal;
-            const modalApi = window.bootstrap?.Modal;
 
-            if (!modalElement || !modalApi) {
+            if (!modalElement) {
                 return null;
             }
 
-            this.runModalInstance = this.runModalInstance || modalApi.getOrCreateInstance(modalElement);
+            this.runModalInstance = this.runModalInstance || Modal.getOrCreateInstance(modalElement);
 
             return this.runModalInstance;
         },
         openRunModal() {
-            this.getRunModalInstance()?.show();
+            this.$nextTick(() => {
+                this.activeRunTab = "A";
+                this.syncRunForm();
+                this.fetchGovernmentBonuses();
+                this.initRunEmployeeSelect();
+                this.getRunModalInstance()?.show();
+            });
+        },
+        setActiveRunTab(tab) {
+            this.activeRunTab = tab;
+        },
+        initRunEmployeeSelect() {
+            const jq = window.jQuery || window.$;
+            const select = this.$refs.runEmployeeSelect;
+            const modalElement = this.$refs.runModal;
+
+            if (!select || !jq || !this.currentEmployees.length) return;
+
+            const $select = jq(select);
+
+            if ($select.hasClass("select2-hidden-accessible")) {
+                $select.select2("destroy");
+            }
+
+            $select.select2({
+                width: "100%",
+                dropdownCssClass: "individual-tax-select2-dropdown",
+                placeholder: "Select employees",
+                dropdownParent: modalElement ? jq(modalElement) : undefined,
+                closeOnSelect: false,
+            });
+
+            $select.val(this.runForm.employee_nos || []).trigger("change.select2");
+
+            $select.off("change.individual-tax-run").on("change.individual-tax-run", (event) => {
+                const values = jq(event.target).val() || [];
+                this.runForm.employee_nos = Array.isArray(values)
+                    ? values.map((value) => String(value))
+                    : [];
+            });
+        },
+        destroyRunEmployeeSelect() {
+            const jq = window.jQuery || window.$;
+            const select = this.$refs.runEmployeeSelect;
+
+            if (!select || !jq) return;
+
+            const $select = jq(select);
+            $select.off(".individual-tax-run");
+
+            if ($select.hasClass("select2-hidden-accessible")) {
+                $select.select2("destroy");
+            }
+        },
+        syncRunEmployeeSelectValue() {
+            const jq = window.jQuery || window.$;
+            const select = this.$refs.runEmployeeSelect;
+
+            if (!select || !jq) return;
+
+            const $select = jq(select);
+
+            if ($select.hasClass("select2-hidden-accessible")) {
+                $select.val(this.runForm.employee_nos || []).trigger("change.select2");
+            }
+        },
+        selectAllRunEmployees() {
+            this.runForm.employee_nos = this.currentEmployees.map((employeeOption) =>
+                String(employeeOption.employee_no),
+            );
+            this.$nextTick(() => {
+                this.syncRunEmployeeSelectValue();
+            });
+        },
+        deselectAllRunEmployees() {
+            this.runForm.employee_nos = [];
+            this.$nextTick(() => {
+                this.syncRunEmployeeSelectValue();
+            });
+        },
+        addRunOther() {
+            this.runForm.others.push({
+                name: "",
+                amount: "",
+                is_taxable: false,
+                is_exempt_bir: false,
+            });
+        },
+        removeRunOther(index) {
+            this.runForm.others.splice(index, 1);
+        },
+        goToNextRunTab() {
+            if (this.activeRunTab === "A") {
+                this.activeRunTab = "B";
+                return;
+            }
+
+            if (this.activeRunTab === "B") {
+                this.activeRunTab = "C";
+            }
+        },
+        revertCurrentView() {
+            this.fetchData();
+        },
+        buildSavePayload() {
+            return {
+                employee_nos: this.runForm.employee_nos || [],
+                n_taxation: {
+                    Year: Number(this.selectedYearValue || 0),
+                },
+                n_taxation_settings: {
+                    train_law_id: this.runForm.trainLawId ? Number(this.runForm.trainLawId) : null,
+                    is_longevity: Boolean(this.runForm.isLongevity),
+                    is_hazard_pay: Boolean(this.runForm.isHazardPay),
+                    is_less_bir: Boolean(this.runForm.is_less_bir),
+                    bonuses: (this.runForm.governmentBonuses || []).map((governmentBonusId) => ({
+                        government_bonus_id: Number(governmentBonusId),
+                    })),
+                    others: (this.runForm.others || []).map((other) => ({
+                        name: other.name || "",
+                        amount: Number(other.amount || 0),
+                        is_taxable: Boolean(other.is_taxable),
+                        is_exempt_bir: Boolean(other.is_exempt_bir),
+                    })),
+                    portion: {
+                        hazard_pay: Number(this.runForm.portion?.hazard_pay || 0),
+                        salary: Number(this.runForm.portion?.salary || 0),
+                        longevity: Number(this.runForm.portion?.longevity || 0),
+                    },
+                },
+            };
+        },
+        handleSave() {
+            window.InfoToast?.fire?.({
+                title: "Use Calculate to submit this request.",
+            });
+        },
+        async handleCalculate() {
+            if (this.isSaving) return;
+
+            this.isSaving = true;
+
+            try {
+                const response = await axios.post(
+                    this.saveUrl,
+                    this.buildSavePayload(),
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                );
+
+                this.closeRunModal();
+                window.SuccessToast?.fire?.({
+                    title: response?.data?.message || "Individual tax settings saved successfully.",
+                });
+            } catch (error) {
+                window.ErrorToast?.fire?.({
+                    title:
+                        error.response?.data?.message ||
+                        Object.values(error.response?.data?.errors || {})?.[0]?.[0] ||
+                        "Unable to save individual tax settings.",
+                });
+            } finally {
+                this.isSaving = false;
+            }
         },
         closeRunModal() {
             this.getRunModalInstance()?.hide();
@@ -544,13 +1214,62 @@ export default {
                 monthlyBreakdown: payload.monthlyBreakdown || [],
                 otherComponents: payload.otherComponents || { earnings: [], de_minimis: [], taxes: [] },
                 summary: payload.summary || {},
+                trainLawOptions: payload.trainLawOptions || [],
+                selectedTrainLawId: payload.selectedTrainLawId ?? null,
             };
 
             this.syncSelectionFromState();
+            this.syncRunForm();
             this.$nextTick(() => {
                 this.initEmployeeSelect();
             });
             this.syncUrl();
+        },
+
+        syncRunForm() {
+            this.runForm.year = String(this.selectedYearValue || "");
+
+            if (
+                (!this.runForm.trainLawId ||
+                    !this.currentTrainLawOptions.some((option) => String(option.id) === String(this.runForm.trainLawId))) &&
+                this.state?.selectedTrainLawId != null
+            ) {
+                this.runForm.trainLawId = String(this.state.selectedTrainLawId);
+            }
+        },
+        async fetchGovernmentBonuses() {
+            this.isLoadingGovernmentBonuses = true;
+
+            try {
+                const response = await axios.get(
+                    "/admin/payroll/government-bonus-types",
+                    {
+                        headers: this.token
+                            ? {
+                                  Accept: "application/json",
+                                  Authorization: `Bearer ${this.token}`,
+                              }
+                            : {
+                                  Accept: "application/json",
+                              },
+                    },
+                );
+
+                const rows = Array.isArray(response?.data?.data)
+                    ? response.data.data
+                    : [];
+
+                this.governmentBonuses = rows.map((item) => ({
+                    id: item.id,
+                    name: item.name || "Government Bonus Rule",
+                    description: item.computation_notes || "",
+                    metaLabel: item.slug || item.computation_type || "",
+                }));
+            } catch (error) {
+                this.governmentBonuses = [];
+            } finally {
+                this.isLoadingGovernmentBonuses = false;
+            }
         },
 
         async fetchData() {
@@ -594,7 +1313,7 @@ export default {
 }
 
 .individual-tax-sheet {
-    max-width: 1480px;
+    // max-width: 1480px;
     margin: 0 auto;
     background: var(--bs-tertiary-bg);
     border: 1px solid var(--bs-border-color);
@@ -616,11 +1335,16 @@ export default {
         gap: 0.75rem;
         flex-wrap: wrap;
     }
+
+    &-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 }
 
-.individual-tax-run-btn {
-    min-height: 44px;
-    font-weight: 700;
+.x-small {
+    font-size: 0.75rem;
 }
 
 .individual-tax-title {
@@ -630,6 +1354,67 @@ export default {
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--bs-body-color);
+}
+
+.individual-tax-toolbar-btn {
+    min-height: 32px;
+    padding: 0.3125rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #c8d1dc;
+    background: linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
+    color: #334155;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.1;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    transition:
+        background-color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        color 0.16s ease;
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+        border-color: #b7c4d3;
+        background: linear-gradient(180deg, #ffffff 0%, #edf3f8 100%);
+        color: #1f2937;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            0 0 0 0.12rem rgba(59, 89, 152, 0.12);
+    }
+
+    &:active:not(:disabled) {
+        background: #e8edf4;
+        border-color: #aebacd;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        box-shadow: none;
+    }
+
+    .fa-solid {
+        font-size: 0.75rem;
+    }
+
+    &--primary {
+        border-color: #b8c7e0;
+        background: linear-gradient(180deg, #eef3fb 0%, #dfe8f6 100%);
+        color: #294574;
+    }
+
+    &--neutral {
+        border-color: #cbd5e1;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+        color: #475569;
+    }
+
+    &--accent {
+        border-color: #bbd4bf;
+        background: linear-gradient(180deg, #edf7ee 0%, #dcefdc 100%);
+        color: #2f5f38;
+    }
 }
 
 .individual-tax-loading-bar {
@@ -813,51 +1598,165 @@ export default {
 
 .individual-tax-modal {
     border: 1px solid var(--bs-border-color);
-    background: var(--bs-tertiary-bg);
+    background: var(--bs-body-bg);
     color: var(--bs-body-color);
 }
 
 .individual-tax-modal-subtitle {
-    margin-top: 0.25rem;
-    font-size: 0.8125rem;
+    margin-top: 0.125rem;
+    font-size: 0.75rem;
     color: var(--bs-secondary-color);
 }
 
 .individual-tax-run-tabs {
-    border-bottom-color: var(--bs-border-color);
+    gap: 0.5rem;
 }
 
 .individual-tax-run-tabs .nav-link {
+    padding: 0.45rem 0.85rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-body-bg);
     color: var(--bs-secondary-color);
     font-weight: 700;
+    font-size: 0.8125rem;
 }
 
 .individual-tax-run-tabs .nav-link.active {
-    color: var(--bs-primary-text-emphasis);
+    color: var(--bs-primary);
     background: var(--bs-primary-bg-subtle);
-    border-color: var(--bs-border-color) var(--bs-border-color) transparent;
+    border-color: var(--bs-primary-border-subtle);
 }
 
 .individual-tax-run-content {
-    padding-top: 1rem;
+    padding-top: 0;
 }
 
-.individual-tax-run-panel {
-    min-height: 280px;
-    padding: 1.25rem;
-    border: 1px solid var(--bs-border-color);
+.individual-tax-run-label {
+    margin-bottom: 0.35rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+}
+
+.individual-tax-run-content :deep(.card) {
+    border-color: var(--bs-border-color);
     background: var(--bs-body-bg);
 }
 
-.individual-tax-run-panel h6 {
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-    font-weight: 800;
+.individual-tax-run-content :deep(.card-header) {
+    padding: 0.75rem 1rem;
+    background: var(--bs-secondary-bg);
+    border-bottom-color: var(--bs-border-color);
 }
 
-.individual-tax-run-panel p {
-    margin: 0;
+.individual-tax-run-content :deep(.card-body) {
+    padding: 1rem;
+}
+
+.individual-tax-run-content :deep(.form-control),
+.individual-tax-run-content :deep(.form-select),
+.individual-tax-run-content :deep(.input-group-text) {
+    min-height: 36px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.45rem;
+}
+
+.individual-tax-run-content :deep(.input-group-text) {
+    background: var(--bs-secondary-bg);
     color: var(--bs-secondary-color);
+    border-color: var(--bs-border-color);
+}
+
+.individual-tax-run-segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-body-bg);
+}
+
+.individual-tax-run-segment {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+    background: var(--bs-body-bg);
+    border-right: 1px solid var(--bs-border-color);
+    transition:
+        background-color 0.16s ease,
+        box-shadow 0.16s ease,
+        color 0.16s ease;
+}
+
+.individual-tax-run-segment:last-child {
+    border-right: 0;
+}
+
+.individual-tax-run-segment-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.individual-tax-run-segment-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 108px;
+    padding: 0.6rem 0.95rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--bs-body-color);
+}
+
+.individual-tax-run-segment--active {
+    background: var(--bs-primary-bg-subtle);
+    box-shadow: inset 0 0 0 1px var(--bs-primary);
+    z-index: 1;
+}
+
+.individual-tax-run-segment--active .individual-tax-run-segment-label {
+    color: var(--bs-primary-text-emphasis);
+}
+
+.individual-tax-run-segment:hover:not(.individual-tax-run-segment--disabled) {
+    background: var(--bs-secondary-bg);
+}
+
+.individual-tax-run-segment--disabled {
+    cursor: not-allowed;
+    opacity: 0.9;
+}
+
+.individual-tax-modal :deep(.modal-header) {
+    padding: 0.9rem 1rem;
+    border-bottom-color: var(--bs-border-color);
+}
+
+.individual-tax-modal :deep(.modal-body) {
+    padding: 0.9rem 1rem 0.75rem;
+}
+
+.individual-tax-modal :deep(.modal-footer) {
+    padding: 0.85rem 1rem;
+    gap: 0.5rem;
+    border-top-color: var(--bs-border-color);
+}
+
+.individual-tax-modal :deep(.modal-footer .btn) {
+    min-height: 38px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 700;
 }
 
 /* Select2 */

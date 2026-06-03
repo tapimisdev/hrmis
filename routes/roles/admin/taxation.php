@@ -10,6 +10,8 @@ Route::prefix('taxation')->group(function() {
 
     Route::get('/individual-tax', [IndividualTaxController::class, 'index'])
         ->name('taxation.individual-tax.index');
+    Route::post('/individual-tax/save', [IndividualTaxController::class, 'save'])
+        ->name('taxation.individual-tax.save');
 
     Route::resource('/', TaxationController::class)->names('taxation');
     Route::get('/status', [TaxationController::class, 'status']);

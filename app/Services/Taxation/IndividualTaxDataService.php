@@ -23,6 +23,7 @@ class IndividualTaxDataService
         $monthlyBreakdown = $this->buildMonthlyBreakdown((string) $employee->employee_no, $selectedYear);
         $otherComponents = $this->getOtherComponents((string) $employee->employee_no, $selectedYear);
         $summary = $this->buildSummary($monthlyBreakdown, $otherComponents);
+        $trainLawOptions = $this->getTrainLawOptions();
 
         return [
             'employee' => $employee,
@@ -32,6 +33,8 @@ class IndividualTaxDataService
             'monthlyBreakdown' => $monthlyBreakdown->values()->all(),
             'otherComponents' => $otherComponents,
             'summary' => $summary,
+            'trainLawOptions' => $trainLawOptions['items'],
+            'selectedTrainLawId' => $trainLawOptions['selectedId'],
         ];
     }
 
@@ -117,7 +120,7 @@ class IndividualTaxDataService
 
     public function resolveSelectedYear(?int $requestedYear, Collection $availableYears): int
     {
-        if ($requestedYear && $availableYears->contains($requestedYear)) {
+        if ($requestedYear && $requestedYear >= 1000 && $requestedYear <= 9999) {
             return $requestedYear;
         }
 
@@ -303,6 +306,25 @@ class IndividualTaxDataService
                 strtolower(trim((string) $item->name)) => strtolower((string) ($item->tax_type ?? 'taxable')),
             ])
             ->all();
+    }
+
+    private function getTrainLawOptions(): array
+    {
+        $items = DB::table('train_law')
+            ->where('is_active', true)
+            ->orderByDesc('year')
+            ->get(['id', 'year'])
+            ->map(fn ($item) => [
+                'id' => (int) $item->id,
+                'year' => (string) $item->year,
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'items' => $items,
+            'selectedId' => $items[0]['id'] ?? null,
+        ];
     }
 
     public function formatEmployeeName(object $employee): string
