@@ -6,6 +6,7 @@
       <online-users :user-id="userId" :user-role="userRole" />
       <notification-component :user-role="userRole" :user-id="userId" />  
       <feedback-component :user-id="userId" />
+      <violations-component v-if="canViewBehavioralNotices" />
       <profile-component />
     </div>
 </template>
@@ -14,6 +15,7 @@
 import WidgetComponent from "./parts/Widgets.vue";
 import NotificationComponent from "./parts/Notification.vue";
 import FeedbackComponent from "./parts/Feedback.vue";
+import ViolationsComponent from "./parts/Violations.vue";
 import ProfileComponent from "./parts/Profile.vue";
 import IncompleteLogs from "./parts/IncompleteLogs.vue";
 import OnlineUsers from "../../admin/components/parts/OnlineUsers.vue";
@@ -34,9 +36,15 @@ export default {
         WidgetComponent,
         NotificationComponent,
         FeedbackComponent,
+        ViolationsComponent,
         ProfileComponent,
         IncompleteLogs,
         OnlineUsers,
+    },
+    computed: {
+        canViewBehavioralNotices() {
+            return Boolean(window.employeePermissions?.behavioralNotices);
+        },
     },
     methods: {
         toggleMobileMenu() {

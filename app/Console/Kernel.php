@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Jobs\CheckAllEmployeeViolations;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,15 +13,29 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('inspire')->hourly();
 
-        $schedule->command('leave:accumulation')
-            ->everyMinute()
-            // ->monthlyOn(1, '0:00') 
-            ->onFailure(function () {
-                \Log::error('Scheduled job leave:accumulation failed.');
-            });
+        // $schedule->command('leave:accumulation')
+        //     ->everyMinute()
+        //     // ->monthlyOn(1, '0:00') 
+        //     ->onFailure(function () {
+        //         \Log::error('Scheduled job leave:accumulation failed.');
+        //     });
             // ->emailOutputTo('iamcarlllemos@gmail.com');
+
+        // Use month numbers (for example, [1, 2]) or specific periods (for example, ['2026-01']).
+        $violationMonthExemptions = [];
+
+        $schedule->call(fn () => (new CheckAllEmployeeViolations(
+            now()->year,
+            $violationMonthExemptions
+        ))->handle())
+            ->twiceDaily(0, 12)
+            ->name('check-all-employee-violations')
+            ->withoutOverlapping()
+            ->onFailure(function () {
+                \Log::error('Scheduled job CheckAllEmployeeViolations failed.');
+            });
     }
 
     /**

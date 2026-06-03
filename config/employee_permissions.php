@@ -8,6 +8,10 @@ return [
         'checkin-out'
     ],
 
+    'behavioral_notices' => [
+        'view',
+    ],
+
     'leave_application' => [
         'view',
         'apply',

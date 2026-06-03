@@ -25,6 +25,9 @@ Route::prefix('employee')->group(function() {
 
     Route::get('notifications', [Employee::class, 'getNotifications']);
     Route::post('notifications', [Employee::class, 'saveReadNotification']);
+    Route::get('violations', [Employee::class, 'getViolations']);
+    Route::get('behavioral-notices', [Employee::class, 'getBehavioralNotices']);
+    Route::post('behavioral-notices/{id}/seen', [Employee::class, 'markBehavioralNoticeSeen']);
     Route::post('feedback', [Employee::class, 'storeFeedback']);
 
     Route::apiResource('notes', NotesController::class);

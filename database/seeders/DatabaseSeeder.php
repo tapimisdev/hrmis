@@ -29,7 +29,8 @@ class DatabaseSeeder extends Seeder
             ModulesSeeder::class,
             PermissionSeeder::class,
             EventsAnnouncementsSeeder::class,
-            PermanentDeductionsSeeder::class
+            PermanentDeductionsSeeder::class,
+            ViolationSettingsSeeder::class,
         ]);
     }
 }

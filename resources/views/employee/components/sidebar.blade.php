@@ -137,6 +137,18 @@
                 </li>
                 @endcan
 
+                @can('emp.behavioral_notices.view')
+                <!-- Behavioral Notice -->
+                <li class="side-items has-submenu {{ request()->routeIs('behavioral-notices.*') ? 'active' : '' }}">
+                    <a href="{{ route('behavioral-notices.index') }}" class="side-link text-body">
+                        <span class="side-icon">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                        </span>
+                        <span class="side-text">Behavioral Notice</span>
+                    </a>
+                </li>
+                @endcan
+
                 @if(Auth::user()?->is_division_chief)
                 <li class="side-items {{ request()->routeIs('chief-corner.index') ? 'active' : '' }}">
                     <a href="{{ route('chief-corner.index') }}" class="side-link text-body">
