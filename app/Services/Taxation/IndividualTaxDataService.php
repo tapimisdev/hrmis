@@ -44,22 +44,32 @@ class IndividualTaxDataService
             : $this->emptyOtherComponents();
         $trainLawOptions = $this->getTrainLawOptions();
         $selectedTrainLawId = $selectedTaxationSetting['train_law_id'] ?? $trainLawOptions['selectedId'];
-        $summary = $hasTaxationData && $hasSelectedEmployee
-            ? $this->buildSummary(
-                $monthlyBreakdown,
-                $otherComponents,
-                $selectedTrainLawId,
-                data_get($selectedTaxationSetting, 'portion')
-            )
-            : [];
         $taxModuleBreakdown = $hasTaxationData && $hasSelectedEmployee
             ? $this->buildTaxModuleBreakdown(
                 (string) $employee->employee_no,
                 $selectedYear,
                 $monthlyBreakdown,
-                (array) data_get($summary, 'annual_tax_due_computation', [])
+                (array) data_get(
+                    $this->buildSummary(
+                        $monthlyBreakdown,
+                        $otherComponents,
+                        $selectedTrainLawId
+                    ),
+                    'annual_tax_due_computation',
+                    []
+                )
             )
             : collect();
+        $monthlyBreakdown = $hasTaxationData && $hasSelectedEmployee
+            ? $this->mergeTaxModuleBreakdownIntoMonthlyBreakdown($monthlyBreakdown, $taxModuleBreakdown)
+            : $monthlyBreakdown;
+        $summary = $hasTaxationData && $hasSelectedEmployee
+            ? $this->buildSummary(
+                $monthlyBreakdown,
+                $otherComponents,
+                $selectedTrainLawId
+            )
+            : [];
 
         return [
             'employee' => $employee ?? (object) [],
@@ -192,6 +202,20 @@ class IndividualTaxDataService
             ->groupBy(fn ($row) => (int) Carbon::parse($row->payroll_date)->month)
             ->map(fn ($rows) => $rows->first());
 
+        $salaryTaxRows = DB::table('payroll_salary_permanent_employees as pspe')
+            ->join('payroll_salary as ps', 'ps.id', '=', 'pspe.payroll_salary_id')
+            ->join('payroll_salary_permanents_employee_deductions as psped', 'psped.pspe_id', '=', 'pspe.id')
+            ->selectRaw('MONTH(ps.payroll_date) as month_number, SUM(COALESCE(psped.amount, 0)) as total_amount')
+            ->where('pspe.employee_no', $employeeNo)
+            ->whereYear('ps.payroll_date', $year)
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(psped.deduction_type) = ?', ['withholding tax'])
+                    ->orWhereRaw('LOWER(psped.deduction_type) = ?', ['withholding_tax'])
+                    ->orWhereRaw('LOWER(psped.deduction_type) like ?', ['%withholding%tax%']);
+            })
+            ->groupByRaw('MONTH(ps.payroll_date)')
+            ->pluck('total_amount', 'month_number');
+
         $forecastSalaryByMonth = $this->getForecastSalaryByMonth($employeeNo, $year);
 
         $hazardRows = DB::table('payroll_hazard_pay_employee as phe')
@@ -203,6 +227,7 @@ class IndividualTaxDataService
                 'php.month',
                 'php.status',
                 'phe.hazard_pay',
+                'phe.witholding_tax',
             ])
             ->groupBy(fn ($row) => (int) substr((string) $row->month, 5, 2))
             ->map(fn ($rows) => $rows->first());
@@ -218,6 +243,7 @@ class IndividualTaxDataService
                 'plp.month',
                 'plp.status',
                 'plpe.longevity_amount',
+                'plpe.w_tax',
             ])
             ->groupBy(fn ($row) => (int) substr((string) $row->month, 5, 2))
             ->map(fn ($rows) => $rows->first());
@@ -228,26 +254,13 @@ class IndividualTaxDataService
             $year
         );
 
-        $taxRows = DB::table('employee_payroll_components as epc')
-            ->join('payroll_components_years as pcy', 'pcy.id', '=', 'epc.tax_deduction_id')
-            ->join('payroll_components as pc', 'pc.id', '=', 'pcy.payroll_component_id')
-            ->where('epc.employee_no', $employeeNo)
-            ->where('pcy.year', $year)
-            ->where('pc.type', 'taxes')
-            ->get([
-                'epc.month',
-                'pc.name',
-                'epc.amount',
-            ])
-            ->groupBy(fn ($row) => (int) $row->month);
-
         $lastActualHazardMonth = $this->getLastActualMonth($hazardRows->keys()->all());
 
         return collect(range(1, 12))->map(function (int $month) use (
             $salaryRows,
+            $salaryTaxRows,
             $hazardRows,
             $longevityRows,
-            $taxRows,
             $forecastSalaryByMonth,
             $forecastHazardByMonth,
             $forecastLongevityByMonth,
@@ -256,16 +269,19 @@ class IndividualTaxDataService
             $salary = $salaryRows->get($month);
             $hazard = $hazardRows->get($month);
             $longevity = $longevityRows->get($month);
-            $taxForMonth = collect($taxRows->get($month, []))->sum('amount');
 
             $salarySource = $salary ? (string) ($salary->status ?? 'completed') : 'forecast';
             $basicSalary = $salary
                 ? (float) $salary->monthly_rate
                 : (float) ($forecastSalaryByMonth[$month] ?? 0);
+            $salaryTaxWithheld = $salary
+                ? (float) round((float) ($salaryTaxRows->get($month) ?? 0), 4)
+                : 0.0;
 
             if ($hazard) {
                 $hazardPay = (float) $hazard->hazard_pay;
                 $hazardSource = (string) ($hazard->status ?? 'completed');
+                $hazardTaxWithheld = (float) round((float) ($hazard->witholding_tax ?? 0), 4);
             } else {
                 [$hazardPay, $hazardSource] = $this->resolveMonthlyComponentAmount(
                     $month,
@@ -273,12 +289,17 @@ class IndividualTaxDataService
                     (float) ($forecastHazardByMonth[$month] ?? 0),
                     $lastActualHazardMonth
                 );
+                $hazardTaxWithheld = 0.0;
             }
 
             $longevitySource = $longevity ? (string) ($longevity->status ?? 'completed') : 'forecast';
             $longevityPay = $longevity
                 ? (float) $longevity->longevity_amount
                 : (float) ($forecastLongevityByMonth[$month] ?? 0);
+            $longevityTaxWithheld = $longevity
+                ? (float) round((float) ($longevity->w_tax ?? 0), 4)
+                : 0.0;
+            $taxForMonth = (float) round($salaryTaxWithheld + $hazardTaxWithheld + $longevityTaxWithheld, 4);
             $total = $basicSalary + $hazardPay + $longevityPay;
             $rowStatuses = collect([$salarySource, $hazardSource, $longevitySource]);
             $rowSource = $rowStatuses->contains(fn ($status) => $status !== 'forecast')
@@ -294,6 +315,9 @@ class IndividualTaxDataService
                 'basic_salary' => $basicSalary,
                 'hazard_pay' => $hazardPay,
                 'longevity_pay' => $longevityPay,
+                'salary_tax_withheld' => $salaryTaxWithheld,
+                'hazard_tax_withheld' => $hazardTaxWithheld,
+                'longevity_tax_withheld' => $longevityTaxWithheld,
                 'total' => $total,
                 'tax_withheld' => (float) $taxForMonth,
                 'source' => $rowSource,
@@ -314,36 +338,34 @@ class IndividualTaxDataService
         array $annualTaxDueComputation = []
     ): Collection
     {
-        $taxRows = DB::table('employee_payroll_components as epc')
-            ->join('payroll_components_years as pcy', 'pcy.id', '=', 'epc.tax_deduction_id')
-            ->join('payroll_components as pc', 'pc.id', '=', 'pcy.payroll_component_id')
-            ->where('epc.employee_no', $employeeNo)
-            ->where('pcy.year', $year)
-            ->where('pc.type', 'taxes')
-            ->get([
-                'epc.month',
-                'pc.name',
-                'epc.amount',
-            ])
-            ->groupBy(fn ($row) => (int) $row->month);
-
         $components = ['Salary Tax', 'Hazard Pay Tax', 'Longevity Tax'];
-        $annualAllocation = collect((array) data_get($annualTaxDueComputation, 'allocation.annual', []))
+        $annualAllocation = collect((array) data_get(
+            $this->buildTaxAllocation(
+                (float) data_get($annualTaxDueComputation, 'annual_tax_due', 0),
+                $monthlyBreakdown
+            ),
+            'annual',
+            []
+        ))
             ->mapWithKeys(function ($amount, $key) {
                 return [$this->normalizeTaxAllocationKey((string) $key) => round((float) $amount, 2)];
             })
             ->all();
 
-        $actualByMonth = collect(range(1, 12))->mapWithKeys(function (int $month) use ($taxRows) {
-            $rows = collect($taxRows->get($month, []));
+        $actualByMonth = collect(range(1, 12))->mapWithKeys(function (int $month) use ($monthlyBreakdown, $components) {
+            $row = $monthlyBreakdown->firstWhere('month_number', $month);
+            $items = collect($components)
+                ->mapWithKeys(function (string $component) use ($row) {
+                    if ($this->resolveTaxComponentSource($row, $component) !== 'actual') {
+                        return [];
+                    }
 
-            $items = $rows
-                ->groupBy(fn ($row) => $this->normalizeTaxModuleName((string) ($row->name ?? '')))
-                ->map(fn ($group, $name) => [
-                    'name' => (string) $name,
-                    'amount' => (float) collect($group)->sum('amount'),
-                    'source' => 'actual',
-                ])
+                    return [$component => [
+                        'name' => $component,
+                        'amount' => (float) round($this->getPayrollWithheldTaxForComponent($row, $component), 2),
+                        'source' => 'actual',
+                    ]];
+                })
                 ->all();
 
             return [$month => [
@@ -358,12 +380,12 @@ class IndividualTaxDataService
             $actualTotal = 0.0;
 
             foreach (range(1, 12) as $month) {
-                $actualItem = $actualByMonth[$month]['items'][$component] ?? null;
-
-                if ($actualItem) {
-                    $actualMonths[] = $month;
-                    $actualTotal += (float) ($actualItem['amount'] ?? 0);
+                if (!array_key_exists($component, $actualByMonth[$month]['items'])) {
+                    continue;
                 }
+
+                $actualMonths[] = $month;
+                $actualTotal += (float) ($actualByMonth[$month]['items'][$component]['amount'] ?? 0);
             }
 
             $targetAnnual = round((float) ($annualAllocation[$component] ?? 0), 2);
@@ -382,20 +404,9 @@ class IndividualTaxDataService
                 return [$month => $this->getTaxForecastWeightForComponent($row, $component)];
             });
 
-            $totalWeight = (float) $weights->sum();
-            $distributed = 0.0;
+            $forecastAmounts = $this->allocateTaxAmountAcrossMonths($remainingAmount, $weights);
 
-            foreach ($missingMonths as $index => $month) {
-                $weight = (float) ($weights[$month] ?? 0);
-                $baseAmount = $totalWeight > 0
-                    ? round($remainingAmount * ($weight / $totalWeight), 2)
-                    : round($remainingAmount / max(1, $missingMonths->count()), 2);
-                $amount = $index === $missingMonths->count() - 1
-                    ? round($remainingAmount - $distributed, 2)
-                    : $baseAmount;
-
-                $distributed = round($distributed + $amount, 2);
-
+            foreach ($missingMonths as $month) {
                 $monthRow = $actualByMonth->get($month, [
                     'month_number' => $month,
                     'month_label' => Carbon::create()->month($month)->format('F'),
@@ -404,7 +415,7 @@ class IndividualTaxDataService
                 $monthItems = (array) ($monthRow['items'] ?? []);
                 $monthItems[$component] = [
                     'name' => $component,
-                    'amount' => $amount,
+                    'amount' => (float) round((float) ($forecastAmounts[$month] ?? 0), 2),
                     'source' => 'forecast',
                 ];
                 $monthRow['items'] = $monthItems;
@@ -505,8 +516,7 @@ class IndividualTaxDataService
     public function buildSummary(
         Collection $monthlyBreakdown,
         array $otherComponents,
-        ?int $selectedTrainLawId = null,
-        ?array $taxPortion = null
+        ?int $selectedTrainLawId = null
     ): array
     {
         $annualBasicSalary = (float) $monthlyBreakdown->sum('basic_salary');
@@ -534,7 +544,7 @@ class IndividualTaxDataService
         $annualTaxDueComputation = $this->buildAnnualTaxDueComputation(
             $netTaxableIncome,
             $selectedTrainLawId,
-            $taxPortion
+            $monthlyBreakdown
         );
 
         return [
@@ -560,6 +570,26 @@ class IndividualTaxDataService
             'annual_tax_due_computation' => $annualTaxDueComputation,
             'annual_tax_due' => (float) data_get($annualTaxDueComputation, 'annual_tax_due', 0),
         ];
+    }
+
+    private function mergeTaxModuleBreakdownIntoMonthlyBreakdown(
+        Collection $monthlyBreakdown,
+        Collection $taxModuleBreakdown
+    ): Collection {
+        return $monthlyBreakdown->map(function (array $row) use ($taxModuleBreakdown) {
+            $taxRow = $taxModuleBreakdown->firstWhere('month_number', (int) ($row['month_number'] ?? 0));
+
+            if (!$taxRow) {
+                return $row;
+            }
+
+            $row['salary_tax_withheld'] = (float) round($this->findTaxModuleItemAmount($taxRow, 'Salary Tax'), 2);
+            $row['hazard_tax_withheld'] = (float) round($this->findTaxModuleItemAmount($taxRow, 'Hazard Pay Tax'), 2);
+            $row['longevity_tax_withheld'] = (float) round($this->findTaxModuleItemAmount($taxRow, 'Longevity Tax'), 2);
+            $row['tax_withheld'] = (float) round((float) ($taxRow['amount'] ?? 0), 2);
+
+            return $row;
+        });
     }
 
     private function getOtherEarningTaxTypesByYear(int $year): array
@@ -653,7 +683,7 @@ class IndividualTaxDataService
     private function buildAnnualTaxDueComputation(
         float $netTaxableIncome,
         ?int $trainLawId = null,
-        ?array $taxPortion = null
+        ?Collection $monthlyBreakdown = null
     ): array
     {
         $defaultResult = [
@@ -731,7 +761,7 @@ class IndividualTaxDataService
         $taxableExcess = round(max(0, $netTaxableIncome - $excessOver), 2);
         $variableTax = round($taxableExcess * ($taxRate / 100), 2);
         $annualTaxDue = round($variableTax + $fixedTax, 2);
-        $allocation = $this->buildTaxAllocation($annualTaxDue, $taxPortion);
+        $allocation = $this->buildTaxAllocation($annualTaxDue, $monthlyBreakdown ?? collect());
 
         return [
             'selected_tax_table' => $this->formatTrainLawLabel($trainLaw?->year),
@@ -754,12 +784,8 @@ class IndividualTaxDataService
         ];
     }
 
-    private function buildTaxAllocation(float $annualTaxDue, ?array $taxPortion = null): array
+    private function buildTaxAllocation(float $annualTaxDue, Collection $monthlyBreakdown): array
     {
-        $salaryPct = (float) data_get($taxPortion, 'salary', 80);
-        $hazardPct = (float) data_get($taxPortion, 'hazard_pay', 20);
-        $longevityPct = (float) data_get($taxPortion, 'longevity', 0);
-
         $reconcile = function (array $parts, float $target, string $fallbackKey): array {
             $roundedTarget = round($target, 2);
             $roundedParts = collect($parts)->map(fn ($amount) => round((float) $amount, 2))->all();
@@ -775,11 +801,22 @@ class IndividualTaxDataService
             ];
         };
 
-        $annualParts = [
-            'Salary Tax' => round($annualTaxDue * ($salaryPct / 100), 2),
-            'Hazard Pay Tax' => round($annualTaxDue * ($hazardPct / 100), 2),
-            'Longevity Tax' => round($annualTaxDue * ($longevityPct / 100), 2),
-        ];
+        $componentTotals = $this->getPayrollComponentTotals($monthlyBreakdown);
+        $totalPayroll = round(array_sum($componentTotals), 4);
+
+        if ($totalPayroll > 0) {
+            $annualParts = [
+                'Salary Tax' => round($annualTaxDue * (($componentTotals['Salary Tax'] ?? 0) / $totalPayroll), 2),
+                'Hazard Pay Tax' => round($annualTaxDue * (($componentTotals['Hazard Pay Tax'] ?? 0) / $totalPayroll), 2),
+                'Longevity Tax' => round($annualTaxDue * (($componentTotals['Longevity Tax'] ?? 0) / $totalPayroll), 2),
+            ];
+        } else {
+            $annualParts = [
+                'Salary Tax' => round($annualTaxDue, 2),
+                'Hazard Pay Tax' => 0.0,
+                'Longevity Tax' => 0.0,
+            ];
+        }
 
         $annualReconciled = $reconcile($annualParts, $annualTaxDue, 'Salary Tax');
         $annualParts = $annualReconciled['parts'];
@@ -795,6 +832,101 @@ class IndividualTaxDataService
             'annual' => array_merge($annualParts, ['total' => $annualReconciled['total']]),
             'monthly' => array_merge($monthlyReconciled['parts'], ['total' => $monthlyReconciled['total']]),
         ];
+    }
+
+    private function getPayrollComponentTotals(Collection $monthlyBreakdown): array
+    {
+        return [
+            'Salary Tax' => (float) round($monthlyBreakdown->sum(fn (array $row) => (float) ($row['basic_salary'] ?? 0)), 4),
+            'Hazard Pay Tax' => (float) round($monthlyBreakdown->sum(fn (array $row) => (float) ($row['hazard_pay'] ?? $row['α17'] ?? 0)), 4),
+            'Longevity Tax' => (float) round($monthlyBreakdown->sum(fn (array $row) => (float) ($row['longevity_pay'] ?? 0)), 4),
+        ];
+    }
+
+    private function allocateTaxAmountAcrossMonths(float $amount, Collection $weights): array
+    {
+        $target = round($amount, 2);
+        $positiveWeights = $weights
+            ->map(fn ($weight) => max(0, (float) $weight))
+            ->filter(fn ($weight) => $weight > 0);
+
+        if ($target <= 0) {
+            return collect(range(1, 12))
+                ->mapWithKeys(fn (int $month) => [$month => 0.0])
+                ->all();
+        }
+
+        if ($positiveWeights->isEmpty()) {
+            return collect(range(1, 12))
+                ->mapWithKeys(fn (int $month) => [$month => $month === 12 ? $target : 0.0])
+                ->all();
+        }
+
+        $allocated = [];
+        $distributed = 0.0;
+        $months = $weights->keys()->map(fn ($month) => (int) $month)->values();
+        $lastPositiveMonth = (int) $positiveWeights->keys()->last();
+        $totalWeight = (float) $positiveWeights->sum();
+
+        foreach ($months as $month) {
+            $weight = max(0, (float) ($weights[$month] ?? 0));
+
+            if ($weight <= 0) {
+                $allocated[$month] = 0.0;
+
+                continue;
+            }
+
+            $allocated[$month] = $month === $lastPositiveMonth
+                ? round($target - $distributed, 2)
+                : round($target * ($weight / $totalWeight), 2);
+
+            $distributed = round($distributed + $allocated[$month], 2);
+        }
+
+        return collect(range(1, 12))
+            ->mapWithKeys(fn (int $month) => [$month => (float) ($allocated[$month] ?? 0.0)])
+            ->all();
+    }
+
+    private function getPayrollWithheldTaxForComponent(?array $row, string $component): float
+    {
+        if (!$row) {
+            return 0.0;
+        }
+
+        return match ($component) {
+            'Salary Tax' => (float) ($row['salary_tax_withheld'] ?? 0),
+            'Hazard Pay Tax' => (float) ($row['hazard_tax_withheld'] ?? 0),
+            'Longevity Tax' => (float) ($row['longevity_tax_withheld'] ?? 0),
+            default => 0.0,
+        };
+    }
+
+    private function findTaxModuleItemAmount(array $taxRow, string $component): float
+    {
+        $item = collect((array) ($taxRow['items'] ?? []))
+            ->firstWhere('name', $component);
+
+        return (float) ($item['amount'] ?? 0);
+    }
+
+    private function resolveTaxComponentSource(?array $row, string $component): string
+    {
+        if (!$row) {
+            return 'forecast';
+        }
+
+        $sourceKey = match ($component) {
+            'Salary Tax' => 'basic_salary',
+            'Hazard Pay Tax' => 'hazard_pay',
+            'Longevity Tax' => 'longevity_pay',
+            default => 'basic_salary',
+        };
+
+        return data_get($row, 'source_breakdown.' . $sourceKey, 'forecast') === 'forecast'
+            ? 'forecast'
+            : 'actual';
     }
 
     private function getTrainLawLabel(?int $trainLawId): string
