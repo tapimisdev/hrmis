@@ -20,24 +20,6 @@
                             <i class="fa-solid fa-play me-2"></i>
                             Calculate
                         </button>
-
-                        <button
-                            type="button"
-                            class="btn individual-tax-toolbar-btn individual-tax-toolbar-btn--neutral"
-                            :disabled="isLoading"
-                            @click="revertCurrentView"
-                        >
-                            Revert
-                        </button>
-
-                        <button
-                            type="button"
-                            class="btn individual-tax-toolbar-btn individual-tax-toolbar-btn--accent"
-                            :disabled="isLoading"
-                            @click="handleSave"
-                        >
-                            Save
-                        </button>
                     </div>
 
                     <select
@@ -520,22 +502,37 @@
                         </div>
                     </div>
 
-                    <h2 class="individual-tax-heading mt-4">Taxes</h2>
+                    <h2 class="individual-tax-heading mt-4">Tax Withheld</h2>
 
-                    <div class="individual-tax-list">
-                        <div
-                            v-for="item in currentOtherComponents.taxes"
-                            :key="`tax-${item.name}`"
-                            class="individual-tax-list-row"
-                        >
-                            <span>{{ item.name }}</span>
-                            <span>{{ peso(item.amount) }}</span>
-                        </div>
-                        <div v-if="!currentOtherComponents.taxes.length" class="individual-tax-list-row">
-                            <span>No tax components found.</span>
-                            <span>{{ peso(0) }}</span>
-                        </div>
-                    </div>
+                    <table class="individual-tax-table individual-tax-table--compact">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th class="amount">Withheld</th>
+                                <th class="amount">Balance</th>
+                                <th class="amount">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="row in currentTaxWithheldRows"
+                                :key="`tax-withheld-${row.key}`"
+                            >
+                                <td>{{ row.label }}</td>
+                                <td class="amount">{{ peso(row.withheld) }}</td>
+                                <td class="amount">{{ peso(row.balance) }}</td>
+                                <td class="amount">{{ peso(row.total) }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>Total</th>
+                                <th class="amount">{{ peso(currentTaxWithheldTotals.withheld) }}</th>
+                                <th class="amount">{{ peso(currentTaxWithheldTotals.balance) }}</th>
+                                <th class="amount individual-tax-highlight-blue">{{ peso(currentTaxWithheldTotals.total) }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
 
                     <div class="individual-tax-note">
                         This view combines payroll actuals with forecasted values for missing months in the selected
@@ -1007,6 +1004,47 @@ export default {
             );
         },
 
+        currentTaxWithheldRows() {
+            const allocationAnnual = this.currentAnnualTaxDueComputation?.allocation?.annual || {};
+            const rows = [
+                { key: "salary", label: "Salary Pay", column: "Salary Tax" },
+                { key: "hazard_pay", label: "Hazard Pay", column: "Hazard Pay Tax" },
+                { key: "longevity", label: "Longevity Pay", column: "Longevity Tax" },
+            ];
+
+            return rows.map((row) => {
+                const total = Number(allocationAnnual?.[row.column] || 0);
+                const withheld = this.currentTaxModuleBreakdown.reduce((sum, monthRow) => {
+                    const item = this.getTaxModuleItem(monthRow, row.column);
+
+                    if (!item || item.source !== "actual") {
+                        return sum;
+                    }
+
+                    return sum + Number(item.amount || 0);
+                }, 0);
+                const balance = Math.max(0, Number((total - withheld).toFixed(2)));
+
+                return {
+                    ...row,
+                    withheld: Number(withheld.toFixed(2)),
+                    balance,
+                    total: Number(total.toFixed(2)),
+                };
+            });
+        },
+
+        currentTaxWithheldTotals() {
+            return this.currentTaxWithheldRows.reduce(
+                (totals, row) => ({
+                    withheld: Number((totals.withheld + Number(row.withheld || 0)).toFixed(2)),
+                    balance: Number((totals.balance + Number(row.balance || 0)).toFixed(2)),
+                    total: Number((totals.total + Number(row.total || 0)).toFixed(2)),
+                }),
+                { withheld: 0, balance: 0, total: 0 },
+            );
+        },
+
         currentOtherComponents() {
             return this.state.otherComponents || { earnings: [], de_minimis: [], government_bonuses: [], allowables: [], taxes: [] };
         },
@@ -1441,9 +1479,6 @@ export default {
                 this.activeRunTab = "C";
             }
         },
-        revertCurrentView() {
-            this.fetchData();
-        },
         buildSavePayload() {
             return {
                 employee_nos: this.runForm.employee_nos || [],
@@ -1463,11 +1498,7 @@ export default {
                 },
             };
         },
-        handleSave() {
-            window.InfoToast?.fire?.({
-                title: "Use Calculate to submit this request.",
-            });
-        },
+        
         async handleCalculate() {
             if (this.isSaving) return;
 

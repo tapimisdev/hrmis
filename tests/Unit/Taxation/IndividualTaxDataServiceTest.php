@@ -16,6 +16,7 @@ class IndividualTaxDataServiceTest extends TestCase
             'EMP-001',
             2026,
             $this->monthlyBreakdown(),
+            ['salary' => 50, 'hazard_pay' => 30, 'longevity' => 20],
             ['annual_tax_due' => 550.00]
         );
 
@@ -26,30 +27,37 @@ class IndividualTaxDataServiceTest extends TestCase
         $march = $breakdown->firstWhere('month_number', 3);
 
         $this->assertSame(150.25, $january['amount']);
-        $this->assertSame(349.75, $february['amount']);
-        $this->assertSame(50.00, $march['amount']);
+        $this->assertSame(289.75, $february['amount']);
+        $this->assertSame(110.00, $march['amount']);
+        $april = $breakdown->firstWhere('month_number', 4);
+        $this->assertSame(0.00, $april['amount']);
 
         $this->assertSame(100.25, $this->itemAmount($january['items'], 'Salary Tax'));
         $this->assertSame(50.00, $this->itemAmount($january['items'], 'Hazard Pay Tax'));
         $this->assertSame(0.00, $this->itemAmount($january['items'], 'Longevity Tax'));
 
-        $this->assertSame(299.75, $this->itemAmount($february['items'], 'Salary Tax'));
-        $this->assertSame(50.00, $this->itemAmount($february['items'], 'Hazard Pay Tax'));
+        $this->assertSame(174.75, $this->itemAmount($february['items'], 'Salary Tax'));
+        $this->assertSame(115.00, $this->itemAmount($february['items'], 'Hazard Pay Tax'));
         $this->assertSame(0.00, $this->itemAmount($february['items'], 'Longevity Tax'));
 
         $this->assertSame(0.00, $this->itemAmount($march['items'], 'Salary Tax'));
         $this->assertSame(0.00, $this->itemAmount($march['items'], 'Hazard Pay Tax'));
-        $this->assertSame(50.00, $this->itemAmount($march['items'], 'Longevity Tax'));
+        $this->assertSame(110.00, $this->itemAmount($march['items'], 'Longevity Tax'));
+
+        $this->assertSame(0.00, $this->itemAmount($april['items'], 'Salary Tax'));
+        $this->assertSame(0.00, $this->itemAmount($april['items'], 'Hazard Pay Tax'));
+        $this->assertSame(0.00, $this->itemAmount($april['items'], 'Longevity Tax'));
 
         $this->assertSame('actual', $this->itemSource($january['items'], 'Salary Tax'));
         $this->assertSame('actual', $this->itemSource($january['items'], 'Hazard Pay Tax'));
         $this->assertSame('forecast', $this->itemSource($february['items'], 'Salary Tax'));
         $this->assertSame('forecast', $this->itemSource($february['items'], 'Hazard Pay Tax'));
         $this->assertSame('forecast', $this->itemSource($march['items'], 'Longevity Tax'));
+        $this->assertSame('forecast', $this->itemSource($april['items'], 'Hazard Pay Tax'));
 
-        $this->assertSame(400.00, round($this->sumItemAmounts($breakdown, 'Salary Tax'), 2));
-        $this->assertSame(100.00, round($this->sumItemAmounts($breakdown, 'Hazard Pay Tax'), 2));
-        $this->assertSame(50.00, round($this->sumItemAmounts($breakdown, 'Longevity Tax'), 2));
+        $this->assertSame(275.00, round($this->sumItemAmounts($breakdown, 'Salary Tax'), 2));
+        $this->assertSame(165.00, round($this->sumItemAmounts($breakdown, 'Hazard Pay Tax'), 2));
+        $this->assertSame(110.00, round($this->sumItemAmounts($breakdown, 'Longevity Tax'), 2));
         $this->assertSame(550.00, round($breakdown->sum('amount'), 2));
     }
 
@@ -61,14 +69,15 @@ class IndividualTaxDataServiceTest extends TestCase
             'EMP-001',
             2026,
             $this->emptyMonthlyBreakdown(),
+            ['salary' => 70, 'hazard_pay' => 20, 'longevity' => 10],
             ['annual_tax_due' => 120.00]
         );
 
         $december = $breakdown->firstWhere('month_number', 12);
 
-        $this->assertSame(120.00, round($this->sumItemAmounts($breakdown, 'Salary Tax'), 2));
-        $this->assertSame(0.00, round($this->sumItemAmounts($breakdown, 'Hazard Pay Tax'), 2));
-        $this->assertSame(0.00, round($this->sumItemAmounts($breakdown, 'Longevity Tax'), 2));
+        $this->assertSame(84.00, round($this->sumItemAmounts($breakdown, 'Salary Tax'), 2));
+        $this->assertSame(24.00, round($this->sumItemAmounts($breakdown, 'Hazard Pay Tax'), 2));
+        $this->assertSame(12.00, round($this->sumItemAmounts($breakdown, 'Longevity Tax'), 2));
         $this->assertSame(120.00, $december['amount']);
         $this->assertSame('forecast', $this->itemSource($december['items'], 'Salary Tax'));
     }

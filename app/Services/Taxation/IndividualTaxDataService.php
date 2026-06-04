@@ -49,11 +49,13 @@ class IndividualTaxDataService
                 (string) $employee->employee_no,
                 $selectedYear,
                 $monthlyBreakdown,
+                (array) data_get($selectedTaxationSetting, 'portion', []),
                 (array) data_get(
                     $this->buildSummary(
                         $monthlyBreakdown,
                         $otherComponents,
-                        $selectedTrainLawId
+                        $selectedTrainLawId,
+                        (array) data_get($selectedTaxationSetting, 'portion', [])
                     ),
                     'annual_tax_due_computation',
                     []
@@ -67,7 +69,8 @@ class IndividualTaxDataService
             ? $this->buildSummary(
                 $monthlyBreakdown,
                 $otherComponents,
-                $selectedTrainLawId
+                $selectedTrainLawId,
+                (array) data_get($selectedTaxationSetting, 'portion', [])
             )
             : [];
 
@@ -335,6 +338,7 @@ class IndividualTaxDataService
         string $employeeNo,
         int $year,
         Collection $monthlyBreakdown,
+        array $taxPortion = [],
         array $annualTaxDueComputation = []
     ): Collection
     {
@@ -342,7 +346,8 @@ class IndividualTaxDataService
         $annualAllocation = collect((array) data_get(
             $this->buildTaxAllocation(
                 (float) data_get($annualTaxDueComputation, 'annual_tax_due', 0),
-                $monthlyBreakdown
+                $monthlyBreakdown,
+                $taxPortion
             ),
             'annual',
             []
@@ -516,7 +521,8 @@ class IndividualTaxDataService
     public function buildSummary(
         Collection $monthlyBreakdown,
         array $otherComponents,
-        ?int $selectedTrainLawId = null
+        ?int $selectedTrainLawId = null,
+        ?array $taxPortion = null
     ): array
     {
         $annualBasicSalary = (float) $monthlyBreakdown->sum('basic_salary');
@@ -544,7 +550,8 @@ class IndividualTaxDataService
         $annualTaxDueComputation = $this->buildAnnualTaxDueComputation(
             $netTaxableIncome,
             $selectedTrainLawId,
-            $monthlyBreakdown
+            $monthlyBreakdown,
+            $taxPortion
         );
 
         return [
@@ -683,7 +690,8 @@ class IndividualTaxDataService
     private function buildAnnualTaxDueComputation(
         float $netTaxableIncome,
         ?int $trainLawId = null,
-        ?Collection $monthlyBreakdown = null
+        ?Collection $monthlyBreakdown = null,
+        ?array $taxPortion = null
     ): array
     {
         $defaultResult = [
@@ -761,7 +769,7 @@ class IndividualTaxDataService
         $taxableExcess = round(max(0, $netTaxableIncome - $excessOver), 2);
         $variableTax = round($taxableExcess * ($taxRate / 100), 2);
         $annualTaxDue = round($variableTax + $fixedTax, 2);
-        $allocation = $this->buildTaxAllocation($annualTaxDue, $monthlyBreakdown ?? collect());
+        $allocation = $this->buildTaxAllocation($annualTaxDue, $monthlyBreakdown ?? collect(), $taxPortion);
 
         return [
             'selected_tax_table' => $this->formatTrainLawLabel($trainLaw?->year),
@@ -784,7 +792,7 @@ class IndividualTaxDataService
         ];
     }
 
-    private function buildTaxAllocation(float $annualTaxDue, Collection $monthlyBreakdown): array
+    private function buildTaxAllocation(float $annualTaxDue, Collection $monthlyBreakdown, ?array $taxPortion = null): array
     {
         $reconcile = function (array $parts, float $target, string $fallbackKey): array {
             $roundedTarget = round($target, 2);
@@ -801,22 +809,15 @@ class IndividualTaxDataService
             ];
         };
 
-        $componentTotals = $this->getPayrollComponentTotals($monthlyBreakdown);
-        $totalPayroll = round(array_sum($componentTotals), 4);
+        $salaryPct = (float) data_get($taxPortion, 'salary', 80);
+        $hazardPct = (float) data_get($taxPortion, 'hazard_pay', 20);
+        $longevityPct = (float) data_get($taxPortion, 'longevity', 0);
 
-        if ($totalPayroll > 0) {
-            $annualParts = [
-                'Salary Tax' => round($annualTaxDue * (($componentTotals['Salary Tax'] ?? 0) / $totalPayroll), 2),
-                'Hazard Pay Tax' => round($annualTaxDue * (($componentTotals['Hazard Pay Tax'] ?? 0) / $totalPayroll), 2),
-                'Longevity Tax' => round($annualTaxDue * (($componentTotals['Longevity Tax'] ?? 0) / $totalPayroll), 2),
-            ];
-        } else {
-            $annualParts = [
-                'Salary Tax' => round($annualTaxDue, 2),
-                'Hazard Pay Tax' => 0.0,
-                'Longevity Tax' => 0.0,
-            ];
-        }
+        $annualParts = [
+            'Salary Tax' => round($annualTaxDue * ($salaryPct / 100), 2),
+            'Hazard Pay Tax' => round($annualTaxDue * ($hazardPct / 100), 2),
+            'Longevity Tax' => round($annualTaxDue * ($longevityPct / 100), 2),
+        ];
 
         $annualReconciled = $reconcile($annualParts, $annualTaxDue, 'Salary Tax');
         $annualParts = $annualReconciled['parts'];
