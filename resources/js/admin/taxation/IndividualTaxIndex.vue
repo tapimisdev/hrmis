@@ -534,6 +534,93 @@
                         </tfoot>
                     </table>
 
+                    <div class="individual-tax-subsection">
+                        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+                            <h3 class="individual-tax-subheading mb-0">Employee Portion Overrides</h3>
+                            <button
+                                type="button"
+                                class="btn btn-primary btn-sm"
+                                :disabled="isRecomputingEmployee || !currentEmployee?.employee_no"
+                                @click="handleRecomputeEmployee"
+                            >
+                                <i class="bi bi-arrow-repeat me-2"></i>
+                                {{ isRecomputingEmployee ? "Recomputing..." : "Recompute" }}
+                            </button>
+                        </div>
+
+                        <div class="individual-tax-employee-portion-card">
+                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+                                <div>
+                                    <div class="fw-semibold">{{ employeeName }}</div>
+                                    <div class="text-muted small">{{ currentEmployee.employee_no || "No employee selected" }}</div>
+                                </div>
+                                <span
+                                    class="badge"
+                                    :class="portionTotal(employeePortionForm) === 100 ? 'text-bg-success' : 'text-bg-danger'"
+                                >
+                                    {{ formatPercent(portionTotal(employeePortionForm)) }}
+                                </span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label individual-tax-run-label">Salary</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-cash-stack"></i>
+                                        </span>
+                                        <input
+                                            v-model="employeePortionForm.salary"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            class="form-control"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label individual-tax-run-label">Hazard Pay</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                        </span>
+                                        <input
+                                            v-model="employeePortionForm.hazard_pay"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            class="form-control"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label individual-tax-run-label">Longevity</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-clock-history"></i>
+                                        </span>
+                                        <input
+                                            v-model="employeePortionForm.longevity"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            class="form-control"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-muted small mt-3">
+                                This recompute only updates {{ currentEmployee.employee_no || "the selected employee" }} for year {{ selectedYearValue }}.
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="individual-tax-note">
                         This view combines payroll actuals with forecasted values for missing months in the selected
                         year and automatically shows the first employee that is both <strong>regular</strong> and
@@ -813,61 +900,88 @@
                                                     <div class="fw-semibold">Portion</div>
                                                     <span class="badge text-bg-secondary">Step 3 of 3</span>
                                                 </div>
-                                                <div class="card-body">
-                                                    <div class="row g-3">
-                                                        <div class="col-12 col-md-4">
-                                                            <label class="form-label individual-tax-run-label">Salary</label>
-                                                            <div class="input-group">
-                                                                <span class="input-group-text">
-                                                                    <i class="bi bi-cash-stack"></i>
-                                                                </span>
-                                                                <input
-                                                                    v-model="runForm.portion.salary"
-                                                                    type="number"
-                                                                    min="0"
-                                                                    step="0.01"
-                                                                    class="form-control"
-                                                                    placeholder="0.00"
-                                                                />
-                                                            </div>
-                                                        </div>
+                                                    <div class="card-body">
+                                                        <div class="row g-3">
+                                                            <div class="col-12">
+                                                                <div class="border rounded p-3 h-100">
+                                                                    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+                                                                        <div>
+                                                                            <div class="fw-bold">Default Portion</div>
+                                                                            <div class="text-muted small">
+                                                                                Used for new employees and fallback values for this year.
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            class="btn btn-sm btn-outline-primary"
+                                                                            @click="applyDefaultPortionToSelectedEmployees"
+                                                                        >
+                                                                            Apply To Selected Employees
+                                                                        </button>
+                                                                    </div>
 
-                                                        <div class="col-12 col-md-4">
-                                                            <label class="form-label individual-tax-run-label">Hazard Pay</label>
-                                                            <div class="input-group">
-                                                                <span class="input-group-text">
-                                                                    <i class="bi bi-exclamation-triangle"></i>
-                                                                </span>
-                                                                <input
-                                                                    v-model="runForm.portion.hazard_pay"
-                                                                    type="number"
-                                                                    min="0"
-                                                                    step="0.01"
-                                                                    class="form-control"
-                                                                    placeholder="0.00"
-                                                                />
-                                                            </div>
-                                                        </div>
+                                                                    <div class="row g-3">
+                                                                        <div class="col-12 col-md-4">
+                                                                            <label class="form-label individual-tax-run-label">Salary</label>
+                                                                            <div class="input-group">
+                                                                                <span class="input-group-text">
+                                                                                    <i class="bi bi-cash-stack"></i>
+                                                                                </span>
+                                                                                <input
+                                                                                    v-model="runForm.portion.salary"
+                                                                                    type="number"
+                                                                                    min="0"
+                                                                                    step="0.01"
+                                                                                    class="form-control"
+                                                                                    placeholder="0.00"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
 
-                                                        <div class="col-12 col-md-4">
-                                                            <label class="form-label individual-tax-run-label">Longevity</label>
-                                                            <div class="input-group">
-                                                                <span class="input-group-text">
-                                                                    <i class="bi bi-clock-history"></i>
-                                                                </span>
-                                                                <input
-                                                                    v-model="runForm.portion.longevity"
-                                                                    type="number"
-                                                                    min="0"
-                                                                    step="0.01"
-                                                                    class="form-control"
-                                                                    placeholder="0.00"
-                                                                />
+                                                                        <div class="col-12 col-md-4">
+                                                                            <label class="form-label individual-tax-run-label">Hazard Pay</label>
+                                                                            <div class="input-group">
+                                                                                <span class="input-group-text">
+                                                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                                                </span>
+                                                                                <input
+                                                                                    v-model="runForm.portion.hazard_pay"
+                                                                                    type="number"
+                                                                                    min="0"
+                                                                                    step="0.01"
+                                                                                    class="form-control"
+                                                                                    placeholder="0.00"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div class="col-12 col-md-4">
+                                                                            <label class="form-label individual-tax-run-label">Longevity</label>
+                                                                            <div class="input-group">
+                                                                                <span class="input-group-text">
+                                                                                    <i class="bi bi-clock-history"></i>
+                                                                                </span>
+                                                                                <input
+                                                                                    v-model="runForm.portion.longevity"
+                                                                                    type="number"
+                                                                                    min="0"
+                                                                                    step="0.01"
+                                                                                    class="form-control"
+                                                                                    placeholder="0.00"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="text-muted small mt-3">
+                                                                        Total: {{ formatPercent(portionTotal(runForm.portion)) }}
+                                                                    </div>
+                                                                </div>
                                                             </div>
+
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -953,11 +1067,17 @@ export default {
             selectedYearInput: String(this.selectedYear || new Date().getFullYear()),
             isLoading: false,
             isSaving: false,
+            isRecomputingEmployee: false,
             token: localStorage.getItem("auth_token"),
             runModalInstance: null,
             activeRunTab: "A",
             governmentBonuses: [],
             isLoadingGovernmentBonuses: false,
+            employeePortionForm: {
+                hazard_pay: 20,
+                salary: 80,
+                longevity: 0,
+            },
             runForm: {
                 year: String(this.selectedYear || new Date().getFullYear()),
                 trainLawId: this.selectedTrainLawId != null ? String(this.selectedTrainLawId) : "",
@@ -968,6 +1088,7 @@ export default {
                     salary: 80,
                     longevity: 0,
                 },
+                employeePortions: {},
             },
         };
     },
@@ -983,6 +1104,13 @@ export default {
 
         currentRunEmployees() {
             return this.state.allEmployees || [];
+        },
+        selectedRunEmployees() {
+            const selectedEmployeeNos = new Set((this.runForm.employee_nos || []).map((employeeNo) => String(employeeNo)));
+
+            return this.currentRunEmployees.filter((employeeOption) =>
+                selectedEmployeeNos.has(String(employeeOption.employee_no)),
+            );
         },
 
         currentMonthlyBreakdown() {
@@ -1122,9 +1250,83 @@ export default {
             },
             deep: true,
         },
+        currentSelectedTaxationSettings: {
+            handler() {
+                this.syncEmployeePortionForm();
+            },
+            deep: true,
+        },
+        selectedEmployeeNo() {
+            this.syncEmployeePortionForm();
+        },
+        "runForm.employee_nos": {
+            handler() {
+                this.ensureRunEmployeePortions();
+            },
+            deep: true,
+        },
     },
 
     methods: {
+        defaultPortion() {
+            return {
+                salary: 80,
+                hazard_pay: 20,
+                longevity: 0,
+            };
+        },
+        normalizePortion(portion = {}) {
+            const defaults = this.defaultPortion();
+
+            return {
+                salary: Number(portion?.salary ?? defaults.salary),
+                hazard_pay: Number(portion?.hazard_pay ?? defaults.hazard_pay),
+                longevity: Number(portion?.longevity ?? defaults.longevity),
+            };
+        },
+        portionTotal(portion = {}) {
+            return Number(
+                (
+                    Number(portion?.salary || 0) +
+                    Number(portion?.hazard_pay || 0) +
+                    Number(portion?.longevity || 0)
+                ).toFixed(2),
+            );
+        },
+        getStoredEmployeePortion(employeeNo) {
+            return this.currentSelectedTaxationSettings?.employee_portions?.[String(employeeNo)] || null;
+        },
+        syncEmployeePortionForm() {
+            this.employeePortionForm = this.normalizePortion(
+                this.getStoredEmployeePortion(this.selectedEmployeeNo) ||
+                this.currentSelectedTaxationSettings?.portion,
+            );
+        },
+        ensureRunEmployeePortions() {
+            const nextPortions = { ...(this.runForm.employeePortions || {}) };
+
+            (this.runForm.employee_nos || []).forEach((employeeNo) => {
+                const key = String(employeeNo);
+
+                nextPortions[key] = this.normalizePortion(
+                    nextPortions[key] ||
+                    this.getStoredEmployeePortion(key) ||
+                    this.runForm.portion,
+                );
+            });
+
+            this.runForm.employeePortions = nextPortions;
+        },
+        applyDefaultPortionToSelectedEmployees() {
+            const defaultPortion = this.normalizePortion(this.runForm.portion);
+            const nextPortions = { ...(this.runForm.employeePortions || {}) };
+
+            (this.runForm.employee_nos || []).forEach((employeeNo) => {
+                nextPortions[String(employeeNo)] = { ...defaultPortion };
+            });
+
+            this.runForm.employeePortions = nextPortions;
+        },
         peso(amount) {
             return `P ${Number(amount || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
@@ -1286,11 +1488,10 @@ export default {
                     .map((bonus) => String(bonus?.government_bonus_id || ""))
                     .filter(Boolean)
                 : [];
-            this.runForm.portion = {
-                hazard_pay: Number(selectedSettings?.portion?.hazard_pay ?? 20),
-                salary: Number(selectedSettings?.portion?.salary ?? 80),
-                longevity: Number(selectedSettings?.portion?.longevity ?? 0),
-            };
+            this.runForm.portion = this.normalizePortion(selectedSettings?.portion);
+            this.runForm.employeePortions = {};
+            this.ensureRunEmployeePortions();
+            this.syncEmployeePortionForm();
         },
 
         syncSelectionFromState() {
@@ -1459,6 +1660,7 @@ export default {
             this.runForm.employee_nos = this.currentRunEmployees.map((employeeOption) =>
                 String(employeeOption.employee_no),
             );
+            this.ensureRunEmployeePortions();
             this.$nextTick(() => {
                 this.syncRunEmployeeSelectValue();
             });
@@ -1479,9 +1681,14 @@ export default {
                 this.activeRunTab = "C";
             }
         },
-        buildSavePayload() {
+        buildSavePayload(employeeNos = this.runForm.employee_nos || [], employeePortions = null) {
+            const resolvedEmployeeNos = Array.isArray(employeeNos)
+                ? employeeNos.map((employeeNo) => String(employeeNo))
+                : [];
+            const resolvedEmployeePortions = employeePortions || this.runForm.employeePortions || {};
+
             return {
-                employee_nos: this.runForm.employee_nos || [],
+                employee_nos: resolvedEmployeeNos,
                 n_taxation: {
                     Year: Number(this.selectedYearValue || 0),
                 },
@@ -1495,8 +1702,58 @@ export default {
                         salary: Number(this.runForm.portion?.salary || 0),
                         longevity: Number(this.runForm.portion?.longevity || 0),
                     },
+                    employee_portions: resolvedEmployeeNos.reduce((carry, employeeNo) => {
+                        const key = String(employeeNo);
+                        const portion = this.normalizePortion(resolvedEmployeePortions?.[key] || this.runForm.portion);
+
+                        carry[key] = {
+                            hazard_pay: Number(portion.hazard_pay || 0),
+                            salary: Number(portion.salary || 0),
+                            longevity: Number(portion.longevity || 0),
+                        };
+
+                        return carry;
+                    }, {}),
                 },
             };
+        },
+
+        async handleRecomputeEmployee() {
+            if (this.isRecomputingEmployee || !this.currentEmployee?.employee_no) return;
+
+            this.isRecomputingEmployee = true;
+
+            try {
+                const employeeNo = String(this.currentEmployee.employee_no);
+                const response = await axios.post(
+                    this.saveUrl,
+                    this.buildSavePayload(
+                        [employeeNo],
+                        {
+                            [employeeNo]: this.normalizePortion(this.employeePortionForm),
+                        },
+                    ),
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                );
+
+                await this.fetchData();
+                window.SuccessToast?.fire?.({
+                    title: response?.data?.message || "Employee portion recomputed successfully.",
+                });
+            } catch (error) {
+                window.ErrorToast?.fire?.({
+                    title:
+                        error.response?.data?.message ||
+                        Object.values(error.response?.data?.errors || {})?.[0]?.[0] ||
+                        "Unable to recompute employee portion.",
+                });
+            } finally {
+                this.isRecomputingEmployee = false;
+            }
         },
         
         async handleCalculate() {
@@ -1515,6 +1772,7 @@ export default {
                     },
                 );
 
+                await this.fetchData();
                 this.closeRunModal();
                 window.SuccessToast?.fire?.({
                     title: response?.data?.message || "Individual tax settings saved successfully.",
@@ -1583,6 +1841,9 @@ export default {
             ) {
                 this.runForm.trainLawId = String(this.state.selectedTrainLawId);
             }
+
+            this.ensureRunEmployeePortions();
+            this.syncEmployeePortionForm();
         },
         async fetchGovernmentBonuses() {
             this.isLoadingGovernmentBonuses = true;
@@ -2132,6 +2393,13 @@ export default {
     background: var(--bs-secondary-bg);
     color: var(--bs-secondary-color);
     border-color: var(--bs-border-color);
+}
+
+.individual-tax-employee-portion-card {
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+    background: var(--bs-body-bg);
 }
 
 .individual-tax-run-segmented {

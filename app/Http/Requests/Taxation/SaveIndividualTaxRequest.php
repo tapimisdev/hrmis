@@ -31,6 +31,11 @@ class SaveIndividualTaxRequest extends FormRequest
             'n_taxation_settings.portion.salary' => ['required', 'numeric', 'min:0'],
             'n_taxation_settings.portion.hazard_pay' => ['required', 'numeric', 'min:0'],
             'n_taxation_settings.portion.longevity' => ['required', 'numeric', 'min:0'],
+            'n_taxation_settings.employee_portions' => ['nullable', 'array'],
+            'n_taxation_settings.employee_portions.*' => ['required', 'array'],
+            'n_taxation_settings.employee_portions.*.salary' => ['required', 'numeric', 'min:0'],
+            'n_taxation_settings.employee_portions.*.hazard_pay' => ['required', 'numeric', 'min:0'],
+            'n_taxation_settings.employee_portions.*.longevity' => ['required', 'numeric', 'min:0'],
         ];
     }
 
@@ -53,12 +58,33 @@ class SaveIndividualTaxRequest extends FormRequest
             ->unique('government_bonus_id')
             ->values()
             ->all();
+        $defaultPortion = [
+            'salary' => (float) data_get($this->input('n_taxation_settings', []), 'portion.salary', 80),
+            'hazard_pay' => (float) data_get($this->input('n_taxation_settings', []), 'portion.hazard_pay', 20),
+            'longevity' => (float) data_get($this->input('n_taxation_settings', []), 'portion.longevity', 0),
+        ];
+        $employeePortions = collect((array) $this->input('n_taxation_settings.employee_portions', []))
+            ->mapWithKeys(function ($portion, $employeeNo) use ($defaultPortion) {
+                return [
+                    trim((string) $employeeNo) => [
+                        'salary' => (float) data_get($portion, 'salary', $defaultPortion['salary']),
+                        'hazard_pay' => (float) data_get($portion, 'hazard_pay', $defaultPortion['hazard_pay']),
+                        'longevity' => (float) data_get($portion, 'longevity', $defaultPortion['longevity']),
+                    ],
+                ];
+            })
+            ->filter(fn (array $portion, string $employeeNo) => $employeeNo !== '')
+            ->only($employeeNos)
+            ->all();
 
         $this->merge([
             'employee_nos' => $employeeNos,
             'n_taxation_settings' => array_merge(
                 (array) $this->input('n_taxation_settings', []),
-                ['bonuses' => $bonuses],
+                [
+                    'bonuses' => $bonuses,
+                    'employee_portions' => $employeePortions,
+                ],
             ),
         ]);
     }
@@ -81,6 +107,19 @@ class SaveIndividualTaxRequest extends FormRequest
                     'n_taxation_settings.portion',
                     'Salary, hazard pay, and longevity must total exactly 100.'
                 );
+            }
+
+            foreach ((array) $this->input('n_taxation_settings.employee_portions', []) as $employeeNo => $employeePortion) {
+                $employeeTotal = (float) ($employeePortion['salary'] ?? 0)
+                    + (float) ($employeePortion['hazard_pay'] ?? 0)
+                    + (float) ($employeePortion['longevity'] ?? 0);
+
+                if (abs($employeeTotal - 100.0) > 0.0001) {
+                    $validator->errors()->add(
+                        "n_taxation_settings.employee_portions.{$employeeNo}",
+                        'Each employee portion must total exactly 100.'
+                    );
+                }
             }
         });
     }

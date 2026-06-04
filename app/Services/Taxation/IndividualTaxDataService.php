@@ -27,6 +27,9 @@ class IndividualTaxDataService
         $selectedTaxationSetting = $hasTaxationData
             ? $this->getSelectedTaxationSetting((int) $taxation->id)
             : null;
+        $selectedEmployeePortion = $hasTaxationData && $hasSelectedEmployee
+            ? $this->resolveEmployeeTaxPortion((string) $employee->employee_no, $selectedTaxationSetting)
+            : $this->defaultTaxPortion();
         $monthlyBreakdown = $hasTaxationData && $hasSelectedEmployee
             ? $this->buildMonthlyBreakdown((string) $employee->employee_no, $selectedYear)
             : collect();
@@ -49,13 +52,13 @@ class IndividualTaxDataService
                 (string) $employee->employee_no,
                 $selectedYear,
                 $monthlyBreakdown,
-                (array) data_get($selectedTaxationSetting, 'portion', []),
+                $selectedEmployeePortion,
                 (array) data_get(
                     $this->buildSummary(
                         $monthlyBreakdown,
                         $otherComponents,
                         $selectedTrainLawId,
-                        (array) data_get($selectedTaxationSetting, 'portion', [])
+                        $selectedEmployeePortion
                     ),
                     'annual_tax_due_computation',
                     []
@@ -70,7 +73,7 @@ class IndividualTaxDataService
                 $monthlyBreakdown,
                 $otherComponents,
                 $selectedTrainLawId,
-                (array) data_get($selectedTaxationSetting, 'portion', [])
+                $selectedEmployeePortion
             )
             : [];
 
@@ -658,6 +661,23 @@ class IndividualTaxDataService
             return null;
         }
 
+        $defaultPortion = $this->normalizeTaxPortion([
+            'salary' => (float) ($setting->portion?->salary ?? 80),
+            'hazard_pay' => (float) ($setting->portion?->hazard_pay ?? 20),
+            'longevity' => (float) ($setting->portion?->longevity ?? 0),
+        ]);
+        $employeePortions = DB::table('n_taxation_employees')
+            ->where('n_taxation_id', $taxationId)
+            ->get(['employee_no', 'salary', 'hazard_pay', 'longevity'])
+            ->mapWithKeys(function ($employeeRow) use ($defaultPortion) {
+                return [(string) $employeeRow->employee_no => $this->normalizeTaxPortion([
+                    'salary' => $employeeRow->salary ?? $defaultPortion['salary'],
+                    'hazard_pay' => $employeeRow->hazard_pay ?? $defaultPortion['hazard_pay'],
+                    'longevity' => $employeeRow->longevity ?? $defaultPortion['longevity'],
+                ])];
+            })
+            ->all();
+
         return [
             'n_taxation_id' => (int) $setting->n_taxation_id,
             'n_taxation_setting_id' => (int) $setting->id,
@@ -668,11 +688,37 @@ class IndividualTaxDataService
                 ])
                 ->values()
                 ->all(),
-            'portion' => [
-                'salary' => (float) ($setting->portion?->salary ?? 80),
-                'hazard_pay' => (float) ($setting->portion?->hazard_pay ?? 20),
-                'longevity' => (float) ($setting->portion?->longevity ?? 0),
-            ],
+            'portion' => $defaultPortion,
+            'employee_portions' => $employeePortions,
+        ];
+    }
+
+    private function resolveEmployeeTaxPortion(string $employeeNo, ?array $selectedTaxationSetting): array
+    {
+        return $this->normalizeTaxPortion(
+            (array) data_get(
+                $selectedTaxationSetting,
+                "employee_portions.{$employeeNo}",
+                data_get($selectedTaxationSetting, 'portion', $this->defaultTaxPortion())
+            )
+        );
+    }
+
+    private function defaultTaxPortion(): array
+    {
+        return [
+            'salary' => 80.0,
+            'hazard_pay' => 20.0,
+            'longevity' => 0.0,
+        ];
+    }
+
+    private function normalizeTaxPortion(array $portion): array
+    {
+        return [
+            'salary' => (float) ($portion['salary'] ?? 80),
+            'hazard_pay' => (float) ($portion['hazard_pay'] ?? 20),
+            'longevity' => (float) ($portion['longevity'] ?? 0),
         ];
     }
 

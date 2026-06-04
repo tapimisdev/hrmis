@@ -16,6 +16,18 @@ class SaveIndividualTaxService
                 ->filter()
                 ->unique()
                 ->values();
+            $defaultPortion = $this->normalizePortion(
+                (array) data_get($payload, 'n_taxation_settings.portion', [])
+            );
+            $employeePortions = $employeeNos
+                ->mapWithKeys(function (string $employeeNo) use ($payload, $defaultPortion) {
+                    return [$employeeNo => $this->normalizePortion(
+                        array_merge(
+                            $defaultPortion,
+                            (array) data_get($payload, "n_taxation_settings.employee_portions.{$employeeNo}", [])
+                        )
+                    )];
+                });
 
             $taxation = NTaxation::query()->firstOrCreate([
                 'Year' => (int) data_get($payload, 'n_taxation.Year'),
@@ -30,20 +42,21 @@ class SaveIndividualTaxService
             ]);
             $setting->save();
 
-            DB::table('n_taxation_employees')
-                ->where('n_taxation_id', $taxation->id)
-                ->delete();
-
             if ($employeeNos->isNotEmpty()) {
-                DB::table('n_taxation_employees')->insert(
+                DB::table('n_taxation_employees')->upsert(
                     $employeeNos
                         ->map(fn (string $employeeNo) => [
                             'n_taxation_id' => $taxation->id,
                             'employee_no' => $employeeNo,
+                            'salary' => (float) data_get($employeePortions, "{$employeeNo}.salary", 0),
+                            'hazard_pay' => (float) data_get($employeePortions, "{$employeeNo}.hazard_pay", 0),
+                            'longevity' => (float) data_get($employeePortions, "{$employeeNo}.longevity", 0),
                             'created_at' => now(),
                             'updated_at' => now(),
                         ])
-                        ->all()
+                        ->all(),
+                    ['n_taxation_id', 'employee_no'],
+                    ['salary', 'hazard_pay', 'longevity', 'updated_at']
                 );
             }
 
@@ -63,9 +76,9 @@ class SaveIndividualTaxService
             $setting->portion()->updateOrCreate(
                 ['n_taxation_setting_id' => $setting->id],
                 [
-                    'hazard_pay' => (float) data_get($payload, 'n_taxation_settings.portion.hazard_pay', 0),
-                    'salary' => (float) data_get($payload, 'n_taxation_settings.portion.salary', 0),
-                    'longevity' => (float) data_get($payload, 'n_taxation_settings.portion.longevity', 0),
+                    'hazard_pay' => (float) ($defaultPortion['hazard_pay'] ?? 0),
+                    'salary' => (float) ($defaultPortion['salary'] ?? 0),
+                    'longevity' => (float) ($defaultPortion['longevity'] ?? 0),
                 ],
             );
 
@@ -83,5 +96,14 @@ class SaveIndividualTaxService
                 ],
             ];
         });
+    }
+
+    private function normalizePortion(array $portion): array
+    {
+        return [
+            'salary' => (float) ($portion['salary'] ?? 80),
+            'hazard_pay' => (float) ($portion['hazard_pay'] ?? 20),
+            'longevity' => (float) ($portion['longevity'] ?? 0),
+        ];
     }
 }
