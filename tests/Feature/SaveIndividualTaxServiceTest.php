@@ -144,4 +144,110 @@ class SaveIndividualTaxServiceTest extends TestCase
             'longevity' => 15,
         ]);
     }
+
+    public function test_saving_tax_override_upserts_employee_tax_override_row(): void
+    {
+        DB::table('train_law')->insert([
+            'id' => 1,
+            'year' => '2026',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = app(SaveIndividualTaxService::class);
+
+        $payload = [
+            'employee_nos' => ['EMP-001'],
+            'n_taxation' => ['Year' => 2026],
+            'n_taxation_settings' => [
+                'train_law_id' => 1,
+                'bonuses' => [],
+                'portion' => [
+                    'salary' => 80,
+                    'hazard_pay' => 20,
+                    'longevity' => 0,
+                ],
+                'employee_portions' => [
+                    'EMP-001' => [
+                        'salary' => 80,
+                        'hazard_pay' => 20,
+                        'longevity' => 0,
+                    ],
+                ],
+                'tax_override' => [
+                    'employee_no' => 'EMP-001',
+                    'tax_type' => 'Salary Tax',
+                    'month_number' => 12,
+                    'amount' => 91.25,
+                ],
+            ],
+        ];
+
+        $service->handle($payload);
+
+        $payload['n_taxation_settings']['tax_override']['amount'] = 95.50;
+        $service->handle($payload);
+
+        $this->assertDatabaseCount('n_taxation_employee_tax_overrides', 1);
+        $this->assertDatabaseHas('n_taxation_employee_tax_overrides', [
+            'employee_no' => 'EMP-001',
+            'tax_type' => 'Salary Tax',
+            'month_number' => 12,
+            'amount' => 95.50,
+        ]);
+    }
+
+    public function test_deleting_tax_override_removes_saved_override_row(): void
+    {
+        DB::table('train_law')->insert([
+            'id' => 1,
+            'year' => '2026',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = app(SaveIndividualTaxService::class);
+
+        $payload = [
+            'employee_nos' => ['EMP-001'],
+            'n_taxation' => ['Year' => 2026],
+            'n_taxation_settings' => [
+                'train_law_id' => 1,
+                'bonuses' => [],
+                'portion' => [
+                    'salary' => 80,
+                    'hazard_pay' => 20,
+                    'longevity' => 0,
+                ],
+                'employee_portions' => [
+                    'EMP-001' => [
+                        'salary' => 80,
+                        'hazard_pay' => 20,
+                        'longevity' => 0,
+                    ],
+                ],
+                'tax_override' => [
+                    'employee_no' => 'EMP-001',
+                    'tax_type' => 'Salary Tax',
+                    'month_number' => 12,
+                    'amount' => 91.25,
+                ],
+            ],
+        ];
+
+        $service->handle($payload);
+
+        $payload['n_taxation_settings']['tax_override'] = [
+            'employee_no' => 'EMP-001',
+            'tax_type' => 'Salary Tax',
+            'month_number' => 12,
+            'action' => 'delete',
+        ];
+
+        $service->handle($payload);
+
+        $this->assertDatabaseCount('n_taxation_employee_tax_overrides', 0);
+    }
 }

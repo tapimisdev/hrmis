@@ -30,6 +30,9 @@ class IndividualTaxDataService
         $selectedEmployeePortion = $hasTaxationData && $hasSelectedEmployee
             ? $this->resolveEmployeeTaxPortion((string) $employee->employee_no, $selectedTaxationSetting)
             : $this->defaultTaxPortion();
+        $selectedEmployeeTaxOverrides = $hasTaxationData && $hasSelectedEmployee
+            ? $this->getEmployeeTaxOverrides((int) $taxation->id, (string) $employee->employee_no)
+            : [];
         $monthlyBreakdown = $hasTaxationData && $hasSelectedEmployee
             ? $this->buildMonthlyBreakdown((string) $employee->employee_no, $selectedYear)
             : collect();
@@ -62,7 +65,8 @@ class IndividualTaxDataService
                     ),
                     'annual_tax_due_computation',
                     []
-                )
+                ),
+                $selectedEmployeeTaxOverrides
             )
             : collect();
         $monthlyBreakdown = $hasTaxationData && $hasSelectedEmployee
@@ -90,6 +94,7 @@ class IndividualTaxDataService
             'trainLawOptions' => $trainLawOptions['items'],
             'selectedTrainLawId' => $selectedTrainLawId,
             'selectedTaxationSettings' => $selectedTaxationSetting,
+            'selectedEmployeeTaxOverrides' => $selectedEmployeeTaxOverrides,
             'hasTaxationData' => $hasTaxationData,
         ];
     }
@@ -342,7 +347,8 @@ class IndividualTaxDataService
         int $year,
         Collection $monthlyBreakdown,
         array $taxPortion = [],
-        array $annualTaxDueComputation = []
+        array $annualTaxDueComputation = [],
+        array $taxOverrides = []
     ): Collection
     {
         $components = ['Salary Tax', 'Hazard Pay Tax', 'Longevity Tax'];
@@ -397,7 +403,6 @@ class IndividualTaxDataService
             }
 
             $targetAnnual = round((float) ($annualAllocation[$component] ?? 0), 2);
-            $remainingAmount = round(max(0, $targetAnnual - round($actualTotal, 2)), 2);
             $missingMonths = collect(range(1, 12))
                 ->reject(fn (int $month) => in_array($month, $actualMonths, true))
                 ->values();
@@ -406,7 +411,22 @@ class IndividualTaxDataService
                 continue;
             }
 
-            $weights = $missingMonths->mapWithKeys(function (int $month) use ($monthlyBreakdown, $component) {
+            $componentOverrides = collect($taxOverrides)
+                ->filter(function (array $taxOverride) use ($component, $missingMonths) {
+                    return $this->normalizeTaxModuleName((string) ($taxOverride['tax_type'] ?? '')) === $component
+                        && $missingMonths->contains((int) ($taxOverride['month_number'] ?? 0));
+                })
+                ->keyBy(fn (array $taxOverride) => (int) ($taxOverride['month_number'] ?? 0));
+            $overrideTotal = round(
+                (float) $componentOverrides->sum(fn (array $taxOverride) => (float) ($taxOverride['amount'] ?? 0)),
+                2
+            );
+            $remainingAmount = round(max(0, $targetAnnual - round($actualTotal, 2) - $overrideTotal), 2);
+            $allocatableMonths = $missingMonths
+                ->reject(fn (int $month) => $componentOverrides->has($month))
+                ->values();
+
+            $weights = $allocatableMonths->mapWithKeys(function (int $month) use ($monthlyBreakdown, $component) {
                 $row = $monthlyBreakdown->firstWhere('month_number', $month);
 
                 return [$month => $this->getTaxForecastWeightForComponent($row, $component)];
@@ -421,10 +441,12 @@ class IndividualTaxDataService
                     'items' => [],
                 ]);
                 $monthItems = (array) ($monthRow['items'] ?? []);
+                $overrideAmount = $this->findTaxOverrideAmount($componentOverrides->values()->all(), $component, (int) $month);
                 $monthItems[$component] = [
                     'name' => $component,
-                    'amount' => (float) round((float) ($forecastAmounts[$month] ?? 0), 2),
-                    'source' => 'forecast',
+                    'amount' => (float) round($overrideAmount ?? (float) ($forecastAmounts[$month] ?? 0), 2),
+                    'source' => $overrideAmount !== null ? 'override' : 'forecast',
+                    'is_editable' => true,
                 ];
                 $monthRow['items'] = $monthItems;
                 $actualByMonth->put($month, $monthRow);
@@ -438,6 +460,7 @@ class IndividualTaxDataService
                         'name' => $component,
                         'amount' => 0.0,
                         'source' => 'forecast',
+                        'is_editable' => true,
                     ];
                 })
                 ->values()
@@ -720,6 +743,24 @@ class IndividualTaxDataService
             'hazard_pay' => (float) ($portion['hazard_pay'] ?? 20),
             'longevity' => (float) ($portion['longevity'] ?? 0),
         ];
+    }
+
+    private function getEmployeeTaxOverrides(int $taxationId, string $employeeNo): array
+    {
+        return DB::table('n_taxation_employee_tax_overrides')
+            ->where('n_taxation_id', $taxationId)
+            ->where('employee_no', $employeeNo)
+            ->orderBy('month_number')
+            ->get(['tax_type', 'month_number', 'amount'])
+            ->map(function ($override) {
+                return [
+                    'tax_type' => $this->normalizeTaxModuleName((string) ($override->tax_type ?? '')),
+                    'month_number' => (int) ($override->month_number ?? 0),
+                    'amount' => (float) round((float) ($override->amount ?? 0), 2),
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     private function emptyOtherComponents(): array
@@ -1076,6 +1117,10 @@ class IndividualTaxDataService
         $preferredItemIndex = $items->search(fn ($item) => ($item['name'] ?? '') === 'Salary Tax' && ($item['source'] ?? 'forecast') === 'forecast');
 
         if ($preferredItemIndex === false) {
+            $preferredItemIndex = $items->search(fn ($item) => ($item['name'] ?? '') === 'Salary Tax' && ($item['source'] ?? 'forecast') !== 'override');
+        }
+
+        if ($preferredItemIndex === false) {
             $preferredItemIndex = $items->search(fn ($item) => ($item['name'] ?? '') === 'Salary Tax');
         }
 
@@ -1098,6 +1143,20 @@ class IndividualTaxDataService
         $breakdown->put($preferredMonthIndex, $row);
 
         return $breakdown->values();
+    }
+
+    private function findTaxOverrideAmount(array $taxOverrides, string $component, int $month): ?float
+    {
+        $override = collect($taxOverrides)->first(function (array $taxOverride) use ($component, $month) {
+            return $this->normalizeTaxModuleName((string) ($taxOverride['tax_type'] ?? '')) === $component
+                && (int) ($taxOverride['month_number'] ?? 0) === $month;
+        });
+
+        if (!$override) {
+            return null;
+        }
+
+        return (float) ($override['amount'] ?? 0);
     }
 
     private function getForecastSalaryByMonth(string $employeeNo, int $year): array

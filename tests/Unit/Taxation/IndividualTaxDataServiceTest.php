@@ -82,6 +82,57 @@ class IndividualTaxDataServiceTest extends TestCase
         $this->assertSame('forecast', $this->itemSource($december['items'], 'Salary Tax'));
     }
 
+    public function test_tax_module_breakdown_uses_employee_override_for_forecast_item(): void
+    {
+        $service = new IndividualTaxDataService();
+
+        $breakdown = $service->buildTaxModuleBreakdown(
+            'EMP-001',
+            2026,
+            $this->emptyMonthlyBreakdown(),
+            ['salary' => 70, 'hazard_pay' => 20, 'longevity' => 10],
+            ['annual_tax_due' => 120.00],
+            [[
+                'tax_type' => 'Salary Tax',
+                'month_number' => 12,
+                'amount' => 90.00,
+            ]]
+        );
+
+        $december = $breakdown->firstWhere('month_number', 12);
+
+        $this->assertSame(90.00, $this->itemAmount($december['items'], 'Salary Tax'));
+        $this->assertSame('override', $this->itemSource($december['items'], 'Salary Tax'));
+        $this->assertSame(90.00, round($this->sumItemAmounts($breakdown, 'Salary Tax'), 2));
+    }
+
+    public function test_tax_override_redistributes_only_forecasted_months_and_keeps_payroll_actuals_unchanged(): void
+    {
+        $service = new IndividualTaxDataService();
+
+        $breakdown = $service->buildTaxModuleBreakdown(
+            'EMP-001',
+            2026,
+            $this->monthlyBreakdown(),
+            ['salary' => 50, 'hazard_pay' => 30, 'longevity' => 20],
+            ['annual_tax_due' => 550.00],
+            [[
+                'tax_type' => 'Salary Tax',
+                'month_number' => 2,
+                'amount' => 120.00,
+            ]]
+        );
+
+        $january = $breakdown->firstWhere('month_number', 1);
+        $february = $breakdown->firstWhere('month_number', 2);
+
+        $this->assertSame(100.25, $this->itemAmount($january['items'], 'Salary Tax'));
+        $this->assertSame('actual', $this->itemSource($january['items'], 'Salary Tax'));
+        $this->assertSame(120.00, $this->itemAmount($february['items'], 'Salary Tax'));
+        $this->assertSame('override', $this->itemSource($february['items'], 'Salary Tax'));
+        $this->assertSame(275.00, round($this->sumItemAmounts($breakdown, 'Salary Tax'), 2));
+    }
+
     private function monthlyBreakdown(): Collection
     {
         $rows = collect(range(1, 12))->map(function (int $month) {

@@ -28,6 +28,9 @@ class SaveIndividualTaxService
                         )
                     )];
                 });
+            $taxOverride = $this->normalizeTaxOverride(
+                (array) data_get($payload, 'n_taxation_settings.tax_override', [])
+            );
 
             $taxation = NTaxation::query()->firstOrCreate([
                 'Year' => (int) data_get($payload, 'n_taxation.Year'),
@@ -82,6 +85,31 @@ class SaveIndividualTaxService
                 ],
             );
 
+            if ($taxOverride !== null) {
+                if (($taxOverride['action'] ?? 'upsert') === 'delete') {
+                    DB::table('n_taxation_employee_tax_overrides')
+                        ->where('n_taxation_id', $taxation->id)
+                        ->where('employee_no', $taxOverride['employee_no'])
+                        ->where('tax_type', $taxOverride['tax_type'])
+                        ->where('month_number', $taxOverride['month_number'])
+                        ->delete();
+                } else {
+                    DB::table('n_taxation_employee_tax_overrides')->upsert(
+                        [[
+                            'n_taxation_id' => $taxation->id,
+                            'employee_no' => $taxOverride['employee_no'],
+                            'tax_type' => $taxOverride['tax_type'],
+                            'month_number' => $taxOverride['month_number'],
+                            'amount' => $taxOverride['amount'],
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]],
+                        ['n_taxation_id', 'employee_no', 'tax_type', 'month_number'],
+                        ['amount', 'updated_at']
+                    );
+                }
+            }
+
             return [
                 'message' => 'Individual tax settings saved successfully.',
                 'data' => [
@@ -104,6 +132,25 @@ class SaveIndividualTaxService
             'salary' => (float) ($portion['salary'] ?? 80),
             'hazard_pay' => (float) ($portion['hazard_pay'] ?? 20),
             'longevity' => (float) ($portion['longevity'] ?? 0),
+        ];
+    }
+
+    private function normalizeTaxOverride(array $taxOverride): ?array
+    {
+        $employeeNo = trim((string) ($taxOverride['employee_no'] ?? ''));
+        $taxType = trim((string) ($taxOverride['tax_type'] ?? ''));
+        $monthNumber = (int) ($taxOverride['month_number'] ?? 0);
+
+        if ($employeeNo === '' || $taxType === '' || $monthNumber < 1 || $monthNumber > 12) {
+            return null;
+        }
+
+        return [
+            'employee_no' => $employeeNo,
+            'tax_type' => $taxType,
+            'month_number' => $monthNumber,
+            'amount' => (float) ($taxOverride['amount'] ?? 0),
+            'action' => trim((string) ($taxOverride['action'] ?? 'upsert')) ?: 'upsert',
         ];
     }
 }

@@ -17,6 +17,7 @@
         :train-law-options='@json($trainLawOptions)'
         :selected-train-law-id='@json($selectedTrainLawId)'
         :selected-taxation-settings='@json($selectedTaxationSettings)'
+        :selected-employee-tax-overrides='@json($selectedEmployeeTaxOverrides)'
         :has-taxation-data='@json($hasTaxationData)'
     />
 @endsection

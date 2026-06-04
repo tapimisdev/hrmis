@@ -36,6 +36,12 @@ class SaveIndividualTaxRequest extends FormRequest
             'n_taxation_settings.employee_portions.*.salary' => ['required', 'numeric', 'min:0'],
             'n_taxation_settings.employee_portions.*.hazard_pay' => ['required', 'numeric', 'min:0'],
             'n_taxation_settings.employee_portions.*.longevity' => ['required', 'numeric', 'min:0'],
+            'n_taxation_settings.tax_override' => ['nullable', 'array'],
+            'n_taxation_settings.tax_override.employee_no' => ['required_with:n_taxation_settings.tax_override', 'exists:employee_information,employee_no'],
+            'n_taxation_settings.tax_override.tax_type' => ['required_with:n_taxation_settings.tax_override', 'string', 'in:Salary Tax,Hazard Pay Tax,Longevity Tax'],
+            'n_taxation_settings.tax_override.month_number' => ['required_with:n_taxation_settings.tax_override', 'integer', 'between:1,12'],
+            'n_taxation_settings.tax_override.amount' => ['nullable', 'numeric', 'min:0'],
+            'n_taxation_settings.tax_override.action' => ['nullable', 'string', 'in:upsert,delete'],
         ];
     }
 
@@ -76,6 +82,8 @@ class SaveIndividualTaxRequest extends FormRequest
             ->filter(fn (array $portion, string $employeeNo) => $employeeNo !== '')
             ->only($employeeNos)
             ->all();
+        $taxOverride = (array) $this->input('n_taxation_settings.tax_override', []);
+        $normalizedEmployeeNo = trim((string) ($taxOverride['employee_no'] ?? ''));
 
         $this->merge([
             'employee_nos' => $employeeNos,
@@ -84,6 +92,15 @@ class SaveIndividualTaxRequest extends FormRequest
                 [
                     'bonuses' => $bonuses,
                     'employee_portions' => $employeePortions,
+                    'tax_override' => $normalizedEmployeeNo !== '' ? [
+                        'employee_no' => $normalizedEmployeeNo,
+                        'tax_type' => trim((string) ($taxOverride['tax_type'] ?? '')),
+                        'month_number' => (int) ($taxOverride['month_number'] ?? 0),
+                        'amount' => array_key_exists('amount', $taxOverride) && $taxOverride['amount'] !== null && $taxOverride['amount'] !== ''
+                            ? (float) $taxOverride['amount']
+                            : null,
+                        'action' => trim((string) ($taxOverride['action'] ?? 'upsert')) ?: 'upsert',
+                    ] : null,
                 ],
             ),
         ]);
@@ -118,6 +135,34 @@ class SaveIndividualTaxRequest extends FormRequest
                     $validator->errors()->add(
                         "n_taxation_settings.employee_portions.{$employeeNo}",
                         'Each employee portion must total exactly 100.'
+                    );
+                }
+            }
+
+            $taxOverride = (array) $this->input('n_taxation_settings.tax_override', []);
+
+            if ($taxOverride !== []) {
+                $overrideEmployeeNo = (string) ($taxOverride['employee_no'] ?? '');
+                $overrideAction = (string) ($taxOverride['action'] ?? 'upsert');
+
+                if ($overrideEmployeeNo !== '' && !in_array($overrideEmployeeNo, (array) $this->input('employee_nos', []), true)) {
+                    $validator->errors()->add(
+                        'n_taxation_settings.tax_override.employee_no',
+                        'Tax override employee must be included in the selected employees.'
+                    );
+                }
+
+                if ($overrideAction !== 'delete' && !array_key_exists('amount', $taxOverride)) {
+                    $validator->errors()->add(
+                        'n_taxation_settings.tax_override.amount',
+                        'The n taxation settings.tax override.amount field is required unless n taxation settings.tax override.action is in delete.'
+                    );
+                }
+
+                if ($overrideAction !== 'delete' && (($taxOverride['amount'] ?? null) === null || $taxOverride['amount'] === '')) {
+                    $validator->errors()->add(
+                        'n_taxation_settings.tax_override.amount',
+                        'The n taxation settings.tax override.amount field is required unless n taxation settings.tax override.action is in delete.'
                     );
                 }
             }

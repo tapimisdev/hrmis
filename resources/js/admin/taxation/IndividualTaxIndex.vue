@@ -374,7 +374,24 @@
                                         :key="`tax-module-${row.month_number}-${column}`"
                                         class="amount"
                                     >
+                                        <button
+                                            v-if="isTaxModuleItemEditable(row, column)"
+                                            type="button"
+                                            class="individual-tax-tax-override-trigger"
+                                            :title="formatTaxModuleSource(row, column)"
+                                            @click="openTaxOverrideModal(row, column)"
+                                        >
+                                            <span class="individual-tax-amount-value">
+                                                <span
+                                                    class="individual-tax-source-dot"
+                                                    :class="sourceDotClass(getTaxModuleSource(row, column))"
+                                                    aria-hidden="true"
+                                                ></span>
+                                                {{ peso(getTaxModuleAmount(row, column)) }}
+                                            </span>
+                                        </button>
                                         <span
+                                            v-else
                                             class="individual-tax-amount-with-source"
                                             :title="formatTaxModuleSource(row, column)"
                                         >
@@ -424,6 +441,10 @@
                                 </tr>
                             </tfoot>
                         </table>
+
+                        <div class="individual-tax-note mt-3">
+                            Click a forecasted tax amount to open override tax.
+                        </div>
                     </div>
                 </section>
 
@@ -1018,6 +1039,141 @@
                 </div>
             </div>
         </div>
+
+        <div
+            ref="taxOverrideModal"
+            class="modal fade"
+            tabindex="-1"
+            aria-labelledby="individualTaxOverrideModalLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content individual-tax-modal">
+                    <div class="modal-header">
+                        <div>
+                            <h5 id="individualTaxOverrideModalLabel" class="modal-title d-flex align-items-center gap-2">
+                                <i class="bi bi-pencil-square"></i>
+                                <span>Override Tax</span>
+                            </h5>
+                            <div class="individual-tax-modal-subtitle">
+                                {{ taxOverrideForm.taxType || "Tax Type" }} for {{ taxOverrideSelectedMonthLabel || "Month" }}
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" aria-label="Close" @click="closeTaxOverrideModal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div v-if="taxOverrideTypeOptions.length" class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label individual-tax-run-label">Type</label>
+                                <select v-model="taxOverrideForm.taxType" class="form-select">
+                                    <option value="">-- Select type --</option>
+                                    <option
+                                        v-for="option in taxOverrideTypeOptions"
+                                        :key="`tax-override-type-${option.value}`"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label individual-tax-run-label">Month</label>
+                                <select v-model="taxOverrideForm.monthNumber" class="form-select">
+                                    <option value="">-- Select month --</option>
+                                    <option
+                                        v-for="option in taxOverrideMonthOptions"
+                                        :key="`tax-override-month-${option.value}`"
+                                        :value="String(option.value)"
+                                    >
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label individual-tax-run-label">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-cash-coin"></i>
+                                    </span>
+                                    <input
+                                        v-model="taxOverrideForm.amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        class="form-control"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="text-muted small">
+                                    Only forecasted tax rows are editable. Selected amount defaults to current forecasted or overridden value.
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>Month</th>
+                                                <th class="text-end">Amount</th>
+                                                <th class="text-end">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr
+                                                v-for="override in currentSelectedEmployeeTaxOverrides"
+                                                :key="`tax-override-row-${override.tax_type}-${override.month_number}`"
+                                            >
+                                                <td>{{ override.tax_type }}</td>
+                                                <td>{{ monthLabel(override.month_number) }}</td>
+                                                <td class="text-end">{{ peso(override.amount) }}</td>
+                                                <td class="text-end">
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-outline-danger btn-sm"
+                                                        :disabled="isRecomputingTaxOverride"
+                                                        @click="handleDeleteTaxOverride(override)"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="!currentSelectedEmployeeTaxOverrides.length">
+                                                <td colspan="4" class="text-muted text-center py-3">
+                                                    No saved overrides for this employee.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="closeTaxOverrideModal">
+                            Close
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            :disabled="isRecomputingTaxOverride || !canSubmitTaxOverride"
+                            @click="handleRecomputeTaxOverride"
+                        >
+                            <i class="bi bi-arrow-repeat me-2"></i>
+                            {{ isRecomputingTaxOverride ? "Recomputing..." : "Recompute" }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -1042,6 +1198,7 @@ export default {
         trainLawOptions: { type: Array, default: () => [] },
         selectedTrainLawId: { type: [Number, String], default: null },
         selectedTaxationSettings: { type: Object, default: null },
+        selectedEmployeeTaxOverrides: { type: Array, default: () => [] },
         hasTaxationData: { type: Boolean, default: false },
     },
 
@@ -1060,6 +1217,7 @@ export default {
                 trainLawOptions: this.trainLawOptions,
                 selectedTrainLawId: this.selectedTrainLawId,
                 selectedTaxationSettings: this.selectedTaxationSettings,
+                selectedEmployeeTaxOverrides: this.selectedEmployeeTaxOverrides,
                 hasTaxationData: this.hasTaxationData,
             },
             selectedEmployeeNo: String(this.employee?.employee_no || ""),
@@ -1068,8 +1226,10 @@ export default {
             isLoading: false,
             isSaving: false,
             isRecomputingEmployee: false,
+            isRecomputingTaxOverride: false,
             token: localStorage.getItem("auth_token"),
             runModalInstance: null,
+            taxOverrideModalInstance: null,
             activeRunTab: "A",
             governmentBonuses: [],
             isLoadingGovernmentBonuses: false,
@@ -1077,6 +1237,11 @@ export default {
                 hazard_pay: 20,
                 salary: 80,
                 longevity: 0,
+            },
+            taxOverrideForm: {
+                taxType: "",
+                monthNumber: "",
+                amount: "",
             },
             runForm: {
                 year: String(this.selectedYear || new Date().getFullYear()),
@@ -1123,6 +1288,62 @@ export default {
 
         currentTaxModuleColumns() {
             return ["Salary Tax", "Hazard Pay Tax", "Longevity Tax"];
+        },
+
+        currentEditableTaxItems() {
+            return this.currentTaxModuleBreakdown.flatMap((row) =>
+                (row?.items || [])
+                    .filter((item) => ["forecast", "override"].includes(item?.source))
+                    .map((item) => ({
+                        monthNumber: Number(row?.month_number || 0),
+                        monthLabel: row?.month_label || "",
+                        taxType: item?.name || "",
+                        amount: Number(item?.amount || 0),
+                    })),
+            );
+        },
+
+        taxOverrideTypeOptions() {
+            const seen = new Set();
+
+            return this.currentEditableTaxItems
+                .filter((item) => {
+                    if (!item.taxType || seen.has(item.taxType)) {
+                        return false;
+                    }
+
+                    seen.add(item.taxType);
+
+                    return true;
+                })
+                .map((item) => ({
+                    value: item.taxType,
+                    label: item.taxType,
+                }));
+        },
+
+        taxOverrideMonthOptions() {
+            return this.currentEditableTaxItems
+                .filter((item) => item.taxType === this.taxOverrideForm.taxType)
+                .map((item) => ({
+                    value: item.monthNumber,
+                    label: item.monthLabel,
+                }));
+        },
+
+        taxOverrideSelectedMonthLabel() {
+            return this.taxOverrideMonthOptions.find(
+                (option) => String(option.value) === String(this.taxOverrideForm.monthNumber),
+            )?.label || "";
+        },
+
+        canSubmitTaxOverride() {
+            return Boolean(
+                this.currentEmployee?.employee_no &&
+                this.taxOverrideForm.taxType &&
+                this.taxOverrideForm.monthNumber &&
+                this.taxOverrideForm.amount !== "",
+            );
         },
 
         currentTaxModuleGrandTotal() {
@@ -1201,6 +1422,10 @@ export default {
             return Boolean(this.state.hasTaxationData);
         },
 
+        currentSelectedEmployeeTaxOverrides() {
+            return this.state.selectedEmployeeTaxOverrides || [];
+        },
+
         isLastRunTab() {
             return this.activeRunTab === "C";
         },
@@ -1234,7 +1459,9 @@ export default {
 
     beforeUnmount() {
         this.closeRunModal();
+        this.closeTaxOverrideModal();
         this.runModalInstance = null;
+        this.taxOverrideModalInstance = null;
         this.destroyRunEmployeeSelect();
         this.destroyEmployeeSelect();
     },
@@ -1253,11 +1480,25 @@ export default {
         currentSelectedTaxationSettings: {
             handler() {
                 this.syncEmployeePortionForm();
+                this.syncTaxOverrideForm();
             },
             deep: true,
         },
         selectedEmployeeNo() {
             this.syncEmployeePortionForm();
+            this.syncTaxOverrideForm();
+        },
+        currentTaxModuleBreakdown: {
+            handler() {
+                this.syncTaxOverrideForm();
+            },
+            deep: true,
+        },
+        "taxOverrideForm.taxType"() {
+            this.syncTaxOverrideMonthSelection();
+        },
+        "taxOverrideForm.monthNumber"() {
+            this.syncTaxOverrideAmount();
         },
         "runForm.employee_nos": {
             handler() {
@@ -1302,6 +1543,68 @@ export default {
                 this.currentSelectedTaxationSettings?.portion,
             );
         },
+        syncTaxOverrideForm() {
+            const firstType = this.taxOverrideTypeOptions[0]?.value || "";
+            const nextType = this.taxOverrideTypeOptions.some((option) => option.value === this.taxOverrideForm.taxType)
+                ? this.taxOverrideForm.taxType
+                : firstType;
+            const monthOptions = this.currentEditableTaxItems
+                .filter((item) => item.taxType === nextType)
+                .map((item) => ({ value: item.monthNumber }));
+            const firstMonth = monthOptions[0]?.value ? String(monthOptions[0].value) : "";
+            const nextMonth = monthOptions.some((option) => String(option.value) === String(this.taxOverrideForm.monthNumber))
+                ? String(this.taxOverrideForm.monthNumber)
+                : firstMonth;
+            const selectedItem = this.currentEditableTaxItems.find((item) =>
+                item.taxType === nextType && String(item.monthNumber) === String(nextMonth),
+            );
+
+            this.taxOverrideForm = {
+                taxType: nextType,
+                monthNumber: nextMonth,
+                amount: selectedItem ? String(selectedItem.amount) : "",
+            };
+        },
+        syncTaxOverrideMonthSelection() {
+            const monthOptions = this.currentEditableTaxItems
+                .filter((item) => item.taxType === this.taxOverrideForm.taxType)
+                .map((item) => String(item.monthNumber));
+            const nextMonth = monthOptions.includes(String(this.taxOverrideForm.monthNumber))
+                ? String(this.taxOverrideForm.monthNumber)
+                : (monthOptions[0] || "");
+
+            this.taxOverrideForm.monthNumber = nextMonth;
+            this.syncTaxOverrideAmount();
+        },
+        syncTaxOverrideAmount() {
+            const selectedItem = this.currentEditableTaxItems.find((item) =>
+                item.taxType === this.taxOverrideForm.taxType &&
+                String(item.monthNumber) === String(this.taxOverrideForm.monthNumber),
+            );
+
+            if (!selectedItem) {
+                return;
+            }
+
+            this.taxOverrideForm.amount = String(selectedItem.amount);
+        },
+        openTaxOverrideModal(row, column) {
+            const item = this.getTaxModuleItem(row, column);
+
+            if (!item || !["forecast", "override"].includes(item.source)) {
+                return;
+            }
+
+            this.taxOverrideForm = {
+                taxType: column,
+                monthNumber: String(row?.month_number || ""),
+                amount: String(Number(item.amount || 0)),
+            };
+
+            this.$nextTick(() => {
+                this.getTaxOverrideModalInstance()?.show();
+            });
+        },
         ensureRunEmployeePortions() {
             const nextPortions = { ...(this.runForm.employeePortions || {}) };
 
@@ -1345,6 +1648,15 @@ export default {
                 maximumFractionDigits: 2,
             })}%`;
         },
+        monthLabel(monthNumber) {
+            const parsedMonth = Number(monthNumber || 0);
+
+            if (!parsedMonth || parsedMonth < 1 || parsedMonth > 12) {
+                return "";
+            }
+
+            return new Date(2000, parsedMonth - 1, 1).toLocaleString("en-US", { month: "long" });
+        },
         sourceDotClass(source) {
             const sourceClassMap = {
                 draft: "individual-tax-source-dot--draft",
@@ -1352,6 +1664,7 @@ export default {
                 approved: "individual-tax-source-dot--approved",
                 for_releasing: "individual-tax-source-dot--for-releasing",
                 completed: "individual-tax-source-dot--completed",
+                override: "individual-tax-source-dot--approved",
                 forecast: "individual-tax-source-dot--forecast",
             };
 
@@ -1386,6 +1699,7 @@ export default {
                 approved: "Approved",
                 for_releasing: "For Releasing",
                 completed: "Completed",
+                override: "Overridden",
                 forecast: "Forecasted",
             };
 
@@ -1398,6 +1712,7 @@ export default {
                 approved: 3,
                 for_releasing: 4,
                 completed: 5,
+                override: 0,
             };
 
             return priorityMap[status] || 99;
@@ -1409,6 +1724,9 @@ export default {
         },
         getTaxModuleItem(row, column) {
             return (row?.items || []).find((entry) => entry?.name === column) || null;
+        },
+        isTaxModuleItemEditable(row, column) {
+            return ["forecast", "override"].includes(this.getTaxModuleItem(row, column)?.source);
         },
         getTaxModuleStatusKey(column) {
             const normalized = String(column || "").toLowerCase();
@@ -1434,6 +1752,10 @@ export default {
             const monthlyRow = this.getMatchingMonthlyBreakdownRow(row?.month_number);
             const sourceKey = this.getTaxModuleStatusKey(column);
             const item = this.getTaxModuleItem(row, column);
+
+            if (item?.source === "override") {
+                return "override";
+            }
 
             if (item?.source === "forecast") {
                 return "forecast";
@@ -1492,6 +1814,7 @@ export default {
             this.runForm.employeePortions = {};
             this.ensureRunEmployeePortions();
             this.syncEmployeePortionForm();
+            this.syncTaxOverrideForm();
         },
 
         syncSelectionFromState() {
@@ -1589,6 +1912,17 @@ export default {
 
             return this.runModalInstance;
         },
+        getTaxOverrideModalInstance() {
+            const modalElement = this.$refs.taxOverrideModal;
+
+            if (!modalElement) {
+                return null;
+            }
+
+            this.taxOverrideModalInstance = this.taxOverrideModalInstance || Modal.getOrCreateInstance(modalElement);
+
+            return this.taxOverrideModalInstance;
+        },
         openRunModal() {
             this.$nextTick(() => {
                 this.activeRunTab = "A";
@@ -1681,7 +2015,7 @@ export default {
                 this.activeRunTab = "C";
             }
         },
-        buildSavePayload(employeeNos = this.runForm.employee_nos || [], employeePortions = null) {
+        buildSavePayload(employeeNos = this.runForm.employee_nos || [], employeePortions = null, taxOverride = null) {
             const resolvedEmployeeNos = Array.isArray(employeeNos)
                 ? employeeNos.map((employeeNo) => String(employeeNo))
                 : [];
@@ -1714,6 +2048,7 @@ export default {
 
                         return carry;
                     }, {}),
+                    tax_override: taxOverride,
                 },
             };
         },
@@ -1755,6 +2090,94 @@ export default {
                 this.isRecomputingEmployee = false;
             }
         },
+
+        async handleRecomputeTaxOverride() {
+            if (this.isRecomputingTaxOverride || !this.canSubmitTaxOverride || !this.currentEmployee?.employee_no) return;
+
+            this.isRecomputingTaxOverride = true;
+
+            try {
+                const employeeNo = String(this.currentEmployee.employee_no);
+                const response = await axios.post(
+                    this.saveUrl,
+                    this.buildSavePayload(
+                        [employeeNo],
+                        {
+                            [employeeNo]: this.normalizePortion(this.employeePortionForm),
+                        },
+                        {
+                            employee_no: employeeNo,
+                            tax_type: this.taxOverrideForm.taxType,
+                            month_number: Number(this.taxOverrideForm.monthNumber || 0),
+                            amount: Number(this.taxOverrideForm.amount || 0),
+                        },
+                    ),
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                );
+
+                await this.fetchData();
+                this.closeTaxOverrideModal();
+                window.SuccessToast?.fire?.({
+                    title: response?.data?.message || "Tax override recomputed successfully.",
+                });
+            } catch (error) {
+                window.ErrorToast?.fire?.({
+                    title:
+                        error.response?.data?.message ||
+                        Object.values(error.response?.data?.errors || {})?.[0]?.[0] ||
+                        "Unable to recompute tax override.",
+                });
+            } finally {
+                this.isRecomputingTaxOverride = false;
+            }
+        },
+        async handleDeleteTaxOverride(override) {
+            if (this.isRecomputingTaxOverride || !this.currentEmployee?.employee_no) return;
+
+            this.isRecomputingTaxOverride = true;
+
+            try {
+                const employeeNo = String(this.currentEmployee.employee_no);
+                const response = await axios.post(
+                    this.saveUrl,
+                    this.buildSavePayload(
+                        [employeeNo],
+                        {
+                            [employeeNo]: this.normalizePortion(this.employeePortionForm),
+                        },
+                        {
+                            employee_no: employeeNo,
+                            tax_type: override.tax_type,
+                            month_number: Number(override.month_number || 0),
+                            action: "delete",
+                        },
+                    ),
+                    {
+                        headers: this.token
+                            ? { Authorization: `Bearer ${this.token}` }
+                            : {},
+                    },
+                );
+
+                await this.fetchData();
+                window.SuccessToast?.fire?.({
+                    title: response?.data?.message || "Tax override deleted successfully.",
+                });
+            } catch (error) {
+                window.ErrorToast?.fire?.({
+                    title:
+                        error.response?.data?.message ||
+                        Object.values(error.response?.data?.errors || {})?.[0]?.[0] ||
+                        "Unable to delete tax override.",
+                });
+            } finally {
+                this.isRecomputingTaxOverride = false;
+            }
+        },
         
         async handleCalculate() {
             if (this.isSaving) return;
@@ -1791,6 +2214,9 @@ export default {
         closeRunModal() {
             this.getRunModalInstance()?.hide();
         },
+        closeTaxOverrideModal() {
+            this.getTaxOverrideModalInstance()?.hide();
+        },
 
         syncUrl() {
             const url = new URL(this.baseUrl, window.location.origin);
@@ -1820,6 +2246,7 @@ export default {
                 trainLawOptions: payload.trainLawOptions || [],
                 selectedTrainLawId: payload.selectedTrainLawId ?? null,
                 selectedTaxationSettings: payload.selectedTaxationSettings || null,
+                selectedEmployeeTaxOverrides: payload.selectedEmployeeTaxOverrides || [],
                 hasTaxationData: Boolean(payload.hasTaxationData),
             };
 
@@ -1911,20 +2338,12 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.individual-tax-page {
-    padding: 20px 18px;
-    background: linear-gradient(
-        180deg,
-        rgba(var(--bs-primary-rgb), 0.15) 0%,
-        var(--bs-body-bg) 100%
-    );
-}
-
 .individual-tax-sheet {
     // max-width: 1480px;
     margin: 0 auto;
-    background: var(--bs-tertiary-bg);
-    border: 1px solid var(--bs-border-color);
+    // background: var(--bs-tertiary-bg);
+    // border: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--bs-border-color);
     position: relative;
 }
 
@@ -2049,6 +2468,25 @@ export default {
 .individual-tax-amount-with-source {
     display: inline-flex;
     align-items: center;
+}
+
+.individual-tax-tax-override-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: right;
+    cursor: pointer;
+}
+
+.individual-tax-tax-override-trigger:hover,
+.individual-tax-tax-override-trigger:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 0.16rem;
 }
 
 .individual-tax-amount-value {
