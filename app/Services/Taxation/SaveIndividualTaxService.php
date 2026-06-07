@@ -28,6 +28,7 @@ class SaveIndividualTaxService
                         )
                     )];
                 });
+            $syncEmployees = (bool) data_get($payload, 'n_taxation_settings.sync_employees', true);
             $taxOverride = $this->normalizeTaxOverride(
                 (array) data_get($payload, 'n_taxation_settings.tax_override', [])
             );
@@ -44,6 +45,28 @@ class SaveIndividualTaxService
                 'train_law_id' => (int) data_get($payload, 'n_taxation_settings.train_law_id'),
             ]);
             $setting->save();
+
+            if ($syncEmployees) {
+                $employeesToKeep = $employeeNos->all();
+
+                DB::table('n_taxation_employees')
+                    ->where('n_taxation_id', $taxation->id)
+                    ->when(
+                        !empty($employeesToKeep),
+                        fn ($query) => $query->whereNotIn('employee_no', $employeesToKeep),
+                        fn ($query) => $query
+                    )
+                    ->delete();
+
+                DB::table('n_taxation_employee_tax_overrides')
+                    ->where('n_taxation_id', $taxation->id)
+                    ->when(
+                        !empty($employeesToKeep),
+                        fn ($query) => $query->whereNotIn('employee_no', $employeesToKeep),
+                        fn ($query) => $query
+                    )
+                    ->delete();
+            }
 
             if ($employeeNos->isNotEmpty()) {
                 DB::table('n_taxation_employees')->upsert(

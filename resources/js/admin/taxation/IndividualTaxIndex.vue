@@ -2015,7 +2015,7 @@ export default {
                 this.activeRunTab = "C";
             }
         },
-        buildSavePayload(employeeNos = this.runForm.employee_nos || [], employeePortions = null, taxOverride = null) {
+        buildSavePayload(employeeNos = this.runForm.employee_nos || [], employeePortions = null, taxOverride = null, syncEmployees = null) {
             const resolvedEmployeeNos = Array.isArray(employeeNos)
                 ? employeeNos.map((employeeNo) => String(employeeNo))
                 : [];
@@ -2048,6 +2048,7 @@ export default {
 
                         return carry;
                     }, {}),
+                    sync_employees: syncEmployees ?? (taxOverride === null && resolvedEmployeeNos.length > 0),
                     tax_override: taxOverride,
                 },
             };
@@ -2067,6 +2068,8 @@ export default {
                         {
                             [employeeNo]: this.normalizePortion(this.employeePortionForm),
                         },
+                        null,
+                        false,
                     ),
                     {
                         headers: this.token
@@ -2111,6 +2114,7 @@ export default {
                             month_number: Number(this.taxOverrideForm.monthNumber || 0),
                             amount: Number(this.taxOverrideForm.amount || 0),
                         },
+                        false,
                     ),
                     {
                         headers: this.token
@@ -2155,6 +2159,7 @@ export default {
                             month_number: Number(override.month_number || 0),
                             action: "delete",
                         },
+                        false,
                     ),
                     {
                         headers: this.token

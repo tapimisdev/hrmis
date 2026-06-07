@@ -114,6 +114,7 @@ class SaveIndividualTaxServiceTest extends TestCase
             'n_taxation_settings' => [
                 'train_law_id' => 1,
                 'bonuses' => [],
+                'sync_employees' => false,
                 'portion' => [
                     'salary' => 75,
                     'hazard_pay' => 20,
@@ -142,6 +143,77 @@ class SaveIndividualTaxServiceTest extends TestCase
             'salary' => 65,
             'hazard_pay' => 20,
             'longevity' => 15,
+        ]);
+    }
+
+    public function test_calculate_syncs_year_employees_to_selected_set_only(): void
+    {
+        DB::table('train_law')->insert([
+            'id' => 1,
+            'year' => '2026',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $service = app(SaveIndividualTaxService::class);
+
+        $service->handle([
+            'employee_nos' => ['EMP-001', 'EMP-002'],
+            'n_taxation' => ['Year' => 2026],
+            'n_taxation_settings' => [
+                'train_law_id' => 1,
+                'bonuses' => [],
+                'portion' => [
+                    'salary' => 80,
+                    'hazard_pay' => 20,
+                    'longevity' => 0,
+                ],
+                'employee_portions' => [
+                    'EMP-001' => [
+                        'salary' => 80,
+                        'hazard_pay' => 20,
+                        'longevity' => 0,
+                    ],
+                    'EMP-002' => [
+                        'salary' => 75,
+                        'hazard_pay' => 20,
+                        'longevity' => 5,
+                    ],
+                ],
+            ],
+        ]);
+
+        $service->handle([
+            'employee_nos' => ['EMP-001'],
+            'n_taxation' => ['Year' => 2026],
+            'n_taxation_settings' => [
+                'train_law_id' => 1,
+                'bonuses' => [],
+                'portion' => [
+                    'salary' => 80,
+                    'hazard_pay' => 20,
+                    'longevity' => 0,
+                ],
+                'employee_portions' => [
+                    'EMP-001' => [
+                        'salary' => 70,
+                        'hazard_pay' => 20,
+                        'longevity' => 10,
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertDatabaseCount('n_taxation_employees', 1);
+        $this->assertDatabaseHas('n_taxation_employees', [
+            'employee_no' => 'EMP-001',
+            'salary' => 70,
+            'hazard_pay' => 20,
+            'longevity' => 10,
+        ]);
+        $this->assertDatabaseMissing('n_taxation_employees', [
+            'employee_no' => 'EMP-002',
         ]);
     }
 

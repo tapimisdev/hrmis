@@ -36,6 +36,7 @@ class SaveIndividualTaxRequest extends FormRequest
             'n_taxation_settings.employee_portions.*.salary' => ['required', 'numeric', 'min:0'],
             'n_taxation_settings.employee_portions.*.hazard_pay' => ['required', 'numeric', 'min:0'],
             'n_taxation_settings.employee_portions.*.longevity' => ['required', 'numeric', 'min:0'],
+            'n_taxation_settings.sync_employees' => ['nullable', 'boolean'],
             'n_taxation_settings.tax_override' => ['nullable', 'array'],
             'n_taxation_settings.tax_override.employee_no' => ['required_with:n_taxation_settings.tax_override', 'exists:employee_information,employee_no'],
             'n_taxation_settings.tax_override.tax_type' => ['required_with:n_taxation_settings.tax_override', 'string', 'in:Salary Tax,Hazard Pay Tax,Longevity Tax'],
@@ -92,6 +93,11 @@ class SaveIndividualTaxRequest extends FormRequest
                 [
                     'bonuses' => $bonuses,
                     'employee_portions' => $employeePortions,
+                    'sync_employees' => filter_var(
+                        data_get($this->input('n_taxation_settings', []), 'sync_employees', true),
+                        FILTER_VALIDATE_BOOL,
+                        FILTER_NULL_ON_FAILURE
+                    ) ?? true,
                     'tax_override' => $normalizedEmployeeNo !== '' ? [
                         'employee_no' => $normalizedEmployeeNo,
                         'tax_type' => trim((string) ($taxOverride['tax_type'] ?? '')),
