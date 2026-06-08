@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Taxation\TaxationController;
 use App\Http\Controllers\Admin\Taxation\TaxationEmployeeController;
 use App\Http\Controllers\Admin\Taxation\IndividualTaxController;
+use App\Http\Controllers\Admin\Taxation\IndividualTaxMonthlyReportController;
 use App\Http\Controllers\Admin\Taxation\TrainLawController;
 use App\Http\Controllers\Admin\Taxation\TrainLawItemController;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +13,8 @@ Route::prefix('taxation')->group(function() {
         ->name('taxation.individual-tax.index');
     Route::post('/individual-tax/save', [IndividualTaxController::class, 'save'])
         ->name('taxation.individual-tax.save');
+    Route::get('/individual-tax-report', [IndividualTaxMonthlyReportController::class, 'index'])
+        ->name('taxation.individual-tax-report.index');
 
     // Route::resource('/', TaxationController::class)->names('taxation');
     // Route::get('/status', [TaxationController::class, 'status']);

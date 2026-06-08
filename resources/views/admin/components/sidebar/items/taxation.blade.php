@@ -29,9 +29,17 @@
 
             <li class="nested-item">
                 <a href="{{ route('taxation.individual-tax.index') }}"
-                    class="{{ request()->is('admin/taxation/individual-tax*') ? 'active' : '' }}">
+                    class="{{ request()->routeIs('taxation.individual-tax.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-file-invoice-dollar"></i>
                     <span>Individual Tax</span>
+                </a>
+            </li>
+
+            <li class="nested-item">
+                <a href="{{ route('taxation.individual-tax-report.index') }}"
+                    class="{{ request()->routeIs('taxation.individual-tax-report.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-table-list"></i>
+                    <span>Monthly Tax Report</span>
                 </a>
             </li>
         </ul>

@@ -69,6 +69,7 @@ class IndividualTaxDataService
                 $selectedEmployeeTaxOverrides
             )
             : collect();
+        $payrollMonthlyBreakdown = $monthlyBreakdown;
         $monthlyBreakdown = $hasTaxationData && $hasSelectedEmployee
             ? $this->mergeTaxModuleBreakdownIntoMonthlyBreakdown($monthlyBreakdown, $taxModuleBreakdown)
             : $monthlyBreakdown;
@@ -88,6 +89,7 @@ class IndividualTaxDataService
             'selectedYear' => $selectedYear,
             'availableYears' => $availableYears->values()->all(),
             'monthlyBreakdown' => $monthlyBreakdown->values()->all(),
+            'payrollMonthlyBreakdown' => $payrollMonthlyBreakdown->values()->all(),
             'taxModuleBreakdown' => $taxModuleBreakdown->values()->all(),
             'otherComponents' => $otherComponents,
             'summary' => $summary,
@@ -119,6 +121,8 @@ class IndividualTaxDataService
                     ->on('latest_org_date.max_effectivity_date', '=', 'latest_org_id.effectivity_date');
             })
             ->leftJoin('employee_organization as eo', 'latest_org_id.max_id', '=', 'eo.id')
+            ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
+            ->leftJoin('units as u', 'eo.unit_id', '=', 'u.id')
             ->leftJoin('positions as p', 'eo.position_id', '=', 'p.id')
             ->where('ei.account_status', 'active')
             ->where('ei.isDeleted', false)
@@ -132,7 +136,9 @@ class IndividualTaxDataService
                 'ep.middlename',
                 'ep.lastname',
                 'ep.suffix',
-                'p.name as position'
+                'p.name as position',
+                'd.name as division_name',
+                'u.name as unit_name',
             )
             ->get()
             ->unique('employee_no')

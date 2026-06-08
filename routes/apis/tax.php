@@ -3,6 +3,7 @@
 
 use App\Http\Controllers\Api\Taxation\RunForecastApiController;
 use App\Http\Controllers\Api\Taxation\IndividualTaxApiController;
+use App\Http\Controllers\Api\Taxation\IndividualTaxMonthlyReportApiController;
 use App\Http\Controllers\Api\Taxation\TaxationEmployeesApiController;
 use App\Http\Controllers\Api\Taxation\TaxationSetupApiController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,7 @@ Route::prefix('tax')->group(function() {
 
     Route::post('run-forecast', [RunForecastApiController::class, 'run']);
     Route::get('individual-tax', [IndividualTaxApiController::class, 'index']);
+    Route::get('individual-tax-monthly-report', [IndividualTaxMonthlyReportApiController::class, 'index']);
 
     Route::prefix('breakdown')->group(function() {
         Route::get('/{taxation_employee_id}', [TaxationEmployeesApiController::class, 'breakdowns']);
