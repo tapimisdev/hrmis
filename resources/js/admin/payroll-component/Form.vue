@@ -528,6 +528,14 @@ export default {
                 (cell) => cell.key === this.cellSelectionKey(employeeNo, monthKey)
             );
         },
+        isMonthLocked(item, monthKey) {
+            return Boolean(item?.[monthKey + "_locked"]);
+        },
+        monthLockReason(item, monthKey) {
+            return this.isMonthLocked(item, monthKey)
+                ? "This month already has an existing payroll record."
+                : "";
+        },
         handleCellSelection(item, monthKey, event) {
             if (!this.computationMode) {
                 return;

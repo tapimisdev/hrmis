@@ -127,10 +127,19 @@ export default {
         setFieldValue(field, rawValue) {
             let value = rawValue;
 
+            if (
+                value === null ||
+                value === undefined ||
+                value === "null" ||
+                value === "undefined"
+            ) {
+                value = "";
+            }
+
             // field.cast supports: "number" | "string"
             if (field.cast === "number") {
                 // handle "" -> "" (keep empty)
-                value = rawValue === "" ? "" : Number(rawValue);
+                value = value === "" ? "" : Number(value);
             }
 
             this.$set

@@ -28,6 +28,11 @@ import ImportEmployeeVue from "./admin/hris/employee/ImportEmployeeVue.vue";
 import UploadTimelogVue from "./admin/timekeeping/UploadTimelogVue.vue";
 import PatchNotesPage from "./admin/pages/patch-notes/PatchNotesPage.vue";
 
+import TaxationIndex from "./admin/taxation/TaxationIndex.vue";
+import IndividualTaxIndex from "./admin/taxation/IndividualTaxIndex.vue";
+import IndividualTaxMonthlyReportIndex from "./admin/taxation/IndividualTaxMonthlyReportIndex.vue";
+import TrainLawIndex from "./admin/trainlaw/TrainLawIndex.vue";
+
 import WebtimeIndex from "./admin/web-time-access/WebtimeIndex.vue";
 import FeedbackDetailModal from "./admin/feedbacks/DetailModal.vue";
 
@@ -87,6 +92,10 @@ const authApp = createApp({
         WebtimeIndex,
         FeedbackDetailModal,
         ViewDtr,
+        TaxationIndex,
+        IndividualTaxIndex,
+        IndividualTaxMonthlyReportIndex,
+        TrainLawIndex,
 
         DashboardVue,
         DtrViewVue,

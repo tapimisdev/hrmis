@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin\Modules;
 
 use App\Enums\EmploymentTypesEnum;
+use App\Enums\TableSettingsEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Modules\StoreComponentEmployeeBulkRequest;
 use App\Services\EmployeeService;
@@ -11,6 +12,7 @@ use App\Services\SalaryEmloyeeService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PayrollComponentsEmployeeController extends Controller
 {
@@ -265,6 +267,7 @@ class PayrollComponentsEmployeeController extends Controller
         try {
             $updated = 0;
             $skipped = [];
+            $lockedMonths = [];
 
             foreach ($employeeNos as $employeeNo) {
                 // Skip employees who are not REGULAR / Permanent
@@ -310,6 +313,7 @@ class PayrollComponentsEmployeeController extends Controller
                             'created_at' => now(),
                         ]
                     );
+                    
 
                     if ($ok) {
                         $updated++;
@@ -317,7 +321,6 @@ class PayrollComponentsEmployeeController extends Controller
                 }
             }
 
-            // dd($updated, $skipped, $employeeNos);
             DB::commit();
 
             return response()->json([
@@ -328,13 +331,24 @@ class PayrollComponentsEmployeeController extends Controller
                     'employees' => $skipped,
                     'reason'    => 'Not REGULAR / not permanent',
                 ],
+                'locked_months' => [
+                    'count' => count($lockedMonths),
+                    'items' => $lockedMonths,
+                    'reason' => 'Month already has an existing payroll record',
+                ],
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
 
+           
             return response()->json([
                 'message' => 'Bulk update failed.',
-                'error'   => $e->getMessage(),
+                'error' => [
+                    'message' => $e->getMessage(),
+                    'file'    => $e->getFile(),
+                    'line'    => $e->getLine(),
+                    'code'    => $e->getCode(),
+                ]
             ], 500);
         }
     }

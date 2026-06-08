@@ -21,6 +21,9 @@
         {{-- Payroll --}}
         @include('admin.components.sidebar.items.payroll')
 
+        {{-- Tax Computation --}}
+        @include('admin.components.sidebar.items.taxation')
+
         {{-- Earnings / Taxes --}}
         @include('admin.components.sidebar.items.payroll-components')
 

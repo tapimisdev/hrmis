@@ -37,6 +37,6 @@ Route::middleware('auth:sanctum')->group(function () {
     require __DIR__ . '/apis/hris.php';
     require __DIR__ . '/apis/shift-work.php';
     require __DIR__ . '/apis/reports.php';
+    require __DIR__ . '/apis/tax.php';
     
-
 });
