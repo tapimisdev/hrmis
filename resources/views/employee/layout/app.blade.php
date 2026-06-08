@@ -18,6 +18,10 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.0/moment.min.js"></script>
     <script>
+        window.employeePermissions = {
+            behavioralNotices: @json(Auth::user()?->can('emp.behavioral_notices.view') ?? false),
+        };
+
         (function () {
             const storageKey = 'theme-preference';
             const storedTheme = localStorage.getItem(storageKey);

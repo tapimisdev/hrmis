@@ -58,8 +58,6 @@
             <th>PERA</th>
             <th>Rep.<br />Allow.</th>
             <th>Transpo.<br />Allow.</th>
-            <th>Absences</th>
-            <th>Deduction:<br />TA</th>
             <th>Total Amount</th>
             <th>Less: Health<br />Card c/o<br />TAPIEA</th>
             <th style="width: 150px">Adjustments</th>
@@ -72,7 +70,7 @@
         <tbody>
           <template v-for="group in groupedEmployees" :key="group.id">
             <tr class="project-header division-header">
-              <td colspan="14" class="project-cell division-cell">
+              <td colspan="12" class="project-cell division-cell">
                 <span class="project-cell-label">{{ group.name }}</span>
               </td>
             </tr>
@@ -89,9 +87,6 @@
               <td class="text-center">{{ formatMoney(emp.pera) }}</td>
               <td class="text-center">{{ formatMoney(emp.representation_allowance) }}</td>
               <td class="text-center">{{ formatMoney(transportationAllowance(emp)) }}</td>
-
-              <td class="text-center">{{ emp.absences }}</td>
-              <td class="text-center">{{ formatMoney(emp.ut_deductions) }}</td>
 
               <td class="text-center"><strong>{{ formatMoney(emp.total) }}</strong></td>
 
@@ -133,8 +128,6 @@
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "pera")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "representation_allowance")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "transportation_allowance", "transportion_allowance")) }}</td>
-              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "absences")) }}</td>
-              <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "ut_deductions")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "total")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "healthcard")) }}</td>
               <td class="number-cell">{{ formatNumber(groupTotals(group.employees, "adjustments")) }}</td>
@@ -144,7 +137,7 @@
             </tr>
           </template>
           <tr v-if="!filteredEmployees.length">
-            <td colspan="14" class="text-center py-3">
+            <td colspan="12" class="text-center py-3">
               No employees found for the selected filters.
             </td>
           </tr>
@@ -158,8 +151,6 @@
             <td class="number-cell">{{ formatNumber(grandTotals("pera")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("representation_allowance")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("transportation_allowance", "transportion_allowance")) }}</td>
-            <td class="number-cell">{{ formatNumber(grandTotals("absences")) }}</td>
-            <td class="number-cell">{{ formatNumber(grandTotals("ut_deductions")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("total")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("healthcard")) }}</td>
             <td class="number-cell">{{ formatNumber(grandTotals("adjustments")) }}</td>

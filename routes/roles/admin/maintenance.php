@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\Settings\TrancheController;
 use App\Http\Controllers\Admin\Settings\ApproverController;
 use App\Http\Controllers\Admin\Settings\PayrollComponentsController;
 use App\Http\Controllers\Admin\Settings\PayrollSettingsController;
+use App\Http\Controllers\Admin\Settings\ViolationController;
 
 
  Route::prefix('maintenance')->group(function() {
@@ -98,6 +99,15 @@ use App\Http\Controllers\Admin\Settings\PayrollSettingsController;
     Route::get('approvers/{approver}/edit', [ApproverController::class, 'edit'])->name('settings.approvers.edit');
     Route::put('approvers/{approver}', [ApproverController::class, 'update'])->name('settings.approvers.update');
     Route::delete('approvers/{approver}', [ApproverController::class, 'destroy'])->name('settings.approvers.destroy');
+
+    # VIOLATIONS
+    Route::get('violations', [ViolationController::class, 'index'])->name('settings.violations.index');
+    Route::get('violations/create', [ViolationController::class, 'create'])->name('settings.violations.create');
+    Route::post('violations', [ViolationController::class, 'store'])->name('settings.violations.store');
+    Route::get('violations/{violation}', [ViolationController::class, 'show'])->name('settings.violations.show');
+    Route::get('violations/{violation}/edit', [ViolationController::class, 'edit'])->name('settings.violations.edit');
+    Route::put('violations/{violation}', [ViolationController::class, 'update'])->name('settings.violations.update');
+    Route::delete('violations/{violation}', [ViolationController::class, 'destroy'])->name('settings.violations.destroy');
 
     # PAYROLL COMPONENTS
     Route::get('payroll-components', [PayrollComponentsController::class, 'index'])->name('settings.payroll-components.index');

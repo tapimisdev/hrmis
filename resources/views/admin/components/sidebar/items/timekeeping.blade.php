@@ -65,6 +65,16 @@
             </li>
             @endcan
 
+            @can('hr.timekeeping.view')
+            <li class="nested-item">
+                <a href="{{ route('timekeeping.behavioral-notices.index') }}"
+                class="{{ Route::is('timekeeping.behavioral-notices.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    <span>Behavioral Notices</span>
+                </a>
+            </li>
+            @endcan
+
             @can('hr.webtime.view')
             <li class="nested-item">
                 <a href="{{ route('webtime.index') }}"

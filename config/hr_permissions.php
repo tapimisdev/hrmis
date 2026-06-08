@@ -172,6 +172,13 @@ return [
         'delete',
     ],
 
+    'violations' => [
+        'view',
+        'create',
+        'edit',
+        'delete',
+    ],
+
     'admin' => [
         'view',
         'create',

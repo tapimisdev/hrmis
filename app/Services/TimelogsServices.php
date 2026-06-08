@@ -441,6 +441,8 @@ class TimelogsServices {
             'total_time_work'    => 0,
             'doble'             => $double,
             'late_undertime'    => 0,
+            'tardiness_minutes' => 0,
+            'undertime_minutes' => 0,
             'paid_hours'        => 0,
             'remarks' => !empty($remarks) ? [$remarks] : '',        
         ];
@@ -1132,6 +1134,7 @@ class TimelogsServices {
     public function checkTimeDiscrepancy(array $payload): array
     {
         $remarks = [];
+        $reasons = [];
         $discrepancy = false;
 
         // Convert times to Carbon instances, null if empty
@@ -1152,23 +1155,29 @@ class TimelogsServices {
         if ($timeInCarbon && $timeOutCarbon && $timeOutCarbon->lt($timeInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
+            $reasons[] = 'Time out is earlier than time in';
         } else if ($breakOutCarbon && $timeInCarbon && $breakOutCarbon->lt($timeInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
+            $reasons[] = 'Break out is earlier than time in';
         } else if ($breakInCarbon && $timeOutCarbon && $breakInCarbon->gt($timeOutCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
+            $reasons[] = 'Break in is later than time out';
         } else if ($otInCarbon && $breakOutCarbon && $otInCarbon->lt($breakOutCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
+            $reasons[] = 'Overtime in is earlier than break out';
         } else if ($otInCarbon && $otOutCarbon && $otOutCarbon->lt($otInCarbon)) {
             $discrepancy = true;
             $remarks[] = 'Discrepancy';
+            $reasons[] = 'Overtime out is earlier than overtime in';
         }
 
         return [
             'discrepancy' => $discrepancy,
             'remarks'     => $remarks,
+            'reasons'     => $reasons,
         ];
     }
 

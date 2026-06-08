@@ -8,6 +8,7 @@ import HeaderVue from "./employee/components/Header.vue";
 import ProfileIndex from "./employee/profile/ProfileIndex.vue";
 import Announcements from "./employee/announcements/Announcements.vue";
 import PayslipIndex from "./employee/payslip/PayslipIndex.vue";
+import BehavioralNoticeIndex from "./employee/behavioral-notices/BehavioralNoticeIndex.vue";
 import ChiefCornerIndex from "./employee/chief-corner/ChiefCornerIndex.vue";
 import Show from "./employee/announcements/Show.vue";
 import ChangePassword from "./employee/profile/ChangePassword.vue";
@@ -20,6 +21,7 @@ import MessagesPage from "./employee/messages/MessagesPage.vue";
 import AdminHeader from "./admin/components/Header.vue";
 import DashboardVue from "./admin/dashboard/DashboardVue.vue";
 import DtrViewVue from "./admin/timekeeping/DtrViewVue.vue";
+import AdminBehavioralNoticeIndex from "./admin/timekeeping/BehavioralNoticeIndex.vue";
 import HrisIndex from "./admin/hris/HrisIndex.vue";
 import ImportCredits from "./admin/credits/Import.vue";
 import ImportEmployeeVue from "./admin/hris/employee/ImportEmployeeVue.vue";
@@ -82,6 +84,7 @@ const authApp = createApp({
         Announcements,
         Show,
         PayslipIndex,
+        BehavioralNoticeIndex,
         ChiefCornerIndex,
         BirthdayComponent,
         ChangePassword,
@@ -96,6 +99,7 @@ const authApp = createApp({
 
         DashboardVue,
         DtrViewVue,
+        AdminBehavioralNoticeIndex,
         HrisIndex,
         ImportCredits,
         ImportEmployeeVue,

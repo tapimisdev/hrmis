@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Employee\AnnouncementsController;
 use App\Http\Controllers\Employee\CalendarController;
 use App\Http\Controllers\Employee\AtroController;
+use App\Http\Controllers\Employee\BehavioralNoticeController;
 use App\Http\Controllers\Employee\ChiefCornerController;
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\LeaveApplicationController;
@@ -63,6 +64,7 @@ Route::prefix('employee')->middleware(['auth'])->group(function () {
     Route::resource('payslip', PayslipController::class)->only('index')->names('payslip');
     Route::get('payslip/data', [PayslipController::class, 'fetch_payslip'])->name('payslip.fetch');
     Route::get('payslip/download', [PayslipController::class, 'download'])->name('payslip.download');
+    Route::get('behavioral-notices', [BehavioralNoticeController::class, 'index'])->name('behavioral-notices.index');
 
     # ANNOUNCEMENTS 
     Route::get('announcements', [AnnouncementsController::class, 'index'])->name('announcement.index');
