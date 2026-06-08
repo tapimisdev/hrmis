@@ -28,14 +28,6 @@
             </li>
 
             <li class="nested-item">
-                <a href="{{ route('taxation.index') }}"
-                    class="{{ request()->is('admin/taxation') ? 'active' : '' }}">
-                    <i class="fa-solid fa-scale-balanced"></i>
-                    <span>Taxation</span>
-                </a>
-            </li>
-
-            <li class="nested-item">
                 <a href="{{ route('taxation.individual-tax.index') }}"
                     class="{{ request()->is('admin/taxation/individual-tax*') ? 'active' : '' }}">
                     <i class="fa-solid fa-file-invoice-dollar"></i>
