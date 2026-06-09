@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\Taxation\TaxationController;
 use App\Http\Controllers\Admin\Taxation\TaxationEmployeeController;
+use App\Http\Controllers\Admin\Taxation\Bir2316Controller;
 use App\Http\Controllers\Admin\Taxation\IndividualTaxController;
 use App\Http\Controllers\Admin\Taxation\IndividualTaxMonthlyReportController;
 use App\Http\Controllers\Admin\Taxation\TrainLawController;
@@ -15,6 +16,20 @@ Route::prefix('taxation')->group(function() {
         ->name('taxation.individual-tax.save');
     Route::get('/individual-tax-report', [IndividualTaxMonthlyReportController::class, 'index'])
         ->name('taxation.individual-tax-report.index');
+    Route::get('/bir-2316', [Bir2316Controller::class, 'index'])
+        ->name('taxation.bir-2316.index');
+    Route::post('/bir-2316/generate', [Bir2316Controller::class, 'generate'])
+        ->name('taxation.bir-2316.generate');
+    Route::get('/bir-2316/{id}', [Bir2316Controller::class, 'show'])
+        ->name('taxation.bir-2316.show');
+    Route::post('/bir-2316/{id}/lock', [Bir2316Controller::class, 'lock'])
+        ->name('taxation.bir-2316.lock');
+    Route::post('/bir-2316/{id}/unlock', [Bir2316Controller::class, 'unlock'])
+        ->name('taxation.bir-2316.unlock');
+    Route::get('/bir-2316/{id}/print', [Bir2316Controller::class, 'print'])
+        ->name('taxation.bir-2316.print');
+    Route::get('/bir-2316/{id}/pdf', [Bir2316Controller::class, 'pdf'])
+        ->name('taxation.bir-2316.pdf');
 
     // Route::resource('/', TaxationController::class)->names('taxation');
     // Route::get('/status', [TaxationController::class, 'status']);
