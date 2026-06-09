@@ -42,6 +42,14 @@
                     <span>Monthly Tax Report</span>
                 </a>
             </li>
+
+            <li class="nested-item">
+                <a href="{{ route('taxation.bir-2316.index') }}"
+                    class="{{ request()->routeIs('taxation.bir-2316.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>BIR 2316</span>
+                </a>
+            </li>
         </ul>
     </div>
 </li>
