@@ -19,7 +19,12 @@ class EmployeeController extends Controller
     public function __construct()
     {
         $this->employeeService = app(EmployeeService::class);
-        $this->middleware('permission:hr.hris.transfer_unit')->only(['transfer', 'updateTransfer']);
+        $this->middleware('permission:hr.hris.transfer_unit')->only([
+            'transfer',
+            'updateTransfer',
+            'transferShift',
+            'updateTransferShift',
+        ]);
         $this->middleware('permission:hr.hris.update_salary')->only(['update_salary', 'updateSalary']);
     }
 
@@ -47,6 +52,81 @@ class EmployeeController extends Controller
             'divisions', 'division_id', 'unit_id', 'employees', 'employment_types', 'selectedEmployee',
             'shifts', 'schedules'
         ));
+    }
+
+    public function transferShift(Request $request)
+    {
+        $selectedEmployees = array_filter((array) $request->input('employee_no', []));
+
+        $employees = $this->employeeService
+            ->getEmployees('active', null, null, null)
+            ->sortBy(fn ($employee) => strtolower(
+                trim(($employee->firstname ?? '') . ' ' . ($employee->lastname ?? ''))
+            ))
+            ->values();
+
+        $shifts = DB::table('shifts')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $schedules = DB::table('work_schedule')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.pages.hris.transfer-shift', compact(
+            'employees',
+            'selectedEmployees',
+            'shifts',
+            'schedules'
+        ));
+    }
+
+    public function updateTransferShift(Request $request)
+    {
+        $validated = $request->validate([
+            'employees' => ['required', 'array', 'min:1'],
+            'employees.*' => [
+                'required',
+                'string',
+                'distinct',
+                Rule::exists('employee_information', 'employee_no')
+                    ->where(fn ($query) => $query->where('account_status', 'active')),
+            ],
+            'shift_id' => [
+                'required',
+                Rule::exists('shifts', 'id')
+                    ->where(fn ($query) => $query->where('is_active', true)),
+            ],
+            'work_schedule_id' => [
+                'required',
+                Rule::exists('work_schedule', 'id')
+                    ->where(fn ($query) => $query->where('is_active', true)),
+            ],
+        ]);
+
+        $processedAt = now();
+        $rows = collect($validated['employees'])
+            ->map(fn ($employeeNo) => [
+                'employee_no' => $employeeNo,
+                'shift_id' => $validated['shift_id'],
+                'work_schedule_id' => $validated['work_schedule_id'],
+                'effectivity_date' => $processedAt->toDateString(),
+                'created_at' => $processedAt,
+                'updated_at' => $processedAt,
+            ])
+            ->all();
+
+        DB::transaction(function () use ($rows) {
+            DB::table('employee_shift_work_schedule')->insert($rows);
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => count($rows) . ' employee shift assignment(s) transferred successfully.',
+            'redirect' => route('hris.employee.transfer-shift'),
+        ]);
     }
 
     public function rules(string $type, array $payload) 

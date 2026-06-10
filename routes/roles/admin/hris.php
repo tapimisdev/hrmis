@@ -40,6 +40,12 @@ Route::prefix('hris')->group(function() {
     Route::post('employee/transfer', [EmployeeController::class, 'updateTransfer'])
         ->name('hris.employee.transfer');
 
+    # TRANSFER EMPLOYEE SHIFT
+    Route::get('employee/transfer-shift', [EmployeeController::class, 'transferShift'])
+        ->name('hris.employee.transfer-shift');
+    Route::post('employee/transfer-shift', [EmployeeController::class, 'updateTransferShift'])
+        ->name('hris.employee.transfer-shift');
+
     # INFORMATION
     Route::get('employee/information/{employee_no?}', [InformationController::class, 'index'])
         ->name('hris.employee.information');
