@@ -30,6 +30,8 @@ Route::prefix('taxation')->group(function() {
         ->name('taxation.bir-2316.print');
     Route::get('/bir-2316/{id}/pdf', [Bir2316Controller::class, 'pdf'])
         ->name('taxation.bir-2316.pdf');
+    Route::get('/bir-2316/{id}/excel', [Bir2316Controller::class, 'excel'])
+        ->name('taxation.bir-2316.excel');
 
     // Route::resource('/', TaxationController::class)->names('taxation');
     // Route::get('/status', [TaxationController::class, 'status']);

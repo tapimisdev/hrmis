@@ -10,7 +10,7 @@ class Bir2316PdfService
 {
     public function generate(Bir2316 $bir2316): string
     {
-        $templatePath = public_path('exports/2316 Sep 2021 ENCS_Final_corrected.pdf');
+        $templatePath = base_path('2316_template.pdf');
         $outputPath = $this->outputPath($bir2316);
         $payload = $this->payload($bir2316);
         $coordinates = config('bir2316_coordinates.fields', []);

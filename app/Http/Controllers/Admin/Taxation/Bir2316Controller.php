@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Taxation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Taxation\Bir2316Request;
 use App\Http\Resources\Taxation\Bir2316Resource;
+use App\Services\Taxation\Bir2316ExcelService;
 use App\Services\Taxation\Bir2316GenerationService;
 use App\Services\Taxation\Bir2316PdfService;
 use App\Services\Taxation\Bir2316Service;
@@ -16,6 +17,7 @@ class Bir2316Controller extends Controller
         private readonly Bir2316Service $bir2316Service,
         private readonly Bir2316GenerationService $bir2316GenerationService,
         private readonly Bir2316PdfService $bir2316PdfService,
+        private readonly Bir2316ExcelService $bir2316ExcelService,
     ) {}
 
     public function index(Request $request)
@@ -47,9 +49,11 @@ class Bir2316Controller extends Controller
             );
         }
 
-        return $this->bir2316PdfService->inline(
-            $this->bir2316Service->findOrFail($id)
-        );
+        $this->bir2316Service->findOrFail($id);
+
+        return view('admin.pages.taxation.bir-2316.show', [
+            'recordId' => $id,
+        ]);
     }
 
     public function lock(int $id, Request $request)
@@ -82,5 +86,10 @@ class Bir2316Controller extends Controller
     public function pdf(int $id)
     {
         return $this->bir2316PdfService->download($this->bir2316Service->findOrFail($id));
+    }
+
+    public function excel(int $id)
+    {
+        return $this->bir2316ExcelService->download($this->bir2316Service->findOrFail($id));
     }
 }
