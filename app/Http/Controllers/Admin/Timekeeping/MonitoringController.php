@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Timekeeping;
 
+use App\Enums\FnEnum;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -47,6 +48,16 @@ class MonitoringController extends Controller
             'clock_out' => [],
         ];
 
+        $breakUserIds = DB::table('timelogs')
+            ->where('is_active', true)
+            ->whereDate('date_time', $date)
+            ->whereIn('fn', [
+                FnEnum::BreakOut->value,
+                FnEnum::BreakIn->value,
+            ])
+            ->pluck('user_id')
+            ->mapWithKeys(fn ($userId) => [(string) $userId => true]);
+
         foreach ($employees as $employee) {
             $payload = [
                 'user_id' => $employee->user_id,
@@ -64,7 +75,7 @@ class MonitoringController extends Controller
                         'employee' => $employee,
                         'log' => $log
                     ];
-                } elseif (!empty($log['break']) && str_contains($log['break'], '--')) {
+                } elseif ($breakUserIds->has((string) $employee->user_id)) {
                     $columns['break'][] = [
                         'employee' => $employee,
                         'log' => $log
