@@ -22,6 +22,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     require __DIR__ . '/payroll.php';
     require __DIR__ . '/earnings.php';
     require __DIR__ . '/reports.php';
+    require __DIR__ . '/taxation.php';
     require __DIR__ . '/maintenance.php';
     require __DIR__ . '/deductions.php';
     require __DIR__ . '/users.php';

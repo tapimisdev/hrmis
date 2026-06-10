@@ -1,0 +1,1732 @@
+<?php
+
+namespace App\Services\Taxation;
+
+use App\Enums\EmploymentTypesEnum;
+use App\Enums\TableSettingsEnum;
+use App\Models\NTaxation;
+use App\Models\NTaxationSetting;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+
+class IndividualTaxDataService
+{
+    public function getPagePayload(?string $employeeNo = null, ?int $year = null): array
+    {
+        $allEmployees = $this->getAllActiveRegularEmployees();
+        $availableYears = $this->getAvailableTaxationYears();
+        $selectedYear = $this->resolveSelectedYear($year, $availableYears);
+        $taxation = $this->getTaxationByYear($selectedYear);
+        $employees = $taxation
+            ? $this->getTaxationEmployees((int) $taxation->id)
+            : collect();
+        $employee = $this->resolveEmployee((string) $employeeNo, $employees);
+        $hasTaxationData = $taxation !== null;
+        $hasSelectedEmployee = $employee !== null;
+        $selectedTaxationSetting = $hasTaxationData
+            ? $this->getSelectedTaxationSetting((int) $taxation->id)
+            : null;
+        $selectedEmployeePortion = $hasTaxationData && $hasSelectedEmployee
+            ? $this->resolveEmployeeTaxPortion((string) $employee->employee_no, $selectedTaxationSetting)
+            : $this->defaultTaxPortion();
+        $selectedEmployeeTaxOverrides = $hasTaxationData && $hasSelectedEmployee
+            ? $this->getEmployeeTaxOverrides((int) $taxation->id, (string) $employee->employee_no)
+            : [];
+        $monthlyBreakdown = $hasTaxationData && $hasSelectedEmployee
+            ? $this->buildMonthlyBreakdown((string) $employee->employee_no, $selectedYear)
+            : collect();
+        $otherComponents = $hasTaxationData && $hasSelectedEmployee
+            ? $this->getOtherComponents(
+                (string) $employee->employee_no,
+                $selectedYear,
+                collect(data_get($selectedTaxationSetting, 'bonuses', []))
+                    ->pluck('government_bonus_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->filter(fn ($id) => $id > 0)
+                    ->values()
+                    ->all()
+            )
+            : $this->emptyOtherComponents();
+        $trainLawOptions = $this->getTrainLawOptions();
+        $selectedTrainLawId = $selectedTaxationSetting['train_law_id'] ?? $trainLawOptions['selectedId'];
+        $taxModuleBreakdown = $hasTaxationData && $hasSelectedEmployee
+            ? $this->buildTaxModuleBreakdown(
+                (string) $employee->employee_no,
+                $selectedYear,
+                $monthlyBreakdown,
+                $selectedEmployeePortion,
+                (array) data_get(
+                    $this->buildSummary(
+                        $monthlyBreakdown,
+                        $otherComponents,
+                        $selectedTrainLawId,
+                        $selectedEmployeePortion
+                    ),
+                    'annual_tax_due_computation',
+                    []
+                ),
+                $selectedEmployeeTaxOverrides
+            )
+            : collect();
+        $payrollMonthlyBreakdown = $monthlyBreakdown;
+        $monthlyBreakdown = $hasTaxationData && $hasSelectedEmployee
+            ? $this->mergeTaxModuleBreakdownIntoMonthlyBreakdown($monthlyBreakdown, $taxModuleBreakdown)
+            : $monthlyBreakdown;
+        $summary = $hasTaxationData && $hasSelectedEmployee
+            ? $this->buildSummary(
+                $monthlyBreakdown,
+                $otherComponents,
+                $selectedTrainLawId,
+                $selectedEmployeePortion
+            )
+            : [];
+
+        return [
+            'employee' => $employee ?? (object) [],
+            'employees' => $employees->values()->all(),
+            'allEmployees' => $allEmployees->values()->all(),
+            'selectedYear' => $selectedYear,
+            'availableYears' => $availableYears->values()->all(),
+            'monthlyBreakdown' => $monthlyBreakdown->values()->all(),
+            'payrollMonthlyBreakdown' => $payrollMonthlyBreakdown->values()->all(),
+            'taxModuleBreakdown' => $taxModuleBreakdown->values()->all(),
+            'otherComponents' => $otherComponents,
+            'summary' => $summary,
+            'trainLawOptions' => $trainLawOptions['items'],
+            'selectedTrainLawId' => $selectedTrainLawId,
+            'selectedTaxationSettings' => $selectedTaxationSetting,
+            'selectedEmployeeTaxOverrides' => $selectedEmployeeTaxOverrides,
+            'hasTaxationData' => $hasTaxationData,
+        ];
+    }
+
+    public function getAllActiveRegularEmployees(): Collection
+    {
+        $latestOrgDate = DB::table('employee_organization')
+            ->selectRaw('employee_no, MAX(effectivity_date) as max_effectivity_date')
+            ->groupBy('employee_no');
+
+        $latestOrgId = DB::table('employee_organization')
+            ->selectRaw('employee_no, effectivity_date, MAX(id) as max_id')
+            ->groupBy('employee_no', 'effectivity_date');
+
+        return DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->leftJoinSub($latestOrgDate, 'latest_org_date', function ($join) {
+                $join->on('ei.employee_no', '=', 'latest_org_date.employee_no');
+            })
+            ->leftJoinSub($latestOrgId, 'latest_org_id', function ($join) {
+                $join->on('latest_org_date.employee_no', '=', 'latest_org_id.employee_no')
+                    ->on('latest_org_date.max_effectivity_date', '=', 'latest_org_id.effectivity_date');
+            })
+            ->leftJoin('employee_organization as eo', 'latest_org_id.max_id', '=', 'eo.id')
+            ->leftJoin('divisions as d', 'eo.division_id', '=', 'd.id')
+            ->leftJoin('units as u', 'eo.unit_id', '=', 'u.id')
+            ->leftJoin('positions as p', 'eo.position_id', '=', 'p.id')
+            ->where('ei.account_status', 'active')
+            ->where('ei.isDeleted', false)
+            ->where('eo.employment_type_id', EmploymentTypesEnum::REGULAR->value)
+            ->orderBy('ep.lastname')
+            ->orderBy('ep.firstname')
+            ->orderBy('ei.employee_no')
+            ->select(
+                'ei.employee_no',
+                'ep.firstname',
+                'ep.middlename',
+                'ep.lastname',
+                'ep.suffix',
+                'p.name as position',
+                'd.name as division_name',
+                'u.name as unit_name',
+            )
+            ->get()
+            ->unique('employee_no')
+            ->map(function ($employee) {
+                $employee->display_name = $this->formatEmployeeName($employee);
+
+                return $employee;
+            })
+            ->values();
+    }
+
+    public function getTaxationEmployees(int $taxationId): Collection
+    {
+        $employeeNos = DB::table('n_taxation_employees')
+            ->where('n_taxation_id', $taxationId)
+            ->pluck('employee_no')
+            ->map(fn ($employeeNo) => (string) $employeeNo)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($employeeNos->isEmpty()) {
+            return collect();
+        }
+
+        return $this->getAllActiveRegularEmployees()
+            ->whereIn('employee_no', $employeeNos->all())
+            ->values();
+    }
+
+    public function resolveEmployee(string $employeeNo, Collection $employees): ?object
+    {
+        if ($employeeNo !== '') {
+            $selectedEmployee = $employees->firstWhere('employee_no', $employeeNo);
+
+            if ($selectedEmployee) {
+                return $selectedEmployee;
+            }
+        }
+
+        return $employees->sortBy('employee_no')->first();
+    }
+
+    public function getAvailableTaxationYears(): Collection
+    {
+        return NTaxation::query()
+            ->orderByDesc('Year')
+            ->pluck('Year')
+            ->filter()
+            ->map(fn ($itemYear) => (int) $itemYear)
+            ->unique()
+            ->sortDesc()
+            ->values();
+    }
+
+    public function resolveSelectedYear(?int $requestedYear, Collection $availableYears): int
+    {
+        if ($requestedYear && $requestedYear >= 1000 && $requestedYear <= 9999) {
+            return $requestedYear;
+        }
+
+        return (int) ($availableYears->first() ?? Carbon::now()->year);
+    }
+
+    public function buildMonthlyBreakdown(string $employeeNo, int $year): Collection
+    {
+        $salaryRows = DB::table('payroll_salary_permanent_employees as pspe')
+            ->join('payroll_salary as ps', 'ps.id', '=', 'pspe.payroll_salary_id')
+            ->where('pspe.employee_no', $employeeNo)
+            ->whereYear('ps.payroll_date', $year)
+            ->orderByDesc('ps.payroll_date')
+            ->get([
+                'ps.payroll_date',
+                'ps.status',
+                'pspe.monthly_rate',
+                'pspe.overtime',
+            ])
+            ->groupBy(fn ($row) => (int) Carbon::parse($row->payroll_date)->month)
+            ->map(fn ($rows) => $rows->first());
+
+        $salaryTaxRows = DB::table('payroll_salary_permanent_employees as pspe')
+            ->join('payroll_salary as ps', 'ps.id', '=', 'pspe.payroll_salary_id')
+            ->join('payroll_salary_permanents_employee_deductions as psped', 'psped.pspe_id', '=', 'pspe.id')
+            ->selectRaw('MONTH(ps.payroll_date) as month_number, SUM(COALESCE(psped.amount, 0)) as total_amount')
+            ->where('pspe.employee_no', $employeeNo)
+            ->whereYear('ps.payroll_date', $year)
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(psped.deduction_type) = ?', ['withholding tax'])
+                    ->orWhereRaw('LOWER(psped.deduction_type) = ?', ['withholding_tax'])
+                    ->orWhereRaw('LOWER(psped.deduction_type) like ?', ['%withholding%tax%']);
+            })
+            ->groupByRaw('MONTH(ps.payroll_date)')
+            ->pluck('total_amount', 'month_number');
+
+        $forecastSalaryByMonth = $this->getForecastSalaryByMonth($employeeNo, $year);
+
+        $hazardRows = DB::table('payroll_hazard_pay_employee as phe')
+            ->join('payroll_hazard_pay as php', 'php.id', '=', 'phe.payroll_hazard_pay_id')
+            ->where('phe.employee_no', $employeeNo)
+            ->whereRaw('LEFT(php.month, 4) = ?', [(string) $year])
+            ->orderByDesc('php.month')
+            ->get([
+                'php.month',
+                'php.status',
+                'phe.hazard_pay',
+                'phe.witholding_tax',
+            ])
+            ->groupBy(fn ($row) => (int) substr((string) $row->month, 5, 2))
+            ->map(fn ($rows) => $rows->first());
+
+        $forecastHazardByMonth = $this->getForecastHazardByMonth($forecastSalaryByMonth);
+
+        $longevityRows = DB::table('payroll_longevity_pay_employee as plpe')
+            ->join('payroll_longevity_pay as plp', 'plp.id', '=', 'plpe.payroll_longevity_pay_id')
+            ->where('plpe.employee_no', $employeeNo)
+            ->whereRaw('LEFT(plp.month, 4) = ?', [(string) $year])
+            ->orderByDesc('plp.month')
+            ->get([
+                'plp.month',
+                'plp.status',
+                'plpe.longevity_amount',
+                'plpe.w_tax',
+            ])
+            ->groupBy(fn ($row) => (int) substr((string) $row->month, 5, 2))
+            ->map(fn ($rows) => $rows->first());
+
+        $forecastLongevityByMonth = $this->getForecastComponentByMonth(
+            TableSettingsEnum::LONGETIVITY->value,
+            $employeeNo,
+            $year
+        );
+
+        $lastActualHazardMonth = $this->getLastActualMonth($hazardRows->keys()->all());
+
+        return collect(range(1, 12))->map(function (int $month) use (
+            $salaryRows,
+            $salaryTaxRows,
+            $hazardRows,
+            $longevityRows,
+            $forecastSalaryByMonth,
+            $forecastHazardByMonth,
+            $forecastLongevityByMonth,
+            $lastActualHazardMonth
+        ) {
+            $salary = $salaryRows->get($month);
+            $hazard = $hazardRows->get($month);
+            $longevity = $longevityRows->get($month);
+
+            $salarySource = $salary ? (string) ($salary->status ?? 'completed') : 'forecast';
+            $basicSalary = $salary
+                ? (float) $salary->monthly_rate
+                : (float) ($forecastSalaryByMonth[$month] ?? 0);
+            $salaryTaxWithheld = $salary
+                ? (float) round((float) ($salaryTaxRows->get($month) ?? 0), 4)
+                : 0.0;
+
+            if ($hazard) {
+                $hazardPay = (float) $hazard->hazard_pay;
+                $hazardSource = (string) ($hazard->status ?? 'completed');
+                $hazardTaxWithheld = (float) round((float) ($hazard->witholding_tax ?? 0), 4);
+            } else {
+                [$hazardPay, $hazardSource] = $this->resolveMonthlyComponentAmount(
+                    $month,
+                    null,
+                    (float) ($forecastHazardByMonth[$month] ?? 0),
+                    $lastActualHazardMonth
+                );
+                $hazardTaxWithheld = 0.0;
+            }
+
+            $longevitySource = $longevity ? (string) ($longevity->status ?? 'completed') : 'forecast';
+            $longevityPay = $longevity
+                ? (float) $longevity->longevity_amount
+                : (float) ($forecastLongevityByMonth[$month] ?? 0);
+            $longevityTaxWithheld = $longevity
+                ? (float) round((float) ($longevity->w_tax ?? 0), 4)
+                : 0.0;
+            $taxForMonth = (float) round($salaryTaxWithheld + $hazardTaxWithheld + $longevityTaxWithheld, 4);
+            $total = $basicSalary + $hazardPay + $longevityPay;
+            $rowStatuses = collect([$salarySource, $hazardSource, $longevitySource]);
+            $rowSource = $rowStatuses->contains(fn ($status) => $status !== 'forecast')
+                ? $rowStatuses
+                    ->reject(fn ($status) => $status === 'forecast')
+                    ->sortBy(fn ($status) => $this->payrollStatusPriority($status))
+                    ->first()
+                : 'forecast';
+
+            return [
+                'month_number' => $month,
+                'month_label' => Carbon::create()->month($month)->format('F'),
+                'basic_salary' => $basicSalary,
+                'hazard_pay' => $hazardPay,
+                'longevity_pay' => $longevityPay,
+                'salary_tax_withheld' => $salaryTaxWithheld,
+                'hazard_tax_withheld' => $hazardTaxWithheld,
+                'longevity_tax_withheld' => $longevityTaxWithheld,
+                'total' => $total,
+                'tax_withheld' => (float) $taxForMonth,
+                'source' => $rowSource,
+                'source_label' => $this->formatPayrollStatusLabel($rowSource),
+                'source_breakdown' => [
+                    'basic_salary' => $salarySource,
+                    'hazard_pay' => $hazardSource,
+                    'longevity_pay' => $longevitySource,
+                ],
+            ];
+        });
+    }
+
+    public function buildTaxModuleBreakdown(
+        string $employeeNo,
+        int $year,
+        Collection $monthlyBreakdown,
+        array $taxPortion = [],
+        array $annualTaxDueComputation = [],
+        array $taxOverrides = []
+    ): Collection
+    {
+        $components = ['Salary Tax', 'Hazard Pay Tax', 'Longevity Tax'];
+        $annualAllocation = collect((array) data_get(
+            $this->buildTaxAllocation(
+                (float) data_get($annualTaxDueComputation, 'annual_tax_due', 0),
+                $monthlyBreakdown,
+                $taxPortion
+            ),
+            'annual',
+            []
+        ))
+            ->mapWithKeys(function ($amount, $key) {
+                return [$this->normalizeTaxAllocationKey((string) $key) => round((float) $amount, 2)];
+            })
+            ->all();
+
+        $actualByMonth = collect(range(1, 12))->mapWithKeys(function (int $month) use ($monthlyBreakdown, $components) {
+            $row = $monthlyBreakdown->firstWhere('month_number', $month);
+            $items = collect($components)
+                ->mapWithKeys(function (string $component) use ($row) {
+                    if ($this->resolveTaxComponentSource($row, $component) !== 'actual') {
+                        return [];
+                    }
+
+                    return [$component => [
+                        'name' => $component,
+                        'amount' => (float) round($this->getPayrollWithheldTaxForComponent($row, $component), 2),
+                        'source' => 'actual',
+                    ]];
+                })
+                ->all();
+
+            return [$month => [
+                'month_number' => $month,
+                'month_label' => Carbon::create()->month($month)->format('F'),
+                'items' => $items,
+            ]];
+        });
+
+        foreach ($components as $component) {
+            $actualMonths = [];
+            $actualTotal = 0.0;
+
+            foreach (range(1, 12) as $month) {
+                if (!array_key_exists($component, $actualByMonth[$month]['items'])) {
+                    continue;
+                }
+
+                $actualMonths[] = $month;
+                $actualTotal += (float) ($actualByMonth[$month]['items'][$component]['amount'] ?? 0);
+            }
+
+            $targetAnnual = round((float) ($annualAllocation[$component] ?? 0), 2);
+            $missingMonths = collect(range(1, 12))
+                ->reject(fn (int $month) => in_array($month, $actualMonths, true))
+                ->values();
+
+            if ($missingMonths->isEmpty()) {
+                continue;
+            }
+
+            $componentOverrides = collect($taxOverrides)
+                ->filter(function (array $taxOverride) use ($component, $missingMonths) {
+                    return $this->normalizeTaxModuleName((string) ($taxOverride['tax_type'] ?? '')) === $component
+                        && $missingMonths->contains((int) ($taxOverride['month_number'] ?? 0));
+                })
+                ->keyBy(fn (array $taxOverride) => (int) ($taxOverride['month_number'] ?? 0));
+            $overrideTotal = round(
+                (float) $componentOverrides->sum(fn (array $taxOverride) => (float) ($taxOverride['amount'] ?? 0)),
+                2
+            );
+            $remainingAmount = round(max(0, $targetAnnual - round($actualTotal, 2) - $overrideTotal), 2);
+            $allocatableMonths = $missingMonths
+                ->reject(fn (int $month) => $componentOverrides->has($month))
+                ->values();
+
+            $weights = $allocatableMonths->mapWithKeys(function (int $month) use ($monthlyBreakdown, $component) {
+                $row = $monthlyBreakdown->firstWhere('month_number', $month);
+
+                return [$month => $this->getTaxForecastWeightForComponent($row, $component)];
+            });
+
+            $forecastAmounts = $this->allocateTaxAmountAcrossMonths($remainingAmount, $weights);
+
+            foreach ($missingMonths as $month) {
+                $monthRow = $actualByMonth->get($month, [
+                    'month_number' => $month,
+                    'month_label' => Carbon::create()->month($month)->format('F'),
+                    'items' => [],
+                ]);
+                $monthItems = (array) ($monthRow['items'] ?? []);
+                $overrideAmount = $this->findTaxOverrideAmount($componentOverrides->values()->all(), $component, (int) $month);
+                $monthItems[$component] = [
+                    'name' => $component,
+                    'amount' => (float) round($overrideAmount ?? (float) ($forecastAmounts[$month] ?? 0), 2),
+                    'source' => $overrideAmount !== null ? 'override' : 'forecast',
+                    'is_editable' => true,
+                ];
+                $monthRow['items'] = $monthItems;
+                $actualByMonth->put($month, $monthRow);
+            }
+        }
+
+        $breakdown = collect(range(1, 12))->map(function (int $month) use ($actualByMonth, $components) {
+            $items = collect($components)
+                ->map(function (string $component) use ($actualByMonth, $month) {
+                    return $actualByMonth[$month]['items'][$component] ?? [
+                        'name' => $component,
+                        'amount' => 0.0,
+                        'source' => 'forecast',
+                        'is_editable' => true,
+                    ];
+                })
+                ->values()
+                ->all();
+
+            return [
+                'month_number' => $month,
+                'month_label' => Carbon::create()->month($month)->format('F'),
+                'amount' => (float) round(collect($items)->sum('amount'), 2),
+                'items' => $items,
+            ];
+        })->values();
+
+        return $this->reconcileTaxModuleBreakdownToAnnualTaxDue(
+            $breakdown,
+            (float) data_get($annualTaxDueComputation, 'annual_tax_due', 0)
+        );
+    }
+
+    public function getOtherComponents(string $employeeNo, int $year, array $selectedGovernmentBonusIds = []): array
+    {
+        $otherEarningTaxTypes = $this->getOtherEarningTaxTypesByYear($year);
+
+        $rows = DB::table('employee_payroll_components as epc')
+            ->join('payroll_components_years as pcy', 'pcy.id', '=', 'epc.tax_deduction_id')
+            ->join('payroll_components as pc', 'pc.id', '=', 'pcy.payroll_component_id')
+            ->where('epc.employee_no', $employeeNo)
+            ->where('pcy.year', $year)
+            ->get([
+                'pc.name',
+                'pc.type',
+                'epc.amount',
+            ]);
+
+        $normalizedEarnings = $rows
+            ->where('type', 'earnings')
+            ->reject(fn ($row) => in_array(strtolower((string) $row->name), [
+                'hazard pay',
+                'longetivity pay',
+                'longevity pay',
+            ], true))
+            ->groupBy('name')
+            ->map(function ($group, $name) use ($otherEarningTaxTypes) {
+                $normalizedName = strtolower(trim((string) $name));
+
+                return [
+                    'name' => $name,
+                    'tax_type' => $otherEarningTaxTypes[$normalizedName] ?? 'taxable',
+                    'amount' => (float) collect($group)->sum('amount'),
+                ];
+            })
+            ->sortBy('name')
+            ->values();
+
+        $earnings = $normalizedEarnings
+            ->values()
+            ->all();
+
+        $deMinimis = [];
+
+        $taxes = $rows
+            ->where('type', 'taxes')
+            ->groupBy('name')
+            ->map(fn ($group, $name) => [
+                'name' => $name,
+                'amount' => (float) collect($group)->sum('amount'),
+            ])
+            ->sortBy('name')
+            ->values()
+            ->all();
+
+        $governmentBonuses = $this->getGovernmentBonuses($employeeNo, $year, $selectedGovernmentBonusIds);
+        $allowables = $this->getAllowablesFromModule($employeeNo, $year);
+
+        return [
+            'earnings' => $earnings,
+            'de_minimis' => $deMinimis,
+            'government_bonuses' => $governmentBonuses,
+            'allowables' => $allowables,
+            'taxes' => $taxes,
+        ];
+    }
+
+    public function buildSummary(
+        Collection $monthlyBreakdown,
+        array $otherComponents,
+        ?int $selectedTrainLawId = null,
+        ?array $taxPortion = null
+    ): array
+    {
+        $annualBasicSalary = (float) $monthlyBreakdown->sum('basic_salary');
+        $annualHazardPay = (float) $monthlyBreakdown->sum('hazard_pay');
+        $annualLongevityPay = (float) $monthlyBreakdown->sum('longevity_pay');
+        $deMinimisTotal = (float) collect($otherComponents['de_minimis'] ?? [])->sum('amount');
+        $otherEarnings = (float) collect($otherComponents['earnings'] ?? [])->sum('amount');
+        $deMinimisBenefits = $deMinimisTotal > 0 ? $deMinimisTotal : $otherEarnings;
+        $governmentBonusesTotal = (float) collect($otherComponents['government_bonuses'] ?? [])->sum('amount');
+        $allowablesTotal = (float) collect($otherComponents['allowables'] ?? [])->sum('amount');
+        $grossCompensationIncome = $annualBasicSalary
+            + $annualHazardPay
+            + $annualLongevityPay
+            + $governmentBonusesTotal
+            + $deMinimisBenefits;
+        $taxExemptBonus = min($governmentBonusesTotal, 90000.0);
+        $netTaxableBenefit = max($governmentBonusesTotal - 90000.0, 0.0);
+        $grossTaxableIncome = $annualBasicSalary
+            + $annualHazardPay
+            + $annualLongevityPay
+            + $netTaxableBenefit;
+        $netTaxableIncome = max($grossTaxableIncome - $allowablesTotal, 0.0);
+        $taxWithheld = (float) $monthlyBreakdown->sum('tax_withheld');
+        $netAfterTax = $grossCompensationIncome - $taxWithheld;
+        $annualTaxDueComputation = $this->buildAnnualTaxDueComputation(
+            $netTaxableIncome,
+            $selectedTrainLawId,
+            $monthlyBreakdown,
+            $taxPortion
+        );
+
+        return [
+            'annual_basic_salary' => $annualBasicSalary,
+            'hazard_pay' => $annualHazardPay,
+            'annual_hazard_pay' => $annualHazardPay,
+            'longevity_pay' => $annualLongevityPay,
+            'annual_longevity_pay' => $annualLongevityPay,
+            'government_bonuses' => $governmentBonusesTotal,
+            'government_bonuses_total' => $governmentBonusesTotal,
+            'other_earnings' => $otherEarnings,
+            'de_minimis' => $deMinimisBenefits,
+            'de_minimis_total' => $deMinimisTotal,
+            'gross_compensation_income' => $grossCompensationIncome,
+            'tax_exempt_bonus' => $taxExemptBonus,
+            'net_taxable_benefit' => $netTaxableBenefit,
+            'gross_taxable_income' => $grossTaxableIncome,
+            'allowable_deductions' => $allowablesTotal,
+            'allowables_total' => $allowablesTotal,
+            'net_taxable_income' => $netTaxableIncome,
+            'total_tax_withheld' => $taxWithheld,
+            'net_after_tax' => $netAfterTax,
+            'annual_tax_due_computation' => $annualTaxDueComputation,
+            'annual_tax_due' => (float) data_get($annualTaxDueComputation, 'annual_tax_due', 0),
+        ];
+    }
+
+    private function mergeTaxModuleBreakdownIntoMonthlyBreakdown(
+        Collection $monthlyBreakdown,
+        Collection $taxModuleBreakdown
+    ): Collection {
+        return $monthlyBreakdown->map(function (array $row) use ($taxModuleBreakdown) {
+            $taxRow = $taxModuleBreakdown->firstWhere('month_number', (int) ($row['month_number'] ?? 0));
+
+            if (!$taxRow) {
+                return $row;
+            }
+
+            $row['salary_tax_withheld'] = (float) round($this->findTaxModuleItemAmount($taxRow, 'Salary Tax'), 2);
+            $row['hazard_tax_withheld'] = (float) round($this->findTaxModuleItemAmount($taxRow, 'Hazard Pay Tax'), 2);
+            $row['longevity_tax_withheld'] = (float) round($this->findTaxModuleItemAmount($taxRow, 'Longevity Tax'), 2);
+            $row['tax_withheld'] = (float) round((float) ($taxRow['amount'] ?? 0), 2);
+
+            return $row;
+        });
+    }
+
+    private function getOtherEarningTaxTypesByYear(int $year): array
+    {
+        $taxationId = DB::table('taxations')
+            ->where('is_active', true)
+            ->where('year', $year)
+            ->value('id');
+
+        if (!$taxationId) {
+            return [];
+        }
+
+        return DB::table('taxation_other_earnings')
+            ->where('taxation_id', $taxationId)
+            ->get(['name', 'tax_type'])
+            ->mapWithKeys(fn ($item) => [
+                strtolower(trim((string) $item->name)) => strtolower((string) ($item->tax_type ?? 'taxable')),
+            ])
+            ->all();
+    }
+
+    private function getTrainLawOptions(): array
+    {
+        $items = DB::table('train_law')
+            ->where('is_active', true)
+            ->orderByDesc('year')
+            ->get(['id', 'year'])
+            ->map(fn ($item) => [
+                'id' => (int) $item->id,
+                'year' => (string) $item->year,
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'items' => $items,
+            'selectedId' => $items[0]['id'] ?? null,
+        ];
+    }
+
+    private function getTaxationByYear(int $year): ?NTaxation
+    {
+        return NTaxation::query()
+            ->where('Year', $year)
+            ->latest('id')
+            ->first();
+    }
+
+    private function getSelectedTaxationSetting(int $taxationId): ?array
+    {
+        $setting = NTaxationSetting::query()
+            ->with(['bonuses', 'portion'])
+            ->where('n_taxation_id', $taxationId)
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$setting) {
+            return null;
+        }
+
+        $defaultPortion = $this->normalizeTaxPortion([
+            'salary' => (float) ($setting->portion?->salary ?? 80),
+            'hazard_pay' => (float) ($setting->portion?->hazard_pay ?? 20),
+            'longevity' => (float) ($setting->portion?->longevity ?? 0),
+        ]);
+        $employeePortions = DB::table('n_taxation_employees')
+            ->where('n_taxation_id', $taxationId)
+            ->get(['employee_no', 'salary', 'hazard_pay', 'longevity'])
+            ->mapWithKeys(function ($employeeRow) use ($defaultPortion) {
+                return [(string) $employeeRow->employee_no => $this->normalizeTaxPortion([
+                    'salary' => $employeeRow->salary ?? $defaultPortion['salary'],
+                    'hazard_pay' => $employeeRow->hazard_pay ?? $defaultPortion['hazard_pay'],
+                    'longevity' => $employeeRow->longevity ?? $defaultPortion['longevity'],
+                ])];
+            })
+            ->all();
+
+        return [
+            'n_taxation_id' => (int) $setting->n_taxation_id,
+            'n_taxation_setting_id' => (int) $setting->id,
+            'train_law_id' => (int) $setting->train_law_id,
+            'bonuses' => $setting->bonuses
+                ->map(fn ($bonus) => [
+                    'government_bonus_id' => (int) $bonus->government_bonus_id,
+                ])
+                ->values()
+                ->all(),
+            'portion' => $defaultPortion,
+            'employee_portions' => $employeePortions,
+        ];
+    }
+
+    private function resolveEmployeeTaxPortion(string $employeeNo, ?array $selectedTaxationSetting): array
+    {
+        return $this->normalizeTaxPortion(
+            (array) data_get(
+                $selectedTaxationSetting,
+                "employee_portions.{$employeeNo}",
+                data_get($selectedTaxationSetting, 'portion', $this->defaultTaxPortion())
+            )
+        );
+    }
+
+    private function defaultTaxPortion(): array
+    {
+        return [
+            'salary' => 80.0,
+            'hazard_pay' => 20.0,
+            'longevity' => 0.0,
+        ];
+    }
+
+    private function normalizeTaxPortion(array $portion): array
+    {
+        return [
+            'salary' => (float) ($portion['salary'] ?? 80),
+            'hazard_pay' => (float) ($portion['hazard_pay'] ?? 20),
+            'longevity' => (float) ($portion['longevity'] ?? 0),
+        ];
+    }
+
+    private function getEmployeeTaxOverrides(int $taxationId, string $employeeNo): array
+    {
+        return DB::table('n_taxation_employee_tax_overrides')
+            ->where('n_taxation_id', $taxationId)
+            ->where('employee_no', $employeeNo)
+            ->orderBy('month_number')
+            ->get(['tax_type', 'month_number', 'amount'])
+            ->map(function ($override) {
+                return [
+                    'tax_type' => $this->normalizeTaxModuleName((string) ($override->tax_type ?? '')),
+                    'month_number' => (int) ($override->month_number ?? 0),
+                    'amount' => (float) round((float) ($override->amount ?? 0), 2),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function emptyOtherComponents(): array
+    {
+        return [
+            'earnings' => [],
+            'de_minimis' => [],
+            'government_bonuses' => [],
+            'allowables' => [],
+            'taxes' => [],
+        ];
+    }
+
+    private function buildAnnualTaxDueComputation(
+        float $netTaxableIncome,
+        ?int $trainLawId = null,
+        ?Collection $monthlyBreakdown = null,
+        ?array $taxPortion = null
+    ): array
+    {
+        $defaultResult = [
+            'selected_tax_table' => '',
+            'selected_tax_table_label' => 'No TRAIN Law table selected',
+            'net_taxable_income' => round($netTaxableIncome, 2),
+            'tax_bracket' => 'No tax bracket found',
+            'minimum_income' => 0.0,
+            'maximum_income' => null,
+            'excess_over' => 0.0,
+            'taxable_excess' => 0.0,
+            'tax_rate' => 0.0,
+            'variable_tax' => 0.0,
+            'fixed_tax' => 0.0,
+            'annual_tax_due' => 0.0,
+            'remarks' => 'No tax bracket found',
+            'allocation' => [
+                'annual' => [
+                    'Salary Tax' => 0.0,
+                    'Hazard Pay Tax' => 0.0,
+                    'Longevity Tax' => 0.0,
+                    'total' => 0.0,
+                ],
+                'monthly' => [
+                    'Salary Tax' => 0.0,
+                    'Hazard Pay Tax' => 0.0,
+                    'Longevity Tax' => 0.0,
+                    'total' => 0.0,
+                ],
+            ],
+        ];
+
+        if ($netTaxableIncome <= 0 || !$trainLawId) {
+            return array_merge($defaultResult, [
+                'selected_tax_table' => $this->getTrainLawLabel($trainLawId),
+                'selected_tax_table_label' => $this->getTrainLawLabel($trainLawId) ?: 'No TRAIN Law table selected',
+                'tax_bracket' => $netTaxableIncome <= 0 ? 'No tax due' : $defaultResult['tax_bracket'],
+                'remarks' => $netTaxableIncome <= 0 ? 'Net taxable income is zero or below.' : $defaultResult['remarks'],
+            ]);
+        }
+
+        $trainLaw = DB::table('train_law')
+            ->where('id', $trainLawId)
+            ->first(['id', 'year']);
+
+        $brackets = DB::table('train_law_items')
+            ->where('train_law_id', $trainLawId)
+            ->orderBy('income_from')
+            ->get([
+                'income_from',
+                'income_to',
+                'fixed_tax',
+                'tax_rate',
+                'excess_over',
+            ]);
+
+        $selectedBracket = $brackets->first(function ($bracket) use ($netTaxableIncome) {
+            $minimumIncome = (float) $bracket->income_from;
+            $maximumIncome = $bracket->income_to !== null ? (float) $bracket->income_to : null;
+
+            return $netTaxableIncome >= $minimumIncome
+                && ($maximumIncome === null || $netTaxableIncome <= $maximumIncome);
+        });
+
+        if (!$selectedBracket) {
+            return array_merge($defaultResult, [
+                'selected_tax_table' => $this->formatTrainLawLabel($trainLaw?->year),
+                'selected_tax_table_label' => $this->formatTrainLawLabel($trainLaw?->year),
+            ]);
+        }
+
+        $excessOver = round((float) $selectedBracket->excess_over, 2);
+        $taxRate = round((float) $selectedBracket->tax_rate, 2);
+        $fixedTax = round((float) $selectedBracket->fixed_tax, 2);
+        $taxableExcess = round(max(0, $netTaxableIncome - $excessOver), 2);
+        $variableTax = round($taxableExcess * ($taxRate / 100), 2);
+        $annualTaxDue = round($variableTax + $fixedTax, 2);
+        $allocation = $this->buildTaxAllocation($annualTaxDue, $monthlyBreakdown ?? collect(), $taxPortion);
+
+        return [
+            'selected_tax_table' => $this->formatTrainLawLabel($trainLaw?->year),
+            'selected_tax_table_label' => $this->formatTrainLawLabel($trainLaw?->year),
+            'net_taxable_income' => round($netTaxableIncome, 2),
+            'tax_bracket' => $this->formatTaxBracketLabel(
+                (float) $selectedBracket->income_from,
+                $selectedBracket->income_to !== null ? (float) $selectedBracket->income_to : null
+            ),
+            'minimum_income' => round((float) $selectedBracket->income_from, 2),
+            'maximum_income' => $selectedBracket->income_to !== null ? round((float) $selectedBracket->income_to, 2) : null,
+            'excess_over' => $excessOver,
+            'taxable_excess' => $taxableExcess,
+            'tax_rate' => $taxRate,
+            'variable_tax' => $variableTax,
+            'fixed_tax' => $fixedTax,
+            'annual_tax_due' => $annualTaxDue,
+            'remarks' => 'Computed using selected TRAIN Law table.',
+            'allocation' => $allocation,
+        ];
+    }
+
+    private function buildTaxAllocation(float $annualTaxDue, Collection $monthlyBreakdown, ?array $taxPortion = null): array
+    {
+        $reconcile = function (array $parts, float $target, string $fallbackKey): array {
+            $roundedTarget = round($target, 2);
+            $roundedParts = collect($parts)->map(fn ($amount) => round((float) $amount, 2))->all();
+            $delta = round($roundedTarget - array_sum($roundedParts), 2);
+
+            if (abs($delta) > 0.0001) {
+                $roundedParts[$fallbackKey] = round(($roundedParts[$fallbackKey] ?? 0) + $delta, 2);
+            }
+
+            return [
+                'parts' => $roundedParts,
+                'total' => round(array_sum($roundedParts), 2),
+            ];
+        };
+
+        $salaryPct = (float) data_get($taxPortion, 'salary', 80);
+        $hazardPct = (float) data_get($taxPortion, 'hazard_pay', 20);
+        $longevityPct = (float) data_get($taxPortion, 'longevity', 0);
+
+        $annualParts = [
+            'Salary Tax' => round($annualTaxDue * ($salaryPct / 100), 2),
+            'Hazard Pay Tax' => round($annualTaxDue * ($hazardPct / 100), 2),
+            'Longevity Tax' => round($annualTaxDue * ($longevityPct / 100), 2),
+        ];
+
+        $annualReconciled = $reconcile($annualParts, $annualTaxDue, 'Salary Tax');
+        $annualParts = $annualReconciled['parts'];
+        $monthlyTaxDue = round($annualTaxDue / 12, 2);
+        $monthlyParts = [
+            'Salary Tax' => round(($annualParts['Salary Tax'] ?? 0) / 12, 2),
+            'Hazard Pay Tax' => round(($annualParts['Hazard Pay Tax'] ?? 0) / 12, 2),
+            'Longevity Tax' => round(($annualParts['Longevity Tax'] ?? 0) / 12, 2),
+        ];
+        $monthlyReconciled = $reconcile($monthlyParts, $monthlyTaxDue, 'Salary Tax');
+
+        return [
+            'annual' => array_merge($annualParts, ['total' => $annualReconciled['total']]),
+            'monthly' => array_merge($monthlyReconciled['parts'], ['total' => $monthlyReconciled['total']]),
+        ];
+    }
+
+    private function getPayrollComponentTotals(Collection $monthlyBreakdown): array
+    {
+        return [
+            'Salary Tax' => (float) round($monthlyBreakdown->sum(fn (array $row) => (float) ($row['basic_salary'] ?? 0)), 4),
+            'Hazard Pay Tax' => (float) round($monthlyBreakdown->sum(fn (array $row) => (float) ($row['hazard_pay'] ?? $row['α17'] ?? 0)), 4),
+            'Longevity Tax' => (float) round($monthlyBreakdown->sum(fn (array $row) => (float) ($row['longevity_pay'] ?? 0)), 4),
+        ];
+    }
+
+    private function allocateTaxAmountAcrossMonths(float $amount, Collection $weights): array
+    {
+        $target = round($amount, 2);
+        $positiveWeights = $weights
+            ->map(fn ($weight) => max(0, (float) $weight))
+            ->filter(fn ($weight) => $weight > 0);
+
+        if ($target <= 0) {
+            return collect(range(1, 12))
+                ->mapWithKeys(fn (int $month) => [$month => 0.0])
+                ->all();
+        }
+
+        if ($positiveWeights->isEmpty()) {
+            return collect(range(1, 12))
+                ->mapWithKeys(fn (int $month) => [$month => $month === 12 ? $target : 0.0])
+                ->all();
+        }
+
+        $allocated = [];
+        $distributed = 0.0;
+        $months = $weights->keys()->map(fn ($month) => (int) $month)->values();
+        $lastPositiveMonth = (int) $positiveWeights->keys()->last();
+        $totalWeight = (float) $positiveWeights->sum();
+
+        foreach ($months as $month) {
+            $weight = max(0, (float) ($weights[$month] ?? 0));
+
+            if ($weight <= 0) {
+                $allocated[$month] = 0.0;
+
+                continue;
+            }
+
+            $allocated[$month] = $month === $lastPositiveMonth
+                ? round($target - $distributed, 2)
+                : round($target * ($weight / $totalWeight), 2);
+
+            $distributed = round($distributed + $allocated[$month], 2);
+        }
+
+        return collect(range(1, 12))
+            ->mapWithKeys(fn (int $month) => [$month => (float) ($allocated[$month] ?? 0.0)])
+            ->all();
+    }
+
+    private function getPayrollWithheldTaxForComponent(?array $row, string $component): float
+    {
+        if (!$row) {
+            return 0.0;
+        }
+
+        return match ($component) {
+            'Salary Tax' => (float) ($row['salary_tax_withheld'] ?? 0),
+            'Hazard Pay Tax' => (float) ($row['hazard_tax_withheld'] ?? 0),
+            'Longevity Tax' => (float) ($row['longevity_tax_withheld'] ?? 0),
+            default => 0.0,
+        };
+    }
+
+    private function findTaxModuleItemAmount(array $taxRow, string $component): float
+    {
+        $item = collect((array) ($taxRow['items'] ?? []))
+            ->firstWhere('name', $component);
+
+        return (float) ($item['amount'] ?? 0);
+    }
+
+    private function resolveTaxComponentSource(?array $row, string $component): string
+    {
+        if (!$row) {
+            return 'forecast';
+        }
+
+        $sourceKey = match ($component) {
+            'Salary Tax' => 'basic_salary',
+            'Hazard Pay Tax' => 'hazard_pay',
+            'Longevity Tax' => 'longevity_pay',
+            default => 'basic_salary',
+        };
+
+        return data_get($row, 'source_breakdown.' . $sourceKey, 'forecast') === 'forecast'
+            ? 'forecast'
+            : 'actual';
+    }
+
+    private function getTrainLawLabel(?int $trainLawId): string
+    {
+        if (!$trainLawId) {
+            return '';
+        }
+
+        $year = DB::table('train_law')
+            ->where('id', $trainLawId)
+            ->value('year');
+
+        return $this->formatTrainLawLabel($year);
+    }
+
+    private function formatTrainLawLabel(?string $year): string
+    {
+        if (!$year) {
+            return '';
+        }
+
+        return sprintf('TRAIN LAW %s', trim($year));
+    }
+
+    private function formatTaxBracketLabel(float $incomeFrom, ?float $incomeTo): string
+    {
+        if ($incomeFrom <= 0 && $incomeTo !== null) {
+            return sprintf('NOT OVER %s', $this->formatPesoText($incomeTo));
+        }
+
+        if ($incomeTo === null) {
+            return sprintf('OVER %s', $this->formatPesoText($incomeFrom));
+        }
+
+        return sprintf(
+            'OVER %s BUT NOT OVER %s',
+            $this->formatPesoText($incomeFrom),
+            $this->formatPesoText($incomeTo)
+        );
+    }
+
+    private function formatPesoText(float $amount): string
+    {
+        return '₱' . number_format($amount, 2);
+    }
+
+    private function normalizeTaxModuleName(string $name): string
+    {
+        $normalized = strtolower(trim($name));
+
+        return match ($normalized) {
+            'salary tax' => 'Salary Tax',
+            'hazard pay tax', 'hazard tax' => 'Hazard Pay Tax',
+            'longetivity tax', 'longevity tax' => 'Longevity Tax',
+            default => $name,
+        };
+    }
+
+    private function normalizeTaxAllocationKey(string $name): string
+    {
+        return $this->normalizeTaxModuleName($name);
+    }
+
+    private function getTaxForecastWeightForComponent(?array $row, string $component): float
+    {
+        if (!$row) {
+            return 0.0;
+        }
+
+        return match ($component) {
+            'Salary Tax' => (float) ($row['basic_salary'] ?? 0),
+            'Hazard Pay Tax' => (float) ($row['hazard_pay'] ?? 0),
+            'Longevity Tax' => (float) ($row['longevity_pay'] ?? 0),
+            default => 0.0,
+        };
+    }
+
+    private function reconcileTaxModuleBreakdownToAnnualTaxDue(
+        Collection $breakdown,
+        float $annualTaxDue
+    ): Collection {
+        $target = round($annualTaxDue, 2);
+        $current = round((float) $breakdown->sum('amount'), 2);
+        $delta = round($target - $current, 2);
+
+        if (abs($delta) < 0.01) {
+            return $breakdown;
+        }
+
+        $preferredMonthIndex = $breakdown->search(function (array $row) {
+            return collect($row['items'] ?? [])->contains(fn ($item) => ($item['source'] ?? 'forecast') === 'forecast');
+        });
+
+        if ($preferredMonthIndex === false) {
+            $preferredMonthIndex = max(0, $breakdown->count() - 1);
+        }
+
+        $row = $breakdown->get($preferredMonthIndex);
+        $items = collect($row['items'] ?? []);
+        $preferredItemIndex = $items->search(fn ($item) => ($item['name'] ?? '') === 'Salary Tax' && ($item['source'] ?? 'forecast') === 'forecast');
+
+        if ($preferredItemIndex === false) {
+            $preferredItemIndex = $items->search(fn ($item) => ($item['name'] ?? '') === 'Salary Tax' && ($item['source'] ?? 'forecast') !== 'override');
+        }
+
+        if ($preferredItemIndex === false) {
+            $preferredItemIndex = $items->search(fn ($item) => ($item['name'] ?? '') === 'Salary Tax');
+        }
+
+        if ($preferredItemIndex === false) {
+            $preferredItemIndex = 0;
+        }
+
+        $item = $items->get($preferredItemIndex, [
+            'name' => 'Salary Tax',
+            'amount' => 0.0,
+            'source' => 'forecast',
+        ]);
+
+        $item['amount'] = round(max(0, (float) ($item['amount'] ?? 0) + $delta), 2);
+        $item['source'] = $item['source'] ?? 'forecast';
+        $items->put($preferredItemIndex, $item);
+
+        $row['items'] = $items->values()->all();
+        $row['amount'] = round((float) collect($row['items'])->sum('amount'), 2);
+        $breakdown->put($preferredMonthIndex, $row);
+
+        return $breakdown->values();
+    }
+
+    private function findTaxOverrideAmount(array $taxOverrides, string $component, int $month): ?float
+    {
+        $override = collect($taxOverrides)->first(function (array $taxOverride) use ($component, $month) {
+            return $this->normalizeTaxModuleName((string) ($taxOverride['tax_type'] ?? '')) === $component
+                && (int) ($taxOverride['month_number'] ?? 0) === $month;
+        });
+
+        if (!$override) {
+            return null;
+        }
+
+        return (float) ($override['amount'] ?? 0);
+    }
+
+    private function getForecastSalaryByMonth(string $employeeNo, int $year): array
+    {
+        $rates = DB::table('employee_salary')
+            ->where('employee_no', $employeeNo)
+            ->whereDate('effectivity_date', '<=', Carbon::create($year, 12, 31)->toDateString())
+            ->orderBy('effectivity_date')
+            ->get(['effectivity_date', 'amount'])
+            ->map(fn ($row) => [
+                'effectivity_date' => Carbon::parse($row->effectivity_date)->startOfDay(),
+                'amount' => (float) str_replace(',', '', (string) ($row->amount ?? 0)),
+            ])
+            ->values();
+
+        $forecast = [];
+        $latestAmount = 0.0;
+        $rateIndex = 0;
+
+        foreach (range(1, 12) as $month) {
+            $monthEnd = Carbon::create($year, $month, 1)->endOfMonth()->startOfDay();
+
+            while ($rateIndex < $rates->count() && $rates[$rateIndex]['effectivity_date']->lte($monthEnd)) {
+                $latestAmount = (float) $rates[$rateIndex]['amount'];
+                $rateIndex++;
+            }
+
+            $forecast[$month] = (float) round($latestAmount, 4);
+        }
+
+        return $forecast;
+    }
+
+    private function getForecastHazardByMonth(array $forecastSalaryByMonth): array
+    {
+        $forecast = [];
+
+        foreach (range(1, 12) as $month) {
+            $forecast[$month] = (float) round(((float) ($forecastSalaryByMonth[$month] ?? 0)) * 0.15, 4);
+        }
+
+        return $forecast;
+    }
+
+    private function getForecastComponentByMonth(
+        string $type,
+        string $employeeNo,
+        int $year
+    ): array {
+        $forecast = array_fill_keys(range(1, 12), 0.0);
+
+        $componentId = DB::table('payroll_components_settings')
+            ->where('type', $type)
+            ->value('table_id');
+
+        if (!$componentId) {
+            return $forecast;
+        }
+
+        $componentYearId = DB::table('payroll_components_years')
+            ->where('payroll_component_id', $componentId)
+            ->where('year', $year)
+            ->value('id');
+
+        if (!$componentYearId) {
+            return $forecast;
+        }
+
+        return DB::table('employee_payroll_components')
+            ->selectRaw('month, SUM(amount) as total')
+            ->where('tax_deduction_id', $componentYearId)
+            ->where('employee_no', $employeeNo)
+            ->groupBy('month')
+            ->pluck('total', 'month')
+            ->mapWithKeys(fn ($amount, $month) => [
+                (int) $month => (float) round((float) $amount, 4),
+            ])
+            ->union(collect($forecast))
+            ->sortKeys()
+            ->all();
+    }
+
+    private function getLastActualMonth(array $actualMonths): ?int
+    {
+        $month = collect($actualMonths)
+            ->map(fn ($value) => (int) $value)
+            ->filter(fn ($value) => $value >= 1 && $value <= 12)
+            ->max();
+
+        return $month ? (int) $month : null;
+    }
+
+    private function resolveMonthlyComponentAmount(
+        int $month,
+        ?float $actualAmount,
+        float $forecastAmount,
+        ?int $lastActualMonth
+    ): array {
+        if ($actualAmount !== null) {
+            return [(float) $actualAmount, null];
+        }
+
+        if ($lastActualMonth !== null && $month <= $lastActualMonth) {
+            return [0.0, 'forecast'];
+        }
+
+        return [(float) $forecastAmount, 'forecast'];
+    }
+
+    private function payrollStatusPriority(string $status): int
+    {
+        return match ($status) {
+            'draft' => 1,
+            'pending' => 2,
+            'approved' => 3,
+            'for_releasing' => 4,
+            'completed' => 5,
+            default => 99,
+        };
+    }
+
+    private function formatPayrollStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'draft' => 'Draft',
+            'pending' => 'Pending',
+            'approved' => 'Approved',
+            'for_releasing' => 'For Releasing',
+            'completed' => 'Completed',
+            default => 'Forecasted',
+        };
+    }
+
+    private function getAllowablesFromModule(string $employeeNo, int $year): array
+    {
+        $moduleIds = [
+            TableSettingsEnum::GSIS->value,
+            TableSettingsEnum::PAGIBIG->value,
+            TableSettingsEnum::PHILHEALTH->value,
+        ];
+
+        $rows = DB::table('module_tab_employees')
+            ->select('module_tab_id', 'month', 'amount')
+            ->where('employee_no', $employeeNo)
+            ->where('year', $year)
+            ->whereIn('module_tab_id', $moduleIds)
+            ->get();
+
+        $grouped = $rows->groupBy('module_tab_id');
+
+        $gsis = (float) round(
+            (float) collect($grouped->get(TableSettingsEnum::GSIS->value, collect()))->sum('amount'),
+            4
+        );
+
+        $philhealth = (float) round(
+            (float) collect($grouped->get(TableSettingsEnum::PHILHEALTH->value, collect()))->sum('amount'),
+            4
+        );
+
+        $pagibig = (float) round(
+            collect($grouped->get(TableSettingsEnum::PAGIBIG->value, collect()))
+                ->groupBy('month')
+                ->sum(fn ($items) => min((float) $items->sum('amount'), 200.00)),
+            4
+        );
+
+        return collect([
+            ['name' => 'GSIS', 'amount' => $gsis],
+            ['name' => 'PhilHealth', 'amount' => $philhealth],
+            ['name' => 'Pag-IBIG', 'amount' => $pagibig],
+        ])
+            ->values()
+            ->all();
+    }
+
+    private function getGovernmentBonuses(string $employeeNo, int $year, array $selectedGovernmentBonusIds = []): array
+    {
+        if ($selectedGovernmentBonusIds === []) {
+            return [];
+        }
+
+        $actualBonuses = DB::table('payroll_government_bonus_employee as pgbe')
+            ->join('payroll_government_bonus as pgb', 'pgbe.payroll_government_bonus_id', '=', 'pgb.id')
+            ->join('government_bonus_types as gbt', 'pgb.government_bonus_type_id', '=', 'gbt.id')
+            ->where('pgbe.employee_no', $employeeNo)
+            ->whereNotIn('pgb.status', ['cancelled', 'failed'])
+            ->whereRaw('YEAR(CONCAT(pgb.month, "-01")) = ?', [$year])
+            ->whereIn('gbt.id', $selectedGovernmentBonusIds)
+            ->orderBy('gbt.id')
+            ->orderByRaw("
+                CASE pgb.status
+                    WHEN 'completed' THEN 5
+                    WHEN 'for_releasing' THEN 4
+                    WHEN 'approved' THEN 3
+                    WHEN 'pending' THEN 2
+                    WHEN 'draft' THEN 1
+                    ELSE 0
+                END DESC
+            ")
+            ->orderByDesc('pgb.month')
+            ->orderByDesc('pgb.id')
+            ->get([
+                'gbt.id as government_bonus_type_id',
+                'pgb.month',
+                'pgb.status',
+                'gbt.name',
+                'pgbe.net_pay',
+                'pgbe.bonus_amount',
+            ])
+            ->groupBy('government_bonus_type_id')
+            ->map(function (Collection $rows) {
+                $row = $rows->first();
+                $amount = (float) ($row->net_pay ?? $row->bonus_amount ?? 0);
+
+                return [
+                    'government_bonus_type_id' => (int) ($row->government_bonus_type_id ?? 0),
+                    'name' => trim((string) ($row->name ?? 'Government Bonus')),
+                    'month' => (string) ($row->month ?? ''),
+                    'amount' => (float) round($amount, 4),
+                    'source' => (string) ($row->status ?? 'payroll_actual'),
+                ];
+            })
+            ->values()
+            ->all();
+
+        $actualBonusTypeIds = collect($actualBonuses)
+            ->pluck('government_bonus_type_id')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        $forecastBonuses = $this->getForecastGovernmentBonuses(
+            $employeeNo,
+            $year,
+            $actualBonusTypeIds,
+            $selectedGovernmentBonusIds
+        );
+
+        return collect([...$actualBonuses, ...$forecastBonuses])
+            ->sortBy([
+                ['month', 'asc'],
+                ['name', 'asc'],
+            ])
+            ->map(function (array $bonus) {
+                unset($bonus['government_bonus_type_id']);
+
+                return $bonus;
+            })
+            ->values()
+            ->all();
+    }
+
+    private function getForecastGovernmentBonuses(
+        string $employeeNo,
+        int $year,
+        array $excludedBonusTypeIds = [],
+        array $selectedGovernmentBonusIds = []
+    ): array
+    {
+        $bonusTypes = DB::table('government_bonus_types as gbt')
+            ->where('gbt.is_active', true)
+            ->when(!empty($selectedGovernmentBonusIds), function ($query) use ($selectedGovernmentBonusIds) {
+                $query->whereIn('gbt.id', $selectedGovernmentBonusIds);
+            })
+            ->when(!empty($excludedBonusTypeIds), function ($query) use ($excludedBonusTypeIds) {
+                $query->whereNotIn('gbt.id', $excludedBonusTypeIds);
+            })
+            ->orderBy('gbt.name')
+            ->get([
+                'gbt.id',
+                'gbt.name',
+                'gbt.computation_type',
+                'gbt.computation_value',
+                'gbt.formula_expression',
+                'gbt.service_date_basis',
+                'gbt.require_active_account',
+                'gbt.require_work_shift',
+                'gbt.require_information',
+                'gbt.require_salary',
+                'gbt.min_years_of_service',
+                'gbt.min_months_of_service',
+            ]);
+
+        if ($bonusTypes->isEmpty()) {
+            return [];
+        }
+
+        $employee = $this->getGovernmentBonusEmployeeContext($employeeNo);
+        $payoutMonth = Carbon::create($year, 12, 1)->format('Y-m');
+
+        return $bonusTypes
+            ->map(function ($bonusType) use ($employee, $employeeNo, $payoutMonth) {
+                if (!$this->employeeMeetsGovernmentBonusEligibility($employee, $employeeNo, $bonusType, $payoutMonth)) {
+                    return null;
+                }
+
+                $amount = $this->computeForecastGovernmentBonusAmount($employeeNo, $bonusType, $payoutMonth);
+
+                if ($amount <= 0) {
+                    return null;
+                }
+
+                return [
+                    'government_bonus_type_id' => (int) ($bonusType->id ?? 0),
+                    'name' => trim((string) ($bonusType->name ?? 'Government Bonus')),
+                    'month' => $payoutMonth,
+                    'amount' => (float) round($amount, 4),
+                    'source' => 'forecast',
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function getGovernmentBonusEmployeeContext(string $employeeNo): ?object
+    {
+        return DB::table('employee_information as ei')
+            ->leftJoin('employee_personal as ep', 'ei.employee_no', '=', 'ep.employee_no')
+            ->leftJoin('employee_organization as eo', 'ei.employee_no', '=', 'eo.employee_no')
+            ->leftJoin('positions as p', 'eo.position_id', '=', 'p.id')
+            ->leftJoin('users as u', 'ei.user_id', '=', 'u.id')
+            ->where('ei.employee_no', $employeeNo)
+            ->select(
+                'ei.employee_no',
+                'ei.account_status',
+                'ei.user_id',
+                'ei.date_hired_company',
+                'ei.date_hired_organization',
+                'ep.id as employee_personal_id',
+                'p.id as position_id'
+            )
+            ->orderByDesc('eo.created_at')
+            ->orderByDesc('eo.id')
+            ->first();
+    }
+
+    private function employeeMeetsGovernmentBonusEligibility(
+        ?object $employee,
+        string $employeeNo,
+        object $bonusType,
+        string $payoutMonth
+    ): bool {
+        if (!$employee) {
+            return false;
+        }
+
+        if ((bool) ($bonusType->require_active_account ?? false) && ($employee->account_status ?? null) !== 'active') {
+            return false;
+        }
+
+        if ((bool) ($bonusType->require_information ?? false) && !$this->hasGovernmentBonusInformation($employee)) {
+            return false;
+        }
+
+        if ((bool) ($bonusType->require_salary ?? false) && !$this->hasGovernmentBonusSalary($employeeNo, $payoutMonth)) {
+            return false;
+        }
+
+        if ((bool) ($bonusType->require_work_shift ?? false) && !$this->hasGovernmentBonusShift($employeeNo, $payoutMonth)) {
+            return false;
+        }
+
+        return $this->meetsGovernmentBonusMinimumService($employee, $bonusType, $payoutMonth);
+    }
+
+    private function hasGovernmentBonusInformation(object $employee): bool
+    {
+        return !empty($employee->user_id)
+            && !empty($employee->employee_personal_id)
+            && !empty($employee->position_id);
+    }
+
+    private function hasGovernmentBonusSalary(string $employeeNo, string $payoutMonth): bool
+    {
+        return $this->getSalaryAsOfMonth($employeeNo, $payoutMonth) > 0;
+    }
+
+    private function hasGovernmentBonusShift(string $employeeNo, string $payoutMonth): bool
+    {
+        $endDate = Carbon::parse($payoutMonth . '-01')->endOfMonth()->toDateString();
+
+        return DB::table('employee_shift_work_schedule as sw1')
+            ->where(
+                'sw1.id',
+                DB::table('employee_shift_work_schedule as sw2')
+                    ->select('sw2.id')
+                    ->whereColumn('sw2.employee_no', 'sw1.employee_no')
+                    ->where('sw2.employee_no', $employeeNo)
+                    ->where('sw2.created_at', '<=', $endDate)
+                    ->orderByDesc('sw2.created_at')
+                    ->orderByDesc('sw2.id')
+                    ->limit(1)
+            )
+            ->exists();
+    }
+
+    private function meetsGovernmentBonusMinimumService(
+        object $employee,
+        object $bonusType,
+        string $payoutMonth
+    ): bool {
+        $minYears = $bonusType->min_years_of_service;
+        $minMonths = $bonusType->min_months_of_service;
+
+        if (is_null($minYears) && is_null($minMonths)) {
+            return true;
+        }
+
+        $periodEnd = Carbon::parse($payoutMonth . '-01')->endOfMonth();
+        $serviceDate = match ((string) ($bonusType->service_date_basis ?? 'organization')) {
+            'company' => $employee->date_hired_company,
+            'current_year' => Carbon::create($periodEnd->year, 1, 1)->toDateString(),
+            default => $employee->date_hired_organization,
+        };
+
+        if (!$serviceDate) {
+            return false;
+        }
+
+        $serviceMonths = Carbon::parse($serviceDate)->diffInMonths($periodEnd);
+        $requiredMonths = (int) (($minYears ?? 0) * 12) + (int) ($minMonths ?? 0);
+
+        return $serviceMonths >= $requiredMonths;
+    }
+
+    private function computeForecastGovernmentBonusAmount(
+        string $employeeNo,
+        object $bonusType,
+        string $payoutMonth
+    ): float {
+        $salary = $this->getSalaryAsOfMonth($employeeNo, $payoutMonth);
+        $computationType = (string) ($bonusType->computation_type ?? 'manual');
+
+        if ($computationType === 'fixed') {
+            return (float) ($bonusType->computation_value ?? 0);
+        }
+
+        if ($computationType === 'percentage') {
+            return $salary * (((float) ($bonusType->computation_value ?? 0)) / 100);
+        }
+
+        if ($computationType === 'formula') {
+            return $this->evaluateGovernmentBonusFormula(
+                (string) ($bonusType->formula_expression ?? ''),
+                [
+                    'salary' => $salary,
+                    'basic_salary' => $salary,
+                    'monthly_salary' => $salary,
+                    'years_of_service' => $this->getGovernmentBonusYearsOfService($bonusType, $payoutMonth, $employeeNo),
+                    'months_of_service' => $this->getGovernmentBonusMonthsOfService($bonusType, $payoutMonth, $employeeNo),
+                ]
+            );
+        }
+
+        return 0.0;
+    }
+
+    private function getSalaryAsOfMonth(string $employeeNo, string $payoutMonth): float
+    {
+        $endDate = Carbon::parse($payoutMonth . '-01')->endOfMonth()->toDateString();
+
+        $salaryRow = DB::table('employee_salary')
+            ->where('employee_no', $employeeNo)
+            ->whereDate('effectivity_date', '<=', $endDate)
+            ->orderByDesc('effectivity_date')
+            ->orderByDesc('id')
+            ->first(['amount']);
+
+        return (float) str_replace(',', '', (string) ($salaryRow->amount ?? 0));
+    }
+
+    private function getGovernmentBonusYearsOfService(object $bonusType, string $payoutMonth, string $employeeNo): float
+    {
+        $serviceDate = $this->getGovernmentBonusServiceDate($bonusType, $payoutMonth, $employeeNo);
+
+        if (!$serviceDate) {
+            return 0.0;
+        }
+
+        return (float) Carbon::parse($serviceDate)
+            ->diffInYears(Carbon::parse($payoutMonth . '-01')->endOfMonth());
+    }
+
+    private function getGovernmentBonusMonthsOfService(object $bonusType, string $payoutMonth, string $employeeNo): float
+    {
+        $serviceDate = $this->getGovernmentBonusServiceDate($bonusType, $payoutMonth, $employeeNo);
+
+        if (!$serviceDate) {
+            return 0.0;
+        }
+
+        return (float) Carbon::parse($serviceDate)
+            ->diffInMonths(Carbon::parse($payoutMonth . '-01')->endOfMonth());
+    }
+
+    private function getGovernmentBonusServiceDate(object $bonusType, string $payoutMonth, string $employeeNo): ?string
+    {
+        if (($bonusType->service_date_basis ?? 'organization') === 'current_year') {
+            return Carbon::parse($payoutMonth . '-01')->startOfYear()->toDateString();
+        }
+
+        $employee = $this->getGovernmentBonusEmployeeContext($employeeNo);
+
+        if (!$employee) {
+            return null;
+        }
+
+        return ($bonusType->service_date_basis ?? 'organization') === 'company'
+            ? ($employee->date_hired_company ?? null)
+            : ($employee->date_hired_organization ?? null);
+    }
+
+    private function evaluateGovernmentBonusFormula(string $formula, array $variables): float
+    {
+        $expression = strtolower(trim($formula));
+
+        if ($expression === '') {
+            return 0.0;
+        }
+
+        uksort($variables, fn ($a, $b) => strlen($b) <=> strlen($a));
+
+        foreach ($variables as $name => $value) {
+            $expression = preg_replace(
+                '/\b' . preg_quote(strtolower($name), '/') . '\b/',
+                (string) round((float) $value, 8),
+                $expression
+            );
+        }
+
+        if (preg_match('/[a-z_]/', $expression)) {
+            return 0.0;
+        }
+
+        if (!preg_match('/^[0-9+\-*\/().\s<>=!?:&|]+$/', $expression)) {
+            return 0.0;
+        }
+
+        set_error_handler(static function () {
+            throw new \ErrorException('Invalid formula.');
+        });
+
+        try {
+            $result = eval('return ' . $expression . ';');
+        } catch (\Throwable) {
+            $result = 0;
+        } finally {
+            restore_error_handler();
+        }
+
+        return is_numeric($result) ? round((float) $result, 2) : 0.0;
+    }
+
+    public function formatEmployeeName(object $employee): string
+    {
+        return collect([
+            $employee->lastname ?? null,
+            isset($employee->firstname) ? ', ' . $employee->firstname : null,
+            !empty($employee->middlename) ? ' ' . strtoupper(substr($employee->middlename, 0, 1)) . '.' : null,
+            !empty($employee->suffix) ? ' ' . $employee->suffix : null,
+        ])->implode('');
+    }
+}
