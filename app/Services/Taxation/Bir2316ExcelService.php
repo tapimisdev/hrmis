@@ -3,8 +3,12 @@
 namespace App\Services\Taxation;
 
 use App\Models\Bir2316;
+use DOMDocument;
+use DOMElement;
+use DOMXPath;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -13,6 +17,7 @@ use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Html;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use ZipArchive;
 
 class Bir2316ExcelService
 {
@@ -31,7 +36,7 @@ class Bir2316ExcelService
             ->load($templatePath);
         $sheet = $spreadsheet->getActiveSheet();
 
-        $this->configureLayout($sheet);
+        $this->prepareInputFields($sheet);
         $this->writeEmployeeInformation($sheet, $bir2316);
         $this->writeEmployerInformation($sheet, $bir2316);
         $this->writeCompensationInformation($sheet, $bir2316);
@@ -44,9 +49,108 @@ class Bir2316ExcelService
 
         $outputPath = $this->outputPath($bir2316);
         (new Xlsx($spreadsheet))->save($outputPath);
+        $this->restoreLeftHeaderShapes($templatePath, $outputPath);
         $spreadsheet->disconnectWorksheets();
 
         return $outputPath;
+    }
+
+    private function restoreLeftHeaderShapes(string $templatePath, string $outputPath): void
+    {
+        $template = new ZipArchive();
+        $output = new ZipArchive();
+
+        if ($template->open($templatePath) !== true) {
+            throw new \RuntimeException('Unable to open the BIR 2316 Excel template.');
+        }
+
+        if ($output->open($outputPath) !== true) {
+            $template->close();
+
+            throw new \RuntimeException('Unable to finalize the BIR 2316 Excel export.');
+        }
+
+        try {
+            $part = 'xl/drawings/drawing1.xml';
+            $templateXml = $template->getFromName($part);
+            $outputXml = $output->getFromName($part);
+
+            if ($templateXml === false || $outputXml === false) {
+                throw new \RuntimeException('The BIR 2316 header drawing could not be found.');
+            }
+
+            $templateDocument = new DOMDocument();
+            $outputDocument = new DOMDocument();
+            $templateDocument->loadXML($templateXml);
+            $outputDocument->loadXML($outputXml);
+
+            $templateXPath = $this->drawingXPath($templateDocument);
+            $outputXPath = $this->drawingXPath($outputDocument);
+            $nextId = $this->highestDrawingId($outputXPath) + 1;
+            $headerShapes = $templateXPath->query(
+                '/xdr:wsDr/*[.//xdr:cNvPr['
+                . '@name="Rectangle 229" or @name="Group 4" '
+                . 'or (@name="Text Box 2" and ancestor::xdr:twoCellAnchor'
+                . '/xdr:from/xdr:col="35" and ancestor::xdr:twoCellAnchor'
+                . '/xdr:from/xdr:row="7")'
+                . ']]'
+            );
+
+            if ($headerShapes === false || $headerShapes->length !== 4) {
+                throw new \RuntimeException('The BIR 2316 header shapes could not be restored.');
+            }
+
+            foreach ($headerShapes as $headerShape) {
+                $importedShape = $outputDocument->importNode($headerShape, true);
+
+                if (!$importedShape instanceof DOMElement) {
+                    continue;
+                }
+
+                foreach ($importedShape->getElementsByTagNameNS(
+                    'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing',
+                    'cNvPr'
+                ) as $properties) {
+                    $properties->setAttribute('id', (string) $nextId++);
+                }
+
+                $outputDocument->documentElement->appendChild($importedShape);
+            }
+
+            if (!$output->addFromString($part, $outputDocument->saveXML())) {
+                throw new \RuntimeException('Unable to restore the BIR 2316 left header.');
+            }
+        } finally {
+            $output->close();
+            $template->close();
+        }
+    }
+
+    private function drawingXPath(DOMDocument $document): DOMXPath
+    {
+        $xpath = new DOMXPath($document);
+        $xpath->registerNamespace(
+            'xdr',
+            'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing'
+        );
+
+        return $xpath;
+    }
+
+    private function highestDrawingId(DOMXPath $xpath): int
+    {
+        $highestId = 0;
+        $properties = $xpath->query('//xdr:cNvPr');
+
+        if ($properties === false) {
+            return $highestId;
+        }
+
+        foreach ($properties as $property) {
+            $highestId = max($highestId, (int) $property->attributes?->getNamedItem('id')?->nodeValue);
+        }
+
+        return $highestId;
     }
 
     public function download(Bir2316 $bir2316)
@@ -107,8 +211,8 @@ class Bir2316ExcelService
         $this->text($sheet, 'Q17', '', Alignment::HORIZONTAL_CENTER);
         $this->text($sheet, 'A20', strtoupper($employee['registered_address']));
         $this->text($sheet, 'Q20', $employee['registered_zip'], Alignment::HORIZONTAL_CENTER);
-        $this->text($sheet, 'A23', strtoupper($employee['local_address']));
-        $this->text($sheet, 'Q23', $employee['local_zip'], Alignment::HORIZONTAL_CENTER);
+        $this->text($sheet, 'A22', strtoupper($employee['local_address']));
+        $this->text($sheet, 'Q22', $employee['local_zip'], Alignment::HORIZONTAL_CENTER);
         $this->text($sheet, 'A30', $this->date($employee['birthday']), Alignment::HORIZONTAL_CENTER);
         $this->text($sheet, 'J30', $employee['contact_number'], Alignment::HORIZONTAL_CENTER);
     }
@@ -207,70 +311,8 @@ class Bir2316ExcelService
         $this->text($sheet, 'Z101', $employeeName, Alignment::HORIZONTAL_CENTER);
     }
 
-    private function configureLayout(Worksheet $sheet): void
+    private function prepareInputFields(Worksheet $sheet): void
     {
-        $sheet->setShowGridlines(false);
-        $sheet->getSheetView()->setZoomScale(85);
-        $sheet->getPageSetup()
-            ->setPrintArea('A2:AN103')
-            ->setFitToPage(true)
-            ->setFitToWidth(1)
-            ->setFitToHeight(1);
-
-        foreach ([
-            13 => 15,
-            14 => 15,
-            15 => 18,
-            16 => 15,
-            17 => 18,
-            19 => 15,
-            20 => 18,
-            22 => 15,
-            23 => 18,
-            26 => 15,
-            27 => 18,
-            29 => 15,
-            30 => 18,
-            32 => 15,
-            33 => 18,
-            35 => 15,
-            36 => 18,
-            38 => 15,
-            39 => 18,
-            40 => 15,
-            41 => 15,
-            42 => 18,
-            43 => 15,
-            44 => 20,
-            46 => 15,
-            47 => 20,
-            49 => 15,
-            50 => 18,
-            51 => 15,
-            52 => 15,
-            53 => 18,
-            54 => 15,
-            55 => 18,
-            57 => 15,
-            58 => 18,
-            86 => 22,
-            87 => 18,
-            89 => 22,
-            90 => 18,
-            93 => 16,
-            94 => 16,
-            95 => 16,
-            96 => 16,
-            97 => 16,
-            98 => 16,
-            99 => 22,
-            100 => 18,
-            101 => 22,
-            102 => 18,
-        ] as $row => $height) {
-            $sheet->getRowDimension($row)->setRowHeight($height);
-        }
-
         foreach ([
             'G11:L12',
             'AB11:AE12',
@@ -280,8 +322,8 @@ class Bir2316ExcelService
             'Q17:T17',
             'A20:P20',
             'Q20:T20',
-            'A23:P23',
-            'Q23:T23',
+            'A22:P23',
+            'Q22:T23',
             'A27:T27',
             'A30:I30',
             'J30:T30',
@@ -342,15 +384,11 @@ class Bir2316ExcelService
             'AC86:AH87',
             'AC89:AH90',
         ] as $range) {
-            $this->inputBox($sheet, $range);
+            $this->inputField($sheet, $range);
         }
-
-        $this->signatureLine($sheet, 'C99:S99');
-        $this->signatureLine($sheet, 'Z101:AN101');
-        $this->signatureLine($sheet, 'C89:S89');
     }
 
-    private function inputBox(Worksheet $sheet, string $range): void
+    private function inputField(Worksheet $sheet, string $range): void
     {
         foreach ($sheet->getMergeCells() as $mergedRange) {
             if ($this->rangesIntersect($range, $mergedRange)) {
@@ -385,42 +423,13 @@ class Bir2316ExcelService
 
     private function rangesIntersect(string $firstRange, string $secondRange): bool
     {
-        [$firstStart, $firstEnd] = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::rangeBoundaries($firstRange);
-        [$secondStart, $secondEnd] = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::rangeBoundaries($secondRange);
+        [$firstStart, $firstEnd] = Coordinate::rangeBoundaries($firstRange);
+        [$secondStart, $secondEnd] = Coordinate::rangeBoundaries($secondRange);
 
         return $firstStart[0] <= $secondEnd[0]
             && $firstEnd[0] >= $secondStart[0]
             && $firstStart[1] <= $secondEnd[1]
             && $firstEnd[1] >= $secondStart[1];
-    }
-
-    private function signatureLine(Worksheet $sheet, string $range): void
-    {
-        foreach ($sheet->getMergeCells() as $mergedRange) {
-            if ($this->rangesIntersect($range, $mergedRange)) {
-                $sheet->unmergeCells($mergedRange);
-            }
-        }
-
-        $sheet->mergeCells($range);
-        $sheet->getStyle($range)->applyFromArray([
-            'font' => [
-                'name' => 'Arial',
-                'size' => 8,
-                'color' => ['argb' => 'FF000000'],
-            ],
-            'borders' => [
-                'bottom' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['argb' => 'FF000000'],
-                ],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_BOTTOM,
-                'shrinkToFit' => true,
-            ],
-        ]);
     }
 
     private function employeePersonalInformation(Bir2316 $bir2316): array

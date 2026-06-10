@@ -117,6 +117,7 @@ class Bir2316GenerationServiceTest extends TestCase
 
         $record = Bir2316::query()->where('employee_id', $employeeId)->firstOrFail();
         $excelPath = app(Bir2316ExcelService::class)->generate($record);
+        $templateSheet = IOFactory::load(public_path('exports/2316_template.xlsx'))->getActiveSheet();
         $sheet = IOFactory::load($excelPath)->getActiveSheet();
 
         $this->assertFileExists($excelPath);
@@ -127,6 +128,27 @@ class Bir2316GenerationServiceTest extends TestCase
         $this->assertSame((float) $record->annual_basic_salary, (float) $sheet->getCell('AH43')->getValue());
         $this->assertSame((float) $record->annual_tax_due, (float) $sheet->getCell('M71')->getValue());
         $this->assertSame((float) $record->tax_withheld, (float) $sheet->getCell('M80')->getValue());
+        $this->assertSame($templateSheet->getPageSetup()->getPrintArea(), $sheet->getPageSetup()->getPrintArea());
+        $this->assertSame($templateSheet->getPageSetup()->getOrientation(), $sheet->getPageSetup()->getOrientation());
+        $this->assertSame($templateSheet->getPageSetup()->getPaperSize(), $sheet->getPageSetup()->getPaperSize());
+        $this->assertSame($templateSheet->getPageSetup()->getScale(), $sheet->getPageSetup()->getScale());
+        $this->assertSame($templateSheet->getPageSetup()->getFitToWidth(), $sheet->getPageSetup()->getFitToWidth());
+        $this->assertSame($templateSheet->getPageSetup()->getFitToHeight(), $sheet->getPageSetup()->getFitToHeight());
+        $this->assertSame($templateSheet->getSheetView()->getZoomScale(), $sheet->getSheetView()->getZoomScale());
+        $this->assertContains('A17:P17', $sheet->getMergeCells());
+        $this->assertContains('AH43:AN44', $sheet->getMergeCells());
+        $this->assertSame('solid', $sheet->getStyle('AH43')->getFill()->getFillType());
+        $this->assertSame('FFFFFFFF', $sheet->getStyle('AH43')->getFill()->getStartColor()->getARGB());
+        $this->assertSame('thin', $sheet->getStyle('AH43')->getBorders()->getTop()->getBorderStyle());
+        $this->assertSame('thin', $sheet->getStyle('AH43')->getBorders()->getLeft()->getBorderStyle());
+        $this->assertSame(
+            $templateSheet->getRowDimension(23)->getRowHeight(),
+            $sheet->getRowDimension(23)->getRowHeight()
+        );
+        $this->assertSame(
+            $templateSheet->getColumnDimension('AH')->getWidth(),
+            $sheet->getColumnDimension('AH')->getWidth()
+        );
 
         $preview = app(Bir2316ExcelService::class)->preview($record);
 
