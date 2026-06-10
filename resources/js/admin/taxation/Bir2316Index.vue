@@ -9,7 +9,7 @@
                                 <div class="text-uppercase small fw-semibold text-body-secondary mb-2">Taxation</div>
                                 <h1 class="h3 mb-2">BIR 2316</h1>
                                 <p class="mb-0 text-body-secondary">
-                                    Generate locked snapshot records from existing annual tax data, then review, print, and download the official form.
+                                    Generate locked snapshot records from existing annual tax data, then download the official form.
                                 </p>
                             </div>
                             <div class="text-body-secondary fw-semibold">
@@ -218,22 +218,14 @@
                                                             </button>
                                                         </li>
                                                         <li v-if="row.record_id">
-                                                            <a class="dropdown-item" :href="showUrl(row.record_id)">View</a>
+                                                            <a class="dropdown-item text-capitalize" :href="showUrl(row.record_id)">View</a>
                                                         </li>
                                                         <li v-if="row.record_id">
-                                                            <a class="dropdown-item" :href="printUrl(row.record_id)" target="_blank" rel="noopener">Print</a>
-                                                        </li>
-                                                        <li v-if="row.record_id">
-                                                            <a class="dropdown-item" :href="pdfUrl(row.record_id)">Download PDF</a>
+                                                            <a class="dropdown-item text-capitalize" :href="excelUrl(row.record_id)">Download Excel</a>
                                                         </li>
                                                         <li v-if="row.record_id && row.can_lock">
                                                             <button class="dropdown-item" type="button" @click="lockRow(row.record_id)">
                                                                 Lock
-                                                            </button>
-                                                        </li>
-                                                        <li v-if="row.record_id && row.can_unlock">
-                                                            <button class="dropdown-item" type="button" @click="unlockRow(row.record_id)">
-                                                                Unlock
                                                             </button>
                                                         </li>
                                                     </ul>
@@ -266,8 +258,7 @@
                                 </div>
                                 <div class="d-flex flex-wrap gap-2">
                                     <a class="btn btn-secondary" :href="baseUrl">Back to List</a>
-                                    <a class="btn btn-secondary" :href="printUrl(record.id)" target="_blank" rel="noopener">Print</a>
-                                    <a class="btn btn-primary" :href="pdfUrl(record.id)">Download PDF</a>
+                                    <a class="btn btn-primary text-capitalize" :href="excelUrl(record.id)">Download Excel</a>
                                 </div>
                             </div>
 
@@ -529,15 +520,6 @@ export default {
                 this.setError(error, "Unable to lock BIR 2316 record.");
             }
         },
-        async unlockRow(recordId) {
-            try {
-                await axios.post(`${this.baseUrl}/${recordId}/unlock`);
-                this.feedback = { type: "success", message: "BIR 2316 record unlocked." };
-                await this.fetchRows();
-            } catch (error) {
-                this.setError(error, "Unable to unlock BIR 2316 record.");
-            }
-        },
         normalizedFilters() {
             return {
                 taxable_year: this.filters.taxable_year,
@@ -572,19 +554,15 @@ export default {
         showUrl(id) {
             return `${this.baseUrl}/${id}`;
         },
-        printUrl(id) {
-            return `${this.baseUrl}/${id}/print`;
-        },
-        pdfUrl(id) {
-            return `${this.baseUrl}/${id}/pdf`;
+        excelUrl(id) {
+            return `${this.baseUrl}/${id}/excel`;
         },
         rowActionCount(row) {
             let count = 0;
 
             if (row.can_generate) count += 1;
-            if (row.record_id) count += 3;
+            if (row.record_id) count += 2;
             if (row.record_id && row.can_lock) count += 1;
-            if (row.record_id && row.can_unlock) count += 1;
 
             return count;
         },

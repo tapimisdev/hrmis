@@ -138,15 +138,7 @@ class Bir2316GenerationService
             ->value('nte.id');
 
         $employer = $this->employerDetails();
-        $employeeAddress = $this->combineAddress([
-            $employee->present_block,
-            $employee->present_street,
-            $employee->present_subdivision,
-            $employee->present_barangay,
-            $employee->present_city,
-            $employee->present_province,
-            $employee->present_zip,
-        ]) ?: $this->combineAddress([
+        $registeredAddress = $this->combineAddress([
             $employee->permanent_block,
             $employee->permanent_street,
             $employee->permanent_subdivision,
@@ -155,6 +147,16 @@ class Bir2316GenerationService
             $employee->permanent_province,
             $employee->permanent_zip,
         ]);
+        $localAddress = $this->combineAddress([
+            $employee->present_block,
+            $employee->present_street,
+            $employee->present_subdivision,
+            $employee->present_barangay,
+            $employee->present_city,
+            $employee->present_province,
+            $employee->present_zip,
+        ]);
+        $employeeAddress = $registeredAddress ?: $localAddress;
         $allowables = $this->normalizeAllowables((array) data_get($otherComponents, 'allowables', []));
         $taxDue = (float) data_get($summary, 'annual_tax_due', 0);
         $taxWithheld = (float) data_get($summary, 'total_tax_withheld', 0);
@@ -187,7 +189,7 @@ class Bir2316GenerationService
             'employer_name' => $employer['name'],
             'employer_tin' => $employer['tin'],
             'employer_address' => $employer['address'],
-            'rdo_code' => $employer['rdo_code'],
+            'rdo_code' => null,
             'annual_basic_salary' => (float) data_get($summary, 'annual_basic_salary', 0),
             'hazard_pay' => (float) data_get($summary, 'hazard_pay', 0),
             'longevity_pay' => (float) data_get($summary, 'longevity_pay', 0),
@@ -209,6 +211,10 @@ class Bir2316GenerationService
                 'employee_name' => $this->formatEmployeeName($employee),
                 'tin' => $employee->tin_no,
                 'address' => $employeeAddress,
+                'registered_address' => $registeredAddress,
+                'registered_zip_code' => $employee->permanent_zip,
+                'local_address' => $localAddress,
+                'local_zip_code' => $employee->present_zip,
                 'birth_date' => $employee->birthday,
                 'contact_number' => $employee->mobile_number,
                 'zip_code' => $employee->present_zip ?: $employee->permanent_zip,
@@ -338,8 +344,8 @@ class Bir2316GenerationService
         return [
             'name' => $agency->name ?? config('app.name'),
             'tin' => null,
-            'address' => $agency->description ?? null,
-            'rdo_code' => $agency->code ?? null,
+            'address' => null,
+            'rdo_code' => null,
         ];
     }
 

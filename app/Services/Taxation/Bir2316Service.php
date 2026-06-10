@@ -7,6 +7,7 @@ use App\Models\Bir2316;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class Bir2316Service
 {
@@ -104,8 +105,12 @@ class Bir2316Service
 
     public function availableYears(): Collection
     {
+        $taxationYears = Schema::hasTable('n_taxation')
+            ? $this->individualTaxDataService->getAvailableTaxationYears()->all()
+            : [];
+
         return collect(array_merge(
-            $this->individualTaxDataService->getAvailableTaxationYears()->all(),
+            $taxationYears,
             Bir2316::query()->pluck('taxable_year')->map(fn ($year) => (int) $year)->all()
         ))
             ->filter()

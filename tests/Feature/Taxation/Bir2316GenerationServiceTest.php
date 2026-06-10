@@ -3,12 +3,14 @@
 namespace Tests\Feature\Taxation;
 
 use App\Models\Bir2316;
+use App\Services\Taxation\Bir2316ExcelService;
 use App\Services\Taxation\Bir2316GenerationService;
 use App\Services\Taxation\Bir2316PdfService;
 use App\Services\Taxation\Bir2316Service;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class Bir2316GenerationServiceTest extends TestCase
@@ -102,6 +104,34 @@ class Bir2316GenerationServiceTest extends TestCase
 
         $this->assertFileExists($pdfPath);
         $this->assertGreaterThan(0, filesize($pdfPath));
+    }
+
+    public function test_it_populates_the_bir_2316_excel_template(): void
+    {
+        $employeeId = $this->seedTaxationEmployee('EMP-004');
+
+        app(Bir2316GenerationService::class)->generate([
+            'taxable_year' => 2026,
+            'employee_ids' => [$employeeId],
+        ], 1);
+
+        $record = Bir2316::query()->where('employee_id', $employeeId)->firstOrFail();
+        $excelPath = app(Bir2316ExcelService::class)->generate($record);
+        $sheet = IOFactory::load($excelPath)->getActiveSheet();
+
+        $this->assertFileExists($excelPath);
+        $this->assertSame('2026', $sheet->getCell('G11')->getValue());
+        $this->assertSame('123-456-789-000', $sheet->getCell('B15')->getValue());
+        $this->assertSame('RIVERA, TAYLOR A', $sheet->getCell('A17')->getValue());
+        $this->assertSame('TECHNOLOGY APPLICATION AND PROMOTION INSTITUTE', $sheet->getCell('A44')->getValue());
+        $this->assertSame((float) $record->annual_basic_salary, (float) $sheet->getCell('AH43')->getValue());
+        $this->assertSame((float) $record->annual_tax_due, (float) $sheet->getCell('M71')->getValue());
+        $this->assertSame((float) $record->tax_withheld, (float) $sheet->getCell('M80')->getValue());
+
+        $preview = app(Bir2316ExcelService::class)->preview($record);
+
+        $this->assertSame('text/html; charset=UTF-8', $preview->headers->get('Content-Type'));
+        $this->assertStringContainsString('RIVERA, TAYLOR A', $preview->getContent());
     }
 
     private function seedTaxationEmployee(string $employeeNo): int
