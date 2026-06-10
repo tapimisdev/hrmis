@@ -29,6 +29,11 @@
                                 <i class="fa-solid fa-right-left me-2"></i> Transfer Unit
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item fw-bold text-uppercase d-flex align-items-center" href="{{ route('hris.employee.transfer-shift') }}">
+                                <i class="fa-solid fa-clock-rotate-left me-2"></i> Transfer Shift
+                            </a>
+                        </li>
                     </ul>
                 </div>
                 <x-button-link 
