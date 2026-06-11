@@ -142,13 +142,14 @@ class TimelogCorrectionController extends Controller
                 ['fn' => FnEnum::OvertimeOut, 'time' => $correction->overtime_out ?? null],
             ];
 
+            $newTimelogIdsByType = [];
 
             foreach ($timeEntries as $entry) {
                 if ($entry['time'] === null) {
                     continue;
                 }
 
-                DB::table('timelogs')->insert([
+                $newTimelogIdsByType[$entry['fn']->value] = DB::table('timelogs')->insertGetId([
                     'user_id'          => $user_id,
                     'employee_no'      => $employee_no,
                     'date_time'        => Carbon::parse($entry['time'])->format('Y-m-d H:i:s'),
@@ -159,6 +160,8 @@ class TimelogCorrectionController extends Controller
                     'updated_at'       => now(),
                 ]);
             }
+
+            $this->reassignAccomplishmentReports($oldLogs, $newTimelogIdsByType);
 
             // Update the status to approved
             DB::table('timelog_corrections')
@@ -196,6 +199,26 @@ class TimelogCorrectionController extends Controller
             ]);
         }
 
+    }
+
+    private function reassignAccomplishmentReports($oldLogs, array $newTimelogIdsByType): void
+    {
+        if ($oldLogs->isEmpty() || empty($newTimelogIdsByType)) {
+            return;
+        }
+
+        $fallbackTimelogId = reset($newTimelogIdsByType);
+
+        foreach ($oldLogs as $oldLog) {
+            $newTimelogId = $newTimelogIdsByType[(int) $oldLog->fn] ?? $fallbackTimelogId;
+
+            DB::table('accomplishment_reports')
+                ->where('timelog_id', $oldLog->id)
+                ->update([
+                    'timelog_id' => $newTimelogId,
+                    'updated_at' => now(),
+                ]);
+        }
     }
 
     public function reject($id, Request $request)
