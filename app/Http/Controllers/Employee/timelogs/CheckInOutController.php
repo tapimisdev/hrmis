@@ -493,11 +493,21 @@ class CheckInOutController extends Controller
 
         // Save PDF
         $path = 'users/' . $employee_no . '/daily-accomplishment-reports/';
-        $filename = 'dar-' . $todayNumeric . '.pdf';
-        $fullPath = $path . $filename;
+        $baseFilename = 'dar-' . $todayNumeric;
+        $filename = $baseFilename . '.pdf';
+        $counter = 1;
 
-        Storage::disk('public')->makeDirectory($path);
-        $pdf->Output(storage_path('app/public/' . $fullPath), 'F');
+        while (Storage::disk('public')->exists($path . $filename)) {
+            $filename = $baseFilename . '-' . $counter . '.pdf';
+            $counter++;
+        }
+
+        $fullPath = $path . $filename;
+        $pdfContents = $pdf->Output($filename, 'S');
+
+        if (!Storage::disk('public')->put($fullPath, $pdfContents)) {
+            throw new \RuntimeException('Unable to save the Daily Accomplishment Report.');
+        }
 
         // Save to database
         DB::table('accomplishment_reports')->insert([
