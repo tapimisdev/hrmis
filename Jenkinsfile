@@ -14,7 +14,7 @@ pipeline {
         APP_SERVER  = 'mis_server1@192.168.2.228'
         APP_SERVER2 = 'mis_server2@192.168.2.232'
 
-        SSH_KEY = '/var/jenkins_home/.ssh/id_ed25519_orbit'
+        SSH_KEY = '/var/jenkins_home/.ssh/id_ed25519'
 
         REPO_SSH_URL = 'git@github.com:tapimisdev/hrmis.git'
         APP_DIR = '/var/www/orbit'
