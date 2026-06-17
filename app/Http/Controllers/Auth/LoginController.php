@@ -31,6 +31,14 @@ class LoginController extends Controller
         $user = $user->load('employeeInformation');
         $roles = $user->getRoleNames();
 
+        if ($roles->contains('applicant') && $user->applicantProfile()->withTrashed()->whereNotNull('deleted_at')->exists()) {
+            auth()->logout();
+
+            return redirect('/login')
+                ->withErrors(['email' => 'This applicant portal account has been closed.'])
+                ->withInput($request->only('email'));
+        }
+
         $isEmployee = $roles->contains(function ($role) {
             return str_starts_with($role, 'emp');
         });
@@ -120,6 +128,10 @@ class LoginController extends Controller
     protected function dashboardPath($user): string
     {
         $roles = $user?->getRoleNames() ?? collect();
+
+        if ($roles->contains('applicant')) {
+            return '/applicant/dashboard';
+        }
 
         $isEmployee = $roles->contains(function ($role) {
             return str_starts_with($role, 'emp');

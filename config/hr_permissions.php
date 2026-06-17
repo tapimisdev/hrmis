@@ -5,6 +5,8 @@ return [
     // Dashboard
     'dashboard' => ['view'],
 
+    'recruitment' => ['view', 'manage'],
+
     // HRIS Management
     'hris' => [
         'view',

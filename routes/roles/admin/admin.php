@@ -27,6 +27,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     require __DIR__ . '/deductions.php';
     require __DIR__ . '/users.php';
     require __DIR__ . '/feedbacks.php';
+    require __DIR__ . '/recruitment.php';
 
     Route::middleware(['auth'])->group(function () {
         Route::get('trails', [TrailsController::class, 'index'])

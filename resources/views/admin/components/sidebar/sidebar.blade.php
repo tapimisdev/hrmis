@@ -12,6 +12,9 @@
         {{-- Dashboard --}}
         @include('admin.components.sidebar.items.dashboard')
 
+        {{-- Recruitment --}}
+        @include('admin.components.sidebar.items.recruitment')
+
         {{-- HRIS --}}
         @include('admin.components.sidebar.items.hris')
 

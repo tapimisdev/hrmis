@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('inspire')->hourly();
+        $schedule->command('recruitment:close-expired-applicants')->dailyAt('01:00');
 
         // $schedule->command('leave:accumulation')
         //     ->everyMinute()

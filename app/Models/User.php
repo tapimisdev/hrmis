@@ -85,6 +85,11 @@ class User extends Authenticatable
         return $this->hasOne(EmployeeInformation::class, 'user_id', 'id');
     }
 
+    public function applicantProfile()
+    {
+        return $this->hasOne(ApplicantProfile::class);
+    }
+
     public function getTodayTimeIn()
     {
         $employeeNo = $this->employeeInformation?->employee_no;

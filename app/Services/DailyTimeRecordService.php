@@ -241,6 +241,14 @@ class DailyTimeRecordService {
             $is_leave = $leave['is_leave'];
             $leave_shift = $leave['shift'];
             $leave_status = $leave['status'];
+            $leave_name = $leave['leave_name'] ?? null;
+            $withLeaveName = function (array $row) use ($leave_name) {
+                if (!empty($leave_name)) {
+                    $row['leave_name'] = $leave_name;
+                }
+
+                return $row;
+            };
 
             if (!empty($leave_shift)) {
                 $leave_status .= '-' . $leave_shift;
@@ -321,14 +329,14 @@ class DailyTimeRecordService {
             if ($empty_log) {
                 
                 if ($is_future) {
-                    $computedData[] = $this->timelogs_services->insertNoData($is_leave ? $leave_status : $remarks, $userId, $date['date']);
+                    $computedData[] = $withLeaveName($this->timelogs_services->insertNoData($is_leave ? $leave_status : $remarks, $userId, $date['date']));
                     continue;
                 }
 
                 if(!$is_future && $suspension['is_suspended'] && $suspension['type'] === 'whole_day') {
                     $remarks[] = 'Suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['type']));
                     $TOTAL_SUSPENSION += 1;
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $computedData[] = $withLeaveName($this->timelogs_services->insertNoData($remarks, $userId, $date['date']));
                     continue;
                 }
 
@@ -336,7 +344,7 @@ class DailyTimeRecordService {
                 if(!$is_future && $suspension['is_suspended'] && $suspension['type'] === 'half_day') {
                     $remarks[] = 'Suspension' . ' ' . ucfirst(str_replace('_', ' ', $suspension['shift']));
                     $TOTAL_SUSPENSION += 0.5;
-                    $computedData[] = [
+                    $computedData[] = $withLeaveName([
                         'date'              => $date['date'],
                         'user_id'           => $userId,
                         'time_in'           => null,
@@ -355,43 +363,43 @@ class DailyTimeRecordService {
                         'undertime_minutes' => 0,
                         'paid_hours'        => 0,
                         'remarks'           => $remarks,
-                    ];
+                    ]);
                     continue;
                 }
 
                 if (!$is_future && !$is_leave && !$is_restday && !$is_offset && !$is_so && !$is_lto && !$is_pass_slip) {
                     $remarks[] = 'absent';
                     $TOTAL_ABSENT++;
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $computedData[] = $withLeaveName($this->timelogs_services->insertNoData($remarks, $userId, $date['date']));
                     continue;
                 }
 
                 if ($leave_status === 'pending leave' && $is_leave) {
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $computedData[] = $withLeaveName($this->timelogs_services->insertNoData($remarks, $userId, $date['date']));
                     $TOTAL_PENDING_LEAVES++;
                     continue;
                 }
 
                 if ($offset_status === 'pending offset' && $is_offset) {
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $computedData[] = $withLeaveName($this->timelogs_services->insertNoData($remarks, $userId, $date['date']));
                     $TOTAL_PENDING_OFFSETS++;
                     continue;
                 }
 
                 if ($so_status === 'pending special order (SO)' && $is_so) {
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $computedData[] = $withLeaveName($this->timelogs_services->insertNoData($remarks, $userId, $date['date']));
                     $TOTAL_PENDING_SO++;
                     continue;
                 }
 
                 if ($lto_status === 'pending local travel order (LTO)' && $is_lto) {
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $computedData[] = $withLeaveName($this->timelogs_services->insertNoData($remarks, $userId, $date['date']));
                     $TOTAL_PENDING_LTO++;
                     continue;
                 }
 
                 if ($pass_slip_status === 'pending pass slip' && $is_pass_slip) {
-                    $computedData[] = $this->timelogs_services->insertNoData($remarks, $userId, $date['date']);
+                    $computedData[] = $withLeaveName($this->timelogs_services->insertNoData($remarks, $userId, $date['date']));
                     $TOTAL_PENDING_PASS_SLIP++;
                     continue;
                 }
@@ -449,7 +457,7 @@ class DailyTimeRecordService {
 
             if ($result['discrepancy']) {
 
-                $computedData[] = [
+                $computedData[] = $withLeaveName([
                     'date'             => $date['date'],
                     'user_id'          => $userId,
                     'time_in'          => $timeInCarbon,
@@ -469,7 +477,7 @@ class DailyTimeRecordService {
                     'paid_hours'       => 0,
                     'remarks'          => $result['remarks'],
                     'discrepancy_reasons' => $result['reasons'] ?? [],
-                ];
+                ]);
 
                 continue;
             }
@@ -484,7 +492,7 @@ class DailyTimeRecordService {
                 }
 
 
-                $computedData[] = [
+                $computedData[] = $withLeaveName([
                     'date'              => Carbon::parse($logDate)->format('Y-m-d'),
                     'user_id'          => $userId,
                     'time_in'          => $timeInCarbon,
@@ -503,7 +511,7 @@ class DailyTimeRecordService {
                     'undertime_minutes' => 0,
                     'paid_hours'       => 0,
                     'remarks'          => $remarks,
-                ];
+                ]);
                 continue;
             }
 
@@ -553,7 +561,7 @@ class DailyTimeRecordService {
             }
 
             /** ---------------- FINAL DATA ROW ---------------- **/
-            $computedData[] = [
+            $computedData[] = $withLeaveName([
                 'date'              => Carbon::parse($logDate)->format('Y-m-d' ),
                 'user_id'           => $userId,
                 'time_in'           => $timeInCarbon,
@@ -573,7 +581,7 @@ class DailyTimeRecordService {
                 'paid_hours'        => $paid_hours,
                 'remarks'           => $remarks,
                 'accomplishments'   => $date['accomplishment'] ?? null
-            ];
+            ]);
         }
 
         $FORMATTED_TOTAL_UT     = $this->formatTime($TOTAL_UT);

@@ -166,7 +166,7 @@
                                                         v-for="(
                                                             rk, i
                                                         ) in filteredRemarks(
-                                                            row.remarks,
+                                                            row,
                                                         )"
                                                         :key="i"
                                                         class=""
@@ -178,9 +178,8 @@
                                                     </span>
                                                     <span
                                                         v-if="
-                                                            filteredRemarks(
-                                                                row.remarks,
-                                                            ).length === 0
+                                                            filteredRemarks(row)
+                                                                .length === 0
                                                         "
                                                         class=""
                                                     >
@@ -311,7 +310,7 @@
                                                         v-for="(
                                                             rk, i
                                                         ) in filteredRemarks(
-                                                            row.remarks,
+                                                            row,
                                                         )"
                                                         :key="i"
                                                         :class="
@@ -322,9 +321,8 @@
                                                     </span>
                                                     <span
                                                         v-if="
-                                                            filteredRemarks(
-                                                                row.remarks,
-                                                            ).length === 0
+                                                            filteredRemarks(row)
+                                                                .length === 0
                                                         "
                                                         class="text-body-secondary small"
                                                     >
@@ -637,7 +635,13 @@ const rowsFirstHalf = computed(() => monthRows.value.slice(0, 15));
 const rowsSecondHalf = computed(() => monthRows.value.slice(15, 31));
 
 /** Remarks column: same idea as parent getFilteredRemarks */
-function filteredRemarks(remarks) {
+function getLeaveDisplayText(row) {
+    return row?.raw?.leave_name || "LEAVE";
+}
+
+function filteredRemarks(row) {
+    const remarks = row?.remarks ?? [];
+
     if (!Array.isArray(remarks)) return [];
 
     const excluded = [
@@ -658,7 +662,10 @@ function filteredRemarks(remarks) {
         const isPending = value.includes("pending");
 
         const formatType = (type, label = null) => {
-            const display = label ?? type.toUpperCase();
+            const display =
+                type === "leave"
+                    ? getLeaveDisplayText(row)
+                    : (label ?? type.toUpperCase());
             const hasType = value.includes(type);
 
             if (!hasType) return null;
