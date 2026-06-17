@@ -7,7 +7,7 @@ use App\Models\ApplicantProfile;
 use App\Models\JobApplication;
 use App\Models\User;
 use App\Models\WorkInterest;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -15,7 +15,7 @@ use Tests\TestCase;
 
 class RecruitmentModuleTest extends TestCase
 {
-    use DatabaseTransactions;
+    use RefreshDatabase;
 
     public function test_public_can_view_published_job_postings(): void
     {
