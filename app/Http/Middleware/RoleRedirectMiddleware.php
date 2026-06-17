@@ -38,7 +38,17 @@ class RoleRedirectMiddleware
             return str_starts_with($role->name, 'emp_');
         });
 
+        $isApplicant = $user->roles->contains('name', 'applicant');
+
+        if ($isApplicant && !$request->is('applicant/*', 'careers*', 'logout')) {
+            return redirect()->to('/applicant/dashboard');
+        }
+
         if ($isEmployee && $request->is('admin/*')) {
+            return redirect()->to('/employee/dashboard');
+        }
+
+        if ($isEmployee && $request->is('applicant/*') && !$user->applicantProfile()->exists()) {
             return redirect()->to('/employee/dashboard');
         }
 

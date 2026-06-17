@@ -14,7 +14,8 @@ export default defineConfig({
                 'resources/sass/errors.scss',
                 'resources/sass/underconstruction.scss',
                 'resources/js/app.js',
-                'resources/js/auth.js'
+                'resources/js/auth.js',
+                'resources/js/applicant/recruitment.js'
             ],
             refresh: true,
         }),

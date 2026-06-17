@@ -479,11 +479,15 @@ class TimelogsServices {
         $isLeave = false;
         $status = 'pending leave';
 
+        $dateValue = is_array($date) ? ($date['date'] ?? null) : $date;
+
         $leave = DB::table('leave_applications as la')
             ->leftJoin('leave_dates as ld', 'la.id', '=', 'ld.leave_application_id')
+            ->leftJoin('leaves as l', 'la.leave_id', '=', 'l.id')
             ->where('la.user_id', $userId)
-            ->whereDate('ld.date', $date)
+            ->whereDate('ld.date', $dateValue)
             ->where('ld.isActive', true)
+            ->select('la.*', 'ld.shift', 'ld.date', 'l.name as leave_name')
             ->first();
         
 
@@ -498,7 +502,8 @@ class TimelogsServices {
         return [
             'is_leave' => $isLeave,
             'shift'    => $leave->shift ?? '',
-            'status'   => $status
+            'status'   => $status,
+            'leave_name' => $leave->leave_name ?? null,
         ];
     }
 

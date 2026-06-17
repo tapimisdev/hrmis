@@ -75,6 +75,9 @@ import GovernmentBonusIndex from "./admin/payroll/government-bonuses/Index.vue";
 import GovernmentBonusStepper from "./admin/payroll/government-bonuses/create/PayrollStepper.vue";
 import GovernmentBonusView from "./admin/payroll/government-bonuses/show/ShowPayroll.vue";
 import GovernmentBonusTypeIndex from "./admin/payroll/government-bonus-types/Index.vue";
+import RecruitmentJobs from "./admin/recruitment/RecruitmentJobs.vue";
+import RecruitmentList from "./admin/recruitment/RecruitmentList.vue";
+import RecruitmentApplication from "./admin/recruitment/RecruitmentApplication.vue";
 
 const authApp = createApp({
     components: {
@@ -143,6 +146,9 @@ const authApp = createApp({
         GovernmentBonusStepper,
         GovernmentBonusView,
         GovernmentBonusTypeIndex,
+        RecruitmentJobs,
+        RecruitmentList,
+        RecruitmentApplication,
         MessagesPage,
     },
 

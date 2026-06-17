@@ -196,7 +196,7 @@
                                                 getRemarkClass(remark),
                                             ]"
                                         >
-                                            {{ formatRemarks(remark) }}
+                                            {{ formatRemarks(remark, log) }}
                                         </span>
                                     </div>
                                 </td>
@@ -381,14 +381,17 @@ export default {
                 this.loading = false;
             }
         },
-        formatRemarks(remark) {
+        formatRemarks(remark, log = null) {
             if (!remark) return "";
 
             const value = String(remark).toLowerCase();
             const isPending = value.includes("pending");
 
             const formatType = (type, label = null) => {
-                const display = label ?? type.toUpperCase();
+                const display =
+                    type === "leave"
+                        ? this.getLeaveDisplayText(log)
+                        : (label ?? type.toUpperCase());
 
                 const hasType = value.includes(type);
 
@@ -486,7 +489,7 @@ export default {
                     return {
                         class: "status-leave",
                         icon: "fa-solid fa-plane-departure",
-                        text: "Leave",
+                        text: this.getLeaveDisplayText(log),
                     };
 
                 case this.hasRemark(remarks, "offset-wholeday"):
@@ -513,6 +516,9 @@ export default {
                 default:
                     return null;
             }
+        },
+        getLeaveDisplayText(log) {
+            return log?.leave_name || "Leave";
         },
         getRemarkClass(remark) {
             const remarkLower = String(remark).trim().toLowerCase();

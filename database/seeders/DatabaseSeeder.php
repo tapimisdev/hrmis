@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             EventsAnnouncementsSeeder::class,
             PermanentDeductionsSeeder::class,
             ViolationSettingsSeeder::class,
+            WorkInterestSeeder::class,
         ]);
     }
 }

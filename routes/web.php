@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TestController;
+use App\Http\Controllers\ApplicantPortalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,3 +43,15 @@ Route::any('/iclock/cdata', [\App\Http\Controllers\ZktecoController::class, 'cda
     ->middleware('biometric.ip');
 
 Route::get('test', [TestController::class, 'index']);
+
+Route::get('/careers', [ApplicantPortalController::class, 'jobs'])->name('careers.jobs');
+Route::middleware('guest')->group(function () {
+    Route::get('/careers/register', [ApplicantPortalController::class, 'register'])->name('applicant.register');
+    Route::post('/careers/register', [ApplicantPortalController::class, 'storeRegistration'])->name('applicant.register.store');
+});
+Route::middleware('auth')->prefix('applicant')->name('applicant.')->group(function () {
+    Route::get('/dashboard', [ApplicantPortalController::class, 'dashboard'])->name('dashboard');
+    Route::post('/jobs/{job}/apply', [ApplicantPortalController::class, 'apply'])->name('apply');
+    Route::post('/applications/{application}/signed-offer', [ApplicantPortalController::class, 'uploadSignedOffer'])->name('offer.sign');
+    Route::post('/applications/{application}/requirements/{requirement}', [ApplicantPortalController::class, 'uploadRequirement'])->name('requirements.upload');
+});
