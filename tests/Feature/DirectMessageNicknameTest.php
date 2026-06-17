@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Events\DirectConversationInfoUpdated;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class DirectMessageNicknameTest extends TestCase
@@ -24,6 +26,8 @@ class DirectMessageNicknameTest extends TestCase
             'updated_at' => now(),
         ]);
 
+        Event::fake([DirectConversationInfoUpdated::class]);
+
         $response = $this->actingAs($authUser, 'sanctum')->postJson(
             "/api/direct-messages/{$partner->id}/info",
             ['nickname' => '   '],
@@ -39,5 +43,6 @@ class DirectMessageNicknameTest extends TestCase
             'user_id' => $authUser->id,
             'partner_id' => $partner->id,
         ]);
+        Event::assertDispatched(DirectConversationInfoUpdated::class);
     }
 }
