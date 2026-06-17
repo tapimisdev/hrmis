@@ -24,6 +24,12 @@ class ApplicantPortalController extends Controller
             ->where(fn ($query) => $query->whereNull('posted_until')->orWhere('posted_until', '>=', now()))
             ->latest()->paginate(12);
 
+        if (request()->expectsJson()) {
+            return response()->json([
+                'jobs' => $jobs,
+            ]);
+        }
+
         return view('applicant.jobs', compact('jobs'));
     }
 

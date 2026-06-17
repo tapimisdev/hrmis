@@ -17,13 +17,6 @@ class RecruitmentModuleTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->withoutVite();
-    }
-
     public function test_public_can_view_published_job_postings(): void
     {
         JobPosting::create([
@@ -36,9 +29,9 @@ class RecruitmentModuleTest extends TestCase
             'status' => 'published',
         ]);
 
-        $this->get(route('careers.jobs'))
+        $this->getJson(route('careers.jobs'))
             ->assertOk()
-            ->assertSee('Science Research Specialist');
+            ->assertJsonFragment(['title' => 'Science Research Specialist']);
     }
 
     public function test_applicant_can_register_with_multiple_work_interests(): void
@@ -81,9 +74,9 @@ class RecruitmentModuleTest extends TestCase
         $user->assignRole($role);
 
         $this->actingAs($user)
-            ->get(route('recruitment.jobs'))
+            ->getJson(route('recruitment.jobs'))
             ->assertOk()
-            ->assertSee('Job Posting');
+            ->assertJsonPath('title', 'Job Posting');
     }
 
     public function test_hiring_an_applicant_creates_an_hris_employee_profile(): void

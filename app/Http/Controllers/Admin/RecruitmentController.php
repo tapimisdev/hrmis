@@ -51,8 +51,17 @@ class RecruitmentController extends Controller
             });
         }
 
+        $jobs = $query->paginate(12)->withQueryString();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'title' => 'Job Posting',
+                'jobs' => $jobs,
+            ]);
+        }
+
         return view('admin.pages.recruitment.jobs', [
-            'jobs' => $query->paginate(12)->withQueryString(),
+            'jobs' => $jobs,
             'search' => $search,
         ]);
     }
