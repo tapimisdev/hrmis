@@ -17,6 +17,13 @@ class RecruitmentModuleTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutVite();
+    }
+
     public function test_public_can_view_published_job_postings(): void
     {
         JobPosting::create([
